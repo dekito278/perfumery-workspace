@@ -1,0 +1,14 @@
+{
+	"name": "pocketbase-app",
+	"type": "module",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "node ./scripts/run-pocketbase.js serve --http=0.0.0.0:8090 --encryptionEnv=PB_ENCRYPTION_KEY --hooksWatch=false",
+		"start": "node ./scripts/run-pocketbase.js serve --http=0.0.0.0:8090 --encryptionEnv=PB_ENCRYPTION_KEY --dir=/data --migrationsDir=./pb_migrations --hooksDir=./pb_hooks --hooksWatch=false",
+		"migrations:up": "node ./scripts/run-pocketbase.js horizons migrations:up --encryptionEnv=PB_ENCRYPTION_KEY --dir=/data --migrationsDir=./pb_migrations --hooksDir=./pb_hooks --hooksWatch=false",
+		"migrations:revert": "node ./scripts/run-pocketbase.js horizons migrations:revert --encryptionEnv=PB_ENCRYPTION_KEY --dir=/data --migrationsDir=./pb_migrations --hooksDir=./pb_hooks --hooksWatch=false",
+		"migrations:snapshot": "node ./scripts/run-pocketbase.js migrate collections --encryptionEnv=PB_ENCRYPTION_KEY --dir=/data --migrationsDir=./pb_snapshots --yes",
+		"update": "node ./scripts/run-pocketbase.js update --encryptionEnv=PB_ENCRYPTION_KEY --backup=0"
+	}
+}
