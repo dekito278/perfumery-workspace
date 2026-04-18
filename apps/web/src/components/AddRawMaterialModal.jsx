@@ -4,46 +4,41 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import FormField from '@/components/FormField.jsx';
 import FormSelect from '@/components/FormSelect.jsx';
-import FormTextarea from '@/components/FormTextarea.jsx';
 import FormNumber from '@/components/FormNumber.jsx';
 import { validateRequired, validateMaxLength, validateNonNegativeNumber } from '@/utils/validation.js';
 import { formatName, formatCurrency } from '@/utils/formatting.js';
 import { formatDilutionInfo } from '@/utils/calculateDilutionCost.js';
-import { MATERIAL_TYPES, MATERIAL_CATEGORIES, SCENT_FAMILIES, NOTE_TYPES, UNIT_OPTIONS, FIELD_CONSTRAINTS } from '@/utils/constants.js';
-import pb from '@/lib/pocketbaseClient';
-
-const PYRAMID_PLACEMENTS = [
-  { value: 'top', label: 'Top' },
-  { value: 'middle', label: 'Middle' },
-  { value: 'base', label: 'Base' }
-];
+import { UNIT_OPTIONS, FIELD_CONSTRAINTS } from '@/utils/constants.js';
+import { getRawMaterialVendorSuggestions, getSolvents } from '@/services/rawMaterialsService.js';
+import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
+import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
+import { getRawMaterialCategoryMeta } from '@/utils/rawMaterialCategoryMeta.js';
 
 const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
   const { addMaterial, loading } = useRawMaterials();
   const [solvents, setSolvents] = useState([]);
+  const [vendorSuggestions, setVendorSuggestions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
+    workbook_code: '',
     category: '',
-    type: '',
+    type: 'material',
     scent_family: '',
-    note_type: '',
     stock_quantity: '',
     unit: 'ml',
     cost_per_unit: '',
-    supplier_name: '',
     minimum_stock: '',
     low_stock_threshold: '',
-    default_dilution_percent: '',
     vendor: '',
+    cas_number: '',
     ifra_limit: '',
-    pyramid_placement: '',
-    dilution_info: '',
-    description: '',
     notes: '',
     is_diluted: false,
     dilution_solvent_id: '',
@@ -58,19 +53,41 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
   useEffect(() => {
     if (open) {
       loadSolvents();
+      loadVendorSuggestions();
+      loadCategories();
     }
   }, [open]);
 
   const loadSolvents = async () => {
     try {
-      const materials = await pb.collection('raw_materials').getFullList({
-        filter: 'type = "solvent"',
-        sort: 'name',
-        $autoCancel: false
-      });
-      setSolvents(materials.map(m => ({ value: m.id, label: m.name })));
+      setSolvents(await getSolvents());
     } catch (error) {
       console.error('Failed to load solvents:', error);
+    }
+  };
+
+  const loadVendorSuggestions = async () => {
+    try {
+      setVendorSuggestions(await getRawMaterialVendorSuggestions());
+    } catch (error) {
+      console.error('Failed to load vendor suggestions:', error);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const categories = await getRawMaterialCategories();
+      setCategoryOptions(
+        categories.map((category) => ({
+          value: category.name.toLowerCase(),
+          label: findPerfumersWorldCategoryByValue(category.name)?.description
+            ? `${category.name} - ${findPerfumersWorldCategoryByValue(category.name).description}`
+            : category.name,
+        }))
+      );
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      setCategoryOptions([]);
     }
   };
 
@@ -81,14 +98,14 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       case 'name':
         error = validateRequired(value, 'Name') || validateMaxLength(value, FIELD_CONSTRAINTS.name.maxLength, 'Name');
         break;
-      case 'type':
-        error = validateRequired(value, 'Type');
-        break;
       case 'category':
         error = validateRequired(value, 'Category');
         break;
       case 'scent_family':
         error = validateMaxLength(value, FIELD_CONSTRAINTS.scentFamily.maxLength, 'Scent family');
+        break;
+      case 'workbook_code':
+        error = validateMaxLength(value, FIELD_CONSTRAINTS.code.maxLength, 'Workbook code');
         break;
       case 'stock_quantity':
         error = validateRequired(value, 'Stock quantity') || validateNonNegativeNumber(value, 'Stock quantity');
@@ -114,16 +131,6 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         break;
       case 'low_stock_threshold':
         error = validateNonNegativeNumber(value, 'Low stock threshold');
-        break;
-      case 'default_dilution_percent':
-        if (value !== '') {
-          const numValue = Number(value);
-          if (isNaN(numValue)) {
-            error = 'Default dilution must be a valid number';
-          } else if (numValue < 0 || numValue > 100) {
-            error = 'Default dilution must be between 0 and 100';
-          }
-        }
         break;
       case 'ifra_limit':
         if (value !== '') {
@@ -154,11 +161,8 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
           }
         }
         break;
-      case 'description':
-        error = validateMaxLength(value, FIELD_CONSTRAINTS.description.maxLength, 'Description');
-        break;
-      case 'notes':
-        error = validateMaxLength(value, FIELD_CONSTRAINTS.notes.maxLength, 'Notes');
+      case 'cas_number':
+        error = validateMaxLength(value, 100, 'CAS number');
         break;
     }
     
@@ -185,7 +189,15 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'category') {
+        const meta = getRawMaterialCategoryMeta(value, prev.type, prev.scent_family);
+        next.type = meta.type;
+        next.scent_family = meta.scentFamily;
+      }
+      return next;
+    });
     if (touched[field]) {
       const error = validateField(field, value);
       setErrors(prev => ({ ...prev, [field]: error }));
@@ -221,23 +233,24 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
     try {
       await addMaterial({
         name: formatName(formData.name),
+        workbook_code: formData.workbook_code || null,
         category: formData.category,
         type: formData.type,
         scent_family: isSolvent ? null : (formData.scent_family || null),
-        note_type: isSolvent ? null : (formData.note_type || null),
         stock_quantity: parseFloat(formData.stock_quantity),
         unit: formData.unit,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : 0,
-        supplier_name: formData.supplier_name || null,
+        supplier_name: null,
         minimum_stock: parseFloat(formData.minimum_stock),
         low_stock_threshold: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : null,
-        default_dilution_percent: isSolvent ? null : (formData.default_dilution_percent ? parseFloat(formData.default_dilution_percent) : null),
+        default_dilution_percent: null,
         vendor: formData.vendor || null,
+        cas_number: formData.cas_number || null,
+        charge_number: null,
         ifra_limit: formData.ifra_limit ? parseFloat(formData.ifra_limit) : null,
-        pyramid_placement: isSolvent ? null : (formData.pyramid_placement || null),
-        dilution_info: isSolvent ? null : (formData.dilution_info || null),
-        description: formData.description || null,
         notes: formData.notes || null,
+        note_type: null,
+        pyramid_placement: null,
         is_diluted: formData.is_diluted,
         dilution_solvent_id: formData.is_diluted ? formData.dilution_solvent_id : null,
         dilution_percentage: formData.is_diluted ? parseFloat(formData.dilution_percentage) : null
@@ -246,22 +259,18 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       toast.success('Material added successfully');
       setFormData({
         name: '',
+        workbook_code: '',
         category: '',
-        type: '',
+        type: 'material',
         scent_family: '',
-        note_type: '',
         stock_quantity: '',
         unit: 'ml',
         cost_per_unit: '',
-        supplier_name: '',
         minimum_stock: '',
         low_stock_threshold: '',
-        default_dilution_percent: '',
         vendor: '',
+        cas_number: '',
         ifra_limit: '',
-        pyramid_placement: '',
-        dilution_info: '',
-        description: '',
         notes: '',
         is_diluted: false,
         dilution_solvent_id: '',
@@ -302,62 +311,46 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              <FormField
+                label="Workbook code"
+                value={formData.workbook_code}
+                onChange={(e) => handleChange('workbook_code', e.target.value)}
+                onBlur={() => handleBlur('workbook_code')}
+                error={errors.workbook_code}
+                placeholder="e.g., C123"
+                maxLength={FIELD_CONSTRAINTS.code.maxLength}
+              />
+              <FormField
+                label="Family"
+                value={formData.scent_family}
+                onChange={() => {}}
+                error={errors.scent_family}
+                disabled
+                placeholder="Auto from category"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <FormSelect
                 label="Category"
                 value={formData.category}
                 onChange={(value) => handleChange('category', value)}
                 onBlur={() => handleBlur('category')}
-                options={MATERIAL_CATEGORIES}
+                options={categoryOptions}
                 error={errors.category}
                 required
-                placeholder="Select category"
+                placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
+                disabled={!categoryOptions.length}
               />
-              <FormSelect
+              <FormField
                 label="Type"
                 value={formData.type}
-                onChange={(value) => handleChange('type', value)}
-                onBlur={() => handleBlur('type')}
-                options={MATERIAL_TYPES}
+                onChange={() => {}}
                 error={errors.type}
-                required
-                placeholder="Select type"
+                disabled
+                placeholder="Auto from category"
               />
             </div>
-
-            {!isSolvent && (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <FormSelect
-                    label="Scent family"
-                    value={formData.scent_family}
-                    onChange={(value) => handleChange('scent_family', value)}
-                    onBlur={() => handleBlur('scent_family')}
-                    options={SCENT_FAMILIES}
-                    error={errors.scent_family}
-                    placeholder="Select scent family"
-                  />
-                  <FormSelect
-                    label="Note type"
-                    value={formData.note_type}
-                    onChange={(value) => handleChange('note_type', value)}
-                    onBlur={() => handleBlur('note_type')}
-                    options={NOTE_TYPES}
-                    error={errors.note_type}
-                    placeholder="Select note type"
-                  />
-                </div>
-
-                <FormSelect
-                  label="Pyramid placement"
-                  value={formData.pyramid_placement}
-                  onChange={(value) => handleChange('pyramid_placement', value)}
-                  onBlur={() => handleBlur('pyramid_placement')}
-                  options={PYRAMID_PLACEMENTS}
-                  error={errors.pyramid_placement}
-                  placeholder="Select placement"
-                />
-              </>
-            )}
           </div>
 
           {!isSolvent && (
@@ -478,32 +471,30 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 min="0"
                 step="0.01"
               />
-              {!isSolvent && (
-                <FormNumber
-                  label="Default dilution"
-                  value={formData.default_dilution_percent}
-                  onChange={(e) => handleChange('default_dilution_percent', e.target.value)}
-                  onBlur={() => handleBlur('default_dilution_percent')}
-                  error={errors.default_dilution_percent}
-                  placeholder="0.0"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  unit="%"
-                />
-              )}
+              <div />
             </div>
           </div>
 
           <div className="border-t pt-3 space-y-3">
-            <FormField
-              label="Vendor"
-              value={formData.vendor}
-              onChange={(e) => handleChange('vendor', e.target.value)}
-              onBlur={() => handleBlur('vendor')}
-              error={errors.vendor}
-              placeholder="e.g., Aromatics International"
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                label="Vendor"
+                value={formData.vendor}
+                onChange={(e) => handleChange('vendor', e.target.value)}
+                onBlur={() => handleBlur('vendor')}
+                error={errors.vendor}
+                placeholder="e.g., Fragment 3"
+                list="raw-material-vendor-suggestions"
+              />
+              <FormField
+                label="CAS number"
+                value={formData.cas_number}
+                onChange={(e) => handleChange('cas_number', e.target.value)}
+                onBlur={() => handleBlur('cas_number')}
+                error={errors.cas_number}
+                placeholder="e.g., 8007-75-8"
+              />
+            </div>
 
             <FormNumber
               label="IFRA limit"
@@ -518,42 +509,24 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
               unit="%"
             />
 
-            {!isSolvent && (
-              <FormTextarea
-                label="Dilution info"
-                value={formData.dilution_info}
-                onChange={(e) => handleChange('dilution_info', e.target.value)}
-                onBlur={() => handleBlur('dilution_info')}
-                error={errors.dilution_info}
-                placeholder="Dilution instructions or notes..."
-                rows={2}
+            <div className="space-y-2">
+              <Label htmlFor="raw-material-notes">Notes</Label>
+              <Textarea
+                id="raw-material-notes"
+                value={formData.notes}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                placeholder="Optional notes about vendor, origin, or handling"
+                rows={3}
+                className="text-foreground text-sm"
               />
-            )}
-
-            <FormTextarea
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              onBlur={() => handleBlur('description')}
-              error={errors.description}
-              placeholder="Material description..."
-              maxLength={FIELD_CONSTRAINTS.description.maxLength}
-              showCharCount
-              rows={2}
-            />
-
-            <FormTextarea
-              label="Notes"
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              onBlur={() => handleBlur('notes')}
-              error={errors.notes}
-              placeholder="Additional notes..."
-              maxLength={FIELD_CONSTRAINTS.notes.maxLength}
-              showCharCount
-              rows={2}
-            />
+            </div>
           </div>
+
+          <datalist id="raw-material-vendor-suggestions">
+            {vendorSuggestions.map((vendor) => (
+              <option key={vendor} value={vendor} />
+            ))}
+          </datalist>
 
           {Object.keys(warnings).length > 0 && (
             <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1">

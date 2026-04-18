@@ -1,5 +1,5 @@
 
-import pb from '@/lib/pocketbaseClient';
+import { getBatches } from '@/services/batchesSupabaseService.js';
 
 /**
  * Check if a formula has related records (batches) that would prevent deletion
@@ -12,15 +12,13 @@ export const checkFormulaRelations = async (formulaId) => {
       return { hasRelations: false, relationCount: 0, relationType: null };
     }
 
-    const batches = await pb.collection('batches').getList(1, 1, {
-      filter: `formula_id = "${formulaId}"`,
-      $autoCancel: false
-    });
+    const batches = await getBatches();
+    const relatedBatches = batches.filter((batch) => batch.formula_id === formulaId);
 
-    if (batches.totalItems > 0) {
+    if (relatedBatches.length > 0) {
       return {
         hasRelations: true,
-        relationCount: batches.totalItems,
+        relationCount: relatedBatches.length,
         relationType: 'batches'
       };
     }

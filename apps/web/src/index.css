@@ -582,4 +582,18 @@
   .print-border {
     border: 1px solid #000 !important;
   }
+
+  main,
+  .detail-page-container,
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .detail-section {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
 }

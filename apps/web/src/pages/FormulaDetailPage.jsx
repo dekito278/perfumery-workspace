@@ -27,7 +27,10 @@ import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate, formatQuantity } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
-import pb from '@/lib/pocketbaseClient';
+import { getFormulaById, getFormulas } from '@/services/formulasSupabaseService.js';
+import { getAccordById, getAccords } from '@/services/accordsSupabaseService.js';
+import { getBatchById, getBatches } from '@/services/batchesSupabaseService.js';
+import { getRawMaterialById, getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const FormulaDetailPage = () => {
   const { id } = useParams();
@@ -48,30 +51,40 @@ const FormulaDetailPage = () => {
   const loadFormulaDetails = async () => {
     setLoading(true);
     try {
-      const formulaData = await pb.collection('formulas').getOne(id, { $autoCancel: false });
+      const formulaData = await getFormulaById(id);
       setFormula(formulaData);
 
       const itemsData = await getFormulaItems(id);
+      const [rawMaterials, accords] = await Promise.all([getRawMaterials(), getAccords()]);
+      const rawMaterialsMap = new Map(rawMaterials.map((item) => [item.id, item]));
+      const accordsMap = new Map(accords.map((item) => [item.id, item]));
 
       const enrichedItems = await Promise.all(itemsData.map(async (item) => {
         let itemDetails = null;
         let isLowStock = false;
         let unitPrice = 0;
         let pyramidPlacement = null;
-        let isDiluted = false;
-        let dilutionPercentage = null;
+        let isDiluted = Boolean(item.dilution_percent && item.dilution_solvent_id);
+        let dilutionPercentage = item.dilution_percent || null;
+        let dilutionSolventName = null;
 
         if (item.item_type === 'raw_material' || item.item_type === 'solvent') {
-          itemDetails = await pb.collection('raw_materials').getOne(item.item_id, { $autoCancel: false });
+          itemDetails = rawMaterialsMap.get(item.item_id) || await getRawMaterialById(item.item_id);
           isLowStock = itemDetails.low_stock_threshold 
             ? itemDetails.stock_quantity < itemDetails.low_stock_threshold
             : itemDetails.stock_quantity < itemDetails.minimum_stock;
           unitPrice = itemDetails.cost_per_unit || 0;
           pyramidPlacement = itemDetails.pyramid_placement || null;
-          isDiluted = itemDetails.is_diluted || false;
-          dilutionPercentage = itemDetails.dilution_percentage || null;
+          if (!isDiluted) {
+            isDiluted = itemDetails.is_diluted || false;
+            dilutionPercentage = itemDetails.dilution_percentage || null;
+          }
+          if (item.dilution_solvent_id) {
+            const dilutionSolvent = rawMaterialsMap.get(item.dilution_solvent_id) || await getRawMaterialById(item.dilution_solvent_id);
+            dilutionSolventName = dilutionSolvent?.name || null;
+          }
         } else if (item.item_type === 'accord') {
-          itemDetails = await pb.collection('accords').getOne(item.item_id, { $autoCancel: false });
+          itemDetails = accordsMap.get(item.item_id) || await getAccordById(item.item_id);
           unitPrice = itemDetails.cost_per_unit || 0;
         }
 
@@ -84,7 +97,8 @@ const FormulaDetailPage = () => {
           unit_price: unitPrice,
           pyramid_placement: pyramidPlacement,
           is_diluted: isDiluted,
-          dilution_percentage: dilutionPercentage
+          dilution_percentage: dilutionPercentage,
+          dilution_solvent_name: dilutionSolventName
         };
       }));
 
@@ -92,12 +106,8 @@ const FormulaDetailPage = () => {
       const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(enrichedItems, totalGrams) : enrichedItems;
       setItems(itemsWithPercentages);
 
-      const batchesData = await pb.collection('batches').getFullList({
-        filter: `formula_id = "${id}"`,
-        sort: '-created',
-        $autoCancel: false
-      });
-      setBatches(batchesData.slice(0, 5));
+      const batchesData = await getBatches();
+      setBatches(batchesData.filter((batch) => batch.formula_id === id).slice(0, 5));
     } catch (error) {
       toast.error('Failed to load formula details');
       navigate('/formulas');
@@ -126,6 +136,11 @@ const FormulaDetailPage = () => {
   const totalGrams = calculateTotalAmount(items);
   const totalPercentage = items.reduce((sum, item) => sum + (item.percentage || 0), 0);
   const totalCost = calculateTotalCost(items);
+  const markupPercentage = Number(formula.markup_percentage || 0);
+  const packagingCost = Number(formula.packaging_cost || 0);
+  const bottleCost = Number(formula.bottle_cost || 0);
+  const capCost = Number(formula.cap_cost || 0);
+  const totalCogs = totalCost + packagingCost + bottleCost + capCost;
 
   return (
     <>
@@ -174,12 +189,11 @@ const FormulaDetailPage = () => {
           <DetailSection title="Summary">
             <DetailFieldGroup columns={4}>
               <DetailField label="Code" value={formula.code} />
+              <DetailField label="By" value={formatNullable(formula.author_name)} />
               <DetailField label="Status" value={formatStatus(formula.status || 'draft')} />
-              <DetailField label="Category" value={formatNullable(formula.category)} />
-              <DetailField 
-                label="Version" 
-                value={formatNullable(formula.version)} 
-              />
+              <DetailField label="Markup" value={`${markupPercentage.toFixed(1)}%`} />
+              <DetailField label="COGS" value={formatPrice(totalCogs)} />
+              <DetailField label="Version" value={formatNullable(formula.version)} />
             </DetailFieldGroup>
             <div className="mt-3 grid grid-cols-2 gap-4">
               <DetailField 
@@ -236,7 +250,7 @@ const FormulaDetailPage = () => {
                               {item.name}
                               {isDiluted && (
                                 <span className="ml-2 text-xs text-muted-foreground">
-                                  ({item.dilution_percentage}%)
+                                  ({item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''})
                                 </span>
                               )}
                             </button>
@@ -288,13 +302,31 @@ const FormulaDetailPage = () => {
               </Table>
             </div>
             <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm">Total formula cost:</span>
-                <span className="text-lg font-bold font-mono text-primary">{formatPrice(totalCost)}</span>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <div className="rounded-lg bg-background/70 p-3">
+                  <div className="text-xs text-muted-foreground">Formula material cost</div>
+                  <div className="mt-1 text-lg font-bold font-mono text-primary">{formatPrice(totalCost)}</div>
+                </div>
+                <div className="rounded-lg bg-background/70 p-3">
+                  <div className="text-xs text-muted-foreground">Packaging cost</div>
+                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(packagingCost)}</div>
+                </div>
+                <div className="rounded-lg bg-background/70 p-3">
+                  <div className="text-xs text-muted-foreground">Bottle cost</div>
+                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(bottleCost)}</div>
+                </div>
+                <div className="rounded-lg bg-background/70 p-3">
+                  <div className="text-xs text-muted-foreground">Cap cost</div>
+                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(capCost)}</div>
+                </div>
+                <div className="rounded-lg bg-background/70 p-3">
+                  <div className="text-xs text-muted-foreground">Total COGS</div>
+                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(totalCogs)}</div>
+                </div>
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Percentages are calculated from gram amounts. Costs are based on per-10ml pricing. Diluted materials show active + solvent composition.
+              Percentages are calculated from gram amounts. COGS combines formula material cost with packaging, bottle, and cap costs. Markup is saved separately so you can decide your own selling estimate.
             </p>
           </DetailSection>
 

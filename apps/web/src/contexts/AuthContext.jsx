@@ -1,70 +1,132 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import pb from '@/lib/pocketbaseClient.js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import supabase from '@/lib/supabaseClient.js';
 
 const AuthContext = createContext(null);
+const AUTH_INIT_TIMEOUT_MS = 5000;
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
-    if (pb.authStore.isValid && pb.authStore.model) {
-      setCurrentUser(pb.authStore.model);
-    }
-    setInitialLoading(false);
+    let isMounted = true;
+    let timeoutId = null;
 
-    const unsubscribe = pb.authStore.onChange((token, model) => {
-      setCurrentUser(model);
+    const finishLoading = (nextSession = null) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setSession(nextSession);
+      setCurrentUser(nextSession?.user ?? null);
+      setInitialLoading(false);
+    };
+
+    const initializeAuth = async () => {
+      try {
+        const {
+          data: { session: initialSession },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('Failed to restore Supabase session:', error);
+        }
+
+        finishLoading(initialSession);
+      } catch (error) {
+        console.error('Unexpected auth initialization error:', error);
+        finishLoading(null);
+      }
+    };
+
+    timeoutId = window.setTimeout(() => {
+      console.warn('Auth initialization timed out, continuing without restored session.');
+      finishLoading(null);
+    }, AUTH_INIT_TIMEOUT_MS);
+
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      finishLoading(nextSession);
     });
 
     return () => {
-      unsubscribe();
+      isMounted = false;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      subscription.unsubscribe();
     };
   }, []);
 
   const login = async (email, password) => {
     try {
-      const authData = await pb.collection('users').authWithPassword(email, password, {
-        $autoCancel: false
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      setCurrentUser(authData.record);
-      return authData;
+
+      if (error) {
+        throw error;
+      }
+
+      setSession(data.session);
+      setCurrentUser(data.user);
+      return data;
     } catch (error) {
       console.error('Login error:', error);
       throw new Error(error.message || 'Login failed');
     }
   };
 
-  const signup = async (email, password, passwordConfirm, name) => {
+  const signup = async (email, password, _passwordConfirm, name) => {
     try {
-      const user = await pb.collection('users').create({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        passwordConfirm,
-        name
-      }, { $autoCancel: false });
-
-      const authData = await pb.collection('users').authWithPassword(email, password, {
-        $autoCancel: false
+        options: {
+          data: {
+            name,
+          },
+        },
       });
-      
-      setCurrentUser(authData.record);
-      return user;
+
+      if (error) {
+        throw error;
+      }
+
+      setSession(data.session ?? null);
+      setCurrentUser(data.user ?? null);
+      return {
+        ...data,
+        emailConfirmationRequired: !data.session,
+      };
     } catch (error) {
       console.error('Signup error:', error);
       throw new Error(error.message || 'Signup failed');
     }
   };
 
-  const logout = () => {
-    pb.authStore.clear();
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('Logout error:', error);
+      throw new Error(error.message || 'Logout failed');
+    }
+
+    setSession(null);
     setCurrentUser(null);
   };
 
   const getAuthState = () => ({
-    isAuthenticated: pb.authStore.isValid,
-    user: pb.authStore.model
+    isAuthenticated: !!session?.user,
+    user: session?.user ?? null,
   });
 
   const value = {
@@ -72,9 +134,10 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    isAuthenticated: pb.authStore.isValid,
+    isAuthenticated: !!session?.user,
     getAuthState,
-    initialLoading
+    initialLoading,
+    session,
   };
 
   if (initialLoading) {

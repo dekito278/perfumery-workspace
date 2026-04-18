@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import * as batchesService from '@/services/batchesService.js';
-import pb from '@/lib/pocketbaseClient';
+import * as batchesService from '@/services/batchesSupabaseService.js';
 
 export const useBatches = () => {
   const [loading, setLoading] = useState(false);
@@ -11,12 +10,7 @@ export const useBatches = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await pb.collection('batches').getFullList({
-        expand: 'formula_id,solvent_id',
-        sort: '-created',
-        $autoCancel: false
-      });
-      return data;
+      return await batchesService.getBatches();
     } catch (err) {
       setError(err.message);
       throw err;
@@ -29,11 +23,7 @@ export const useBatches = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await pb.collection('batches').getOne(id, {
-        expand: 'formula_id,solvent_id',
-        $autoCancel: false
-      });
-      return data;
+      return await batchesService.getBatchById(id);
     } catch (err) {
       setError(err.message);
       throw err;
@@ -87,7 +77,7 @@ export const useBatches = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await batchesService.completeBatch(id);
+      const result = await batchesService.completeBatchWithStockDeduction(id);
       return result;
     } catch (err) {
       setError(err.message);

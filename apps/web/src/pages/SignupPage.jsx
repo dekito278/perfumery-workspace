@@ -47,7 +47,14 @@ const SignupPage = () => {
     setLoading(true);
 
     try {
-      await signup(formData.email, formData.password, formData.passwordConfirm, formData.name);
+      const result = await signup(formData.email, formData.password, formData.passwordConfirm, formData.name);
+
+      if (result.emailConfirmationRequired) {
+        toast.success('Account created. Please verify your email before signing in.');
+        navigate('/login');
+        return;
+      }
+
       toast.success('Account created successfully');
       navigate('/dashboard');
     } catch (err) {

@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { formatGramAmount, formatPercentage, formatStatus, formatQuantity } from '@/utils/formatting.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
-import pb from '@/lib/pocketbaseClient';
+import { getFormulaItems } from '@/services/formulasSupabaseService.js';
+import { getAccords } from '@/services/accordsSupabaseService.js';
+import { getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const FormulaPreview = ({ formula }) => {
   const [items, setItems] = useState([]);
@@ -20,28 +22,28 @@ const FormulaPreview = ({ formula }) => {
   const loadFormulaItems = async () => {
     setLoading(true);
     try {
-      const itemsData = await pb.collection('formula_items').getFullList({
-        filter: `formula_id = "${formula.id}"`,
-        sort: 'created',
-        $autoCancel: false
-      });
+      const itemsData = await getFormulaItems(formula.id);
+      const [rawMaterials, accords] = await Promise.all([getRawMaterials(), getAccords()]);
+      const rawMaterialsMap = new Map(rawMaterials.map((item) => [item.id, item]));
+      const accordsMap = new Map(accords.map((item) => [item.id, item]));
 
-      const enrichedItems = await Promise.all(itemsData.map(async (item) => {
+      const enrichedItems = itemsData.map((item) => {
         let itemDetails = null;
         if (item.item_type === 'raw_material' || item.item_type === 'solvent') {
-          itemDetails = await pb.collection('raw_materials').getOne(item.item_id, { $autoCancel: false });
+          itemDetails = rawMaterialsMap.get(item.item_id) || null;
         } else if (item.item_type === 'accord') {
-          itemDetails = await pb.collection('accords').getOne(item.item_id, { $autoCancel: false });
+          itemDetails = accordsMap.get(item.item_id) || null;
         }
 
         return {
           ...item,
           name: itemDetails?.name || 'Unknown',
           type: itemDetails?.type || item.item_type,
-          is_diluted: itemDetails?.is_diluted || false,
-          dilution_percentage: itemDetails?.dilution_percentage || null
+          is_diluted: Boolean(item.dilution_percent && item.dilution_solvent_id) || itemDetails?.is_diluted || false,
+          dilution_percentage: item.dilution_percent || itemDetails?.dilution_percentage || null,
+          dilution_solvent_name: item.dilution_solvent_id ? rawMaterialsMap.get(item.dilution_solvent_id)?.name || null : null,
         };
-      }));
+      });
 
       setItems(enrichedItems);
     } catch (error) {
@@ -95,7 +97,7 @@ const FormulaPreview = ({ formula }) => {
                     {item.name}
                     {isDiluted && (
                       <span className="ml-2 text-xs text-muted-foreground">
-                        ({item.dilution_percentage}%)
+                        ({item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''})
                       </span>
                     )}
                   </TableCell>

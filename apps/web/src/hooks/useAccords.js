@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import * as accordsService from '@/services/accordsService.js';
+import * as accordsService from '@/services/accordsSupabaseService.js';
 
 export const useAccords = () => {
   const [loading, setLoading] = useState(false);

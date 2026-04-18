@@ -1,6 +1,6 @@
 
-import pb from '@/lib/pocketbaseClient';
-import { calculateBatchComposition } from '@/services/batchesService.js';
+import { calculateBatchComposition } from '@/services/batchesSupabaseService.js';
+import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 
 /**
  * Calculate and validate stock deductions for batch production using expanded composition
@@ -27,7 +27,7 @@ export const calculateAndValidateBatchStockDeduction = async (batch, formulaItem
     // Validate stock availability for each material
     for (const item of expandedComposition) {
       try {
-        const material = await pb.collection('raw_materials').getOne(item.raw_material_id, { $autoCancel: false });
+        const material = await getRawMaterialById(item.raw_material_id);
         
         const availableStock = material.stock_quantity || 0;
         const requiredQuantity = item.required_quantity || 0;
@@ -101,13 +101,9 @@ export const executeStockDeductions = async (deductions) => {
 
   for (const deduction of deductions) {
     try {
-      const material = await pb.collection('raw_materials').getOne(deduction.raw_material_id, { $autoCancel: false });
+      const material = await getRawMaterialById(deduction.raw_material_id);
       
       const newStock = material.stock_quantity - deduction.amount_to_deduct;
-      
-      await pb.collection('raw_materials').update(deduction.raw_material_id, {
-        stock_quantity: newStock
-      }, { $autoCancel: false });
 
       results.push({
         material_id: deduction.raw_material_id,

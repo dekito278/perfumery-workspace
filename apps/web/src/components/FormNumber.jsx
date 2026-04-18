@@ -2,6 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const FormNumber = ({ 
   label, 
@@ -35,6 +36,7 @@ const FormNumber = ({
           value={value}
           onChange={onChange}
           onBlur={onBlur}
+          onWheel={blurNumberInputOnWheel}
           placeholder={placeholder}
           disabled={disabled}
           min={min}

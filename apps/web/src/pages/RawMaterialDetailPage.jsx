@@ -19,7 +19,8 @@ import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import UsageHistoryTable from '@/components/UsageHistoryTable.jsx';
 import { formatQuantity, formatPercentage, formatNullable, formatStatus } from '@/utils/formatting.js';
 import { formatPricePerUnit, formatPrice } from '@/utils/pricingUtils.js';
-import pb from '@/lib/pocketbaseClient';
+import { getRawMaterialById, getRawMaterialUsageHistory } from '@/services/rawMaterialsService.js';
+import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 
 const RawMaterialDetailPage = () => {
   const { id } = useParams();
@@ -41,7 +42,7 @@ const RawMaterialDetailPage = () => {
   const loadMaterial = async () => {
     setLoading(true);
     try {
-      const data = await pb.collection('raw_materials').getOne(id, { $autoCancel: false });
+      const data = await getRawMaterialById(id);
       setMaterial(data);
     } catch (error) {
       toast.error('Failed to load material details');
@@ -54,16 +55,11 @@ const RawMaterialDetailPage = () => {
   const loadUsageHistory = async () => {
     setUsageLoading(true);
     try {
-      const records = await pb.collection('batch_usage_records').getList(1, 50, {
-        filter: `raw_material_id = "${id}"`,
-        sort: '-created_at',
-        expand: 'batch_id,raw_material_id',
-        $autoCancel: false
-      });
-      setUsageRecords(records.items);
+      const records = await getRawMaterialUsageHistory(id);
+      setUsageRecords(records);
     } catch (error) {
       console.error('Failed to load usage history:', error);
-      toast.error('Failed to load usage history');
+      setUsageRecords([]);
     } finally {
       setUsageLoading(false);
     }
@@ -99,6 +95,7 @@ const RawMaterialDetailPage = () => {
     : material.stock_quantity < material.minimum_stock;
 
   const stockStatus = isLowStock ? 'Low stock' : 'In stock';
+  const scentFamily = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
 
   // Calculate total quantity used
   const totalQuantityUsed = usageRecords.reduce((sum, record) => {
@@ -115,7 +112,7 @@ const RawMaterialDetailPage = () => {
       <DetailPageLayout>
         <DetailPageHeader
           title={material.name}
-          subtitle={formatNullable(material.description, '')}
+          subtitle={material.vendor ? `Vendor: ${material.vendor}` : ''}
           badge={
             <Badge variant="outline" className="capitalize text-xs">
               {formatStatus(material.type)}
@@ -148,6 +145,18 @@ const RawMaterialDetailPage = () => {
                 value={formatPricePerUnit(material.cost_per_unit)} 
               />
             </DetailFieldGroup>
+            <div className="mt-3">
+              <DetailFieldGroup columns={3}>
+                <DetailField label="Vendor" value={formatNullable(material.vendor)} />
+                <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
+                <DetailField label="Supplier" value={formatNullable(material.supplier_name)} />
+              </DetailFieldGroup>
+            </div>
+            <div className="mt-3">
+              <DetailFieldGroup columns={3}>
+                <DetailField label="Workbook code" value={formatNullable(material.workbook_code)} />
+              </DetailFieldGroup>
+            </div>
           </DetailSection>
 
           <DetailSection title="Stock information">
@@ -184,36 +193,18 @@ const RawMaterialDetailPage = () => {
                 } 
               />
             </DetailFieldGroup>
-            <div className="mt-3">
-              <DetailField 
-                label="Supplier" 
-                value={formatNullable(material.supplier_name)} 
-              />
-            </div>
           </DetailSection>
 
-          <DetailSection title="Properties">
+          <DetailSection title="Classification">
             <DetailFieldGroup columns={3}>
               <DetailField 
-                label="Scent family" 
-                value={formatNullable(material.scent_family)} 
+                label="Family" 
+                value={formatNullable(scentFamily)} 
               />
-              <DetailField 
-                label="Note type" 
-                value={formatNullable(material.note_type)} 
-              />
-              <DetailField 
-                label="Default dilution" 
-                value={material.default_dilution_percent ? formatPercentage(material.default_dilution_percent) : 'N/A'} 
-              />
+              <DetailField label="Category system" value="Perfumer's Workbook A-Z" />
+              <DetailField label="Type" value={formatStatus(material.type)} />
             </DetailFieldGroup>
           </DetailSection>
-
-          {material.notes && (
-            <DetailSection title="Notes">
-              <p className="text-muted-foreground whitespace-pre-wrap text-sm">{material.notes}</p>
-            </DetailSection>
-          )}
 
           <DetailSection title="Usage history">
             {usageRecords.length > 0 && (
@@ -245,7 +236,10 @@ const RawMaterialDetailPage = () => {
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         material={material}
-        onSuccess={loadMaterial}
+        onSuccess={() => {
+          loadMaterial();
+          loadUsageHistory();
+        }}
       />
 
       <ConfirmDialog

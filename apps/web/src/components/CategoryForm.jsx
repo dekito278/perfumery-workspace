@@ -36,23 +36,32 @@ const CategoryForm = ({ category, onSave, onCancel, loading }) => {
 
       <div className="space-y-1.5">
         <Label htmlFor="category-color" className="text-xs font-medium">Color *</Label>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-3 items-center">
           <div 
-            className="w-8 h-8 rounded border-2 border-border shrink-0"
+            className="w-10 h-10 rounded-xl border-2 border-border shrink-0 shadow-sm"
             style={{ backgroundColor: color }}
           />
-          <Input
-            id="category-color"
-            type="text"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="#FFB6D9"
-            required
-            pattern="^#[0-9A-Fa-f]{6}$"
-            className="text-foreground font-mono h-8"
-          />
+          <div className="flex-1 flex items-center gap-2">
+            <Input
+              id="category-color"
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value.toUpperCase())}
+              required
+              className="h-10 w-16 cursor-pointer p-1"
+            />
+            <Input
+              type="text"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              placeholder="#FFB6D9"
+              required
+              pattern="^#[0-9A-Fa-f]{6}$"
+              className="text-foreground font-mono h-10"
+            />
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">Enter hex color code (e.g., #FFB6D9)</p>
+        <p className="text-xs text-muted-foreground">Klik kotak warna untuk membuka picker, lalu geser sampai warnanya pas.</p>
       </div>
 
       <div className="flex gap-2 pt-2">

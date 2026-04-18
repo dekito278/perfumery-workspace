@@ -1,5 +1,5 @@
 
-import pb from '@/lib/pocketbaseClient.js';
+import { getBatches } from '@/services/batchesSupabaseService.js';
 
 /**
  * Check if a formula is being used in other records
@@ -12,16 +12,14 @@ export const checkFormulaUsage = async (formulaId) => {
       return { isInUse: false, usageType: null, count: 0 };
     }
 
-    const batches = await pb.collection('batches').getList(1, 1, {
-      filter: `formula_id = "${formulaId}"`,
-      $autoCancel: false
-    });
+    const batches = await getBatches();
+    const relatedBatches = batches.filter((batch) => batch.formula_id === formulaId);
 
-    if (batches.totalItems > 0) {
+    if (relatedBatches.length > 0) {
       return {
         isInUse: true,
         usageType: 'batches',
-        count: batches.totalItems
+        count: relatedBatches.length
       };
     }
 

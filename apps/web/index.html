@@ -6,6 +6,21 @@
 		<meta name="generator" content="Hostinger Horizons" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Hostinger Horizons</title>
+		<script>
+			window.addEventListener('error', function (event) {
+				var pre = document.createElement('pre');
+				pre.textContent = 'Runtime error: ' + (event.error?.stack || event.message);
+				pre.style.cssText = 'position:fixed;inset:16px;z-index:99999;background:#fff1f2;color:#9f1239;padding:16px;border:1px solid #fecdd3;border-radius:12px;overflow:auto;white-space:pre-wrap;font:12px/1.5 monospace;';
+				document.body.appendChild(pre);
+			});
+
+			window.addEventListener('unhandledrejection', function (event) {
+				var pre = document.createElement('pre');
+				pre.textContent = 'Unhandled promise rejection: ' + (event.reason?.stack || event.reason || 'Unknown error');
+				pre.style.cssText = 'position:fixed;inset:16px;z-index:99999;background:#fff1f2;color:#9f1239;padding:16px;border:1px solid #fecdd3;border-radius:12px;overflow:auto;white-space:pre-wrap;font:12px/1.5 monospace;';
+				document.body.appendChild(pre);
+			});
+		</script>
 	</head>
 	<body>
 		<div id="root"></div>

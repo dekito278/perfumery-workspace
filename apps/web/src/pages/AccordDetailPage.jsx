@@ -20,7 +20,8 @@ import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import { calculateAccordPercentages } from '@/utils/calculateAccordPercentages.js';
 import { formatQuantity, formatNullable, formatStatus, formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
-import pb from '@/lib/pocketbaseClient';
+import { getAccordById, getAccordItems } from '@/services/accordsSupabaseService.js';
+import { getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const AccordDetailPage = () => {
   const { id } = useParams();
@@ -40,14 +41,14 @@ const AccordDetailPage = () => {
   const loadAccord = async () => {
     setLoading(true);
     try {
-      const accordData = await pb.collection('accords').getOne(id, { $autoCancel: false });
+      const accordData = await getAccordById(id);
       setAccord(accordData);
 
-      const itemsData = await pb.collection('accord_items').getFullList({
-        filter: `accord_id = "${id}"`,
-        expand: 'raw_material_id',
-        $autoCancel: false
-      });
+      const [itemsData, rawMaterials] = await Promise.all([
+        getAccordItems(id),
+        getRawMaterials(),
+      ]);
+      const rawMaterialsMap = new Map(rawMaterials.map((material) => [material.id, material]));
 
       const itemsWithGrams = itemsData.map(item => ({
         ...item,
@@ -56,8 +57,20 @@ const AccordDetailPage = () => {
 
       const itemsWithCalculatedPercentages = calculateAccordPercentages(itemsWithGrams);
 
-      const enrichedItems = await Promise.all(itemsWithCalculatedPercentages.map(async (item) => {
-        const material = await pb.collection('raw_materials').getOne(item.raw_material_id, { $autoCancel: false });
+      const enrichedItems = itemsWithCalculatedPercentages.map((item) => {
+        const material = rawMaterialsMap.get(item.raw_material_id);
+        if (!material) {
+          return {
+            ...item,
+            material_name: 'Unknown material',
+            material_type: null,
+            material_unit: null,
+            material_stock: 0,
+            is_low_stock: false,
+            unit_price: 0,
+          };
+        }
+
         const isLowStock = material.low_stock_threshold 
           ? material.stock_quantity < material.low_stock_threshold
           : material.stock_quantity < material.minimum_stock;
@@ -71,7 +84,7 @@ const AccordDetailPage = () => {
           is_low_stock: isLowStock,
           unit_price: material.cost_per_unit || 0
         };
-      }));
+      });
 
       setItems(enrichedItems);
     } catch (error) {

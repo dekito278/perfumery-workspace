@@ -13,7 +13,7 @@ import AccordItemRow from '@/components/AccordItemRow.jsx';
 import { calculateAccordPercentages, calculateAccordTotalGrams } from '@/utils/calculateAccordPercentages.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
-import pb from '@/lib/pocketbaseClient';
+import { getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const EditAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
   const { editAccord, fetchAccordItems, loading } = useAccords();
@@ -36,10 +36,7 @@ const EditAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
       console.log('=== LOADING ACCORD DATA ===');
       console.log('Accord ID:', accord.id);
 
-      const materialsData = await pb.collection('raw_materials').getFullList({
-        sort: 'name',
-        $autoCancel: false
-      });
+      const materialsData = await getRawMaterials();
       setMaterials(materialsData);
       console.log('Loaded materials:', materialsData.length);
 

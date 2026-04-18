@@ -9,7 +9,9 @@ import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateBatchQuantities } from '@/utils/calculateBatchQuantities.js';
 import { formatQuantity, formatPercentage } from '@/utils/formatting.js';
-import pb from '@/lib/pocketbaseClient';
+import { getFormulas } from '@/services/formulasSupabaseService.js';
+import { getSolvents } from '@/services/rawMaterialsService.js';
+import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const BatchProductionForm = ({ initialData = null, preSelectedFormulaId = null, onSubmit, onCancel, loading }) => {
   const [formulas, setFormulas] = useState([]);
@@ -67,18 +69,11 @@ const BatchProductionForm = ({ initialData = null, preSelectedFormulaId = null, 
     setLoadingData(true);
     try {
       const [formulasData, solventsData] = await Promise.all([
-        pb.collection('formulas').getFullList({
-          sort: 'name',
-          $autoCancel: false
-        }),
-        pb.collection('raw_materials').getFullList({
-          filter: 'type="solvent"',
-          sort: 'name',
-          $autoCancel: false
-        })
+        getFormulas(),
+        getSolvents()
       ]);
       setFormulas(formulasData);
-      setSolvents(solventsData);
+      setSolvents(solventsData.map((item) => ({ id: item.value, name: item.label })));
     } catch (error) {
       console.error('Failed to load data:', error);
       toast.error('Failed to load formulas and solvents');
@@ -275,6 +270,7 @@ const BatchProductionForm = ({ initialData = null, preSelectedFormulaId = null, 
                 type="number"
                 value={formData.target_quantity}
                 onChange={(e) => setFormData(prev => ({ ...prev, target_quantity: e.target.value }))}
+                onWheel={blurNumberInputOnWheel}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -309,6 +305,7 @@ const BatchProductionForm = ({ initialData = null, preSelectedFormulaId = null, 
                 type="number"
                 value={formData.formula_percentage}
                 onChange={(e) => setFormData(prev => ({ ...prev, formula_percentage: e.target.value }))}
+                onWheel={blurNumberInputOnWheel}
                 placeholder="20"
                 min="0"
                 max="100"

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,14 @@ import { Pencil, Trash2, Printer, ExternalLink, CheckCircle } from 'lucide-react
 import { toast } from 'sonner';
 import { useBatches } from '@/hooks/useBatches.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
-import { calculateBatchComposition, calculateBatchCost, completeBatchWithStockDeduction, validateBatchStockDeduction } from '@/services/batchesService.js';
+import {
+  calculateBatchComposition,
+  calculateBatchCost,
+  completeBatchWithStockDeduction,
+  getBatchById,
+  getBatchUsageRecords,
+  validateBatchStockDeduction,
+} from '@/services/batchesSupabaseService.js';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
 import DetailPageHeader from '@/components/DetailPageHeader.jsx';
 import DetailSection from '@/components/DetailSection.jsx';
@@ -21,9 +28,10 @@ import DetailMetadata from '@/components/DetailMetadata.jsx';
 import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
 import EditBatchModal from '@/components/EditBatchModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
-import { formatQuantity, formatPercentage, formatNullable, formatStatus, formatDate } from '@/utils/formatting.js';
+import { formatQuantity, formatPercentage, formatStatus, formatDate } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
-import pb from '@/lib/pocketbaseClient';
+import { getFormulaById } from '@/services/formulasSupabaseService.js';
+import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 
 const BatchDetailPage = () => {
   const { id } = useParams();
@@ -34,6 +42,7 @@ const BatchDetailPage = () => {
   const [formula, setFormula] = useState(null);
   const [solvent, setSolvent] = useState(null);
   const [expandedComposition, setExpandedComposition] = useState([]);
+  const [usageRecords, setUsageRecords] = useState([]);
   const [costBreakdown, setCostBreakdown] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -51,22 +60,23 @@ const BatchDetailPage = () => {
   const loadBatchDetails = async () => {
     setLoading(true);
     try {
-      const batchData = await pb.collection('batches').getOne(id, { 
-        expand: 'solvent_id',
-        $autoCancel: false 
-      });
+      const batchData = await getBatchById(id);
       setBatch(batchData);
 
-      const formulaData = await pb.collection('formulas').getOne(batchData.formula_id, { $autoCancel: false });
+      const formulaData = await getFormulaById(batchData.formula_id);
       setFormula(formulaData);
 
       let solventData = null;
       if (batchData.solvent_id) {
-        solventData = await pb.collection('raw_materials').getOne(batchData.solvent_id, { $autoCancel: false });
+        solventData = await getRawMaterialById(batchData.solvent_id);
         setSolvent(solventData);
+      } else {
+        setSolvent(null);
       }
 
       const itemsData = await getFormulaItems(batchData.formula_id);
+      const usageData = await getBatchUsageRecords(batchData.id);
+      setUsageRecords(usageData);
 
       // Calculate expanded composition (includes dilution expansion)
       const compositionData = await calculateBatchComposition(batchData, itemsData, solventData);
@@ -133,6 +143,15 @@ const BatchDetailPage = () => {
   const handlePrint = () => {
     window.print();
   };
+
+  const totalMaterialsUsed = useMemo(
+    () => expandedComposition.reduce((sum, item) => sum + Number(item.required_quantity || 0), 0),
+    [expandedComposition]
+  );
+  const totalUsageCost = useMemo(
+    () => usageRecords.reduce((sum, record) => sum + Number(record.cost || 0), 0),
+    [usageRecords]
+  );
 
   if (loading) {
     return (
@@ -214,10 +233,37 @@ const BatchDetailPage = () => {
             {batch.is_stock_deducted && (
               <div className="mt-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
                 <p className="text-xs text-primary font-medium">
-                  ✓ Stock has been deducted for this batch
+                  Stock has already been deducted for this batch.
                 </p>
               </div>
             )}
+          </DetailSection>
+
+          <DetailSection title="Production snapshot">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Total batch cost</div>
+                <div className="text-lg font-semibold font-mono">
+                  {costBreakdown ? formatPrice(costBreakdown.total_cost) : '-'}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">COGS per {batch.unit}</div>
+                <div className="text-lg font-semibold font-mono">
+                  {costBreakdown ? formatPrice(costBreakdown.cost_per_unit) : '-'}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Materials involved</div>
+                <div className="text-lg font-semibold">{expandedComposition.length}</div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Total material volume</div>
+                <div className="text-lg font-semibold font-mono">
+                  {formatQuantity(totalMaterialsUsed)} {batch.unit}
+                </div>
+              </div>
+            </div>
           </DetailSection>
 
           <DetailSection title="Formula information">
@@ -290,7 +336,7 @@ const BatchDetailPage = () => {
           </DetailSection>
 
           <DetailSection title="Quantity breakdown">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <div className="p-3 bg-card border rounded-lg">
                 <div className="text-xs text-muted-foreground mb-1">Target batch size</div>
                 <div className="text-lg font-bold font-mono">{formatQuantity(batch.target_quantity)} {batch.unit}</div>
@@ -472,6 +518,62 @@ const BatchDetailPage = () => {
               Diluted materials are expanded into active material + dilution solvent components. All costs are calculated based on actual material usage.
             </p>
           </DetailSection>
+
+          {batch.is_stock_deducted && (
+            <DetailSection title="Stock deduction record">
+              <div className="mb-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Deduction lines</div>
+                  <div className="text-lg font-semibold">{usageRecords.length}</div>
+                </div>
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Recorded deduction cost</div>
+                  <div className="text-lg font-semibold font-mono">{formatPrice(totalUsageCost)}</div>
+                </div>
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Batch stock status</div>
+                  <div className="text-lg font-semibold">Deducted</div>
+                </div>
+              </div>
+
+              {usageRecords.length > 0 ? (
+                <div className="rounded-lg border bg-card overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Material</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-right">Quantity deducted</TableHead>
+                        <TableHead className="text-right">Recorded cost</TableHead>
+                        <TableHead>Source</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {usageRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell className="font-medium text-sm">{record.material_name || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {record.type?.replaceAll('_', ' ') || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatQuantity(record.quantity_deducted)} {record.material_unit || batch.unit}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatPrice(record.cost || 0)}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{record.source || '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No stock deduction records found for this batch yet.</p>
+              )}
+            </DetailSection>
+          )}
 
           <DetailSection title="Notes">
             {batch.notes ? (

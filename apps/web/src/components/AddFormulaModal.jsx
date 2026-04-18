@@ -14,16 +14,21 @@ import FormulaItemRow from '@/components/FormulaItemRow.jsx';
 import { calculatePercentages, calculateTotalGrams, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
-import { FORMULA_STATUSES, FORMULA_CATEGORIES } from '@/utils/constants.js';
-import pb from '@/lib/pocketbaseClient';
+import { FORMULA_STATUSES } from '@/utils/constants.js';
+import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getAccords } from '@/services/accordsSupabaseService.js';
+import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const { createFormula, loading } = useFormulas();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [category, setCategory] = useState('');
   const [version, setVersion] = useState('');
   const [status, setStatus] = useState('draft');
+  const [markupPercentage, setMarkupPercentage] = useState('0');
+  const [packagingCost, setPackagingCost] = useState('0');
+  const [bottleCost, setBottleCost] = useState('0');
+  const [capCost, setCapCost] = useState('0');
   const [notes, setNotes] = useState('');
   const [formulaItems, setFormulaItems] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
@@ -41,9 +46,12 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const resetForm = () => {
     setName('');
     setCode('');
-    setCategory('');
     setVersion('');
     setStatus('draft');
+    setMarkupPercentage('0');
+    setPackagingCost('0');
+    setBottleCost('0');
+    setCapCost('0');
     setNotes('');
     setFormulaItems([]);
     setValidationErrors({});
@@ -53,8 +61,8 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     setLoadingData(true);
     try {
       const [materialsData, accordsData] = await Promise.all([
-        pb.collection('raw_materials').getFullList({ sort: 'name', $autoCancel: false }),
-        pb.collection('accords').getFullList({ sort: 'name', $autoCancel: false })
+        getRawMaterials(),
+        getAccords()
       ]);
       setRawMaterials(materialsData);
       setAccords(accordsData);
@@ -158,9 +166,13 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       await createFormula({ 
         name, 
         code, 
-        category: category || null,
+        category: null,
         version: version || null, 
         status,
+        markup_percentage: markupPercentage ? parseFloat(markupPercentage) : 0,
+        packaging_cost: packagingCost ? parseFloat(packagingCost) : 0,
+        bottle_cost: bottleCost ? parseFloat(bottleCost) : 0,
+        cap_cost: capCost ? parseFloat(capCost) : 0,
         notes: notes || null
       }, itemsForSubmit);
       
@@ -221,22 +233,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="formula-category" className="text-sm font-medium">Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="text-foreground h-9">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FORMULA_CATEGORIES.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="formula-version" className="text-sm font-medium">Version</Label>
                   <Input
@@ -261,6 +258,65 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="formula-markup" className="text-sm font-medium">Markup %</Label>
+                  <Input
+                    id="formula-markup"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={markupPercentage}
+                    onChange={(e) => setMarkupPercentage(e.target.value)}
+                    onWheel={blurNumberInputOnWheel}
+                    placeholder="0"
+                    className="text-foreground"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="formula-packaging-cost" className="text-sm font-medium">Packaging cost</Label>
+                  <Input
+                    id="formula-packaging-cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={packagingCost}
+                    onChange={(e) => setPackagingCost(e.target.value)}
+                    onWheel={blurNumberInputOnWheel}
+                    placeholder="0"
+                    className="text-foreground"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="formula-bottle-cost" className="text-sm font-medium">Bottle cost</Label>
+                  <Input
+                    id="formula-bottle-cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={bottleCost}
+                    onChange={(e) => setBottleCost(e.target.value)}
+                    onWheel={blurNumberInputOnWheel}
+                    placeholder="0"
+                    className="text-foreground"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="formula-cap-cost" className="text-sm font-medium">Cap cost</Label>
+                  <Input
+                    id="formula-cap-cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={capCost}
+                    onChange={(e) => setCapCost(e.target.value)}
+                    onWheel={blurNumberInputOnWheel}
+                    placeholder="0"
+                    className="text-foreground"
+                  />
                 </div>
               </div>
             </div>

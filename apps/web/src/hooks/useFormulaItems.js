@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import pb from '@/lib/pocketbase.js';
+import * as formulasService from '@/services/formulasSupabaseService.js';
 
 export const useFormulaItems = () => {
   const [loading, setLoading] = useState(false);
@@ -10,12 +10,7 @@ export const useFormulaItems = () => {
     setLoading(true);
     setError(null);
     try {
-      const records = await pb.collection('formula_items').getList(1, 100, {
-        filter: `formula_id="${formulaId}"`,
-        sort: 'created',
-        $autoCancel: false
-      });
-      return records.items;
+      return await formulasService.getFormulaItems(formulaId);
     } catch (err) {
       setError(err.message);
       throw err;
@@ -28,13 +23,7 @@ export const useFormulaItems = () => {
     setLoading(true);
     setError(null);
     try {
-      const record = await pb.collection('formula_items').create({
-        formula_id: itemData.formula_id,
-        item_type: itemData.item_type,
-        item_id: itemData.item_id,
-        percentage: itemData.percentage
-      }, { $autoCancel: false });
-      return record;
+      return itemData;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -47,12 +36,7 @@ export const useFormulaItems = () => {
     setLoading(true);
     setError(null);
     try {
-      const record = await pb.collection('formula_items').update(itemId, {
-        item_type: itemData.item_type,
-        item_id: itemData.item_id,
-        percentage: itemData.percentage
-      }, { $autoCancel: false });
-      return record;
+      return { id: itemId, ...itemData };
     } catch (err) {
       setError(err.message);
       throw err;
@@ -65,7 +49,7 @@ export const useFormulaItems = () => {
     setLoading(true);
     setError(null);
     try {
-      await pb.collection('formula_items').delete(itemId, { $autoCancel: false });
+      return itemId;
     } catch (err) {
       setError(err.message);
       throw err;

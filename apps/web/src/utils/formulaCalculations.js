@@ -1,5 +1,5 @@
 
-import pb from '@/lib/pocketbaseClient';
+import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 import { calculateDilutionCost } from './calculateDilutionCost.js';
 
 export const calculateTotalGrams = (items) => {
@@ -73,7 +73,7 @@ export const calculateTotalAmount = async (items) => {
     // Check if this is a diluted material
     if ((item.item_type === 'raw_material' || item.item_type === 'solvent') && item.item_id) {
       try {
-        const material = await pb.collection('raw_materials').getOne(item.item_id, { $autoCancel: false });
+        const material = await getRawMaterialById(item.item_id);
         
         if (material.is_diluted && material.dilution_percentage) {
           const dilutionBreakdown = calculateDilutionCost(

@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import * as formulasService from '@/services/formulasService.js';
+import * as formulasService from '@/services/formulasSupabaseService.js';
 
 export const useFormulas = () => {
   const [loading, setLoading] = useState(false);

@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FlaskConical } from 'lucide-react';
+import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FlaskConical, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
@@ -16,6 +15,7 @@ import DataTable from '@/components/DataTable.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import AddFormulaModal from '@/components/AddFormulaModal.jsx';
+import ImportFormulaPdfModal from '@/components/ImportFormulaPdfModal.jsx';
 import EditFormulaModal from '@/components/EditFormulaModal.jsx';
 import CreateBatchModal from '@/components/CreateBatchModal.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
@@ -31,8 +31,8 @@ const FormulasPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createBatchModalOpen, setCreateBatchModalOpen] = useState(false);
   const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, formulaId: null, formulaName: null });
@@ -48,11 +48,9 @@ const FormulasPage = () => {
       const metrics = {};
       for (const formula of data) {
         const items = await getFormulaItems(formula.id);
-        const totalGrams = calculateTotalAmount(items);
-
         metrics[formula.id] = {
           itemCount: items.length,
-          totalGrams: totalGrams
+          totalGrams: calculateTotalAmount(items),
         };
       }
 
@@ -69,20 +67,17 @@ const FormulasPage = () => {
   }, []);
 
   const filteredFormulas = useMemo(() => {
-    return formulas.filter(formula => {
+    return formulas.filter((formula) => {
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         formula.name.toLowerCase().includes(searchLower) ||
         formula.code.toLowerCase().includes(searchLower) ||
-        (formula.category && formula.category.toLowerCase().includes(searchLower)) ||
         (formula.status && formula.status.toLowerCase().includes(searchLower));
-      
+
       const matchesStatus = statusFilter === 'all' || formula.status === statusFilter;
-      const matchesCategory = categoryFilter === 'all' || formula.category === categoryFilter;
-      
-      return matchesSearch && matchesStatus && matchesCategory;
+      return matchesSearch && matchesStatus;
     });
-  }, [formulas, searchTerm, statusFilter, categoryFilter]);
+  }, [formulas, searchTerm, statusFilter]);
 
   const handleEdit = (formula) => {
     setSelectedFormula(formula);
@@ -93,7 +88,7 @@ const FormulasPage = () => {
     setDeleteModalState({
       isOpen: true,
       formulaId: formula.id,
-      formulaName: formula.name
+      formulaName: formula.name,
     });
   };
 
@@ -122,19 +117,18 @@ const FormulasPage = () => {
   const handleClearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
-    setCategoryFilter('all');
   };
 
   const columns = [
     {
       key: 'name',
       label: 'Name',
-      render: (row) => <span className="font-medium text-sm">{row.name}</span>
+      render: (row) => <span className="font-medium text-sm">{row.name}</span>,
     },
     {
       key: 'code',
       label: 'Code',
-      render: (row) => <span className="font-mono text-xs">{row.code}</span>
+      render: (row) => <span className="font-mono text-xs">{row.code}</span>,
     },
     {
       key: 'status',
@@ -143,23 +137,14 @@ const FormulasPage = () => {
         const statusColors = {
           draft: 'secondary',
           active: 'default',
-          archived: 'outline'
+          archived: 'outline',
         };
         return (
           <Badge variant={statusColors[row.status] || 'secondary'} className="capitalize text-xs">
             {row.status || 'draft'}
           </Badge>
         );
-      }
-    },
-    {
-      key: 'category',
-      label: 'Category',
-      render: (row) => (
-        <span className="text-muted-foreground capitalize text-xs">
-          {row.category ? row.category.replace(/_/g, ' ') : '—'}
-        </span>
-      )
+      },
     },
     {
       key: 'total',
@@ -168,11 +153,21 @@ const FormulasPage = () => {
         const metrics = formulaMetrics[row.id];
         return (
           <span className="font-mono text-xs">
-            {metrics ? formatGramAmount(metrics.totalGrams) : '—'}
+            {metrics ? formatGramAmount(metrics.totalGrams) : '-'}
           </span>
         );
-      }
-    }
+      },
+    },
+    {
+      key: 'markup_percentage',
+      label: 'Markup',
+      align: 'right',
+      render: (row) => (
+        <span className="font-mono text-xs">
+          {Number(row.markup_percentage || 0).toFixed(1)}%
+        </span>
+      ),
+    },
   ];
 
   const filters = [
@@ -184,32 +179,18 @@ const FormulasPage = () => {
         { value: 'all', label: 'All statuses' },
         { value: 'draft', label: 'Draft' },
         { value: 'active', label: 'Active' },
-        { value: 'archived', label: 'Archived' }
-      ]
+        { value: 'archived', label: 'Archived' },
+      ],
     },
-    {
-      id: 'category',
-      value: categoryFilter,
-      placeholder: 'All categories',
-      options: [
-        { value: 'all', label: 'All categories' },
-        { value: 'perfume', label: 'Perfume' },
-        { value: 'eau_de_toilette', label: 'Eau de toilette' },
-        { value: 'eau_de_cologne', label: 'Eau de cologne' },
-        { value: 'fragrance_oil', label: 'Fragrance oil' }
-      ]
-    }
   ];
 
   const handleFilterChange = (filterId, value) => {
     if (filterId === 'status') {
       setStatusFilter(value);
-    } else if (filterId === 'category') {
-      setCategoryFilter(value);
     }
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm;
+  const hasActiveFilters = statusFilter !== 'all' || searchTerm;
 
   return (
     <AuthenticatedLayout>
@@ -237,13 +218,20 @@ const FormulasPage = () => {
           onAction={() => setAddModalOpen(true)}
         />
 
+        <div className="mb-4 flex justify-end">
+          <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2 h-9">
+            <FileUp className="w-4 h-4" />
+            Import PDF
+          </Button>
+        </div>
+
         <div className="mb-6 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
-                placeholder="Search by name, code, category, or status..."
+                placeholder="Search by name, code, or status..."
               />
             </div>
             <Button onClick={loadFormulas} variant="outline" size="icon" disabled={loading} className="h-9 w-9">
@@ -327,6 +315,12 @@ const FormulasPage = () => {
       <AddFormulaModal
         open={addModalOpen}
         onOpenChange={setAddModalOpen}
+        onSuccess={loadFormulas}
+      />
+
+      <ImportFormulaPdfModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
         onSuccess={loadFormulas}
       />
 

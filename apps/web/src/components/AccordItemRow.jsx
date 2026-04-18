@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Trash2 } from 'lucide-react';
 import IngredientSelect from '@/components/IngredientSelect.jsx';
+import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const AccordItemRow = ({ 
   item, 
@@ -38,6 +39,7 @@ const AccordItemRow = ({
                 max="999999"
                 value={item.gram_amount || ''}
                 onChange={(e) => onGramAmountChange(index, e.target.value)}
+                onWheel={blurNumberInputOnWheel}
                 placeholder="0.000"
                 className="text-foreground"
               />

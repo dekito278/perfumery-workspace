@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
+import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import SignupPage from '@/pages/SignupPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
@@ -19,7 +20,12 @@ import BatchesPage from '@/pages/BatchesPage.jsx';
 import BatchDetailPage from '@/pages/BatchDetailPage.jsx';
 
 const RootRedirect = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initialLoading } = useAuth();
+
+  if (initialLoading) {
+    return null;
+  }
+
   return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
 };
 
@@ -67,6 +73,12 @@ function AppRoutes() {
             <AccordDetailPage />
           </ProtectedRoute>
         } />
+
+        <Route path="/accords/:id" element={
+          <ProtectedRoute>
+            <AccordDetailPage />
+          </ProtectedRoute>
+        } />
         
         <Route path="/formulas" element={
           <ProtectedRoute>
@@ -99,9 +111,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }
 

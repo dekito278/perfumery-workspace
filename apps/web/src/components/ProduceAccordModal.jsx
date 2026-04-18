@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle2, Package } from 'lucide-react';
 import { useAccords } from '@/hooks/useAccords.js';
-import pb from '@/lib/pocketbaseClient';
+import { getAccordItems } from '@/services/accordsSupabaseService.js';
+import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const ProduceAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
   const { produceAccord, loading } = useAccords();
@@ -32,16 +33,12 @@ const ProduceAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
   const loadRequirements = async () => {
     setLoadingRequirements(true);
     try {
-      const items = await pb.collection('accord_items').getFullList({
-        filter: `accord_id="${accord.id}"`,
-        expand: 'raw_material_id',
-        $autoCancel: false
-      });
+      const items = await getAccordItems(accord.id);
 
       const reqs = items.map(item => ({
-        material: item.expand.raw_material_id,
+        material: item.expand?.raw_material_id,
         percentage: item.percentage,
-        currentStock: item.expand.raw_material_id.stock_quantity
+        currentStock: item.expand?.raw_material_id?.stock_quantity || 0
       }));
 
       setRequirements(reqs);
@@ -119,6 +116,7 @@ const ProduceAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
                     min="0"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
+                    onWheel={blurNumberInputOnWheel}
                     placeholder="0.00"
                     required
                     className="text-foreground"

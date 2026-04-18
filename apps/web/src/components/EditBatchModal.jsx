@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useBatches } from '@/hooks/useBatches.js';
 import BatchProductionForm from '@/components/BatchProductionForm.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
-import pb from '@/lib/pocketbaseClient';
+import { getBatchById } from '@/services/batchesSupabaseService.js';
 
 const EditBatchModal = ({ open, onOpenChange, batch, onSuccess }) => {
   const { updateBatch, completeBatch, loading } = useBatches();
@@ -25,10 +25,7 @@ const EditBatchModal = ({ open, onOpenChange, batch, onSuccess }) => {
   const loadBatchData = async () => {
     setLoadingData(true);
     try {
-      const fullBatch = await pb.collection('batches').getOne(batch.id, {
-        expand: 'formula_id,solvent_id',
-        $autoCancel: false
-      });
+      const fullBatch = await getBatchById(batch.id);
       setBatchData(fullBatch);
     } catch (error) {
       toast.error('Failed to load batch data');

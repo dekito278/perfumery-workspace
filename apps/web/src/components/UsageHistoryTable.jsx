@@ -58,10 +58,9 @@ const UsageHistoryTable = ({ usageRecords = [], isLoading = false }) => {
         <TableHeader>
           <TableRow>
             <TableHead className="min-w-[120px]">Batch code</TableHead>
-            <TableHead className="min-w-[150px]">Material name</TableHead>
             <TableHead className="text-right min-w-[120px]">Quantity deducted</TableHead>
             <TableHead className="min-w-[140px]">Type</TableHead>
-            <TableHead className="min-w-[200px]">Source</TableHead>
+            <TableHead className="min-w-[220px]">Used for</TableHead>
             <TableHead className="min-w-[100px]">Date</TableHead>
             <TableHead className="text-right min-w-[100px]">Cost</TableHead>
           </TableRow>
@@ -72,9 +71,6 @@ const UsageHistoryTable = ({ usageRecords = [], isLoading = false }) => {
               <TableCell className="font-mono text-sm">
                 {record.expand?.batch_id?.batch_code || 'N/A'}
               </TableCell>
-              <TableCell className="font-medium text-sm">
-                {record.expand?.raw_material_id?.name || 'N/A'}
-              </TableCell>
               <TableCell className="text-right font-mono text-sm">
                 {formatQuantity(record.quantity_deducted)} {record.expand?.raw_material_id?.unit || 'ml'}
               </TableCell>
@@ -83,8 +79,8 @@ const UsageHistoryTable = ({ usageRecords = [], isLoading = false }) => {
                   {getTypeLabel(record.type)}
                 </Badge>
               </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {record.source}
+              <TableCell className="text-sm text-muted-foreground">
+                {record.source || 'Batch production'}
               </TableCell>
               <TableCell className="text-sm">
                 {formatDate(record.created_at)}

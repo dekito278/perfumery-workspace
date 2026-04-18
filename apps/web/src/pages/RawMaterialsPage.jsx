@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Package, Eye } from 'lucide-react';
+import { RefreshCw, Home, Plus, Package, Eye, AlertTriangle, Layers3, Droplets, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -17,12 +17,18 @@ import NoResultsState from '@/components/NoResultsState.jsx';
 import AddRawMaterialModal from '@/components/AddRawMaterialModal.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
+import RawMaterialDetailModal from '@/components/RawMaterialDetailModal.jsx';
+import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCategoriesModal.jsx';
 import { formatQuantity, formatCurrency } from '@/utils/formatting.js';
+import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
+import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
+import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
   const { fetchMaterials, deleteMaterial } = useRawMaterials();
   const [materials, setMaterials] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -30,6 +36,8 @@ const RawMaterialsPage = () => {
   const [stockFilter, setStockFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [remapModalOpen, setRemapModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -46,17 +54,31 @@ const RawMaterialsPage = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const data = await getRawMaterialCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      setCategories([]);
+    }
+  };
+
   useEffect(() => {
     loadMaterials();
+    loadCategories();
   }, []);
 
   const filteredMaterials = useMemo(() => {
     return materials.filter(material => {
       const searchLower = searchTerm.toLowerCase();
+      const family = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
       const matchesSearch = 
         material.name.toLowerCase().includes(searchLower) ||
         (material.category && material.category.toLowerCase().includes(searchLower)) ||
-        (material.scent_family && material.scent_family.toLowerCase().includes(searchLower));
+        (family && family.toLowerCase().includes(searchLower)) ||
+        (material.vendor && material.vendor.toLowerCase().includes(searchLower)) ||
+        (material.cas_number && material.cas_number.toLowerCase().includes(searchLower));
       
       const matchesType = typeFilter === 'all' || material.type === typeFilter;
       const matchesCategory = categoryFilter === 'all' || material.category === categoryFilter;
@@ -74,13 +96,34 @@ const RawMaterialsPage = () => {
     });
   }, [materials, searchTerm, typeFilter, categoryFilter, stockFilter]);
 
+  const categoryColorMap = useMemo(
+    () => new Map(categories.map((category) => [category.name.toLowerCase(), category.color])),
+    [categories]
+  );
+
+  const lowStockCount = useMemo(
+    () =>
+      materials.filter((material) => {
+        const threshold = material.low_stock_threshold || material.minimum_stock;
+        return Number(material.stock_quantity) < Number(threshold);
+      }).length,
+    [materials]
+  );
+
+  const solventCount = useMemo(
+    () => materials.filter((material) => material.type === 'solvent').length,
+    [materials]
+  );
+
   const handleEdit = (material) => {
     setSelectedMaterial(material);
+    setDetailModalOpen(false);
     setEditModalOpen(true);
   };
 
   const handleDelete = (material) => {
     setSelectedMaterial(material);
+    setDetailModalOpen(false);
     setDeleteDialogOpen(true);
   };
 
@@ -102,7 +145,8 @@ const RawMaterialsPage = () => {
   };
 
   const handleView = (material) => {
-    navigate(`/raw-material/${material.id}`);
+    setSelectedMaterial(material);
+    setDetailModalOpen(true);
   };
 
   const handleClearFilters = () => {
@@ -116,15 +160,28 @@ const RawMaterialsPage = () => {
     {
       key: 'name',
       label: 'Name',
-      render: (row) => <span className="font-medium">{row.name}</span>
+      render: (row) => (
+        <button
+          onClick={() => handleView(row)}
+          className="font-medium text-left text-primary hover:underline"
+        >
+          {row.name}
+        </button>
+      )
     },
     {
       key: 'category',
       label: 'Category',
       render: (row) => (
-        <Badge variant="outline" className="capitalize">
-          {row.category}
-        </Badge>
+        <span className="inline-flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full border border-border/60"
+              style={{ backgroundColor: categoryColorMap.get(String(row.category || '').toLowerCase()) || '#CBD5E1' }}
+            />
+          <Badge variant="outline" className="capitalize">
+            {row.category}
+          </Badge>
+        </span>
       )
     },
     {
@@ -149,13 +206,24 @@ const RawMaterialsPage = () => {
       }
     },
     {
+      key: 'vendor',
+      label: 'Vendor / CAS',
+      render: (row) => (
+        <div className="min-w-[180px]">
+          <div className="text-sm font-medium">{row.vendor || '-'}</div>
+          <div className="text-xs text-muted-foreground">{row.cas_number || 'No CAS number'}</div>
+        </div>
+      )
+    },
+    {
       key: 'cost_per_unit',
       label: 'Price',
       align: 'right',
       render: (row) => (
-        <span className="font-mono text-sm">
-          {formatCurrency(row.cost_per_unit)} / 10 ml
-        </span>
+        <div className="text-right">
+          <div className="font-mono text-sm">{formatCurrency(row.cost_per_unit)} / 10 ml</div>
+          <div className="text-xs text-muted-foreground">Min {formatQuantity(row.minimum_stock)} {row.unit}</div>
+        </div>
       )
     }
   ];
@@ -177,17 +245,12 @@ const RawMaterialsPage = () => {
       placeholder: 'All categories',
       options: [
         { value: 'all', label: 'All categories' },
-        { value: 'floral', label: 'Floral' },
-        { value: 'amber', label: 'Amber' },
-        { value: 'woody', label: 'Woody' },
-        { value: 'citrus', label: 'Citrus' },
-        { value: 'musk', label: 'Musk' },
-        { value: 'fruity', label: 'Fruity' },
-        { value: 'green', label: 'Green' },
-        { value: 'gourmand', label: 'Gourmand' },
-        { value: 'spicy', label: 'Spicy' },
-        { value: 'resinous', label: 'Resinous' },
-        { value: 'solvent', label: 'Solvent' }
+        ...categories.map((category) => ({
+          value: category.name.toLowerCase(),
+          label: findPerfumersWorldCategoryByValue(category.name)?.description
+            ? `${category.name} - ${findPerfumersWorldCategoryByValue(category.name).description}`
+            : category.name,
+        })),
       ]
     },
     {
@@ -220,12 +283,12 @@ const RawMaterialsPage = () => {
         <title>Raw Materials - Perfumer Studio</title>
         <meta name="description" content="Manage your raw materials inventory with stock tracking and cost management." />
       </Helmet>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container">
         <div className="mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate('/dashboard')}
-            className="gap-2 mb-4"
+            className="gap-2 mb-4 h-9"
           >
             <Home className="w-4 h-4" />
             Back to dashboard
@@ -240,16 +303,53 @@ const RawMaterialsPage = () => {
           onAction={() => setAddModalOpen(true)}
         />
 
+        <div className="mb-4 flex justify-end">
+          <Button variant="outline" onClick={() => setRemapModalOpen(true)} className="gap-2 h-9">
+            <Wand2 className="w-4 h-4" />
+            Remap categories
+          </Button>
+        </div>
+
+        <div className="mb-6 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total materials</p>
+                <p className="mt-1 text-2xl font-semibold">{materials.length}</p>
+              </div>
+              <Layers3 className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="rounded-2xl border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Low stock alerts</p>
+                <p className="mt-1 text-2xl font-semibold text-destructive">{lowStockCount}</p>
+              </div>
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+            </div>
+          </div>
+          <div className="rounded-2xl border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Solvents ready</p>
+                <p className="mt-1 text-2xl font-semibold">{solventCount}</p>
+              </div>
+              <Droplets className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+
         <div className="mb-6 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
-                placeholder="Search by name, category, or scent family..."
+                placeholder="Search by name, vendor, CAS, scent family, or category..."
               />
             </div>
-            <Button onClick={loadMaterials} variant="outline" size="icon" disabled={loading}>
+            <Button onClick={() => { loadMaterials(); loadCategories(); }} variant="outline" size="icon" disabled={loading} className="h-9 w-9">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
@@ -316,6 +416,24 @@ const RawMaterialsPage = () => {
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         material={selectedMaterial}
+        onSuccess={() => {
+          loadMaterials();
+          setDetailModalOpen(false);
+        }}
+      />
+
+      <RawMaterialDetailModal
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        material={selectedMaterial}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      <RemapRawMaterialCategoriesModal
+        open={remapModalOpen}
+        onOpenChange={setRemapModalOpen}
+        materials={materials}
         onSuccess={loadMaterials}
       />
 

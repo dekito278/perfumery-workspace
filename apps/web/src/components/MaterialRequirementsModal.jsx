@@ -8,11 +8,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { useBatches } from '@/hooks/useBatches.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
-import { calculateBatchComposition, calculateBatchCost, completeBatch } from '@/services/batchesService.js';
+import { calculateBatchComposition, calculateBatchCost, completeBatchWithStockDeduction } from '@/services/batchesSupabaseService.js';
 import { formatCurrency, formatQuantity } from '@/utils/formatting.js';
-import pb from '@/lib/pocketbaseClient';
+import { getFormulaById } from '@/services/formulasSupabaseService.js';
+import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 
 const MaterialRequirementsModal = ({ open, onOpenChange, batch, onSuccess }) => {
   const { getFormulaItems } = useFormulaItems();
@@ -32,12 +32,12 @@ const MaterialRequirementsModal = ({ open, onOpenChange, batch, onSuccess }) => 
   const loadRequirements = async () => {
     setLoading(true);
     try {
-      const formulaData = await pb.collection('formulas').getOne(batch.formula_id, { $autoCancel: false });
+      const formulaData = await getFormulaById(batch.formula_id);
       setFormula(formulaData);
 
       let solventData = null;
       if (batch.solvent_id) {
-        solventData = await pb.collection('raw_materials').getOne(batch.solvent_id, { $autoCancel: false });
+        solventData = await getRawMaterialById(batch.solvent_id);
         setSolvent(solventData);
       }
 
@@ -62,7 +62,7 @@ const MaterialRequirementsModal = ({ open, onOpenChange, batch, onSuccess }) => 
   const handleProduce = async () => {
     setProducing(true);
     try {
-      await completeBatch(batch.id, expandedComposition);
+      await completeBatchWithStockDeduction(batch.id);
       toast.success('Batch produced successfully. Stock has been deducted.');
       onOpenChange(false);
       if (onSuccess) onSuccess();
