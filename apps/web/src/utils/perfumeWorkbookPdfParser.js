@@ -1,7 +1,19 @@
-import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
+let pdfRuntimePromise;
 
-GlobalWorkerOptions.workerSrc = pdfWorker;
+const getPdfRuntime = async () => {
+  if (!pdfRuntimePromise) {
+    pdfRuntimePromise = Promise.all([
+      import('pdfjs-dist/legacy/build/pdf.mjs'),
+      import('pdfjs-dist/legacy/build/pdf.worker.mjs?url'),
+    ]).then(([pdfjsModule, workerModule]) => {
+      const { GlobalWorkerOptions, getDocument } = pdfjsModule;
+      GlobalWorkerOptions.workerSrc = workerModule.default;
+      return { getDocument };
+    });
+  }
+
+  return pdfRuntimePromise;
+};
 
 const normalizeFragment = (value) =>
   String(value || '')
@@ -17,6 +29,7 @@ const normalizeDecorativeSpacing = (line) => {
 };
 
 const extractPdfLines = async (file) => {
+  const { getDocument } = await getPdfRuntime();
   const data = new Uint8Array(await file.arrayBuffer());
   const pdf = await getDocument({
     data,

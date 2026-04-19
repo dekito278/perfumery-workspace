@@ -1,25 +1,15 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, AlertTriangle, Eye, TrendingUp, Minus, TrendingDown } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, Eye } from 'lucide-react';
 import { formatPricePerUnit } from '@/utils/pricingUtils.js';
+import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 
 const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
-  const isLowStock = (material) => material.stock_quantity < material.minimum_stock;
-
-  const getPyramidIcon = (placement) => {
-    switch (placement) {
-      case 'top':
-        return <TrendingUp className="w-3.5 h-3.5 text-amber-600" title="Top note" />;
-      case 'middle':
-        return <Minus className="w-3.5 h-3.5 text-rose-600" title="Middle note" />;
-      case 'base':
-        return <TrendingDown className="w-3.5 h-3.5 text-amber-800" title="Base note" />;
-      default:
-        return <span className="text-xs text-muted-foreground">—</span>;
-    }
+  const isLowStock = (material) => {
+    const threshold = Number(material.low_stock_threshold || material.minimum_stock || 0);
+    return Number(material.stock_quantity || 0) < threshold;
   };
 
   return (
@@ -30,7 +20,7 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
             <TableHead className="min-w-[180px]">Name</TableHead>
             <TableHead className="min-w-[120px]">Category</TableHead>
             <TableHead className="min-w-[100px]">Vendor</TableHead>
-            <TableHead className="min-w-[80px]">Pyramid</TableHead>
+            <TableHead className="min-w-[120px]">Family</TableHead>
             <TableHead className="min-w-[100px]">Unit</TableHead>
             <TableHead className="text-right min-w-[140px]">Unit price</TableHead>
             <TableHead className="min-w-[100px]">Status</TableHead>
@@ -53,14 +43,12 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
                     {material.category}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {material.vendor || '—'}
-                </TableCell>
-                <TableCell className="text-center">
-                  {getPyramidIcon(material.pyramid_placement)}
+                <TableCell className="text-sm text-muted-foreground">{material.vendor || '-'}</TableCell>
+                <TableCell className="text-sm">
+                  {material.scent_family || deriveScentFamilyFromCategory(material.category, '') || '-'}
                 </TableCell>
                 <TableCell className="text-sm">{material.unit}</TableCell>
-                <TableCell className="text-right font-mono text-sm">{formatPricePerUnit(material.cost_per_unit)}</TableCell>
+                <TableCell className="text-right font-mono text-sm">{formatPricePerUnit(material.cost_per_unit, material.unit)}</TableCell>
                 <TableCell>
                   {isLowStock(material) ? (
                     <Badge variant="destructive" className="gap-1 text-xs">

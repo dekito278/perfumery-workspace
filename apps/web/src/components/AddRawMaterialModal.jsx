@@ -240,17 +240,12 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         stock_quantity: parseFloat(formData.stock_quantity),
         unit: formData.unit,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : 0,
-        supplier_name: null,
         minimum_stock: parseFloat(formData.minimum_stock),
         low_stock_threshold: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : null,
-        default_dilution_percent: null,
         vendor: formData.vendor || null,
         cas_number: formData.cas_number || null,
-        charge_number: null,
         ifra_limit: formData.ifra_limit ? parseFloat(formData.ifra_limit) : null,
         notes: formData.notes || null,
-        note_type: null,
-        pyramid_placement: null,
         is_diluted: formData.is_diluted,
         dilution_solvent_id: formData.is_diluted ? formData.dilution_solvent_id : null,
         dilution_percentage: formData.is_diluted ? parseFloat(formData.dilution_percentage) : null
@@ -432,7 +427,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <FormNumber
-                  label="Unit price (per 10 ml)"
+                  label={`Unit price (per 10 ${formData.unit || 'ml'})`}
                   value={formData.cost_per_unit}
                   onChange={(e) => handleChange('cost_per_unit', e.target.value)}
                   onBlur={() => handleBlur('cost_per_unit')}
@@ -443,7 +438,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 />
                 {formData.cost_per_unit && (
                   <p className="text-xs text-muted-foreground">
-                    {formatCurrency(parseFloat(formData.cost_per_unit))} per 10 ml
+                    {formatCurrency(parseFloat(formData.cost_per_unit))} per 10 {formData.unit || 'ml'}
                   </p>
                 )}
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,11 @@ import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import AddAccordModal from '@/components/AddAccordModal.jsx';
 import EditAccordModal from '@/components/EditAccordModal.jsx';
-import ImportAccordPdfModal from '@/components/ImportAccordPdfModal.jsx';
 import ProduceAccordModal from '@/components/ProduceAccordModal.jsx';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog.jsx';
 import { formatQuantity, formatCurrency } from '@/utils/formatting.js';
+
+const ImportAccordPdfModal = lazy(() => import('@/components/ImportAccordPdfModal.jsx'));
 
 const AccordsPage = () => {
   const navigate = useNavigate();
@@ -258,11 +259,15 @@ const AccordsPage = () => {
         onSuccess={loadAccords}
       />
 
-      <ImportAccordPdfModal
-        open={importModalOpen}
-        onOpenChange={setImportModalOpen}
-        onSuccess={loadAccords}
-      />
+      {importModalOpen && (
+        <Suspense fallback={null}>
+          <ImportAccordPdfModal
+            open={importModalOpen}
+            onOpenChange={setImportModalOpen}
+            onSuccess={loadAccords}
+          />
+        </Suspense>
+      )}
 
       {selectedAccord && (
         <>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Package, Palette, Beaker, Boxes, ArrowRight } from 'lucide-react';
+import { Package, Palette, Beaker, Boxes, ArrowRight, Calculator } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const HomePage = () => {
@@ -27,7 +27,7 @@ const HomePage = () => {
     },
     {
       title: 'Formulas',
-      description: 'Build complete perfume formulas with cost analysis and pricing',
+      description: 'Build complete perfume formulas around raw materials, accords, and solvent composition',
       icon: Beaker,
       path: '/formulas',
       color: 'from-primary/10 to-amber-500/10',
@@ -42,6 +42,15 @@ const HomePage = () => {
       color: 'from-emerald-500/10 to-teal-500/10',
       iconColor: 'text-emerald-600',
       hoverColor: 'hover:border-emerald-500/30'
+    },
+    {
+      title: 'Production Costing',
+      description: 'Convert batch volume into bottle output and calculate extra bottle, cap, and packaging costs',
+      icon: Calculator,
+      path: '/production-costing',
+      color: 'from-sky-500/10 to-cyan-500/10',
+      iconColor: 'text-sky-600',
+      hoverColor: 'hover:border-sky-500/30'
     }
   ];
 

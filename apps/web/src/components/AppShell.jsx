@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Package, Layers, Beaker, FlaskConical, LogOut, Tag } from 'lucide-react';
+import { Menu, Home, Package, Layers, Beaker, FlaskConical, LogOut, Tag, Calculator } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const AppShell = ({ children }) => {
@@ -23,7 +23,8 @@ const AppShell = ({ children }) => {
     { path: '/categories', label: 'Categories', icon: Tag },
     { path: '/accords', label: 'Accords', icon: Layers },
     { path: '/formulas', label: 'Formulas', icon: Beaker },
-    { path: '/batches', label: 'Batches', icon: FlaskConical }
+    { path: '/batches', label: 'Batches', icon: FlaskConical },
+    { path: '/production-costing', label: 'Production cost', icon: Calculator }
   ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');

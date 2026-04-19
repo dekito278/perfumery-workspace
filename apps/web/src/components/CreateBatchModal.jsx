@@ -9,20 +9,12 @@ const CreateBatchModal = ({ open, onOpenChange, onSuccess, preSelectedFormulaId 
   const { createBatch, loading } = useBatches();
 
   const handleSubmit = async (formData) => {
-    console.log('=== CREATE BATCH MODAL SUBMIT ===');
-    console.log('Form data received:', formData);
-    
     try {
-      const result = await createBatch(formData);
-      console.log('Batch created successfully:', result);
+      await createBatch(formData);
       toast.success('Batch created successfully');
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error('=== BATCH CREATION FAILED IN MODAL ===');
-      console.error('Error object:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
       toast.error(error.message || 'Failed to create batch');
     }
   };

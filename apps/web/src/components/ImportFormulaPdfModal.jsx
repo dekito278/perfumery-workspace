@@ -13,7 +13,6 @@ import FormNumber from '@/components/FormNumber.jsx';
 import FormSelect from '@/components/FormSelect.jsx';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { createRawMaterial, getRawMaterials } from '@/services/rawMaterialsService.js';
-import { parsePerfumeWorkbookPdf } from '@/utils/perfumeWorkbookPdfParser.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
@@ -232,6 +231,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     setValidationErrors({});
 
     try {
+      const { parsePerfumeWorkbookPdf } = await import('@/utils/perfumeWorkbookPdfParser.js');
       const parsedResult = await parsePerfumeWorkbookPdf(file);
       setParseResult(parsedResult);
       setFormulaName(parsedResult.formulaName || file.name.replace(/\.pdf$/i, ''));
@@ -327,21 +327,16 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           stock_quantity: Number(draft.stock_quantity),
           unit: draft.unit,
           cost_per_unit: draft.cost_per_unit === '' ? 0 : Number(draft.cost_per_unit),
-          supplier_name: null,
           minimum_stock: Number(draft.minimum_stock),
           low_stock_threshold: draft.low_stock_threshold === '' ? null : Number(draft.low_stock_threshold),
-          default_dilution_percent: null,
           vendor: draft.vendor.trim() || null,
           cas_number: null,
-          charge_number: null,
           ifra_limit: null,
-          pyramid_placement: null,
           notes: draft.notes.trim() || `Imported from ${parseResult.fileName}`,
           is_diluted: false,
           dilution_solvent_id: null,
           dilution_percentage: null,
           scent_family: null,
-          note_type: null,
         });
 
         createdMaterials.set(key, createdMaterial);
@@ -358,21 +353,16 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           stock_quantity: Number(draft.stock_quantity),
           unit: draft.unit,
           cost_per_unit: draft.cost_per_unit === '' ? 0 : Number(draft.cost_per_unit),
-          supplier_name: null,
           minimum_stock: Number(draft.minimum_stock),
           low_stock_threshold: draft.low_stock_threshold === '' ? null : Number(draft.low_stock_threshold),
-          default_dilution_percent: null,
           vendor: draft.vendor.trim() || null,
           cas_number: null,
-          charge_number: null,
           ifra_limit: null,
-          pyramid_placement: null,
           notes: draft.notes.trim() || `Imported as solvent from ${parseResult.fileName}`,
           is_diluted: false,
           dilution_solvent_id: null,
           dilution_percentage: null,
           scent_family: null,
-          note_type: null,
         });
 
         createdSolvents.set(key, createdSolvent);
@@ -406,7 +396,6 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           code: internalCode.trim() || undefined,
           author_name: formulaAuthor.trim() || null,
           status: 'draft',
-          markup_percentage: 0,
           notes: buildImportNotes({ customNotes: notes, parseResult }),
         },
         itemsForSubmit
@@ -673,8 +662,8 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                           </div>
 
                           <div className="grid gap-4 md:grid-cols-3">
-                            <FormNumber
-                              label="Unit price (per 10 ml)"
+                          <FormNumber
+                            label={`Unit price (per 10 ${draft.unit || 'ml'})`}
                               value={draft.cost_per_unit}
                               onChange={(event) => updateMissingMaterialDraft(key, 'cost_per_unit', event.target.value)}
                               min="0"

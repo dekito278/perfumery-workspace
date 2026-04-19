@@ -24,9 +24,10 @@ import PyramidSummary from '@/components/PyramidSummary.jsx';
 import ExportFormulaButton from '@/components/ExportFormulaButton.jsx';
 import { calculatePercentages } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
-import { formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate, formatQuantity } from '@/utils/formatting.js';
+import { formatAmountWithUnit, formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
+import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import { getFormulaById, getFormulas } from '@/services/formulasSupabaseService.js';
 import { getAccordById, getAccords } from '@/services/accordsSupabaseService.js';
 import { getBatchById, getBatches } from '@/services/batchesSupabaseService.js';
@@ -63,7 +64,8 @@ const FormulaDetailPage = () => {
         let itemDetails = null;
         let isLowStock = false;
         let unitPrice = 0;
-        let pyramidPlacement = null;
+        let category = null;
+        let componentFamily = null;
         let isDiluted = Boolean(item.dilution_percent && item.dilution_solvent_id);
         let dilutionPercentage = item.dilution_percent || null;
         let dilutionSolventName = null;
@@ -74,7 +76,8 @@ const FormulaDetailPage = () => {
             ? itemDetails.stock_quantity < itemDetails.low_stock_threshold
             : itemDetails.stock_quantity < itemDetails.minimum_stock;
           unitPrice = itemDetails.cost_per_unit || 0;
-          pyramidPlacement = itemDetails.pyramid_placement || null;
+          category = itemDetails.category || null;
+          componentFamily = itemDetails.scent_family || deriveScentFamilyFromCategory(itemDetails.category, '') || null;
           if (!isDiluted) {
             isDiluted = itemDetails.is_diluted || false;
             dilutionPercentage = itemDetails.dilution_percentage || null;
@@ -86,16 +89,23 @@ const FormulaDetailPage = () => {
         } else if (item.item_type === 'accord') {
           itemDetails = accordsMap.get(item.item_id) || await getAccordById(item.item_id);
           unitPrice = itemDetails.cost_per_unit || 0;
+          category = itemDetails.category || null;
+          componentFamily = itemDetails.category || 'Accord';
         }
+
+        const gramAmount = item.grams || item.percentage || 0;
 
         return {
           ...item,
           name: itemDetails?.name || 'Unknown',
           unit: itemDetails?.unit || 'g',
           is_low_stock: isLowStock,
-          gram_amount: item.grams || item.percentage || 0,
+          gram_amount: gramAmount,
           unit_price: unitPrice,
-          pyramid_placement: pyramidPlacement,
+          ingredient_cost: calculateIngredientCost(gramAmount, unitPrice),
+          category,
+          component_family: componentFamily,
+          scent_family: componentFamily,
           is_diluted: isDiluted,
           dilution_percentage: dilutionPercentage,
           dilution_solvent_name: dilutionSolventName
@@ -136,11 +146,6 @@ const FormulaDetailPage = () => {
   const totalGrams = calculateTotalAmount(items);
   const totalPercentage = items.reduce((sum, item) => sum + (item.percentage || 0), 0);
   const totalCost = calculateTotalCost(items);
-  const markupPercentage = Number(formula.markup_percentage || 0);
-  const packagingCost = Number(formula.packaging_cost || 0);
-  const bottleCost = Number(formula.bottle_cost || 0);
-  const capCost = Number(formula.cap_cost || 0);
-  const totalCogs = totalCost + packagingCost + bottleCost + capCost;
 
   return (
     <>
@@ -191,8 +196,7 @@ const FormulaDetailPage = () => {
               <DetailField label="Code" value={formula.code} />
               <DetailField label="By" value={formatNullable(formula.author_name)} />
               <DetailField label="Status" value={formatStatus(formula.status || 'draft')} />
-              <DetailField label="Markup" value={`${markupPercentage.toFixed(1)}%`} />
-              <DetailField label="COGS" value={formatPrice(totalCogs)} />
+              <DetailField label="Material cost" value={formatPrice(totalCost)} />
               <DetailField label="Version" value={formatNullable(formula.version)} />
             </DetailFieldGroup>
             <div className="mt-3 grid grid-cols-2 gap-4">
@@ -207,7 +211,7 @@ const FormulaDetailPage = () => {
             </div>
           </DetailSection>
 
-          <DetailSection title="Pyramid composition">
+          <DetailSection title="Composition profile">
             <PyramidSummary items={items} />
           </DetailSection>
 
@@ -218,7 +222,7 @@ const FormulaDetailPage = () => {
                   <TableRow>
                     <TableHead className="min-w-[150px]">Material name</TableHead>
                     <TableHead className="min-w-[100px]">Item type</TableHead>
-                    <TableHead className="text-right min-w-[100px]">Amount (g)</TableHead>
+                    <TableHead className="text-right min-w-[100px]">Amount</TableHead>
                     <TableHead className="text-right min-w-[100px]">Percentage</TableHead>
                     <TableHead className="text-right min-w-[140px]">Unit price</TableHead>
                     <TableHead className="text-right min-w-[100px]">Cost</TableHead>
@@ -227,7 +231,7 @@ const FormulaDetailPage = () => {
                 </TableHeader>
                 <TableBody>
                   {items.map((item, index) => {
-                    const ingredientCost = calculateIngredientCost(item.gram_amount, item.unit_price);
+                    const ingredientCost = item.ingredient_cost ?? calculateIngredientCost(item.gram_amount, item.unit_price);
                     const isDiluted = item.is_diluted && item.dilution_percentage;
                     const composition = isDiluted 
                       ? calculateDilutionComposition(item.gram_amount, item.dilution_percentage)
@@ -260,10 +264,10 @@ const FormulaDetailPage = () => {
                               {formatStatus(item.item_type)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">{formatGramAmount(item.gram_amount)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{formatAmountWithUnit(item.gram_amount, item.unit)}</TableCell>
                           <TableCell className="text-right font-mono text-sm">{formatPercentage(item.percentage)}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatPricePerUnit(item.unit_price)}
+                            {formatPricePerUnit(item.unit_price, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatPrice(ingredientCost)}
@@ -280,7 +284,7 @@ const FormulaDetailPage = () => {
                           <TableRow className="bg-muted/30">
                             <TableCell colSpan={7} className="py-2 px-4">
                               <div className="text-xs text-muted-foreground">
-                                Active: {formatQuantity(composition.activeAmount)} ml + Solvent: {formatQuantity(composition.solventAmount)} ml
+                                Active: {formatAmountWithUnit(composition.activeAmount, item.unit)} + Solvent: {formatAmountWithUnit(composition.solventAmount, item.unit)}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -301,32 +305,12 @@ const FormulaDetailPage = () => {
                 </TableBody>
               </Table>
             </div>
-            <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <div className="rounded-lg bg-background/70 p-3">
-                  <div className="text-xs text-muted-foreground">Formula material cost</div>
-                  <div className="mt-1 text-lg font-bold font-mono text-primary">{formatPrice(totalCost)}</div>
-                </div>
-                <div className="rounded-lg bg-background/70 p-3">
-                  <div className="text-xs text-muted-foreground">Packaging cost</div>
-                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(packagingCost)}</div>
-                </div>
-                <div className="rounded-lg bg-background/70 p-3">
-                  <div className="text-xs text-muted-foreground">Bottle cost</div>
-                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(bottleCost)}</div>
-                </div>
-                <div className="rounded-lg bg-background/70 p-3">
-                  <div className="text-xs text-muted-foreground">Cap cost</div>
-                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(capCost)}</div>
-                </div>
-                <div className="rounded-lg bg-background/70 p-3">
-                  <div className="text-xs text-muted-foreground">Total COGS</div>
-                  <div className="mt-1 text-lg font-bold font-mono">{formatPrice(totalCogs)}</div>
-                </div>
-              </div>
+            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/10 p-4">
+              <div className="text-xs text-muted-foreground">Formula material cost</div>
+              <div className="mt-1 text-lg font-bold font-mono text-primary">{formatPrice(totalCost)}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Percentages are calculated from gram amounts. COGS combines formula material cost with packaging, bottle, and cap costs. Markup is saved separately so you can decide your own selling estimate.
+              Percentages are calculated from gram amounts. Formula detail stays focused on raw materials, accords, and solvent-related costs only.
             </p>
           </DetailSection>
 

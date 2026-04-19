@@ -29,7 +29,7 @@ import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
 import EditBatchModal from '@/components/EditBatchModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import { formatQuantity, formatPercentage, formatStatus, formatDate } from '@/utils/formatting.js';
-import { formatPrice } from '@/utils/pricingUtils.js';
+import { formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
 import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 
@@ -396,7 +396,7 @@ const BatchDetailPage = () => {
                           </TableCell>
                           <TableCell className="text-right text-sm">{item.unit}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatPrice(item.cost_per_unit)}/10ml
+                            {formatPricePerUnit(item.cost_per_unit, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatPrice(item.total_cost)}
@@ -428,7 +428,7 @@ const BatchDetailPage = () => {
                           </TableCell>
                           <TableCell className="text-right text-sm">{item.unit}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatPrice(item.cost_per_unit)}/10ml
+                            {formatPricePerUnit(item.cost_per_unit, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatPrice(item.total_cost)}
@@ -460,7 +460,7 @@ const BatchDetailPage = () => {
                           </TableCell>
                           <TableCell className="text-right text-sm">{item.unit}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatPrice(item.cost_per_unit)}/{item.unit}
+                            {formatPricePerUnit(item.cost_per_unit, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatPrice(item.total_cost)}

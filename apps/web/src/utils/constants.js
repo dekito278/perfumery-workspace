@@ -44,15 +44,10 @@ export const SCENT_FAMILIES = [
   { value: 'gourmand', label: 'Gourmand' }
 ];
 
-export const NOTE_TYPES = [
-  { value: 'top', label: 'Top Note' },
-  { value: 'middle', label: 'Middle Note' },
-  { value: 'base', label: 'Base Note' }
-];
-
 export const UNIT_OPTIONS = [
   { value: 'ml', label: 'ml' },
   { value: 'g', label: 'g' },
+  { value: 'l', label: 'l' },
   { value: 'kg', label: 'kg' },
   { value: 'oz', label: 'oz' },
   { value: 'lb', label: 'lb' }

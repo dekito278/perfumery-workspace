@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,91 +13,128 @@ import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
 
+const emptyRecipeItem = () => ({
+  raw_material_id: '',
+  gram_amount: '',
+  dilution_percent: '',
+  dilution_solvent_id: '',
+  dilution_solvent_name: '',
+});
+
 const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
   const { addAccord, loading } = useAccords();
   const [name, setName] = useState('');
+  const [authorName, setAuthorName] = useState('');
   const [notes, setNotes] = useState('');
   const [recipeItems, setRecipeItems] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
-    if (open) {
-      console.log('=== ADD ACCORD MODAL OPENED ===');
-      loadMaterials();
-      resetForm();
+    if (!open) {
+      return;
     }
-  }, [open]);
 
-  const resetForm = () => {
+    loadMaterials();
     setName('');
+    setAuthorName('');
     setNotes('');
     setRecipeItems([]);
     setValidationErrors({});
-  };
+  }, [open]);
 
   const loadMaterials = async () => {
-    setLoadingMaterials(true);
     try {
       const data = await getRawMaterials();
-      console.log('Materials loaded:', data.length);
       setMaterials(data);
     } catch (error) {
       console.error('Failed to load materials:', error);
       toast.error('Failed to load materials');
-    } finally {
-      setLoadingMaterials(false);
     }
   };
 
   const addRecipeItem = () => {
-    console.log('=== ITEM ADDED ===');
-    const newItem = { raw_material_id: '', gram_amount: '' };
-    console.log('New item:', newItem);
-    setRecipeItems([...recipeItems, newItem]);
+    setRecipeItems((currentItems) => [...currentItems, emptyRecipeItem()]);
   };
 
   const removeRecipeItem = (index) => {
-    console.log('Item removed at index:', index);
-    setRecipeItems(recipeItems.filter((_, i) => i !== index));
-    const newErrors = { ...validationErrors };
-    delete newErrors[`item_${index}`];
-    setValidationErrors(newErrors);
+    setRecipeItems((currentItems) => currentItems.filter((_, itemIndex) => itemIndex !== index));
+    setValidationErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[`item_${index}`];
+      return nextErrors;
+    });
   };
 
   const updateRecipeItem = (index, materialId) => {
-    console.log('=== UPDATING RECIPE ITEM ===');
-    console.log('Index:', index);
-    console.log('Material ID:', materialId);
-    console.log('Material ID type:', typeof materialId);
-    
-    // Ensure materialId is a string ID, not an object
-    const idString = typeof materialId === 'string' ? materialId : (materialId?.id || '');
-    console.log('Extracted ID string:', idString);
-    
-    const updated = [...recipeItems];
-    updated[index].raw_material_id = idString;
-    
-    console.log('Updated item:', updated[index]);
-    setRecipeItems(updated);
+    const nextMaterialId = typeof materialId === 'string' ? materialId : (materialId?.id || '');
+
+    setRecipeItems((currentItems) => {
+      const nextItems = [...currentItems];
+      nextItems[index] = {
+        ...nextItems[index],
+        raw_material_id: nextMaterialId,
+      };
+      return nextItems;
+    });
   };
 
   const updateGramAmount = (index, gramAmount) => {
-    console.log('Updating gram amount:', { index, gramAmount, type: typeof gramAmount });
-    
-    const updated = [...recipeItems];
-    updated[index].gram_amount = gramAmount;
-    setRecipeItems(updated);
-    
+    setRecipeItems((currentItems) => {
+      const nextItems = [...currentItems];
+      nextItems[index] = {
+        ...nextItems[index],
+        gram_amount: gramAmount,
+      };
+      return nextItems;
+    });
+
     const error = validateGramAmount(gramAmount);
-    const newErrors = { ...validationErrors };
-    if (error) {
-      newErrors[`item_${index}`] = error;
-    } else {
-      delete newErrors[`item_${index}`];
-    }
-    setValidationErrors(newErrors);
+    setValidationErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      if (error) {
+        nextErrors[`item_${index}`] = error;
+      } else {
+        delete nextErrors[`item_${index}`];
+      }
+      return nextErrors;
+    });
+  };
+
+  const updateDilutionConfig = (index, field, value) => {
+    setRecipeItems((currentItems) => {
+      const nextItems = [...currentItems];
+      const nextItem = { ...nextItems[index] };
+
+      if (field === 'clear_dilution') {
+        nextItem.dilution_percent = '';
+        nextItem.dilution_solvent_id = '';
+        nextItem.dilution_solvent_name = '';
+      } else {
+        nextItem[field] = value;
+      }
+
+      if (field === 'dilution_solvent_id') {
+        const solvent = materials.find((material) => material.id === value);
+        nextItem.dilution_solvent_name = solvent?.name || '';
+      }
+
+      if (field === 'dilution_percent' && (value === '' || Number(value) <= 0)) {
+        nextItem.dilution_percent = '';
+        nextItem.dilution_solvent_id = '';
+        nextItem.dilution_solvent_name = '';
+      }
+
+      nextItems[index] = nextItem;
+      return nextItems;
+    });
+
+    setValidationErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      delete nextErrors.ingredients;
+      delete nextErrors[`item_${index}`];
+      return nextErrors;
+    });
   };
 
   const totalGrams = calculateAccordTotalGrams(recipeItems);
@@ -120,12 +156,24 @@ const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
       if (!item.raw_material_id) {
         errors[`item_${index}`] = 'Material is required';
       }
+
       if (!item.gram_amount || item.gram_amount === '') {
         errors[`item_${index}`] = 'Amount is required';
       } else {
         const gramError = validateGramAmount(item.gram_amount);
         if (gramError) {
           errors[`item_${index}`] = gramError;
+        }
+      }
+
+      const dilutionPercent = parseFloat(item.dilution_percent);
+      const hasDilutionPercent = !Number.isNaN(dilutionPercent) && dilutionPercent > 0;
+      const hasDilutionConfig = hasDilutionPercent || Boolean(item.dilution_solvent_id);
+      if (hasDilutionConfig) {
+        if (!hasDilutionPercent || dilutionPercent > 100) {
+          errors[`item_${index}`] = 'Dilution percentage must be between 0 and 100';
+        } else if (!item.dilution_solvent_id) {
+          errors[`item_${index}`] = 'Dilution solvent is required';
         }
       }
     });
@@ -143,84 +191,49 @@ const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    console.log('=== SAVE CLICKED ===');
-    console.log('Checkpoint: Form submitted');
-    console.log('Form data:', { name, notes });
-    console.log('Recipe items (raw):', JSON.stringify(recipeItems, null, 2));
-    console.log('Items with percentages:', JSON.stringify(itemsWithPercentages, null, 2));
-    console.log('Total grams:', totalGrams);
-    console.log('Total percentage:', totalPercentage);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     if (!validateForm()) {
-      console.error('Form validation failed:', validationErrors);
       toast.error('Please fix validation errors');
       return;
     }
 
     try {
-      // Prepare accord data
-      const accordData = {
-        name: name.trim(),
-        notes: notes.trim() || undefined,
-        unit: 'ml'
-      };
+      const itemsForSubmit = itemsWithPercentages.map((item) => ({
+        raw_material_id: String(item.raw_material_id || '').trim(),
+        percentage: Number(item.percentage),
+        dilution_percent: item.dilution_percent ? Number(item.dilution_percent) : null,
+        dilution_solvent_id: item.dilution_solvent_id || null,
+        concentrate_amount: item.dilution_percent
+          ? Number(((parseFloat(item.gram_amount) * parseFloat(item.dilution_percent)) / 100).toFixed(3))
+          : null,
+      }));
 
-      // Prepare items with percentages
-      // Ensure raw_material_id is a string and percentage is a number
-      const itemsForSubmit = itemsWithPercentages.map((item, index) => {
-        const materialId = String(item.raw_material_id || '').trim();
-        const percentage = Number(item.percentage);
-        
-        console.log(`Preparing item ${index + 1} for submit:`, {
-          raw_material_id: materialId,
-          raw_material_id_type: typeof materialId,
-          percentage: percentage,
-          percentage_type: typeof percentage,
-          percentage_isNumber: !isNaN(percentage)
-        });
-        
-        return {
-          raw_material_id: materialId,
-          percentage: percentage
-        };
-      });
+      await addAccord(
+        {
+          name: name.trim(),
+          author_name: authorName.trim() || undefined,
+          notes: notes.trim() || undefined,
+          unit: 'ml',
+        },
+        itemsForSubmit
+      );
 
-      console.log('=== SUBMITTING TO SERVICE ===');
-      console.log('Accord data:', JSON.stringify(accordData, null, 2));
-      console.log('Items for submit:', JSON.stringify(itemsForSubmit, null, 2));
-
-      const result = await addAccord(accordData, itemsForSubmit);
-      
-      console.log('✓ Accord created successfully:', result);
       toast.success('Accord created successfully');
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error('✗ Failed to create accord:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        data: error.data,
-        validationErrors: error.data?.data
-      });
-      
-      // Extract and display detailed validation errors
       if (error.data?.data) {
-        const validationErrors = Object.entries(error.data.data)
-          .map(([field, err]) => {
-            const message = err.message || err.code || JSON.stringify(err);
-            return `${field}: ${message}`;
-          })
+        const validationMessage = Object.entries(error.data.data)
+          .map(([field, err]) => `${field}: ${err.message || err.code || JSON.stringify(err)}`)
           .join(', ');
-        
-        console.error('Formatted validation errors:', validationErrors);
-        toast.error(`Validation failed: ${validationErrors}`);
-      } else {
-        toast.error(error.message || 'Failed to create accord');
+
+        toast.error(`Validation failed: ${validationMessage}`);
+        return;
       }
+
+      toast.error(error.message || 'Failed to create accord');
     }
   };
 
@@ -236,19 +249,31 @@ const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-4">
             <h3 className="font-semibold text-base">Basic information</h3>
-            <div className="space-y-2">
-              <Label htmlFor="accord-name" className="text-sm font-medium">Accord name *</Label>
-              <Input
-                id="accord-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Rose Accord, Citrus Blend"
-                required
-                className="text-foreground"
-              />
-              {validationErrors.name && (
-                <p className="text-xs text-destructive">{validationErrors.name}</p>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="accord-name" className="text-sm font-medium">Accord name *</Label>
+                <Input
+                  id="accord-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="e.g., Rose Accord, Citrus Blend"
+                  required
+                  className="text-foreground"
+                />
+                {validationErrors.name && (
+                  <p className="text-xs text-destructive">{validationErrors.name}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="accord-author" className="text-sm font-medium">By</Label>
+                <Input
+                  id="accord-author"
+                  value={authorName}
+                  onChange={(event) => setAuthorName(event.target.value)}
+                  placeholder="Optional creator name"
+                  className="text-foreground"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -256,7 +281,7 @@ const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
               <Textarea
                 id="accord-notes"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(event) => setNotes(event.target.value)}
                 placeholder="Description, usage notes, or characteristics..."
                 rows={2}
                 className="text-foreground text-sm"
@@ -293,6 +318,7 @@ const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
                     index={index}
                     onItemChange={updateRecipeItem}
                     onGramAmountChange={updateGramAmount}
+                    onDilutionChange={updateDilutionConfig}
                     onRemove={removeRecipeItem}
                     rawMaterials={materials}
                     error={validationErrors[`item_${index}`]}
@@ -307,16 +333,26 @@ const AddAccordModal = ({ open, onOpenChange, onSuccess }) => {
                   <span>Total:</span>
                   <span className="font-mono">{formatGramAmount(totalGrams)}</span>
                 </div>
-                
+
                 {totalGrams > 0 && (
                   <div className="pt-3 border-t space-y-2">
                     <h4 className="font-medium text-xs text-muted-foreground">Calculated composition</h4>
                     {itemsWithPercentages.map((item, index) => {
-                      const itemName = materials.find(m => m.id === item.raw_material_id)?.name || 'Unknown';
-                      
+                      const itemName = materials.find((material) => material.id === item.raw_material_id)?.name || 'Unknown';
+                      const solventName = item.dilution_solvent_id
+                        ? materials.find((material) => material.id === item.dilution_solvent_id)?.name
+                        : '';
+
                       return (
                         <div key={index} className="flex justify-between text-xs">
-                          <span>{itemName}</span>
+                          <span>
+                            {itemName}
+                            {item.dilution_percent && (
+                              <span className="text-muted-foreground">
+                                {` ${item.dilution_percent}%${solventName ? ` in ${solventName}` : ''}`}
+                              </span>
+                            )}
+                          </span>
                           <span className="font-mono">
                             {formatGramAmount(item.gram_amount)} ({formatPercentage(item.percentage)})
                           </span>

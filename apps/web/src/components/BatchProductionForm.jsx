@@ -146,11 +146,6 @@ const BatchProductionForm = ({ initialData = null, preSelectedFormulaId = null, 
       unit: formData.unit
     };
 
-    console.log('=== BATCH SUBMISSION DEBUG ===');
-    console.log('Form data:', formData);
-    console.log('Calculated quantities:', calculatedQuantities);
-    console.log('Submit data:', submitData);
-
     onSubmit(submitData);
   };
 

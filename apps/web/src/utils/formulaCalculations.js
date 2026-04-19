@@ -46,6 +46,21 @@ export const validateFormulaItems = (items) => {
     if (!item.gram_amount || parseFloat(item.gram_amount) <= 0) {
       errors.push(`Item ${index + 1}: Gram amount must be greater than 0`);
     }
+    const percent = parseFloat(item.dilution_percent);
+    const hasDilutionPercent = !Number.isNaN(percent) && percent > 0;
+    const hasDilutionConfig = hasDilutionPercent || Boolean(item.dilution_solvent_id);
+
+    if (hasDilutionConfig) {
+      if (!hasDilutionPercent) {
+        errors.push(`Item ${index + 1}: Dilution percentage must be between 0 and 100`);
+      }
+      if (!item.dilution_solvent_id && hasDilutionPercent) {
+        errors.push(`Item ${index + 1}: Dilution solvent is required`);
+      }
+      if (hasDilutionPercent && percent > 100) {
+        errors.push(`Item ${index + 1}: Dilution percentage must be between 0 and 100`);
+      }
+    }
   });
   
   return errors;
@@ -169,7 +184,8 @@ export const calculateFormulaCost = async (items, materials, accords) => {
     } else if (item.item_type === 'accord') {
       const accord = accords.find(a => a.id === item.item_id);
       if (accord && accord.cost_per_unit) {
-        itemCost = gramAmount * accord.cost_per_unit;
+        const costPerGram = calculateEffectiveUnitCost(accord.cost_per_unit, 10);
+        itemCost = gramAmount * costPerGram;
       }
     }
     

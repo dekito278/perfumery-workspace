@@ -28,6 +28,47 @@ const mapUsageRecord = (row) => ({
   },
 });
 
+const normalizeOptionalText = (value) => {
+  const normalized = String(value || '').trim();
+  return normalized || null;
+};
+
+const normalizeOptionalNumber = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
+};
+
+const buildRawMaterialPayload = (data) => {
+  const normalizedCategory = data.category || null;
+  const normalizedType = inferRawMaterialTypeFromCategory(normalizedCategory, data.type || 'material');
+  const normalizedFamily = deriveScentFamilyFromCategory(normalizedCategory, data.scent_family || '');
+  const isDiluted = Boolean(data.is_diluted);
+
+  return {
+    name: String(data.name || '').trim(),
+    category: normalizedCategory,
+    type: normalizedType,
+    stock_quantity: Number(data.stock_quantity || 0),
+    unit: data.unit,
+    cost_per_unit: Number(data.cost_per_unit || 0),
+    minimum_stock: Number(data.minimum_stock || 0),
+    notes: normalizeOptionalText(data.notes),
+    workbook_code: normalizeOptionalText(data.workbook_code),
+    scent_family: normalizedFamily || null,
+    low_stock_threshold: normalizeOptionalNumber(data.low_stock_threshold),
+    vendor: normalizeOptionalText(data.vendor),
+    cas_number: normalizeOptionalText(data.cas_number),
+    ifra_limit: normalizeOptionalNumber(data.ifra_limit),
+    is_diluted: isDiluted,
+    dilution_solvent_id: isDiluted ? data.dilution_solvent_id : null,
+    dilution_percentage: isDiluted ? normalizeOptionalNumber(data.dilution_percentage) : null,
+  };
+};
+
 const getCurrentUserId = async () => {
   const {
     data: { user },
@@ -61,6 +102,28 @@ const getSolventMap = async (solventIds) => {
   }
 
   return new Map((data || []).map((item) => [item.id, item]));
+};
+
+const findExistingRawMaterialByName = async (userId, name) => {
+  const normalizedName = String(name || '').trim();
+  if (!normalizedName) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('raw_materials')
+    .select('*')
+    .eq('user_id', userId)
+    .ilike('name', normalizedName)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking existing raw material by name:', error);
+    return null;
+  }
+
+  return data || null;
 };
 
 export const getRawMaterials = async () => {
@@ -177,9 +240,7 @@ export const getRawMaterialUsageHistory = async (id) => {
 export const createRawMaterial = async (data) => {
   try {
     const userId = await getCurrentUserId();
-    const normalizedCategory = data.category || null;
-    const normalizedType = inferRawMaterialTypeFromCategory(normalizedCategory, data.type || 'material');
-    const normalizedFamily = deriveScentFamilyFromCategory(normalizedCategory, data.scent_family || '');
+    const payload = buildRawMaterialPayload(data);
 
     // Validate dilution fields
     if (data.is_diluted) {
@@ -195,33 +256,19 @@ export const createRawMaterial = async (data) => {
       .from('raw_materials')
       .insert({
         user_id: userId,
-        name: data.name,
-        category: normalizedCategory,
-        type: normalizedType,
-        stock_quantity: data.stock_quantity,
-        unit: data.unit,
-        cost_per_unit: data.cost_per_unit,
-        supplier_name: data.supplier_name || null,
-        minimum_stock: data.minimum_stock,
-        notes: data.notes || null,
-        workbook_code: data.workbook_code || null,
-        default_dilution_percent: data.default_dilution_percent || null,
-        scent_family: normalizedFamily || null,
-        note_type: data.note_type || null,
-        low_stock_threshold: data.low_stock_threshold || null,
-        vendor: data.vendor || null,
-        cas_number: data.cas_number || null,
-        charge_number: data.charge_number || null,
-        ifra_limit: data.ifra_limit || null,
-        pyramid_placement: data.pyramid_placement || null,
-        is_diluted: data.is_diluted || false,
-        dilution_solvent_id: data.is_diluted ? data.dilution_solvent_id : null,
-        dilution_percentage: data.is_diluted ? data.dilution_percentage : null,
+        ...payload,
       })
       .select('*')
       .single();
 
     if (error) {
+      if (error.code === '23505' && error.message?.includes('raw_materials_unique_name_per_user')) {
+        const existingRecord = await findExistingRawMaterialByName(userId, payload.name);
+        if (existingRecord) {
+          const solventMap = await getSolventMap(existingRecord.dilution_solvent_id ? [existingRecord.dilution_solvent_id] : []);
+          return mapRawMaterial(existingRecord, solventMap);
+        }
+      }
       throw error;
     }
 
@@ -235,9 +282,7 @@ export const createRawMaterial = async (data) => {
 
 export const updateRawMaterial = async (id, data) => {
   try {
-    const normalizedCategory = data.category || null;
-    const normalizedType = inferRawMaterialTypeFromCategory(normalizedCategory, data.type || 'material');
-    const normalizedFamily = deriveScentFamilyFromCategory(normalizedCategory, data.scent_family || '');
+    const payload = buildRawMaterialPayload(data);
 
     // Validate dilution fields
     if (data.is_diluted) {
@@ -251,30 +296,7 @@ export const updateRawMaterial = async (id, data) => {
 
     const { data: record, error } = await supabase
       .from('raw_materials')
-      .update({
-        name: data.name,
-        category: normalizedCategory,
-        type: normalizedType,
-        stock_quantity: data.stock_quantity,
-        unit: data.unit,
-        cost_per_unit: data.cost_per_unit,
-        supplier_name: data.supplier_name || null,
-        minimum_stock: data.minimum_stock,
-        notes: data.notes || null,
-        workbook_code: data.workbook_code || null,
-        default_dilution_percent: data.default_dilution_percent || null,
-        scent_family: normalizedFamily || null,
-        note_type: data.note_type || null,
-        low_stock_threshold: data.low_stock_threshold || null,
-        vendor: data.vendor || null,
-        cas_number: data.cas_number || null,
-        charge_number: data.charge_number || null,
-        ifra_limit: data.ifra_limit || null,
-        pyramid_placement: data.pyramid_placement || null,
-        is_diluted: data.is_diluted || false,
-        dilution_solvent_id: data.is_diluted ? data.dilution_solvent_id : null,
-        dilution_percentage: data.is_diluted ? data.dilution_percentage : null,
-      })
+      .update(payload)
       .eq('id', id)
       .select('*')
       .single();

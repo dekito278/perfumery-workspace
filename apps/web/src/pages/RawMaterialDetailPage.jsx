@@ -142,7 +142,7 @@ const RawMaterialDetailPage = () => {
               <DetailField label="Category" value={formatStatus(material.category)} />
               <DetailField 
                 label="Unit price" 
-                value={formatPricePerUnit(material.cost_per_unit)} 
+                value={formatPricePerUnit(material.cost_per_unit, material.unit)} 
               />
             </DetailFieldGroup>
             <div className="mt-3">
@@ -205,6 +205,12 @@ const RawMaterialDetailPage = () => {
               <DetailField label="Type" value={formatStatus(material.type)} />
             </DetailFieldGroup>
           </DetailSection>
+
+          {material.notes && (
+            <DetailSection title="Notes">
+              <p className="text-muted-foreground whitespace-pre-wrap text-sm">{material.notes}</p>
+            </DetailSection>
+          )}
 
           <DetailSection title="Usage history">
             {usageRecords.length > 0 && (

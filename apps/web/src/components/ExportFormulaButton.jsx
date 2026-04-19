@@ -4,12 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 
+const getCompositionLabel = (item) => {
+  if (item.item_type === 'accord') {
+    return item.category || 'Accord';
+  }
+
+  if (item.item_type === 'solvent') {
+    return item.name || 'Solvent';
+  }
+
+  return item.component_family || item.scent_family || item.category || 'Material';
+};
+
 const ExportFormulaButton = ({ formula, items }) => {
   const handleExport = () => {
     try {
-      const pyramidData = items.reduce((acc, item) => {
-        const placement = item.pyramid_placement || 'unknown';
-        acc[placement] = (acc[placement] || 0) + (item.percentage || 0);
+      const compositionProfile = items.reduce((acc, item) => {
+        const label = getCompositionLabel(item);
+        acc[label] = (acc[label] || 0) + Number(item.percentage || 0);
+        return acc;
+      }, {});
+      const itemTypeTotals = items.reduce((acc, item) => {
+        const type = item.item_type || 'unknown';
+        acc[type] = (acc[type] || 0) + Number(item.percentage || 0);
         return acc;
       }, {});
 
@@ -27,15 +44,15 @@ const ExportFormulaButton = ({ formula, items }) => {
         ingredients: items.map(item => ({
           name: item.name,
           type: item.item_type,
+          category: item.category || null,
+          family: item.component_family || item.scent_family || null,
           gram_amount: item.gram_amount,
           percentage: item.percentage,
-          pyramid_placement: item.pyramid_placement || null
+          unit_price: item.unit_price || 0,
+          ingredient_cost: item.ingredient_cost || 0,
         })),
-        pyramid_summary: {
-          top: pyramidData.top || 0,
-          middle: pyramidData.middle || 0,
-          base: pyramidData.base || 0
-        }
+        composition_profile: compositionProfile,
+        item_type_summary: itemTypeTotals,
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

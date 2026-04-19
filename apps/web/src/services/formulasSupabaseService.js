@@ -13,19 +13,40 @@ const normalizeFormulaPayload = (formulaData) => ({
     ? Number(formulaData.batch_size)
     : null,
   batch_date: formulaData.batch_date || null,
-  markup_percentage: formulaData.markup_percentage !== undefined && formulaData.markup_percentage !== null
-    ? Number(formulaData.markup_percentage)
-    : 0,
-  packaging_cost: formulaData.packaging_cost !== undefined && formulaData.packaging_cost !== null
-    ? Number(formulaData.packaging_cost)
-    : 0,
-  bottle_cost: formulaData.bottle_cost !== undefined && formulaData.bottle_cost !== null
-    ? Number(formulaData.bottle_cost)
-    : 0,
-  cap_cost: formulaData.cap_cost !== undefined && formulaData.cap_cost !== null
-    ? Number(formulaData.cap_cost)
-    : 0,
 });
+
+const VERSIONED_CODE_PATTERN = /-V(\d+)$/i;
+
+const buildNextVersionCode = (code, nextVersion) => {
+  const baseCode = String(code || '').trim().replace(VERSIONED_CODE_PATTERN, '');
+  return `${baseCode}-V${nextVersion}`;
+};
+
+const getNextAvailableFormulaCode = async (userId, preferredCode) => {
+  const normalizedCode = String(preferredCode || '').trim();
+  const baseCode = normalizedCode.replace(VERSIONED_CODE_PATTERN, '');
+
+  const { data, error } = await supabase
+    .from('formulas')
+    .select('code')
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(error.message || 'Failed to resolve duplicate formula code');
+  }
+
+  const existingCodes = new Set((data || []).map((item) => String(item.code || '').trim().toLowerCase()));
+  if (!existingCodes.has(normalizedCode.toLowerCase())) {
+    return normalizedCode;
+  }
+
+  let version = 2;
+  while (existingCodes.has(buildNextVersionCode(baseCode, version).toLowerCase())) {
+    version += 1;
+  }
+
+  return buildNextVersionCode(baseCode, version);
+};
 
 const normalizeFormulaItemPayload = (formulaId, item, index) => ({
   formula_id: formulaId,
@@ -86,19 +107,34 @@ export const getFormulaItems = async (formulaId) => {
 
 export const createFormula = async (formulaData, items) => {
   const userId = await getCurrentUserId();
+  let payload = {
+    user_id: userId,
+    ...normalizeFormulaPayload(formulaData),
+  };
 
-  const { data: formula, error: formulaError } = await supabase
-    .from('formulas')
-    .insert({
-      user_id: userId,
-      ...normalizeFormulaPayload(formulaData),
-    })
-    .select('*')
-    .single();
+  let formula = null;
+  while (!formula) {
+    const { data, error } = await supabase
+      .from('formulas')
+      .insert(payload)
+      .select('*')
+      .single();
 
-  if (formulaError) {
-    console.error('Error creating formula:', formulaError);
-    throw new Error(formulaError.message || 'Failed to create formula');
+    if (!error) {
+      formula = data;
+      break;
+    }
+
+    if (error.code === '23505' && error.message?.includes('formulas_unique_code_per_user')) {
+      payload = {
+        ...payload,
+        code: await getNextAvailableFormulaCode(userId, payload.code),
+      };
+      continue;
+    }
+
+    console.error('Error creating formula:', error);
+    throw new Error(error.message || 'Failed to create formula');
   }
 
   if (items?.length) {

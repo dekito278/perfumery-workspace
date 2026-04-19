@@ -12,6 +12,7 @@ import { AlertTriangle, CheckCircle2, Package } from 'lucide-react';
 import { useAccords } from '@/hooks/useAccords.js';
 import { getAccordItems } from '@/services/accordsSupabaseService.js';
 import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
+import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 
 const ProduceAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
   const { produceAccord, loading } = useAccords();
@@ -34,12 +35,35 @@ const ProduceAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
     setLoadingRequirements(true);
     try {
       const items = await getAccordItems(accord.id);
+      const reqs = items.flatMap((item) => {
+        const material = item.expand?.raw_material_id;
+        const baseRequirement = {
+          material,
+          percentage: item.percentage,
+          currentStock: material?.stock_quantity || 0,
+        };
 
-      const reqs = items.map(item => ({
-        material: item.expand?.raw_material_id,
-        percentage: item.percentage,
-        currentStock: item.expand?.raw_material_id?.stock_quantity || 0
-      }));
+        if (item.dilution_percent && item.dilution_solvent_id && item.expand?.dilution_solvent_id) {
+          const composition = calculateDilutionComposition(item.percentage, item.dilution_percent);
+          return [
+            {
+              ...baseRequirement,
+              percentage: composition.activeAmount,
+              displayPercentage: item.percentage,
+              sourceLabel: `${item.dilution_percent}% active`,
+            },
+            {
+              material: item.expand.dilution_solvent_id,
+              percentage: composition.solventAmount,
+              displayPercentage: item.percentage,
+              currentStock: item.expand.dilution_solvent_id?.stock_quantity || 0,
+              sourceLabel: `${item.dilution_percent}% solvent`,
+            },
+          ];
+        }
+
+        return [baseRequirement];
+      });
 
       setRequirements(reqs);
     } catch (error) {
@@ -167,7 +191,7 @@ const ProduceAccordModal = ({ open, onOpenChange, accord, onSuccess }) => {
                         <div className="flex-1">
                           <div className="font-medium">{req.material.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {req.percentage}% of recipe
+                            {req.sourceLabel ? `${req.sourceLabel} from ${req.displayPercentage}% of recipe` : `${req.percentage}% of recipe`}
                           </div>
                         </div>
                         <div className="text-right">

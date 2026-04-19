@@ -45,6 +45,12 @@ export const formatGramAmount = (value) => {
   return `${formatted} g`;
 };
 
+export const formatAmountWithUnit = (value, unit = '') => {
+  const formatted = formatQuantity(value);
+  const normalizedUnit = formatUnit(unit);
+  return normalizedUnit ? `${formatted} ${normalizedUnit}` : formatted;
+};
+
 export const formatPercentage = (value, decimals = 1) => {
   if (value === null || value === undefined) return '0.0%';
   const numValue = Number(value);

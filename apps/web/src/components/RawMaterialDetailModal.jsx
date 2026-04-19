@@ -3,9 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, TrendingUp, Minus, TrendingDown, AlertTriangle } from 'lucide-react';
-import { formatQuantity, formatCurrency, formatDate, formatPercentage } from '@/utils/formatting.js';
-import { formatPrice } from '@/utils/pricingUtils.js';
+import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { formatQuantity, formatDate, formatPercentage } from '@/utils/formatting.js';
+import { formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import UsageHistoryTable from '@/components/UsageHistoryTable.jsx';
 import { getRawMaterialUsageHistory } from '@/services/rawMaterialsService.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
@@ -47,19 +47,6 @@ const RawMaterialDetailModal = ({ open, onOpenChange, material, onEdit, onDelete
     ? material.stock_quantity < material.low_stock_threshold
     : material.stock_quantity < material.minimum_stock;
   const scentFamily = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
-
-  const getPyramidIcon = (placement) => {
-    switch (placement) {
-      case 'top':
-        return <TrendingUp className="w-3.5 h-3.5 text-amber-600" />;
-      case 'middle':
-        return <Minus className="w-3.5 h-3.5 text-rose-600" />;
-      case 'base':
-        return <TrendingDown className="w-3.5 h-3.5 text-amber-800" />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,6 +142,13 @@ const RawMaterialDetailModal = ({ open, onOpenChange, material, onEdit, onDelete
                 </div>
               )}
 
+              {material.notes && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
+                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">{material.notes}</p>
+                </div>
+              )}
+
               <div className="border-t pt-3 flex gap-4 text-xs text-muted-foreground">
                 <div>
                   <span className="font-medium">Created:</span> {formatDate(material.created)}
@@ -175,7 +169,7 @@ const RawMaterialDetailModal = ({ open, onOpenChange, material, onEdit, onDelete
 
               <div className="rounded-xl border bg-card p-4">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Unit price</p>
-                <p className="font-mono text-lg font-semibold">{formatCurrency(material.cost_per_unit)} / 10 ml</p>
+                <p className="font-mono text-lg font-semibold">{formatPricePerUnit(material.cost_per_unit, material.unit)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

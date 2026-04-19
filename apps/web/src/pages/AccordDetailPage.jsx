@@ -18,8 +18,9 @@ import DetailMetadata from '@/components/DetailMetadata.jsx';
 import EditAccordModal from '@/components/EditAccordModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import { calculateAccordPercentages } from '@/utils/calculateAccordPercentages.js';
-import { formatQuantity, formatNullable, formatStatus, formatGramAmount, formatPercentage } from '@/utils/formatting.js';
+import { formatAmountWithUnit, formatQuantity, formatNullable, formatStatus, formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
+import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 import { getAccordById, getAccordItems } from '@/services/accordsSupabaseService.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
 
@@ -82,7 +83,12 @@ const AccordDetailPage = () => {
           material_unit: material.unit,
           material_stock: material.stock_quantity,
           is_low_stock: isLowStock,
-          unit_price: material.cost_per_unit || 0
+          unit_price: material.cost_per_unit || 0,
+          is_diluted: Boolean(item.dilution_percent && item.dilution_solvent_id),
+          dilution_percentage: item.dilution_percent || null,
+          dilution_solvent_name: item.dilution_solvent_id
+            ? rawMaterialsMap.get(item.dilution_solvent_id)?.name || null
+            : null,
         };
       });
 
@@ -153,15 +159,16 @@ const AccordDetailPage = () => {
 
         <div className="space-y-5">
           <DetailSection title="Summary">
-            <DetailFieldGroup columns={3}>
+            <DetailFieldGroup columns={4}>
               <DetailField label="Name" value={accord.name} />
+              <DetailField label="By" value={formatNullable(accord.author_name)} />
               <DetailField 
                 label="Stock quantity" 
                 value={`${formatQuantity(accord.stock_quantity)} ${accord.unit || 'ml'}`} 
               />
               <DetailField 
                 label="Unit price" 
-                value={formatPricePerUnit(accord.cost_per_unit || 0)} 
+                value={formatPricePerUnit(accord.cost_per_unit || 0, accord.unit || 'ml')} 
               />
             </DetailFieldGroup>
           </DetailSection>
@@ -183,39 +190,59 @@ const AccordDetailPage = () => {
                 <TableBody>
                   {items.map((item) => {
                     const ingredientCost = calculateIngredientCost(item.gram_amount, item.unit_price);
+                    const isDiluted = Boolean(item.dilution_percent && item.dilution_solvent_id);
+                    const composition = isDiluted
+                      ? calculateDilutionComposition(item.gram_amount, item.dilution_percent)
+                      : null;
                     return (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <button
-                            onClick={() => navigate(`/raw-material/${item.raw_material_id}`)}
-                            className="font-medium text-primary hover:underline text-sm"
-                          >
-                            {item.material_name}
-                          </button>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize text-xs">
-                            {formatStatus(item.material_type)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatGramAmount(item.gram_amount)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatPercentage(item.percentage)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs">
-                          {formatPricePerUnit(item.unit_price)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatPrice(ingredientCost)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={item.is_low_stock ? 'destructive' : 'default'} className="text-xs">
-                            {item.is_low_stock ? 'Low stock' : 'In stock'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
+                      <React.Fragment key={item.id}>
+                        <TableRow>
+                          <TableCell>
+                            <button
+                              onClick={() => navigate(`/raw-material/${item.raw_material_id}`)}
+                              className="font-medium text-primary hover:underline text-sm"
+                            >
+                              {item.material_name}
+                              {isDiluted && (
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                  ({item.dilution_percent}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''})
+                                </span>
+                              )}
+                            </button>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize text-xs">
+                              {formatStatus(item.material_type)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatGramAmount(item.gram_amount)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatPercentage(item.percentage)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs">
+                            {formatPricePerUnit(item.unit_price, item.material_unit)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatPrice(ingredientCost)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant={item.is_low_stock ? 'destructive' : 'default'} className="text-xs">
+                              {item.is_low_stock ? 'Low stock' : 'In stock'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                        {isDiluted && composition && (
+                          <TableRow className="bg-muted/30">
+                            <TableCell colSpan={7} className="py-2 px-4">
+                              <div className="text-xs text-muted-foreground">
+                                Active: {formatAmountWithUnit(composition.activeAmount, item.material_unit)} + Solvent: {formatAmountWithUnit(composition.solventAmount, item.material_unit)}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                   <TableRow className="font-semibold bg-muted/50">

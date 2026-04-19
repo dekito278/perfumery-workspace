@@ -1,72 +1,61 @@
 
 import React from 'react';
-import { TrendingUp, Minus, TrendingDown } from 'lucide-react';
+
+const getProfileLabel = (item) => {
+  if (item.item_type === 'accord') {
+    return item.category || 'Accord';
+  }
+
+  if (item.item_type === 'solvent') {
+    return item.name || 'Solvent';
+  }
+
+  return item.component_family || item.scent_family || item.category || 'Material';
+};
 
 const PyramidSummary = ({ items }) => {
-  const pyramidData = items.reduce((acc, item) => {
-    const placement = item.pyramid_placement || 'unknown';
-    acc[placement] = (acc[placement] || 0) + (item.percentage || 0);
+  const profileData = items.reduce((acc, item) => {
+    const label = getProfileLabel(item);
+    acc[label] = (acc[label] || 0) + Number(item.percentage || 0);
     return acc;
   }, {});
 
-  const top = pyramidData.top || 0;
-  const middle = pyramidData.middle || 0;
-  const base = pyramidData.base || 0;
-  const total = top + middle + base;
+  const profileItems = Object.entries(profileData)
+    .map(([label, percentage]) => ({ label, percentage }))
+    .sort((left, right) => right.percentage - left.percentage);
 
-  if (total === 0) {
+  if (!profileItems.length) {
     return (
       <div className="text-xs text-muted-foreground italic">
-        No pyramid data available
+        No composition profile available
       </div>
     );
   }
 
-  const topPercent = (top / total) * 100;
-  const middlePercent = (middle / total) * 100;
-  const basePercent = (base / total) * 100;
+  const topProfiles = profileItems.slice(0, 6);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs">
-        <TrendingUp className="w-3.5 h-3.5 text-amber-600" />
-        <span className="font-medium">Top:</span>
-        <span className="font-mono">{topPercent.toFixed(1)}%</span>
-      </div>
-      <div className="flex items-center gap-2 text-xs">
-        <Minus className="w-3.5 h-3.5 text-rose-600" />
-        <span className="font-medium">Middle:</span>
-        <span className="font-mono">{middlePercent.toFixed(1)}%</span>
-      </div>
-      <div className="flex items-center gap-2 text-xs">
-        <TrendingDown className="w-3.5 h-3.5 text-amber-800" />
-        <span className="font-medium">Base:</span>
-        <span className="font-mono">{basePercent.toFixed(1)}%</span>
-      </div>
-      
-      <div className="h-4 flex rounded overflow-hidden mt-3">
-        {topPercent > 0 && (
-          <div 
-            className="bg-amber-400" 
-            style={{ width: `${topPercent}%` }}
-            title={`Top: ${topPercent.toFixed(1)}%`}
-          />
-        )}
-        {middlePercent > 0 && (
-          <div 
-            className="bg-rose-400" 
-            style={{ width: `${middlePercent}%` }}
-            title={`Middle: ${middlePercent.toFixed(1)}%`}
-          />
-        )}
-        {basePercent > 0 && (
-          <div 
-            className="bg-amber-700" 
-            style={{ width: `${basePercent}%` }}
-            title={`Base: ${basePercent.toFixed(1)}%`}
-          />
-        )}
-      </div>
+    <div className="space-y-3">
+      {topProfiles.map((profile) => (
+        <div key={profile.label} className="space-y-1">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="font-medium">{profile.label}</span>
+            <span className="font-mono">{profile.percentage.toFixed(1)}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.min(profile.percentage, 100)}%` }}
+              title={`${profile.label}: ${profile.percentage.toFixed(1)}%`}
+            />
+          </div>
+        </div>
+      ))}
+      {profileItems.length > topProfiles.length && (
+        <p className="text-xs text-muted-foreground">
+          +{profileItems.length - topProfiles.length} more composition groups
+        </p>
+      )}
     </div>
   );
 };

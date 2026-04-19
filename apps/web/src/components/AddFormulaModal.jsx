@@ -17,7 +17,6 @@ import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { FORMULA_STATUSES } from '@/utils/constants.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
 import { getAccords } from '@/services/accordsSupabaseService.js';
-import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const { createFormula, loading } = useFormulas();
@@ -25,10 +24,6 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const [code, setCode] = useState('');
   const [version, setVersion] = useState('');
   const [status, setStatus] = useState('draft');
-  const [markupPercentage, setMarkupPercentage] = useState('0');
-  const [packagingCost, setPackagingCost] = useState('0');
-  const [bottleCost, setBottleCost] = useState('0');
-  const [capCost, setCapCost] = useState('0');
   const [notes, setNotes] = useState('');
   const [formulaItems, setFormulaItems] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
@@ -48,10 +43,6 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     setCode('');
     setVersion('');
     setStatus('draft');
-    setMarkupPercentage('0');
-    setPackagingCost('0');
-    setBottleCost('0');
-    setCapCost('0');
     setNotes('');
     setFormulaItems([]);
     setValidationErrors({});
@@ -74,7 +65,10 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   };
 
   const addFormulaItem = () => {
-    setFormulaItems([...formulaItems, { item_id: '', gram_amount: '' }]);
+    setFormulaItems([
+      ...formulaItems,
+      { item_id: '', gram_amount: '', dilution_percent: '', dilution_solvent_id: '', dilution_solvent_name: '' }
+    ]);
   };
 
   const removeFormulaItem = (index) => {
@@ -96,6 +90,9 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
     } else if (isAccord) {
       updated[index].item_type = 'accord';
+      updated[index].dilution_percent = '';
+      updated[index].dilution_solvent_id = '';
+      updated[index].dilution_solvent_name = '';
     }
     
     setFormulaItems(updated);
@@ -114,6 +111,35 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       delete newErrors[`item_${index}`];
     }
     setValidationErrors(newErrors);
+  };
+
+  const updateDilutionConfig = (index, field, value) => {
+    const updated = [...formulaItems];
+
+    if (field === 'clear_dilution') {
+      updated[index].dilution_percent = '';
+      updated[index].dilution_solvent_id = '';
+      updated[index].dilution_solvent_name = '';
+    } else {
+      updated[index][field] = value;
+    }
+
+    if (field === 'dilution_solvent_id') {
+      const solvent = rawMaterials.find((material) => material.id === value);
+      updated[index].dilution_solvent_name = solvent?.name || '';
+    }
+
+    if (field === 'dilution_percent' && (value === '' || Number(value) <= 0)) {
+      updated[index].dilution_percent = '';
+      updated[index].dilution_solvent_id = '';
+      updated[index].dilution_solvent_name = '';
+    }
+
+    setFormulaItems(updated);
+    const nextErrors = { ...validationErrors };
+    delete nextErrors.ingredients;
+    delete nextErrors[`item_${index}`];
+    setValidationErrors(nextErrors);
   };
 
   const totalGrams = calculateTotalGrams(formulaItems);
@@ -160,7 +186,12 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
         item_type: item.item_type,
         item_id: item.item_id,
         percentage: item.percentage,
-        grams: parseFloat(item.gram_amount)
+        grams: parseFloat(item.gram_amount),
+        dilution_percent: item.dilution_percent ? parseFloat(item.dilution_percent) : null,
+        dilution_solvent_id: item.dilution_solvent_id || null,
+        concentrate_amount: item.dilution_percent
+          ? Number(((parseFloat(item.gram_amount) * parseFloat(item.dilution_percent)) / 100).toFixed(3))
+          : null,
       }));
 
       await createFormula({ 
@@ -169,10 +200,6 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
         category: null,
         version: version || null, 
         status,
-        markup_percentage: markupPercentage ? parseFloat(markupPercentage) : 0,
-        packaging_cost: packagingCost ? parseFloat(packagingCost) : 0,
-        bottle_cost: bottleCost ? parseFloat(bottleCost) : 0,
-        cap_cost: capCost ? parseFloat(capCost) : 0,
         notes: notes || null
       }, itemsForSubmit);
       
@@ -233,7 +260,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="formula-version" className="text-sm font-medium">Version</Label>
                   <Input
@@ -258,65 +285,6 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="formula-markup" className="text-sm font-medium">Markup %</Label>
-                  <Input
-                    id="formula-markup"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={markupPercentage}
-                    onChange={(e) => setMarkupPercentage(e.target.value)}
-                    onWheel={blurNumberInputOnWheel}
-                    placeholder="0"
-                    className="text-foreground"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="formula-packaging-cost" className="text-sm font-medium">Packaging cost</Label>
-                  <Input
-                    id="formula-packaging-cost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={packagingCost}
-                    onChange={(e) => setPackagingCost(e.target.value)}
-                    onWheel={blurNumberInputOnWheel}
-                    placeholder="0"
-                    className="text-foreground"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="formula-bottle-cost" className="text-sm font-medium">Bottle cost</Label>
-                  <Input
-                    id="formula-bottle-cost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={bottleCost}
-                    onChange={(e) => setBottleCost(e.target.value)}
-                    onWheel={blurNumberInputOnWheel}
-                    placeholder="0"
-                    className="text-foreground"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="formula-cap-cost" className="text-sm font-medium">Cap cost</Label>
-                  <Input
-                    id="formula-cap-cost"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={capCost}
-                    onChange={(e) => setCapCost(e.target.value)}
-                    onWheel={blurNumberInputOnWheel}
-                    placeholder="0"
-                    className="text-foreground"
-                  />
                 </div>
               </div>
             </div>
@@ -350,6 +318,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                       index={index}
                       onItemChange={updateItem}
                       onGramAmountChange={updateGramAmount}
+                      onDilutionChange={updateDilutionConfig}
                       onRemove={removeFormulaItem}
                       rawMaterials={rawMaterials}
                       accords={accords}
@@ -373,10 +342,20 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                         const itemName = item.item_type === 'accord' 
                           ? accords.find(a => a.id === item.item_id)?.name
                           : rawMaterials.find(m => m.id === item.item_id)?.name;
+                        const solventName = item.dilution_solvent_id
+                          ? rawMaterials.find((material) => material.id === item.dilution_solvent_id)?.name
+                          : '';
                         
                         return (
                           <div key={index} className="flex justify-between text-xs">
-                            <span>{itemName || 'Unknown'}</span>
+                            <span>
+                              {itemName || 'Unknown'}
+                              {item.dilution_percent && (
+                                <span className="text-muted-foreground">
+                                  {` ${item.dilution_percent}%${solventName ? ` in ${solventName}` : ''}`}
+                                </span>
+                              )}
+                            </span>
                             <span className="font-mono">
                               {formatGramAmount(item.gram_amount)} ({formatPercentage(item.percentage)})
                             </span>

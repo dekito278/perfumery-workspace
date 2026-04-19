@@ -11,6 +11,7 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { calculateBatchComposition, calculateBatchCost, completeBatchWithStockDeduction } from '@/services/batchesSupabaseService.js';
 import { formatCurrency, formatQuantity } from '@/utils/formatting.js';
+import { formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
 import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 
@@ -143,7 +144,7 @@ const MaterialRequirementsModal = ({ open, onOpenChange, batch, onSuccess }) => 
                           </TableCell>
                           <TableCell className="text-right text-sm">{item.unit}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatCurrency(item.cost_per_unit)}/10ml
+                            {formatPricePerUnit(item.cost_per_unit, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatCurrency(item.total_cost)}
@@ -184,7 +185,7 @@ const MaterialRequirementsModal = ({ open, onOpenChange, batch, onSuccess }) => 
                           </TableCell>
                           <TableCell className="text-right text-sm">{item.unit}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatCurrency(item.cost_per_unit)}/10ml
+                            {formatPricePerUnit(item.cost_per_unit, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatCurrency(item.total_cost)}
@@ -225,7 +226,7 @@ const MaterialRequirementsModal = ({ open, onOpenChange, batch, onSuccess }) => 
                           </TableCell>
                           <TableCell className="text-right text-sm">{item.unit}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            {formatCurrency(item.cost_per_unit)}/{item.unit}
+                            {formatPricePerUnit(item.cost_per_unit, item.unit)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">
                             {formatCurrency(item.total_cost)}

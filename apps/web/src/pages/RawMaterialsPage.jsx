@@ -19,7 +19,8 @@ import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import RawMaterialDetailModal from '@/components/RawMaterialDetailModal.jsx';
 import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCategoriesModal.jsx';
-import { formatQuantity, formatCurrency } from '@/utils/formatting.js';
+import { formatQuantity } from '@/utils/formatting.js';
+import { formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
@@ -221,7 +222,7 @@ const RawMaterialsPage = () => {
       align: 'right',
       render: (row) => (
         <div className="text-right">
-          <div className="font-mono text-sm">{formatCurrency(row.cost_per_unit)} / 10 ml</div>
+                    <div className="font-mono text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
           <div className="text-xs text-muted-foreground">Min {formatQuantity(row.minimum_stock)} {row.unit}</div>
         </div>
       )

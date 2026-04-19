@@ -18,6 +18,7 @@ import FormulasPage from '@/pages/FormulasPage.jsx';
 import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
 import BatchesPage from '@/pages/BatchesPage.jsx';
 import BatchDetailPage from '@/pages/BatchDetailPage.jsx';
+import ProductionCostPage from '@/pages/ProductionCostPage.jsx';
 
 const RootRedirect = () => {
   const { isAuthenticated, initialLoading } = useAuth();
@@ -101,6 +102,12 @@ function AppRoutes() {
         <Route path="/batches/:id" element={
           <ProtectedRoute>
             <BatchDetailPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/production-costing" element={
+          <ProtectedRoute>
+            <ProductionCostPage />
           </ProtectedRoute>
         } />
       </Routes>

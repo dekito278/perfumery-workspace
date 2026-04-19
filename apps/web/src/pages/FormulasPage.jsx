@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,13 @@ import DataTable from '@/components/DataTable.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import AddFormulaModal from '@/components/AddFormulaModal.jsx';
-import ImportFormulaPdfModal from '@/components/ImportFormulaPdfModal.jsx';
 import EditFormulaModal from '@/components/EditFormulaModal.jsx';
 import CreateBatchModal from '@/components/CreateBatchModal.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { formatGramAmount } from '@/utils/formatting.js';
+
+const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfModal.jsx'));
 
 const FormulasPage = () => {
   const navigate = useNavigate();
@@ -157,16 +158,6 @@ const FormulasPage = () => {
           </span>
         );
       },
-    },
-    {
-      key: 'markup_percentage',
-      label: 'Markup',
-      align: 'right',
-      render: (row) => (
-        <span className="font-mono text-xs">
-          {Number(row.markup_percentage || 0).toFixed(1)}%
-        </span>
-      ),
     },
   ];
 
@@ -318,11 +309,15 @@ const FormulasPage = () => {
         onSuccess={loadFormulas}
       />
 
-      <ImportFormulaPdfModal
-        open={importModalOpen}
-        onOpenChange={setImportModalOpen}
-        onSuccess={loadFormulas}
-      />
+      {importModalOpen && (
+        <Suspense fallback={null}>
+          <ImportFormulaPdfModal
+            open={importModalOpen}
+            onOpenChange={setImportModalOpen}
+            onSuccess={loadFormulas}
+          />
+        </Suspense>
+      )}
 
       <EditFormulaModal
         open={editModalOpen}

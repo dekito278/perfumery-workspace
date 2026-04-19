@@ -12,7 +12,6 @@ import FormNumber from '@/components/FormNumber.jsx';
 import FormSelect from '@/components/FormSelect.jsx';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { createRawMaterial, getRawMaterials } from '@/services/rawMaterialsService.js';
-import { parsePerfumeWorkbookPdf } from '@/utils/perfumeWorkbookPdfParser.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
@@ -21,12 +20,27 @@ import { parseDilutionFromMaterialName } from '@/utils/formulaDilutionParsing.js
 const normalizeLookupValue = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
 
 const buildMissingMaterialKey = (item) => `${item.workbookCode}::${normalizeLookupValue(item.pureMaterialName || item.materialName)}`;
+const buildMissingSolventKey = (solventName) => `solvent::${normalizeLookupValue(solventName)}`;
 
 const createMissingMaterialDraft = (item) => ({
   name: item.pureMaterialName || item.materialName,
   workbook_code: item.workbookCode,
   category: suggestPerfumersWorldCategory({ workbookCode: item.workbookCode, name: item.materialName }).category?.label.toLowerCase() || '',
   type: 'material',
+  stock_quantity: '',
+  unit: 'ml',
+  cost_per_unit: '',
+  minimum_stock: '',
+  low_stock_threshold: '',
+  vendor: '',
+  notes: '',
+});
+
+const createMissingSolventDraft = (solventName) => ({
+  name: solventName,
+  workbook_code: '',
+  category: 'z - zolvents',
+  type: 'solvent',
   stock_quantity: '',
   unit: 'ml',
   cost_per_unit: '',
@@ -61,6 +75,7 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
   const [parsing, setParsing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [accordName, setAccordName] = useState('');
+  const [accordAuthor, setAccordAuthor] = useState('');
   const [notes, setNotes] = useState('');
   const [missingMaterialDrafts, setMissingMaterialDrafts] = useState({});
   const [validationErrors, setValidationErrors] = useState({});
@@ -105,6 +120,7 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
       setParsing(false);
       setSubmitting(false);
       setAccordName('');
+      setAccordAuthor('');
       setNotes('');
       setMissingMaterialDrafts({});
       setValidationErrors({});
@@ -135,12 +151,19 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
       const dilutionInfo = parseDilutionFromMaterialName(item.materialName);
       const workbookCodeMatch = rawMaterialLookup.byWorkbookCode.get(normalizeLookupValue(item.workbookCode));
       const nameMatch = rawMaterialLookup.byName.get(normalizeLookupValue(dilutionInfo.pureName));
+      const solventMatch = dilutionInfo.solventName
+        ? rawMaterials.find((material) => material.type === 'solvent' && normalizeLookupValue(material.name) === normalizeLookupValue(dilutionInfo.solventName)) || null
+        : null;
       const matchedMaterial = workbookCodeMatch || nameMatch || null;
 
       return {
         ...item,
         pureMaterialName: dilutionInfo.pureName,
+        isDilutedInAccord: dilutionInfo.isDilutedInFormula,
+        dilutionPercent: dilutionInfo.dilutionPercent,
+        dilutionSolventName: dilutionInfo.solventName,
         matchedMaterial,
+        matchedSolvent: solventMatch,
       };
     });
   }, [parseResult, rawMaterialLookup]);
@@ -159,6 +182,20 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
     return [...uniqueEntries.values()];
   }, [matchedItems]);
 
+  const missingSolventEntries = useMemo(() => {
+    const uniqueEntries = new Map();
+
+    matchedItems.forEach((item) => {
+      if (!item.isDilutedInAccord || item.matchedSolvent || !item.dilutionSolventName) {
+        return;
+      }
+
+      uniqueEntries.set(buildMissingSolventKey(item.dilutionSolventName), item.dilutionSolventName);
+    });
+
+    return [...uniqueEntries.values()];
+  }, [matchedItems]);
+
   useEffect(() => {
     setMissingMaterialDrafts((currentDrafts) => {
       const nextDrafts = {};
@@ -168,9 +205,14 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
         nextDrafts[key] = currentDrafts[key] || createMissingMaterialDraft(item);
       });
 
+      missingSolventEntries.forEach((solventName) => {
+        const key = buildMissingSolventKey(solventName);
+        nextDrafts[key] = currentDrafts[key] || createMissingSolventDraft(solventName);
+      });
+
       return nextDrafts;
     });
-  }, [missingMaterialEntries]);
+  }, [missingMaterialEntries, missingSolventEntries]);
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
@@ -186,9 +228,11 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
     setValidationErrors({});
 
     try {
+      const { parsePerfumeWorkbookPdf } = await import('@/utils/perfumeWorkbookPdfParser.js');
       const parsedResult = await parsePerfumeWorkbookPdf(file);
       setParseResult(parsedResult);
       setAccordName(parsedResult.formulaName || file.name.replace(/\.pdf$/i, ''));
+      setAccordAuthor('');
       setNotes('');
       toast.success(`Parsed ${parsedResult.items.length} accord items from PDF`);
     } catch (error) {
@@ -244,6 +288,27 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
       }
     });
 
+    missingSolventEntries.forEach((solventName) => {
+      const key = buildMissingSolventKey(solventName);
+      const draft = missingMaterialDrafts[key];
+
+      if (!draft?.category) {
+        nextErrors[`${key}.category`] = 'Category is required';
+      }
+
+      if (draft?.stock_quantity === '' || Number.isNaN(Number(draft.stock_quantity))) {
+        nextErrors[`${key}.stock_quantity`] = 'Stock quantity is required';
+      }
+
+      if (!draft?.unit) {
+        nextErrors[`${key}.unit`] = 'Unit is required';
+      }
+
+      if (draft?.minimum_stock === '' || Number.isNaN(Number(draft.minimum_stock))) {
+        nextErrors[`${key}.minimum_stock`] = 'Minimum stock is required';
+      }
+    });
+
     setValidationErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -265,6 +330,7 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
 
     try {
       const createdMaterials = new Map();
+      const createdSolvents = new Map();
 
       for (const item of missingMaterialEntries) {
         const key = buildMissingMaterialKey(item);
@@ -286,20 +352,49 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
         createdMaterials.set(key, createdMaterial);
       }
 
+      for (const solventName of missingSolventEntries) {
+        const key = buildMissingSolventKey(solventName);
+        const draft = missingMaterialDrafts[key];
+        const createdSolvent = await createRawMaterial({
+          name: draft.name,
+          workbook_code: null,
+          category: draft.category || null,
+          type: 'solvent',
+          stock_quantity: Number(draft.stock_quantity || 0),
+          unit: draft.unit || 'ml',
+          cost_per_unit: Number(draft.cost_per_unit || 0),
+          minimum_stock: Number(draft.minimum_stock || 0),
+          low_stock_threshold: draft.low_stock_threshold === '' ? null : Number(draft.low_stock_threshold || 0),
+          vendor: draft.vendor || null,
+          notes: draft.notes || null,
+        });
+
+        createdSolvents.set(key, createdSolvent);
+      }
+
       const itemsForSubmit = matchedItems.map((item) => {
         const material =
           item.matchedMaterial ||
           createdMaterials.get(buildMissingMaterialKey(item));
+        const dilutionSolvent = item.isDilutedInAccord
+          ? item.matchedSolvent || createdSolvents.get(buildMissingSolventKey(item.dilutionSolventName))
+          : null;
 
         return {
           raw_material_id: material.id,
           percentage: item.percentage,
+          dilution_percent: item.isDilutedInAccord ? item.dilutionPercent : null,
+          dilution_solvent_id: dilutionSolvent?.id || null,
+          concentrate_amount: item.isDilutedInAccord
+            ? Number(((item.grams * item.dilutionPercent) / 100).toFixed(3))
+            : null,
         };
       });
 
       await addAccord(
         {
           name: accordName.trim(),
+          author_name: accordAuthor.trim() || null,
           notes: buildImportNotes({ customNotes: notes, parseResult }),
           unit: 'ml',
         },
@@ -365,13 +460,19 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
 
           {readyToImport && (
             <>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <FormField
                   label="Accord name"
                   required
                   value={accordName}
                   onChange={(event) => setAccordName(event.target.value)}
                   error={validationErrors.accordName}
+                />
+                <FormField
+                  label="By"
+                  value={accordAuthor}
+                  onChange={(event) => setAccordAuthor(event.target.value)}
+                  placeholder="Optional creator name"
                 />
                 <div className="rounded-lg border bg-muted/30 p-4 text-sm">
                   <div className="flex items-center justify-between">
@@ -424,10 +525,17 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {matchedItems.map((item) => (
+                  {matchedItems.map((item) => (
                       <TableRow key={`${item.lineNumber}-${item.workbookCode}-${item.materialName}`}>
                         <TableCell className="font-mono text-xs">{item.workbookCode || '-'}</TableCell>
-                        <TableCell className="text-sm">{item.materialName}</TableCell>
+                        <TableCell className="text-sm">
+                          {item.pureMaterialName}
+                          {item.isDilutedInAccord && (
+                            <div className="text-xs text-muted-foreground">
+                              {item.dilutionPercent}% in {item.dilutionSolventName}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right font-mono text-sm">{formatGramAmount(item.grams)}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{item.percentage.toFixed(3)}%</TableCell>
                         <TableCell>
@@ -446,7 +554,7 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
                 </Table>
               </div>
 
-              {missingMaterialEntries.length > 0 && (
+              {(missingMaterialEntries.length > 0 || missingSolventEntries.length > 0) && (
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-base font-semibold">Create missing raw materials</h3>
@@ -531,6 +639,62 @@ const ImportAccordPdfModal = ({ open, onOpenChange, onSuccess }) => {
                             value={draft.low_stock_threshold}
                             onChange={(event) => updateMissingMaterialDraft(key, 'low_stock_threshold', event.target.value)}
                             error={validationErrors[`${key}.low_stock_threshold`]}
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {missingSolventEntries.map((solventName) => {
+                    const key = buildMissingSolventKey(solventName);
+                    const draft = missingMaterialDrafts[key] || createMissingSolventDraft(solventName);
+
+                    return (
+                      <div key={key} className="rounded-xl border p-4 space-y-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{draft.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Dilution solvent from imported accord
+                            </p>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">New solvent</Badge>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                          <FormSelect
+                            label="Category"
+                            value={draft.category}
+                            onChange={(value) => updateMissingMaterialDraft(key, 'category', value)}
+                            placeholder={loadingReferenceData ? 'Loading categories...' : 'Select category'}
+                            options={categoryOptions}
+                            error={validationErrors[`${key}.category`]}
+                          />
+                          <FormSelect
+                            label="Unit"
+                            value={draft.unit}
+                            onChange={(value) => updateMissingMaterialDraft(key, 'unit', value)}
+                            options={[
+                              { value: 'ml', label: 'ml' },
+                              { value: 'g', label: 'g' },
+                            ]}
+                            error={validationErrors[`${key}.unit`]}
+                          />
+                          <FormNumber
+                            label="Opening stock"
+                            value={draft.stock_quantity}
+                            onChange={(event) => updateMissingMaterialDraft(key, 'stock_quantity', event.target.value)}
+                            error={validationErrors[`${key}.stock_quantity`]}
+                            min="0"
+                            step="0.01"
+                          />
+                          <FormNumber
+                            label="Minimum stock"
+                            value={draft.minimum_stock}
+                            onChange={(event) => updateMissingMaterialDraft(key, 'minimum_stock', event.target.value)}
+                            error={validationErrors[`${key}.minimum_stock`]}
                             min="0"
                             step="0.01"
                           />

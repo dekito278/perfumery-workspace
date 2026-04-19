@@ -6,6 +6,10 @@
 
 import { calculateDilutionCost } from './calculateDilutionCost.js';
 
+const DEFAULT_PRICE_BASE_QUANTITY = 10;
+
+const normalizePriceUnit = (unit) => String(unit || 'ml').trim().toLowerCase();
+
 /**
  * Format price in Indonesian Rupiah with thousand separators and no decimals
  * @param {number} price - Price value to format
@@ -25,33 +29,37 @@ export const formatPrice = (price) => {
 };
 
 /**
- * Format price per unit (10ml) in Indonesian Rupiah
- * @param {number} price - Price per 10ml
+ * Format price per unit in Indonesian Rupiah
+ * @param {number} price - Price per base quantity
+ * @param {string} unit - Measurement unit
+ * @param {number} baseQuantity - Pricing base quantity
  * @returns {string} Formatted price string (e.g., "Rp 3.000 per 10 ml")
  */
-export const formatPricePerUnit = (price) => {
-  if (price === null || price === undefined) return 'Rp 0 per 10 ml';
+export const formatPricePerUnit = (price, unit = 'ml', baseQuantity = DEFAULT_PRICE_BASE_QUANTITY) => {
+  const normalizedUnit = normalizePriceUnit(unit);
+  if (price === null || price === undefined) return `Rp 0 per ${baseQuantity} ${normalizedUnit}`;
   const numValue = Number(price);
-  if (isNaN(numValue)) return 'Rp 0 per 10 ml';
+  if (isNaN(numValue)) return `Rp 0 per ${baseQuantity} ${normalizedUnit}`;
   
   const rounded = Math.round(numValue);
   const formatted = rounded.toLocaleString('id-ID', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   });
-  return `Rp ${formatted} per 10 ml`;
+  return `Rp ${formatted} per ${baseQuantity} ${normalizedUnit}`;
 };
 
 /**
- * Calculate ingredient cost based on gram amount and unit price (per 10ml)
- * @param {number} gramAmount - Amount in grams
- * @param {number} unitPrice - Price per 10ml
+ * Calculate ingredient cost based on amount and unit price
+ * @param {number} amount - Amount in material unit
+ * @param {number} unitPrice - Price per base quantity
+ * @param {number} baseQuantity - Pricing base quantity
  * @returns {number} Calculated cost
  */
-export const calculateIngredientCost = (gramAmount, unitPrice) => {
-  const grams = Number(gramAmount) || 0;
+export const calculateIngredientCost = (amount, unitPrice, baseQuantity = DEFAULT_PRICE_BASE_QUANTITY) => {
+  const normalizedAmount = Number(amount) || 0;
   const price = Number(unitPrice) || 0;
-  return (grams / 10) * price;
+  return (normalizedAmount / baseQuantity) * price;
 };
 
 /**
