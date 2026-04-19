@@ -2,16 +2,16 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 
-const PageHeader = ({ title, description, action, actionIcon: ActionIcon, onAction }) => {
+const PageHeader = ({ title, description, action, actionIcon: ActionIcon, onAction, eyebrow = null }) => {
   return (
     <div className="page-header page-header-card">
       <div className="flex-1 min-w-0">
-        <div className="page-header-eyebrow">Workspace</div>
+        {eyebrow ? <div className="page-header-eyebrow">{eyebrow}</div> : null}
         <h1 className="mb-2 text-3xl font-bold sm:text-4xl" style={{ letterSpacing: '-0.02em' }}>
           {title}
         </h1>
         {description && (
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {description}
           </p>
         )}

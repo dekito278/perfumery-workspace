@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,8 @@ import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
+import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
 
 const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const { createFormula, loading } = useFormulas();
@@ -27,6 +29,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const [notes, setNotes] = useState('');
   const [formulaItems, setFormulaItems] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
+  const [referenceLinksMap, setReferenceLinksMap] = useState(new Map());
   const [loadingData, setLoadingData] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [focusRowIndex, setFocusRowIndex] = useState(null);
@@ -159,6 +162,48 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const activeFormulaItems = getActiveFormulaItems(formulaItems);
   const totalGrams = calculateTotalGrams(activeFormulaItems);
   const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(activeFormulaItems, totalGrams) : [];
+  const rawMaterialsById = useMemo(
+    () => new Map(rawMaterials.map((material) => [material.id, material])),
+    [rawMaterials]
+  );
+  const selectedRawMaterialIdsKey = useMemo(
+    () => [...new Set(activeFormulaItems.map((item) => item.item_id).filter(Boolean))].sort().join('|'),
+    [activeFormulaItems]
+  );
+  const selectedRawMaterialIds = useMemo(
+    () => (selectedRawMaterialIdsKey ? selectedRawMaterialIdsKey.split('|') : []),
+    [selectedRawMaterialIdsKey]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const loadReferenceLinks = async () => {
+      if (!selectedRawMaterialIds.length) {
+        if (active) {
+          setReferenceLinksMap(new Map());
+        }
+        return;
+      }
+
+      try {
+        const nextMap = await getReferenceLinksByRawMaterialIds(selectedRawMaterialIds);
+        if (active) {
+          setReferenceLinksMap(nextMap);
+        }
+      } catch (error) {
+        if (active) {
+          setReferenceLinksMap(new Map());
+        }
+      }
+    };
+
+    loadReferenceLinks();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedRawMaterialIds]);
 
   const validateForm = () => {
     const errors = {};
@@ -388,6 +433,15 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                     </div>
                   )}
                 </div>
+              )}
+
+              {itemsWithPercentages.length > 0 && (
+                <FormulaWorkbookSimulationPanel
+                  items={itemsWithPercentages}
+                  rawMaterialsById={rawMaterialsById}
+                  referenceLinksMap={referenceLinksMap}
+                  description="Workbook metrics update live while you build the formula. IFRA checks stay informational and never block create."
+                />
               )}
             </div>
 

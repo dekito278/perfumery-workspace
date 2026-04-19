@@ -124,6 +124,11 @@ const drawSummary = (doc, entries, cursorY, columns = 2) => {
 };
 
 const drawTable = (doc, columns, rows, cursorY, footerRows = []) => {
+  const totalRequestedWidth = columns.reduce((sum, column) => sum + Number(column.width || 0), 0) || CONTENT_WIDTH;
+  const normalizedColumns = columns.map((column) => ({
+    ...column,
+    computedWidth: (Number(column.width || 0) / totalRequestedWidth) * CONTENT_WIDTH,
+  }));
   const headerHeight = 8;
   const padding = 2;
   let y = ensureSpace(doc, cursorY, headerHeight + 8);
@@ -134,13 +139,13 @@ const drawTable = (doc, columns, rows, cursorY, footerRows = []) => {
     doc.setTextColor(255, 255, 255);
 
     let x = MARGIN;
-    columns.forEach((column) => {
+    normalizedColumns.forEach((column) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       const align = column.align === 'right' ? 'right' : 'left';
-      const textX = align === 'right' ? x + column.width - padding : x + padding;
+      const textX = align === 'right' ? x + column.computedWidth - padding : x + padding;
       doc.text(column.label, textX, y + 5.2, { align });
-      x += column.width;
+      x += column.computedWidth;
     });
 
     doc.setTextColor(...BRAND.ink);
@@ -148,8 +153,8 @@ const drawTable = (doc, columns, rows, cursorY, footerRows = []) => {
   };
 
   const drawRow = (row, style = 'plain') => {
-    const cellLines = columns.map((column) => (
-      doc.splitTextToSize(asText(row[column.key]), Math.max(column.width - (padding * 2), 10))
+    const cellLines = normalizedColumns.map((column) => (
+      doc.splitTextToSize(asText(row[column.key]), Math.max(column.computedWidth - (padding * 2), 10))
     ));
     const rowHeight = Math.max(8, ...cellLines.map((lines) => (lines.length * LINE_HEIGHT) + 3));
 
@@ -170,16 +175,16 @@ const drawTable = (doc, columns, rows, cursorY, footerRows = []) => {
     }
 
     let x = MARGIN;
-    columns.forEach((column, columnIndex) => {
+    normalizedColumns.forEach((column, columnIndex) => {
       doc.setDrawColor(...BRAND.border);
-      doc.rect(x, y, column.width, rowHeight);
+      doc.rect(x, y, column.computedWidth, rowHeight);
       doc.setFont('helvetica', style === 'footer' ? 'bold' : 'normal');
       doc.setFontSize(8.4);
       doc.setTextColor(...BRAND.ink);
       const align = column.align === 'right' ? 'right' : 'left';
-      const textX = align === 'right' ? x + column.width - padding : x + padding;
+      const textX = align === 'right' ? x + column.computedWidth - padding : x + padding;
       doc.text(cellLines[columnIndex], textX, y + 4.6, { align });
-      x += column.width;
+      x += column.computedWidth;
     });
 
     y += rowHeight;

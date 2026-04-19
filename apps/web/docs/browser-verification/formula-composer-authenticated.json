@@ -1,0 +1,31 @@
+{
+  "afterLoginUrl": "http://127.0.0.1:3002/login",
+  "console": [
+    {
+      "type": "error",
+      "text": "TypeError: Failed to fetch\n    at window.fetch (http://127.0.0.1:3002/login:369:23)\n    at http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12490:23\n    at _handleRequest2 (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12780:20)\n    at _request (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12770:22)\n    at SupabaseAuthClient.signInWithPassword (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:15558:21)\n    at login (http://127.0.0.1:3002/src/contexts/AuthContext.jsx:58:51)\n    at handleSubmit (http://127.0.0.1:3002/src/pages/LoginPage.jsx:25:13)\n    at HTMLUnknownElement.callCallback2 (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3680:22)\n    at Object.invokeGuardedCallbackDev (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3705:24)\n    at invokeGuardedCallback (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3739:39)"
+    },
+    {
+      "type": "error",
+      "text": "TypeError: Failed to fetch\n    at window.fetch (http://127.0.0.1:3002/login:369:23)\n    at http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12490:23\n    at _handleRequest2 (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12780:20)\n    at _request (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12770:22)\n    at SupabaseAuthClient.signInWithPassword (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:15558:21)\n    at login (http://127.0.0.1:3002/src/contexts/AuthContext.jsx:58:51)\n    at handleSubmit (http://127.0.0.1:3002/src/pages/LoginPage.jsx:25:13)\n    at HTMLUnknownElement.callCallback2 (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3680:22)\n    at Object.invokeGuardedCallbackDev (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3705:24)\n    at invokeGuardedCallback (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3739:39)"
+    },
+    {
+      "type": "error",
+      "text": "Login error: AuthRetryableFetchError: Failed to fetch\n    at _handleRequest2 (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12783:11)\n    at async _request (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12770:16)\n    at async SupabaseAuthClient.signInWithPassword (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:15558:15)\n    at async login (http://127.0.0.1:3002/src/contexts/AuthContext.jsx:58:31)\n    at async handleSubmit (http://127.0.0.1:3002/src/pages/LoginPage.jsx:25:7)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "formulaUrl": "http://127.0.0.1:3002/login",
+  "metrics": {
+    "viewport": {
+      "width": 1650,
+      "height": 850
+    },
+    "pageScrolls": false,
+    "bodyScrollHeight": 850,
+    "bodyClientHeight": 850
+  }
+}

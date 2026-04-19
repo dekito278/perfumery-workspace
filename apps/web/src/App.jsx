@@ -12,6 +12,8 @@ import DashboardPage from '@/pages/DashboardPage.jsx';
 import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
 import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
 import FormulasPage from '@/pages/FormulasPage.jsx';
+import CreateFormulaPage from '@/pages/CreateFormulaPage.jsx';
+import EditFormulaPage from '@/pages/EditFormulaPage.jsx';
 import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
 import BatchesPage from '@/pages/BatchesPage.jsx';
 import BatchDetailPage from '@/pages/BatchDetailPage.jsx';
@@ -63,6 +65,18 @@ function AppRoutes() {
         <Route path="/formulas" element={
           <ProtectedRoute>
             <FormulasPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/formulas/new" element={
+          <ProtectedRoute>
+            <CreateFormulaPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/formulas/:id/edit" element={
+          <ProtectedRoute>
+            <EditFormulaPage />
           </ProtectedRoute>
         } />
         

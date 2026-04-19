@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Package, Beaker, Boxes, Activity, AlertTriangle, Plus, Eye, Sparkles, ArrowRight, Layers3 } from 'lucide-react';
+import { Package, Beaker, Activity, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBatches } from '@/hooks/useBatches.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import DashboardSummaryCard from '@/components/DashboardSummaryCard.jsx';
 import DashboardSection from '@/components/DashboardSection.jsx';
@@ -16,8 +16,34 @@ import RecentActivityList from '@/components/RecentActivityList.jsx';
 import OperationalInsightCard from '@/components/OperationalInsightCard.jsx';
 import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
 
+const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+const isTransientNetworkError = (error) => {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('failed to fetch') || message.includes('network');
+};
+
+const runWithRetry = async (loader, retries = 1) => {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await loader();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !isTransientNetworkError(error)) {
+        throw error;
+      }
+      await sleep(350);
+    }
+  }
+
+  throw lastError;
+};
+
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const { fetchMaterials } = useRawMaterials();
   const { getFormulas } = useFormulas();
   const { getBatches } = useBatches();
@@ -30,14 +56,27 @@ const DashboardPage = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [materialsData, formulasData, batchesData] = await Promise.all([
-        fetchMaterials(),
-        getFormulas(),
-        getBatches()
+      const results = await Promise.allSettled([
+        runWithRetry(() => fetchMaterials()),
+        runWithRetry(() => getFormulas()),
+        runWithRetry(() => getBatches())
       ]);
-      setMaterials(materialsData);
-      setFormulas(formulasData);
-      setBatches(batchesData);
+
+      const [materialsResult, formulasResult, batchesResult] = results;
+      const failedRequests = results.filter((result) => result.status === 'rejected');
+
+      setMaterials(materialsResult.status === 'fulfilled' ? materialsResult.value : []);
+      setFormulas(formulasResult.status === 'fulfilled' ? formulasResult.value : []);
+      setBatches(batchesResult.status === 'fulfilled' ? batchesResult.value : []);
+
+      if (failedRequests.length) {
+        console.error('Dashboard data loaders failed:', failedRequests.map((result) => result.reason));
+        toast.error(
+          failedRequests.length === results.length
+            ? 'Failed to load dashboard data'
+            : 'Some dashboard data could not be loaded'
+        );
+      }
     } catch (error) {
       toast.error('Failed to load dashboard data');
     } finally {
@@ -57,36 +96,30 @@ const DashboardPage = () => {
   const activeBatches = batches.filter(b => b.status === 'in_progress' || b.status === 'draft').slice(0, 5);
   const recentFormulas = [...formulas].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
   const recentBatches = [...batches].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
-  const recentMaterials = [...materials].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
-  const accordFormulaCount = formulas.filter((formula) => formula.category === 'accord').length;
-  const perfumeFormulaCount = formulas.filter((formula) => formula.category !== 'accord').length;
+  const displayName =
+    currentUser?.user_metadata?.name?.trim()
+    || currentUser?.email?.split('@')[0]
+    || 'Dekito';
 
   const summaryCards = [
     {
       icon: Package,
-      label: 'Total raw materials',
+      label: 'Raw materials',
       count: materials.length,
       color: 'text-amber-600',
       onClick: () => navigate('/raw-materials')
     },
     {
       icon: Beaker,
-      label: 'Total formulas',
+      label: 'Formulas',
       count: formulas.length,
       color: 'text-primary',
       onClick: () => navigate('/formulas')
     },
     {
-      icon: Boxes,
-      label: 'Total batches',
-      count: batches.length,
-      color: 'text-emerald-600',
-      onClick: () => navigate('/batches')
-    },
-    {
       icon: Activity,
       label: 'Active batches',
-      count: batches.filter(b => b.status === 'in_progress').length,
+      count: batches.filter((b) => b.status === 'in_progress' || b.status === 'draft').length,
       color: 'text-blue-600',
       onClick: () => navigate('/batches')
     },
@@ -97,14 +130,6 @@ const DashboardPage = () => {
       color: 'text-destructive',
       onClick: () => navigate('/raw-materials')
     }
-  ];
-
-  const quickActions = [
-    { label: 'Add raw material', icon: Plus, onClick: () => navigate('/raw-materials'), variant: 'default' },
-    { label: 'Create formula', icon: Plus, onClick: () => navigate('/formulas'), variant: 'default' },
-    { label: 'Create batch', icon: Plus, onClick: () => navigate('/batches'), variant: 'default' },
-    { label: 'View inventory', icon: Eye, onClick: () => navigate('/raw-materials'), variant: 'outline' },
-    { label: 'View formulas', icon: Eye, onClick: () => navigate('/formulas'), variant: 'outline' }
   ];
 
   return (
@@ -118,13 +143,15 @@ const DashboardPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Sparkles className="w-4 h-4 text-primary" />
-              Workspace overview
+              Halo, {displayName}
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
-              A cleaner production workspace for formulas, inventory, batches, and costing.
+              Lab hari ini siap dipakai.
             </h1>
             <p className="max-w-3xl text-base text-muted-foreground">
-              Everything now flows through one main workspace. Accord formulas still exist, but they live inside the same formula workflow instead of a separate module.
+              {formulas.length > 0
+                ? `${displayName}, sekarang ada ${formulas.length} formula, ${activeBatches.length} batch aktif, dan ${lowStockMaterials.length} bahan yang perlu dicek.`
+                : `${displayName}, belum ada formula hari ini. Mau mulai racik yang baru?`}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button onClick={() => navigate('/formulas')} className="h-11 rounded-2xl gap-2 px-5">
@@ -138,12 +165,12 @@ const DashboardPage = () => {
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Perfume formulas</span>
-              <strong>{perfumeFormulaCount}</strong>
+              <span className="dashboard-hero-stat-label">Formula hari ini</span>
+              <strong>{formulas.length}</strong>
             </div>
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Accord formulas</span>
-              <strong>{accordFormulaCount}</strong>
+              <span className="dashboard-hero-stat-label">Batch aktif</span>
+              <strong>{activeBatches.length}</strong>
             </div>
             <div className="dashboard-hero-stat">
               <span className="dashboard-hero-stat-label">Low stock alerts</span>
@@ -152,8 +179,8 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <DashboardSection title="Summary" subtitle="Key numbers across the workspace">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardSection title="Ringkasan">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {summaryCards.map((card, index) => (
               <DashboardSummaryCard
                 key={index}
@@ -168,61 +195,10 @@ const DashboardPage = () => {
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Quick actions" subtitle="The fastest way into the flows you use most">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <Button
-                  key={index}
-                  variant={action.variant}
-                  onClick={action.onClick}
-                  className="h-auto min-h-[88px] flex-col items-start justify-between rounded-[24px] px-4 py-4 text-left shadow-sm sm:flex-row sm:items-center"
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-xs sm:text-sm">{action.label}</span>
-                </Button>
-              );
-            })}
-          </div>
-        </DashboardSection>
-
-        <DashboardSection title="Formula pulse" subtitle="How the current formula library is split across perfume and accord work">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-[28px] border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_-42px_rgba(125,86,13,0.35)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    <Layers3 className="w-4 h-4 text-primary" />
-                    Unified formulas
-                  </div>
-                  <h3 className="mt-3 text-xl font-semibold">All formulas now live in one place.</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Accord is no longer a separate feature. Use the formula category only as a label to distinguish full perfume formulas from accord formulas.
-                  </p>
-                </div>
-                <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 px-3 py-1 text-primary">
-                  Unified
-                </Badge>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Perfume</p>
-                <p className="mt-3 text-3xl font-bold">{perfumeFormulaCount}</p>
-              </div>
-              <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Accord</p>
-                <p className="mt-3 text-3xl font-bold">{accordFormulaCount}</p>
-              </div>
-            </div>
-          </div>
-        </DashboardSection>
-
-        <DashboardSection title="Recent activity" subtitle="Latest additions and updates">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <DashboardSection title="Baru-barusan">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <RecentActivityList
-              title="Recently added formulas"
+              title="Formula terbaru"
               items={recentFormulas}
               columns={[
                 {
@@ -246,7 +222,7 @@ const DashboardPage = () => {
             />
 
             <RecentActivityList
-              title="Recently created batches"
+              title="Batch terbaru"
               items={recentBatches}
               columns={[
                 {
@@ -268,37 +244,13 @@ const DashboardPage = () => {
               onRowClick={(item) => navigate(`/batches/${item.id}`)}
               isLoading={loading}
             />
-
-            <RecentActivityList
-              title="Recently added materials"
-              items={recentMaterials}
-              columns={[
-                {
-                  key: 'name',
-                  render: (item) => (
-                    <span className="text-sm font-medium truncate">{item.name}</span>
-                  ),
-                  className: 'flex-1'
-                },
-                {
-                  key: 'type',
-                  render: (item) => (
-                    <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
-                  ),
-                  className: 'text-right'
-                }
-              ]}
-              emptyMessage="No materials yet"
-              onRowClick={() => navigate('/raw-materials')}
-              isLoading={loading}
-            />
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Operational insights" subtitle="Alerts and items requiring attention">
+        <DashboardSection title="Perlu dilihat">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <OperationalInsightCard
-              title="Low stock alert"
+              title="Low stock"
               icon={AlertTriangle}
               items={lowStockMaterials.map(m => ({
                 id: m.id,
@@ -313,7 +265,7 @@ const DashboardPage = () => {
             />
 
             <OperationalInsightCard
-              title="Batches in progress"
+              title="Batch aktif"
               icon={Activity}
               items={activeBatches.map(b => ({
                 id: b.id,

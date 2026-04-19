@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FlaskConical, FileUp, Sparkles } from 'lucide-react';
+import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FlaskConical, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
@@ -15,8 +15,6 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
-import AddFormulaModal from '@/components/AddFormulaModal.jsx';
-import EditFormulaModal from '@/components/EditFormulaModal.jsx';
 import CreateBatchModal from '@/components/CreateBatchModal.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
@@ -34,9 +32,7 @@ const FormulasPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [addModalOpen, setAddModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [createBatchModalOpen, setCreateBatchModalOpen] = useState(false);
   const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, formulaId: null, formulaName: null });
   const [selectedFormula, setSelectedFormula] = useState(null);
@@ -103,8 +99,7 @@ const FormulasPage = () => {
   }, [currentPage, filteredFormulas.length]);
 
   const handleEdit = (formula) => {
-    setSelectedFormula(formula);
-    setEditModalOpen(true);
+    navigate(`/formulas/${formula.id}/edit`);
   };
 
   const handleDelete = (formula) => {
@@ -250,36 +245,25 @@ const FormulasPage = () => {
 
         <PageHeader
           title="Formulas"
-          description="Kelola seluruh formula dalam satu tempat. Formula kategori Perfume dan Accord sekarang memakai workflow yang sama tanpa menu Accord terpisah."
+          description="Semua formula ada di satu tempat. Cari cepat, edit cepat, lalu lanjut bikin batch."
           action="Create formula"
           actionIcon={Plus}
-          onAction={() => setAddModalOpen(true)}
+          onAction={() => navigate('/formulas/new')}
+          eyebrow="Library"
         />
 
-        <div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_24px_70px_-42px_rgba(125,86,13,0.35)]">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Unified formula workspace
-            </div>
-            <h2 className="mt-3 text-xl font-semibold">Import, buat, edit, dan batch semua formula dari satu jalur.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Category hanya menjadi penanda jenis formula. Seluruh operasi utama tetap berada di halaman ini.
-            </p>
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Total</div>
+            <div className="mt-3 text-3xl font-bold">{formulas.length}</div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Total</div>
-              <div className="mt-3 text-3xl font-bold">{formulas.length}</div>
-            </div>
-            <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Perfume</div>
-              <div className="mt-3 text-3xl font-bold">{perfumeCount}</div>
-            </div>
-            <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Accord</div>
-              <div className="mt-3 text-3xl font-bold">{accordCount}</div>
-            </div>
+          <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Perfume</div>
+            <div className="mt-3 text-3xl font-bold">{perfumeCount}</div>
+          </div>
+          <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Accord</div>
+            <div className="mt-3 text-3xl font-bold">{accordCount}</div>
           </div>
         </div>
 
@@ -332,7 +316,7 @@ const FormulasPage = () => {
             description="Create your first perfume or accord formula by combining raw materials with precise gram amounts."
             action="Create formula"
             actionIcon={Plus}
-            onAction={() => setAddModalOpen(true)}
+            onAction={() => navigate('/formulas/new')}
           />
         ) : filteredFormulas.length === 0 ? (
           <NoResultsState
@@ -464,12 +448,6 @@ const FormulasPage = () => {
         )}
       </div>
 
-      <AddFormulaModal
-        open={addModalOpen}
-        onOpenChange={setAddModalOpen}
-        onSuccess={loadFormulas}
-      />
-
       {importModalOpen && (
         <Suspense fallback={null}>
           <ImportFormulaPdfModal
@@ -479,13 +457,6 @@ const FormulasPage = () => {
           />
         </Suspense>
       )}
-
-      <EditFormulaModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        formula={selectedFormula}
-        onSuccess={loadFormulas}
-      />
 
       <CreateBatchModal
         open={createBatchModalOpen}

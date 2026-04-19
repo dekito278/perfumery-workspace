@@ -22,19 +22,24 @@ import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCatego
 import { formatQuantity } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
+import { getReferenceMatchStatusMap } from '@/services/materialReferenceService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+
+const hasReferenceValue = (value) => value !== null && value !== undefined;
 
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
   const { fetchMaterials, deleteMaterial } = useRawMaterials();
   const [materials, setMaterials] = useState([]);
+  const [referenceStatusMap, setReferenceStatusMap] = useState(new Map());
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
+  const [referenceFilter, setReferenceFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [remapModalOpen, setRemapModalOpen] = useState(false);
@@ -49,6 +54,13 @@ const RawMaterialsPage = () => {
     try {
       const data = await fetchMaterials();
       setMaterials(data);
+      try {
+        const nextReferenceStatusMap = await getReferenceMatchStatusMap(data.map((material) => material.id));
+        setReferenceStatusMap(nextReferenceStatusMap);
+      } catch (referenceError) {
+        console.error('Failed to load raw material reference status map:', referenceError);
+        setReferenceStatusMap(new Map());
+      }
     } catch (error) {
       toast.error('Failed to load materials');
     } finally {
@@ -75,12 +87,26 @@ const RawMaterialsPage = () => {
     return materials.filter(material => {
       const searchLower = searchTerm.toLowerCase();
       const family = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
+      const referenceStatus = referenceStatusMap.get(material.id);
+      const referenceProfile = referenceStatus?.reference_profile || null;
+      const hasReferenceGuidance =
+        Boolean(referenceProfile)
+        && (
+          hasReferenceValue(referenceProfile.ifra_limit_percent)
+          || hasReferenceValue(referenceProfile.use_level_max_percent)
+        );
       const matchesSearch = 
         material.name.toLowerCase().includes(searchLower) ||
         (material.category && material.category.toLowerCase().includes(searchLower)) ||
         (family && family.toLowerCase().includes(searchLower)) ||
         (material.vendor && material.vendor.toLowerCase().includes(searchLower)) ||
-        (material.cas_number && material.cas_number.toLowerCase().includes(searchLower));
+        (material.cas_number && material.cas_number.toLowerCase().includes(searchLower)) ||
+        (material.workbook_code && material.workbook_code.toLowerCase().includes(searchLower)) ||
+        (referenceProfile?.reference_code && referenceProfile.reference_code.toLowerCase().includes(searchLower)) ||
+        (referenceProfile?.name && referenceProfile.name.toLowerCase().includes(searchLower)) ||
+        (referenceProfile?.abc_code && referenceProfile.abc_code.toLowerCase().includes(searchLower)) ||
+        (referenceProfile?.abc_primary_family && referenceProfile.abc_primary_family.toLowerCase().includes(searchLower)) ||
+        (referenceProfile?.cas_no && referenceProfile.cas_no.toLowerCase().includes(searchLower));
       
       const matchesType = typeFilter === 'all' || material.type === typeFilter;
       const matchesCategory =
@@ -95,10 +121,17 @@ const RawMaterialsPage = () => {
         const threshold = material.low_stock_threshold || material.minimum_stock;
         matchesStock = material.stock_quantity >= threshold;
       }
+
+      const matchesReference =
+        referenceFilter === 'all'
+        || (referenceFilter === 'matched' && Boolean(referenceProfile))
+        || (referenceFilter === 'unmatched' && !referenceProfile)
+        || (referenceFilter === 'ifra_limited' && Boolean(referenceProfile) && hasReferenceValue(referenceProfile.ifra_limit_percent))
+        || (referenceFilter === 'has_guidance' && hasReferenceGuidance);
       
-      return matchesSearch && matchesType && matchesCategory && matchesStock;
+      return matchesSearch && matchesType && matchesCategory && matchesStock && matchesReference;
     });
-  }, [materials, searchTerm, typeFilter, categoryFilter, stockFilter]);
+  }, [materials, referenceStatusMap, searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
 
   const paginatedMaterials = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -107,7 +140,7 @@ const RawMaterialsPage = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, typeFilter, categoryFilter, stockFilter]);
+  }, [searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
 
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / pageSize));
@@ -149,6 +182,20 @@ const RawMaterialsPage = () => {
     [materials]
   );
 
+  const matchedReferenceCount = useMemo(
+    () => materials.filter((material) => Boolean(referenceStatusMap.get(material.id)?.reference_profile)).length,
+    [materials, referenceStatusMap]
+  );
+
+  const ifraReferenceCount = useMemo(
+    () =>
+      materials.filter((material) => {
+        const referenceProfile = referenceStatusMap.get(material.id)?.reference_profile || null;
+        return Boolean(referenceProfile) && hasReferenceValue(referenceProfile.ifra_limit_percent);
+      }).length,
+    [materials, referenceStatusMap]
+  );
+
   const handleEdit = (material) => {
     setSelectedMaterial(material);
     setEditModalOpen(true);
@@ -187,6 +234,7 @@ const RawMaterialsPage = () => {
     setTypeFilter('all');
     setCategoryFilter('all');
     setStockFilter('all');
+    setReferenceFilter('all');
   };
 
   const columns = [
@@ -194,13 +242,27 @@ const RawMaterialsPage = () => {
       key: 'name',
       label: 'Name',
       render: (row) => (
-        <button
-          onClick={() => handleView(row)}
-          className="text-left"
-        >
+        <button onClick={() => handleView(row)} className="text-left">
           <div className="font-medium text-primary hover:underline">{row.name}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+            </span>
+            {referenceStatusMap.get(row.id)?.reference_profile ? (
+              <Badge variant="secondary" className="text-[10px]">
+                Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px]">
+                Unmatched
+              </Badge>
+            )}
+            {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
+            && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
+              <Badge variant="outline" className="text-[10px]">
+                IFRA ref
+              </Badge>
+            ) : null}
           </div>
         </button>
       )
@@ -257,6 +319,28 @@ const RawMaterialsPage = () => {
       )
     },
     {
+      key: 'reference',
+      label: 'Reference',
+      render: (row) => {
+        const referenceProfile = referenceStatusMap.get(row.id)?.reference_profile || null;
+        return (
+          <div className="min-w-[180px]">
+            <div className="text-sm font-medium">
+              {referenceProfile?.name || 'No linked profile'}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {referenceProfile
+                ? [
+                    referenceProfile.reference_code,
+                    referenceProfile.abc_code || null,
+                  ].filter(Boolean).join(' · ')
+                : 'Open detail page to review and match'}
+            </div>
+          </div>
+        );
+      }
+    },
+    {
       key: 'cost_per_unit',
       label: 'Price',
       align: 'right',
@@ -305,6 +389,18 @@ const RawMaterialsPage = () => {
         { value: 'low', label: 'Low stock' },
         { value: 'in_stock', label: 'In stock' }
       ]
+    },
+    {
+      id: 'reference',
+      value: referenceFilter,
+      placeholder: 'All reference states',
+      options: [
+        { value: 'all', label: 'All reference states' },
+        { value: 'matched', label: 'Matched' },
+        { value: 'unmatched', label: 'Unmatched' },
+        { value: 'ifra_limited', label: 'Has IFRA reference' },
+        { value: 'has_guidance', label: 'Has reference guidance' }
+      ]
     }
   ];
 
@@ -315,10 +411,17 @@ const RawMaterialsPage = () => {
       setCategoryFilter(value);
     } else if (filterId === 'stock') {
       setStockFilter(value);
+    } else if (filterId === 'reference') {
+      setReferenceFilter(value);
     }
   };
 
-  const hasActiveFilters = typeFilter !== 'all' || categoryFilter !== 'all' || stockFilter !== 'all' || searchTerm;
+  const hasActiveFilters =
+    typeFilter !== 'all'
+    || categoryFilter !== 'all'
+    || stockFilter !== 'all'
+    || referenceFilter !== 'all'
+    || searchTerm;
 
   return (
     <AuthenticatedLayout>
@@ -340,7 +443,7 @@ const RawMaterialsPage = () => {
 
         <PageHeader
           title="Raw materials"
-          description="Audit inventory health, vendor coverage, and dilution readiness from one master list before you dive into detail pages."
+          description="Audit inventory health, vendor coverage, dilution readiness, and workbook reference coverage from one master list before you dive into detail pages."
           action="Add material"
           actionIcon={Plus}
           onAction={() => setAddModalOpen(true)}
@@ -352,7 +455,7 @@ const RawMaterialsPage = () => {
               <div>
                 <p className="list-summary-label">Total materials</p>
                 <span className="list-summary-value">{materials.length}</span>
-                <p className="list-summary-note">Active inventory records across materials and solvents.</p>
+                <p className="list-summary-note">{matchedReferenceCount} linked to workbook references.</p>
               </div>
               <Layers3 className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -382,7 +485,7 @@ const RawMaterialsPage = () => {
               <div>
                 <p className="list-summary-label">Estimated stock value</p>
                 <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{formatPrice(inventoryValue)}</span>
-                <p className="list-summary-note">{categoryCount} mapped categories currently in use.</p>
+                <p className="list-summary-note">{categoryCount} categories in use · {ifraReferenceCount} IFRA reference profiles linked.</p>
               </div>
               <Banknote className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -411,12 +514,12 @@ const RawMaterialsPage = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
             <div className="space-y-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Search materials or vendor
+                Search inventory or reference data
               </div>
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
-                placeholder="Search by name, vendor, CAS, scent family, or category..."
+                placeholder="Search by name, vendor, CAS, workbook code, reference code, or ABC family..."
               />
             </div>
             <div className="flex items-end">
@@ -470,8 +573,25 @@ const RawMaterialsPage = () => {
                       <button onClick={() => handleView(row)} className="w-full text-left">
                         <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
                       </button>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+                        </span>
+                        {referenceStatusMap.get(row.id)?.reference_profile ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">
+                            Unmatched
+                          </Badge>
+                        )}
+                        {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
+                        && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            IFRA ref
+                          </Badge>
+                        ) : null}
                       </div>
                     </div>
                     <Badge variant="outline" className="shrink-0 capitalize text-[11px]">

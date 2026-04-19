@@ -5,7 +5,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
@@ -17,10 +17,28 @@ import DetailMetadata from '@/components/DetailMetadata.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import UsageHistoryTable from '@/components/UsageHistoryTable.jsx';
+import ManualReferenceMatchModal from '@/components/ManualReferenceMatchModal.jsx';
 import { formatQuantity, formatPercentage, formatNullable, formatStatus } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPricePerUnit, formatPrice } from '@/utils/pricingUtils.js';
 import { getRawMaterialById, getRawMaterialUsageHistory } from '@/services/rawMaterialsService.js';
+import { getReferenceProfileByRawMaterialId } from '@/services/materialReferenceService.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+
+const stripHtml = (value) =>
+  String(value || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\|/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const toKeywordList = (value) =>
+  stripHtml(value)
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 16);
 
 const RawMaterialDetailPage = () => {
   const { id } = useParams();
@@ -31,6 +49,9 @@ const RawMaterialDetailPage = () => {
   const [usageRecords, setUsageRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [referenceLink, setReferenceLink] = useState(null);
+  const [referenceLoading, setReferenceLoading] = useState(true);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -38,6 +59,7 @@ const RawMaterialDetailPage = () => {
   useEffect(() => {
     loadMaterial();
     loadUsageHistory();
+    loadReferenceProfile();
   }, [id]);
 
   const loadMaterial = async () => {
@@ -63,6 +85,19 @@ const RawMaterialDetailPage = () => {
       setUsageRecords([]);
     } finally {
       setUsageLoading(false);
+    }
+  };
+
+  const loadReferenceProfile = async () => {
+    setReferenceLoading(true);
+    try {
+      const data = await getReferenceProfileByRawMaterialId(id);
+      setReferenceLink(data);
+    } catch (error) {
+      console.error('Failed to load reference profile:', error);
+      setReferenceLink(null);
+    } finally {
+      setReferenceLoading(false);
     }
   };
 
@@ -101,6 +136,16 @@ const RawMaterialDetailPage = () => {
   const inventoryValue = calculateIngredientCost(material.stock_quantity || 0, material.cost_per_unit || 0);
   const reorderGap = Math.max(stockThreshold - Number(material.stock_quantity || 0), 0);
   const dilutionSolventName = material.expand?.dilution_solvent_id?.name || null;
+  const referenceProfile = referenceLink?.reference_profile || null;
+  const referenceKeywords = toKeywordList(referenceProfile?.perfume_uses);
+  const flavourKeywords = toKeywordList(referenceProfile?.flavour_uses);
+  const referenceDescription = stripHtml(referenceProfile?.odour_description || referenceProfile?.brief_description);
+  const stabilityNotes = [
+    referenceProfile?.stability_heat ? `Heat: ${referenceProfile.stability_heat}` : null,
+    referenceProfile?.stability_discolour ? `Discolour: ${referenceProfile.stability_discolour}` : null,
+    referenceProfile?.stability_storage ? `Storage: ${referenceProfile.stability_storage}` : null,
+    referenceProfile?.stability_antioxidant ? `Antioxidant: ${referenceProfile.stability_antioxidant}` : null,
+  ].filter(Boolean);
 
   // Calculate total quantity used
   const totalQuantityUsed = usageRecords.reduce((sum, record) => {
@@ -138,6 +183,12 @@ const RawMaterialDetailPage = () => {
           backLabel="Back to materials"
           meta={
             <>
+              {referenceProfile ? (
+                <div className="detail-page-meta-chip">
+                  <span className="detail-page-meta-label">Reference</span>
+                  <span className="detail-page-meta-value">{referenceProfile.reference_code}</span>
+                </div>
+              ) : null}
               <div className="detail-page-meta-chip">
                 <span className="detail-page-meta-label">Current stock</span>
                 <span className="detail-page-meta-value">
@@ -161,6 +212,10 @@ const RawMaterialDetailPage = () => {
               <Button variant="outline" onClick={() => setEditModalOpen(true)} className="gap-2 h-9">
                 <Pencil className="w-4 h-4" />
                 Edit
+              </Button>
+              <Button variant="outline" onClick={() => setMatchModalOpen(true)} className="gap-2 h-9">
+                <LinkIcon className="w-4 h-4" />
+                {referenceProfile ? 'Update reference' : 'Match reference'}
               </Button>
               <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} className="gap-2 h-9">
                 <Trash2 className="w-4 h-4" />
@@ -269,6 +324,128 @@ const RawMaterialDetailPage = () => {
             </DetailFieldGroup>
           </DetailSection>
 
+          <DetailSection title="Reference profile">
+            {referenceLoading ? (
+              <div className="grid gap-3 md:grid-cols-3">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : referenceProfile ? (
+              <div className="space-y-5">
+                <div className="flex justify-end">
+                  <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="gap-2">
+                    <LinkIcon className="w-4 h-4" />
+                    Change linked profile
+                  </Button>
+                </div>
+                <DetailFieldGroup columns={4}>
+                  <DetailField label="Reference code" value={referenceProfile.reference_code} />
+                  <DetailField label="ABC code" value={formatNullable(referenceProfile.abc_code)} />
+                  <DetailField label="Primary family" value={formatNullable(referenceProfile.abc_primary_family)} />
+                  <DetailField label="Secondary family" value={formatNullable(referenceProfile.abc_secondary_family)} />
+                </DetailFieldGroup>
+
+                <DetailFieldGroup columns={4}>
+                  <DetailField label="Impact" value={referenceProfile.impact !== null ? formatQuantity(referenceProfile.impact) : 'N/A'} />
+                  <DetailField label="Life hours" value={referenceProfile.life_hours !== null ? formatQuantity(referenceProfile.life_hours) : 'N/A'} />
+                  <DetailField label="Use level max" value={referenceProfile.use_level_max_percent !== null ? formatPercentage(referenceProfile.use_level_max_percent, 2) : 'N/A'} />
+                  <DetailField label="IFRA reference limit" value={referenceProfile.ifra_limit_percent !== null ? formatPercentage(referenceProfile.ifra_limit_percent, 2) : 'N/A'} />
+                </DetailFieldGroup>
+
+                {referenceDescription ? (
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-2">Odour description</div>
+                    <p className="text-sm leading-6 text-foreground">{referenceDescription}</p>
+                  </div>
+                ) : null}
+
+                {referenceProfile.odour_facets?.length ? (
+                  <div className="space-y-3">
+                    <div className="text-sm font-semibold">Odour profile</div>
+                    <div className="flex flex-wrap gap-2">
+                      {referenceProfile.odour_facets.map((facet) => (
+                        <Badge key={facet.id} variant="outline" className="rounded-full px-3 py-1 text-xs">
+                          {facet.letter} · {facet.family || 'Family'} · {formatQuantity(facet.value)}%
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {(referenceKeywords.length || flavourKeywords.length) ? (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-2">Perfume uses</div>
+                      <div className="flex flex-wrap gap-2">
+                        {referenceKeywords.length ? referenceKeywords.map((keyword) => (
+                          <Badge key={keyword} variant="secondary" className="rounded-full text-xs">
+                            {keyword}
+                          </Badge>
+                        )) : <span className="text-sm text-muted-foreground">No perfume use notes</span>}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-2">Flavour uses</div>
+                      <div className="flex flex-wrap gap-2">
+                        {flavourKeywords.length ? flavourKeywords.map((keyword) => (
+                          <Badge key={keyword} variant="secondary" className="rounded-full text-xs">
+                            {keyword}
+                          </Badge>
+                        )) : <span className="text-sm text-muted-foreground">No flavour use notes</span>}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <DetailFieldGroup columns={4}>
+                  <DetailField label="Supplier" value={formatNullable(referenceProfile.supplier)} />
+                  <DetailField label="Catalog unit" value={formatNullable(referenceProfile.catalog_unit)} />
+                  <DetailField label="Catalog price" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : 'N/A'} />
+                  <DetailField label="Function labels" value={formatNullable(referenceProfile.function_labels)} />
+                </DetailFieldGroup>
+
+                <DetailFieldGroup columns={4}>
+                  <DetailField label="Physical state" value={formatNullable(referenceProfile.physical_state)} />
+                  <DetailField label="Molecular formula" value={formatNullable(referenceProfile.mol_formula)} />
+                  <DetailField label="Molecular weight" value={referenceProfile.molecular_weight !== null ? formatQuantity(referenceProfile.molecular_weight, 2) : 'N/A'} />
+                  <DetailField label="Safety note" value={formatNullable(referenceProfile.safety)} />
+                </DetailFieldGroup>
+
+                {stabilityNotes.length || referenceProfile.stability_summary ? (
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-2">Stability</div>
+                    {referenceProfile.stability_summary ? (
+                      <p className="text-sm text-foreground mb-3">{referenceProfile.stability_summary}</p>
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      {stabilityNotes.map((note) => (
+                        <Badge key={note} variant="outline" className="rounded-full text-xs">
+                          {note}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="text-sm text-muted-foreground">
+                  Linked by {referenceLink.match_method || 'manual'}
+                  {referenceLink.match_confidence !== null ? ` with ${(referenceLink.match_confidence * 100).toFixed(0)}% confidence` : ''}.
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                <p>
+                  This material does not have a workbook reference profile yet. The inventory workflow still works normally, and we can attach a reference profile later during the matching or import phase.
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="mt-4 gap-2">
+                  <LinkIcon className="w-4 h-4" />
+                  Match reference profile
+                </Button>
+              </div>
+            )}
+          </DetailSection>
+
           {material.is_diluted && (
             <DetailSection title="Dilution setup">
               <DetailFieldGroup columns={3}>
@@ -334,6 +511,7 @@ const RawMaterialDetailPage = () => {
         onSuccess={() => {
           loadMaterial();
           loadUsageHistory();
+          loadReferenceProfile();
         }}
       />
 
@@ -344,6 +522,17 @@ const RawMaterialDetailPage = () => {
         title="Delete material"
         description={`Are you sure you want to delete "${material.name}"? This action cannot be undone.`}
         confirmText={deleting ? 'Deleting...' : 'Delete'}
+      />
+
+      <ManualReferenceMatchModal
+        open={matchModalOpen}
+        onOpenChange={setMatchModalOpen}
+        material={material}
+        currentLink={referenceLink}
+        onSuccess={async () => {
+          await loadReferenceProfile();
+          toast.success('Reference profile updated');
+        }}
       />
     </>
   );

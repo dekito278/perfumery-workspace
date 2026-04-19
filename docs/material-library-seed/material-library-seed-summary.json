@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-04-19T13:10:07.014Z",
+  "source_dir": "C:\\webapp\\perfumers-workbook\\exports",
+  "should_apply": false,
+  "planning_mode": "offline_workbook_catalog",
+  "users": 0,
+  "workbook_materials": 1137,
+  "pending_creates": 1137,
+  "existing_materials": 0,
+  "pending_links_for_existing_materials": 0,
+  "missing_reference_profiles": 0,
+  "created": 0,
+  "linked": 0
+}

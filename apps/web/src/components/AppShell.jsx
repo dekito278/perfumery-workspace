@@ -1,16 +1,37 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Package, Beaker, FlaskConical, LogOut, Calculator, Sparkles } from 'lucide-react';
+import { Menu, Home, Package, Beaker, FlaskConical, LogOut, Calculator, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+
+const DESKTOP_SIDEBAR_STORAGE_KEY = 'perfumer-studio.sidebar-collapsed';
 
 const AppShell = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true);
+
+  useEffect(() => {
+    const savedValue = window.localStorage.getItem(DESKTOP_SIDEBAR_STORAGE_KEY);
+    if (savedValue === null) {
+      return;
+    }
+
+    setDesktopSidebarCollapsed(savedValue === 'true');
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(DESKTOP_SIDEBAR_STORAGE_KEY, String(desktopSidebarCollapsed));
+  }, [desktopSidebarCollapsed]);
+
+  const displayName =
+    currentUser?.user_metadata?.name?.trim()
+    || currentUser?.email?.split('@')[0]
+    || 'Dekito';
 
   const handleLogout = () => {
     logout();
@@ -27,7 +48,7 @@ const AppShell = ({ children }) => {
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-  const NavLinks = ({ mobile = false }) => (
+  const NavLinks = ({ mobile = false, collapsed = false }) => (
     <nav
       aria-label={mobile ? 'Mobile navigation' : 'Primary navigation'}
       className={`flex ${mobile ? 'flex-col' : 'flex-col'} gap-1`}
@@ -41,7 +62,8 @@ const AppShell = ({ children }) => {
             to={item.path}
             onClick={() => mobile && setMobileMenuOpen(false)}
             aria-current={active ? 'page' : undefined}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all ${
+            title={!mobile && collapsed ? item.label : undefined}
+            className={`flex items-center ${collapsed ? 'justify-center px-2.5' : 'gap-3 px-3'} rounded-2xl py-3 text-sm font-medium transition-all ${
               active
                 ? 'bg-primary text-primary-foreground shadow-[0_12px_30px_-18px_hsl(var(--primary)/0.8)]'
                 : 'text-muted-foreground hover:bg-white/70 hover:text-foreground'
@@ -50,7 +72,7 @@ const AppShell = ({ children }) => {
             <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-primary-foreground/14' : 'bg-muted/70'}`}>
               <Icon className="w-4 h-4" />
             </span>
-            <span className="flex-1">{item.label}</span>
+            {!collapsed && <span className="flex-1">{item.label}</span>}
           </Link>
         );
       })}
@@ -60,41 +82,52 @@ const AppShell = ({ children }) => {
   return (
     <div className="min-h-screen bg-background">
       <div className="app-shell">
-        <aside className="app-sidebar no-print hidden lg:flex">
+        <aside className={`app-sidebar no-print hidden lg:flex ${desktopSidebarCollapsed ? 'app-sidebar-collapsed' : ''}`}>
           <div className="app-sidebar-panel">
-            <Link to="/dashboard" className="app-brand">
+            <div className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>
+              <Link to="/dashboard" className="app-brand">
               <span className="app-brand-icon">
                 <Beaker className="w-5 h-5" />
               </span>
-              <span>
-                <span className="app-brand-title">Perfumer Studio</span>
-                <span className="app-brand-subtitle">Production workspace</span>
-              </span>
-            </Link>
+              {!desktopSidebarCollapsed && (
+                <span>
+                  <span className="app-brand-title">Perfumer Studio</span>
+                  <span className="app-brand-subtitle">Small batch lab</span>
+                </span>
+              )}
+              </Link>
 
-            <div className="app-sidebar-intro">
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                Focus Mode
-              </div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Semua alur utama sekarang dipusatkan ke formulas, batches, inventory, dan costing.
-              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setDesktopSidebarCollapsed((current) => !current)}
+                className="h-10 w-10 rounded-2xl"
+                title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Minimize sidebar'}
+                aria-label={desktopSidebarCollapsed ? 'Expand sidebar' : 'Minimize sidebar'}
+              >
+                {desktopSidebarCollapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
+              </Button>
             </div>
 
-            <NavLinks />
+            <NavLinks collapsed={desktopSidebarCollapsed} />
 
-            <div className="mt-auto rounded-3xl border border-white/70 bg-white/85 p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Session</p>
-              <p className="mt-2 text-sm font-semibold text-foreground">Ready to formulate</p>
+            <div className={`mt-auto rounded-3xl border border-white/70 bg-white/85 p-4 shadow-sm ${desktopSidebarCollapsed ? 'px-2 py-3' : ''}`}>
+              {!desktopSidebarCollapsed && (
+                <>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Session</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">{displayName} is in the lab</p>
+                </>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="mt-3 w-full justify-start gap-2 rounded-xl"
+                className={`w-full gap-2 rounded-xl ${desktopSidebarCollapsed ? 'mt-0 justify-center px-0' : 'mt-3 justify-start'}`}
+                title={desktopSidebarCollapsed ? 'Logout' : undefined}
               >
                 <LogOut className="w-4 h-4" />
-                Logout
+                {!desktopSidebarCollapsed && 'Logout'}
               </Button>
             </div>
           </div>
@@ -117,7 +150,7 @@ const AppShell = ({ children }) => {
                       </span>
                       <span>
                         <span className="app-brand-title">Perfumer Studio</span>
-                        <span className="app-brand-subtitle">Production workspace</span>
+                        <span className="app-brand-subtitle">Small batch lab</span>
                       </span>
                     </Link>
                     <div className="mt-6">
@@ -144,14 +177,25 @@ const AppShell = ({ children }) => {
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold leading-none">Perfumer Studio</span>
-                  <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Formulas first</span>
+                  <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Halo, {displayName}</span>
                 </span>
               </Link>
             </div>
 
             <div className="hidden items-center gap-3 lg:flex">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setDesktopSidebarCollapsed((current) => !current)}
+                className="rounded-2xl border-white/70 bg-white/75"
+                title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Minimize sidebar'}
+                aria-label={desktopSidebarCollapsed ? 'Expand sidebar' : 'Minimize sidebar'}
+              >
+                {desktopSidebarCollapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
+              </Button>
               <div className="rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-medium text-muted-foreground">
-                Unified formula workspace
+                Halo, {displayName}
               </div>
             </div>
           </header>

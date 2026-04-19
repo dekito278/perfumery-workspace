@@ -1,10 +1,39 @@
 # Dekito Perfumery Workspace
 
-Monorepo ini berisi:
+## Active Stack
+
+Workflow aktif sekarang berpusat di:
 
 - `apps/web`: frontend React + Vite
-- `apps/api`: backend Express
-- `apps/pocketbase`: database/app backend bawaan dari Horizon
+- Supabase: auth + database operasional
+
+Kalau tujuanmu adalah menjalankan app, melihat perubahan lokal, dan melanjutkan development harian, fokusnya ada di dua hal itu saja.
+
+Root repo sekarang juga mengikuti alur itu:
+
+- `npm run dev` menjalankan frontend aktif
+- `npm run build` membangun frontend aktif
+- `npm run lint` memeriksa frontend aktif
+
+## Legacy Folders
+
+Folder berikut masih ada di repo sebagai sisa struktur lama, tetapi bukan jalur utama aplikasi aktif:
+
+- `apps/api`: backend Express legacy
+- `apps/pocketbase`: backend/data legacy dari Horizon
+
+Status audit saat ini:
+
+- `apps/api` hanya mengekspose route `/health`
+- frontend aktif tidak lagi memakai `VITE_API_BASE_URL`
+- frontend aktif tidak lagi mengimpor helper PocketBase atau service API lama
+- charting, auth, formula flow, dan inventory flow yang sudah kita cek berjalan lewat Supabase
+
+Kesimpulan praktis:
+
+- `apps/api` saat ini tidak dibutuhkan oleh workflow web aktif
+- `apps/pocketbase` saat ini tidak dibutuhkan untuk menjalankan frontend lokal aktif
+- keduanya tetap disimpan di repo hanya sebagai legacy reference, bukan jalur default
 
 ## Kondisi setup yang sudah dicek
 
@@ -12,8 +41,9 @@ Monorepo ini berisi:
 - `npm run lint` berhasil
 - `npm run build` berhasil untuk frontend
 - frontend dev server merespons normal di lokal
+- Vite sudah terpasang di `apps/web`, jadi tidak perlu install lagi terpisah
 
-## Setup lokal
+## Setup Lokal
 
 1. Gunakan Node.js versi `20.19.1` sesuai file `.nvmrc`.
 2. Install dependency dari root:
@@ -22,38 +52,50 @@ Monorepo ini berisi:
 npm install
 ```
 
-3. Siapkan environment API:
-
-```bash
-copy apps\api\.env.example apps\api\.env
-```
-
-4. Siapkan environment web:
+3. Siapkan environment web:
 
 ```bash
 copy apps\web\.env.example apps\web\.env
 ```
 
-5. Sesuaikan nilai di `apps/api/.env` dan `apps/web/.env`.
-6. Jalankan semua service:
+4. Pastikan nilai Supabase di `apps/web/.env` benar.
+5. Jalankan frontend aktif:
 
 ```bash
 npm run dev
 ```
 
-Service default:
+Kalau mau port tetap dan gampang saya cek juga dari lokal:
+
+```bash
+npm run dev:web:3002
+```
+
+Lalu buka:
+
+- `http://localhost:3000` untuk `dev`
+- `http://127.0.0.1:3002` untuk `dev:web:3002`
+
+## Jika Memang Mau Menyalakan Stack Legacy
+
+```bash
+npm run dev:legacy
+```
+
+Service default monorepo lama:
 
 - web: `http://localhost:3000`
 - api: `http://localhost:3001`
 - pocketbase: `http://localhost:8090`
 
-Jika ingin fokus merapikan frontend dulu tanpa menyalakan semua service, jalankan:
+Untuk kerja frontend sehari-hari, pakai `npm run dev` atau `npm run dev:web:3002`.
+
+Kalau ingin preview build production frontend:
 
 ```bash
-npm run dev --prefix apps/web
+npm run build
+npm run start
 ```
-
-Lalu buka `http://localhost:3000`.
 
 ## Menjalankan migration Supabase
 
@@ -77,22 +119,33 @@ git remote add origin <URL_REPO_GITHUB>
 git push -u origin main
 ```
 
-## Rencana migrasi ke Supabase
+## Audit apps/api
 
-Aplikasi saat ini masih terhubung kuat ke PocketBase, terutama di:
+Hasil audit saat ini menunjukkan:
 
-- `apps/web/src/lib/pocketbaseClient.js`
-- banyak file di `apps/web/src/services`
-- `apps/api/src/utils/pocketbaseClient.js`
+1. `apps/api` adalah server Express kecil dengan dependency utama `express`, `cors`, `helmet`, `morgan`, dan `pocketbase`.
+2. Route yang aktif saat ini hanya `GET /health`.
+3. Frontend aktif tidak lagi mengarah ke `http://localhost:3001`, `VITE_API_BASE_URL`, atau helper `apiServerClient`.
+4. Tidak ada referensi aktif dari `apps/web/src` ke service PocketBase atau service API lama yang sebelumnya sudah dibersihkan.
 
-Supaya migrasinya aman, urutannya sebaiknya:
+Kesimpulan:
 
-1. petakan collection PocketBase ke tabel Supabase
-2. definisikan auth flow baru
-3. buat client Supabase terpusat
-4. migrasikan service frontend satu per satu
-5. migrasikan endpoint API yang masih memakai PocketBase
-6. hentikan `apps/pocketbase` setelah semua alur data stabil
+- `apps/api` tidak dipakai oleh workflow frontend aktif saat ini.
+- Penghapusan struktural bisa dilakukan sebagai fase terpisah, asalkan kita tetap menjaga `apps/web` dan `supabase/` utuh.
+
+## Workspace Aktif
+
+Root workspace sekarang difokuskan ke `apps/web`.
+Folder legacy masih ada di repo, tetapi tidak lagi menjadi bagian dari jalur kerja utama.
+
+## Next Cleanup Direction
+
+Kalau ingin lanjut bersih-bersih tanpa mengganggu web app aktif, urutan amannya:
+
+1. ubah default command repo ke web-only
+2. tandai `apps/api` dan `apps/pocketbase` sebagai legacy di dokumentasi dan script
+3. arsipkan atau keluarkan folder legacy dalam fase terpisah
+4. setelah itu, evaluasi apakah root workspace masih perlu berbentuk monorepo
 
 ## Persiapan Supabase
 
@@ -113,4 +166,4 @@ Referensi resmi:
 
 - Jangan commit file `.env`
 - Jangan commit `apps/pocketbase/pb_data`
-- Saat siap migrasi, kita bisa mulai dari desain schema Supabase dulu agar perubahan di frontend lebih terarah
+- Untuk lihat hasil update UI lokal, gunakan `npm run dev` atau `npm run dev:web:3002`

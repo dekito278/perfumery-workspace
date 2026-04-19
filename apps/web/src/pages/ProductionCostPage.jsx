@@ -13,13 +13,15 @@ import { toast } from 'sonner';
 import { getFormulas, getFormulaItems } from '@/services/formulasSupabaseService.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
-import { formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
+import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 
 const parseNumberInput = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const clampPercentage = (value) => Math.min(Math.max(value, 0), 100);
 
 const ProductionCostPage = () => {
   const navigate = useNavigate();
@@ -119,7 +121,7 @@ const ProductionCostPage = () => {
 
   const computed = useMemo(() => {
     const batchVolume = parseNumberInput(totalBatchVolume);
-    const concentration = parseNumberInput(formulaPercentage);
+    const concentration = clampPercentage(parseNumberInput(formulaPercentage));
     const unitBottleSize = parseNumberInput(bottleSize);
     const perBottleBottleCost = parseNumberInput(bottleCost);
     const perBottleCapCost = parseNumberInput(capCost);
@@ -130,7 +132,8 @@ const ProductionCostPage = () => {
     const formulaVolumeNeeded = batchVolume * (concentration / 100);
     const solventVolumeNeeded = Math.max(batchVolume - formulaVolumeNeeded, 0);
     const formulaMaterialCost = (formulaProfile?.costPerMl || 0) * formulaVolumeNeeded;
-    const solventMaterialCost = selectedSolvent ? ((Number(selectedSolvent.cost_per_unit || 0) / 10) * solventVolumeNeeded) : 0;
+    const solventCostPerMl = selectedSolvent ? calculateIngredientCost(1, Number(selectedSolvent.cost_per_unit || 0)) : 0;
+    const solventMaterialCost = solventCostPerMl * solventVolumeNeeded;
     const totalMaterialCost = formulaMaterialCost + solventMaterialCost;
     const bottleCount = unitBottleSize > 0 ? Math.floor(batchVolume / unitBottleSize) : 0;
     const remainingVolume = unitBottleSize > 0 ? batchVolume - (bottleCount * unitBottleSize) : 0;
@@ -144,6 +147,7 @@ const ProductionCostPage = () => {
       unitBottleSize,
       formulaVolumeNeeded,
       solventVolumeNeeded,
+      solventCostPerMl,
       formulaMaterialCost,
       solventMaterialCost,
       totalMaterialCost,
@@ -191,7 +195,7 @@ const ProductionCostPage = () => {
           {
             item: 'Formula concentrate',
             quantity: `${formatQuantity(computed.formulaVolumeNeeded)} ml`,
-            unitCost: formatPrice(formulaProfile.costPerMl),
+            unitCost: formatCurrency(formulaProfile.costPerMl),
             totalCost: formatPrice(computed.formulaMaterialCost),
             notes: 'Based on saved raw material prices',
           },
@@ -205,7 +209,7 @@ const ProductionCostPage = () => {
           {
             item: 'Bottle + cap + packaging + label + other',
             quantity: `${computed.bottleCount} bottles`,
-            unitCost: formatPrice(computed.additionalUnitCost),
+            unitCost: formatCurrency(computed.additionalUnitCost),
             totalCost: formatPrice(computed.totalAdditionalCost),
             notes: 'Per-bottle extras',
           },
@@ -216,7 +220,7 @@ const ProductionCostPage = () => {
             quantity: '',
             unitCost: '',
             totalCost: formatPrice(computed.totalProductionCost),
-            notes: `${formatPrice(computed.costPerBottle)} per bottle`,
+            notes: `${formatCurrency(computed.costPerBottle)} per bottle`,
           },
         ],
         sections: [
@@ -226,7 +230,7 @@ const ProductionCostPage = () => {
               { label: 'Formula needed', value: `${formatQuantity(computed.formulaVolumeNeeded)} ml` },
               { label: 'Solvent needed', value: `${formatQuantity(computed.solventVolumeNeeded)} ml` },
               { label: 'Remaining volume', value: `${formatQuantity(computed.remainingVolume)} ml` },
-              { label: 'Material cost per bottle', value: formatPrice(computed.materialCostPerBottle) },
+              { label: 'Material cost per bottle', value: formatCurrency(computed.materialCostPerBottle) },
             ],
             columns: 2,
           },
@@ -269,7 +273,7 @@ const ProductionCostPage = () => {
         {
           item: 'Formula concentrate',
           quantity: `${formatQuantity(computed.formulaVolumeNeeded)} ml`,
-          unitCost: formatPrice(formulaProfile.costPerMl),
+          unitCost: formatCurrency(formulaProfile.costPerMl),
           totalCost: formatPrice(computed.formulaMaterialCost),
           notes: 'Based on saved raw material prices',
         },
@@ -283,7 +287,7 @@ const ProductionCostPage = () => {
         {
           item: 'Bottle + cap + packaging + label + other',
           quantity: `${computed.bottleCount} bottles`,
-          unitCost: formatPrice(computed.additionalUnitCost),
+          unitCost: formatCurrency(computed.additionalUnitCost),
           totalCost: formatPrice(computed.totalAdditionalCost),
           notes: 'Per-bottle extras',
         },
@@ -294,7 +298,7 @@ const ProductionCostPage = () => {
           quantity: '',
           unitCost: '',
           totalCost: formatPrice(computed.totalProductionCost),
-          notes: `${formatPrice(computed.costPerBottle)} per bottle`,
+          notes: `${formatCurrency(computed.costPerBottle)} per bottle`,
         },
       ],
     });
@@ -320,10 +324,11 @@ const ProductionCostPage = () => {
 
         <PageHeader
           title="Production Costing"
-          description="Hitung hasil batch ke botol jadi tanpa mengganggu formula. Formula tetap fokus ke material, sedangkan biaya botol, cap, packaging, dan label dihitung di sini."
+          description="Hitung biaya batch ke botol jadi dengan formula, solvent, dan biaya kemasan."
           action="Export PDF"
           actionIcon={Download}
           onAction={handleExportPdf}
+          eyebrow="Costing"
         />
 
         {loading ? (
@@ -436,11 +441,11 @@ const ProductionCostPage = () => {
                   </div>
                   <div className="rounded-lg border bg-primary/10 p-4">
                     <div className="text-xs text-muted-foreground">Material cost per bottle</div>
-                    <div className="mt-1 text-2xl font-bold font-mono text-primary">{formatPrice(computed.materialCostPerBottle)}</div>
+                    <div className="mt-1 text-2xl font-bold font-mono text-primary">{formatCurrency(computed.materialCostPerBottle)}</div>
                   </div>
                   <div className="rounded-lg border bg-accent/10 p-4">
                     <div className="text-xs text-muted-foreground">Total cost per bottle</div>
-                    <div className="mt-1 text-2xl font-bold font-mono">{formatPrice(computed.costPerBottle)}</div>
+                    <div className="mt-1 text-2xl font-bold font-mono">{formatCurrency(computed.costPerBottle)}</div>
                   </div>
                 </div>
 
@@ -462,8 +467,12 @@ const ProductionCostPage = () => {
                     <span className="font-mono">{formatPrice(computed.solventMaterialCost)}</span>
                   </div>
                   <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-muted-foreground">Solvent cost per ml</span>
+                    <span className="font-mono">{formatCurrency(computed.solventCostPerMl)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
                     <span className="text-muted-foreground">All extras per bottle</span>
-                    <span className="font-mono">{formatPrice(computed.additionalUnitCost)}</span>
+                    <span className="font-mono">{formatCurrency(computed.additionalUnitCost)}</span>
                   </div>
                   <div className="flex justify-between gap-4 text-sm">
                     <span className="text-muted-foreground">Total extra cost</span>
@@ -489,7 +498,7 @@ const ProductionCostPage = () => {
                       </div>
                       <div className="rounded-lg border bg-muted/30 p-4">
                         <div className="text-xs text-muted-foreground">Material cost per ml</div>
-                        <div className="mt-1 text-lg font-semibold font-mono">{formatPrice(formulaProfile.costPerMl)}</div>
+                        <div className="mt-1 text-lg font-semibold font-mono">{formatCurrency(formulaProfile.costPerMl)}</div>
                       </div>
                     </div>
                     <div className="rounded-lg border p-4 text-sm">
@@ -513,12 +522,14 @@ const ProductionCostPage = () => {
               </div>
 
               <div className="rounded-xl border bg-card p-5 space-y-4">
-                <h2 className="text-lg font-semibold">How the calculation works</h2>
-                <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>Formula cost uses the raw material costs already saved in your formula.</p>
-                  <p>Batch material cost = formula concentrate needed + solvent needed.</p>
-                  <p>Per-bottle extras are added only in this menu, so formula import and formula editing stay clean.</p>
-                  <p>Bottle count is rounded down to full bottles. Sisa volume ditampilkan terpisah supaya mudah dipakai untuk uji coba atau topping.</p>
+                <h2 className="text-lg font-semibold">Quick notes</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                    Formula cost follows the saved raw material prices in the selected formula.
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                    Bottle count is rounded down, so any leftover liquid stays visible as remaining volume.
+                  </div>
                 </div>
                 {selectedSolvent && (
                   <div className="rounded-lg border p-4 text-sm">

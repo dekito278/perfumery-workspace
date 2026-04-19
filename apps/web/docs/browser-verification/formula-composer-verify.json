@@ -1,0 +1,37 @@
+{
+  "email": "codex.formula.1776615577418@example.com",
+  "afterSignupUrl": "http://127.0.0.1:3002/signup",
+  "afterSignupText": "Create an account\nEnter your details to get started with Perfumer Studio\nName\nEmail\nPassword\nConfirm password\nCreating account...\nAlready have an account? Sign in",
+  "afterAuthUrl": "http://127.0.0.1:3002/signup",
+  "console": [
+    {
+      "type": "error",
+      "text": "TypeError: Failed to fetch\n    at window.fetch (http://127.0.0.1:3002/signup:369:23)\n    at http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12490:23\n    at _handleRequest2 (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12780:20)\n    at _request (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12770:22)\n    at SupabaseAuthClient.signUp (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:15387:21)\n    at signup (http://127.0.0.1:3002/src/contexts/AuthContext.jsx:75:51)\n    at handleSubmit (http://127.0.0.1:3002/src/pages/SignupPage.jsx:45:28)\n    at HTMLUnknownElement.callCallback2 (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3680:22)\n    at Object.invokeGuardedCallbackDev (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3705:24)\n    at invokeGuardedCallback (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3739:39)"
+    },
+    {
+      "type": "error",
+      "text": "TypeError: Failed to fetch\n    at window.fetch (http://127.0.0.1:3002/signup:369:23)\n    at http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12490:23\n    at _handleRequest2 (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12780:20)\n    at _request (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12770:22)\n    at SupabaseAuthClient.signUp (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:15387:21)\n    at signup (http://127.0.0.1:3002/src/contexts/AuthContext.jsx:75:51)\n    at handleSubmit (http://127.0.0.1:3002/src/pages/SignupPage.jsx:45:28)\n    at HTMLUnknownElement.callCallback2 (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3680:22)\n    at Object.invokeGuardedCallbackDev (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3705:24)\n    at invokeGuardedCallback (http://127.0.0.1:3002/node_modules/.vite/deps/chunk-IEWVK4NL.js?v=6a2b6ea8:3739:39)"
+    },
+    {
+      "type": "error",
+      "text": "Signup error: AuthRetryableFetchError: Failed to fetch\n    at _handleRequest2 (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12783:11)\n    at async _request (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:12770:16)\n    at async SupabaseAuthClient.signUp (http://127.0.0.1:3002/node_modules/.vite/deps/@supabase_supabase-js.js?v=6a2b6ea8:15387:15)\n    at async signup (http://127.0.0.1:3002/src/contexts/AuthContext.jsx:75:31)\n    at async handleSubmit (http://127.0.0.1:3002/src/pages/SignupPage.jsx:45:22)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "formulaUrl": "http://127.0.0.1:3002/login",
+  "bodyText": "Welcome back, Dekito\nMasuk dan lanjut racik hari ini.\nEmail\nPassword\nSign in\nDon't have an account? Sign up",
+  "metrics": {
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "bodyScrollWidth": 1440,
+    "bodyClientWidth": 1440,
+    "documentScrollHeight": 960,
+    "documentClientHeight": 960,
+    "pageHasVerticalScroll": false
+  }
+}

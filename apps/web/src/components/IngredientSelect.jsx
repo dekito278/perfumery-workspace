@@ -11,6 +11,9 @@ const IngredientSelect = ({
   ingredients = [],
   autoFocus = false,
   onAutoFocusHandled,
+  compact = false,
+  showSuggestions = true,
+  onActivate,
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +24,10 @@ const IngredientSelect = ({
   const selectedIngredient = ingredients.find((ing) => ing.id === value);
 
   const filteredIngredients = useMemo(() => {
+    if (!showSuggestions) {
+      return [];
+    }
+
     const normalizedTerm = searchTerm.trim().toLowerCase();
     const sorted = [...ingredients].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -64,6 +71,10 @@ const IngredientSelect = ({
   }, [searchTerm]);
 
   useEffect(() => {
+    if (!showSuggestions) {
+      return undefined;
+    }
+
     const handlePointerDown = (event) => {
       if (wrapperRef.current?.contains(event.target)) {
         return;
@@ -80,7 +91,7 @@ const IngredientSelect = ({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('touchstart', handlePointerDown);
     };
-  }, [selectedIngredient]);
+  }, [selectedIngredient, showSuggestions]);
 
   const handleSelect = (ingredientId) => {
     onChange(ingredientId);
@@ -89,7 +100,32 @@ const IngredientSelect = ({
     setSearchTerm(ingredient?.name || '');
   };
 
+  const commitExactMatch = () => {
+    if (showSuggestions) {
+      return;
+    }
+
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    if (!normalizedTerm) {
+      return;
+    }
+
+    const exactMatch = ingredients.find((ingredient) => ingredient.name.trim().toLowerCase() === normalizedTerm);
+    if (exactMatch && exactMatch.id !== value) {
+      onChange(exactMatch.id);
+      setSearchTerm(exactMatch.name);
+    }
+  };
+
   const handleKeyDown = (event) => {
+    if (!showSuggestions) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        commitExactMatch();
+      }
+      return;
+    }
+
     if (!open && ['ArrowDown', 'Enter'].includes(event.key)) {
       setOpen(true);
       return;
@@ -134,16 +170,28 @@ const IngredientSelect = ({
         value={searchTerm}
         onChange={(event) => {
           setSearchTerm(event.target.value);
-          setOpen(Boolean(event.target.value.trim()));
+          setOpen(showSuggestions && Boolean(event.target.value.trim()));
         }}
-        onFocus={() => !disabled && searchTerm.trim() && setOpen(true)}
+        onFocus={() => {
+          onActivate?.();
+          if (!disabled && showSuggestions && searchTerm.trim()) {
+            setOpen(true);
+          }
+        }}
+        onBlur={() => {
+          commitExactMatch();
+        }}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        className="h-10 rounded-xl border-white/70 bg-white/85 text-foreground"
+        className={compact ? 'h-9 rounded-lg border-[#ddd3bf] bg-white text-foreground' : 'h-10 rounded-xl border-white/70 bg-white/85 text-foreground'}
         autoComplete="off"
       />
-      {open && !disabled ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 rounded-2xl border border-stone-200 bg-stone-50 p-1.5 text-foreground shadow-[0_30px_80px_-42px_rgba(64,38,12,0.45)] ring-1 ring-black/5 backdrop-blur-sm">
+      {showSuggestions && open && !disabled ? (
+        <div className={`absolute left-0 right-0 z-50 text-foreground ring-1 ring-black/5 backdrop-blur-sm ${
+          compact
+            ? 'top-[calc(100%+0.25rem)] rounded-xl border border-stone-200 bg-stone-50 p-1 shadow-[0_22px_60px_-38px_rgba(64,38,12,0.45)]'
+            : 'top-[calc(100%+0.5rem)] rounded-2xl border border-stone-200 bg-stone-50 p-1.5 shadow-[0_30px_80px_-42px_rgba(64,38,12,0.45)]'
+        }`}>
           <div className="max-h-[238px] overflow-y-auto">
             {filteredIngredients.length === 0 ? (
               <div className="px-3 py-5 text-center text-sm text-muted-foreground">

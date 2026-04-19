@@ -43,8 +43,8 @@ const LoginPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>Sign in to your Perfumer Studio account</CardDescription>
+            <CardTitle className="text-2xl font-bold">Welcome back, Dekito</CardTitle>
+            <CardDescription>Masuk dan lanjut racik hari ini.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

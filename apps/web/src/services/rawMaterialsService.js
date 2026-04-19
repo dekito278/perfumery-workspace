@@ -126,6 +126,28 @@ const findExistingRawMaterialByName = async (userId, name) => {
   return data || null;
 };
 
+const findExistingRawMaterialByWorkbookCode = async (userId, workbookCode) => {
+  const normalizedWorkbookCode = String(workbookCode || '').trim();
+  if (!normalizedWorkbookCode) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('raw_materials')
+    .select('*')
+    .eq('user_id', userId)
+    .ilike('workbook_code', normalizedWorkbookCode)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking existing raw material by workbook code:', error);
+    return null;
+  }
+
+  return data || null;
+};
+
 export const getRawMaterials = async () => {
   try {
     const { data, error } = await supabase
@@ -262,6 +284,14 @@ export const createRawMaterial = async (data) => {
       .single();
 
     if (error) {
+      if (error.code === '23505' && error.message?.includes('raw_materials_unique_workbook_code_per_user')) {
+        const existingRecord = await findExistingRawMaterialByWorkbookCode(userId, payload.workbook_code);
+        if (existingRecord) {
+          const solventMap = await getSolventMap(existingRecord.dilution_solvent_id ? [existingRecord.dilution_solvent_id] : []);
+          return mapRawMaterial(existingRecord, solventMap);
+        }
+      }
+
       if (error.code === '23505' && error.message?.includes('raw_materials_unique_name_per_user')) {
         const existingRecord = await findExistingRawMaterialByName(userId, payload.name);
         if (existingRecord) {
