@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
+  "engines": {
+    "node": "20.19.x || 22.x || >=24"
+  },
   "scripts": {
     "dev": "vite --host :: --port 3000",
     "build": "node tools/build.mjs",
