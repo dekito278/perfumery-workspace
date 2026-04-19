@@ -79,7 +79,7 @@ const EditBatchModal = ({ open, onOpenChange, batch, onSuccess }) => {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit batch</DialogTitle>
-            <DialogDescription>Update batch details including solvent and dilution settings (draft batches only).</DialogDescription>
+        <DialogDescription>Update the batch setup, solvent choice, and target quantity while the batch is still in draft.</DialogDescription>
           </DialogHeader>
           {loadingData ? (
             <div className="space-y-6">

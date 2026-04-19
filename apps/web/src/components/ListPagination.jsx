@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import {
   Pagination,
   PaginationContent,
@@ -15,6 +16,7 @@ const ListPagination = ({
   itemLabel = 'items',
   onPageChange,
 }) => {
+  const isMobile = useIsMobile();
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   if (totalItems <= pageSize) {
@@ -48,20 +50,28 @@ const ListPagination = ({
               className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
             />
           </PaginationItem>
-          {pages.map((page) => (
-            <PaginationItem key={page}>
-              <PaginationLink
-                href="#"
-                isActive={page === currentPage}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onPageChange(page);
-                }}
-              >
-                {page}
+          {isMobile ? (
+            <PaginationItem>
+              <PaginationLink href="#" isActive onClick={(event) => event.preventDefault()}>
+                {currentPage} / {totalPages}
               </PaginationLink>
             </PaginationItem>
-          ))}
+          ) : (
+            pages.map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  href="#"
+                  isActive={page === currentPage}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onPageChange(page);
+                  }}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))
+          )}
           <PaginationItem>
             <PaginationNext
               href="#"

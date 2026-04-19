@@ -15,7 +15,7 @@ import { validateRequired, validateMaxLength, validateNonNegativeNumber } from '
 import { formatName, formatCurrency } from '@/utils/formatting.js';
 import { formatDilutionInfo } from '@/utils/calculateDilutionCost.js';
 import { UNIT_OPTIONS, FIELD_CONSTRAINTS } from '@/utils/constants.js';
-import { getRawMaterialVendorSuggestions, getSolvents } from '@/services/rawMaterialsService.js';
+import { getSolvents } from '@/services/rawMaterialsService.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { getRawMaterialCategoryMeta } from '@/utils/rawMaterialCategoryMeta.js';
@@ -23,7 +23,6 @@ import { getRawMaterialCategoryMeta } from '@/utils/rawMaterialCategoryMeta.js';
 const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
   const { updateMaterial, loading } = useRawMaterials();
   const [solvents, setSolvents] = useState([]);
-  const [vendorSuggestions, setVendorSuggestions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -53,7 +52,6 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
   useEffect(() => {
     if (open) {
       loadSolvents();
-      loadVendorSuggestions();
       loadCategories();
     }
   }, [open]);
@@ -90,14 +88,6 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
       setSolvents(await getSolvents());
     } catch (error) {
       console.error('Failed to load solvents:', error);
-    }
-  };
-
-  const loadVendorSuggestions = async () => {
-    try {
-      setVendorSuggestions(await getRawMaterialVendorSuggestions());
-    } catch (error) {
-      console.error('Failed to load vendor suggestions:', error);
     }
   };
 
@@ -154,10 +144,10 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         }
         break;
       case 'minimum_stock':
-        error = validateRequired(value, 'Minimum stock') || validateNonNegativeNumber(value, 'Minimum stock');
+        error = '';
         break;
       case 'low_stock_threshold':
-        error = validateNonNegativeNumber(value, 'Low stock threshold');
+        error = validateRequired(value, 'Low stock alert') || validateNonNegativeNumber(value, 'Low stock alert');
         break;
       case 'ifra_limit':
         if (value !== '') {
@@ -220,8 +210,13 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
       const next = { ...prev, [field]: value };
       if (field === 'category') {
         const meta = getRawMaterialCategoryMeta(value, prev.type, prev.scent_family);
+        const previousCategoryCode = findPerfumersWorldCategoryByValue(prev.category)?.code || '';
+        const nextCategoryCode = findPerfumersWorldCategoryByValue(value)?.code || '';
         next.type = meta.type;
         next.scent_family = meta.scentFamily;
+        if (nextCategoryCode && (!prev.workbook_code || prev.workbook_code === previousCategoryCode)) {
+          next.workbook_code = nextCategoryCode;
+        }
       }
       return next;
     });
@@ -267,9 +262,9 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         stock_quantity: parseFloat(formData.stock_quantity),
         unit: formData.unit,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : 0,
-        minimum_stock: parseFloat(formData.minimum_stock),
+        minimum_stock: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : 0,
         low_stock_threshold: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : null,
-        vendor: formData.vendor || null,
+        vendor: null,
         cas_number: formData.cas_number || null,
         ifra_limit: formData.ifra_limit ? parseFloat(formData.ifra_limit) : null,
         notes: formData.notes || null,
@@ -310,49 +305,19 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                label="Workbook code"
-                value={formData.workbook_code}
-                onChange={(e) => handleChange('workbook_code', e.target.value)}
-                onBlur={() => handleBlur('workbook_code')}
-                error={errors.workbook_code}
-                placeholder="e.g., C123"
-                maxLength={FIELD_CONSTRAINTS.code.maxLength}
-              />
-              <FormField
-                label="Family"
-                value={formData.scent_family}
-                onChange={() => {}}
-                error={errors.scent_family}
-                disabled
-                placeholder="Auto from category"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormSelect
-                label="Category"
-                value={formData.category}
-                onChange={(value) => handleChange('category', value)}
-                onBlur={() => handleBlur('category')}
-                options={categoryOptions}
-                error={errors.category}
-                required
-                searchable
-                searchPlaceholder="Find category..."
-                placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
-                disabled={!categoryOptions.length}
-              />
-              <FormField
-                label="Type"
-                value={formData.type}
-                onChange={() => {}}
-                error={errors.type}
-                disabled
-                placeholder="Auto from category"
-              />
-            </div>
+            <FormSelect
+              label="Category"
+              value={formData.category}
+              onChange={(value) => handleChange('category', value)}
+              onBlur={() => handleBlur('category')}
+              options={categoryOptions}
+              error={errors.category}
+              required
+              searchable
+              searchPlaceholder="Find category..."
+              placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
+              disabled={!categoryOptions.length}
+            />
           </div>
 
           {!isSolvent && (
@@ -450,44 +415,22 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
                 )}
               </div>
               <FormNumber
-                label="Minimum stock"
-                value={formData.minimum_stock}
-                onChange={(e) => handleChange('minimum_stock', e.target.value)}
-                onBlur={() => handleBlur('minimum_stock')}
-                error={errors.minimum_stock}
+                label="Low stock alert"
+                value={formData.low_stock_threshold}
+                onChange={(e) => handleChange('low_stock_threshold', e.target.value)}
+                onBlur={() => handleBlur('low_stock_threshold')}
+                error={errors.low_stock_threshold}
+                helperText="Warn when stock goes below this amount."
                 required
                 placeholder="0.00"
                 min="0"
                 step="0.01"
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormNumber
-                label="Low stock threshold"
-                value={formData.low_stock_threshold}
-                onChange={(e) => handleChange('low_stock_threshold', e.target.value)}
-                onBlur={() => handleBlur('low_stock_threshold')}
-                error={errors.low_stock_threshold}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
-              <div />
-            </div>
           </div>
 
           <div className="border-t pt-3 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                label="Vendor"
-                value={formData.vendor}
-                onChange={(e) => handleChange('vendor', e.target.value)}
-                onBlur={() => handleBlur('vendor')}
-                error={errors.vendor}
-                placeholder="e.g., Fragment 3"
-                list="raw-material-vendor-suggestions"
-              />
+            <div className="grid grid-cols-1 gap-3">
               <FormField
                 label="CAS number"
                 value={formData.cas_number}
@@ -523,12 +466,6 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
               />
             </div>
           </div>
-
-          <datalist id="raw-material-vendor-suggestions">
-            {vendorSuggestions.map((vendor) => (
-              <option key={vendor} value={vendor} />
-            ))}
-          </datalist>
 
           {Object.keys(warnings).length > 0 && (
             <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1">

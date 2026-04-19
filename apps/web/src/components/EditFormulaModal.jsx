@@ -116,6 +116,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   const updateItem = (index, itemId) => {
     const updated = [...formulaItems];
     updated[index].item_id = itemId;
+    updated[index].item_type = '';
     
     const isRawMaterial = rawMaterials.some(m => m.id === itemId);
     if (isRawMaterial) {
@@ -198,7 +199,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     }
 
     const materialIds = new Set();
-    activeFormulaItems.forEach((item, index) => {
+    formulaItems.forEach((item, index) => {
       if (item.item_id && materialIds.has(item.item_id)) {
         errors[`item_${index}`] = 'Duplicate material';
       } else if (item.item_id) {
@@ -259,7 +260,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>Edit formula</DialogTitle>
-          <DialogDescription>Type ingredients directly, keep editing inline, and let the form maintain one ready-to-fill empty row.</DialogDescription>
+          <DialogDescription>Edit the list inline while one empty row stays ready for the next ingredient.</DialogDescription>
         </DialogHeader>
         
         {loadingData ? (
@@ -349,7 +350,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
               <div className="space-y-1">
                 <h3 className="font-semibold text-base">Formula ingredients</h3>
                 <p className="text-sm text-muted-foreground">
-                  Edit the current lines directly. A fresh empty row stays available at the bottom as you work.
+                  Edit the current lines directly. A fresh empty row stays available so you can continue without extra taps.
                 </p>
               </div>
 

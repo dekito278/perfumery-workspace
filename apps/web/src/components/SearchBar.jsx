@@ -34,7 +34,7 @@ const SearchBar = ({ value, onChange, placeholder = 'Search...', debounceMs = 30
         onChange={(e) => setLocalValue(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-11 rounded-2xl border-white/70 bg-white/80 pl-10 pr-10 text-foreground shadow-sm"
+        className="h-11 rounded-2xl border-white/75 bg-white/88 pl-10 pr-10 text-foreground shadow-sm"
       />
       {localValue && (
         <Button

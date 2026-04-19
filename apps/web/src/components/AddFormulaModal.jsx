@@ -43,16 +43,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const getActiveFormulaItems = (items) =>
     items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
 
-  const ensureTrailingEmptyItem = (items) => {
-    const nextItems = [...getActiveFormulaItems(items)];
-    const lastItem = nextItems[nextItems.length - 1];
-
-    if (!lastItem || lastItem.item_id || lastItem.gram_amount || lastItem.dilution_percent || lastItem.dilution_solvent_id) {
-      nextItems.push(createEmptyFormulaItem());
-    }
-
-    return nextItems;
-  };
+  const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
 
   useEffect(() => {
     if (open) {
@@ -87,7 +78,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, i) => i !== index);
-    setFormulaItems(ensureTrailingEmptyItem(remainingItems));
+    setFormulaItems(normalizeFormulaItems(remainingItems));
     const newErrors = { ...validationErrors };
     delete newErrors[`item_${index}`];
     setValidationErrors(newErrors);
@@ -96,6 +87,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const updateItem = (index, itemId) => {
     const updated = [...formulaItems];
     updated[index].item_id = itemId;
+    updated[index].item_type = '';
     
     const isRawMaterial = rawMaterials.some(m => m.id === itemId);
     if (isRawMaterial) {
@@ -103,21 +95,27 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
     }
     
-    setFormulaItems(ensureTrailingEmptyItem(updated));
+    setFormulaItems(updated);
   };
 
   const handleCommitRow = (index) => {
     setFormulaItems((currentItems) => {
-      const nextItems = ensureTrailingEmptyItem(currentItems);
-      setFocusRowIndex(Math.min(index + 1, nextItems.length - 1));
-      return nextItems;
+      const committedItem = currentItems[index];
+
+      if (!committedItem?.item_id || parseFloat(committedItem.gram_amount) <= 0) {
+        return currentItems;
+      }
+
+      const remainingItems = currentItems.filter((_, itemIndex) => itemIndex !== index);
+      setFocusRowIndex(0);
+      return [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
     });
   };
 
   const updateGramAmount = (index, gramAmount) => {
     const updated = [...formulaItems];
     updated[index].gram_amount = gramAmount;
-    setFormulaItems(ensureTrailingEmptyItem(updated));
+    setFormulaItems(updated);
     
     const error = validateGramAmount(gramAmount);
     const newErrors = { ...validationErrors };
@@ -151,7 +149,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       updated[index].dilution_solvent_name = '';
     }
 
-    setFormulaItems(ensureTrailingEmptyItem(updated));
+    setFormulaItems(updated);
     const nextErrors = { ...validationErrors };
     delete nextErrors.ingredients;
     delete nextErrors[`item_${index}`];
@@ -178,7 +176,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     }
 
     const materialIds = new Set();
-    activeFormulaItems.forEach((item, index) => {
+    formulaItems.forEach((item, index) => {
       if (item.item_id && materialIds.has(item.item_id)) {
         errors[`item_${index}`] = 'Duplicate material';
       } else if (item.item_id) {
@@ -235,7 +233,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>Create new formula</DialogTitle>
-          <DialogDescription>Type ingredients directly, pick from quick suggestions, then fill the gram amounts without extra taps.</DialogDescription>
+          <DialogDescription>Type a material, enter the grams, then confirm it while the next input stays ready at the top.</DialogDescription>
         </DialogHeader>
         
         {loadingData ? (
@@ -325,7 +323,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
               <div className="space-y-1">
                 <h3 className="font-semibold text-base">Formula ingredients</h3>
                 <p className="text-sm text-muted-foreground">
-                  Start typing the material name. A new empty line will appear automatically as you fill the current one.
+                  Start at the top. After you confirm one ingredient, it moves into the list and a fresh row stays ready above it.
                 </p>
               </div>
 

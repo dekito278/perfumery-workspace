@@ -353,24 +353,33 @@ const FormulasPage = () => {
                 };
 
                 return (
-                  <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-sm">
+                  <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <button onClick={() => handleView(row)} className="text-left">
+                      <div className="min-w-0 flex-1">
+                        <button onClick={() => handleView(row)} className="w-full text-left">
                           <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
                         </button>
                         <div className="mt-1 text-xs font-mono text-muted-foreground">{row.code}</div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Badge variant="outline" className="capitalize text-[11px]">
-                            {formatNullable(row.category, 'uncategorized')}
-                          </Badge>
-                          <Badge variant={statusColors[row.status] || 'secondary'} className="capitalize text-[11px]">
-                            {row.status || 'draft'}
-                          </Badge>
-                        </div>
-                        <div className="mt-3 text-xs text-muted-foreground">
-                          {metrics ? `${formatGramAmount(metrics.totalGrams)} total` : 'No composition yet'}
-                        </div>
+                      </div>
+                      <Badge variant={statusColors[row.status] || 'secondary'} className="shrink-0 capitalize text-[11px]">
+                        {row.status || 'draft'}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Category</div>
+                        <div className="mt-1 text-sm capitalize">{formatNullable(row.category, 'uncategorized')}</div>
+                      </div>
+                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Total</div>
+                        <div className="mt-1 text-sm">{metrics ? formatGramAmount(metrics.totalGrams) : '-'}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="text-xs text-muted-foreground">
+                        {metrics ? `${metrics.itemCount} ingredients` : 'No composition yet'}
                       </div>
                       <div className="flex shrink-0 gap-1">
                         <Button

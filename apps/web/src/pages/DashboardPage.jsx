@@ -118,13 +118,13 @@ const DashboardPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Sparkles className="w-4 h-4 text-primary" />
-              Production overview
+              Workspace overview
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
-              Workspace yang lebih fokus, lebih cepat dipindai, dan tanpa menu Accord terpisah.
+              A cleaner production workspace for formulas, inventory, batches, and costing.
             </h1>
             <p className="max-w-3xl text-base text-muted-foreground">
-              Semua alur sekarang berpusat di formulas, raw materials, batches, dan production costing. Formula kategori accord tetap ada, tapi sudah menyatu dalam workflow utama.
+              Everything now flows through one main workspace. Accord formulas still exist, but they live inside the same formula workflow instead of a separate module.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button onClick={() => navigate('/formulas')} className="h-11 rounded-2xl gap-2 px-5">
@@ -132,7 +132,7 @@ const DashboardPage = () => {
                 <ArrowRight className="w-4 h-4" />
               </Button>
               <Button variant="outline" onClick={() => navigate('/raw-materials')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
-                View inventory
+                Open inventory
               </Button>
             </div>
           </div>
@@ -152,7 +152,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <DashboardSection title="Summary" subtitle="Key metrics at a glance">
+        <DashboardSection title="Summary" subtitle="Key numbers across the workspace">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {summaryCards.map((card, index) => (
               <DashboardSummaryCard
@@ -168,7 +168,7 @@ const DashboardPage = () => {
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Quick actions" subtitle="Common tasks and shortcuts">
+        <DashboardSection title="Quick actions" subtitle="The fastest way into the flows you use most">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
@@ -187,18 +187,18 @@ const DashboardPage = () => {
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Formula pulse" subtitle="Distribusi formula utama di workspace saat ini">
+        <DashboardSection title="Formula pulse" subtitle="How the current formula library is split across perfume and accord work">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="rounded-[28px] border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_-42px_rgba(125,86,13,0.35)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     <Layers3 className="w-4 h-4 text-primary" />
-                    Formula categories
+                    Unified formulas
                   </div>
-                  <h3 className="mt-3 text-xl font-semibold">Semua formula sekarang berada dalam satu workspace.</h3>
+                  <h3 className="mt-3 text-xl font-semibold">All formulas now live in one place.</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Accord tidak lagi tampil sebagai fitur terpisah. Gunakan kategori formula untuk membedakan formula parfum penuh dan formula accord.
+                    Accord is no longer a separate feature. Use the formula category only as a label to distinguish full perfume formulas from accord formulas.
                   </p>
                 </div>
                 <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 px-3 py-1 text-primary">

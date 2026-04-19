@@ -11,7 +11,6 @@ import SignupPage from '@/pages/SignupPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
 import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
-import CategoriesPage from '@/pages/CategoriesPage.jsx';
 import FormulasPage from '@/pages/FormulasPage.jsx';
 import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
 import BatchesPage from '@/pages/BatchesPage.jsx';
@@ -55,11 +54,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         
-        <Route path="/categories" element={
-          <ProtectedRoute>
-            <CategoriesPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/categories" element={<Navigate to="/raw-materials" replace />} />
         
         <Route path="/accords" element={<Navigate to="/formulas" replace />} />
         <Route path="/accord/:id" element={<Navigate to="/formulas" replace />} />

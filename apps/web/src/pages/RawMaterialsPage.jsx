@@ -464,26 +464,41 @@ const RawMaterialsPage = () => {
               columns={columns}
               data={paginatedMaterials}
               mobileCard={(row) => (
-                <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-sm">
+                <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <button onClick={() => handleView(row)} className="text-left">
+                    <div className="min-w-0 flex-1">
+                      <button onClick={() => handleView(row)} className="w-full text-left">
                         <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
                       </button>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className="capitalize text-[11px]">
-                          {row.type}
-                        </Badge>
-                        {row.category && (
-                          <span className="text-xs text-muted-foreground">{row.category}</span>
-                        )}
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
                       </div>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 capitalize text-[11px]">
+                      {row.type}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Vendor</div>
+                      <div className="mt-1 truncate text-sm">{row.vendor || '-'}</div>
+                    </div>
+                    <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Stock</div>
+                      <div className="mt-1 text-sm">{formatQuantity(row.stock_quantity)} {row.unit}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0 text-xs text-muted-foreground">
+                      {row.category || 'Uncategorized'}
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleView(row)}
-                      className="h-8 rounded-xl px-3"
+                      className="h-9 rounded-xl px-4"
                     >
                       View
                     </Button>

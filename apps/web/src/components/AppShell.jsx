@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Package, Beaker, FlaskConical, LogOut, Tag, Calculator, Sparkles } from 'lucide-react';
+import { Menu, Home, Package, Beaker, FlaskConical, LogOut, Calculator, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const AppShell = ({ children }) => {
@@ -20,7 +20,6 @@ const AppShell = ({ children }) => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/raw-materials', label: 'Raw materials', icon: Package },
-    { path: '/categories', label: 'Categories', icon: Tag },
     { path: '/formulas', label: 'Formulas', icon: Beaker },
     { path: '/batches', label: 'Batches', icon: FlaskConical },
     { path: '/production-costing', label: 'Production cost', icon: Calculator }
@@ -139,13 +138,13 @@ const AppShell = ({ children }) => {
                 </SheetContent>
               </Sheet>
 
-              <Link to="/dashboard" className="flex items-center gap-2 lg:hidden">
+              <Link to="/dashboard" className="min-w-0 flex items-center gap-2 lg:hidden">
                 <span className="app-brand-icon h-10 w-10">
                   <Beaker className="w-5 h-5" />
                 </span>
-                <span>
-                  <span className="block text-sm font-semibold leading-none">Perfumer Studio</span>
-                  <span className="mt-1 block text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Formulas first</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold leading-none">Perfumer Studio</span>
+                  <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Formulas first</span>
                 </span>
               </Link>
             </div>

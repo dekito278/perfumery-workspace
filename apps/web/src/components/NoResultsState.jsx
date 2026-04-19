@@ -9,11 +9,11 @@ const NoResultsState = ({ searchTerm, onClearFilters }) => {
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-muted/70">
         <SearchX className="w-8 h-8 text-muted-foreground" />
       </div>
-      <h3 className="empty-state-title">No results found</h3>
+      <h3 className="empty-state-title">Nothing matches yet</h3>
       <p className="empty-state-description">
         {searchTerm
-          ? `No items match "${searchTerm}". Try adjusting your search or filters.`
-          : 'No items match your current filters. Try adjusting your filters.'}
+          ? `No items match "${searchTerm}". Try a broader keyword or clear one of the filters.`
+          : 'No items match your current filters. Clear one or more filters to widen the list.'}
       </p>
       {onClearFilters && (
         <Button onClick={onClearFilters} variant="outline" className="h-11 rounded-2xl border-white/70 bg-white/80 px-5">

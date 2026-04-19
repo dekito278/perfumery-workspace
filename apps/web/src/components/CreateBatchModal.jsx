@@ -24,7 +24,7 @@ const CreateBatchModal = ({ open, onOpenChange, onSuccess, preSelectedFormulaId 
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create new batch</DialogTitle>
-          <DialogDescription>Set up a new production batch with solvent dilution for a formula.</DialogDescription>
+        <DialogDescription>Set up a new production batch, choose the solvent, and review the target volume.</DialogDescription>
         </DialogHeader>
         <BatchProductionForm
           preSelectedFormulaId={preSelectedFormulaId}

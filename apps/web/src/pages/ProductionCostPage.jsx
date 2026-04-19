@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Calculator, Home } from 'lucide-react';
+import { Calculator, Download, Home, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
@@ -157,6 +157,149 @@ const ProductionCostPage = () => {
     };
   }, [totalBatchVolume, formulaPercentage, bottleSize, bottleCost, capCost, packagingCost, labelCost, otherUnitCost, formulaProfile, selectedSolvent]);
 
+  const handleExportPdf = async () => {
+    if (!selectedFormula || !formulaProfile) {
+      toast.error('Choose a formula first');
+      return;
+    }
+
+    const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+    exportWorkbookPdf(
+      {
+        typeLabel: 'Production Cost Sheet',
+        title: selectedFormula.name,
+        subtitle: `Costing scenario for ${computed.batchVolume} ml batch`,
+        summaryEntries: [
+          { label: 'Formula', value: `${selectedFormula.name} (${selectedFormula.code})` },
+          { label: 'Solvent', value: selectedSolvent?.name || '-' },
+          { label: 'Batch volume', value: `${formatQuantity(computed.batchVolume)} ml` },
+          { label: 'Concentration', value: formatPercentage(computed.concentration) },
+          { label: 'Bottle size', value: `${formatQuantity(computed.unitBottleSize)} ml` },
+          { label: 'Bottle count', value: computed.bottleCount },
+          { label: 'Material cost', value: formatPrice(computed.totalMaterialCost) },
+          { label: 'Total production cost', value: formatPrice(computed.totalProductionCost) },
+        ],
+        tableTitle: 'Material And Packaging Breakdown',
+        columns: [
+          { key: 'item', label: 'Item', width: 58 },
+          { key: 'quantity', label: 'Quantity', width: 30, align: 'right' },
+          { key: 'unitCost', label: 'Unit cost', width: 32, align: 'right' },
+          { key: 'totalCost', label: 'Total cost', width: 28, align: 'right' },
+          { key: 'notes', label: 'Notes', width: 44 },
+        ],
+        rows: [
+          {
+            item: 'Formula concentrate',
+            quantity: `${formatQuantity(computed.formulaVolumeNeeded)} ml`,
+            unitCost: formatPrice(formulaProfile.costPerMl),
+            totalCost: formatPrice(computed.formulaMaterialCost),
+            notes: 'Based on saved raw material prices',
+          },
+          {
+            item: selectedSolvent?.name || 'Batch solvent',
+            quantity: `${formatQuantity(computed.solventVolumeNeeded)} ml`,
+            unitCost: selectedSolvent ? formatPricePerUnit(selectedSolvent.cost_per_unit, selectedSolvent.unit) : '-',
+            totalCost: formatPrice(computed.solventMaterialCost),
+            notes: 'Main solvent for this batch',
+          },
+          {
+            item: 'Bottle + cap + packaging + label + other',
+            quantity: `${computed.bottleCount} bottles`,
+            unitCost: formatPrice(computed.additionalUnitCost),
+            totalCost: formatPrice(computed.totalAdditionalCost),
+            notes: 'Per-bottle extras',
+          },
+        ],
+        footerRows: [
+          {
+            item: 'TOTAL PRODUCTION COST',
+            quantity: '',
+            unitCost: '',
+            totalCost: formatPrice(computed.totalProductionCost),
+            notes: `${formatPrice(computed.costPerBottle)} per bottle`,
+          },
+        ],
+        sections: [
+          {
+            title: 'Scenario Details',
+            entries: [
+              { label: 'Formula needed', value: `${formatQuantity(computed.formulaVolumeNeeded)} ml` },
+              { label: 'Solvent needed', value: `${formatQuantity(computed.solventVolumeNeeded)} ml` },
+              { label: 'Remaining volume', value: `${formatQuantity(computed.remainingVolume)} ml` },
+              { label: 'Material cost per bottle', value: formatPrice(computed.materialCostPerBottle) },
+            ],
+            columns: 2,
+          },
+        ],
+      },
+      `${selectedFormula.code || 'production_cost'}_costing.pdf`
+    );
+  };
+
+  const handlePrint = async () => {
+    if (!selectedFormula || !formulaProfile) {
+      toast.error('Choose a formula first');
+      return;
+    }
+
+    const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+    printWorkbookPdf({
+      typeLabel: 'Production Cost Sheet',
+      title: selectedFormula.name,
+      subtitle: `Costing scenario for ${computed.batchVolume} ml batch`,
+      summaryEntries: [
+        { label: 'Formula', value: `${selectedFormula.name} (${selectedFormula.code})` },
+        { label: 'Solvent', value: selectedSolvent?.name || '-' },
+        { label: 'Batch volume', value: `${formatQuantity(computed.batchVolume)} ml` },
+        { label: 'Concentration', value: formatPercentage(computed.concentration) },
+        { label: 'Bottle size', value: `${formatQuantity(computed.unitBottleSize)} ml` },
+        { label: 'Bottle count', value: computed.bottleCount },
+        { label: 'Material cost', value: formatPrice(computed.totalMaterialCost) },
+        { label: 'Total production cost', value: formatPrice(computed.totalProductionCost) },
+      ],
+      tableTitle: 'Material And Packaging Breakdown',
+      columns: [
+        { key: 'item', label: 'Item', width: 58 },
+        { key: 'quantity', label: 'Quantity', width: 30, align: 'right' },
+        { key: 'unitCost', label: 'Unit cost', width: 32, align: 'right' },
+        { key: 'totalCost', label: 'Total cost', width: 28, align: 'right' },
+        { key: 'notes', label: 'Notes', width: 44 },
+      ],
+      rows: [
+        {
+          item: 'Formula concentrate',
+          quantity: `${formatQuantity(computed.formulaVolumeNeeded)} ml`,
+          unitCost: formatPrice(formulaProfile.costPerMl),
+          totalCost: formatPrice(computed.formulaMaterialCost),
+          notes: 'Based on saved raw material prices',
+        },
+        {
+          item: selectedSolvent?.name || 'Batch solvent',
+          quantity: `${formatQuantity(computed.solventVolumeNeeded)} ml`,
+          unitCost: selectedSolvent ? formatPricePerUnit(selectedSolvent.cost_per_unit, selectedSolvent.unit) : '-',
+          totalCost: formatPrice(computed.solventMaterialCost),
+          notes: 'Main solvent for this batch',
+        },
+        {
+          item: 'Bottle + cap + packaging + label + other',
+          quantity: `${computed.bottleCount} bottles`,
+          unitCost: formatPrice(computed.additionalUnitCost),
+          totalCost: formatPrice(computed.totalAdditionalCost),
+          notes: 'Per-bottle extras',
+        },
+      ],
+      footerRows: [
+        {
+          item: 'TOTAL PRODUCTION COST',
+          quantity: '',
+          unitCost: '',
+          totalCost: formatPrice(computed.totalProductionCost),
+          notes: `${formatPrice(computed.costPerBottle)} per bottle`,
+        },
+      ],
+    });
+  };
+
   return (
     <AuthenticatedLayout>
       <Helmet>
@@ -178,6 +321,9 @@ const ProductionCostPage = () => {
         <PageHeader
           title="Production Costing"
           description="Hitung hasil batch ke botol jadi tanpa mengganggu formula. Formula tetap fokus ke material, sedangkan biaya botol, cap, packaging, dan label dihitung di sini."
+          action="Export PDF"
+          actionIcon={Download}
+          onAction={handleExportPdf}
         />
 
         {loading ? (
@@ -268,9 +414,15 @@ const ProductionCostPage = () => {
               </div>
 
               <div className="rounded-xl border bg-card p-5 space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                   <Calculator className="w-4 h-4 text-primary" />
                   <h2 className="text-lg font-semibold">Cost summary</h2>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 h-9">
+                    <Printer className="w-4 h-4" />
+                    Print
+                  </Button>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">

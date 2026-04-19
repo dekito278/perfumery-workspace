@@ -144,11 +144,11 @@ const FormulaDetailPage = () => {
       columns: [
         { key: 'material', label: 'Material', width: 54 },
         { key: 'type', label: 'Type', width: 22 },
-        { key: 'amount', label: 'Amount', width: 22 },
-        { key: 'percentage', label: '%', width: 18 },
+        { key: 'amount', label: 'Amount', width: 24, align: 'right' },
+        { key: 'percentage', label: '%', width: 18, align: 'right' },
         { key: 'dilution', label: 'Dilution', width: 34 },
-        { key: 'unitPrice', label: 'Unit price', width: 28 },
-        { key: 'cost', label: 'Cost', width: 22 },
+        { key: 'unitPrice', label: 'Unit price', width: 26, align: 'right' },
+        { key: 'cost', label: 'Cost', width: 18, align: 'right' },
       ],
       rows: items.map((item) => ({
         material: item.name,
@@ -159,6 +159,17 @@ const FormulaDetailPage = () => {
         unitPrice: formatPricePerUnit(item.unit_price, item.unit),
         cost: formatPrice(item.ingredient_cost ?? calculateIngredientCost(item.gram_amount, item.unit_price)),
       })),
+      footerRows: [
+        {
+          material: 'TOTAL',
+          type: '',
+          amount: formatGramAmount(totalGrams),
+          percentage: '100%',
+          dilution: '',
+          unitPrice: '',
+          cost: formatPrice(totalCost),
+        },
+      ],
       notes: formula.notes || '',
     });
   };
@@ -197,7 +208,7 @@ const FormulaDetailPage = () => {
             `Code ${formula.code}`,
             formula.category ? formatStatus(formula.category) : null,
             formula.version ? `Version ${formula.version}` : null,
-          ].filter(Boolean).join(' • ')}
+          ].filter(Boolean).join(' / ')}
           badge={
             formula.status && (
               <Badge variant="outline" className="capitalize text-xs">
@@ -479,3 +490,4 @@ const FormulaDetailPage = () => {
 };
 
 export default FormulaDetailPage;
+

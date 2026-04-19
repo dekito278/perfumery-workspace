@@ -122,7 +122,7 @@ const RawMaterialDetailPage = () => {
             material.vendor ? `Vendor: ${material.vendor}` : null,
             material.category ? formatStatus(material.category) : 'Uncategorized material',
             scentFamily || null,
-          ].filter(Boolean).join(' • ')}
+          ].filter(Boolean).join(' / ')}
           badge={
             <Badge variant="outline" className="capitalize text-xs">
               {formatStatus(material.type)}
@@ -210,14 +210,9 @@ const RawMaterialDetailPage = () => {
             </DetailFieldGroup>
             <div className="mt-3">
               <DetailFieldGroup columns={3}>
-                <DetailField label="Vendor" value={formatNullable(material.vendor)} />
                 <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
-                <DetailField label="Supplier" value={formatNullable(material.supplier_name)} />
-              </DetailFieldGroup>
-            </div>
-            <div className="mt-3">
-              <DetailFieldGroup columns={3}>
-                <DetailField label="Workbook code" value={formatNullable(material.workbook_code)} />
+                <DetailField label="IFRA limit" value={material.ifra_limit ? formatPercentage(material.ifra_limit) : 'N/A'} />
+                <DetailField label="Inventory value" value={formatPrice(inventoryValue)} />
               </DetailFieldGroup>
             </div>
           </DetailSection>
@@ -240,12 +235,8 @@ const RawMaterialDetailPage = () => {
                 value={`${formatQuantity(material.stock_quantity)} ${material.unit}`} 
               />
               <DetailField 
-                label="Minimum stock" 
-                value={`${formatQuantity(material.minimum_stock)} ${material.unit}`} 
-              />
-              <DetailField 
-                label="Low stock threshold" 
-                value={material.low_stock_threshold ? `${formatQuantity(material.low_stock_threshold)} ${material.unit}` : 'N/A'} 
+                label="Alert threshold" 
+                value={`${formatQuantity(stockThreshold)} ${material.unit}`} 
               />
               <DetailField 
                 label="Stock status" 
@@ -254,6 +245,10 @@ const RawMaterialDetailPage = () => {
                     {stockStatus}
                   </Badge>
                 } 
+              />
+              <DetailField 
+                label="Reorder gap" 
+                value={isLowStock ? `${formatQuantity(reorderGap)} ${material.unit}` : 'No gap'} 
               />
             </DetailFieldGroup>
             <div className="mt-3 text-sm text-muted-foreground">
@@ -355,3 +350,4 @@ const RawMaterialDetailPage = () => {
 };
 
 export default RawMaterialDetailPage;
+

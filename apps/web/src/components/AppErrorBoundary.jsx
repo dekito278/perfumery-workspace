@@ -1,5 +1,13 @@
 import React from 'react';
 
+const RESIZE_OBSERVER_MESSAGES = [
+  'ResizeObserver loop completed with undelivered notifications.',
+  'ResizeObserver loop limit exceeded',
+];
+
+const isIgnorableRuntimeError = (error) =>
+  RESIZE_OBSERVER_MESSAGES.some((message) => String(error?.message || error || '').includes(message));
+
 class AppErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -7,10 +15,17 @@ class AppErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    if (isIgnorableRuntimeError(error)) {
+      return null;
+    }
     return { error };
   }
 
   componentDidCatch(error, errorInfo) {
+    if (isIgnorableRuntimeError(error)) {
+      console.warn('Ignored ResizeObserver runtime noise:', error);
+      return;
+    }
     console.error('Unhandled application error:', error, errorInfo);
   }
 

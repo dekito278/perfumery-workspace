@@ -367,26 +367,37 @@ const BatchesPage = () => {
               columns={columns}
               data={paginatedBatches}
               mobileCard={(row) => (
-                <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-sm">
+                <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <button onClick={() => handleView(row)} className="text-left">
+                    <div className="min-w-0 flex-1">
+                      <button onClick={() => handleView(row)} className="w-full text-left">
                         <div className="truncate font-mono text-sm font-semibold text-primary hover:underline">{row.batch_code}</div>
                       </button>
-                      <div className="mt-1 text-sm text-foreground">{row.expand?.formula_id?.name || 'Unknown formula'}</div>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <BatchStatusBadge status={row.status} />
-                        <span className="text-xs text-muted-foreground">
-                          {formatQuantity(row.target_quantity)} {row.unit}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground">
+                      <div className="mt-1 truncate text-sm text-foreground">{row.expand?.formula_id?.name || 'Unknown formula'}</div>
+                    </div>
+                    <BatchStatusBadge status={row.status} />
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Target</div>
+                      <div className="mt-1 text-sm">{formatQuantity(row.target_quantity)} {row.unit}</div>
+                    </div>
+                    <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Date</div>
+                      <div className="mt-1 text-sm">
                         {new Date(row.production_date).toLocaleDateString('en-US', {
-                          year: 'numeric',
                           month: 'short',
                           day: 'numeric',
+                          year: 'numeric',
                         })}
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0 text-xs text-muted-foreground">
+                      {row.expand?.solvent_id?.name || 'No solvent selected'}
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <Button

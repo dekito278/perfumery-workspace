@@ -177,10 +177,10 @@ const BatchDetailPage = () => {
       columns: [
         { key: 'material', label: 'Material', width: 46 },
         { key: 'type', label: 'Type', width: 24 },
-        { key: 'required', label: 'Required', width: 22 },
+        { key: 'required', label: 'Required', width: 22, align: 'right' },
         { key: 'unit', label: 'Unit', width: 14 },
-        { key: 'unitPrice', label: 'Unit price', width: 26 },
-        { key: 'cost', label: 'Cost', width: 20 },
+        { key: 'unitPrice', label: 'Unit price', width: 26, align: 'right' },
+        { key: 'cost', label: 'Cost', width: 20, align: 'right' },
         { key: 'source', label: 'Source', width: 30 },
       ],
       rows: expandedComposition.map((item) => ({
@@ -192,6 +192,17 @@ const BatchDetailPage = () => {
         cost: formatPrice(item.total_cost),
         source: item.source,
       })),
+      footerRows: costBreakdown ? [
+        {
+          material: 'TOTAL BATCH COST',
+          type: '',
+          required: '',
+          unit: '',
+          unitPrice: '',
+          cost: formatPrice(costBreakdown.total_cost),
+          source: '',
+        },
+      ] : [],
       notes: batch.notes || '',
     });
   };
@@ -217,10 +228,10 @@ const BatchDetailPage = () => {
         columns: [
           { key: 'material', label: 'Material', width: 46 },
           { key: 'type', label: 'Type', width: 24 },
-          { key: 'required', label: 'Required', width: 22 },
+          { key: 'required', label: 'Required', width: 22, align: 'right' },
           { key: 'unit', label: 'Unit', width: 14 },
-          { key: 'unitPrice', label: 'Unit price', width: 26 },
-          { key: 'cost', label: 'Cost', width: 20 },
+          { key: 'unitPrice', label: 'Unit price', width: 26, align: 'right' },
+          { key: 'cost', label: 'Cost', width: 20, align: 'right' },
           { key: 'source', label: 'Source', width: 30 },
         ],
         rows: expandedComposition.map((item) => ({
@@ -232,6 +243,17 @@ const BatchDetailPage = () => {
           cost: formatPrice(item.total_cost),
           source: item.source,
         })),
+        footerRows: costBreakdown ? [
+          {
+            material: 'TOTAL BATCH COST',
+            type: '',
+            required: '',
+            unit: '',
+            unitPrice: '',
+            cost: formatPrice(costBreakdown.total_cost),
+            source: '',
+          },
+        ] : [],
         notes: batch.notes || '',
       },
       `${batch.batch_code}.pdf`
@@ -282,7 +304,7 @@ const BatchDetailPage = () => {
             formula?.name || null,
             formatDate(batch.production_date),
             `${formatQuantity(batch.target_quantity)} ${batch.unit}`,
-          ].filter(Boolean).join(' • ')}
+          ].filter(Boolean).join(' / ')}
           badge={<BatchStatusBadge status={batch.status} showIcon />}
           onBack={() => navigate('/batches')}
           backLabel="Back to batches"
@@ -912,3 +934,4 @@ const BatchDetailPage = () => {
 };
 
 export default BatchDetailPage;
+

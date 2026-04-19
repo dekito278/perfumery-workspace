@@ -32,11 +32,11 @@ const ExportFormulaButton = ({ formula, items }) => {
           columns: [
             { key: 'material', label: 'Material', width: 54 },
             { key: 'type', label: 'Type', width: 22 },
-            { key: 'amount', label: 'Amount', width: 22 },
-            { key: 'percentage', label: '%', width: 18 },
+            { key: 'amount', label: 'Amount', width: 24, align: 'right' },
+            { key: 'percentage', label: '%', width: 18, align: 'right' },
             { key: 'dilution', label: 'Dilution', width: 34 },
-            { key: 'unitPrice', label: 'Unit price', width: 28 },
-            { key: 'cost', label: 'Cost', width: 22 },
+            { key: 'unitPrice', label: 'Unit price', width: 26, align: 'right' },
+            { key: 'cost', label: 'Cost', width: 18, align: 'right' },
           ],
           rows: items.map((item) => ({
             material: item.name,
@@ -47,6 +47,17 @@ const ExportFormulaButton = ({ formula, items }) => {
             unitPrice: formatPricePerUnit(item.unit_price, item.unit),
             cost: formatPrice(item.ingredient_cost || 0),
           })),
+          footerRows: [
+            {
+              material: 'TOTAL',
+              type: '',
+              amount: formatGramAmount(totalGrams),
+              percentage: '100%',
+              dilution: '',
+              unitPrice: '',
+              cost: formatPrice(totalCost),
+            },
+          ],
           notes: formula.notes || '',
         },
         `${formula.code || 'formula'}_${formula.name.replace(/\s+/g, '_')}.pdf`

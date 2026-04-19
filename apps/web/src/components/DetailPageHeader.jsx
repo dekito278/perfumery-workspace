@@ -38,7 +38,7 @@ const DetailPageHeader = ({
           </div>
           
           {actions && (
-            <div className="flex gap-2 shrink-0 flex-wrap">
+            <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto [&>*]:w-full sm:[&>*]:w-auto">
               {actions}
             </div>
           )}
