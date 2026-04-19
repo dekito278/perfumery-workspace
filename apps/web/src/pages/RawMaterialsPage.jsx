@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Package, Eye, AlertTriangle, Layers3, Droplets, Wand2 } from 'lucide-react';
+import { RefreshCw, Home, Plus, Package, Eye, AlertTriangle, Layers3, Droplets, Wand2, Banknote, Shapes } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -12,15 +12,15 @@ import PageHeader from '@/components/PageHeader.jsx';
 import SearchBar from '@/components/SearchBar.jsx';
 import FilterBar from '@/components/FilterBar.jsx';
 import DataTable from '@/components/DataTable.jsx';
+import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import AddRawMaterialModal from '@/components/AddRawMaterialModal.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
-import RawMaterialDetailModal from '@/components/RawMaterialDetailModal.jsx';
 import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCategoriesModal.jsx';
 import { formatQuantity } from '@/utils/formatting.js';
-import { formatPricePerUnit } from '@/utils/pricingUtils.js';
+import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
@@ -37,11 +37,12 @@ const RawMaterialsPage = () => {
   const [stockFilter, setStockFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [remapModalOpen, setRemapModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
 
   const loadMaterials = async () => {
     setLoading(true);
@@ -82,7 +83,9 @@ const RawMaterialsPage = () => {
         (material.cas_number && material.cas_number.toLowerCase().includes(searchLower));
       
       const matchesType = typeFilter === 'all' || material.type === typeFilter;
-      const matchesCategory = categoryFilter === 'all' || material.category === categoryFilter;
+      const matchesCategory =
+        categoryFilter === 'all' ||
+        String(material.category || '').toLowerCase() === String(categoryFilter || '').toLowerCase();
       
       let matchesStock = true;
       if (stockFilter === 'low') {
@@ -96,6 +99,22 @@ const RawMaterialsPage = () => {
       return matchesSearch && matchesType && matchesCategory && matchesStock;
     });
   }, [materials, searchTerm, typeFilter, categoryFilter, stockFilter]);
+
+  const paginatedMaterials = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredMaterials.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, filteredMaterials]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, categoryFilter, stockFilter]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / pageSize));
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, filteredMaterials.length]);
 
   const categoryColorMap = useMemo(
     () => new Map(categories.map((category) => [category.name.toLowerCase(), category.color])),
@@ -116,15 +135,27 @@ const RawMaterialsPage = () => {
     [materials]
   );
 
+  const categoryCount = useMemo(
+    () => new Set(materials.map((material) => String(material.category || '').trim()).filter(Boolean)).size,
+    [materials]
+  );
+
+  const inventoryValue = useMemo(
+    () =>
+      materials.reduce(
+        (sum, material) => sum + calculateIngredientCost(material.stock_quantity || 0, material.cost_per_unit || 0),
+        0
+      ),
+    [materials]
+  );
+
   const handleEdit = (material) => {
     setSelectedMaterial(material);
-    setDetailModalOpen(false);
     setEditModalOpen(true);
   };
 
   const handleDelete = (material) => {
     setSelectedMaterial(material);
-    setDetailModalOpen(false);
     setDeleteDialogOpen(true);
   };
 
@@ -146,8 +177,9 @@ const RawMaterialsPage = () => {
   };
 
   const handleView = (material) => {
-    setSelectedMaterial(material);
-    setDetailModalOpen(true);
+    navigate(`/raw-material/${material.id}`, {
+      state: { from: '/raw-materials' },
+    });
   };
 
   const handleClearFilters = () => {
@@ -164,9 +196,12 @@ const RawMaterialsPage = () => {
       render: (row) => (
         <button
           onClick={() => handleView(row)}
-          className="font-medium text-left text-primary hover:underline"
+          className="text-left"
         >
-          {row.name}
+          <div className="font-medium text-primary hover:underline">{row.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+          </div>
         </button>
       )
     },
@@ -200,9 +235,14 @@ const RawMaterialsPage = () => {
         const threshold = row.low_stock_threshold || row.minimum_stock;
         const isLowStock = row.stock_quantity < threshold;
         return (
-          <span className={`font-mono ${isLowStock ? 'text-destructive font-semibold' : ''}`}>
-            {formatQuantity(row.stock_quantity)} {row.unit}
-          </span>
+          <div className="text-right">
+            <div className={`font-mono ${isLowStock ? 'text-destructive font-semibold' : ''}`}>
+              {formatQuantity(row.stock_quantity)} {row.unit}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Min {formatQuantity(threshold)} {row.unit}
+            </div>
+          </div>
         );
       }
     },
@@ -222,8 +262,10 @@ const RawMaterialsPage = () => {
       align: 'right',
       render: (row) => (
         <div className="text-right">
-                    <div className="font-mono text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
-          <div className="text-xs text-muted-foreground">Min {formatQuantity(row.minimum_stock)} {row.unit}</div>
+          <div className="font-mono text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
+          <div className="text-xs text-muted-foreground">
+            Stock value {formatPrice(calculateIngredientCost(row.stock_quantity || 0, row.cost_per_unit || 0))}
+          </div>
         </div>
       )
     }
@@ -298,61 +340,90 @@ const RawMaterialsPage = () => {
 
         <PageHeader
           title="Raw materials"
-          description="Manage your raw materials inventory with stock tracking and cost management"
+          description="Audit inventory health, vendor coverage, and dilution readiness from one master list before you dive into detail pages."
           action="Add material"
           actionIcon={Plus}
           onAction={() => setAddModalOpen(true)}
         />
 
-        <div className="mb-4 flex justify-end">
-          <Button variant="outline" onClick={() => setRemapModalOpen(true)} className="gap-2 h-9">
-            <Wand2 className="w-4 h-4" />
-            Remap categories
-          </Button>
-        </div>
-
-        <div className="mb-6 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border bg-card p-4">
+        <div className="list-summary-grid list-summary-grid-4">
+          <div className="list-summary-card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total materials</p>
-                <p className="mt-1 text-2xl font-semibold">{materials.length}</p>
+                <p className="list-summary-label">Total materials</p>
+                <span className="list-summary-value">{materials.length}</span>
+                <p className="list-summary-note">Active inventory records across materials and solvents.</p>
               </div>
               <Layers3 className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
-          <div className="rounded-2xl border bg-card p-4">
+          <div className="list-summary-card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Low stock alerts</p>
-                <p className="mt-1 text-2xl font-semibold text-destructive">{lowStockCount}</p>
+                <p className="list-summary-label">Low stock alerts</p>
+                <span className="list-summary-value text-destructive">{lowStockCount}</span>
+                <p className="list-summary-note">Materials already below their reorder threshold.</p>
               </div>
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
           </div>
-          <div className="rounded-2xl border bg-card p-4">
+          <div className="list-summary-card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Solvents ready</p>
-                <p className="mt-1 text-2xl font-semibold">{solventCount}</p>
+                <p className="list-summary-label">Solvents ready</p>
+                <span className="list-summary-value">{solventCount}</span>
+                <p className="list-summary-note">Solvents available for dilution and batch production.</p>
               </div>
               <Droplets className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
+          <div className="list-summary-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="list-summary-label">Estimated stock value</p>
+                <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{formatPrice(inventoryValue)}</span>
+                <p className="list-summary-note">{categoryCount} mapped categories currently in use.</p>
+              </div>
+              <Banknote className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
         </div>
 
-        <div className="mb-6 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+        <div className="list-toolbar-panel mb-6">
+          <div className="mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+            <div className="list-subtle-panel max-w-3xl">
+              <div className="flex items-start gap-3">
+                <Shapes className="mt-0.5 h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Inventory review flow</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Use this page to clean up categorization and stock health, then open each material&apos;s detail page for usage history and dilution context.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => setRemapModalOpen(true)} className="gap-2 h-10 rounded-2xl xl:self-start">
+              <Wand2 className="w-4 h-4" />
+              Remap categories
+            </Button>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Search materials or vendor
+              </div>
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
                 placeholder="Search by name, vendor, CAS, scent family, or category..."
               />
             </div>
-            <Button onClick={() => { loadMaterials(); loadCategories(); }} variant="outline" size="icon" disabled={loading} className="h-9 w-9">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
+            <div className="flex items-end">
+              <Button onClick={() => { loadMaterials(); loadCategories(); }} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-2xl">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
 
           <FilterBar
@@ -364,6 +435,7 @@ const RawMaterialsPage = () => {
           {!loading && materials.length > 0 && (
             <div className="results-count">
               Showing {filteredMaterials.length} of {materials.length} materials
+              {hasActiveFilters ? ' with active filters applied' : ''}
             </div>
           )}
         </div>
@@ -387,23 +459,59 @@ const RawMaterialsPage = () => {
             onClearFilters={hasActiveFilters ? handleClearFilters : null}
           />
         ) : (
-          <DataTable
-            columns={columns}
-            data={filteredMaterials}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            actions={(row) => (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleView(row)}
-                className="h-8 w-8 p-0"
-                title="View details"
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-            )}
-          />
+          <>
+            <DataTable
+              columns={columns}
+              data={paginatedMaterials}
+              mobileCard={(row) => (
+                <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <button onClick={() => handleView(row)} className="text-left">
+                        <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
+                      </button>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="capitalize text-[11px]">
+                          {row.type}
+                        </Badge>
+                        {row.category && (
+                          <span className="text-xs text-muted-foreground">{row.category}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleView(row)}
+                      className="h-8 rounded-xl px-3"
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+              )}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              actions={(row) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleView(row)}
+                  className="h-8 w-8 p-0"
+                  title="View details"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              )}
+            />
+            <ListPagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalItems={filteredMaterials.length}
+              itemLabel="materials"
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
 
@@ -419,16 +527,7 @@ const RawMaterialsPage = () => {
         material={selectedMaterial}
         onSuccess={() => {
           loadMaterials();
-          setDetailModalOpen(false);
         }}
-      />
-
-      <RawMaterialDetailModal
-        open={detailModalOpen}
-        onOpenChange={setDetailModalOpen}
-        material={selectedMaterial}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
       />
 
       <RemapRawMaterialCategoriesModal

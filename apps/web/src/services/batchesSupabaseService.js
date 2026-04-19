@@ -1,6 +1,7 @@
 import supabase from '@/lib/supabaseClient.js';
 import { getFormulaItems } from '@/services/formulasSupabaseService.js';
-import { getCurrentUserId, fetchFormulasMap, fetchRawMaterialsMap, toAppRecord } from '@/services/supabaseDataHelpers.js';
+import { getAccordItemsByAccordIds } from '@/services/accordsSupabaseService.js';
+import { getCurrentUserId, fetchAccordsMap, fetchFormulasMap, fetchRawMaterialsMap, toAppRecord } from '@/services/supabaseDataHelpers.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 
 const generateBatchCode = () => {
@@ -29,43 +30,37 @@ export const calculateBatchComposition = async (batch, formulaItems, solvent) =>
     .filter((item) => item.item_type === 'raw_material' || item.item_type === 'solvent')
     .map((item) => item.item_id);
   const materialsMap = await fetchRawMaterialsMap(materialIds);
+  const accordIds = formulaItems
+    .filter((item) => item.item_type === 'accord')
+    .map((item) => item.item_id);
+  const accordsMap = await fetchAccordsMap(accordIds);
+  const accordItemsMap = await getAccordItemsByAccordIds(accordIds);
 
-  for (const item of formulaItems) {
-    if (item.item_type !== 'raw_material' && item.item_type !== 'solvent') {
-      continue;
-    }
+  const pushMaterialComposition = async ({
+    material,
+    requiredQuantity,
+    source,
+    dilutionPercent = null,
+    dilutionSolventId = null,
+  }) => {
+    const hasDilution = dilutionPercent && dilutionSolventId;
 
-    const ingredientGrams = parseFloat(item.grams) || 0;
-    const proportion = ingredientGrams / formulaTotalGrams;
-    const requiredQuantity = proportion * batch.formula_quantity_needed;
-    const material = materialsMap.get(item.item_id);
-
-    if (!material) {
-      continue;
-    }
-
-    const formulaLevelDilutionPercent = item.dilution_percent ? Number(item.dilution_percent) : null;
-    const formulaLevelDilutionSolventId = item.dilution_solvent_id || null;
-    const hasFormulaLevelDilution = formulaLevelDilutionPercent && formulaLevelDilutionSolventId;
-
-    if (hasFormulaLevelDilution || (material.is_diluted && material.dilution_percentage && material.dilution_solvent_id)) {
-      const activePercent = hasFormulaLevelDilution ? formulaLevelDilutionPercent : material.dilution_percentage;
-      const solventId = hasFormulaLevelDilution ? formulaLevelDilutionSolventId : material.dilution_solvent_id;
-      const breakdown = calculateDilutionComposition(requiredQuantity, activePercent);
-      const effectivePricePerMl = (material.cost_per_unit || 0) / 10;
+    if (hasDilution) {
+      const breakdown = calculateDilutionComposition(requiredQuantity, dilutionPercent);
+      const effectivePricePerUnit = (material.cost_per_unit || 0) / 10;
 
       composition.push({
         type: 'formula_ingredient',
-        raw_material_id: item.item_id,
+        raw_material_id: material.id,
         name: material.name,
         required_quantity: Math.round(breakdown.activeAmount * 1000) / 1000,
         unit: material.unit || batch.unit,
         cost_per_unit: material.cost_per_unit || 0,
-        total_cost: effectivePricePerMl * breakdown.activeAmount,
-        source: `from ${material.name} ${activePercent}% diluted in formula`,
+        total_cost: effectivePricePerUnit * breakdown.activeAmount,
+        source,
       });
 
-      const dilutionSolvent = (await fetchRawMaterialsMap([solventId])).get(solventId);
+      const dilutionSolvent = (await fetchRawMaterialsMap([dilutionSolventId])).get(dilutionSolventId);
       if (dilutionSolvent) {
         composition.push({
           type: 'dilution_solvent',
@@ -75,21 +70,80 @@ export const calculateBatchComposition = async (batch, formulaItems, solvent) =>
           unit: dilutionSolvent.unit || batch.unit,
           cost_per_unit: dilutionSolvent.cost_per_unit || 0,
           total_cost: ((dilutionSolvent.cost_per_unit || 0) / 10) * breakdown.solventAmount,
-          source: `from ${material.name} ${activePercent}% diluted in formula`,
+          source,
         });
       }
-    } else {
-      composition.push({
-        type: 'formula_ingredient',
-        raw_material_id: item.item_id,
-        name: material.name,
-        required_quantity: Math.round(requiredQuantity * 1000) / 1000,
-        unit: material.unit || batch.unit,
-        cost_per_unit: material.cost_per_unit || 0,
-        total_cost: ((material.cost_per_unit || 0) / 10) * requiredQuantity,
-        source: 'direct ingredient',
-      });
+
+      return;
     }
+
+    composition.push({
+      type: 'formula_ingredient',
+      raw_material_id: material.id,
+      name: material.name,
+      required_quantity: Math.round(requiredQuantity * 1000) / 1000,
+      unit: material.unit || batch.unit,
+      cost_per_unit: material.cost_per_unit || 0,
+      total_cost: ((material.cost_per_unit || 0) / 10) * requiredQuantity,
+      source,
+    });
+  };
+
+  for (const item of formulaItems) {
+    const ingredientGrams = parseFloat(item.grams) || 0;
+    const proportion = ingredientGrams / formulaTotalGrams;
+    const requiredQuantity = proportion * batch.formula_quantity_needed;
+    if (item.item_type === 'accord') {
+      const accord = accordsMap.get(item.item_id);
+      const accordItems = accordItemsMap.get(item.item_id) || [];
+      const accordTotalPercentage = accordItems.reduce((sum, accordItem) => sum + Number(accordItem.percentage || 0), 0) || 100;
+
+      for (const accordItem of accordItems) {
+        const material = accordItem.expand?.raw_material_id || null;
+        if (!material) {
+          continue;
+        }
+
+        const accordPortion = Number(accordItem.percentage || 0) / accordTotalPercentage;
+        const accordRequiredQuantity = requiredQuantity * accordPortion;
+        const accordDilutionPercent = accordItem.dilution_percent ? Number(accordItem.dilution_percent) : null;
+        const accordDilutionSolventId = accordItem.dilution_solvent_id || null;
+        const hasAccordDilution = accordDilutionPercent && accordDilutionSolventId;
+
+        await pushMaterialComposition({
+          material,
+          requiredQuantity: accordRequiredQuantity,
+          source: `from legacy accord ${accord?.name || 'Unknown accord'}`,
+          dilutionPercent: hasAccordDilution ? accordDilutionPercent : material.dilution_percentage,
+          dilutionSolventId: hasAccordDilution ? accordDilutionSolventId : material.dilution_solvent_id,
+        });
+      }
+
+      continue;
+    }
+
+    if (item.item_type !== 'raw_material' && item.item_type !== 'solvent') {
+      continue;
+    }
+
+    const material = materialsMap.get(item.item_id);
+    if (!material) {
+      continue;
+    }
+
+    const formulaLevelDilutionPercent = item.dilution_percent ? Number(item.dilution_percent) : null;
+    const formulaLevelDilutionSolventId = item.dilution_solvent_id || null;
+    const hasFormulaLevelDilution = formulaLevelDilutionPercent && formulaLevelDilutionSolventId;
+
+    await pushMaterialComposition({
+      material,
+      requiredQuantity,
+      source: hasFormulaLevelDilution || (material.is_diluted && material.dilution_percentage && material.dilution_solvent_id)
+        ? `from ${material.name} ${(hasFormulaLevelDilution ? formulaLevelDilutionPercent : material.dilution_percentage)}% diluted in formula`
+        : 'direct ingredient',
+      dilutionPercent: hasFormulaLevelDilution ? formulaLevelDilutionPercent : material.dilution_percentage,
+      dilutionSolventId: hasFormulaLevelDilution ? formulaLevelDilutionSolventId : material.dilution_solvent_id,
+    });
   }
 
   if (solvent && batch.solvent_quantity_needed > 0) {

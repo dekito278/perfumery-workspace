@@ -34,7 +34,7 @@ const OperationalInsightCard = ({
   }
 
   return (
-    <Card className="p-6">
+    <Card className="rounded-[28px] border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_-42px_rgba(125,86,13,0.35)]">
       <div className="flex items-center gap-3 mb-4">
         <div className={`p-2 rounded-lg bg-muted/50 ${color}`}>
           <Icon className="w-5 h-5" />
@@ -46,18 +46,19 @@ const OperationalInsightCard = ({
       ) : (
         <div className="space-y-2">
           {items.map((item, index) => (
-            <div
+            <button
               key={item.id || index}
+              type="button"
               onClick={() => onItemClick && onItemClick(item)}
-              className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
-                onItemClick ? 'cursor-pointer hover:bg-muted/50' : ''
+              className={`flex w-full items-center justify-between rounded-2xl py-3 px-3 text-left transition-colors ${
+                onItemClick ? 'cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30' : ''
               }`}
             >
               <span className="text-sm font-medium truncate flex-1">{item.name}</span>
               <Badge variant={badgeVariant} className="ml-2 shrink-0">
                 {item.badge}
               </Badge>
-            </div>
+            </button>
           ))}
         </div>
       )}

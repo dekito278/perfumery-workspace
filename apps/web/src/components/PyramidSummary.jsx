@@ -2,10 +2,6 @@
 import React from 'react';
 
 const getProfileLabel = (item) => {
-  if (item.item_type === 'accord') {
-    return item.category || 'Accord';
-  }
-
   if (item.item_type === 'solvent') {
     return item.name || 'Solvent';
   }

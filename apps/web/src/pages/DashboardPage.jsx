@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Package, Palette, Beaker, Boxes, Activity, AlertTriangle, Plus, Eye } from 'lucide-react';
+import { Package, Beaker, Boxes, Activity, AlertTriangle, Plus, Eye, Sparkles, ArrowRight, Layers3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
-import { useAccords } from '@/hooks/useAccords.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBatches } from '@/hooks/useBatches.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -19,12 +19,10 @@ import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { fetchMaterials } = useRawMaterials();
-  const { fetchAccords } = useAccords();
   const { getFormulas } = useFormulas();
   const { getBatches } = useBatches();
 
   const [materials, setMaterials] = useState([]);
-  const [accords, setAccords] = useState([]);
   const [formulas, setFormulas] = useState([]);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,14 +30,12 @@ const DashboardPage = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [materialsData, accordsData, formulasData, batchesData] = await Promise.all([
+      const [materialsData, formulasData, batchesData] = await Promise.all([
         fetchMaterials(),
-        fetchAccords(),
         getFormulas(),
         getBatches()
       ]);
       setMaterials(materialsData);
-      setAccords(accordsData);
       setFormulas(formulasData);
       setBatches(batchesData);
     } catch (error) {
@@ -62,6 +58,8 @@ const DashboardPage = () => {
   const recentFormulas = [...formulas].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
   const recentBatches = [...batches].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
   const recentMaterials = [...materials].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
+  const accordFormulaCount = formulas.filter((formula) => formula.category === 'accord').length;
+  const perfumeFormulaCount = formulas.filter((formula) => formula.category !== 'accord').length;
 
   const summaryCards = [
     {
@@ -70,13 +68,6 @@ const DashboardPage = () => {
       count: materials.length,
       color: 'text-amber-600',
       onClick: () => navigate('/raw-materials')
-    },
-    {
-      icon: Palette,
-      label: 'Total accords',
-      count: accords.length,
-      color: 'text-rose-600',
-      onClick: () => navigate('/accords')
     },
     {
       icon: Beaker,
@@ -110,7 +101,6 @@ const DashboardPage = () => {
 
   const quickActions = [
     { label: 'Add raw material', icon: Plus, onClick: () => navigate('/raw-materials'), variant: 'default' },
-    { label: 'Create accord', icon: Plus, onClick: () => navigate('/accords'), variant: 'default' },
     { label: 'Create formula', icon: Plus, onClick: () => navigate('/formulas'), variant: 'default' },
     { label: 'Create batch', icon: Plus, onClick: () => navigate('/batches'), variant: 'default' },
     { label: 'View inventory', icon: Eye, onClick: () => navigate('/raw-materials'), variant: 'outline' },
@@ -121,16 +111,45 @@ const DashboardPage = () => {
     <AuthenticatedLayout>
       <Helmet>
         <title>Dashboard - Perfumer Studio</title>
-        <meta name="description" content="Manage your perfume production workflow with tools for raw materials, accords, formulas, and batches." />
+        <meta name="description" content="Manage your perfume production workflow with tools for raw materials, formulas, and batches." />
       </Helmet>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ letterSpacing: '-0.02em' }}>
-            Dashboard
-          </h1>
-          <p className="text-base text-muted-foreground">
-            Overview of your perfume production operations
-          </p>
+        <div className="dashboard-hero">
+          <div className="dashboard-hero-copy">
+            <div className="dashboard-hero-eyebrow">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Production overview
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
+              Workspace yang lebih fokus, lebih cepat dipindai, dan tanpa menu Accord terpisah.
+            </h1>
+            <p className="max-w-3xl text-base text-muted-foreground">
+              Semua alur sekarang berpusat di formulas, raw materials, batches, dan production costing. Formula kategori accord tetap ada, tapi sudah menyatu dalam workflow utama.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button onClick={() => navigate('/formulas')} className="h-11 rounded-2xl gap-2 px-5">
+                Open formulas
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/raw-materials')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
+                View inventory
+              </Button>
+            </div>
+          </div>
+          <div className="dashboard-hero-panel">
+            <div className="dashboard-hero-stat">
+              <span className="dashboard-hero-stat-label">Perfume formulas</span>
+              <strong>{perfumeFormulaCount}</strong>
+            </div>
+            <div className="dashboard-hero-stat">
+              <span className="dashboard-hero-stat-label">Accord formulas</span>
+              <strong>{accordFormulaCount}</strong>
+            </div>
+            <div className="dashboard-hero-stat">
+              <span className="dashboard-hero-stat-label">Low stock alerts</span>
+              <strong>{lowStockMaterials.length}</strong>
+            </div>
+          </div>
         </div>
 
         <DashboardSection title="Summary" subtitle="Key metrics at a glance">
@@ -150,7 +169,7 @@ const DashboardPage = () => {
         </DashboardSection>
 
         <DashboardSection title="Quick actions" subtitle="Common tasks and shortcuts">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
               return (
@@ -158,13 +177,45 @@ const DashboardPage = () => {
                   key={index}
                   variant={action.variant}
                   onClick={action.onClick}
-                  className="gap-2 h-auto py-3 flex-col sm:flex-row"
+                  className="h-auto min-h-[88px] flex-col items-start justify-between rounded-[24px] px-4 py-4 text-left shadow-sm sm:flex-row sm:items-center"
                 >
                   <Icon className="w-4 h-4" />
                   <span className="text-xs sm:text-sm">{action.label}</span>
                 </Button>
               );
             })}
+          </div>
+        </DashboardSection>
+
+        <DashboardSection title="Formula pulse" subtitle="Distribusi formula utama di workspace saat ini">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-[28px] border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_-42px_rgba(125,86,13,0.35)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <Layers3 className="w-4 h-4 text-primary" />
+                    Formula categories
+                  </div>
+                  <h3 className="mt-3 text-xl font-semibold">Semua formula sekarang berada dalam satu workspace.</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Accord tidak lagi tampil sebagai fitur terpisah. Gunakan kategori formula untuk membedakan formula parfum penuh dan formula accord.
+                  </p>
+                </div>
+                <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 px-3 py-1 text-primary">
+                  Unified
+                </Badge>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Perfume</p>
+                <p className="mt-3 text-3xl font-bold">{perfumeFormulaCount}</p>
+              </div>
+              <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Accord</p>
+                <p className="mt-3 text-3xl font-bold">{accordFormulaCount}</p>
+              </div>
+            </div>
           </div>
         </DashboardSection>
 

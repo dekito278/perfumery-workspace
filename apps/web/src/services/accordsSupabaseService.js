@@ -1,5 +1,7 @@
 import supabase from '@/lib/supabaseClient.js';
 import { fetchRawMaterialsMap, getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js';
+import { calculateDilutionCost } from '@/utils/calculateDilutionCost.js';
+import { calculateIngredientCost } from '@/utils/pricingUtils.js';
 
 const mapAccordItem = (row, materialsMap = new Map()) => ({
   ...toAppRecord(row),
@@ -58,6 +60,37 @@ export const getAccordItems = async (accordId) => {
   return (data || []).map((row) => mapAccordItem(row, materialsMap));
 };
 
+export const getAccordItemsByAccordIds = async (accordIds) => {
+  const uniqueIds = [...new Set((accordIds || []).filter(Boolean))];
+  if (!uniqueIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from('accord_items')
+    .select('*')
+    .in('accord_id', uniqueIds)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching accord items:', error);
+    throw new Error('Failed to fetch accord items');
+  }
+
+  const materialsMap = await fetchRawMaterialsMap(
+    (data || []).flatMap((item) => [item.raw_material_id, item.dilution_solvent_id]).filter(Boolean)
+  );
+
+  const groupedItems = new Map(uniqueIds.map((id) => [id, []]));
+  (data || []).forEach((row) => {
+    const currentItems = groupedItems.get(row.accord_id) || [];
+    currentItems.push(mapAccordItem(row, materialsMap));
+    groupedItems.set(row.accord_id, currentItems);
+  });
+
+  return groupedItems;
+};
+
 const normalizeAccordItemPayload = (accordId, item) => ({
   accord_id: accordId,
   raw_material_id: String(item.raw_material_id),
@@ -74,6 +107,58 @@ const buildAccordPayload = (accordData) => ({
   description: accordData.description ? String(accordData.description).trim() : null,
   unit: accordData.unit || 'ml',
 });
+
+const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
+const calculateAccordDerivedFields = async (items, fallbackUnit = 'ml') => {
+  if (!items?.length) {
+    return {
+      unit: fallbackUnit,
+      cost_per_unit: 0,
+    };
+  }
+
+  const materialsMap = await fetchRawMaterialsMap(
+    items.flatMap((item) => [item.raw_material_id, item.dilution_solvent_id]).filter(Boolean)
+  );
+
+  const totalAmount = items.reduce((sum, item) => sum + Number(item.percentage || 0), 0);
+  const totalCost = items.reduce((sum, item) => {
+    const material = materialsMap.get(item.raw_material_id);
+    if (!material) {
+      return sum;
+    }
+
+    const amount = Number(item.percentage || 0);
+    if (item.dilution_percent) {
+      return sum + calculateDilutionCost(amount, material.cost_per_unit || 0, item.dilution_percent).totalCost;
+    }
+
+    return sum + calculateIngredientCost(amount, material.cost_per_unit || 0);
+  }, 0);
+
+  return {
+    unit: fallbackUnit,
+    cost_per_unit: totalAmount > 0 ? roundMoney((totalCost / totalAmount) * 10) : 0,
+  };
+};
+
+const syncAccordDerivedFields = async (accordId, accordData, items) => {
+  const derivedFields = await calculateAccordDerivedFields(items, accordData.unit || 'ml');
+  const { data, error } = await supabase
+    .from('accords')
+    .update(derivedFields)
+    .eq('id', accordId)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error syncing accord derived fields:', error);
+    throw new Error(error.message || 'Failed to sync accord cost');
+  }
+
+  return data;
+};
 
 const VERSIONED_NAME_PATTERN = /\s+v(\d+)$/i;
 
@@ -230,17 +315,18 @@ const createAccordWithCompatibility = async (userId, accordData) => {
 
 export const createAccord = async (accordData, items) => {
   const userId = await getCurrentUserId();
-  const accord = await createAccordWithCompatibility(userId, accordData);
+  let accord = await createAccordWithCompatibility(userId, accordData);
 
   if (items?.length) {
     await insertAccordItemsWithCompatibility(accord.id, items);
   }
 
+  accord = await syncAccordDerivedFields(accord.id, accordData, items || []);
   return toAppRecord(accord);
 };
 
 export const updateAccord = async (accordId, accordData, items) => {
-  const accord = await updateAccordWithCompatibility(accordId, accordData);
+  await updateAccordWithCompatibility(accordId, accordData);
 
   const { error: deleteError } = await supabase
     .from('accord_items')
@@ -256,6 +342,7 @@ export const updateAccord = async (accordId, accordData, items) => {
     await insertAccordItemsWithCompatibility(accordId, items);
   }
 
+  const accord = await syncAccordDerivedFields(accordId, accordData, items || []);
   return toAppRecord(accord);
 };
 

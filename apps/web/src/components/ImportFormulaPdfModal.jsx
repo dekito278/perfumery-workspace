@@ -17,6 +17,7 @@ import { formatGramAmount } from '@/utils/formatting.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
 import { parseDilutionFromMaterialName } from '@/utils/formulaDilutionParsing.js';
+import { FORMULA_CATEGORIES } from '@/utils/constants.js';
 
 const normalizeLookupValue = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
 
@@ -76,6 +77,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
   const [parsing, setParsing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formulaName, setFormulaName] = useState('');
+  const [formulaCategory, setFormulaCategory] = useState('perfume');
   const [formulaAuthor, setFormulaAuthor] = useState('');
   const [internalCode, setInternalCode] = useState('');
   const [notes, setNotes] = useState('');
@@ -122,6 +124,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       setParsing(false);
       setSubmitting(false);
       setFormulaName('');
+      setFormulaCategory('perfume');
       setFormulaAuthor('');
       setInternalCode('');
       setNotes('');
@@ -235,6 +238,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       const parsedResult = await parsePerfumeWorkbookPdf(file);
       setParseResult(parsedResult);
       setFormulaName(parsedResult.formulaName || file.name.replace(/\.pdf$/i, ''));
+      setFormulaCategory('perfume');
       setInternalCode('');
       setFormulaAuthor('');
       setNotes('');
@@ -394,6 +398,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         {
           name: formulaName.trim(),
           code: internalCode.trim() || undefined,
+          category: formulaCategory,
           author_name: formulaAuthor.trim() || null,
           status: 'draft',
           notes: buildImportNotes({ customNotes: notes, parseResult }),
@@ -475,13 +480,19 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
+                    <FormSelect
+                      label="Formula category"
+                      value={formulaCategory}
+                      onChange={setFormulaCategory}
+                      options={FORMULA_CATEGORIES}
+                    />
                     <FormField
                       label="Internal code"
                       value={internalCode}
                       onChange={(event) => setInternalCode(event.target.value)}
                       placeholder="Optional, auto-generated if empty"
                     />
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-2 text-sm col-span-2">
                       <p className="font-medium">Workbook source</p>
                       <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
                         <p>Formula code: {parseResult.workbookFormulaCode || '-'}</p>

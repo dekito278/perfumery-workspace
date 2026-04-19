@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Package, Layers, Beaker, FlaskConical, LogOut, Tag, Calculator } from 'lucide-react';
+import { Menu, Home, Package, Beaker, FlaskConical, LogOut, Tag, Calculator, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const AppShell = ({ children }) => {
@@ -21,7 +21,6 @@ const AppShell = ({ children }) => {
     { path: '/dashboard', label: 'Dashboard', icon: Home },
     { path: '/raw-materials', label: 'Raw materials', icon: Package },
     { path: '/categories', label: 'Categories', icon: Tag },
-    { path: '/accords', label: 'Accords', icon: Layers },
     { path: '/formulas', label: 'Formulas', icon: Beaker },
     { path: '/batches', label: 'Batches', icon: FlaskConical },
     { path: '/production-costing', label: 'Production cost', icon: Calculator }
@@ -30,7 +29,10 @@ const AppShell = ({ children }) => {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const NavLinks = ({ mobile = false }) => (
-    <nav className={`flex ${mobile ? 'flex-col' : 'items-center'} gap-1`}>
+    <nav
+      aria-label={mobile ? 'Mobile navigation' : 'Primary navigation'}
+      className={`flex ${mobile ? 'flex-col' : 'flex-col'} gap-1`}
+    >
       {navItems.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.path);
@@ -39,14 +41,17 @@ const AppShell = ({ children }) => {
             key={item.path}
             to={item.path}
             onClick={() => mobile && setMobileMenuOpen(false)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            aria-current={active ? 'page' : undefined}
+            className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all ${
               active
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                ? 'bg-primary text-primary-foreground shadow-[0_12px_30px_-18px_hsl(var(--primary)/0.8)]'
+                : 'text-muted-foreground hover:bg-white/70 hover:text-foreground'
             }`}
           >
-            <Icon className="w-4 h-4" />
-            {item.label}
+            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-primary-foreground/14' : 'bg-muted/70'}`}>
+              <Icon className="w-4 h-4" />
+            </span>
+            <span className="flex-1">{item.label}</span>
           </Link>
         );
       })}
@@ -55,46 +60,77 @@ const AppShell = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 no-print">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-14 items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Link to="/dashboard" className="flex items-center gap-2">
-                <Beaker className="w-6 h-6 text-primary" />
-                <span className="font-bold text-lg">Perfumer Studio</span>
-              </Link>
-              <div className="hidden md:block">
-                <NavLinks />
+      <div className="app-shell">
+        <aside className="app-sidebar no-print hidden lg:flex">
+          <div className="app-sidebar-panel">
+            <Link to="/dashboard" className="app-brand">
+              <span className="app-brand-icon">
+                <Beaker className="w-5 h-5" />
+              </span>
+              <span>
+                <span className="app-brand-title">Perfumer Studio</span>
+                <span className="app-brand-subtitle">Production workspace</span>
+              </span>
+            </Link>
+
+            <div className="app-sidebar-intro">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                Focus Mode
               </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Semua alur utama sekarang dipusatkan ke formulas, batches, inventory, dan costing.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <NavLinks />
+
+            <div className="mt-auto rounded-3xl border border-white/70 bg-white/85 p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Session</p>
+              <p className="mt-2 text-sm font-semibold text-foreground">Ready to formulate</p>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="hidden md:flex gap-2"
+                className="mt-3 w-full justify-start gap-2 rounded-xl"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
               </Button>
+            </div>
+          </div>
+        </aside>
 
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="app-topbar no-print">
+            <div className="flex items-center gap-3">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild className="md:hidden">
-                  <Button variant="ghost" size="icon">
+                <SheetTrigger asChild className="lg:hidden">
+                  <Button variant="outline" size="icon" className="rounded-xl border-white/60 bg-white/70">
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-64">
-                  <div className="flex flex-col gap-4 mt-8">
-                    <NavLinks mobile />
+                <SheetContent side="left" className="w-[86vw] max-w-sm border-r-0 bg-[#f8efe1] p-0">
+                  <div className="flex h-full flex-col p-5">
+                    <Link to="/dashboard" className="app-brand" onClick={() => setMobileMenuOpen(false)}>
+                      <span className="app-brand-icon">
+                        <Beaker className="w-5 h-5" />
+                      </span>
+                      <span>
+                        <span className="app-brand-title">Perfumer Studio</span>
+                        <span className="app-brand-subtitle">Production workspace</span>
+                      </span>
+                    </Link>
+                    <div className="mt-6">
+                      <NavLinks mobile />
+                    </div>
                     <Button
                       variant="ghost"
                       onClick={() => {
                         handleLogout();
                         setMobileMenuOpen(false);
                       }}
-                      className="justify-start gap-2"
+                      className="mt-auto justify-start gap-2 rounded-xl"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -102,12 +138,28 @@ const AppShell = ({ children }) => {
                   </div>
                 </SheetContent>
               </Sheet>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      <main>{children}</main>
+              <Link to="/dashboard" className="flex items-center gap-2 lg:hidden">
+                <span className="app-brand-icon h-10 w-10">
+                  <Beaker className="w-5 h-5" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold leading-none">Perfumer Studio</span>
+                  <span className="mt-1 block text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Formulas first</span>
+                </span>
+              </Link>
+            </div>
+
+            <div className="hidden items-center gap-3 lg:flex">
+              <div className="rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-medium text-muted-foreground">
+                Unified formula workspace
+              </div>
+            </div>
+          </header>
+
+          <main className="app-main">{children}</main>
+        </div>
+      </div>
     </div>
   );
 };

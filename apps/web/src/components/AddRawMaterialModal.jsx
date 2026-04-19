@@ -193,8 +193,13 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       const next = { ...prev, [field]: value };
       if (field === 'category') {
         const meta = getRawMaterialCategoryMeta(value, prev.type, prev.scent_family);
+        const previousCategoryCode = findPerfumersWorldCategoryByValue(prev.category)?.code || '';
+        const nextCategoryCode = findPerfumersWorldCategoryByValue(value)?.code || '';
         next.type = meta.type;
         next.scent_family = meta.scentFamily;
+        if (nextCategoryCode && (!prev.workbook_code || prev.workbook_code === previousCategoryCode)) {
+          next.workbook_code = nextCategoryCode;
+        }
       }
       return next;
     });
@@ -313,6 +318,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 onBlur={() => handleBlur('workbook_code')}
                 error={errors.workbook_code}
                 placeholder="e.g., C123"
+                helperText="Auto-filled from category code. You can still edit it."
                 maxLength={FIELD_CONSTRAINTS.code.maxLength}
               />
               <FormField
@@ -334,6 +340,8 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 options={categoryOptions}
                 error={errors.category}
                 required
+                searchable
+                searchPlaceholder="Find category..."
                 placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
                 disabled={!categoryOptions.length}
               />

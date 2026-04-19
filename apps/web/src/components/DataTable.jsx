@@ -3,8 +3,29 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile.jsx';
 
-const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'No items found' }) => {
+const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'No items found', mobileCard }) => {
+  const isMobile = useIsMobile();
+
+  if (isMobile && mobileCard) {
+    return (
+      <div className="space-y-3">
+        {data.length === 0 ? (
+          <div className="table-container px-4 py-12 text-center text-muted-foreground">
+            {emptyMessage}
+          </div>
+        ) : (
+          data.map((row, rowIndex) => (
+            <div key={row.id || rowIndex}>
+              {mobileCard(row)}
+            </div>
+          ))
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="table-container">
       <Table>
@@ -52,6 +73,7 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
                           onClick={() => onEdit(row)}
                           className="h-8 w-8 p-0"
                           title="Edit"
+                          aria-label={`Edit ${row.name || row.code || 'item'}`}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -63,6 +85,7 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
                           onClick={() => onDelete(row)}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                           title="Delete"
+                          aria-label={`Delete ${row.name || row.code || 'item'}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

@@ -12,8 +12,6 @@ import DashboardPage from '@/pages/DashboardPage.jsx';
 import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
 import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
 import CategoriesPage from '@/pages/CategoriesPage.jsx';
-import AccordsPage from '@/pages/AccordsPage.jsx';
-import AccordDetailPage from '@/pages/AccordDetailPage.jsx';
 import FormulasPage from '@/pages/FormulasPage.jsx';
 import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
 import BatchesPage from '@/pages/BatchesPage.jsx';
@@ -63,23 +61,9 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         
-        <Route path="/accords" element={
-          <ProtectedRoute>
-            <AccordsPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/accord/:id" element={
-          <ProtectedRoute>
-            <AccordDetailPage />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/accords/:id" element={
-          <ProtectedRoute>
-            <AccordDetailPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/accords" element={<Navigate to="/formulas" replace />} />
+        <Route path="/accord/:id" element={<Navigate to="/formulas" replace />} />
+        <Route path="/accords/:id" element={<Navigate to="/formulas" replace />} />
         
         <Route path="/formulas" element={
           <ProtectedRoute>

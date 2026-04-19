@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 
 const EmptyState = ({ icon: Icon, title, description, action, actionIcon: ActionIcon, onAction }) => {
   return (
-    <div className="empty-state">
+    <div className="empty-state rounded-[32px] border border-dashed border-primary/20 bg-white/70 shadow-[0_30px_80px_-50px_rgba(125,86,13,0.45)]">
       {Icon && (
-        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-          <Icon className="w-8 h-8 text-muted-foreground" />
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] bg-primary/10 text-primary">
+          <Icon className="w-8 h-8" />
         </div>
       )}
       <h3 className="empty-state-title">{title}</h3>
@@ -15,7 +15,7 @@ const EmptyState = ({ icon: Icon, title, description, action, actionIcon: Action
         <p className="empty-state-description">{description}</p>
       )}
       {action && onAction && (
-        <Button onClick={onAction} className="gap-2 h-10">
+        <Button onClick={onAction} className="gap-2 h-11 rounded-2xl px-5">
           {ActionIcon && <ActionIcon className="w-4 h-4" />}
           {action}
         </Button>

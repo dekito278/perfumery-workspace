@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getFormulas, getFormulaItems } from '@/services/formulasSupabaseService.js';
-import { getAccords } from '@/services/accordsSupabaseService.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
+import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 
 const parseNumberInput = (value) => {
   const parsed = Number(value);
@@ -26,7 +26,6 @@ const ProductionCostPage = () => {
   const [loading, setLoading] = useState(true);
   const [formulas, setFormulas] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
-  const [accords, setAccords] = useState([]);
   const [selectedFormulaId, setSelectedFormulaId] = useState('');
   const [selectedSolventId, setSelectedSolventId] = useState('');
   const [formulaProfile, setFormulaProfile] = useState(null);
@@ -43,15 +42,13 @@ const ProductionCostPage = () => {
     const loadReferenceData = async () => {
       setLoading(true);
       try {
-        const [formulasData, rawMaterialsData, accordsData] = await Promise.all([
+        const [formulasData, rawMaterialsData] = await Promise.all([
           getFormulas(),
           getRawMaterials(),
-          getAccords(),
         ]);
 
         setFormulas(formulasData);
         setRawMaterials(rawMaterialsData);
-        setAccords(accordsData);
 
         const firstFormulaId = formulasData[0]?.id || '';
         const firstSolventId = rawMaterialsData.find((material) => material.type === 'solvent')?.id || '';
@@ -76,13 +73,10 @@ const ProductionCostPage = () => {
 
       try {
         const items = await getFormulaItems(selectedFormulaId);
-        const rawMaterialsMap = new Map(rawMaterials.map((item) => [item.id, item]));
-        const accordsMap = new Map(accords.map((item) => [item.id, item]));
+        const referenceMaps = await buildFormulaItemReferenceMaps(items, rawMaterials);
 
         const enrichedItems = items.map((item) => {
-          const sourceItem = item.item_type === 'accord'
-            ? accordsMap.get(item.item_id)
-            : rawMaterialsMap.get(item.item_id);
+          const sourceItem = resolveFormulaItemReference(item, referenceMaps);
           const gramAmount = Number(item.grams || 0);
           const unitPrice = Number(sourceItem?.cost_per_unit || 0);
 
@@ -110,10 +104,10 @@ const ProductionCostPage = () => {
       }
     };
 
-    if (!loading && rawMaterials.length >= 0 && accords.length >= 0) {
+    if (!loading && rawMaterials.length >= 0) {
       loadFormulaProfile();
     }
-  }, [selectedFormulaId, rawMaterials, accords, loading]);
+  }, [selectedFormulaId, rawMaterials, loading]);
 
   const solventOptions = useMemo(
     () => rawMaterials.filter((material) => material.type === 'solvent'),
@@ -369,7 +363,7 @@ const ProductionCostPage = () => {
               <div className="rounded-xl border bg-card p-5 space-y-4">
                 <h2 className="text-lg font-semibold">How the calculation works</h2>
                 <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>Formula cost uses the raw material and accord costs already saved in your formula.</p>
+                  <p>Formula cost uses the raw material costs already saved in your formula.</p>
                   <p>Batch material cost = formula concentrate needed + solvent needed.</p>
                   <p>Per-bottle extras are added only in this menu, so formula import and formula editing stay clean.</p>
                   <p>Bottle count is rounded down to full bottles. Sisa volume ditampilkan terpisah supaya mudah dipakai untuk uji coba atau topping.</p>

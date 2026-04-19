@@ -140,10 +140,9 @@ export const calculateTotalAmount = async (items) => {
  * Calculate formula cost with dilution support
  * @param {Array} items - Formula items
  * @param {Array} materials - Raw materials array
- * @param {Array} accords - Accords array
  * @returns {Object} { totalCost, costBreakdown }
  */
-export const calculateFormulaCost = async (items, materials, accords) => {
+export const calculateFormulaCost = async (items, materials) => {
   if (!items || items.length === 0) {
     return { totalCost: 0, costBreakdown: [] };
   }
@@ -180,12 +179,6 @@ export const calculateFormulaCost = async (items, materials, accords) => {
           const costPerGram = calculateEffectiveUnitCost(material.cost_per_unit, 10);
           itemCost = gramAmount * costPerGram;
         }
-      }
-    } else if (item.item_type === 'accord') {
-      const accord = accords.find(a => a.id === item.item_id);
-      if (accord && accord.cost_per_unit) {
-        const costPerGram = calculateEffectiveUnitCost(accord.cost_per_unit, 10);
-        itemCost = gramAmount * costPerGram;
       }
     }
     

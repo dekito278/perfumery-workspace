@@ -339,6 +339,8 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
                 options={categoryOptions}
                 error={errors.category}
                 required
+                searchable
+                searchPlaceholder="Find category..."
                 placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
                 disabled={!categoryOptions.length}
               />

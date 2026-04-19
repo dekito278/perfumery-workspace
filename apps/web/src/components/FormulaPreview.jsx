@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatGramAmount, formatPercentage, formatStatus, formatQuantity } from '@/utils/formatting.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
+import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 import { getFormulaItems } from '@/services/formulasSupabaseService.js';
-import { getAccords } from '@/services/accordsSupabaseService.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const FormulaPreview = ({ formula }) => {
@@ -23,25 +23,19 @@ const FormulaPreview = ({ formula }) => {
     setLoading(true);
     try {
       const itemsData = await getFormulaItems(formula.id);
-      const [rawMaterials, accords] = await Promise.all([getRawMaterials(), getAccords()]);
-      const rawMaterialsMap = new Map(rawMaterials.map((item) => [item.id, item]));
-      const accordsMap = new Map(accords.map((item) => [item.id, item]));
+      const rawMaterials = await getRawMaterials();
+      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
 
       const enrichedItems = itemsData.map((item) => {
-        let itemDetails = null;
-        if (item.item_type === 'raw_material' || item.item_type === 'solvent') {
-          itemDetails = rawMaterialsMap.get(item.item_id) || null;
-        } else if (item.item_type === 'accord') {
-          itemDetails = accordsMap.get(item.item_id) || null;
-        }
+        const itemDetails = resolveFormulaItemReference(item, referenceMaps);
 
         return {
           ...item,
           name: itemDetails?.name || 'Unknown',
-          type: itemDetails?.type || item.item_type,
+          type: itemDetails?.type || itemDetails?.item_type || 'raw_material',
           is_diluted: Boolean(item.dilution_percent && item.dilution_solvent_id) || itemDetails?.is_diluted || false,
           dilution_percentage: item.dilution_percent || itemDetails?.dilution_percentage || null,
-          dilution_solvent_name: item.dilution_solvent_id ? rawMaterialsMap.get(item.dilution_solvent_id)?.name || null : null,
+          dilution_solvent_name: item.dilution_solvent_id ? referenceMaps.rawMaterialsMap.get(item.dilution_solvent_id)?.name || null : null,
         };
       });
 
@@ -113,7 +107,7 @@ const FormulaPreview = ({ formula }) => {
                   <TableRow className="bg-muted/30">
                     <TableCell colSpan={4} className="py-2 px-4">
                       <div className="text-xs text-muted-foreground">
-                        Composition: {formatQuantity(composition.activeAmount)} ml active + {formatQuantity(composition.solventAmount)} ml solvent
+                        Composition: {formatQuantity(composition.activeAmount)} g active + {formatQuantity(composition.solventAmount)} g solvent
                       </div>
                     </TableCell>
                   </TableRow>

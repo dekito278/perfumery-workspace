@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Pencil, Trash2, Printer, ExternalLink, CheckCircle } from 'lucide-react';
+import { Pencil, Trash2, Printer, ExternalLink, CheckCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBatches } from '@/hooks/useBatches.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
@@ -30,8 +30,9 @@ import EditBatchModal from '@/components/EditBatchModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import { formatQuantity, formatPercentage, formatStatus, formatDate } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
+import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
-import { getRawMaterialById } from '@/services/rawMaterialsService.js';
+import { getRawMaterialById, getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const BatchDetailPage = () => {
   const { id } = useParams();
@@ -44,6 +45,7 @@ const BatchDetailPage = () => {
   const [expandedComposition, setExpandedComposition] = useState([]);
   const [usageRecords, setUsageRecords] = useState([]);
   const [costBreakdown, setCostBreakdown] = useState(null);
+  const [formulaPreviewItems, setFormulaPreviewItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -52,6 +54,7 @@ const BatchDetailPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [validating, setValidating] = useState(false);
+  const [formulaPreviewOpen, setFormulaPreviewOpen] = useState(false);
 
   useEffect(() => {
     loadBatchDetails();
@@ -74,7 +77,21 @@ const BatchDetailPage = () => {
         setSolvent(null);
       }
 
-      const itemsData = await getFormulaItems(batchData.formula_id);
+      const [itemsData, rawMaterials] = await Promise.all([
+        getFormulaItems(batchData.formula_id),
+        getRawMaterials(),
+      ]);
+      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
+      setFormulaPreviewItems(
+        itemsData.map((item) => {
+          const sourceItem = resolveFormulaItemReference(item, referenceMaps);
+
+          return {
+            ...item,
+            name: sourceItem?.name || 'Unknown',
+          };
+        })
+      );
       const usageData = await getBatchUsageRecords(batchData.id);
       setUsageRecords(usageData);
 
@@ -140,8 +157,85 @@ const BatchDetailPage = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+    printWorkbookPdf({
+      typeLabel: 'Batch Production Sheet',
+      title: batch.batch_code,
+      subtitle: formula?.name || 'Batch details',
+      summaryEntries: [
+        { label: 'Batch code', value: batch.batch_code },
+        { label: 'Formula', value: formula.name },
+        { label: 'Status', value: formatStatus(batch.status) },
+        { label: 'Production date', value: formatDate(batch.production_date) },
+        { label: 'Target quantity', value: `${formatQuantity(batch.target_quantity)} ${batch.unit}` },
+        { label: 'Formula concentration', value: formatPercentage(batch.formula_percentage || 0) },
+        { label: 'Solvent percentage', value: formatPercentage(batch.solvent_percentage || 0) },
+        { label: 'Total batch cost', value: costBreakdown ? formatPrice(costBreakdown.total_cost) : '-' },
+      ],
+      tableTitle: 'Material Requirements',
+      columns: [
+        { key: 'material', label: 'Material', width: 46 },
+        { key: 'type', label: 'Type', width: 24 },
+        { key: 'required', label: 'Required', width: 22 },
+        { key: 'unit', label: 'Unit', width: 14 },
+        { key: 'unitPrice', label: 'Unit price', width: 26 },
+        { key: 'cost', label: 'Cost', width: 20 },
+        { key: 'source', label: 'Source', width: 30 },
+      ],
+      rows: expandedComposition.map((item) => ({
+        material: item.name,
+        type: formatStatus(item.type),
+        required: formatQuantity(item.required_quantity),
+        unit: item.unit,
+        unitPrice: formatPricePerUnit(item.cost_per_unit, item.unit),
+        cost: formatPrice(item.total_cost),
+        source: item.source,
+      })),
+      notes: batch.notes || '',
+    });
+  };
+
+  const handleExportPdf = async () => {
+    const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+    exportWorkbookPdf(
+      {
+        typeLabel: 'Batch Production Sheet',
+        title: batch.batch_code,
+        subtitle: formula?.name || 'Batch details',
+        summaryEntries: [
+          { label: 'Batch code', value: batch.batch_code },
+          { label: 'Formula', value: formula.name },
+          { label: 'Status', value: formatStatus(batch.status) },
+          { label: 'Production date', value: formatDate(batch.production_date) },
+          { label: 'Target quantity', value: `${formatQuantity(batch.target_quantity)} ${batch.unit}` },
+          { label: 'Formula concentration', value: formatPercentage(batch.formula_percentage || 0) },
+          { label: 'Solvent percentage', value: formatPercentage(batch.solvent_percentage || 0) },
+          { label: 'Total batch cost', value: costBreakdown ? formatPrice(costBreakdown.total_cost) : '-' },
+        ],
+        tableTitle: 'Material Requirements',
+        columns: [
+          { key: 'material', label: 'Material', width: 46 },
+          { key: 'type', label: 'Type', width: 24 },
+          { key: 'required', label: 'Required', width: 22 },
+          { key: 'unit', label: 'Unit', width: 14 },
+          { key: 'unitPrice', label: 'Unit price', width: 26 },
+          { key: 'cost', label: 'Cost', width: 20 },
+          { key: 'source', label: 'Source', width: 30 },
+        ],
+        rows: expandedComposition.map((item) => ({
+          material: item.name,
+          type: formatStatus(item.type),
+          required: formatQuantity(item.required_quantity),
+          unit: item.unit,
+          unitPrice: formatPricePerUnit(item.cost_per_unit, item.unit),
+          cost: formatPrice(item.total_cost),
+          source: item.source,
+        })),
+        notes: batch.notes || '',
+      },
+      `${batch.batch_code}.pdf`
+    );
   };
 
   const totalMaterialsUsed = useMemo(
@@ -182,10 +276,36 @@ const BatchDetailPage = () => {
       
       <DetailPageLayout>
         <DetailPageHeader
+          eyebrow="Batch"
           title={batch.batch_code}
+          subtitle={[
+            formula?.name || null,
+            formatDate(batch.production_date),
+            `${formatQuantity(batch.target_quantity)} ${batch.unit}`,
+          ].filter(Boolean).join(' • ')}
           badge={<BatchStatusBadge status={batch.status} showIcon />}
           onBack={() => navigate('/batches')}
           backLabel="Back to batches"
+          meta={
+            <>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Formula</span>
+                <span className="detail-page-meta-value">{formula?.name || '-'}</span>
+              </div>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Target quantity</span>
+                <span className="detail-page-meta-value">
+                  {formatQuantity(batch.target_quantity)} {batch.unit}
+                </span>
+              </div>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Batch cost</span>
+                <span className="detail-page-meta-value">
+                  {costBreakdown ? formatPrice(costBreakdown.total_cost) : '-'}
+                </span>
+              </div>
+            </>
+          }
           actions={
             <>
               {canComplete && (
@@ -206,6 +326,10 @@ const BatchDetailPage = () => {
               <Button variant="outline" onClick={handlePrint} className="gap-2 h-9">
                 <Printer className="w-4 h-4" />
                 Print
+              </Button>
+              <Button variant="outline" onClick={handleExportPdf} className="gap-2 h-9">
+                <Download className="w-4 h-4" />
+                Export PDF
               </Button>
               {batch.status === 'draft' && (
                 <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} className="gap-2 h-9">
@@ -283,12 +407,7 @@ const BatchDetailPage = () => {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/formulas/${formula.id}`)}
-                  className="gap-2 h-8"
-                >
+                <Button variant="outline" size="sm" onClick={() => setFormulaPreviewOpen(true)} className="gap-2 h-8">
                   View formula
                   <ExternalLink className="w-3 h-3" />
                 </Button>
@@ -298,6 +417,12 @@ const BatchDetailPage = () => {
                   Batch size: {formatQuantity(formula.batch_size)} ml
                 </div>
               )}
+              <div className="mt-4">
+                <Button variant="outline" size="sm" onClick={() => navigate(`/formulas/${formula.id}`)} className="gap-2 h-8">
+                  Open formula detail
+                  <ExternalLink className="w-3 h-3" />
+                </Button>
+              </div>
             </div>
           </DetailSection>
 
@@ -333,6 +458,14 @@ const BatchDetailPage = () => {
                 </div>
               </div>
             </div>
+            {solvent && (
+              <div className="mt-3">
+                <Button variant="outline" size="sm" onClick={() => navigate(`/raw-material/${solvent.id}`)} className="gap-2 h-8">
+                  Open solvent detail
+                  <ExternalLink className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
           </DetailSection>
 
           <DetailSection title="Quantity breakdown">
@@ -684,6 +817,92 @@ const BatchDetailPage = () => {
             </Button>
             <Button onClick={handleComplete} disabled={completing || validating}>
               {completing ? 'Completing...' : 'Complete batch'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={formulaPreviewOpen} onOpenChange={setFormulaPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{formula.name}</DialogTitle>
+            <DialogDescription>
+              Formula preview for batch {batch.batch_code}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-lg border bg-card p-4">
+                <div className="text-xs text-muted-foreground">Code</div>
+                <div className="mt-1 font-mono text-sm font-semibold">{formula.code}</div>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="text-xs text-muted-foreground">Status</div>
+                <div className="mt-1">
+                  <Badge variant="outline" className="capitalize text-xs">
+                    {formatStatus(formula.status || 'draft')}
+                  </Badge>
+                </div>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="text-xs text-muted-foreground">Version</div>
+                <div className="mt-1 text-sm font-semibold">{formula.version || '-'}</div>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="text-xs text-muted-foreground">Items</div>
+                <div className="mt-1 text-sm font-semibold">{formulaPreviewItems.length}</div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-card overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Material</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Percentage</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {formulaPreviewItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-sm">
+                        {item.name}
+                        {item.dilution_percent && (
+                          <div className="text-xs text-muted-foreground">
+                            {item.dilution_percent}%{item.dilution_solvent_id ? ' diluted' : ''}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize text-xs">
+                          {formatStatus(item.item_type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatQuantity(item.grams || 0)} g
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatPercentage(item.percentage || 0)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {formula.notes && (
+              <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground whitespace-pre-wrap">
+                {formula.notes}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setFormulaPreviewOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

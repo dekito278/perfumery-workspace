@@ -3,67 +3,54 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toast } from 'sonner';
-
-const getCompositionLabel = (item) => {
-  if (item.item_type === 'accord') {
-    return item.category || 'Accord';
-  }
-
-  if (item.item_type === 'solvent') {
-    return item.name || 'Solvent';
-  }
-
-  return item.component_family || item.scent_family || item.category || 'Material';
-};
+import { formatDate, formatGramAmount, formatNullable, formatPercentage, formatStatus } from '@/utils/formatting.js';
+import { formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 
 const ExportFormulaButton = ({ formula, items }) => {
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      const compositionProfile = items.reduce((acc, item) => {
-        const label = getCompositionLabel(item);
-        acc[label] = (acc[label] || 0) + Number(item.percentage || 0);
-        return acc;
-      }, {});
-      const itemTypeTotals = items.reduce((acc, item) => {
-        const type = item.item_type || 'unknown';
-        acc[type] = (acc[type] || 0) + Number(item.percentage || 0);
-        return acc;
-      }, {});
-
+      const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
       const totalGrams = items.reduce((sum, item) => sum + (parseFloat(item.gram_amount) || 0), 0);
+      const totalCost = items.reduce((sum, item) => sum + Number(item.ingredient_cost || 0), 0);
 
-      const exportData = {
-        name: formula.name,
-        code: formula.code,
-        category: formula.category || null,
-        status: formula.status || 'draft',
-        version: formula.version || null,
-        created: formula.created,
-        notes: formula.notes || '',
-        total_grams: totalGrams,
-        ingredients: items.map(item => ({
-          name: item.name,
-          type: item.item_type,
-          category: item.category || null,
-          family: item.component_family || item.scent_family || null,
-          gram_amount: item.gram_amount,
-          percentage: item.percentage,
-          unit_price: item.unit_price || 0,
-          ingredient_cost: item.ingredient_cost || 0,
-        })),
-        composition_profile: compositionProfile,
-        item_type_summary: itemTypeTotals,
-      };
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${formula.code}_${formula.name.replace(/\s+/g, '_')}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      exportWorkbookPdf(
+        {
+          typeLabel: 'Formula Sheet',
+          title: formula.name,
+          subtitle: `Code ${formula.code}`,
+          summaryEntries: [
+            { label: 'Code', value: formula.code },
+            { label: 'By', value: formatNullable(formula.author_name) },
+            { label: 'Status', value: formatStatus(formula.status || 'draft') },
+            { label: 'Version', value: formatNullable(formula.version) },
+            { label: 'Total amount', value: formatGramAmount(totalGrams) },
+            { label: 'Material cost', value: formatPrice(totalCost) },
+            { label: 'Created', value: formatDate(formula.created) },
+            { label: 'Category', value: formatNullable(formula.category) },
+          ],
+          tableTitle: 'Composition',
+          columns: [
+            { key: 'material', label: 'Material', width: 54 },
+            { key: 'type', label: 'Type', width: 22 },
+            { key: 'amount', label: 'Amount', width: 22 },
+            { key: 'percentage', label: '%', width: 18 },
+            { key: 'dilution', label: 'Dilution', width: 34 },
+            { key: 'unitPrice', label: 'Unit price', width: 28 },
+            { key: 'cost', label: 'Cost', width: 22 },
+          ],
+          rows: items.map((item) => ({
+            material: item.name,
+            type: formatStatus(item.item_type),
+            amount: formatGramAmount(item.gram_amount),
+            percentage: formatPercentage(item.percentage),
+            dilution: item.dilution_percentage ? `${item.dilution_percentage}%${item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''}` : '-',
+            unitPrice: formatPricePerUnit(item.unit_price, item.unit),
+            cost: formatPrice(item.ingredient_cost || 0),
+          })),
+          notes: formula.notes || '',
+        },
+        `${formula.code || 'formula'}_${formula.name.replace(/\s+/g, '_')}.pdf`
+      );
 
       toast.success('Formula exported successfully');
     } catch (error) {
@@ -74,7 +61,7 @@ const ExportFormulaButton = ({ formula, items }) => {
   return (
     <Button variant="outline" onClick={handleExport} className="gap-2 h-9">
       <Download className="w-4 h-4" />
-      Export
+      Export PDF
     </Button>
   );
 };

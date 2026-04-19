@@ -11,28 +11,32 @@ const FilterBar = ({ filters, onFilterChange, onClearAll }) => {
   return (
     <div className="filter-bar-container">
       {filters.map((filter) => (
-        <Select
-          key={filter.id}
-          value={filter.value}
-          onValueChange={(value) => onFilterChange(filter.id, value)}
-        >
-          <SelectTrigger className="w-full sm:w-48 text-foreground">
-            <SelectValue placeholder={filter.placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {filter.options.map((option) => (
-              <SelectItem key={option.value} value={option.value} className="capitalize">
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div key={filter.id} className="min-w-[180px] flex-1 sm:flex-none">
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {filter.placeholder}
+          </div>
+          <Select
+            value={filter.value}
+            onValueChange={(value) => onFilterChange(filter.id, value)}
+          >
+            <SelectTrigger className="h-11 w-full rounded-2xl border-white/70 bg-white/80 text-foreground shadow-sm sm:w-48">
+              <SelectValue placeholder={filter.placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {filter.options.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="capitalize">
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       ))}
       {activeFilterCount > 0 && (
-        <Button variant="outline" onClick={onClearAll} className="gap-2">
+        <Button variant="outline" onClick={onClearAll} className="mt-[22px] h-11 gap-2 rounded-2xl border-white/70 bg-white/80 px-4">
           <X className="w-4 h-4" />
           Clear filters
-          <Badge variant="secondary" className="ml-1">
+          <Badge variant="secondary" className="ml-1 rounded-full">
             {activeFilterCount}
           </Badge>
         </Button>

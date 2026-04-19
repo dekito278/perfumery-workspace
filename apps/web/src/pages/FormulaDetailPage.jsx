@@ -24,13 +24,13 @@ import PyramidSummary from '@/components/PyramidSummary.jsx';
 import ExportFormulaButton from '@/components/ExportFormulaButton.jsx';
 import { calculatePercentages } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
-import { formatAmountWithUnit, formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate } from '@/utils/formatting.js';
+import { formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate, formatQuantity } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
-import { getFormulaById, getFormulas } from '@/services/formulasSupabaseService.js';
-import { getAccordById, getAccords } from '@/services/accordsSupabaseService.js';
-import { getBatchById, getBatches } from '@/services/batchesSupabaseService.js';
+import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
+import { getFormulaById } from '@/services/formulasSupabaseService.js';
+import { getBatches } from '@/services/batchesSupabaseService.js';
 import { getRawMaterialById, getRawMaterials } from '@/services/rawMaterialsService.js';
 
 const FormulaDetailPage = () => {
@@ -56,12 +56,11 @@ const FormulaDetailPage = () => {
       setFormula(formulaData);
 
       const itemsData = await getFormulaItems(id);
-      const [rawMaterials, accords] = await Promise.all([getRawMaterials(), getAccords()]);
-      const rawMaterialsMap = new Map(rawMaterials.map((item) => [item.id, item]));
-      const accordsMap = new Map(accords.map((item) => [item.id, item]));
+      const rawMaterials = await getRawMaterials();
+      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
 
       const enrichedItems = await Promise.all(itemsData.map(async (item) => {
-        let itemDetails = null;
+        let itemDetails = resolveFormulaItemReference(item, referenceMaps);
         let isLowStock = false;
         let unitPrice = 0;
         let category = null;
@@ -71,7 +70,7 @@ const FormulaDetailPage = () => {
         let dilutionSolventName = null;
 
         if (item.item_type === 'raw_material' || item.item_type === 'solvent') {
-          itemDetails = rawMaterialsMap.get(item.item_id) || await getRawMaterialById(item.item_id);
+          itemDetails = itemDetails || await getRawMaterialById(item.item_id);
           isLowStock = itemDetails.low_stock_threshold 
             ? itemDetails.stock_quantity < itemDetails.low_stock_threshold
             : itemDetails.stock_quantity < itemDetails.minimum_stock;
@@ -83,14 +82,13 @@ const FormulaDetailPage = () => {
             dilutionPercentage = itemDetails.dilution_percentage || null;
           }
           if (item.dilution_solvent_id) {
-            const dilutionSolvent = rawMaterialsMap.get(item.dilution_solvent_id) || await getRawMaterialById(item.dilution_solvent_id);
+            const dilutionSolvent = referenceMaps.rawMaterialsMap.get(item.dilution_solvent_id) || await getRawMaterialById(item.dilution_solvent_id);
             dilutionSolventName = dilutionSolvent?.name || null;
           }
         } else if (item.item_type === 'accord') {
-          itemDetails = accordsMap.get(item.item_id) || await getAccordById(item.item_id);
-          unitPrice = itemDetails.cost_per_unit || 0;
-          category = itemDetails.category || null;
-          componentFamily = itemDetails.category || 'Accord';
+          unitPrice = itemDetails?.cost_per_unit || 0;
+          category = itemDetails?.category || 'accord';
+          componentFamily = 'accord';
         }
 
         const gramAmount = item.grams || item.percentage || 0;
@@ -126,8 +124,43 @@ const FormulaDetailPage = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+    printWorkbookPdf({
+      typeLabel: 'Formula Sheet',
+      title: formula.name,
+      subtitle: `Code ${formula.code}`,
+      summaryEntries: [
+        { label: 'Code', value: formula.code },
+        { label: 'By', value: formatNullable(formula.author_name) },
+        { label: 'Status', value: formatStatus(formula.status || 'draft') },
+        { label: 'Version', value: formatNullable(formula.version) },
+        { label: 'Total amount', value: formatGramAmount(totalGrams) },
+        { label: 'Material cost', value: formatPrice(totalCost) },
+        { label: 'Created', value: formatDate(formula.created) },
+        { label: 'Category', value: formatNullable(formula.category) },
+      ],
+      tableTitle: 'Composition',
+      columns: [
+        { key: 'material', label: 'Material', width: 54 },
+        { key: 'type', label: 'Type', width: 22 },
+        { key: 'amount', label: 'Amount', width: 22 },
+        { key: 'percentage', label: '%', width: 18 },
+        { key: 'dilution', label: 'Dilution', width: 34 },
+        { key: 'unitPrice', label: 'Unit price', width: 28 },
+        { key: 'cost', label: 'Cost', width: 22 },
+      ],
+      rows: items.map((item) => ({
+        material: item.name,
+        type: formatStatus(item.item_type),
+        amount: formatGramAmount(item.gram_amount),
+        percentage: formatPercentage(item.percentage),
+        dilution: item.dilution_percentage ? `${item.dilution_percentage}%${item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''}` : '-',
+        unitPrice: formatPricePerUnit(item.unit_price, item.unit),
+        cost: formatPrice(item.ingredient_cost ?? calculateIngredientCost(item.gram_amount, item.unit_price)),
+      })),
+      notes: formula.notes || '',
+    });
   };
 
   if (loading) {
@@ -146,6 +179,8 @@ const FormulaDetailPage = () => {
   const totalGrams = calculateTotalAmount(items);
   const totalPercentage = items.reduce((sum, item) => sum + (item.percentage || 0), 0);
   const totalCost = calculateTotalCost(items);
+  const lowStockCount = items.filter((item) => item.is_low_stock).length;
+  const dilutedItemCount = items.filter((item) => item.is_diluted && item.dilution_percentage).length;
 
   return (
     <>
@@ -156,8 +191,13 @@ const FormulaDetailPage = () => {
       
       <DetailPageLayout>
         <DetailPageHeader
+          eyebrow="Formula"
           title={formula.name}
-          subtitle={`Code: ${formula.code}`}
+          subtitle={[
+            `Code ${formula.code}`,
+            formula.category ? formatStatus(formula.category) : null,
+            formula.version ? `Version ${formula.version}` : null,
+          ].filter(Boolean).join(' • ')}
           badge={
             formula.status && (
               <Badge variant="outline" className="capitalize text-xs">
@@ -167,6 +207,22 @@ const FormulaDetailPage = () => {
           }
           onBack={() => navigate('/formulas')}
           backLabel="Back to formulas"
+          meta={
+            <>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Formula size</span>
+                <span className="detail-page-meta-value">{formatGramAmount(totalGrams)}</span>
+              </div>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Material cost</span>
+                <span className="detail-page-meta-value">{formatPrice(totalCost)}</span>
+              </div>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Related batches</span>
+                <span className="detail-page-meta-value">{batches.length}</span>
+              </div>
+            </>
+          }
           actions={
             <>
               <Button onClick={() => setCreateBatchModalOpen(true)} className="gap-2 h-9">
@@ -191,12 +247,34 @@ const FormulaDetailPage = () => {
         />
 
         <div className="space-y-5 print-full-width">
+          <DetailSection title="Snapshot">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Total items</div>
+                <div className="text-lg font-semibold">{items.length}</div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Low stock ingredients</div>
+                <div className={`text-lg font-semibold ${lowStockCount > 0 ? 'text-destructive' : ''}`}>{lowStockCount}</div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Diluted ingredients</div>
+                <div className="text-lg font-semibold">{dilutedItemCount}</div>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="text-xs text-muted-foreground mb-1">Recent batches</div>
+                <div className="text-lg font-semibold">{batches.length}</div>
+              </div>
+            </div>
+          </DetailSection>
+
           <DetailSection title="Summary">
             <DetailFieldGroup columns={4}>
               <DetailField label="Code" value={formula.code} />
               <DetailField label="By" value={formatNullable(formula.author_name)} />
               <DetailField label="Status" value={formatStatus(formula.status || 'draft')} />
               <DetailField label="Material cost" value={formatPrice(totalCost)} />
+              <DetailField label="Category" value={formatNullable(formula.category)} />
               <DetailField label="Version" value={formatNullable(formula.version)} />
             </DetailFieldGroup>
             <div className="mt-3 grid grid-cols-2 gap-4">
@@ -241,30 +319,30 @@ const FormulaDetailPage = () => {
                       <React.Fragment key={index}>
                         <TableRow>
                           <TableCell>
-                            <button
-                              onClick={() => {
-                                if (item.item_type === 'raw_material' || item.item_type === 'solvent') {
-                                  navigate(`/raw-material/${item.item_id}`);
-                                } else if (item.item_type === 'accord') {
-                                  navigate(`/accord/${item.item_id}`);
-                                }
-                              }}
-                              className="font-medium text-primary hover:underline text-sm"
-                            >
-                              {item.name}
-                              {isDiluted && (
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  ({item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''})
-                                </span>
-                              )}
-                            </button>
+                            {item.item_type === 'raw_material' || item.item_type === 'solvent' ? (
+                              <button
+                                onClick={() => navigate(`/raw-material/${item.item_id}`)}
+                                className="font-medium text-primary hover:underline text-sm"
+                              >
+                                {item.name}
+                                {isDiluted && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    ({item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''})
+                                  </span>
+                                )}
+                              </button>
+                            ) : (
+                              <div className="font-medium text-sm">
+                                {item.name}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="capitalize text-xs">
                               {formatStatus(item.item_type)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm">{formatAmountWithUnit(item.gram_amount, item.unit)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{formatGramAmount(item.gram_amount)}</TableCell>
                           <TableCell className="text-right font-mono text-sm">{formatPercentage(item.percentage)}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
                             {formatPricePerUnit(item.unit_price, item.unit)}
@@ -284,7 +362,7 @@ const FormulaDetailPage = () => {
                           <TableRow className="bg-muted/30">
                             <TableCell colSpan={7} className="py-2 px-4">
                               <div className="text-xs text-muted-foreground">
-                                Active: {formatAmountWithUnit(composition.activeAmount, item.unit)} + Solvent: {formatAmountWithUnit(composition.solventAmount, item.unit)}
+                                Active: {formatGramAmount(composition.activeAmount)} + Solvent: {formatGramAmount(composition.solventAmount)}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -310,7 +388,7 @@ const FormulaDetailPage = () => {
               <div className="mt-1 text-lg font-bold font-mono text-primary">{formatPrice(totalCost)}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Percentages are calculated from gram amounts. Formula detail stays focused on raw materials, accords, and solvent-related costs only.
+              Percentages are calculated from gram amounts. Formula detail stays focused on raw materials and solvent-related costs only.
             </p>
           </DetailSection>
 
@@ -341,7 +419,7 @@ const FormulaDetailPage = () => {
                           <BatchStatusBadge status={batch.status} />
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          {formatGramAmount(batch.target_quantity)}
+                          {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
                         </TableCell>
                         <TableCell className="text-right text-sm">
                           {formatDate(batch.production_date)}

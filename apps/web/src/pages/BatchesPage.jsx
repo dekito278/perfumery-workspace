@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Home, Plus, Boxes, Eye, FlaskConical } from 'lucide-react';
+import { RefreshCw, Home, Plus, Boxes, Eye, FlaskConical, ClipboardList, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBatches } from '@/hooks/useBatches.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -11,6 +11,7 @@ import PageHeader from '@/components/PageHeader.jsx';
 import SearchBar from '@/components/SearchBar.jsx';
 import FilterBar from '@/components/FilterBar.jsx';
 import DataTable from '@/components/DataTable.jsx';
+import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
@@ -33,6 +34,8 @@ const BatchesPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
 
   const loadBatches = async () => {
     setLoading(true);
@@ -66,6 +69,37 @@ const BatchesPage = () => {
       return matchesSearch && matchesStatus;
     });
   }, [batches, searchTerm, statusFilter]);
+
+  const paginatedBatches = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredBatches.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, filteredBatches]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredBatches.length / pageSize));
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, filteredBatches.length]);
+
+  const draftCount = useMemo(
+    () => batches.filter((batch) => batch.status === 'draft').length,
+    [batches]
+  );
+
+  const completedCount = useMemo(
+    () => batches.filter((batch) => batch.status === 'completed').length,
+    [batches]
+  );
+
+  const deductedCount = useMemo(
+    () => batches.filter((batch) => batch.is_stock_deducted).length,
+    [batches]
+  );
 
   const handleEdit = (batch) => {
     if (batch.status !== 'draft') {
@@ -124,7 +158,14 @@ const BatchesPage = () => {
     {
       key: 'batch_code',
       label: 'Batch code',
-      render: (row) => <span className="font-mono font-semibold text-sm">{row.batch_code}</span>
+      render: (row) => (
+        <button onClick={() => handleView(row)} className="text-left">
+          <div className="font-mono font-semibold text-sm text-primary hover:underline">{row.batch_code}</div>
+          <div className="text-xs text-muted-foreground">
+            {formatQuantity(row.target_quantity)} {row.unit}
+          </div>
+        </button>
+      )
     },
     {
       key: 'formula',
@@ -213,13 +254,68 @@ const BatchesPage = () => {
 
         <PageHeader
           title="Batches"
-          description="Track production batches with solvent dilution and monitor batch status"
+          description="Move batches from planning to completion with clearer status tracking, material readiness, and production records."
           action="Create batch"
           actionIcon={Plus}
           onAction={() => setCreateModalOpen(true)}
         />
 
-        <div className="mb-6 flex flex-col gap-4">
+        <div className="list-summary-grid list-summary-grid-4">
+          <div className="list-summary-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="list-summary-label">Total batches</p>
+                <span className="list-summary-value">{batches.length}</span>
+                <p className="list-summary-note">All production runs recorded in the workspace.</p>
+              </div>
+              <Boxes className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="list-summary-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="list-summary-label">Draft queue</p>
+                <span className="list-summary-value">{draftCount}</span>
+                <p className="list-summary-note">Draft batches can still be edited, produced, or deleted.</p>
+              </div>
+              <ClipboardList className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="list-summary-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="list-summary-label">Completed</p>
+                <span className="list-summary-value text-emerald-700">{completedCount}</span>
+                <p className="list-summary-note">Production runs already marked as completed.</p>
+              </div>
+              <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+            </div>
+          </div>
+          <div className="list-summary-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="list-summary-label">Stock deducted</p>
+                <span className="list-summary-value">{deductedCount}</span>
+                <p className="list-summary-note">Batches with material deductions already recorded.</p>
+              </div>
+              <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+
+        <div className="list-toolbar-panel mb-6 flex flex-col gap-4">
+          <div className="list-subtle-panel">
+            <div className="flex items-start gap-3">
+              <FlaskConical className="mt-0.5 h-4 w-4 text-primary" />
+              <div>
+                <p className="text-sm font-semibold">Batch workflow</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Draft batches are your planning stage. Open a batch detail page to review material expansion, costs, and stock deduction before completion.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <SearchBar
@@ -242,6 +338,7 @@ const BatchesPage = () => {
           {!loading && batches.length > 0 && (
             <div className="results-count">
               Showing {filteredBatches.length} of {batches.length} batches
+              {hasActiveFilters ? ' with active filters applied' : ''}
             </div>
           )}
         </div>
@@ -265,36 +362,92 @@ const BatchesPage = () => {
             onClearFilters={hasActiveFilters ? handleClearFilters : null}
           />
         ) : (
-          <DataTable
-            columns={columns}
-            data={filteredBatches}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            actions={(row) => (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleView(row)}
-                  className="h-8 w-8 p-0"
-                  title="View details"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-                {row.status === 'draft' && (
+          <>
+            <DataTable
+              columns={columns}
+              data={paginatedBatches}
+              mobileCard={(row) => (
+                <div className="rounded-[22px] border border-white/80 bg-white/88 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <button onClick={() => handleView(row)} className="text-left">
+                        <div className="truncate font-mono text-sm font-semibold text-primary hover:underline">{row.batch_code}</div>
+                      </button>
+                      <div className="mt-1 text-sm text-foreground">{row.expand?.formula_id?.name || 'Unknown formula'}</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <BatchStatusBadge status={row.status} />
+                        <span className="text-xs text-muted-foreground">
+                          {formatQuantity(row.target_quantity)} {row.unit}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {new Date(row.production_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleView(row)}
+                        className="h-8 w-8 rounded-xl p-0"
+                        title="View details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {row.status === 'draft' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleProduce(row)}
+                          className="h-8 w-8 rounded-xl p-0"
+                          title="Produce batch"
+                        >
+                          <FlaskConical className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              actions={(row) => (
+                <>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleProduce(row)}
+                    onClick={() => handleView(row)}
                     className="h-8 w-8 p-0"
-                    title="Produce batch"
+                    title="View details"
                   >
-                    <FlaskConical className="w-4 h-4" />
+                    <Eye className="w-4 h-4" />
                   </Button>
-                )}
-              </>
-            )}
-          />
+                  {row.status === 'draft' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleProduce(row)}
+                      className="h-8 w-8 p-0"
+                      title="Produce batch"
+                    >
+                      <FlaskConical className="w-4 h-4" />
+                    </Button>
+                  )}
+                </>
+              )}
+            />
+            <ListPagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalItems={filteredBatches.length}
+              itemLabel="batches"
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
 

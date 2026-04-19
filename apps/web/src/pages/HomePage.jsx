@@ -2,7 +2,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Package, Palette, Beaker, Boxes, ArrowRight, Calculator } from 'lucide-react';
+import { Package, Beaker, Boxes, ArrowRight, Calculator } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const HomePage = () => {
@@ -17,17 +17,8 @@ const HomePage = () => {
       hoverColor: 'hover:border-amber-500/30'
     },
     {
-      title: 'Accords',
-      description: 'Create and manage custom fragrance accords from raw materials',
-      icon: Palette,
-      path: '/accords',
-      color: 'from-rose-500/10 to-pink-500/10',
-      iconColor: 'text-rose-600',
-      hoverColor: 'hover:border-rose-500/30'
-    },
-    {
       title: 'Formulas',
-      description: 'Build complete perfume formulas around raw materials, accords, and solvent composition',
+      description: 'Build complete perfume and accord formulas around raw materials and solvent composition',
       icon: Beaker,
       path: '/formulas',
       color: 'from-primary/10 to-amber-500/10',
@@ -58,7 +49,7 @@ const HomePage = () => {
     <>
       <Helmet>
         <title>Dashboard - Perfumer Studio</title>
-        <meta name="description" content="Manage your perfume production workflow with tools for raw materials, accords, formulas, and batches." />
+        <meta name="description" content="Manage your perfume production workflow with tools for raw materials, formulas, and batches." />
       </Helmet>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
@@ -119,7 +110,7 @@ const HomePage = () => {
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-2">Getting started</h3>
                 <p className="text-muted-foreground">
-                  Begin by adding raw materials to your inventory, then create accords and formulas to build your perfume collection.
+                  Begin by adding raw materials to your inventory, then create perfume or accord formulas to build your collection.
                 </p>
               </div>
               <Link to="/raw-materials">

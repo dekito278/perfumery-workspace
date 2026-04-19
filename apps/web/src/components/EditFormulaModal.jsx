@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import FormulaItemRow from '@/components/FormulaItemRow.jsx';
@@ -16,23 +16,47 @@ import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalcu
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
-import { FORMULA_STATUSES } from '@/utils/constants.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
-import { getAccords } from '@/services/accordsSupabaseService.js';
 
 const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   const { updateFormula, loading } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [category, setCategory] = useState('perfume');
   const [version, setVersion] = useState('');
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [formulaItems, setFormulaItems] = useState([]);
+  const [legacyAccordItems, setLegacyAccordItems] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
-  const [accords, setAccords] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [focusRowIndex, setFocusRowIndex] = useState(null);
+
+  const createEmptyFormulaItem = () => ({
+    item_id: '',
+    gram_amount: '',
+    dilution_percent: '',
+    dilution_solvent_id: '',
+    dilution_solvent_name: '',
+    item_type: '',
+  });
+
+  const getActiveFormulaItems = (items) =>
+    items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
+
+  const ensureTrailingEmptyItem = (items) => {
+    const nextItems = [...getActiveFormulaItems(items)];
+    const lastItem = nextItems[nextItems.length - 1];
+
+    if (!lastItem || lastItem.item_id || lastItem.gram_amount || lastItem.dilution_percent || lastItem.dilution_solvent_id) {
+      nextItems.push(createEmptyFormulaItem());
+    }
+
+    return nextItems;
+  };
 
   useEffect(() => {
     if (open && formula) {
@@ -43,16 +67,18 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [materialsData, accordsData, itemsData] = await Promise.all([
+      const [materialsData, itemsData] = await Promise.all([
         getRawMaterials(),
-        getAccords(),
         getFormulaItems(formula.id)
       ]);
 
       setRawMaterials(materialsData);
-      setAccords(accordsData);
+      const hiddenLegacyAccordItems = itemsData.filter((item) => item.item_type === 'accord');
+      setLegacyAccordItems(hiddenLegacyAccordItems);
 
-      const formattedItems = itemsData.map((item) => ({
+      const formattedItems = itemsData
+        .filter((item) => item.item_type !== 'accord')
+        .map((item) => ({
         item_type: item.item_type,
         item_id: item.item_id,
         gram_amount: item.grams || (item.percentage || 0).toString(),
@@ -65,11 +91,13 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
 
       setName(formula.name);
       setCode(formula.code);
+      setCategory(formula.category || 'perfume');
       setVersion(formula.version || '');
       setStatus(formula.status || 'draft');
       setNotes(formula.notes || '');
-      setFormulaItems(formattedItems);
+      setFormulaItems(ensureTrailingEmptyItem(formattedItems));
       setValidationErrors({});
+      setFocusRowIndex(null);
     } catch (error) {
       toast.error('Failed to load formula data');
     } finally {
@@ -77,15 +105,9 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     }
   };
 
-  const addFormulaItem = () => {
-    setFormulaItems([
-      ...formulaItems,
-      { item_id: '', gram_amount: '', dilution_percent: '', dilution_solvent_id: '', dilution_solvent_name: '' }
-    ]);
-  };
-
   const removeFormulaItem = (index) => {
-    setFormulaItems(formulaItems.filter((_, i) => i !== index));
+    const remainingItems = formulaItems.filter((_, i) => i !== index);
+    setFormulaItems(ensureTrailingEmptyItem(remainingItems));
     const newErrors = { ...validationErrors };
     delete newErrors[`item_${index}`];
     setValidationErrors(newErrors);
@@ -96,25 +118,26 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     updated[index].item_id = itemId;
     
     const isRawMaterial = rawMaterials.some(m => m.id === itemId);
-    const isAccord = accords.some(a => a.id === itemId);
-    
     if (isRawMaterial) {
       const material = rawMaterials.find(m => m.id === itemId);
       updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
-    } else if (isAccord) {
-      updated[index].item_type = 'accord';
-      updated[index].dilution_percent = '';
-      updated[index].dilution_solvent_id = '';
-      updated[index].dilution_solvent_name = '';
     }
     
-    setFormulaItems(updated);
+    setFormulaItems(ensureTrailingEmptyItem(updated));
+  };
+
+  const handleCommitRow = (index) => {
+    setFormulaItems((currentItems) => {
+      const nextItems = ensureTrailingEmptyItem(currentItems);
+      setFocusRowIndex(Math.min(index + 1, nextItems.length - 1));
+      return nextItems;
+    });
   };
 
   const updateGramAmount = (index, gramAmount) => {
     const updated = [...formulaItems];
     updated[index].gram_amount = gramAmount;
-    setFormulaItems(updated);
+    setFormulaItems(ensureTrailingEmptyItem(updated));
     
     const error = validateGramAmount(gramAmount);
     const newErrors = { ...validationErrors };
@@ -148,15 +171,16 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
       updated[index].dilution_solvent_name = '';
     }
 
-    setFormulaItems(updated);
+    setFormulaItems(ensureTrailingEmptyItem(updated));
     const nextErrors = { ...validationErrors };
     delete nextErrors.ingredients;
     delete nextErrors[`item_${index}`];
     setValidationErrors(nextErrors);
   };
 
-  const totalGrams = calculateTotalAmount(formulaItems);
-  const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(formulaItems, totalGrams) : [];
+  const activeFormulaItems = getActiveFormulaItems(formulaItems);
+  const totalGrams = calculateTotalAmount(activeFormulaItems);
+  const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(activeFormulaItems, totalGrams) : [];
 
   const validateForm = () => {
     const errors = {};
@@ -168,13 +192,13 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
       errors.code = 'Formula code is required';
     }
 
-    const ingredientErrors = validateFormulaItems(formulaItems);
+    const ingredientErrors = validateFormulaItems(activeFormulaItems);
     if (ingredientErrors.length > 0) {
       errors.ingredients = ingredientErrors.join(', ');
     }
 
     const materialIds = new Set();
-    formulaItems.forEach((item, index) => {
+    activeFormulaItems.forEach((item, index) => {
       if (item.item_id && materialIds.has(item.item_id)) {
         errors[`item_${index}`] = 'Duplicate material';
       } else if (item.item_id) {
@@ -207,12 +231,12 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
           : null,
       }));
 
-      const totalAmount = calculateTotalAmount(formulaItems);
+      const totalAmount = calculateTotalAmount(activeFormulaItems);
 
       await updateFormula(formula.id, { 
         name, 
         code, 
-        category: null,
+        category,
         version: version || null, 
         status,
         notes: notes || null,
@@ -228,13 +252,14 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   };
 
   const hasErrors = Object.keys(validationErrors).length > 0;
+  const hasLegacyAccordItems = legacyAccordItems.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>Edit formula</DialogTitle>
-          <DialogDescription>Update the formula details and ingredient amounts.</DialogDescription>
+          <DialogDescription>Type ingredients directly, keep editing inline, and let the form maintain one ready-to-fill empty row.</DialogDescription>
         </DialogHeader>
         
         {loadingData ? (
@@ -278,6 +303,21 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
+                  <Label htmlFor="edit-formula-category" className="text-sm font-medium">Formula category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger id="edit-formula-category" className="text-foreground h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORMULA_CATEGORIES.map((formulaCategory) => (
+                        <SelectItem key={formulaCategory.value} value={formulaCategory.value}>
+                          {formulaCategory.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="edit-formula-version" className="text-sm font-medium">Version</Label>
                   <Input
                     id="edit-formula-version"
@@ -287,7 +327,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
                     className="text-foreground"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="edit-formula-status" className="text-sm font-medium">Status</Label>
                   <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger className="text-foreground h-9">
@@ -306,12 +346,11 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
             </div>
 
             <div className="border-t pt-5 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="space-y-1">
                 <h3 className="font-semibold text-base">Formula ingredients</h3>
-                <Button type="button" onClick={addFormulaItem} size="sm" variant="outline" className="gap-2 h-9">
-                  <Plus className="w-4 h-4" />
-                  Add ingredient
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Edit the current lines directly. A fresh empty row stays available at the bottom as you work.
+                </p>
               </div>
 
               {validationErrors.ingredients && (
@@ -321,30 +360,35 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
                 </div>
               )}
 
-              {formulaItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg text-sm">
-                  No ingredients yet. Click "Add ingredient" to start building your formula.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {formulaItems.map((item, index) => (
-                    <FormulaItemRow
-                      key={index}
-                      item={item}
-                      index={index}
-                      onItemChange={updateItem}
-                      onGramAmountChange={updateGramAmount}
-                      onDilutionChange={updateDilutionConfig}
-                      onRemove={removeFormulaItem}
-                      rawMaterials={rawMaterials}
-                      accords={accords}
-                      error={validationErrors[`item_${index}`]}
-                    />
-                  ))}
+              {hasLegacyAccordItems && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <p className="text-xs text-amber-800">
+                    This formula still contains {legacyAccordItems.length} hidden legacy accord item{legacyAccordItems.length > 1 ? 's' : ''}. Editing is locked to avoid removing old accord data silently. Rebuild the formula into raw materials first if you want to change it.
+                  </p>
                 </div>
               )}
 
-              {formulaItems.length > 0 && (
+              <div className="space-y-3">
+                {formulaItems.map((item, index) => (
+                  <FormulaItemRow
+                    key={index}
+                    item={item}
+                    index={index}
+                    onItemChange={updateItem}
+                    onGramAmountChange={updateGramAmount}
+                    onDilutionChange={updateDilutionConfig}
+                    onCommit={handleCommitRow}
+                    onRemove={removeFormulaItem}
+                    rawMaterials={rawMaterials}
+                    error={validationErrors[`item_${index}`]}
+                    autoFocusMaterial={focusRowIndex === index}
+                    onAutoFocusHandled={() => setFocusRowIndex(null)}
+                  />
+                ))}
+              </div>
+
+              {activeFormulaItems.length > 0 && (
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
                   <div className="flex justify-between items-center font-semibold text-sm">
                     <span>Total:</span>
@@ -355,9 +399,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
                     <div className="pt-3 border-t space-y-2">
                       <h4 className="font-medium text-xs text-muted-foreground">Calculated composition</h4>
                       {itemsWithPercentages.map((item, index) => {
-                        const itemName = item.item_type === 'accord' 
-                          ? accords.find(a => a.id === item.item_id)?.name
-                          : rawMaterials.find(m => m.id === item.item_id)?.name;
+                        const itemName = rawMaterials.find(m => m.id === item.item_id)?.name;
                         const solventName = item.dilution_solvent_id
                           ? rawMaterials.find((material) => material.id === item.dilution_solvent_id)?.name
                           : '';
@@ -400,7 +442,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading || hasErrors || formulaItems.length === 0} size="sm">
+              <Button type="submit" disabled={loading || hasErrors || activeFormulaItems.length === 0 || hasLegacyAccordItems} size="sm">
                 {loading ? 'Updating...' : 'Update formula'}
               </Button>
             </DialogFooter>

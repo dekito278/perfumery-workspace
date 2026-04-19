@@ -8,28 +8,51 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import FormulaItemRow from '@/components/FormulaItemRow.jsx';
 import { calculatePercentages, calculateTotalGrams, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
-import { FORMULA_STATUSES } from '@/utils/constants.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
-import { getAccords } from '@/services/accordsSupabaseService.js';
 
 const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const { createFormula, loading } = useFormulas();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [category, setCategory] = useState('perfume');
   const [version, setVersion] = useState('');
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [formulaItems, setFormulaItems] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
-  const [accords, setAccords] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [focusRowIndex, setFocusRowIndex] = useState(null);
+
+  const createEmptyFormulaItem = () => ({
+    item_id: '',
+    gram_amount: '',
+    dilution_percent: '',
+    dilution_solvent_id: '',
+    dilution_solvent_name: '',
+    item_type: '',
+  });
+
+  const getActiveFormulaItems = (items) =>
+    items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
+
+  const ensureTrailingEmptyItem = (items) => {
+    const nextItems = [...getActiveFormulaItems(items)];
+    const lastItem = nextItems[nextItems.length - 1];
+
+    if (!lastItem || lastItem.item_id || lastItem.gram_amount || lastItem.dilution_percent || lastItem.dilution_solvent_id) {
+      nextItems.push(createEmptyFormulaItem());
+    }
+
+    return nextItems;
+  };
 
   useEffect(() => {
     if (open) {
@@ -41,38 +64,30 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const resetForm = () => {
     setName('');
     setCode('');
+    setCategory('perfume');
     setVersion('');
     setStatus('draft');
     setNotes('');
-    setFormulaItems([]);
+    setFormulaItems([createEmptyFormulaItem()]);
     setValidationErrors({});
+    setFocusRowIndex(0);
   };
 
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [materialsData, accordsData] = await Promise.all([
-        getRawMaterials(),
-        getAccords()
-      ]);
+      const materialsData = await getRawMaterials();
       setRawMaterials(materialsData);
-      setAccords(accordsData);
     } catch (error) {
-      toast.error('Failed to load materials and accords');
+      toast.error('Failed to load raw materials');
     } finally {
       setLoadingData(false);
     }
   };
 
-  const addFormulaItem = () => {
-    setFormulaItems([
-      ...formulaItems,
-      { item_id: '', gram_amount: '', dilution_percent: '', dilution_solvent_id: '', dilution_solvent_name: '' }
-    ]);
-  };
-
   const removeFormulaItem = (index) => {
-    setFormulaItems(formulaItems.filter((_, i) => i !== index));
+    const remainingItems = formulaItems.filter((_, i) => i !== index);
+    setFormulaItems(ensureTrailingEmptyItem(remainingItems));
     const newErrors = { ...validationErrors };
     delete newErrors[`item_${index}`];
     setValidationErrors(newErrors);
@@ -83,25 +98,26 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     updated[index].item_id = itemId;
     
     const isRawMaterial = rawMaterials.some(m => m.id === itemId);
-    const isAccord = accords.some(a => a.id === itemId);
-    
     if (isRawMaterial) {
       const material = rawMaterials.find(m => m.id === itemId);
       updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
-    } else if (isAccord) {
-      updated[index].item_type = 'accord';
-      updated[index].dilution_percent = '';
-      updated[index].dilution_solvent_id = '';
-      updated[index].dilution_solvent_name = '';
     }
     
-    setFormulaItems(updated);
+    setFormulaItems(ensureTrailingEmptyItem(updated));
+  };
+
+  const handleCommitRow = (index) => {
+    setFormulaItems((currentItems) => {
+      const nextItems = ensureTrailingEmptyItem(currentItems);
+      setFocusRowIndex(Math.min(index + 1, nextItems.length - 1));
+      return nextItems;
+    });
   };
 
   const updateGramAmount = (index, gramAmount) => {
     const updated = [...formulaItems];
     updated[index].gram_amount = gramAmount;
-    setFormulaItems(updated);
+    setFormulaItems(ensureTrailingEmptyItem(updated));
     
     const error = validateGramAmount(gramAmount);
     const newErrors = { ...validationErrors };
@@ -135,15 +151,16 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       updated[index].dilution_solvent_name = '';
     }
 
-    setFormulaItems(updated);
+    setFormulaItems(ensureTrailingEmptyItem(updated));
     const nextErrors = { ...validationErrors };
     delete nextErrors.ingredients;
     delete nextErrors[`item_${index}`];
     setValidationErrors(nextErrors);
   };
 
-  const totalGrams = calculateTotalGrams(formulaItems);
-  const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(formulaItems, totalGrams) : [];
+  const activeFormulaItems = getActiveFormulaItems(formulaItems);
+  const totalGrams = calculateTotalGrams(activeFormulaItems);
+  const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(activeFormulaItems, totalGrams) : [];
 
   const validateForm = () => {
     const errors = {};
@@ -155,13 +172,13 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       errors.code = 'Formula code is required';
     }
 
-    const ingredientErrors = validateFormulaItems(formulaItems);
+    const ingredientErrors = validateFormulaItems(activeFormulaItems);
     if (ingredientErrors.length > 0) {
       errors.ingredients = ingredientErrors.join(', ');
     }
 
     const materialIds = new Set();
-    formulaItems.forEach((item, index) => {
+    activeFormulaItems.forEach((item, index) => {
       if (item.item_id && materialIds.has(item.item_id)) {
         errors[`item_${index}`] = 'Duplicate material';
       } else if (item.item_id) {
@@ -197,7 +214,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       await createFormula({ 
         name, 
         code, 
-        category: null,
+        category,
         version: version || null, 
         status,
         notes: notes || null
@@ -218,7 +235,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>Create new formula</DialogTitle>
-          <DialogDescription>Build a perfume formula by specifying gram amounts for each ingredient.</DialogDescription>
+          <DialogDescription>Type ingredients directly, pick from quick suggestions, then fill the gram amounts without extra taps.</DialogDescription>
         </DialogHeader>
         
         {loadingData ? (
@@ -262,6 +279,21 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
+                  <Label htmlFor="formula-category" className="text-sm font-medium">Formula category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger id="formula-category" className="text-foreground h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORMULA_CATEGORIES.map((formulaCategory) => (
+                        <SelectItem key={formulaCategory.value} value={formulaCategory.value}>
+                          {formulaCategory.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="formula-version" className="text-sm font-medium">Version</Label>
                   <Input
                     id="formula-version"
@@ -271,7 +303,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                     className="text-foreground"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="formula-status" className="text-sm font-medium">Status</Label>
                   <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger className="text-foreground h-9">
@@ -290,12 +322,11 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
             </div>
 
             <div className="border-t pt-5 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="space-y-1">
                 <h3 className="font-semibold text-base">Formula ingredients</h3>
-                <Button type="button" onClick={addFormulaItem} size="sm" variant="outline" className="gap-2 h-9">
-                  <Plus className="w-4 h-4" />
-                  Add ingredient
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Start typing the material name. A new empty line will appear automatically as you fill the current one.
+                </p>
               </div>
 
               {validationErrors.ingredients && (
@@ -305,30 +336,26 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                 </div>
               )}
 
-              {formulaItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg text-sm">
-                  No ingredients yet. Click "Add ingredient" to start building your formula.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {formulaItems.map((item, index) => (
-                    <FormulaItemRow
-                      key={index}
-                      item={item}
-                      index={index}
-                      onItemChange={updateItem}
-                      onGramAmountChange={updateGramAmount}
-                      onDilutionChange={updateDilutionConfig}
-                      onRemove={removeFormulaItem}
-                      rawMaterials={rawMaterials}
-                      accords={accords}
-                      error={validationErrors[`item_${index}`]}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="space-y-3">
+                {formulaItems.map((item, index) => (
+                  <FormulaItemRow
+                    key={index}
+                    item={item}
+                    index={index}
+                    onItemChange={updateItem}
+                    onGramAmountChange={updateGramAmount}
+                    onDilutionChange={updateDilutionConfig}
+                    onCommit={handleCommitRow}
+                    onRemove={removeFormulaItem}
+                    rawMaterials={rawMaterials}
+                    error={validationErrors[`item_${index}`]}
+                    autoFocusMaterial={focusRowIndex === index}
+                    onAutoFocusHandled={() => setFocusRowIndex(null)}
+                  />
+                ))}
+              </div>
 
-              {formulaItems.length > 0 && (
+              {activeFormulaItems.length > 0 && (
                 <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
                   <div className="flex justify-between items-center font-semibold text-sm">
                     <span>Total:</span>
@@ -339,9 +366,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
                     <div className="pt-3 border-t space-y-2">
                       <h4 className="font-medium text-xs text-muted-foreground">Calculated composition</h4>
                       {itemsWithPercentages.map((item, index) => {
-                        const itemName = item.item_type === 'accord' 
-                          ? accords.find(a => a.id === item.item_id)?.name
-                          : rawMaterials.find(m => m.id === item.item_id)?.name;
+                        const itemName = rawMaterials.find(m => m.id === item.item_id)?.name;
                         const solventName = item.dilution_solvent_id
                           ? rawMaterials.find((material) => material.id === item.dilution_solvent_id)?.name
                           : '';
@@ -384,7 +409,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading || hasErrors || formulaItems.length === 0} size="sm">
+              <Button type="submit" disabled={loading || hasErrors || activeFormulaItems.length === 0} size="sm">
                 {loading ? 'Creating...' : 'Create formula'}
               </Button>
             </DialogFooter>

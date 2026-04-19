@@ -1,54 +1,86 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const IngredientSelect = ({ 
   value, 
   onChange, 
-  placeholder = "Select ingredient", 
+  placeholder = "Type material name", 
   disabled = false,
-  ingredients = []
+  ingredients = [],
+  autoFocus = false,
+  onAutoFocusHandled,
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const inputRef = useRef(null);
-  const listRef = useRef(null);
+  const wrapperRef = useRef(null);
 
-  const selectedIngredient = ingredients.find(ing => ing.id === value);
+  const selectedIngredient = ingredients.find((ing) => ing.id === value);
 
-  const filteredIngredients = ingredients
-    .filter(ing => 
-      ing.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const filteredIngredients = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    const sorted = [...ingredients].sort((a, b) => a.name.localeCompare(b.name));
+
+    if (!normalizedTerm) {
+      return sorted.slice(0, 4);
+    }
+
+    return sorted
+      .filter((ing) => ing.name.toLowerCase().includes(normalizedTerm))
+      .slice(0, 4);
+  }, [ingredients, searchTerm]);
 
   useEffect(() => {
-    if (open && inputRef.current) {
-      inputRef.current.focus();
+    if (selectedIngredient && !open) {
+      setSearchTerm(selectedIngredient.name);
+      setHighlightedIndex(0);
+    } else if (!selectedIngredient && !open) {
       setSearchTerm('');
       setHighlightedIndex(0);
     }
-  }, [open]);
+  }, [selectedIngredient, open]);
+
+  useEffect(() => {
+    if (autoFocus && inputRef.current && !disabled) {
+      requestAnimationFrame(() => {
+        if (!inputRef.current) return;
+        inputRef.current.focus();
+        inputRef.current.select();
+        setOpen(true);
+        onAutoFocusHandled?.();
+      });
+    }
+  }, [autoFocus, disabled, onAutoFocusHandled]);
 
   useEffect(() => {
     setHighlightedIndex(0);
   }, [searchTerm]);
 
   useEffect(() => {
-    if (listRef.current && highlightedIndex >= 0) {
-      const highlightedElement = listRef.current.children[highlightedIndex];
-      if (highlightedElement) {
-        highlightedElement.scrollIntoView({ block: 'nearest' });
+    const handlePointerDown = (event) => {
+      if (!wrapperRef.current?.contains(event.target)) {
+        setOpen(false);
+        if (selectedIngredient) {
+          setSearchTerm(selectedIngredient.name);
+        }
       }
-    }
-  }, [highlightedIndex]);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [selectedIngredient]);
 
   const handleKeyDown = (e) => {
+    if (!open && ['ArrowDown', 'Enter'].includes(e.key)) {
+      setOpen(true);
+      return;
+    }
+
     if (!open) return;
 
     switch (e.key) {
@@ -78,73 +110,72 @@ const IngredientSelect = ({
   const handleSelect = (ingredientId) => {
     onChange(ingredientId);
     setOpen(false);
-    setSearchTerm('');
+    const ingredient = ingredients.find((entry) => entry.id === ingredientId);
+    setSearchTerm(ingredient?.name || '');
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between text-foreground"
-          disabled={disabled}
-        >
-          {selectedIngredient ? (
-            <span className="truncate">{selectedIngredient.name}</span>
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
-        <div className="p-2 border-b">
+    <div ref={wrapperRef} className="relative">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverAnchor asChild>
           <Input
             ref={inputRef}
-            placeholder="Search ingredients..."
+            placeholder={placeholder}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => !disabled && setOpen(true)}
             onKeyDown={handleKeyDown}
-            className="h-9 text-foreground"
+            disabled={disabled}
+            className="h-10 rounded-xl border-white/70 bg-white/85 text-foreground"
+            autoComplete="off"
           />
-        </div>
-        <div 
-          ref={listRef}
-          className="max-h-[300px] overflow-y-auto"
+        </PopoverAnchor>
+        <PopoverContent
+          className="w-[var(--radix-popover-trigger-width)] rounded-2xl border-white/80 bg-white/96 p-1 shadow-[0_24px_64px_-48px_rgba(125,86,13,0.42)]"
+          align="start"
+          sideOffset={8}
+          onOpenAutoFocus={(event) => event.preventDefault()}
         >
-          {filteredIngredients.length === 0 ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              No results found
-            </div>
-          ) : (
-            filteredIngredients.map((ingredient, index) => (
-              <button
-                key={ingredient.id}
-                onClick={() => handleSelect(ingredient.id)}
-                className={cn(
-                  "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors",
-                  highlightedIndex === index && "bg-accent text-accent-foreground",
-                  value === ingredient.id && "bg-primary/10"
-                )}
-                onMouseEnter={() => setHighlightedIndex(index)}
-              >
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">{ingredient.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {ingredient.unit}
-                  </span>
-                </div>
-                {value === ingredient.id && (
-                  <Check className="h-4 w-4 text-primary" />
-                )}
-              </button>
-            ))
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+          <div className="max-h-[238px] overflow-y-auto">
+            {filteredIngredients.length === 0 ? (
+              <div className="px-3 py-5 text-center text-sm text-muted-foreground">
+                No matching materials
+              </div>
+            ) : (
+              filteredIngredients.map((ingredient, index) => (
+                <button
+                  key={ingredient.id}
+                  type="button"
+                  onClick={() => handleSelect(ingredient.id)}
+                  className={cn(
+                    "w-full rounded-xl px-3 py-2.5 text-left transition-colors",
+                    "hover:bg-accent/10",
+                    highlightedIndex === index && "bg-accent/10",
+                    value === ingredient.id && "bg-primary/10"
+                  )}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{ingredient.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {ingredient.type === 'solvent' ? 'Solvent' : 'Raw material'} • {ingredient.unit}
+                      </div>
+                    </div>
+                    {value === ingredient.id && (
+                      <Check className="h-4 w-4 shrink-0 text-primary" />
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 };
 
