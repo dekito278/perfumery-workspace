@@ -12,6 +12,22 @@ const ExportFormulaButton = ({ formula, items }) => {
       const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
       const totalGrams = items.reduce((sum, item) => sum + (parseFloat(item.gram_amount) || 0), 0);
       const totalCost = items.reduce((sum, item) => sum + Number(item.ingredient_cost || 0), 0);
+      const machineReadableLines = [
+        `${formula.name} Code: ${formula.code || '-'} WS: -`,
+        `Price: - RM: ${items.length}`,
+        `Date: ${formatDate(formula.created)}`,
+        `Total: ${totalGrams.toFixed(4)}`,
+        ...items.map((item, index) => {
+          const workbookCode = String(item.workbook_code || `RM${String(index + 1).padStart(2, '0')}`)
+            .replace(/[^A-Za-z0-9]/g, '')
+            .slice(0, 4) || `RM${String(index + 1).padStart(2, '0')}`;
+          const materialName = item.dilution_percentage
+            ? `${item.name} ${item.dilution_percentage}% in ${item.dilution_solvent_name || 'Unknown solvent'}`
+            : item.name;
+
+          return `${index + 1} ${workbookCode}: ${materialName} : ${(Number(item.gram_amount) || 0).toFixed(4)}`;
+        }),
+      ];
 
       exportWorkbookPdf(
         {
@@ -58,6 +74,7 @@ const ExportFormulaButton = ({ formula, items }) => {
               cost: formatPrice(totalCost),
             },
           ],
+          machineReadableLines,
           notes: formula.notes || '',
         },
         `${formula.code || 'formula'}_${formula.name.replace(/\s+/g, '_')}.pdf`

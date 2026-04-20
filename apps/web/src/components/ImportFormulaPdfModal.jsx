@@ -394,7 +394,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         };
       });
 
-      await createFormula(
+      const createdFormula = await createFormula(
         {
           name: formulaName.trim(),
           code: internalCode.trim() || undefined,
@@ -409,7 +409,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       toast.success('Formula imported successfully');
       onOpenChange(false);
       if (onSuccess) {
-        onSuccess();
+        onSuccess(createdFormula);
       }
     } catch (error) {
       toast.error(error.message || 'Failed to import formula');

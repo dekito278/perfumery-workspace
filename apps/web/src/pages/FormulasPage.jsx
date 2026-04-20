@@ -63,6 +63,14 @@ const FormulasPage = () => {
     }
   };
 
+  const handleImportSuccess = async (createdFormula) => {
+    await loadFormulas();
+
+    if (createdFormula?.id) {
+      navigate(`/formulas/${createdFormula.id}`);
+    }
+  };
+
   useEffect(() => {
     loadFormulas();
   }, []);
@@ -453,7 +461,7 @@ const FormulasPage = () => {
           <ImportFormulaPdfModal
             open={importModalOpen}
             onOpenChange={setImportModalOpen}
-            onSuccess={loadFormulas}
+            onSuccess={handleImportSuccess}
           />
         </Suspense>
       )}

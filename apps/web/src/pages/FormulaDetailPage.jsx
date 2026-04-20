@@ -165,6 +165,7 @@ const FormulaDetailPage = () => {
         return {
           ...item,
           name: itemDetails?.name || 'Unknown',
+          workbook_code: itemDetails?.workbook_code || null,
           unit: itemDetails?.unit || 'g',
           is_low_stock: isLowStock,
           gram_amount: gramAmount,

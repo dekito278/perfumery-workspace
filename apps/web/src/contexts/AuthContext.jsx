@@ -4,6 +4,35 @@ import supabase from '@/lib/supabaseClient.js';
 
 const AuthContext = createContext(null);
 const AUTH_INIT_TIMEOUT_MS = 5000;
+const AUTH_STORAGE_KEY_SUFFIX = '-auth-token';
+
+const getCachedSession = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null;
+  }
+
+  try {
+    const authStorageKey = Object.keys(window.localStorage).find((key) => key.endsWith(AUTH_STORAGE_KEY_SUFFIX));
+    if (!authStorageKey) {
+      return null;
+    }
+
+    const rawValue = window.localStorage.getItem(authStorageKey);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    if (!parsedValue?.access_token || !parsedValue?.user) {
+      return null;
+    }
+
+    return parsedValue;
+  } catch (error) {
+    console.warn('Failed to read cached auth session:', error);
+    return null;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -26,6 +55,7 @@ export const AuthProvider = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
+        const cachedSession = getCachedSession();
         const {
           data: { session: initialSession },
           error,
@@ -35,16 +65,16 @@ export const AuthProvider = ({ children }) => {
           console.error('Failed to restore Supabase session:', error);
         }
 
-        finishLoading(initialSession);
+        finishLoading(initialSession || cachedSession);
       } catch (error) {
         console.error('Unexpected auth initialization error:', error);
-        finishLoading(null);
+        finishLoading(getCachedSession());
       }
     };
 
     timeoutId = window.setTimeout(() => {
       console.warn('Auth initialization timed out, continuing without restored session.');
-      finishLoading(null);
+      finishLoading(getCachedSession());
     }, AUTH_INIT_TIMEOUT_MS);
 
     initializeAuth();

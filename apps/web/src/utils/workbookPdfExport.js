@@ -238,6 +238,26 @@ const drawTextSection = (doc, section, cursorY) => {
   return y + boxHeight + 4;
 };
 
+const drawMachineReadableSection = (doc, lines, cursorY) => {
+  if (!Array.isArray(lines) || !lines.length) {
+    return cursorY;
+  }
+
+  let y = drawSectionTitle(doc, 'Import Data', cursorY);
+  const printableLines = lines.map((line) => asText(line));
+  const blockHeight = Math.max(16, (printableLines.length * LINE_HEIGHT) + 6);
+  y = ensureSpace(doc, y, blockHeight + 2);
+
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...BRAND.border);
+  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, blockHeight, 2.5, 2.5, 'FD');
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(8.2);
+  doc.setTextColor(...BRAND.ink);
+  doc.text(printableLines, MARGIN + 3, y + 5);
+  return y + blockHeight + 4;
+};
+
 const buildWorkbookPdf = ({
   typeLabel,
   title,
@@ -249,6 +269,7 @@ const buildWorkbookPdf = ({
   rows = [],
   footerRows = [],
   sections = [],
+  machineReadableLines = [],
   notes,
 }) => {
   const doc = createDocument();
@@ -268,6 +289,7 @@ const buildWorkbookPdf = ({
     cursorY = drawTextSection(doc, section, cursorY);
   });
 
+  cursorY = drawMachineReadableSection(doc, machineReadableLines, cursorY);
   drawNotes(doc, notes, cursorY);
   drawFooter(doc);
   return doc;
