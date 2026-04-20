@@ -388,7 +388,7 @@ const CreateFormulaPage = () => {
         />
       </Helmet>
 
-      <div className="page-container">
+      <div className="page-container overflow-x-hidden">
         <FormulaMetadataDialog
           open={metadataDialogOpen}
           onOpenChange={handleMetadataDialogChange}
@@ -493,7 +493,7 @@ const CreateFormulaPage = () => {
                   </p>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                   <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
                     Rows {activeFormulaItems.length}
                   </div>
@@ -549,14 +549,14 @@ const CreateFormulaPage = () => {
                             onClick={() => handleLibrarySelect(material.id)}
                             onDoubleClick={() => handleLibraryDoubleClick(material.id)}
                             disabled={alreadyAdded}
-                            className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                            className={`flex w-full min-w-0 flex-col items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
                               alreadyAdded
                                 ? 'cursor-not-allowed border-[#e7dfcf] bg-[#f3eee4] text-muted-foreground opacity-70'
                                 : 'border-transparent bg-white hover:border-[#decda6] hover:bg-[#fff9ec]'
                             }`}
                           >
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-medium">{material.name}</div>
+                            <div className="min-w-0 w-full">
+                              <div className="break-words text-sm font-medium leading-snug">{material.name}</div>
                               <div className="mt-0.5 text-[11px] text-muted-foreground">
                                 {material.type === 'solvent' ? 'Solvent' : 'Raw material'}
                                 {material.unit ? ` - ${material.unit}` : ''}

@@ -46,7 +46,7 @@ const FormulaItemTableEditor = ({
             return (
               <div
                 key={index}
-                className={`rounded-2xl border px-3 py-3 shadow-sm transition-colors ${
+                className={`overflow-hidden rounded-2xl border px-3 py-3 shadow-sm transition-colors ${
                   index === activeRowIndex
                     ? 'border-[#dfbf7d] bg-[#fff7e8]'
                     : index === 0
@@ -54,7 +54,7 @@ const FormulaItemTableEditor = ({
                       : 'border-[#ece4d3] bg-white'
                 }`}
               >
-                <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="rounded-full border border-[#ded1b2] bg-[#f6eedc] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f603d]">
                     Row {rowNumber}
                   </div>
@@ -71,7 +71,7 @@ const FormulaItemTableEditor = ({
                 </div>
 
                 <div className="space-y-3">
-                  <div>
+                  <div className="min-w-0">
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
                       Raw material
                     </div>
@@ -91,8 +91,8 @@ const FormulaItemTableEditor = ({
                     ) : null}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="min-w-0">
                       <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
                         Amount
                       </div>
@@ -107,13 +107,13 @@ const FormulaItemTableEditor = ({
                           onWheel={blurNumberInputOnWheel}
                           onFocus={() => onActivateRow?.(index)}
                           placeholder="0.000"
-                          className="h-9 rounded-xl border-[#d8cfbf] px-3 text-right text-sm"
+                          className="h-9 w-full rounded-xl border-[#d8cfbf] px-3 text-right text-sm"
                         />
                         <span className="shrink-0 text-[11px] text-muted-foreground">g</span>
                       </div>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
                         Dil. %
                       </div>
@@ -127,12 +127,12 @@ const FormulaItemTableEditor = ({
                         onWheel={blurNumberInputOnWheel}
                         onFocus={() => onActivateRow?.(index)}
                         placeholder="-"
-                        className="h-9 rounded-xl border-[#d8cfbf] px-3 text-right text-sm"
+                        className="h-9 w-full rounded-xl border-[#d8cfbf] px-3 text-right text-sm"
                       />
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
                       Solvent
                     </div>
@@ -140,7 +140,7 @@ const FormulaItemTableEditor = ({
                       value={item.dilution_solvent_id || '__none__'}
                       onValueChange={(value) => onDilutionChange(index, 'dilution_solvent_id', value === '__none__' ? '' : value)}
                     >
-                      <SelectTrigger className="h-9 rounded-xl border-[#d8cfbf] px-3 text-sm" onClick={() => onActivateRow?.(index)}>
+                      <SelectTrigger className="h-9 w-full min-w-0 rounded-xl border-[#d8cfbf] px-3 text-sm" onClick={() => onActivateRow?.(index)}>
                         <SelectValue placeholder="No solvent" />
                       </SelectTrigger>
                       <SelectContent>

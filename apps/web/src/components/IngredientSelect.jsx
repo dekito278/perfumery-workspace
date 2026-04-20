@@ -163,7 +163,7 @@ const IngredientSelect = ({
   };
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative min-w-0">
       <Input
         ref={inputRef}
         placeholder={placeholder}
@@ -183,7 +183,7 @@ const IngredientSelect = ({
         }}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        className={compact ? 'h-9 rounded-lg border-[#ddd3bf] bg-white text-foreground' : 'h-10 rounded-xl border-white/70 bg-white/85 text-foreground'}
+        className={compact ? 'h-9 w-full min-w-0 rounded-lg border-[#ddd3bf] bg-white text-foreground' : 'h-10 w-full min-w-0 rounded-xl border-white/70 bg-white/85 text-foreground'}
         autoComplete="off"
       />
       {showSuggestions && open && !disabled ? (
