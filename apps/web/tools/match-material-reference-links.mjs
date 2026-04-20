@@ -14,6 +14,7 @@ import {
 } from './material-reference-common.mjs';
 
 const MATERIAL_REFERENCE_JSON = 'material-reference-clean.json';
+const INVALID_CAS_VALUES = new Set(['mixture', '*mixture', 'mix', 'n/a', 'na', 'unknown']);
 
 const splitSynonyms = (value) =>
   String(value || '')
@@ -76,7 +77,7 @@ const scoreMatch = (material, lookup) => {
   }
 
   const casNumber = normalizeLookupValue(material.cas_number);
-  if (casNumber && lookup.byCas.has(casNumber)) {
+  if (casNumber && !INVALID_CAS_VALUES.has(casNumber) && lookup.byCas.has(casNumber)) {
     return {
       profile: lookup.byCas.get(casNumber),
       match_method: 'cas_exact',

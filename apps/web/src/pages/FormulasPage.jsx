@@ -215,7 +215,6 @@ const FormulasPage = () => {
       options: [
         { value: 'all', label: 'All categories' },
         { value: 'perfume', label: 'Perfume' },
-        { value: 'accord', label: 'Accord' },
       ],
     },
   ];
@@ -230,8 +229,7 @@ const FormulasPage = () => {
   };
 
   const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm;
-  const accordCount = formulas.filter((formula) => formula.category === 'accord').length;
-  const perfumeCount = formulas.filter((formula) => formula.category !== 'accord').length;
+  const perfumeCount = formulas.length;
 
   return (
     <AuthenticatedLayout>
@@ -260,7 +258,7 @@ const FormulasPage = () => {
           eyebrow="Library"
         />
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Total</div>
             <div className="mt-3 text-3xl font-bold">{formulas.length}</div>
@@ -268,10 +266,6 @@ const FormulasPage = () => {
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Perfume</div>
             <div className="mt-3 text-3xl font-bold">{perfumeCount}</div>
-          </div>
-          <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Accord</div>
-            <div className="mt-3 text-3xl font-bold">{accordCount}</div>
           </div>
         </div>
 
@@ -321,7 +315,7 @@ const FormulasPage = () => {
           <EmptyState
             icon={Beaker}
             title="No formulas yet"
-            description="Create your first perfume or accord formula by combining raw materials with precise gram amounts."
+            description="Create your first perfume formula by combining raw materials with precise gram amounts."
             action="Create formula"
             actionIcon={Plus}
             onAction={() => navigate('/formulas/new')}

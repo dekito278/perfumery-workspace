@@ -3,6 +3,108 @@ import { Input } from '@/components/ui/input';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const normalizeSearchValue = (value) => String(value || '').trim().toLowerCase();
+
+const toSearchTokens = (value) =>
+  normalizeSearchValue(value)
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean);
+
+const getEditDistance = (left, right) => {
+  if (left === right) {
+    return 0;
+  }
+
+  if (!left.length) {
+    return right.length;
+  }
+
+  if (!right.length) {
+    return left.length;
+  }
+
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    let diagonal = previous[0];
+    previous[0] = leftIndex;
+
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const current = previous[rightIndex];
+      const substitutionCost = left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+
+      previous[rightIndex] = Math.min(
+        previous[rightIndex] + 1,
+        previous[rightIndex - 1] + 1,
+        diagonal + substitutionCost
+      );
+
+      diagonal = current;
+    }
+  }
+
+  return previous[right.length];
+};
+
+const getSuggestionLimit = (term) => {
+  if (term.length <= 1) {
+    return 6;
+  }
+
+  if (term.length <= 3) {
+    return 4;
+  }
+
+  return 1;
+};
+
+const scoreIngredientMatch = (ingredientName, rawQuery) => {
+  const normalizedName = normalizeSearchValue(ingredientName);
+  const normalizedQuery = normalizeSearchValue(rawQuery);
+
+  if (!normalizedName || !normalizedQuery) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const nameTokens = toSearchTokens(normalizedName);
+  const queryTokens = toSearchTokens(normalizedQuery);
+  const compactName = normalizedName.replace(/[^a-z0-9]+/gi, '');
+  const compactQuery = normalizedQuery.replace(/[^a-z0-9]+/gi, '');
+  const startsWith = normalizedName.startsWith(normalizedQuery);
+  const includes = normalizedName.includes(normalizedQuery);
+  const tokenPrefixMatches = queryTokens.filter((token) =>
+    nameTokens.some((nameToken) => nameToken.startsWith(token))
+  ).length;
+  const tokenIncludesMatches = queryTokens.filter((token) =>
+    nameTokens.some((nameToken) => nameToken.includes(token))
+  ).length;
+
+  let score = Number.NEGATIVE_INFINITY;
+
+  if (normalizedName === normalizedQuery) {
+    score = 2000;
+  } else if (startsWith) {
+    score = 1600 - Math.max(0, normalizedName.length - normalizedQuery.length);
+  } else if (nameTokens.some((token) => token.startsWith(normalizedQuery))) {
+    score = 1450;
+  } else if (tokenPrefixMatches > 0) {
+    score = 1250 + tokenPrefixMatches * 80;
+  } else if (includes) {
+    score = 1100 - normalizedName.indexOf(normalizedQuery) * 5;
+  } else if (tokenIncludesMatches > 0) {
+    score = 950 + tokenIncludesMatches * 40;
+  }
+
+  const compactDistance = getEditDistance(compactName, compactQuery);
+  const allowedDistance = compactQuery.length >= 6 ? 3 : compactQuery.length >= 4 ? 2 : 1;
+
+  if (compactDistance <= allowedDistance) {
+    score = Math.max(score, 900 - compactDistance * 120);
+  }
+
+  return score;
+};
+
 const IngredientSelect = ({
   value,
   onChange,
@@ -28,16 +130,23 @@ const IngredientSelect = ({
       return [];
     }
 
-    const normalizedTerm = searchTerm.trim().toLowerCase();
-    const sorted = [...ingredients].sort((a, b) => a.name.localeCompare(b.name));
+    const normalizedTerm = normalizeSearchValue(searchTerm);
 
     if (!normalizedTerm) {
       return [];
     }
 
-    return sorted
-      .filter((ing) => ing.name.toLowerCase().includes(normalizedTerm))
-      .slice(0, 3);
+    const scoredMatches = ingredients
+      .map((ingredient) => ({
+        ingredient,
+        score: scoreIngredientMatch(ingredient.name, normalizedTerm),
+      }))
+      .filter((entry) => Number.isFinite(entry.score))
+      .sort((left, right) => right.score - left.score || left.ingredient.name.localeCompare(right.ingredient.name));
+
+    return scoredMatches
+      .slice(0, getSuggestionLimit(normalizedTerm))
+      .map((entry) => entry.ingredient);
   }, [ingredients, searchTerm]);
 
   useEffect(() => {

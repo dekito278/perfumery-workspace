@@ -39,6 +39,69 @@ const mapReferenceLink = (row) => ({
   reference_profile: mapReferenceProfile(row.material_reference_profiles),
 });
 
+const chunkValues = (values, size = 150) => {
+  const chunks = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+};
+
+const normalizeOptionalText = (value) => {
+  const normalized = String(value || '').trim();
+  return normalized || null;
+};
+
+const normalizeOptionalNumber = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
+};
+
+const hasManualReferenceGuidance = (rawMaterial) => [
+  rawMaterial?.cas_number,
+  rawMaterial?.ifra_limit,
+  rawMaterial?.reference_abc_primary_family,
+  rawMaterial?.reference_impact,
+  rawMaterial?.reference_life_hours,
+  rawMaterial?.reference_use_level_typical_percent,
+  rawMaterial?.reference_use_level_max_percent,
+].some((value) => value !== null && value !== undefined && value !== '');
+
+const buildManualReferencePayload = (rawMaterial, userId) => {
+  const manualReferenceCode = `MAN-${String(rawMaterial.id || '').replace(/-/g, '').slice(0, 12).toUpperCase()}`;
+
+  return {
+    owner_user_id: userId,
+    source_kind: 'manual',
+    source_raw_material_id: rawMaterial.id,
+    reference_code: manualReferenceCode,
+    name: normalizeOptionalText(rawMaterial.name) || manualReferenceCode,
+    supplier: normalizeOptionalText(rawMaterial.vendor || rawMaterial.supplier_name),
+    abc_code: normalizeOptionalText(rawMaterial.workbook_code),
+    abc_primary_family: normalizeOptionalText(rawMaterial.reference_abc_primary_family || rawMaterial.scent_family),
+    category: normalizeOptionalText(rawMaterial.category),
+    brief_description: normalizeOptionalText(rawMaterial.description),
+    odour_description: normalizeOptionalText(rawMaterial.description),
+    impact: normalizeOptionalNumber(rawMaterial.reference_impact),
+    life_hours: normalizeOptionalNumber(rawMaterial.reference_life_hours),
+    use_level_typical_percent: normalizeOptionalNumber(rawMaterial.reference_use_level_typical_percent),
+    use_level_max_percent: normalizeOptionalNumber(rawMaterial.reference_use_level_max_percent),
+    ifra_limit_percent: normalizeOptionalNumber(rawMaterial.ifra_limit),
+    cas_no: normalizeOptionalText(rawMaterial.cas_number),
+    raw_payload: {
+      source: 'manual_raw_material_form',
+      raw_material_id: rawMaterial.id,
+      workbook_code: normalizeOptionalText(rawMaterial.workbook_code),
+      type: normalizeOptionalText(rawMaterial.type),
+      unit: normalizeOptionalText(rawMaterial.unit),
+    },
+  };
+};
+
 export const getReferenceProfileByRawMaterialId = async (rawMaterialId) => {
   const { data, error } = await supabase
     .from('raw_material_reference_links')
@@ -67,30 +130,68 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
     return new Map();
   }
 
-  const { data, error } = await supabase
-    .from('raw_material_reference_links')
-    .select(`
-      raw_material_id,
-      match_method,
-      match_confidence,
-      is_primary,
-      material_reference_profiles (
-        id,
-        reference_code,
-        name,
-        abc_code
-      )
-    `)
-    .in('raw_material_id', uniqueIds)
-    .eq('is_primary', true);
+  const linkChunks = chunkValues(uniqueIds);
+  const links = [];
 
-  if (error) {
-    console.error('Error fetching reference match status map:', error);
-    throw new Error(error.message || 'Failed to fetch reference match statuses');
+  for (const idChunk of linkChunks) {
+    const { data: chunkLinks, error: chunkLinksError } = await supabase
+      .from('raw_material_reference_links')
+      .select('raw_material_id, reference_profile_id, match_method, match_confidence, is_primary')
+      .in('raw_material_id', idChunk)
+      .eq('is_primary', true);
+
+    if (chunkLinksError) {
+      console.error('Error fetching reference match status map links:', chunkLinksError);
+      throw new Error(chunkLinksError.message || 'Failed to fetch reference match statuses');
+    }
+
+    links.push(...(chunkLinks || []));
+  }
+
+  const referenceProfileIds = [...new Set((links || []).map((row) => row.reference_profile_id).filter(Boolean))];
+  const referenceProfilesById = new Map();
+
+  if (referenceProfileIds.length) {
+    const referenceProfileChunks = chunkValues(referenceProfileIds);
+
+    for (const idChunk of referenceProfileChunks) {
+      const { data: referenceProfiles, error: referenceProfilesError } = await supabase
+        .from('material_reference_profiles')
+        .select(`
+          id,
+          reference_code,
+          name,
+          abc_code,
+          abc_primary_family,
+          cas_no,
+          ifra_limit_percent,
+          use_level_max_percent
+        `)
+        .in('id', idChunk);
+
+      if (referenceProfilesError) {
+        console.error('Error fetching reference profiles for status map:', referenceProfilesError);
+        throw new Error(referenceProfilesError.message || 'Failed to fetch reference profile details');
+      }
+
+      for (const profile of referenceProfiles || []) {
+        referenceProfilesById.set(profile.id, {
+          ...profile,
+          ifra_limit_percent:
+            profile.ifra_limit_percent === null || profile.ifra_limit_percent === undefined
+              ? null
+              : Number(profile.ifra_limit_percent),
+          use_level_max_percent:
+            profile.use_level_max_percent === null || profile.use_level_max_percent === undefined
+              ? null
+              : Number(profile.use_level_max_percent),
+        });
+      }
+    }
   }
 
   return new Map(
-    (data || []).map((row) => [
+    (links || []).map((row) => [
       row.raw_material_id,
       {
         raw_material_id: row.raw_material_id,
@@ -100,19 +201,7 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
             ? null
             : Number(row.match_confidence),
         is_primary: Boolean(row.is_primary),
-        reference_profile: row.material_reference_profiles
-          ? {
-              ...row.material_reference_profiles,
-              ifra_limit_percent:
-                row.material_reference_profiles.ifra_limit_percent === null || row.material_reference_profiles.ifra_limit_percent === undefined
-                  ? null
-                  : Number(row.material_reference_profiles.ifra_limit_percent),
-              use_level_max_percent:
-                row.material_reference_profiles.use_level_max_percent === null || row.material_reference_profiles.use_level_max_percent === undefined
-                  ? null
-                  : Number(row.material_reference_profiles.use_level_max_percent),
-            }
-          : null,
+        reference_profile: referenceProfilesById.get(row.reference_profile_id) || null,
       },
     ])
   );
@@ -133,13 +222,19 @@ export const getReferenceLinksByRawMaterialIds = async (rawMaterialIds) => {
         reference_code,
         name,
         brief_description,
+        classification,
         impact,
         life_hours,
+        abc_primary_letter,
         abc_primary_family,
+        abc_secondary_letter,
+        abc_secondary_family,
+        odour_profile,
         use_level_min_percent,
         use_level_typical_percent,
         use_level_max_percent,
         ifra_limit_percent,
+        raw_payload,
         material_reference_odour_facets (*)
       )
     `)
@@ -152,6 +247,34 @@ export const getReferenceLinksByRawMaterialIds = async (rawMaterialIds) => {
   }
 
   return new Map((data || []).map((row) => [row.raw_material_id, mapReferenceLink(row)]));
+};
+
+export const ensureReferenceLinksForRawMaterials = async (rawMaterials) => {
+  const materials = [...new Map(
+    (rawMaterials || [])
+      .filter((material) => material?.id)
+      .map((material) => [material.id, material])
+  ).values()];
+
+  if (!materials.length) {
+    return new Map();
+  }
+
+  let referenceLinksMap = await getReferenceLinksByRawMaterialIds(materials.map((material) => material.id));
+  const missingManualMaterials = materials.filter((material) => (
+    !referenceLinksMap.has(material.id) && hasManualReferenceGuidance(material)
+  ));
+
+  if (!missingManualMaterials.length) {
+    return referenceLinksMap;
+  }
+
+  for (const rawMaterial of missingManualMaterials) {
+    await syncManualReferenceProfileForRawMaterial(rawMaterial);
+  }
+
+  referenceLinksMap = await getReferenceLinksByRawMaterialIds(materials.map((material) => material.id));
+  return referenceLinksMap;
 };
 
 export const searchReferenceProfiles = async (query = '', limit = 12) => {
@@ -267,4 +390,88 @@ export const removePrimaryReferenceProfile = async (rawMaterialId) => {
     console.error('Error removing material reference link:', error);
     throw new Error(error.message || 'Failed to remove material reference link');
   }
+};
+
+export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
+  if (!rawMaterial?.id) {
+    return null;
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('Error loading authenticated user for manual reference sync:', userError);
+    throw new Error(userError.message || 'Failed to load current user');
+  }
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data: existingManualProfile, error: existingProfileError } = await supabase
+    .from('material_reference_profiles')
+    .select('id')
+    .eq('source_kind', 'manual')
+    .eq('source_raw_material_id', rawMaterial.id)
+    .maybeSingle();
+
+  if (existingProfileError) {
+    console.error('Error loading existing manual reference profile:', existingProfileError);
+    throw new Error(existingProfileError.message || 'Failed to load manual reference profile');
+  }
+
+  if (!hasManualReferenceGuidance(rawMaterial)) {
+    if (existingManualProfile?.id) {
+      const { error: deleteProfileError } = await supabase
+        .from('material_reference_profiles')
+        .delete()
+        .eq('id', existingManualProfile.id);
+
+      if (deleteProfileError) {
+        console.error('Error deleting manual reference profile:', deleteProfileError);
+        throw new Error(deleteProfileError.message || 'Failed to delete manual reference profile');
+      }
+    }
+
+    return null;
+  }
+
+  const payload = buildManualReferencePayload(rawMaterial, user.id);
+  let referenceProfileId = existingManualProfile?.id || null;
+
+  if (referenceProfileId) {
+    const { error: updateProfileError } = await supabase
+      .from('material_reference_profiles')
+      .update(payload)
+      .eq('id', referenceProfileId);
+
+    if (updateProfileError) {
+      console.error('Error updating manual reference profile:', updateProfileError);
+      throw new Error(updateProfileError.message || 'Failed to update manual reference profile');
+    }
+  } else {
+    const { data: insertedProfile, error: insertProfileError } = await supabase
+      .from('material_reference_profiles')
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (insertProfileError) {
+      console.error('Error creating manual reference profile:', insertProfileError);
+      throw new Error(insertProfileError.message || 'Failed to create manual reference profile');
+    }
+
+    referenceProfileId = insertedProfile.id;
+  }
+
+  await assignPrimaryReferenceProfile(
+    rawMaterial.id,
+    referenceProfileId,
+    `Synced from raw material form on ${new Date().toISOString()}`,
+  );
+
+  return referenceProfileId;
 };

@@ -36,8 +36,14 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
     minimum_stock: '',
     low_stock_threshold: '',
     vendor: '',
+    description: '',
     cas_number: '',
     ifra_limit: '',
+    reference_abc_primary_family: '',
+    reference_impact: '',
+    reference_life_hours: '',
+    reference_use_level_typical_percent: '',
+    reference_use_level_max_percent: '',
     notes: '',
     is_diluted: false,
     dilution_solvent_id: '',
@@ -70,8 +76,14 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         minimum_stock: material.minimum_stock?.toString() || '',
         low_stock_threshold: material.low_stock_threshold?.toString() || '',
         vendor: material.vendor || '',
+        description: material.description || '',
         cas_number: material.cas_number || '',
         ifra_limit: material.ifra_limit?.toString() || '',
+        reference_abc_primary_family: material.reference_abc_primary_family || '',
+        reference_impact: material.reference_impact?.toString() || '',
+        reference_life_hours: material.reference_life_hours?.toString() || '',
+        reference_use_level_typical_percent: material.reference_use_level_typical_percent?.toString() || '',
+        reference_use_level_max_percent: material.reference_use_level_max_percent?.toString() || '',
         notes: material.notes || '',
         is_diluted: material.is_diluted || false,
         dilution_solvent_id: material.dilution_solvent_id || '',
@@ -150,14 +162,22 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         error = validateRequired(value, 'Low stock alert') || validateNonNegativeNumber(value, 'Low stock alert');
         break;
       case 'ifra_limit':
+      case 'reference_use_level_typical_percent':
+      case 'reference_use_level_max_percent':
         if (value !== '') {
           const numValue = Number(value);
           if (isNaN(numValue)) {
-            error = 'IFRA limit must be a valid number';
+            error = 'Reference percentage must be a valid number';
           } else if (numValue < 0 || numValue > 100) {
-            error = 'IFRA limit must be between 0 and 100';
+            error = 'Reference percentage must be between 0 and 100';
           }
         }
+        break;
+      case 'reference_impact':
+        error = value !== '' ? validateNonNegativeNumber(value, 'Impact') : '';
+        break;
+      case 'reference_life_hours':
+        error = value !== '' ? validateNonNegativeNumber(value, 'Lifetime') : '';
         break;
       case 'dilution_solvent_id':
         if (formData.is_diluted && !value) {
@@ -180,6 +200,9 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         break;
       case 'cas_number':
         error = validateMaxLength(value, 100, 'CAS number');
+        break;
+      case 'reference_abc_primary_family':
+        error = validateMaxLength(value, 120, 'ABC family');
         break;
     }
     
@@ -264,9 +287,15 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : 0,
         minimum_stock: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : 0,
         low_stock_threshold: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : null,
-        vendor: null,
+        vendor: formData.vendor || null,
+        description: formData.description || null,
         cas_number: formData.cas_number || null,
         ifra_limit: formData.ifra_limit ? parseFloat(formData.ifra_limit) : null,
+        reference_abc_primary_family: formData.reference_abc_primary_family || null,
+        reference_impact: formData.reference_impact ? parseFloat(formData.reference_impact) : null,
+        reference_life_hours: formData.reference_life_hours ? parseFloat(formData.reference_life_hours) : null,
+        reference_use_level_typical_percent: formData.reference_use_level_typical_percent ? parseFloat(formData.reference_use_level_typical_percent) : null,
+        reference_use_level_max_percent: formData.reference_use_level_max_percent ? parseFloat(formData.reference_use_level_max_percent) : null,
         notes: formData.notes || null,
         is_diluted: formData.is_diluted,
         dilution_solvent_id: formData.is_diluted ? formData.dilution_solvent_id : null,
@@ -304,6 +333,16 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
                 maxLength={FIELD_CONSTRAINTS.name.maxLength}
               />
             </div>
+
+            <FormField
+              label="Workbook code"
+              value={formData.workbook_code}
+              onChange={(e) => handleChange('workbook_code', e.target.value)}
+              onBlur={() => handleBlur('workbook_code')}
+              error={errors.workbook_code}
+              placeholder="e.g., 3JJ00005"
+              maxLength={FIELD_CONSTRAINTS.code.maxLength}
+            />
 
             <FormSelect
               label="Category"
@@ -432,6 +471,13 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
           <div className="border-t pt-3 space-y-3">
             <div className="grid grid-cols-1 gap-3">
               <FormField
+                label="Vendor"
+                value={formData.vendor}
+                onChange={(e) => handleChange('vendor', e.target.value)}
+                placeholder="e.g., PerfumersWorld"
+              />
+
+              <FormField
                 label="CAS number"
                 value={formData.cas_number}
                 onChange={(e) => handleChange('cas_number', e.target.value)}
@@ -453,6 +499,86 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
               step="0.1"
               unit="%"
             />
+
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
+              <div>
+                <p className="text-sm font-medium">Manual reference guidance</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Optional. These values keep a manual reference profile in sync for IFRA and workbook-style advisory checks when this material does not rely on the seeded library.
+                </p>
+              </div>
+
+              <FormField
+                label="ABC family"
+                value={formData.reference_abc_primary_family}
+                onChange={(e) => handleChange('reference_abc_primary_family', e.target.value)}
+                onBlur={() => handleBlur('reference_abc_primary_family')}
+                error={errors.reference_abc_primary_family}
+                placeholder="e.g., Floral, Woody, Citrus"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormNumber
+                  label="Impact"
+                  value={formData.reference_impact}
+                  onChange={(e) => handleChange('reference_impact', e.target.value)}
+                  onBlur={() => handleBlur('reference_impact')}
+                  error={errors.reference_impact}
+                  placeholder="0.0"
+                  min="0"
+                  step="0.1"
+                />
+                <FormNumber
+                  label="Lifetime (hours)"
+                  value={formData.reference_life_hours}
+                  onChange={(e) => handleChange('reference_life_hours', e.target.value)}
+                  onBlur={() => handleBlur('reference_life_hours')}
+                  error={errors.reference_life_hours}
+                  placeholder="0.0"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormNumber
+                  label="Typical use level"
+                  value={formData.reference_use_level_typical_percent}
+                  onChange={(e) => handleChange('reference_use_level_typical_percent', e.target.value)}
+                  onBlur={() => handleBlur('reference_use_level_typical_percent')}
+                  error={errors.reference_use_level_typical_percent}
+                  placeholder="0.0"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  unit="%"
+                />
+                <FormNumber
+                  label="Max use level"
+                  value={formData.reference_use_level_max_percent}
+                  onChange={(e) => handleChange('reference_use_level_max_percent', e.target.value)}
+                  onBlur={() => handleBlur('reference_use_level_max_percent')}
+                  error={errors.reference_use_level_max_percent}
+                  placeholder="0.0"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  unit="%"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-raw-material-description">Description</Label>
+              <Textarea
+                id="edit-raw-material-description"
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                placeholder="Short material description or odour summary"
+                rows={3}
+                className="text-foreground text-sm"
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit-raw-material-notes">Notes</Label>

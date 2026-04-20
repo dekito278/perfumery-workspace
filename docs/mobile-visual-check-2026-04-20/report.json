@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-04-20T07:03:30.456Z",
+  "baseUrl": "http://127.0.0.1:3002",
+  "steps": [
+    {
+      "name": "open-login",
+      "at": "2026-04-20T07:03:32.246Z",
+      "url": "http://127.0.0.1:3002/login"
+    },
+    {
+      "name": "logged-in",
+      "at": "2026-04-20T07:03:33.902Z",
+      "url": "http://127.0.0.1:3002/dashboard"
+    },
+    {
+      "name": "open-add-material-modal",
+      "at": "2026-04-20T07:03:37.038Z"
+    },
+    {
+      "name": "material-created",
+      "at": "2026-04-20T07:03:56.058Z"
+    },
+    {
+      "name": "open-material-detail",
+      "at": "2026-04-20T07:03:58.030Z",
+      "url": "http://127.0.0.1:3002/raw-material/1508029f-abff-408f-9ab6-880614b185cd"
+    },
+    {
+      "name": "formula-created",
+      "at": "2026-04-20T07:04:03.695Z",
+      "url": "http://127.0.0.1:3002/formulas/c76b526f-2db5-4822-bd3b-888bd22ee919"
+    },
+    {
+      "name": "exported-pdf",
+      "at": "2026-04-20T07:04:10.314Z",
+      "file": "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\QAF-610457_QA_Mobile_Formula_qa-mobile-1776668610457.pdf"
+    }
+  ],
+  "assertions": {
+    "materialReferenceProfile": {
+      "hasSection": true,
+      "hasReferenceCode": true,
+      "hasImpact": false,
+      "hasLifeHours": false,
+      "hasUseLevelMax": false,
+      "hasIfraLimit": false
+    },
+    "formulaAdvisories": {
+      "hasReferenceGuidance": true,
+      "hasTypicalAdvisory": true,
+      "hasMaxAdvisory": true,
+      "hasIfraAdvisory": true
+    },
+    "pdfExport": {
+      "hasFormulaName": true,
+      "hasMaterialName": true,
+      "hasReferenceGuidance": false,
+      "hasAdvisorySummary": true
+    }
+  },
+  "console": [],
+  "pageErrors": [],
+  "artifacts": {
+    "screenshots": [
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\01-login.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\02-dashboard.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\03-add-material-modal.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\04-add-material-filled.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\05-raw-material-list-filtered.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\06-material-detail.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\07-formula-metadata.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\08-formula-library-drawer.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\09-formula-compose.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\10-formula-detail.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\11-formula-detail-after-export.png"
+    ],
+    "download": "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\QAF-610457_QA_Mobile_Formula_qa-mobile-1776668610457.pdf"
+  },
+  "created": {
+    "materialName": "QA Mobile Manual Ref qa-mobile-1776668610457",
+    "materialCode": "QA-610457",
+    "formulaName": "QA Mobile Formula qa-mobile-1776668610457",
+    "formulaCode": "QAF-610457"
+  }
+}

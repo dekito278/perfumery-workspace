@@ -13,7 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx';
-import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
+import { formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import { Badge } from '@/components/ui/badge';
 
@@ -46,6 +46,8 @@ const DECAY_CHART_CONFIG = {
   },
 };
 
+const formatWeightedLoad = (value) => `${formatQuantity(value, 2)} ow`;
+
 const FormulaSensoryChartLayer = ({
   items,
   rawMaterialsById,
@@ -62,11 +64,19 @@ const FormulaSensoryChartLayer = ({
     return null;
   }
 
+  const facetHeading = charts.hasWorkbookFacetData ? 'Lead Facet' : 'Lead Family';
+  const facetDescription = charts.hasWorkbookFacetData
+    ? 'The strongest workbook odour facet in the current formula.'
+    : 'Workbook facets are not available yet, so this view falls back to the primary reference family.';
+  const facetChartDescription = charts.hasWorkbookFacetData
+    ? 'Workbook odour facets weighted by odour impact contribution.'
+    : 'Primary reference families weighted by odour impact contribution when workbook facets are unavailable.';
+
   return (
     <div className={`grid gap-3 lg:grid-cols-2 ${className}`.trim()}>
       <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2 xl:grid-cols-4">
         <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Lead Facet</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{facetHeading}</div>
           <div className="mt-2 flex items-center gap-2">
             <div className="text-lg font-semibold">{charts.dominantFacet?.facet || '-'}</div>
             {charts.dominantFacet ? (
@@ -76,7 +86,7 @@ const FormulaSensoryChartLayer = ({
             ) : null}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            The strongest odour letter in the workbook-weighted profile.
+            {facetDescription}
           </div>
         </div>
 
@@ -91,24 +101,24 @@ const FormulaSensoryChartLayer = ({
             ) : null}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            The family most represented by effective active load.
+            The family most represented by workbook odour-weight contribution.
           </div>
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
           <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Opening Load</div>
           <div className="mt-2 text-lg font-semibold">
-            {formatGramAmount(charts.openingProfile?.total || 0)}
+            {formatWeightedLoad(charts.openingProfile?.total || 0)}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Total effective active material at the start of the decay curve.
+            Total workbook odour-weight load at the start of the decay curve.
           </div>
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
           <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Late Drydown</div>
           <div className="mt-2 text-lg font-semibold">
-            {formatGramAmount(charts.finishProfile?.base || 0)}
+            {formatWeightedLoad(charts.finishProfile?.base || 0)}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             Remaining base load at {charts.finishProfile?.label || '-'}.
@@ -120,13 +130,13 @@ const FormulaSensoryChartLayer = ({
         <div className="mb-3">
           <div className="text-sm font-semibold">Odour facet chart</div>
           <div className="text-xs text-muted-foreground">
-            Workbook odour letters weighted by effective active load.
+            {facetChartDescription}
           </div>
         </div>
 
-        {charts.odourFacetData.length ? (
+        {charts.fallbackFacetData.length ? (
           <ChartContainer config={ODOUR_CHART_CONFIG} className="h-[250px] w-full">
-            <RadarChart data={charts.odourFacetData} outerRadius="72%">
+            <RadarChart data={charts.fallbackFacetData} outerRadius="72%">
               <ChartTooltip
                 cursor={false}
                 content={(
@@ -153,7 +163,7 @@ const FormulaSensoryChartLayer = ({
           </ChartContainer>
         ) : (
           <div className="rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground">
-            No odour facet data is linked yet for this formula.
+            No reference-driven chart data is linked yet for this formula.
           </div>
         )}
       </div>
@@ -162,7 +172,7 @@ const FormulaSensoryChartLayer = ({
         <div className="mb-3">
           <div className="text-sm font-semibold">Family chart</div>
           <div className="text-xs text-muted-foreground">
-            Weighted family spread derived from workbook facets and primary family tags.
+            Weighted family spread derived from workbook facets and primary family tags using odour impact contribution.
           </div>
         </div>
 
@@ -206,7 +216,7 @@ const FormulaSensoryChartLayer = ({
         <div className="mb-3">
           <div className="text-sm font-semibold">Top / middle / base decay</div>
           <div className="text-xs text-muted-foreground">
-            Simple workbook decay curve based on effective active load and linked life-hours.
+            Workbook decay curve based on odour-weight contribution and linked life-hours.
           </div>
         </div>
 
@@ -217,7 +227,7 @@ const FormulaSensoryChartLayer = ({
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => formatGramAmount(value)}
+              tickFormatter={(value) => formatWeightedLoad(value)}
             />
             <ChartTooltip
               content={(
@@ -226,7 +236,7 @@ const FormulaSensoryChartLayer = ({
                   formatter={(value, name) => (
                     <div className="flex min-w-[10rem] items-center justify-between gap-3">
                       <span className="text-muted-foreground capitalize">{name}</span>
-                      <span className="font-mono">{formatGramAmount(Number(value || 0))}</span>
+                      <span className="font-mono">{formatWeightedLoad(Number(value || 0))}</span>
                     </div>
                   )}
                 />

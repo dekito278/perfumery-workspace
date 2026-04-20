@@ -29,6 +29,12 @@ const MetricCard = ({ label, value, hint, tone = 'default' }) => (
   </div>
 );
 
+const SourceBadge = ({ label, value, toneClass = 'border-border bg-background text-foreground' }) => (
+  <div className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClass}`}>
+    {label}: {value}
+  </div>
+);
+
 const BalanceBar = ({ label, percentage, amount, toneClass }) => (
   <div className="space-y-1.5">
     <div className="flex items-center justify-between gap-3 text-xs">
@@ -41,7 +47,7 @@ const BalanceBar = ({ label, percentage, amount, toneClass }) => (
         style={{ width: `${Math.min(Math.max(percentage, 0), 100)}%` }}
       />
     </div>
-    <div className="text-[11px] text-muted-foreground">{formatGramAmount(amount)} effective active load</div>
+    <div className="text-[11px] text-muted-foreground">{formatQuantity(amount, 2)} odour-weight load</div>
   </div>
 );
 
@@ -69,17 +75,34 @@ const FormulaWorkbookSimulationPanel = ({
           <FlaskConical className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold">{title}</h3>
           <Badge variant="outline" className="text-[10px]">
-            {simulation.linkedItemCount}/{simulation.eligibleItemCount} linked
+            {simulation.guidanceBackedCount}/{simulation.eligibleItemCount} with guidance
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">{description}</p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <SourceBadge
+            label="Workbook link"
+            value={simulation.linkedProfileCount}
+            toneClass="border-emerald-200 bg-emerald-50 text-emerald-900"
+          />
+          <SourceBadge
+            label="Manual guidance"
+            value={simulation.fallbackGuidanceCount}
+            toneClass="border-amber-200 bg-amber-50 text-amber-950"
+          />
+          <SourceBadge
+            label="Missing"
+            value={simulation.missingGuidanceCount}
+            toneClass="border-slate-200 bg-slate-50 text-slate-700"
+          />
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Reference Coverage"
           value={formatPercentage(simulation.coveragePercent, 0)}
-          hint={`${simulation.linkedItemCount} linked materials`}
+          hint={`${simulation.guidanceBackedCount} materials already readable by workbook guidance`}
         />
         <MetricCard
           label="Impact Estimate"
@@ -103,7 +126,7 @@ const FormulaWorkbookSimulationPanel = ({
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold">Top / middle / base balance</div>
-            <div className="text-xs text-muted-foreground">Calculated from workbook life-hours and effective active load.</div>
+            <div className="text-xs text-muted-foreground">Calculated from workbook life-hours and odour-weight contribution.</div>
           </div>
           <TimerReset className="h-4 w-4 text-muted-foreground" />
         </div>
@@ -139,7 +162,11 @@ const FormulaWorkbookSimulationPanel = ({
                 <AlertTitle>{advisory.itemName}</AlertTitle>
                 <AlertDescription>
                   <p>{advisory.message}</p>
-                  <p className="mt-1 text-xs opacity-80">Reference {advisory.referenceCode || 'linked profile'}</p>
+                  <p className="mt-1 text-xs opacity-80">
+                    Reference {advisory.referenceCode || 'linked profile'}
+                    {' · '}
+                    {advisory.guidanceSource === 'raw_material_fallback' ? 'manual guidance fallback' : 'workbook linked'}
+                  </p>
                 </AlertDescription>
               </Alert>
             )) : (
@@ -147,7 +174,7 @@ const FormulaWorkbookSimulationPanel = ({
                 <Info className="h-4 w-4" />
                 <AlertTitle>No IFRA exceedance detected</AlertTitle>
                 <AlertDescription>
-                  Linked materials are currently within the IFRA reference limit where workbook data is available.
+                  Guidance-backed materials are currently within the IFRA reference limit where workbook data is available.
                 </AlertDescription>
               </Alert>
             )}
@@ -167,6 +194,8 @@ const FormulaWorkbookSimulationPanel = ({
                     <div className="truncate text-sm font-medium">{row.name}</div>
                     <div className="text-[11px] text-muted-foreground">
                       {row.reference_profile?.reference_code || 'linked profile'}
+                      {' · '}
+                      {row.guidanceSource === 'raw_material_fallback' ? 'manual guidance' : 'workbook linked'}
                     </div>
                   </div>
                   <div className="text-right">

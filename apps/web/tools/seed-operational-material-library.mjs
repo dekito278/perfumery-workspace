@@ -13,7 +13,7 @@ import {
   writeJsonFile,
 } from './material-reference-common.mjs';
 
-const MATERIAL_REFERENCE_JSON = 'material-reference-clean.json';
+const MATERIAL_REFERENCE_JSON = 'material-reference-no-dilute.json';
 const DEFAULT_OUTPUT_DIR = path.resolve('../../docs/material-library-seed');
 const DEFAULT_STOCK_QUANTITY = 1000;
 const DEFAULT_MINIMUM_STOCK = 1;

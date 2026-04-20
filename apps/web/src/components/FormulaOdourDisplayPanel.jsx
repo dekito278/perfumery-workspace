@@ -1,26 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
-import { BarChart3, ChevronDown, PieChartIcon } from 'lucide-react';
+import { BarChart3, ChevronDown, Pause, PieChartIcon, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
-import { formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
-
-const ODOUR_PIE_COLORS = [
-  '#b8691d',
-  '#cdc4ad',
-  '#998c2f',
-  '#d9d300',
-  '#666633',
-  '#dfdfdf',
-  '#ea00c4',
-  '#26e626',
-  '#168341',
-  '#31c7a1',
-  '#4b4fd1',
-  '#dac8ff',
-];
+import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 
 const CHART_CONFIG = {
   weight: {
@@ -42,6 +27,12 @@ const MetricCard = ({ label, value, hint }) => (
     <div className="text-[11px] uppercase tracking-[0.16em] text-[#7e7153]">{label}</div>
     <div className="mt-2 text-xl font-semibold text-[#3c3222]">{value}</div>
     {hint ? <div className="mt-1 text-xs text-[#776c56]">{hint}</div> : null}
+  </div>
+);
+
+const SourcePill = ({ label, value, className }) => (
+  <div className={`rounded-full border px-3 py-1 text-[11px] font-medium ${className}`}>
+    {label}: {value}
   </div>
 );
 
@@ -77,17 +68,70 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
   const [displayMode, setDisplayMode] = useState('pie');
   const [legendExpanded, setLegendExpanded] = useState(false);
   const [balanceExpanded, setBalanceExpanded] = useState(false);
+  const [elapsedHour, setElapsedHour] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const charts = useMemo(() => buildFormulaSensoryCharts({
     items,
     rawMaterialsById,
     referenceLinksMap,
   }), [items, rawMaterialsById, referenceLinksMap]);
 
-  const odourData = charts.odourFacetData.slice(0, 12).map((entry, index) => ({
-    ...entry,
-    fill: ODOUR_PIE_COLORS[index % ODOUR_PIE_COLORS.length],
-  }));
+  useEffect(() => {
+    setElapsedHour((current) => Math.min(current, charts.maxElapsedHour || 0));
+  }, [charts.maxElapsedHour]);
+
+  useEffect(() => {
+    if (!isAutoPlaying || !charts.maxElapsedHour) {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      setElapsedHour((current) => {
+        if (current >= charts.maxElapsedHour) {
+          setIsAutoPlaying(false);
+          return charts.maxElapsedHour;
+        }
+
+        return Math.min(current + 1, charts.maxElapsedHour);
+      });
+    }, 280);
+
+    return () => window.clearInterval(interval);
+  }, [isAutoPlaying, charts.maxElapsedHour]);
+
+  const roundedElapsedHour = Math.min(
+    Math.max(Math.round(Number(elapsedHour) || 0), 0),
+    charts.maxElapsedHour || 0,
+  );
+  const elapsedClassDistribution = charts.classDistributionTimeline?.[roundedElapsedHour]?.classes
+    || charts.classDistributionData;
+  const odourData = elapsedClassDistribution.slice(0, 12);
+  const dominantElapsedClass = odourData[0] || null;
+  const elapsedDecayPoint = (charts.decayTimeline || charts.decayData || []).reduce((closest, entry) => {
+    if (!closest) {
+      return entry;
+    }
+
+    return Math.abs(entry.hour - roundedElapsedHour) < Math.abs(closest.hour - roundedElapsedHour)
+      ? entry
+      : closest;
+  }, null);
   const hasLinkedData = charts.simulation.linkedItemCount > 0;
+  const chartDataSourceLabel = 'Workbook class distribution';
+  const leadFacetLabel = 'Lead class';
+  const elapsedTotalLoad = odourData.reduce((sum, entry) => sum + Number(entry.weight || 0), 0);
+  const elapsedStageShares = elapsedDecayPoint && elapsedDecayPoint.total > 0
+    ? {
+        top: (elapsedDecayPoint.top / elapsedDecayPoint.total) * 100,
+        middle: (elapsedDecayPoint.middle / elapsedDecayPoint.total) * 100,
+        base: (elapsedDecayPoint.base / elapsedDecayPoint.total) * 100,
+      }
+    : { top: 0, middle: 0, base: 0 };
+  const elapsedStageLabel = elapsedStageShares.top >= elapsedStageShares.middle && elapsedStageShares.top >= elapsedStageShares.base
+    ? 'Top'
+    : elapsedStageShares.base >= elapsedStageShares.middle
+      ? 'Base'
+      : 'Middle';
 
   return (
     <aside className={`space-y-4 ${className}`.trim()}>
@@ -104,7 +148,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
               </p>
             </div>
             <Badge variant="outline" className="border-[#c9bb94] bg-white/80 text-[10px] text-[#6c5d36]">
-              {charts.simulation.linkedItemCount}/{charts.simulation.eligibleItemCount} linked
+              {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount} guidance-backed materials
             </Badge>
           </div>
         </div>
@@ -125,32 +169,116 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                 onClick={() => setDisplayMode('bar')}
               />
               <div className="rounded-full border border-dashed border-[#d6c8a2] bg-[#faf6ea] px-3 py-1 text-[11px] font-medium text-[#7a6a3b] sm:ml-auto">
-                Lead facet {charts.dominantFacet?.facet || '-'}
+                {leadFacetLabel} {dominantElapsedClass?.familyName || charts.dominantClass?.familyName || '-'}
               </div>
             </div>
 
             <p className="mt-3 text-sm text-muted-foreground">
-              Kategori odour ditarik dari workbook-linked raw material, lalu dijumlahkan berdasarkan effective active load.
+              Workbook link, manual guidance, dan material yang belum punya guidance sekarang dibaca terpisah supaya coverage lebih jelas. Pie dan bar chart di bawah memakai distribusi klasifikasi workbook A-Z yang diambil dari workbook profile tiap material, dan bisa di-elapse per jam supaya perubahan top, middle, dan base ikut terbaca seperti di workbook desktop.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <SourcePill
+                label="Workbook link"
+                value={charts.simulation.linkedProfileCount}
+                className="border-emerald-200 bg-emerald-50 text-emerald-900"
+              />
+              <SourcePill
+                label="Manual guidance"
+                value={charts.simulation.fallbackGuidanceCount}
+                className="border-amber-200 bg-amber-50 text-amber-950"
+              />
+              <SourcePill
+                label="Missing"
+                value={charts.simulation.missingGuidanceCount}
+                className="border-slate-200 bg-slate-50 text-slate-700"
+              />
+            </div>
           </div>
 
           {hasLinkedData ? (
             <div className="mt-5 rounded-[24px] border border-[#dbd2bc] bg-[radial-gradient(circle_at_top,#fffdf7_0%,#fbf7ec_48%,#f2ebda_100%)] p-4">
               <div className="space-y-4">
-                <ChartContainer config={CHART_CONFIG} className="h-[240px] w-full sm:h-[360px]">
+                <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 px-3 py-2 text-[11px] font-medium text-[#6f644f]">
+                  Graphic source: {chartDataSourceLabel}
+                  {' · '}
+                  Coverage {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount}
+                </div>
+                <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <div
+                      data-testid="autoelapse-chip"
+                      data-elapsed-hour={roundedElapsedHour}
+                      className="rounded-full border border-[#ded3be] bg-[#f8f3e7] px-3 py-1 text-[11px] font-medium text-[#6d6043]"
+                    >
+                      AutoElapse {formatQuantity(roundedElapsedHour, 0)} h
+                    </div>
+                    <div className="rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-3 py-1 text-[11px] font-medium text-[#496033]">
+                      Stage {elapsedStageLabel}
+                    </div>
+                    <div className="rounded-full border border-[#d6ddee] bg-[#f4f7fd] px-3 py-1 text-[11px] font-medium text-[#49587b]">
+                      Load {formatQuantity(elapsedTotalLoad, 2)}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 rounded-full px-3 sm:ml-auto"
+                      onClick={() => {
+                        if (roundedElapsedHour >= (charts.maxElapsedHour || 0)) {
+                          setElapsedHour(0);
+                        }
+                        setIsAutoPlaying((current) => !current);
+                      }}
+                    >
+                      {isAutoPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                      {isAutoPlaying ? 'Pause' : 'Play'}
+                    </Button>
+                  </div>
+                  <div className="mt-3">
+                    <input
+                      data-testid="autoelapse-slider"
+                      type="range"
+                      min="0"
+                      max={charts.maxElapsedHour || 0}
+                      step="1"
+                      value={roundedElapsedHour}
+                      onChange={(event) => {
+                        setIsAutoPlaying(false);
+                        setElapsedHour(Number(event.target.value || 0));
+                      }}
+                      className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e8deca]"
+                    />
+                    <div className="mt-2 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] text-[#7f7257]">
+                      <span>0h</span>
+                      <span>{formatQuantity(charts.maxElapsedHour || 0, 0)}h</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-xl bg-sky-500/10 px-3 py-2 text-[11px] text-sky-950">
+                      Top {formatPercentage(elapsedStageShares.top, 1)}
+                    </div>
+                    <div className="rounded-xl bg-amber-500/10 px-3 py-2 text-[11px] text-amber-950">
+                      Middle {formatPercentage(elapsedStageShares.middle, 1)}
+                    </div>
+                    <div className="rounded-xl bg-emerald-600/10 px-3 py-2 text-[11px] text-emerald-950">
+                      Base {formatPercentage(elapsedStageShares.base, 1)}
+                    </div>
+                  </div>
+                </div>
+                <ChartContainer config={CHART_CONFIG} className="h-[240px] w-full sm:h-[360px]" data-testid="odour-display-chart">
                   {displayMode === 'pie' ? (
                     <PieChart>
                       <Pie
                         data={odourData}
                         dataKey="weight"
-                        nameKey="facet"
+                        nameKey="familyName"
                         innerRadius={0}
                         outerRadius={96}
                         paddingAngle={1}
                         strokeWidth={0}
                       >
                         {odourData.map((entry) => (
-                          <Cell key={entry.facet} fill={entry.fill} />
+                          <Cell key={entry.classIndex} fill={entry.color} />
                         ))}
                       </Pie>
                       <ChartTooltip
@@ -158,9 +286,14 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                           <ChartTooltipContent
                             hideLabel
                             formatter={(_value, _name, item) => (
-                              <div className="flex min-w-[12rem] items-center justify-between gap-3">
-                                <span className="text-muted-foreground">{item.payload.facet}</span>
-                                <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                              <div className="min-w-[14rem] space-y-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-muted-foreground">{item.payload.familyName}</span>
+                                  <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                                </div>
+                                <div className="text-[11px] text-muted-foreground">
+                                  {item.payload.description}
+                                </div>
                               </div>
                             )}
                           />
@@ -172,8 +305,8 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                       <XAxis type="number" hide />
                       <YAxis
                         type="category"
-                        dataKey="facet"
-                        width={28}
+                        dataKey="letter"
+                        width={32}
                         tickLine={false}
                         axisLine={false}
                       />
@@ -182,9 +315,14 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                           <ChartTooltipContent
                             hideLabel
                             formatter={(_value, _name, item) => (
-                              <div className="flex min-w-[12rem] items-center justify-between gap-3">
-                                <span className="text-muted-foreground">{item.payload.facet}</span>
-                                <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                              <div className="min-w-[14rem] space-y-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-muted-foreground">{item.payload.familyName}</span>
+                                  <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                                </div>
+                                <div className="text-[11px] text-muted-foreground">
+                                  {item.payload.description}
+                                </div>
                               </div>
                             )}
                           />
@@ -192,7 +330,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                       />
                       <Bar dataKey="weight" radius={10}>
                         {[...odourData].reverse().map((entry) => (
-                          <Cell key={entry.facet} fill={entry.fill} />
+                          <Cell key={entry.classIndex} fill={entry.color} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -207,10 +345,10 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                   >
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6a4a]">
-                        Facet percentages
+                        Workbook class distribution
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        Buka jika ingin lihat rincian E, H, W, Q dan facet lainnya.
+                        Buka untuk lihat rincian klasifikasi A-Z pada jam elapse sekarang, deskripsi kelas, dan material kontributor utamanya.
                       </div>
                     </div>
                     <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${legendExpanded ? 'rotate-180' : ''}`} />
@@ -219,18 +357,43 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                   {legendExpanded ? (
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                       {odourData.map((entry) => (
-                        <div key={entry.facet} className="flex items-center justify-between gap-3 text-sm">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span
-                              className="h-3 w-3 rounded-sm"
-                              style={{ backgroundColor: entry.fill }}
-                            />
-                            <span className="font-medium">{entry.facet}</span>
+                        <div key={entry.classIndex} className="rounded-xl border border-[#e7decb] bg-white/80 p-3 text-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span
+                                  className="h-3 w-3 rounded-sm"
+                                  style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="font-medium">{entry.familyName}</span>
+                                <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                  {entry.letter}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-[11px] text-muted-foreground">
+                                {entry.description}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-mono text-xs">{formatPercentage(entry.percent, 1)}</div>
+                              <div className="font-mono text-[10px] text-muted-foreground">{formatQuantity(entry.weight, 2)}</div>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-mono text-xs">{formatPercentage(entry.percent, 1)}</div>
-                            <div className="font-mono text-[10px] text-muted-foreground">{formatQuantity(entry.weight, 2)}</div>
-                          </div>
+                          {entry.contributors?.length ? (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {entry.contributors.map((contributor) => (
+                                <Badge
+                                  key={`${entry.classIndex}-${contributor.name}-${contributor.referenceCode || 'ref'}`}
+                                  variant="outline"
+                                  className="rounded-full text-[10px]"
+                                >
+                                  {contributor.name}
+                                  {' · '}
+                                  {formatQuantity(contributor.weight, 2)}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -239,43 +402,53 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
               </div>
 
               <div className="mt-4 grid gap-3 rounded-2xl border border-[#ddd3bf] bg-white/72 p-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-[#faf3dd] px-3 py-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#88734a]">
-                    Dominant family
+                  <div className="rounded-xl bg-[#faf3dd] px-3 py-2" data-testid="dominant-class-card">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#88734a]">
+                    Dominant class
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[#433821]">
+                    {dominantElapsedClass?.familyName || charts.dominantClass?.familyName || '-'}
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#7f7157]">
+                    {dominantElapsedClass?.description || charts.dominantClass?.description || 'No workbook class data yet'}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-[#433821]">
-                    {charts.dominantFamily?.family || '-'}
+                  <div className="rounded-xl bg-[#f1f6ea] px-3 py-2" data-testid="elapsed-load-card">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5d7542]">
+                    Elapsed load
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[#31451f]" data-testid="elapsed-load-value">
+                    {formatQuantity(elapsedTotalLoad, 2)}
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#607350]" data-testid="elapsed-load-hint">
+                    AutoElapse {formatQuantity(roundedElapsedHour, 0)} h of {formatQuantity(charts.maxElapsedHour || 0, 0)} h
+                    </div>
                   </div>
-                </div>
-                <div className="rounded-xl bg-[#f1f6ea] px-3 py-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5d7542]">
-                    Opening load
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-[#31451f]">
-                    {formatGramAmount(charts.openingProfile?.total || 0)}
-                  </div>
-                </div>
               </div>
             </div>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed bg-background/70 px-4 py-8 text-sm text-muted-foreground">
-              Tambahkan raw material yang sudah terhubung ke workbook reference profile supaya graphic odour display, impact, dan life bisa dihitung live.
+              Tambahkan raw material yang sudah punya workbook link atau manual guidance supaya graphic odour display, impact, dan life bisa dihitung live.
             </div>
           )}
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <MetricCard
+            <div data-testid="impact-card">
+              <MetricCard
               label="Impact"
               value={formatQuantity(charts.simulation.impactEstimate, 1)}
               hint="Workbook additive impact estimate"
-            />
-            <MetricCard
+              />
+            </div>
+            <div data-testid="life-card">
+              <MetricCard
               label="Life"
-              value={formatHours(charts.simulation.odourWeightedLifeHours)}
-              hint={charts.simulation.simpleLifeHours
-                ? `Simple life ${formatHours(charts.simulation.simpleLifeHours)}`
-                : 'Weighted by impact contribution'}
-            />
+              value={formatHours(charts.simulation.simpleLifeHours)}
+              hint={charts.simulation.odourWeightedLifeHours
+                ? `Odour-weighted life ${formatHours(charts.simulation.odourWeightedLifeHours)}`
+                : 'Weighted by effective active percentage'}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -289,12 +462,12 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
           <div>
             <div className="text-sm font-semibold text-[#3c3222]">Balance preview</div>
             <div className="text-xs text-[#776c56]">
-              Baca cepat top, middle, dan base dari life-hours workbook.
+              Baca cepat top, middle, dan base dari life-hours workbook dengan bobot impact, jadi balance-nya lebih dekat ke persepsi odour.
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="border border-[#ded3be] bg-[#f5efde] text-[10px] text-[#6f623f]">
-              {charts.dominantFamily?.family || 'No family'}
+              {charts.dominantClass?.familyName || charts.dominantFamily?.family || 'No class'}
             </Badge>
             <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${balanceExpanded ? 'rotate-180' : ''}`} />
           </div>
@@ -309,9 +482,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
             </div>
 
             <div className="mt-4 rounded-2xl bg-[#f6f1e5] p-3 text-xs text-[#756a55]">
-              Opening load {formatGramAmount(charts.openingProfile?.total || 0)}.
-              {' '}
-              Late drydown base {formatGramAmount(charts.finishProfile?.base || 0)} at {charts.finishProfile?.label || '-'}.
+              Balance ini sekarang dihitung dari odour-weight contribution, bukan cuma gram aktif, supaya top/middle/base lebih mengikuti strength workbook tiap material.
             </div>
           </>
         ) : null}

@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-04-20T07:54:26.980Z",
+  "assertions": {
+    "materialDetail": {
+      "hasReferenceProfile": true,
+      "hasImpact7": true,
+      "hasLife4": true,
+      "hasMax2": true,
+      "hasIfra3": true
+    },
+    "materialEditEffect": {
+      "hasImpact8": true,
+      "hasMax25": true
+    },
+    "createWorkbookTab": {
+      "hasGraphicDisplay": true,
+      "hasFallbackSource": true,
+      "hasLeadFamily": true,
+      "hasLinkedBadge": true
+    },
+    "formulaDetail": {
+      "hasReferenceGuidance": true,
+      "hasTypicalAlert": true,
+      "hasMaxAlert": true,
+      "hasIfraAlert": true,
+      "hasChartLayer": true
+    },
+    "export": {
+      "hasReferenceGuidance": true,
+      "hasReferenceDetail": true,
+      "hasMaterialName": true,
+      "hasFormulaName": true,
+      "hasAlerts": true,
+      "hasBrokenSeparator": false
+    },
+    "editWorkbookTab": {
+      "hasGraphicDisplay": true,
+      "hasFallbackSource": true,
+      "hasLinkedBadge": true
+    }
+  },
+  "artifacts": {
+    "screenshots": [
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\13-sweep-material-detail-created.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\14-sweep-material-detail-edited.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\15-sweep-create-workbook-tab.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\16-sweep-formula-detail.png",
+      "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\17-sweep-edit-workbook-tab.png"
+    ],
+    "download": "C:\\webapp\\dekito-workspace-perfumery\\docs\\mobile-visual-check-2026-04-20\\QAS-666981_QA_Sweep_Formula_1776671666981.pdf"
+  },
+  "cleanup": {
+    "formulaIds": [
+      "7e8a01be-393b-48fa-97a8-7b2bb7778ab6"
+    ],
+    "materialIds": [
+      "dfe39254-6924-49fc-a4b2-ec7e8b076eb4"
+    ]
+  }
+}

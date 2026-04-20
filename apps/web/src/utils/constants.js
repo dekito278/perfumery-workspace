@@ -66,8 +66,7 @@ export const BATCH_STATUSES = [
 ];
 
 export const FORMULA_CATEGORIES = [
-  { value: 'perfume', label: 'Perfume' },
-  { value: 'accord', label: 'Accord' }
+  { value: 'perfume', label: 'Perfume' }
 ];
 
 export const FIELD_CONSTRAINTS = {

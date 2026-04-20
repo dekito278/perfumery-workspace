@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-04-20T12:48:54.348Z",
+  "base_url": "http://127.0.0.1:3002",
+  "final_url": "http://127.0.0.1:3002/formulas/278b4924-fa62-42d1-98ad-05ad25c20514/edit",
+  "slider_max": 12,
+  "target_hour": 6,
+  "before_autoelapse_chip": "AutoElapse  h",
+  "after_autoelapse_chip": "AutoElapse 6 h",
+  "before_autoelapse_hour": "0",
+  "after_autoelapse_hour": "6",
+  "before_elapsed_load": "ELAPSED LOAD\n0\nAutoElapse h of 12 h",
+  "after_elapsed_load": "ELAPSED LOAD\n0\nAutoElapse 6 h of 12 h",
+  "before_elapsed_load_value": "0",
+  "after_elapsed_load_value": "0",
+  "before_elapsed_load_hint": "AutoElapse h of 12 h",
+  "after_elapsed_load_hint": "AutoElapse 6 h of 12 h",
+  "life_value": "0 h",
+  "impact_value": "0",
+  "chart_paths_changed": false,
+  "console_issues": [],
+  "page_errors": []
+}

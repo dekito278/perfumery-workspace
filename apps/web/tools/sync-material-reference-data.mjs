@@ -16,7 +16,7 @@ import {
   writeJsonFile,
 } from './material-reference-common.mjs';
 
-const MATERIAL_REFERENCE_JSON = 'material-reference-clean.json';
+const MATERIAL_REFERENCE_JSON = 'material-reference-no-dilute.json';
 const ABC_REFERENCE_CSV = 'abc-classification-reference.csv';
 
 const buildAbcFamilies = (rows) =>

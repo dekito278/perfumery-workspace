@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 
 const FormulaMetadataDialog = ({
@@ -16,11 +17,13 @@ const FormulaMetadataDialog = ({
   category,
   version,
   status,
+  notes = '',
   onNameChange,
   onCodeChange,
   onCategoryChange,
   onVersionChange,
   onStatusChange,
+  onNotesChange = () => {},
   validationErrors = {},
   onConfirm,
   confirmLabel = 'OK',
@@ -99,6 +102,18 @@ const FormulaMetadataDialog = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="formula-meta-notes">Notes</Label>
+            <Textarea
+              id="formula-meta-notes"
+              value={notes}
+              onChange={(event) => onNotesChange(event.target.value)}
+              placeholder="Formula description, usage notes..."
+              rows={4}
+              className="rounded-2xl"
+            />
           </div>
         </div>
 

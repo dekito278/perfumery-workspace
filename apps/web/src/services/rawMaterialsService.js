@@ -1,6 +1,7 @@
 
 import supabase from '@/lib/supabaseClient.js';
 import { deriveScentFamilyFromCategory, inferRawMaterialTypeFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+import { syncManualReferenceProfileForRawMaterial } from '@/services/materialReferenceService.js';
 
 const mapRawMaterial = (row, solventMap = new Map()) => ({
   ...row,
@@ -56,13 +57,20 @@ const buildRawMaterialPayload = (data) => {
     unit: data.unit,
     cost_per_unit: Number(data.cost_per_unit || 0),
     minimum_stock: Number(data.minimum_stock || 0),
+    description: normalizeOptionalText(data.description),
     notes: normalizeOptionalText(data.notes),
     workbook_code: normalizeOptionalText(data.workbook_code),
     scent_family: normalizedFamily || null,
     low_stock_threshold: normalizeOptionalNumber(data.low_stock_threshold),
+    supplier_name: normalizeOptionalText(data.supplier_name),
     vendor: normalizeOptionalText(data.vendor),
     cas_number: normalizeOptionalText(data.cas_number),
     ifra_limit: normalizeOptionalNumber(data.ifra_limit),
+    reference_abc_primary_family: normalizeOptionalText(data.reference_abc_primary_family),
+    reference_impact: normalizeOptionalNumber(data.reference_impact),
+    reference_life_hours: normalizeOptionalNumber(data.reference_life_hours),
+    reference_use_level_typical_percent: normalizeOptionalNumber(data.reference_use_level_typical_percent),
+    reference_use_level_max_percent: normalizeOptionalNumber(data.reference_use_level_max_percent),
     is_diluted: isDiluted,
     dilution_solvent_id: isDiluted ? data.dilution_solvent_id : null,
     dilution_percentage: isDiluted ? normalizeOptionalNumber(data.dilution_percentage) : null,
@@ -322,6 +330,7 @@ export const createRawMaterial = async (data) => {
     }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
+    await syncManualReferenceProfileForRawMaterial(record);
     return mapRawMaterial(record, solventMap);
   } catch (error) {
     console.error('Error creating raw material:', error);
@@ -355,6 +364,7 @@ export const updateRawMaterial = async (id, data) => {
     }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
+    await syncManualReferenceProfileForRawMaterial(record);
     return mapRawMaterial(record, solventMap);
   } catch (error) {
     console.error('Error updating raw material:', error);

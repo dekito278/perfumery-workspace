@@ -1,0 +1,22 @@
+{
+  "baseUrl": "http://127.0.0.1:3002",
+  "formulaId": "186f654a-5b6d-4d82-94a1-f163682b76b7",
+  "rawMaterialId": "f21e4abe-23c9-4b5b-9993-3e86e0a4d82d",
+  "referenceCode": "MAN-F21E4ABE23C9",
+  "sourceKind": "manual",
+  "detailHasWorkbookLinks": true,
+  "detailHasRefBadge": true,
+  "detailHasManualGuidanceCard": true,
+  "editHasWorkbookLinkedOne": true,
+  "createHasWorkbookLinkedOne": true,
+  "mobileHasReferenceGuidance": true,
+  "browserConsoleIssues": [],
+  "mobileConsoleIssues": [],
+  "artifacts": {
+    "outDir": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-e2e-autoensure",
+    "detailDesktop": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-e2e-autoensure\\formula-detail-desktop.png",
+    "editDesktop": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-e2e-autoensure\\formula-edit-desktop.png",
+    "createDesktop": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-e2e-autoensure\\formula-create-desktop.png",
+    "detailMobile": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-e2e-autoensure\\formula-detail-mobile.png"
+  }
+}

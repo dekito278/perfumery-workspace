@@ -28,12 +28,15 @@ import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate, formatQuantity } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
+import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
+import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.js';
+import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
 import { getBatches } from '@/services/batchesSupabaseService.js';
 import { getRawMaterialById, getRawMaterials } from '@/services/rawMaterialsService.js';
-import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
+import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 
 const buildReferenceAdvisories = (item) => {
   const referenceProfile = item.reference_profile;
@@ -122,11 +125,11 @@ const FormulaDetailPage = () => {
       const rawMaterials = await getRawMaterials();
       setRawMaterialsById(new Map(rawMaterials.map((material) => [material.id, material])));
       const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
-      const referenceLinksMap = await getReferenceLinksByRawMaterialIds(
-        itemsData
-          .filter((item) => item.item_type === 'raw_material' || item.item_type === 'solvent')
-          .map((item) => item.item_id)
-      );
+      const selectedRawMaterials = itemsData
+        .filter((item) => item.item_type === 'raw_material' || item.item_type === 'solvent')
+        .map((item) => rawMaterials.find((material) => material.id === item.item_id))
+        .filter(Boolean);
+      const referenceLinksMap = await ensureReferenceLinksForRawMaterials(selectedRawMaterials);
 
       const enrichedItems = await Promise.all(itemsData.map(async (item) => {
         let itemDetails = resolveFormulaItemReference(item, referenceMaps);
@@ -178,7 +181,10 @@ const FormulaDetailPage = () => {
           dilution_percentage: dilutionPercentage,
           dilution_solvent_name: dilutionSolventName,
           reference_link: referenceLinksMap.get(item.item_id) || null,
-          reference_profile: referenceLinksMap.get(item.item_id)?.reference_profile || null,
+          reference_profile:
+            referenceLinksMap.get(item.item_id)?.reference_profile
+            || buildFallbackReferenceProfileFromRawMaterial(itemDetails)
+            || null,
         };
       }));
 
@@ -202,52 +208,7 @@ const FormulaDetailPage = () => {
 
   const handlePrint = async () => {
     const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
-    printWorkbookPdf({
-      typeLabel: 'Formula Sheet',
-      title: formula.name,
-      subtitle: `Code ${formula.code}`,
-      summaryEntries: [
-        { label: 'Code', value: formula.code },
-        { label: 'By', value: formatNullable(formula.author_name) },
-        { label: 'Status', value: formatStatus(formula.status || 'draft') },
-        { label: 'Version', value: formatNullable(formula.version) },
-        { label: 'Total amount', value: formatGramAmount(totalGrams) },
-        { label: 'Material cost', value: formatPrice(totalCost) },
-        { label: 'Created', value: formatDate(formula.created) },
-        { label: 'Category', value: formatNullable(formula.category) },
-      ],
-      tableTitle: 'Composition',
-      columns: [
-        { key: 'material', label: 'Material', width: 54 },
-        { key: 'type', label: 'Type', width: 22 },
-        { key: 'amount', label: 'Amount', width: 24, align: 'right' },
-        { key: 'percentage', label: '%', width: 18, align: 'right' },
-        { key: 'dilution', label: 'Dilution', width: 34 },
-        { key: 'unitPrice', label: 'Unit price', width: 26, align: 'right' },
-        { key: 'cost', label: 'Cost', width: 18, align: 'right' },
-      ],
-      rows: items.map((item) => ({
-        material: item.name,
-        type: formatStatus(item.item_type),
-        amount: formatGramAmount(item.gram_amount),
-        percentage: formatPercentage(item.percentage),
-        dilution: item.dilution_percentage ? `${item.dilution_percentage}%${item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''}` : '-',
-        unitPrice: formatPricePerUnit(item.unit_price, item.unit),
-        cost: formatPrice(item.ingredient_cost ?? calculateIngredientCost(item.gram_amount, item.unit_price)),
-      })),
-      footerRows: [
-        {
-          material: 'TOTAL',
-          type: '',
-          amount: formatGramAmount(totalGrams),
-          percentage: '100%',
-          dilution: '',
-          unitPrice: '',
-          cost: formatPrice(totalCost),
-        },
-      ],
-      notes: formula.notes || '',
-    });
+    printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
   };
 
   if (loading) {
@@ -284,6 +245,15 @@ const FormulaDetailPage = () => {
   const ifraAdvisoryCount = formulaReferenceAdvisories.filter((item) => item.type === 'ifra').length;
   const maxUseAdvisoryCount = formulaReferenceAdvisories.filter((item) => item.type === 'max').length;
   const typicalUseAdvisoryCount = formulaReferenceAdvisories.filter((item) => item.type === 'typical').length;
+  const workbookSimulation = buildWorkbookSimulation({
+    items,
+    rawMaterialsById,
+    referenceLinksMap: new Map(
+      items
+        .filter((item) => item.reference_link)
+        .map((item) => [item.item_id, item.reference_link])
+    ),
+  });
 
   return (
     <>
@@ -376,13 +346,24 @@ const FormulaDetailPage = () => {
               <>
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Reference-linked items</div>
+                    <div className="text-xs text-muted-foreground mb-1">Guidance-backed items</div>
                     <div className="text-lg font-semibold">{referenceCoverageCount}</div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Workbook links</div>
+                    <div className="text-lg font-semibold">{workbookSimulation.linkedProfileCount}</div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Manual guidance</div>
+                    <div className="text-lg font-semibold">{workbookSimulation.fallbackGuidanceCount}</div>
                   </div>
                   <div className="rounded-xl border bg-card p-4">
                     <div className="text-xs text-muted-foreground mb-1">IFRA alerts</div>
                     <div className={`text-lg font-semibold ${ifraAdvisoryCount > 0 ? 'text-destructive' : ''}`}>{ifraAdvisoryCount}</div>
                   </div>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border bg-card p-4">
                     <div className="text-xs text-muted-foreground mb-1">Max use alerts</div>
                     <div className={`text-lg font-semibold ${maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''}`}>{maxUseAdvisoryCount}</div>
@@ -394,16 +375,16 @@ const FormulaDetailPage = () => {
                 </div>
 
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Guidance uses the linked workbook reference profile for each raw material. For diluted ingredients, the advisory is calculated from the effective active percentage, not the listed diluted percentage in the formula.
+                  Guidance now distinguishes workbook-linked profiles from manual raw material guidance. For diluted ingredients, the advisory is calculated from the effective active percentage, not the listed diluted percentage in the formula.
                 </p>
 
                 <div className="mt-4 space-y-3">
                   {!hasReferenceCoverage ? (
                     <Alert>
                       <Info className="h-4 w-4" />
-                      <AlertTitle>No workbook-linked materials yet</AlertTitle>
+                      <AlertTitle>No guidance-backed materials yet</AlertTitle>
                       <AlertDescription>
-                        Add raw materials that already have workbook reference links to unlock IFRA guidance, odour facets, and lifetime-based charting for this formula.
+                        Add raw materials that already have workbook reference links or manual guidance to unlock IFRA guidance, odour facets, and lifetime-based charting for this formula.
                       </AlertDescription>
                     </Alert>
                   ) : formulaReferenceAdvisories.length ? formulaReferenceAdvisories.map((advisory) => (

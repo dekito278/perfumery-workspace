@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-04-20T11:21:44.353Z",
+  "base_url": "http://127.0.0.1:3002",
+  "chart_profile": {
+    "id": "6dd5c9eb-354a-408f-81b9-f3ad1213a7b3",
+    "reference_code": "MAN-CHART-1776684086281",
+    "odour_profile": "F:40 E:35 W:25",
+    "raw_payload": {
+      "Class_5": 35,
+      "Class_6": 40,
+      "Class_23": 25
+    }
+  },
+  "manual_link_before": null,
+  "manual_link_after": {
+    "id": "1726a7bd-911f-400e-a885-2c5a611d3a08",
+    "reference_profile_id": "74c6ceee-96ce-4e3f-9e95-152585743956",
+    "material_reference_profiles": {
+      "source_kind": "manual",
+      "reference_code": "MAN-C068CD967340",
+      "abc_primary_family": "FRUIT"
+    }
+  },
+  "detail_checks": {
+    "workbookLinks": true,
+    "impactEstimate": false,
+    "odourWeightedLife": false,
+    "referenceGuidance": true
+  },
+  "edit_checks": {
+    "workbookLinkedTwo": true,
+    "graphicOdourDisplay": true,
+    "workbookClassDistribution": true,
+    "impactEstimate": false,
+    "odourWeightedLife": false,
+    "classesVisible": [
+      "EDIBLE",
+      "FRUIT",
+      "WOOD"
+    ]
+  },
+  "create_checks": {
+    "workbookLinkedOne": true,
+    "graphicOdourDisplay": true,
+    "workbookClassDistribution": true,
+    "classesVisible": [
+      "EDIBLE",
+      "FRUIT",
+      "WOOD"
+    ]
+  },
+  "console_issues": [],
+  "page_errors": []
+}

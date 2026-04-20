@@ -7,17 +7,20 @@ import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer.jsx';
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
+import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
-import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
+import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 
 const createEmptyFormulaItem = () => ({
   item_id: '',
@@ -65,6 +68,9 @@ const EditFormulaPage = () => {
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   const [materialLibraryQuery, setMaterialLibraryQuery] = useState('');
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
+  const [mobileComposerTab, setMobileComposerTab] = useState('compose');
+  const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     let active = true;
@@ -193,6 +199,12 @@ const EditFormulaPage = () => {
     });
   };
 
+  const handleMobileLibraryPick = (itemId) => {
+    handleLibraryDoubleClick(itemId);
+    setMobileLibraryOpen(false);
+    setMobileComposerTab('compose');
+  };
+
   const updateGramAmount = (index, gramAmount) => {
     const updated = [...formulaItems];
     updated[index].gram_amount = gramAmount;
@@ -286,7 +298,10 @@ const EditFormulaPage = () => {
       }
 
       try {
-        const nextMap = await getReferenceLinksByRawMaterialIds(selectedRawMaterialIds);
+        const selectedMaterials = selectedRawMaterialIds
+          .map((materialId) => rawMaterialsById.get(materialId))
+          .filter(Boolean);
+        const nextMap = await ensureReferenceLinksForRawMaterials(selectedMaterials);
         if (active) {
           setReferenceLinksMap(nextMap);
         }
@@ -302,7 +317,7 @@ const EditFormulaPage = () => {
     return () => {
       active = false;
     };
-  }, [selectedRawMaterialIds]);
+  }, [selectedRawMaterialIds, rawMaterialsById]);
 
   const validateForm = () => {
     const errors = {};
@@ -372,6 +387,49 @@ const EditFormulaPage = () => {
 
   const hasErrors = Object.keys(validationErrors).length > 0;
   const hasLegacyAccordItems = legacyAccordItems.length > 0;
+  const renderMaterialLibraryList = ({ mobile = false } = {}) => (
+    <div className={mobile ? 'space-y-2' : 'space-y-1.5'}>
+      {filteredLibraryMaterials.map((material) => {
+        const currentRowItemId = formulaItems[activeRowIndex]?.item_id;
+        const alreadyAdded = selectedRawMaterialIdsSet.has(material.id) && currentRowItemId !== material.id;
+
+        return (
+          <button
+            key={material.id}
+            type="button"
+            onClick={() => (mobile ? handleMobileLibraryPick(material.id) : handleLibrarySelect(material.id))}
+            onDoubleClick={mobile ? undefined : () => handleLibraryDoubleClick(material.id)}
+            disabled={alreadyAdded}
+            className={`flex w-full min-w-0 flex-col items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
+              alreadyAdded
+                ? 'cursor-not-allowed border-[#e7dfcf] bg-[#f3eee4] text-muted-foreground opacity-70'
+                : 'border-transparent bg-white hover:border-[#decda6] hover:bg-[#fff9ec]'
+            }`}
+          >
+            <div className="min-w-0 w-full">
+              <div className="break-words text-sm font-medium leading-snug">{material.name}</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                {material.type === 'solvent' ? 'Solvent' : 'Raw material'}
+                {material.unit ? ` - ${material.unit}` : ''}
+              </div>
+            </div>
+            <div className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+              alreadyAdded
+                ? 'bg-[#e4dccb] text-[#8b7d63]'
+                : 'bg-[#f6efe0] text-[#7d6942]'
+            }`}>
+              {alreadyAdded ? 'Added' : mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`}
+            </div>
+          </button>
+        );
+      })}
+      {filteredLibraryMaterials.length === 0 ? (
+        <div className="rounded-xl bg-white px-3 py-4 text-sm text-muted-foreground">
+          No raw materials found.
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
     <AuthenticatedLayout>
@@ -394,11 +452,13 @@ const EditFormulaPage = () => {
           category={category}
           version={version}
           status={status}
+          notes={notes}
           onNameChange={setName}
           onCodeChange={setCode}
           onCategoryChange={setCategory}
           onVersionChange={setVersion}
           onStatusChange={setStatus}
+          onNotesChange={setNotes}
           validationErrors={validationErrors}
           onConfirm={() => setMetadataDialogOpen(false)}
           confirmLabel="Apply changes"
@@ -449,7 +509,19 @@ const EditFormulaPage = () => {
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-3 flex flex-wrap gap-2 md:hidden">
+            <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
+              {code || 'Code not set'}
+            </div>
+            <div className="rounded-full border border-[#ddd3bf] bg-[#fbf8f0] px-3 py-1.5 text-xs font-semibold capitalize text-[#433821]">
+              {status}
+            </div>
+            <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold capitalize text-[#31451f]">
+              {category}
+            </div>
+          </div>
+
+          <div className="mt-3 hidden gap-2 md:grid md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-[16px] border border-[#e5dcc7] bg-[linear-gradient(135deg,#fff9ec_0%,#f8f1dc_100%)] px-3 py-2">
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Name</div>
               <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Untitled formula'}</div>
@@ -471,6 +543,13 @@ const EditFormulaPage = () => {
               <div className="mt-1 text-sm font-semibold capitalize text-[#433821]">{status}</div>
             </div>
           </div>
+
+          <div className="mt-3 hidden rounded-[16px] border border-[#ddd3bf] bg-white px-4 py-3 md:block">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Notes</div>
+            <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+              {notes || 'No notes yet'}
+            </div>
+          </div>
         </div>
 
         {loadingData ? (
@@ -481,138 +560,280 @@ const EditFormulaPage = () => {
             <Skeleton className="h-[640px] w-full rounded-[28px]" />
           </div>
         ) : (
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
-            <form id="edit-formula-form" onSubmit={handleSubmit} className="space-y-4">
-              <section className={composerSectionClass}>
-                <div className="space-y-1">
-                  <h2 className="text-lg font-semibold">Formula ingredients</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Area kiri khusus untuk komposisi. Halaman boleh scroll normal ke bawah supaya penyusunan formula lebih lega dan tidak kepotong.
-                  </p>
-                </div>
+          <>
+            {isMobile ? (
+              <>
+                <form id="edit-formula-form" onSubmit={handleSubmit} className="space-y-4">
+                  <Tabs value={mobileComposerTab} onValueChange={setMobileComposerTab} className="space-y-4">
+                    <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-[#f3ecdd] p-1">
+                      <TabsTrigger value="compose" className="rounded-xl py-2 text-xs">Compose</TabsTrigger>
+                      <TabsTrigger value="workbook" className="rounded-xl py-2 text-xs">Workbook</TabsTrigger>
+                      <TabsTrigger value="info" className="rounded-xl py-2 text-xs">Info</TabsTrigger>
+                    </TabsList>
 
-                <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
-                  <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
-                    Rows {activeFormulaItems.length}
-                  </div>
-                  <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
-                    Workbook linked {referenceLinksMap.size}
-                  </div>
-                  <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
-                    Total {formatGramAmount(totalGrams)}
-                  </div>
-                </div>
-
-                {validationErrors.ingredients ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
-                    <p className="text-xs text-destructive">{validationErrors.ingredients}</p>
-                  </div>
-                ) : null}
-
-                {hasLegacyAccordItems ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
-                    <p className="text-xs text-amber-800">
-                      Formula ini masih punya {legacyAccordItems.length} hidden legacy accord item{legacyAccordItems.length > 1 ? 's' : ''}. Formula masih bisa dilihat, tetapi update dibatasi sampai data accord lama dibersihkan.
-                    </p>
-                  </div>
-                ) : null}
-
-                <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
-                  <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                        Material library
-                      </div>
-                      <div className="mt-1 text-sm text-muted-foreground">
-                        Klik material untuk mengisi row aktif. Double click untuk langsung masukkan ke daftar seperti di halaman create.
-                      </div>
-                    </div>
-                    <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
-                      Active row {activeRowIndex + 1}
-                    </div>
-                  </div>
-
-                  <div className="border-b border-[#e7decb] px-4 py-3">
-                    <Input
-                      value={materialLibraryQuery}
-                      onChange={(event) => setMaterialLibraryQuery(event.target.value)}
-                      placeholder="Find raw material..."
-                      className="h-9 rounded-xl border-[#ddd3bf] bg-white text-sm"
-                    />
-                  </div>
-
-                  <div className="max-h-[240px] overflow-y-auto px-3 py-3">
-                    <div className="space-y-1.5">
-                      {filteredLibraryMaterials.map((material) => {
-                        const currentRowItemId = formulaItems[activeRowIndex]?.item_id;
-                        const alreadyAdded = selectedRawMaterialIdsSet.has(material.id) && currentRowItemId !== material.id;
-
-                        return (
-                          <button
-                            key={material.id}
-                            type="button"
-                            onClick={() => handleLibrarySelect(material.id)}
-                            onDoubleClick={() => handleLibraryDoubleClick(material.id)}
-                            disabled={alreadyAdded}
-                            className={`flex w-full min-w-0 flex-col items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
-                              alreadyAdded
-                                ? 'cursor-not-allowed border-[#e7dfcf] bg-[#f3eee4] text-muted-foreground opacity-70'
-                                : 'border-transparent bg-white hover:border-[#decda6] hover:bg-[#fff9ec]'
-                            }`}
-                          >
-                            <div className="min-w-0 w-full">
-                              <div className="break-words text-sm font-medium leading-snug">{material.name}</div>
-                              <div className="mt-0.5 text-[11px] text-muted-foreground">
-                                {material.type === 'solvent' ? 'Solvent' : 'Raw material'}
-                                {material.unit ? ` - ${material.unit}` : ''}
-                              </div>
-                            </div>
-                            <div className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                              alreadyAdded
-                                ? 'bg-[#e4dccb] text-[#8b7d63]'
-                                : 'bg-[#f6efe0] text-[#7d6942]'
-                            }`}>
-                              {alreadyAdded ? 'Added' : `Row ${activeRowIndex + 1}`}
-                            </div>
-                          </button>
-                        );
-                      })}
-                      {filteredLibraryMaterials.length === 0 ? (
-                        <div className="rounded-xl bg-white px-3 py-4 text-sm text-muted-foreground">
-                          No raw materials found.
+                    <TabsContent value="compose" className="mt-0">
+                      <section className={composerSectionClass}>
+                        <div className="space-y-1">
+                          <h2 className="text-lg font-semibold">Formula ingredients</h2>
+                          <p className="text-sm text-muted-foreground">
+                            Fokus utama di mobile ada di daftar formula. Tambah material lewat library drawer supaya revisi lebih cepat.
+                          </p>
                         </div>
-                      ) : null}
+
+                        <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
+                          <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
+                            Rows {activeFormulaItems.length}
+                          </div>
+                          <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
+                            Workbook linked {referenceLinksMap.size}
+                          </div>
+                          <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
+                            Total {formatGramAmount(totalGrams)}
+                          </div>
+                        </div>
+
+                        {validationErrors.ingredients ? (
+                          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                            <p className="text-xs text-destructive">{validationErrors.ingredients}</p>
+                          </div>
+                        ) : null}
+
+                        {hasLegacyAccordItems ? (
+                          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                            <p className="text-xs text-amber-800">
+                              Formula ini masih punya {legacyAccordItems.length} hidden legacy accord item{legacyAccordItems.length > 1 ? 's' : ''}. Update dibatasi sampai data accord lama dibersihkan.
+                            </p>
+                          </div>
+                        ) : null}
+
+                        <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4] px-4 py-3">
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
+                              Material library
+                            </div>
+                            <div className="mt-1 text-sm text-muted-foreground">
+                              Tap untuk langsung tambah material ke formula.
+                            </div>
+                          </div>
+                          <Button type="button" className="rounded-xl" onClick={() => setMobileLibraryOpen(true)}>
+                            Add material
+                          </Button>
+                        </div>
+
+                        <div className="mt-4">
+                          <FormulaItemTableEditor
+                            items={formulaItems}
+                            rawMaterials={rawMaterials}
+                            focusRowIndex={focusRowIndex}
+                            activeRowIndex={activeRowIndex}
+                            onAutoFocusHandled={() => setFocusRowIndex(null)}
+                            onActivateRow={setActiveRowIndex}
+                            onItemChange={updateItem}
+                            onGramAmountChange={updateGramAmount}
+                            onDilutionChange={updateDilutionConfig}
+                            onRemove={removeFormulaItem}
+                            validationErrors={validationErrors}
+                          />
+                        </div>
+                      </section>
+                    </TabsContent>
+
+                    <TabsContent value="workbook" className="mt-0">
+                      <FormulaOdourDisplayPanel
+                        items={itemsWithPercentages}
+                        rawMaterialsById={rawMaterialsById}
+                        referenceLinksMap={referenceLinksMap}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="info" className="mt-0">
+                      <section className={composerSectionClass}>
+                        <div className="space-y-1">
+                          <h2 className="text-lg font-semibold">Formula info</h2>
+                          <p className="text-sm text-muted-foreground">
+                            Detail formula dipisah ke tab ini supaya composer utama tidak terlalu panjang di mobile.
+                          </p>
+                        </div>
+
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <div className="rounded-[16px] border border-[#e5dcc7] bg-[linear-gradient(135deg,#fff9ec_0%,#f8f1dc_100%)] px-3 py-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Name</div>
+                            <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Untitled formula'}</div>
+                          </div>
+                          <div className="rounded-[16px] border border-[#d9def0] bg-[linear-gradient(135deg,#f6f8ff_0%,#edf2ff_100%)] px-3 py-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#61709a]">Code</div>
+                            <div className="mt-1 text-sm font-semibold text-[#26314e]">{code || 'Code not set'}</div>
+                          </div>
+                          <div className="rounded-[16px] border border-[#dce6d1] bg-[linear-gradient(135deg,#f4f9ee_0%,#edf6e3_100%)] px-3 py-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6f8454]">Category</div>
+                            <div className="mt-1 text-sm font-semibold capitalize text-[#31451f]">{category}</div>
+                          </div>
+                          <div className="rounded-[16px] border border-[#ead7cf] bg-[linear-gradient(135deg,#fff6f2_0%,#fcedea_100%)] px-3 py-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a6d5d]">Version</div>
+                            <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{version || 'Not set'}</div>
+                          </div>
+                          <div className="rounded-[16px] border border-[#ddd3bf] bg-[linear-gradient(135deg,#fbf8f0_0%,#f4ede0_100%)] px-3 py-2 sm:col-span-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Status</div>
+                            <div className="mt-1 text-sm font-semibold capitalize text-[#433821]">{status}</div>
+                          </div>
+                          <div className="rounded-[16px] border border-[#ddd3bf] bg-white px-3 py-3 sm:col-span-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6a4a]">Notes</div>
+                            <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                              {notes || 'No notes yet'}
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+                    </TabsContent>
+                  </Tabs>
+                </form>
+
+                <Drawer open={mobileLibraryOpen} onOpenChange={setMobileLibraryOpen}>
+                  <DrawerContent className="max-h-[85vh] rounded-t-[24px] border-[#ddd3bf] bg-[#fcfaf4]">
+                    <DrawerHeader className="text-left">
+                      <DrawerTitle>Material library</DrawerTitle>
+                      <DrawerDescription>
+                        Tap sekali untuk langsung menambahkan material ke formula dan pindah ke row berikutnya.
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="border-b border-[#e7decb] px-4 pb-3">
+                      <Input
+                        value={materialLibraryQuery}
+                        onChange={(event) => setMaterialLibraryQuery(event.target.value)}
+                        placeholder="Find raw material..."
+                        className="h-10 rounded-xl border-[#ddd3bf] bg-white text-sm"
+                      />
+                    </div>
+                    <div className="overflow-y-auto px-4 py-4">
+                      {renderMaterialLibraryList({ mobile: true })}
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+
+                <div className="sticky bottom-3 z-20 mt-4 md:hidden">
+                  <div className="rounded-[22px] border border-[#ddd3bf] bg-white/95 p-2 shadow-lg backdrop-blur">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setMetadataDialogOpen(true);
+                          setMobileComposerTab('info');
+                        }}
+                        className="h-11 rounded-2xl"
+                      >
+                        Edit info
+                      </Button>
+                      <Button
+                        type="submit"
+                        form="edit-formula-form"
+                        disabled={loading || hasErrors || activeFormulaItems.length === 0 || hasLegacyAccordItems}
+                        className="h-11 rounded-2xl gap-2"
+                      >
+                        <Save className="h-4 w-4" />
+                        {loading ? 'Updating...' : 'Update'}
+                      </Button>
                     </div>
                   </div>
                 </div>
+              </>
+            ) : (
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
+                <form id="edit-formula-form" onSubmit={handleSubmit} className="space-y-4">
+                  <section className={composerSectionClass}>
+                    <div className="space-y-1">
+                      <h2 className="text-lg font-semibold">Formula ingredients</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Area kiri khusus untuk komposisi. Halaman boleh scroll normal ke bawah supaya penyusunan formula lebih lega dan tidak kepotong.
+                      </p>
+                    </div>
 
-                <div className="mt-4">
-                  <FormulaItemTableEditor
-                    items={formulaItems}
-                    rawMaterials={rawMaterials}
-                    focusRowIndex={focusRowIndex}
-                    activeRowIndex={activeRowIndex}
-                    onAutoFocusHandled={() => setFocusRowIndex(null)}
-                    onActivateRow={setActiveRowIndex}
-                    onItemChange={updateItem}
-                    onGramAmountChange={updateGramAmount}
-                    onDilutionChange={updateDilutionConfig}
-                    onRemove={removeFormulaItem}
-                    validationErrors={validationErrors}
-                  />
-                </div>
-              </section>
-            </form>
+                    <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
+                      <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
+                        Rows {activeFormulaItems.length}
+                      </div>
+                      <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
+                        Workbook linked {referenceLinksMap.size}
+                      </div>
+                      <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
+                        Total {formatGramAmount(totalGrams)}
+                      </div>
+                    </div>
 
-            <FormulaOdourDisplayPanel
-              items={itemsWithPercentages}
-              rawMaterialsById={rawMaterialsById}
-              referenceLinksMap={referenceLinksMap}
-              className="xl:sticky xl:top-24 xl:self-start"
-            />
-          </div>
+                    {validationErrors.ingredients ? (
+                      <div className="mt-4 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                        <p className="text-xs text-destructive">{validationErrors.ingredients}</p>
+                      </div>
+                    ) : null}
+
+                    {hasLegacyAccordItems ? (
+                      <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                        <p className="text-xs text-amber-800">
+                          Formula ini masih punya {legacyAccordItems.length} hidden legacy accord item{legacyAccordItems.length > 1 ? 's' : ''}. Formula masih bisa dilihat, tetapi update dibatasi sampai data accord lama dibersihkan.
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
+                      <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
+                            Material library
+                          </div>
+                          <div className="mt-1 text-sm text-muted-foreground">
+                            Klik material untuk mengisi row aktif. Double click untuk langsung masukkan ke daftar seperti di halaman create.
+                          </div>
+                        </div>
+                        <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
+                          Active row {activeRowIndex + 1}
+                        </div>
+                      </div>
+
+                      <div className="border-b border-[#e7decb] px-4 py-3">
+                        <Input
+                          value={materialLibraryQuery}
+                          onChange={(event) => setMaterialLibraryQuery(event.target.value)}
+                          placeholder="Find raw material..."
+                          className="h-9 rounded-xl border-[#ddd3bf] bg-white text-sm"
+                        />
+                      </div>
+
+                      <div className="max-h-[240px] overflow-y-auto px-3 py-3">
+                        {renderMaterialLibraryList()}
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <FormulaItemTableEditor
+                        items={formulaItems}
+                        rawMaterials={rawMaterials}
+                        focusRowIndex={focusRowIndex}
+                        activeRowIndex={activeRowIndex}
+                        onAutoFocusHandled={() => setFocusRowIndex(null)}
+                        onActivateRow={setActiveRowIndex}
+                        onItemChange={updateItem}
+                        onGramAmountChange={updateGramAmount}
+                        onDilutionChange={updateDilutionConfig}
+                        onRemove={removeFormulaItem}
+                        validationErrors={validationErrors}
+                      />
+                    </div>
+                  </section>
+                </form>
+
+                <FormulaOdourDisplayPanel
+                  items={itemsWithPercentages}
+                  rawMaterialsById={rawMaterialsById}
+                  referenceLinksMap={referenceLinksMap}
+                  className="xl:sticky xl:top-24 xl:self-start"
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </AuthenticatedLayout>
