@@ -14,7 +14,7 @@ const formatHours = (value) => {
   return `${formatQuantity(value, 1)} h`;
 };
 
-const MetricCard = ({ label, value, hint, tone = 'default' }) => (
+const MetricCard = ({ label, value, tone = 'default' }) => (
   <div className={`rounded-2xl border p-4 ${
     tone === 'danger'
       ? 'border-destructive/25 bg-destructive/5'
@@ -25,7 +25,6 @@ const MetricCard = ({ label, value, hint, tone = 'default' }) => (
   >
     <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
     <div className="mt-2 text-lg font-semibold">{value}</div>
-    {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
   </div>
 );
 
@@ -56,7 +55,7 @@ const FormulaWorkbookSimulationPanel = ({
   rawMaterialsById,
   referenceLinksMap,
   title = 'Workbook simulation',
-  description = 'Impact, lifetime, and IFRA checks are advisory only and never block saving this formula.',
+  description = '',
 }) => {
   const simulation = useMemo(() => buildWorkbookSimulation({
     items,
@@ -70,7 +69,7 @@ const FormulaWorkbookSimulationPanel = ({
 
   return (
     <div className="space-y-4 rounded-[24px] border border-white/80 bg-white/88 p-4 shadow-sm">
-      <div className="space-y-1">
+      <div>
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold">{title}</h3>
@@ -78,7 +77,6 @@ const FormulaWorkbookSimulationPanel = ({
             {simulation.guidanceBackedCount}/{simulation.eligibleItemCount} with guidance
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{description}</p>
         <div className="flex flex-wrap gap-2 pt-1">
           <SourceBadge
             label="Workbook link"
@@ -102,32 +100,25 @@ const FormulaWorkbookSimulationPanel = ({
         <MetricCard
           label="Reference Coverage"
           value={formatPercentage(simulation.coveragePercent, 0)}
-          hint={`${simulation.guidanceBackedCount} materials already readable by workbook guidance`}
         />
         <MetricCard
           label="Impact Estimate"
           value={formatQuantity(simulation.impactEstimate, 1)}
-          hint="Workbook additive impact model"
           tone="accent"
         />
         <MetricCard
           label="Simple Lifetime"
           value={formatHours(simulation.simpleLifeHours)}
-          hint="Weighted by effective active percentage"
         />
         <MetricCard
           label="Odour-Weighted Life"
           value={formatHours(simulation.odourWeightedLifeHours)}
-          hint="Weighted by impact contribution"
         />
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold">Top / middle / base balance</div>
-            <div className="text-xs text-muted-foreground">Calculated from workbook life-hours and odour-weight contribution.</div>
-          </div>
+          <div className="text-sm font-semibold">Top / middle / base balance</div>
           <TimerReset className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="grid gap-3 md:grid-cols-3">
@@ -145,11 +136,8 @@ const FormulaWorkbookSimulationPanel = ({
 
       <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold">IFRA warnings</div>
-              <div className="text-xs text-muted-foreground">Still advisory only. Formula save stays available.</div>
-            </div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold">IFRA warnings</div>
             <Badge variant={simulation.ifraAdvisories.length ? 'destructive' : 'secondary'} className="text-[10px]">
               {simulation.ifraAdvisories.length} alert{simulation.ifraAdvisories.length === 1 ? '' : 's'}
             </Badge>
@@ -182,10 +170,7 @@ const FormulaWorkbookSimulationPanel = ({
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="mb-3">
-            <div className="text-sm font-semibold">Main impact contributors</div>
-            <div className="text-xs text-muted-foreground">The strongest workbook contributors based on effective active percentage.</div>
-          </div>
+          <div className="mb-3 text-sm font-semibold">Main impact contributors</div>
           <div className="space-y-3">
             {simulation.topImpactContributors.length ? simulation.topImpactContributors.map((row) => (
               <div key={`${row.item_id}-${row.reference_profile?.reference_code || row.name}`} className="space-y-1">

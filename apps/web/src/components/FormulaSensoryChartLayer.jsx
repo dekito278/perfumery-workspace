@@ -65,13 +65,6 @@ const FormulaSensoryChartLayer = ({
   }
 
   const facetHeading = charts.hasWorkbookFacetData ? 'Lead Facet' : 'Lead Family';
-  const facetDescription = charts.hasWorkbookFacetData
-    ? 'The strongest workbook odour facet in the current formula.'
-    : 'Workbook facets are not available yet, so this view falls back to the primary reference family.';
-  const facetChartDescription = charts.hasWorkbookFacetData
-    ? 'Workbook odour facets weighted by odour impact contribution.'
-    : 'Primary reference families weighted by odour impact contribution when workbook facets are unavailable.';
-
   return (
     <div className={`grid gap-3 lg:grid-cols-2 ${className}`.trim()}>
       <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2 xl:grid-cols-4">
@@ -85,9 +78,6 @@ const FormulaSensoryChartLayer = ({
               </Badge>
             ) : null}
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {facetDescription}
-          </div>
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
@@ -100,18 +90,12 @@ const FormulaSensoryChartLayer = ({
               </Badge>
             ) : null}
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            The family most represented by workbook odour-weight contribution.
-          </div>
         </div>
 
         <div className="rounded-2xl border bg-background/70 p-4">
           <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Opening Load</div>
           <div className="mt-2 text-lg font-semibold">
             {formatWeightedLoad(charts.openingProfile?.total || 0)}
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            Total workbook odour-weight load at the start of the decay curve.
           </div>
         </div>
 
@@ -120,19 +104,11 @@ const FormulaSensoryChartLayer = ({
           <div className="mt-2 text-lg font-semibold">
             {formatWeightedLoad(charts.finishProfile?.base || 0)}
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            Remaining base load at {charts.finishProfile?.label || '-'}.
-          </div>
         </div>
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4">
-        <div className="mb-3">
-          <div className="text-sm font-semibold">Odour facet chart</div>
-          <div className="text-xs text-muted-foreground">
-            {facetChartDescription}
-          </div>
-        </div>
+        <div className="mb-3 text-sm font-semibold">Odour facet chart</div>
 
         {charts.fallbackFacetData.length ? (
           <ChartContainer config={ODOUR_CHART_CONFIG} className="h-[250px] w-full">
@@ -163,18 +139,13 @@ const FormulaSensoryChartLayer = ({
           </ChartContainer>
         ) : (
           <div className="rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground">
-            No reference-driven chart data is linked yet for this formula.
+            No chart data yet.
           </div>
         )}
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4">
-        <div className="mb-3">
-          <div className="text-sm font-semibold">Family chart</div>
-          <div className="text-xs text-muted-foreground">
-            Weighted family spread derived from workbook facets and primary family tags using odour impact contribution.
-          </div>
-        </div>
+        <div className="mb-3 text-sm font-semibold">Family chart</div>
 
         {charts.familyData.length ? (
           <ChartContainer config={FAMILY_CHART_CONFIG} className="h-[250px] w-full">
@@ -207,18 +178,13 @@ const FormulaSensoryChartLayer = ({
           </ChartContainer>
         ) : (
           <div className="rounded-xl border border-dashed px-4 py-8 text-sm text-muted-foreground">
-            No family distribution is available yet.
+            No family data yet.
           </div>
         )}
       </div>
 
       <div className="rounded-2xl border bg-background/70 p-4 lg:col-span-2">
-        <div className="mb-3">
-          <div className="text-sm font-semibold">Top / middle / base decay</div>
-          <div className="text-xs text-muted-foreground">
-            Workbook decay curve based on odour-weight contribution and linked life-hours.
-          </div>
-        </div>
+        <div className="mb-3 text-sm font-semibold">Top / middle / base decay</div>
 
         <ChartContainer config={DECAY_CHART_CONFIG} className="h-[280px] w-full">
           <AreaChart data={charts.decayData} margin={{ left: 8, right: 8 }}>
@@ -247,18 +213,6 @@ const FormulaSensoryChartLayer = ({
             <Area type="monotone" dataKey="base" stackId="decay" stroke="var(--color-base)" fill="var(--color-base)" fillOpacity={0.45} />
           </AreaChart>
         </ChartContainer>
-
-        <div className="mt-4 grid gap-2 md:grid-cols-3">
-          <div className="rounded-xl bg-sky-500/10 px-3 py-2 text-xs text-sky-900">
-            Opening top notes fade fastest, so use this as a quick read on lift rather than persistence.
-          </div>
-          <div className="rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-900">
-            Middle notes usually anchor the heart between the first impression and drydown.
-          </div>
-          <div className="rounded-xl bg-emerald-600/10 px-3 py-2 text-xs text-emerald-900">
-            Base-heavy formulas should keep more mass toward the right side of the decay chart.
-          </div>
-        </div>
       </div>
     </div>
   );

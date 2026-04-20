@@ -7,14 +7,9 @@ const PageHeader = ({ title, description, action, actionIcon: ActionIcon, onActi
     <div className="page-header page-header-card">
       <div className="flex-1 min-w-0">
         {eyebrow ? <div className="page-header-eyebrow">{eyebrow}</div> : null}
-        <h1 className="mb-2 text-3xl font-bold sm:text-4xl" style={{ letterSpacing: '-0.02em' }}>
+        <h1 className="text-3xl font-bold sm:text-4xl" style={{ letterSpacing: '-0.02em' }}>
           {title}
         </h1>
-        {description && (
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            {description}
-          </p>
-        )}
       </div>
       {action && onAction && (
         <Button

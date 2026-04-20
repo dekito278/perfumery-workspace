@@ -11,9 +11,6 @@ const EmptyState = ({ icon: Icon, title, description, action, actionIcon: Action
         </div>
       )}
       <h3 className="empty-state-title">{title}</h3>
-      {description && (
-        <p className="empty-state-description max-w-[30rem]">{description}</p>
-      )}
       {action && onAction && (
         <Button onClick={onAction} className="h-11 gap-2 rounded-2xl px-5">
           {ActionIcon && <ActionIcon className="w-4 h-4" />}

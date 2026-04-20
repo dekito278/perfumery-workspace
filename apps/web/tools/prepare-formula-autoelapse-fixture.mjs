@@ -81,6 +81,10 @@ const main = async () => {
   const password = String(args.get('password') || '');
   const name = String(args.get('name') || 'Codex AutoElapse Fixture');
   const code = String(args.get('code') || `AUTOELAPSE-${Date.now()}`);
+  const materialIds = String(args.get('material-ids') || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
 
   if (!email || !password) {
     throw new Error('Missing --email or --password');
@@ -98,12 +102,32 @@ const main = async () => {
   }
 
   const materials = [];
-  for (const candidateNames of REQUIRED_MATERIAL_NAMES) {
-    const material = await findMaterialByNames(supabase, candidateNames);
-    if (!material) {
-      throw new Error(`Could not find any raw material matching: ${candidateNames.join(', ')}`);
+
+  if (materialIds.length) {
+    const { data: selectedMaterials, error: selectedMaterialsError } = await supabase
+      .from('raw_materials')
+      .select('id, name, workbook_code')
+      .in('id', materialIds);
+
+    if (selectedMaterialsError) {
+      throw new Error(selectedMaterialsError.message || 'Failed to query selected raw materials');
     }
-    materials.push(material);
+
+    for (const materialId of materialIds) {
+      const material = (selectedMaterials || []).find((row) => row.id === materialId);
+      if (!material) {
+        throw new Error(`Could not find raw material with id: ${materialId}`);
+      }
+      materials.push(material);
+    }
+  } else {
+    for (const candidateNames of REQUIRED_MATERIAL_NAMES) {
+      const material = await findMaterialByNames(supabase, candidateNames);
+      if (!material) {
+        throw new Error(`Could not find any raw material matching: ${candidateNames.join(', ')}`);
+      }
+      materials.push(material);
+    }
   }
 
   const { data: formula, error: formulaError } = await supabase

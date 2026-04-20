@@ -4,6 +4,7 @@ import { BarChart3, ChevronDown, Pause, PieChartIcon, Play } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx';
+import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 
@@ -22,11 +23,10 @@ const formatHours = (value) => {
   return `${formatQuantity(value, 1)} h`;
 };
 
-const MetricCard = ({ label, value, hint }) => (
+const MetricCard = ({ label, value }) => (
   <div className="rounded-2xl border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(250,246,236,0.98)_100%)] p-4 shadow-sm">
     <div className="text-[11px] uppercase tracking-[0.16em] text-[#7e7153]">{label}</div>
     <div className="mt-2 text-xl font-semibold text-[#3c3222]">{value}</div>
-    {hint ? <div className="mt-1 text-xs text-[#776c56]">{hint}</div> : null}
   </div>
 );
 
@@ -64,12 +64,20 @@ const DisplayToggle = ({ active, icon: Icon, label, onClick }) => (
   </Button>
 );
 
-const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, className = '' }) => {
+const FormulaOdourDisplayPanel = ({
+  items,
+  rawMaterialsById,
+  referenceLinksMap,
+  className = '',
+  isVisible = true,
+}) => {
   const [displayMode, setDisplayMode] = useState('pie');
   const [legendExpanded, setLegendExpanded] = useState(false);
   const [balanceExpanded, setBalanceExpanded] = useState(false);
   const [elapsedHour, setElapsedHour] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [chartRenderVersion, setChartRenderVersion] = useState(0);
+  const isMobile = useIsMobile();
   const charts = useMemo(() => buildFormulaSensoryCharts({
     items,
     rawMaterialsById,
@@ -99,6 +107,25 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
     return () => window.clearInterval(interval);
   }, [isAutoPlaying, charts.maxElapsedHour]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isVisible) {
+      return undefined;
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      setChartRenderVersion((current) => current + 1);
+      window.dispatchEvent(new Event('resize'));
+    });
+    const timeoutId = window.setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 180);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [isVisible, displayMode]);
+
   const roundedElapsedHour = Math.min(
     Math.max(Math.round(Number(elapsedHour) || 0), 0),
     charts.maxElapsedHour || 0,
@@ -117,7 +144,6 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
       : closest;
   }, null);
   const hasLinkedData = charts.simulation.linkedItemCount > 0;
-  const chartDataSourceLabel = 'Workbook class distribution';
   const leadFacetLabel = 'Lead class';
   const elapsedTotalLoad = odourData.reduce((sum, entry) => sum + Number(entry.weight || 0), 0);
   const elapsedStageShares = elapsedDecayPoint && elapsedDecayPoint.total > 0
@@ -132,6 +158,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
     : elapsedStageShares.base >= elapsedStageShares.middle
       ? 'Base'
       : 'Middle';
+  const useFixedMobilePieChart = isMobile && displayMode === 'pie';
 
   return (
     <aside className={`space-y-4 ${className}`.trim()}>
@@ -143,9 +170,6 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                 Workbook
               </div>
               <h2 className="mt-1 text-xl font-semibold text-[#3d3422]">Graphic odour display</h2>
-              <p className="mt-1.5 text-sm text-[#6f6550]">
-                Tampilan utama untuk baca komposisi odour secara cepat saat formula disusun.
-              </p>
             </div>
             <Badge variant="outline" className="border-[#c9bb94] bg-white/80 text-[10px] text-[#6c5d36]">
               {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount} guidance-backed materials
@@ -172,10 +196,6 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                 {leadFacetLabel} {dominantElapsedClass?.familyName || charts.dominantClass?.familyName || '-'}
               </div>
             </div>
-
-            <p className="mt-3 text-sm text-muted-foreground">
-              Workbook link, manual guidance, dan material yang belum punya guidance sekarang dibaca terpisah supaya coverage lebih jelas. Pie dan bar chart di bawah memakai distribusi klasifikasi workbook A-Z yang diambil dari workbook profile tiap material, dan bisa di-elapse per jam supaya perubahan top, middle, dan base ikut terbaca seperti di workbook desktop.
-            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <SourcePill
                 label="Workbook link"
@@ -198,11 +218,6 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
           {hasLinkedData ? (
             <div className="mt-5 rounded-[24px] border border-[#dbd2bc] bg-[radial-gradient(circle_at_top,#fffdf7_0%,#fbf7ec_48%,#f2ebda_100%)] p-4">
               <div className="space-y-4">
-                <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 px-3 py-2 text-[11px] font-medium text-[#6f644f]">
-                  Graphic source: {chartDataSourceLabel}
-                  {' · '}
-                  Coverage {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount}
-                </div>
                 <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <div
@@ -265,77 +280,99 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                     </div>
                   </div>
                 </div>
-                <ChartContainer config={CHART_CONFIG} className="h-[240px] w-full sm:h-[360px]" data-testid="odour-display-chart">
-                  {displayMode === 'pie' ? (
-                    <PieChart>
+                {useFixedMobilePieChart ? (
+                  <div data-testid="odour-display-chart" className="flex min-h-[240px] items-center justify-center py-2">
+                    <PieChart width={260} height={220}>
                       <Pie
                         data={odourData}
                         dataKey="weight"
                         nameKey="familyName"
+                        cx="50%"
+                        cy="50%"
                         innerRadius={0}
-                        outerRadius={96}
+                        outerRadius={78}
                         paddingAngle={1}
                         strokeWidth={0}
+                        isAnimationActive={false}
                       >
                         {odourData.map((entry) => (
                           <Cell key={entry.classIndex} fill={entry.color} />
                         ))}
                       </Pie>
-                      <ChartTooltip
-                        content={(
-                          <ChartTooltipContent
-                            hideLabel
-                            formatter={(_value, _name, item) => (
-                              <div className="min-w-[14rem] space-y-1">
-                                <div className="flex items-center justify-between gap-3">
-                                  <span className="text-muted-foreground">{item.payload.familyName}</span>
-                                  <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
-                                </div>
-                                <div className="text-[11px] text-muted-foreground">
-                                  {item.payload.description}
-                                </div>
-                              </div>
-                            )}
-                          />
-                        )}
-                      />
                     </PieChart>
-                  ) : (
-                    <BarChart data={[...odourData].reverse()} layout="vertical" margin={{ left: 8, right: 16, top: 6, bottom: 6 }}>
-                      <XAxis type="number" hide />
-                      <YAxis
-                        type="category"
-                        dataKey="letter"
-                        width={32}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <ChartTooltip
-                        content={(
-                          <ChartTooltipContent
-                            hideLabel
-                            formatter={(_value, _name, item) => (
-                              <div className="min-w-[14rem] space-y-1">
-                                <div className="flex items-center justify-between gap-3">
-                                  <span className="text-muted-foreground">{item.payload.familyName}</span>
-                                  <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                  </div>
+                ) : (
+                  <ChartContainer
+                    key={`odour-display-chart-${displayMode}-${chartRenderVersion}`}
+                    config={CHART_CONFIG}
+                    className="aspect-auto h-[240px] min-h-[240px] w-full sm:h-[360px] sm:min-h-[360px]"
+                    data-testid="odour-display-chart"
+                  >
+                    {displayMode === 'pie' ? (
+                      <PieChart>
+                        <Pie
+                          data={odourData}
+                          dataKey="weight"
+                          nameKey="familyName"
+                          innerRadius={0}
+                          outerRadius={96}
+                          paddingAngle={1}
+                          strokeWidth={0}
+                        >
+                          {odourData.map((entry) => (
+                            <Cell key={entry.classIndex} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip
+                          content={(
+                            <ChartTooltipContent
+                              hideLabel
+                              formatter={(_value, _name, item) => (
+                                <div className="min-w-[14rem] space-y-1">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-muted-foreground">{item.payload.familyName}</span>
+                                    <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                                  </div>
                                 </div>
-                                <div className="text-[11px] text-muted-foreground">
-                                  {item.payload.description}
+                              )}
+                            />
+                          )}
+                        />
+                      </PieChart>
+                    ) : (
+                      <BarChart data={[...odourData].reverse()} layout="vertical" margin={{ left: 8, right: 16, top: 6, bottom: 6 }}>
+                        <XAxis type="number" hide />
+                        <YAxis
+                          type="category"
+                          dataKey="letter"
+                          width={32}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <ChartTooltip
+                          content={(
+                            <ChartTooltipContent
+                              hideLabel
+                              formatter={(_value, _name, item) => (
+                                <div className="min-w-[14rem] space-y-1">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-muted-foreground">{item.payload.familyName}</span>
+                                    <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          />
-                        )}
-                      />
-                      <Bar dataKey="weight" radius={10}>
-                        {[...odourData].reverse().map((entry) => (
-                          <Cell key={entry.classIndex} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  )}
-                </ChartContainer>
+                              )}
+                            />
+                          )}
+                        />
+                        <Bar dataKey="weight" radius={10}>
+                          {[...odourData].reverse().map((entry) => (
+                            <Cell key={entry.classIndex} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    )}
+                  </ChartContainer>
+                )}
 
                 <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 p-3">
                   <button
@@ -343,13 +380,8 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                     onClick={() => setLegendExpanded((current) => !current)}
                     className="flex w-full items-center justify-between gap-3 text-left"
                   >
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6a4a]">
-                        Workbook class distribution
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Buka untuk lihat rincian klasifikasi A-Z pada jam elapse sekarang, deskripsi kelas, dan material kontributor utamanya.
-                      </div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6a4a]">
+                      Workbook class distribution
                     </div>
                     <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${legendExpanded ? 'rotate-180' : ''}`} />
                   </button>
@@ -369,9 +401,6 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                                 <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                                   {entry.letter}
                                 </span>
-                              </div>
-                              <div className="mt-1 text-[11px] text-muted-foreground">
-                                {entry.description}
                               </div>
                             </div>
                             <div className="text-right">
@@ -428,7 +457,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
             </div>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed bg-background/70 px-4 py-8 text-sm text-muted-foreground">
-              Tambahkan raw material yang sudah punya workbook link atau manual guidance supaya graphic odour display, impact, dan life bisa dihitung live.
+              No workbook data yet.
             </div>
           )}
 
@@ -437,16 +466,12 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
               <MetricCard
               label="Impact"
               value={formatQuantity(charts.simulation.impactEstimate, 1)}
-              hint="Workbook additive impact estimate"
               />
             </div>
             <div data-testid="life-card">
               <MetricCard
               label="Life"
               value={formatHours(charts.simulation.simpleLifeHours)}
-              hint={charts.simulation.odourWeightedLifeHours
-                ? `Odour-weighted life ${formatHours(charts.simulation.odourWeightedLifeHours)}`
-                : 'Weighted by effective active percentage'}
               />
             </div>
           </div>
@@ -459,12 +484,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
           onClick={() => setBalanceExpanded((current) => !current)}
           className="flex w-full items-center justify-between gap-3 text-left"
         >
-          <div>
-            <div className="text-sm font-semibold text-[#3c3222]">Balance preview</div>
-            <div className="text-xs text-[#776c56]">
-              Baca cepat top, middle, dan base dari life-hours workbook dengan bobot impact, jadi balance-nya lebih dekat ke persepsi odour.
-            </div>
-          </div>
+          <div className="text-sm font-semibold text-[#3c3222]">Balance preview</div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="border border-[#ded3be] bg-[#f5efde] text-[10px] text-[#6f623f]">
               {charts.dominantClass?.familyName || charts.dominantFamily?.family || 'No class'}
@@ -479,10 +499,6 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
               <BalanceRow label="Top" value={charts.simulation.topPercent} toneClass="bg-sky-500" />
               <BalanceRow label="Middle" value={charts.simulation.middlePercent} toneClass="bg-amber-500" />
               <BalanceRow label="Base" value={charts.simulation.basePercent} toneClass="bg-emerald-600" />
-            </div>
-
-            <div className="mt-4 rounded-2xl bg-[#f6f1e5] p-3 text-xs text-[#756a55]">
-              Balance ini sekarang dihitung dari odour-weight contribution, bukan cuma gram aktif, supaya top/middle/base lebih mengikuti strength workbook tiap material.
             </div>
           </>
         ) : null}

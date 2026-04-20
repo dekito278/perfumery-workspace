@@ -484,9 +484,6 @@ const EditFormulaPage = () => {
               <h1 className="mt-1 text-xl font-bold tracking-[-0.02em] sm:text-2xl">
                 {name || formula?.name || 'Edit formula'}
               </h1>
-              <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                Edit formula memakai workspace yang sama seperti halaman create supaya proses racik dan revisi tetap konsisten.
-              </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button
@@ -573,12 +570,7 @@ const EditFormulaPage = () => {
 
                     <TabsContent value="compose" className="mt-0">
                       <section className={composerSectionClass}>
-                        <div className="space-y-1">
-                          <h2 className="text-lg font-semibold">Formula ingredients</h2>
-                          <p className="text-sm text-muted-foreground">
-                            Fokus utama di mobile ada di daftar formula. Tambah material lewat library drawer supaya revisi lebih cepat.
-                          </p>
-                        </div>
+                        <h2 className="text-lg font-semibold">Formula ingredients</h2>
 
                         <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                           <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
@@ -609,13 +601,8 @@ const EditFormulaPage = () => {
                         ) : null}
 
                         <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4] px-4 py-3">
-                          <div>
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                              Material library
-                            </div>
-                            <div className="mt-1 text-sm text-muted-foreground">
-                              Tap untuk langsung tambah material ke formula.
-                            </div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
+                            Material library
                           </div>
                           <Button type="button" className="rounded-xl" onClick={() => setMobileLibraryOpen(true)}>
                             Add material
@@ -645,17 +632,13 @@ const EditFormulaPage = () => {
                         items={itemsWithPercentages}
                         rawMaterialsById={rawMaterialsById}
                         referenceLinksMap={referenceLinksMap}
+                        isVisible={mobileComposerTab === 'workbook'}
                       />
                     </TabsContent>
 
                     <TabsContent value="info" className="mt-0">
                       <section className={composerSectionClass}>
-                        <div className="space-y-1">
-                          <h2 className="text-lg font-semibold">Formula info</h2>
-                          <p className="text-sm text-muted-foreground">
-                            Detail formula dipisah ke tab ini supaya composer utama tidak terlalu panjang di mobile.
-                          </p>
-                        </div>
+                        <h2 className="text-lg font-semibold">Formula info</h2>
 
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                           <div className="rounded-[16px] border border-[#e5dcc7] bg-[linear-gradient(135deg,#fff9ec_0%,#f8f1dc_100%)] px-3 py-2">
@@ -743,12 +726,7 @@ const EditFormulaPage = () => {
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
                 <form id="edit-formula-form" onSubmit={handleSubmit} className="space-y-4">
                   <section className={composerSectionClass}>
-                    <div className="space-y-1">
-                      <h2 className="text-lg font-semibold">Formula ingredients</h2>
-                      <p className="text-sm text-muted-foreground">
-                        Area kiri khusus untuk komposisi. Halaman boleh scroll normal ke bawah supaya penyusunan formula lebih lega dan tidak kepotong.
-                      </p>
-                    </div>
+                    <h2 className="text-lg font-semibold">Formula ingredients</h2>
 
                     <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                       <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
@@ -780,13 +758,8 @@ const EditFormulaPage = () => {
 
                     <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
                       <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                            Material library
-                          </div>
-                          <div className="mt-1 text-sm text-muted-foreground">
-                            Klik material untuk mengisi row aktif. Double click untuk langsung masukkan ke daftar seperti di halaman create.
-                          </div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
+                          Material library
                         </div>
                         <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
                           Active row {activeRowIndex + 1}
@@ -830,6 +803,7 @@ const EditFormulaPage = () => {
                   rawMaterialsById={rawMaterialsById}
                   referenceLinksMap={referenceLinksMap}
                   className="xl:sticky xl:top-24 xl:self-start"
+                  isVisible
                 />
               </div>
             )}
