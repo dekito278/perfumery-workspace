@@ -91,9 +91,11 @@ const DashboardPage = () => {
   const lowStockMaterials = materials.filter(m => {
     const threshold = m.low_stock_threshold || m.minimum_stock;
     return m.stock_quantity < threshold;
-  }).slice(0, 5);
+  });
 
-  const activeBatches = batches.filter(b => b.status === 'in_progress' || b.status === 'draft').slice(0, 5);
+  const activeBatches = batches.filter(b => b.status === 'in_progress' || b.status === 'draft');
+  const lowStockPreview = lowStockMaterials.slice(0, 5);
+  const activeBatchPreview = activeBatches.slice(0, 5);
   const recentFormulas = [...formulas].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
   const recentBatches = [...batches].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
   const displayName =
@@ -165,7 +167,7 @@ const DashboardPage = () => {
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Formula hari ini</span>
+              <span className="dashboard-hero-stat-label">Total formula</span>
               <strong>{formulas.length}</strong>
             </div>
             <div className="dashboard-hero-stat">
@@ -252,7 +254,7 @@ const DashboardPage = () => {
             <OperationalInsightCard
               title="Low stock"
               icon={AlertTriangle}
-              items={lowStockMaterials.map(m => ({
+              items={lowStockPreview.map(m => ({
                 id: m.id,
                 name: m.name,
                 badge: `${m.stock_quantity.toFixed(1)} ${m.unit}`
@@ -267,7 +269,7 @@ const DashboardPage = () => {
             <OperationalInsightCard
               title="Batch aktif"
               icon={Activity}
-              items={activeBatches.map(b => ({
+              items={activeBatchPreview.map(b => ({
                 id: b.id,
                 name: b.batch_code,
                 badge: b.status === 'in_progress' ? 'In progress' : 'Draft'

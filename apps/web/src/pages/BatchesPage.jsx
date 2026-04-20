@@ -395,34 +395,58 @@ const BatchesPage = () => {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0 text-xs text-muted-foreground">
-                      {row.expand?.solvent_id?.name || 'No solvent selected'}
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleView(row)}
-                        className="h-8 w-8 rounded-xl p-0"
-                        title="View details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {row.status === 'draft' && (
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0 text-xs text-muted-foreground">
+                        {row.expand?.solvent_id?.name || 'No solvent selected'}
+                      </div>
+                      <div className="flex shrink-0 gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleProduce(row)}
-                          className="h-8 w-8 rounded-xl p-0"
-                          title="Produce batch"
+                          onClick={() => handleView(row)}
+                          className="table-action-button"
+                          title="View details"
+                          aria-label={`View details for ${row.batch_code}`}
                         >
-                          <FlaskConical className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
-                      )}
+                        {row.status === 'draft' && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleProduce(row)}
+                              className="table-action-button"
+                              title="Produce batch"
+                              aria-label={`Produce batch ${row.batch_code}`}
+                            >
+                              <FlaskConical className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(row)}
+                              className="h-8 rounded-xl px-3 text-xs"
+                              title="Edit"
+                              aria-label={`Edit ${row.batch_code}`}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(row)}
+                              className="h-8 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete"
+                              aria-label={`Delete ${row.batch_code}`}
+                            >
+                              Delete
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
               )}
               onEdit={handleEdit}
               onDelete={handleDelete}
@@ -432,8 +456,9 @@ const BatchesPage = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleView(row)}
-                    className="h-8 w-8 p-0"
+                    className="table-action-button"
                     title="View details"
+                    aria-label={`View details for ${row.batch_code}`}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -442,8 +467,9 @@ const BatchesPage = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleProduce(row)}
-                      className="h-8 w-8 p-0"
+                      className="table-action-button"
                       title="Produce batch"
+                      aria-label={`Produce batch ${row.batch_code}`}
                     >
                       <FlaskConical className="w-4 h-4" />
                     </Button>

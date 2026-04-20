@@ -333,7 +333,7 @@ const RawMaterialsPage = () => {
                 ? [
                     referenceProfile.reference_code,
                     referenceProfile.abc_code || null,
-                  ].filter(Boolean).join(' · ')
+                  ].filter(Boolean).join(' / ')
                 : 'Open detail page to review and match'}
             </div>
           </div>
@@ -485,7 +485,7 @@ const RawMaterialsPage = () => {
               <div>
                 <p className="list-summary-label">Estimated stock value</p>
                 <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{formatPrice(inventoryValue)}</span>
-                <p className="list-summary-note">{categoryCount} categories in use · {ifraReferenceCount} IFRA reference profiles linked.</p>
+                <p className="list-summary-note">{categoryCount} categories in use / {ifraReferenceCount} IFRA reference profiles linked.</p>
               </div>
               <Banknote className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -614,14 +614,36 @@ const RawMaterialsPage = () => {
                     <div className="min-w-0 text-xs text-muted-foreground">
                       {row.category || 'Uncategorized'}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleView(row)}
-                      className="h-9 rounded-xl px-4"
-                    >
-                      View
-                    </Button>
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleView(row)}
+                        className="h-9 rounded-xl px-4"
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(row)}
+                        className="h-9 rounded-xl px-3 text-xs"
+                        title="Edit"
+                        aria-label={`Edit ${row.name}`}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(row)}
+                        className="h-9 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Delete"
+                        aria-label={`Delete ${row.name}`}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -632,8 +654,9 @@ const RawMaterialsPage = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleView(row)}
-                  className="h-8 w-8 p-0"
+                  className="table-action-button"
                   title="View details"
+                  aria-label={`View details for ${row.name}`}
                 >
                   <Eye className="w-4 h-4" />
                 </Button>

@@ -31,19 +31,22 @@ const createEmptyFormulaItem = () => ({
   item_type: '',
 });
 
+const normalizeFormulaItemType = (item, material) => {
+  if (item?.item_type === 'accord') {
+    return 'accord';
+  }
+
+  if (material?.type === 'solvent' || item?.item_type === 'solvent') {
+    return 'solvent';
+  }
+
+  return 'raw_material';
+};
+
 const getActiveFormulaItems = (items) =>
   items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
 
-const ensureTrailingEmptyItem = (items) => {
-  const nextItems = [...getActiveFormulaItems(items)];
-  const lastItem = nextItems[nextItems.length - 1];
-
-  if (!lastItem || lastItem.item_id || lastItem.gram_amount || lastItem.dilution_percent || lastItem.dilution_solvent_id) {
-    nextItems.push(createEmptyFormulaItem());
-  }
-
-  return nextItems;
-};
+const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
 const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
 
 const EditFormulaPage = () => {
@@ -96,16 +99,21 @@ const EditFormulaPage = () => {
 
         const formattedItems = itemsData
           .filter((item) => item.item_type !== 'accord')
-          .map((item) => ({
-            item_type: item.item_type,
-            item_id: item.item_id,
-            gram_amount: item.grams || (item.percentage || 0).toString(),
-            dilution_percent: item.dilution_percent?.toString() || '',
-            dilution_solvent_id: item.dilution_solvent_id || '',
-            dilution_solvent_name: item.dilution_solvent_id
-              ? materialsData.find((material) => material.id === item.dilution_solvent_id)?.name || ''
-              : '',
-          }));
+          .map((item) => {
+            const material = materialsData.find((entry) => entry.id === item.item_id);
+            return {
+              item_type: normalizeFormulaItemType(item, material),
+              item_id: item.item_id,
+              gram_amount: item.grams !== null && item.grams !== undefined
+                ? String(item.grams)
+                : String(item.percentage || 0),
+              dilution_percent: item.dilution_percent?.toString() || '',
+              dilution_solvent_id: item.dilution_solvent_id || '',
+              dilution_solvent_name: item.dilution_solvent_id
+                ? materialsData.find((solvent) => solvent.id === item.dilution_solvent_id)?.name || ''
+                : '',
+            };
+          });
 
         setName(formulaData.name || '');
         setCode(formulaData.code || '');
@@ -113,10 +121,10 @@ const EditFormulaPage = () => {
         setVersion(formulaData.version || '');
         setStatus(formulaData.status || 'draft');
         setNotes(formulaData.notes || '');
-        setFormulaItems(ensureTrailingEmptyItem(formattedItems));
+        setFormulaItems(normalizeFormulaItems(formattedItems));
         setValidationErrors({});
         setFocusRowIndex(0);
-        setActiveRowIndex(Math.max(formattedItems.length, 0));
+        setActiveRowIndex(0);
       } catch (error) {
         toast.error('Failed to load formula data');
         navigate('/formulas');
@@ -136,10 +144,10 @@ const EditFormulaPage = () => {
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, itemIndex) => itemIndex !== index);
-    setFormulaItems(ensureTrailingEmptyItem(remainingItems));
+    setFormulaItems(normalizeFormulaItems(remainingItems));
     setActiveRowIndex((current) => {
       if (current === index) {
-        return Math.max(ensureTrailingEmptyItem(remainingItems).length - 1, 0);
+        return 0;
       }
       return Math.max(0, current > index ? current - 1 : current);
     });
@@ -158,7 +166,7 @@ const EditFormulaPage = () => {
       updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
     }
 
-    setFormulaItems(ensureTrailingEmptyItem(updated));
+    setFormulaItems(updated);
     setActiveRowIndex(index);
   };
 
@@ -191,10 +199,12 @@ const EditFormulaPage = () => {
       const rowIndex = Math.min(activeRowIndex, Math.max(nextItems.length - 1, 0));
       nextItems[rowIndex] = buildItemWithMaterial(nextItems[rowIndex] || createEmptyFormulaItem(), itemId);
 
-      const normalizedItems = ensureTrailingEmptyItem(nextItems);
-      const nextActiveIndex = Math.max(normalizedItems.length - 1, 0);
-      setActiveRowIndex(nextActiveIndex);
-      setFocusRowIndex(nextActiveIndex);
+      const committedItem = nextItems[rowIndex];
+      const remainingItems = nextItems.filter((_, itemIndex) => itemIndex !== rowIndex);
+      const normalizedItems = [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
+
+      setActiveRowIndex(0);
+      setFocusRowIndex(0);
       return normalizedItems;
     });
   };
@@ -208,7 +218,7 @@ const EditFormulaPage = () => {
   const updateGramAmount = (index, gramAmount) => {
     const updated = [...formulaItems];
     updated[index].gram_amount = gramAmount;
-    setFormulaItems(ensureTrailingEmptyItem(updated));
+    setFormulaItems(updated);
     setActiveRowIndex(index);
 
     const error = validateGramAmount(gramAmount);
@@ -243,7 +253,7 @@ const EditFormulaPage = () => {
       updated[index].dilution_solvent_name = '';
     }
 
-    setFormulaItems(ensureTrailingEmptyItem(updated));
+    setFormulaItems(updated);
     setActiveRowIndex(index);
     const nextErrors = { ...validationErrors };
     delete nextErrors.ingredients;

@@ -7,6 +7,7 @@ import { useIsMobile } from '@/hooks/use-mobile.jsx';
 
 const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'No items found', mobileCard }) => {
   const isMobile = useIsMobile();
+  const hasActions = Boolean(onEdit || onDelete || actions);
 
   if (isMobile && mobileCard) {
     return (
@@ -39,15 +40,15 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
                 {column.label}
               </TableHead>
             ))}
-            {(onEdit || onDelete || actions) && (
-              <TableHead className="text-right w-32">Actions</TableHead>
+            {hasActions && (
+              <TableHead className="table-action-head">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length + 1} className="text-center py-12 text-muted-foreground">
+              <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="text-center py-12 text-muted-foreground">
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -62,16 +63,16 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
                     {column.render ? column.render(row) : row[column.key]}
                   </TableCell>
                 ))}
-                {(onEdit || onDelete || actions) && (
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
+                {hasActions && (
+                  <TableCell className="table-action-cell">
+                    <div className="table-action-group">
                       {actions && actions(row)}
                       {onEdit && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => onEdit(row)}
-                          className="h-8 w-8 p-0"
+                          className="table-action-button"
                           title="Edit"
                           aria-label={`Edit ${row.name || row.code || 'item'}`}
                         >
@@ -83,7 +84,7 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
                           variant="ghost"
                           size="sm"
                           onClick={() => onDelete(row)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="table-action-button text-destructive hover:text-destructive hover:bg-destructive/10"
                           title="Delete"
                           aria-label={`Delete ${row.name || row.code || 'item'}`}
                         >

@@ -22,6 +22,7 @@ import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
 import PyramidSummary from '@/components/PyramidSummary.jsx';
 import ExportFormulaButton from '@/components/ExportFormulaButton.jsx';
+import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
 import { calculatePercentages } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
@@ -99,6 +100,18 @@ const buildReferenceAdvisories = (item) => {
   };
 };
 
+const normalizeFormulaItemType = (item, itemDetails) => {
+  if (item?.item_type === 'accord') {
+    return 'accord';
+  }
+
+  if (itemDetails?.type === 'solvent' || itemDetails?.item_type === 'solvent' || item?.item_type === 'solvent') {
+    return 'solvent';
+  }
+
+  return 'raw_material';
+};
+
 const FormulaDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -163,10 +176,13 @@ const FormulaDetailPage = () => {
           componentFamily = 'accord';
         }
 
+        const normalizedItemType = normalizeFormulaItemType(item, itemDetails);
+
         const gramAmount = item.grams || item.percentage || 0;
 
         return {
           ...item,
+          item_type: normalizedItemType,
           name: itemDetails?.name || 'Unknown',
           workbook_code: itemDetails?.workbook_code || null,
           unit: itemDetails?.unit || 'g',
@@ -398,12 +414,12 @@ const FormulaDetailPage = () => {
                       ) : (
                         <Info className="h-4 w-4" />
                       )}
-                      <AlertTitle>{advisory.itemName} · {advisory.label}</AlertTitle>
+                      <AlertTitle>{advisory.itemName} / {advisory.label}</AlertTitle>
                       <AlertDescription>
                         <p>{advisory.message}</p>
                         <p className="mt-1 text-xs opacity-80">
                           Reference {advisory.referenceCode || 'profile linked'}
-                          {advisory.dilutionPercentage ? ` · diluted ${formatPercentage(advisory.dilutionPercentage, 1)}` : ''}
+                          {advisory.dilutionPercentage ? ` / diluted ${formatPercentage(advisory.dilutionPercentage, 1)}` : ''}
                         </p>
                       </AlertDescription>
                     </Alert>
@@ -462,17 +478,29 @@ const FormulaDetailPage = () => {
 
           <DetailSection title="Chart layer">
             {hasFormulaItems ? (
-              <FormulaWorkbookSimulationPanel
-                items={items}
-                rawMaterialsById={rawMaterialsById}
-                referenceLinksMap={new Map(
-                  items
-                    .filter((item) => item.reference_link)
-                    .map((item) => [item.item_id, item.reference_link])
-                )}
-                title="Workbook chart layer"
-                description="Workbook metrics and chart views for odour facets, family spread, and top-mid-base decay."
-              />
+              <div className="space-y-4">
+                <FormulaOdourDisplayPanel
+                  items={items}
+                  rawMaterialsById={rawMaterialsById}
+                  referenceLinksMap={new Map(
+                    items
+                      .filter((item) => item.reference_link)
+                      .map((item) => [item.item_id, item.reference_link])
+                  )}
+                  isVisible
+                />
+                <FormulaWorkbookSimulationPanel
+                  items={items}
+                  rawMaterialsById={rawMaterialsById}
+                  referenceLinksMap={new Map(
+                    items
+                      .filter((item) => item.reference_link)
+                      .map((item) => [item.item_id, item.reference_link])
+                  )}
+                  title="Workbook diagnostics"
+                  description="Reference coverage, lifetime estimate, and IFRA-oriented diagnostics for the current formula."
+                />
+              </div>
             ) : (
               <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
                 Workbook charts will appear after the formula has ingredients. Linked workbook materials will unlock odour facets, family spread, and top-middle-base decay curves.
@@ -572,7 +600,7 @@ const FormulaDetailPage = () => {
                   })}
                 </div>
 
-                <div className="hidden rounded-lg border bg-card overflow-x-auto md:block">
+                <div className="hidden table-container md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -723,7 +751,7 @@ const FormulaDetailPage = () => {
                   </div>
                 ))}
               </div>
-              <div className="hidden rounded-lg border bg-card overflow-x-auto md:block">
+              <div className="hidden table-container md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>

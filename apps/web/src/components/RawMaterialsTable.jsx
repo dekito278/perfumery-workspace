@@ -13,7 +13,7 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
   };
 
   return (
-    <div className="rounded-lg border bg-card overflow-x-auto">
+    <div className="table-container">
       <Table>
         <TableHeader>
           <TableRow>
@@ -24,7 +24,7 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
             <TableHead className="min-w-[100px]">Unit</TableHead>
             <TableHead className="text-right min-w-[140px]">Unit price</TableHead>
             <TableHead className="min-w-[100px]">Status</TableHead>
-            <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+            <TableHead className="table-action-head">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -59,14 +59,15 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
                     <Badge variant="secondary" className="text-xs">In stock</Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
+                <TableCell className="table-action-cell">
+                  <div className="table-action-group">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onView(material)}
-                      className="h-8 w-8 p-0"
+                      className="table-action-button"
                       title="View details"
+                      aria-label={`View details for ${material.name}`}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -74,8 +75,9 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
                       variant="ghost"
                       size="sm"
                       onClick={() => onEdit(material)}
-                      className="h-8 w-8 p-0"
+                      className="table-action-button"
                       title="Edit"
+                      aria-label={`Edit ${material.name}`}
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -83,8 +85,9 @@ const RawMaterialsTable = ({ materials, onEdit, onDelete, onView }) => {
                       variant="ghost"
                       size="sm"
                       onClick={() => onDelete(material)}
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      className="table-action-button text-destructive hover:text-destructive"
                       title="Delete"
+                      aria-label={`Delete ${material.name}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

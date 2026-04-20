@@ -2,6 +2,10 @@ import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceG
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
 };
@@ -121,7 +125,7 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     const impact = toFiniteNumber(referenceProfile?.impact);
     const lifeHours = toFiniteNumber(referenceProfile?.life_hours);
     const impactContribution = impact === null ? null : (effectivePercentage / 100) * impact;
-    const odourWeight = impactContribution;
+    const odourWeight = impactContribution ?? effectivePercentage ?? effectiveActiveGrams;
     const lifeContribution = lifeHours === null ? null : (effectivePercentage / 100) * lifeHours;
     const weightedLifeContribution = impactContribution === null || lifeHours === null
       ? null
@@ -163,6 +167,8 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
   const linkedProfileCount = rows.filter((row) => row.guidanceSource === 'linked_profile').length;
   const fallbackGuidanceCount = rows.filter((row) => row.guidanceSource === 'raw_material_fallback').length;
   const missingGuidanceCount = rows.filter((row) => row.guidanceSource === 'none').length;
+  const hasImpactData = guidanceRows.some((row) => row.impact !== null);
+  const hasLifeData = guidanceRows.some((row) => row.lifeHours !== null);
   const totalImpactContribution = guidanceRows.reduce((sum, row) => sum + (row.impactContribution || 0), 0);
   const totalWeightedLifeContribution = guidanceRows.reduce((sum, row) => sum + (row.weightedLifeContribution || 0), 0);
   const totalLifeContribution = guidanceRows.reduce((sum, row) => sum + (row.lifeContribution || 0), 0);
@@ -198,9 +204,11 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     linkedProfileCount,
     fallbackGuidanceCount,
     missingGuidanceCount,
+    hasImpactData,
+    hasLifeData,
     coveragePercent: eligibleItems.length ? (guidanceRows.length / eligibleItems.length) * 100 : 0,
-    impactEstimate: totalImpactContribution || 0,
-    simpleLifeHours: totalLifeContribution || 0,
+    impactEstimate: hasImpactData ? (totalImpactContribution || 0) : null,
+    simpleLifeHours: hasLifeData ? (totalLifeContribution || 0) : null,
     odourWeightedLifeHours: totalImpactContribution > 0 ? totalWeightedLifeContribution / totalImpactContribution : null,
     topAmount,
     middleAmount,

@@ -4,6 +4,10 @@ import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassificat
 const DEFAULT_DECAY_SAMPLES = [0, 1, 3, 6, 12, 24, 48, 72, 120, 168, 240];
 
 const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
 };

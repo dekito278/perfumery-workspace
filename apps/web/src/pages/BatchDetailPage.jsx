@@ -516,7 +516,7 @@ const BatchDetailPage = () => {
           </DetailSection>
 
           <DetailSection title="Material requirements & cost breakdown">
-            <div className="rounded-lg border bg-card overflow-x-auto">
+            <div className="table-container">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -692,7 +692,7 @@ const BatchDetailPage = () => {
               </div>
 
               {usageRecords.length > 0 ? (
-                <div className="rounded-lg border bg-card overflow-x-auto">
+                <div className="table-container">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -800,7 +800,7 @@ const BatchDetailPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-lg border bg-card overflow-x-auto">
+              <div className="table-container">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -877,7 +877,7 @@ const BatchDetailPage = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border bg-card overflow-x-auto">
+            <div className="table-container">
               <Table>
                 <TableHeader>
                   <TableRow>

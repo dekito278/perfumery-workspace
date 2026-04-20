@@ -46,16 +46,20 @@ const FormulasPage = () => {
       const data = await getFormulas();
       setFormulas(data);
 
-      const metrics = {};
-      for (const formula of data) {
-        const items = await getFormulaItems(formula.id);
-        metrics[formula.id] = {
-          itemCount: items.length,
-          totalGrams: calculateTotalAmount(items),
-        };
-      }
+      const metricEntries = await Promise.all(
+        data.map(async (formula) => {
+          const items = await getFormulaItems(formula.id);
+          return [
+            formula.id,
+            {
+              itemCount: items.length,
+              totalGrams: calculateTotalAmount(items),
+            },
+          ];
+        })
+      );
 
-      setFormulaMetrics(metrics);
+      setFormulaMetrics(Object.fromEntries(metricEntries));
     } catch (error) {
       toast.error('Failed to load formulas');
     } finally {
@@ -94,6 +98,13 @@ const FormulasPage = () => {
     const startIndex = (currentPage - 1) * pageSize;
     return filteredFormulas.slice(startIndex, startIndex + pageSize);
   }, [currentPage, filteredFormulas]);
+
+  const formulaCategories = useMemo(
+    () =>
+      [...new Set(formulas.map((formula) => String(formula.category || '').trim()).filter(Boolean))]
+        .sort((left, right) => left.localeCompare(right)),
+    [formulas]
+  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -214,7 +225,10 @@ const FormulasPage = () => {
       placeholder: 'All categories',
       options: [
         { value: 'all', label: 'All categories' },
-        { value: 'perfume', label: 'Perfume' },
+        ...formulaCategories.map((category) => ({
+          value: category,
+          label: formatNullable(category, 'uncategorized'),
+        })),
       ],
     },
   ];
@@ -229,7 +243,7 @@ const FormulasPage = () => {
   };
 
   const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm;
-  const perfumeCount = formulas.length;
+  const perfumeCount = formulas.filter((formula) => String(formula.category || '').toLowerCase() === 'perfume').length;
 
   return (
     <AuthenticatedLayout>
@@ -372,8 +386,9 @@ const FormulasPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleView(row)}
-                          className="h-8 w-8 rounded-xl p-0"
+                          className="table-action-button"
                           title="View details"
+                          aria-label={`View ${row.name}`}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -381,8 +396,9 @@ const FormulasPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCreateBatch(row)}
-                          className="h-8 w-8 rounded-xl p-0"
+                          className="table-action-button"
                           title="Create batch"
+                          aria-label={`Create batch from ${row.name}`}
                         >
                           <FlaskConical className="w-4 h-4" />
                         </Button>
@@ -390,11 +406,32 @@ const FormulasPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDuplicate(row)}
-                          className="h-8 w-8 rounded-xl p-0"
+                          className="table-action-button"
                           title="Duplicate formula"
+                          aria-label={`Duplicate ${row.name}`}
                           disabled={duplicatingId === row.id}
                         >
                           <Copy className={`w-4 h-4 ${duplicatingId === row.id ? 'animate-spin' : ''}`} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(row)}
+                          className="h-8 rounded-xl px-3 text-xs"
+                          title="Edit"
+                          aria-label={`Edit ${row.name}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(row)}
+                          className="h-8 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Delete"
+                          aria-label={`Delete ${row.name}`}
+                        >
+                          Delete
                         </Button>
                       </div>
                     </div>
@@ -409,7 +446,7 @@ const FormulasPage = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleView(row)}
-                    className="h-8 w-8 rounded-xl p-0"
+                    className="table-action-button"
                     title="View details"
                     aria-label={`View ${row.name}`}
                   >
@@ -419,7 +456,7 @@ const FormulasPage = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleCreateBatch(row)}
-                    className="h-8 w-8 rounded-xl p-0"
+                    className="table-action-button"
                     title="Create batch"
                     aria-label={`Create batch from ${row.name}`}
                   >
@@ -429,7 +466,7 @@ const FormulasPage = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDuplicate(row)}
-                    className="h-8 w-8 rounded-xl p-0"
+                    className="table-action-button"
                     title="Duplicate formula"
                     aria-label={`Duplicate ${row.name}`}
                     disabled={duplicatingId === row.id}

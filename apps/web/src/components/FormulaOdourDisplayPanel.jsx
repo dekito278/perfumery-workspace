@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Cell, XAxis, YAxis } from 'recharts';
 import { BarChart3, ChevronDown, Pause, PieChartIcon, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx';
-import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 
@@ -64,6 +63,136 @@ const DisplayToggle = ({ active, icon: Icon, label, onClick }) => (
   </Button>
 );
 
+const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+};
+
+const describeArc = (centerX, centerY, radius, startAngle, endAngle) => {
+  const start = polarToCartesian(centerX, centerY, radius, endAngle);
+  const end = polarToCartesian(centerX, centerY, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+};
+
+const buildWorkbookPieSlices = (data) => {
+  let cursor = -90;
+
+  return data.map((entry) => {
+    const span = (Number(entry.percent || 0) / 100) * 360;
+    const startAngle = cursor;
+    const endAngle = cursor + span;
+    cursor = endAngle;
+
+    return {
+      ...entry,
+      startAngle,
+      endAngle,
+      midAngle: startAngle + span / 2,
+    };
+  });
+};
+
+const WorkbookPieChart = ({
+  data,
+  elapsedHour,
+  maxElapsedHour,
+  impactEstimate,
+  simpleLifeHours,
+  hasImpactData,
+  hasLifeData,
+}) => {
+  const width = 420;
+  const height = 360;
+  const centerX = 208;
+  const centerY = 176;
+  const radius = 112;
+  const labelRadius = 144;
+  const slices = buildWorkbookPieSlices(data);
+  const dominantSlice = slices[0] || null;
+  const arcStart = dominantSlice ? dominantSlice.midAngle - 58 : -140;
+  const arcEnd = dominantSlice ? dominantSlice.midAngle + 74 : 60;
+
+  return (
+    <div
+      data-testid="odour-display-chart"
+      className="overflow-hidden rounded-[22px] border border-[#ddd3bf] bg-[#fffdf8] p-2"
+    >
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full">
+        <g>
+          {slices.map((slice) => {
+            const start = polarToCartesian(centerX, centerY, radius, slice.startAngle);
+            const end = polarToCartesian(centerX, centerY, radius, slice.endAngle);
+            const largeArcFlag = slice.endAngle - slice.startAngle > 180 ? 1 : 0;
+            const path = [
+              `M ${centerX} ${centerY}`,
+              `L ${start.x} ${start.y}`,
+              `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`,
+              'Z',
+            ].join(' ');
+
+            const labelStart = polarToCartesian(centerX, centerY, radius + 2, slice.midAngle);
+            const labelBend = polarToCartesian(centerX, centerY, labelRadius - 16, slice.midAngle);
+            const labelEnd = polarToCartesian(centerX, centerY, labelRadius + 10, slice.midAngle);
+            const labelBoxX = labelEnd.x + (labelEnd.x >= centerX ? 2 : -18);
+            const labelBoxY = labelEnd.y - 7;
+
+            return (
+              <g key={slice.classIndex}>
+                <path d={path} fill={slice.color} stroke="#b8af9e" strokeWidth="1" />
+                <path
+                  d={`M ${labelStart.x} ${labelStart.y} L ${labelBend.x} ${labelBend.y} L ${labelEnd.x} ${labelEnd.y}`}
+                  fill="none"
+                  stroke="#7b725f"
+                  strokeWidth="1.15"
+                />
+                <rect
+                  x={labelBoxX}
+                  y={labelBoxY}
+                  width="16"
+                  height="14"
+                  rx="3"
+                  fill="#fffdf8"
+                  stroke="#7b725f"
+                  strokeWidth="1"
+                />
+                <text
+                  x={labelBoxX + 8}
+                  y={labelBoxY + 9.6}
+                  textAnchor="middle"
+                  fontSize="8.5"
+                  fontWeight="700"
+                  fill="#403522"
+                >
+                  {slice.letter || '?'}
+                </text>
+              </g>
+            );
+          })}
+
+          <path
+            d={describeArc(centerX - 18, centerY - 20, 32, arcStart, arcEnd)}
+            fill="none"
+            stroke="#17130d"
+            strokeWidth="4.5"
+            strokeLinecap="round"
+          />
+        </g>
+
+        <g transform={`translate(20 ${height - 24})`}>
+          <text fontSize="10.5" fill="#5a5140">Impact: {hasImpactData ? formatQuantity(impactEstimate || 0, 0) : '-'}</text>
+          <text x="126" fontSize="10.5" fill="#5a5140">Life: {hasLifeData ? `${formatQuantity(simpleLifeHours || 0, 0)} hours` : '-'}</text>
+          <text x="282" fontSize="10.5" fill="#5a5140">AutoElapse: {formatQuantity(elapsedHour, 2)}</text>
+        </g>
+      </svg>
+    </div>
+  );
+};
+
 const FormulaOdourDisplayPanel = ({
   items,
   rawMaterialsById,
@@ -77,7 +206,6 @@ const FormulaOdourDisplayPanel = ({
   const [elapsedHour, setElapsedHour] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [chartRenderVersion, setChartRenderVersion] = useState(0);
-  const isMobile = useIsMobile();
   const charts = useMemo(() => buildFormulaSensoryCharts({
     items,
     rawMaterialsById,
@@ -158,8 +286,6 @@ const FormulaOdourDisplayPanel = ({
     : elapsedStageShares.base >= elapsedStageShares.middle
       ? 'Base'
       : 'Middle';
-  const useFixedMobilePieChart = isMobile && displayMode === 'pie';
-
   return (
     <aside className={`space-y-4 ${className}`.trim()}>
       <div className="overflow-hidden rounded-[28px] border border-white/80 bg-white/90 shadow-sm">
@@ -280,27 +406,16 @@ const FormulaOdourDisplayPanel = ({
                     </div>
                   </div>
                 </div>
-                {useFixedMobilePieChart ? (
-                  <div data-testid="odour-display-chart" className="flex min-h-[240px] items-center justify-center py-2">
-                    <PieChart width={260} height={220}>
-                      <Pie
-                        data={odourData}
-                        dataKey="weight"
-                        nameKey="familyName"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={0}
-                        outerRadius={78}
-                        paddingAngle={1}
-                        strokeWidth={0}
-                        isAnimationActive={false}
-                      >
-                        {odourData.map((entry) => (
-                          <Cell key={entry.classIndex} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </div>
+                {displayMode === 'pie' ? (
+                  <WorkbookPieChart
+                    data={odourData}
+                    elapsedHour={roundedElapsedHour}
+                    maxElapsedHour={charts.maxElapsedHour}
+                    impactEstimate={charts.simulation.impactEstimate}
+                    simpleLifeHours={charts.simulation.simpleLifeHours}
+                    hasImpactData={charts.simulation.hasImpactData}
+                    hasLifeData={charts.simulation.hasLifeData}
+                  />
                 ) : (
                   <ChartContainer
                     key={`odour-display-chart-${displayMode}-${chartRenderVersion}`}
@@ -308,69 +423,36 @@ const FormulaOdourDisplayPanel = ({
                     className="aspect-auto h-[240px] min-h-[240px] w-full sm:h-[360px] sm:min-h-[360px]"
                     data-testid="odour-display-chart"
                   >
-                    {displayMode === 'pie' ? (
-                      <PieChart>
-                        <Pie
-                          data={odourData}
-                          dataKey="weight"
-                          nameKey="familyName"
-                          innerRadius={0}
-                          outerRadius={96}
-                          paddingAngle={1}
-                          strokeWidth={0}
-                        >
-                          {odourData.map((entry) => (
-                            <Cell key={entry.classIndex} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip
-                          content={(
-                            <ChartTooltipContent
-                              hideLabel
-                              formatter={(_value, _name, item) => (
-                                <div className="min-w-[14rem] space-y-1">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span className="text-muted-foreground">{item.payload.familyName}</span>
-                                    <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
-                                  </div>
+                    <BarChart data={[...odourData].reverse()} layout="vertical" margin={{ left: 8, right: 16, top: 6, bottom: 6 }}>
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="letter"
+                        width={32}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <ChartTooltip
+                        content={(
+                          <ChartTooltipContent
+                            hideLabel
+                            formatter={(_value, _name, item) => (
+                              <div className="min-w-[14rem] space-y-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-muted-foreground">{item.payload.familyName}</span>
+                                  <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
                                 </div>
-                              )}
-                            />
-                          )}
-                        />
-                      </PieChart>
-                    ) : (
-                      <BarChart data={[...odourData].reverse()} layout="vertical" margin={{ left: 8, right: 16, top: 6, bottom: 6 }}>
-                        <XAxis type="number" hide />
-                        <YAxis
-                          type="category"
-                          dataKey="letter"
-                          width={32}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <ChartTooltip
-                          content={(
-                            <ChartTooltipContent
-                              hideLabel
-                              formatter={(_value, _name, item) => (
-                                <div className="min-w-[14rem] space-y-1">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span className="text-muted-foreground">{item.payload.familyName}</span>
-                                    <span className="font-mono">{formatPercentage(item.payload.percent, 1)}</span>
-                                  </div>
-                                </div>
-                              )}
-                            />
-                          )}
-                        />
-                        <Bar dataKey="weight" radius={10}>
-                          {[...odourData].reverse().map((entry) => (
-                            <Cell key={entry.classIndex} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    )}
+                              </div>
+                            )}
+                          />
+                        )}
+                      />
+                      <Bar dataKey="weight" radius={10}>
+                        {[...odourData].reverse().map((entry) => (
+                          <Cell key={entry.classIndex} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
                   </ChartContainer>
                 )}
 
@@ -417,7 +499,7 @@ const FormulaOdourDisplayPanel = ({
                                   className="rounded-full text-[10px]"
                                 >
                                   {contributor.name}
-                                  {' · '}
+                                  {' / '}
                                   {formatQuantity(contributor.weight, 2)}
                                 </Badge>
                               ))}
@@ -465,13 +547,13 @@ const FormulaOdourDisplayPanel = ({
             <div data-testid="impact-card">
               <MetricCard
               label="Impact"
-              value={formatQuantity(charts.simulation.impactEstimate, 1)}
+              value={charts.simulation.hasImpactData ? formatQuantity(charts.simulation.impactEstimate, 1) : '-'}
               />
             </div>
             <div data-testid="life-card">
               <MetricCard
               label="Life"
-              value={formatHours(charts.simulation.simpleLifeHours)}
+              value={charts.simulation.hasLifeData ? formatHours(charts.simulation.simpleLifeHours) : '-'}
               />
             </div>
           </div>
@@ -508,3 +590,4 @@ const FormulaOdourDisplayPanel = ({
 };
 
 export default FormulaOdourDisplayPanel;
+

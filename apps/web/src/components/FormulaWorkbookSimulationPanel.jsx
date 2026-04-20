@@ -68,7 +68,7 @@ const FormulaWorkbookSimulationPanel = ({
   }
 
   return (
-    <div className="space-y-4 rounded-[24px] border border-white/80 bg-white/88 p-4 shadow-sm">
+    <div className="space-y-4 rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm">
       <div>
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-primary" />
@@ -77,6 +77,9 @@ const FormulaWorkbookSimulationPanel = ({
             {simulation.guidanceBackedCount}/{simulation.eligibleItemCount} with guidance
           </Badge>
         </div>
+        {description ? (
+          <p className="pt-1 text-sm text-muted-foreground">{description}</p>
+        ) : null}
         <div className="flex flex-wrap gap-2 pt-1">
           <SourceBadge
             label="Workbook link"
@@ -103,12 +106,12 @@ const FormulaWorkbookSimulationPanel = ({
         />
         <MetricCard
           label="Impact Estimate"
-          value={formatQuantity(simulation.impactEstimate, 1)}
+          value={simulation.hasImpactData ? formatQuantity(simulation.impactEstimate, 1) : '-'}
           tone="accent"
         />
         <MetricCard
           label="Simple Lifetime"
-          value={formatHours(simulation.simpleLifeHours)}
+          value={simulation.hasLifeData ? formatHours(simulation.simpleLifeHours) : '-'}
         />
         <MetricCard
           label="Odour-Weighted Life"
@@ -152,7 +155,7 @@ const FormulaWorkbookSimulationPanel = ({
                   <p>{advisory.message}</p>
                   <p className="mt-1 text-xs opacity-80">
                     Reference {advisory.referenceCode || 'linked profile'}
-                    {' · '}
+                    {' / '}
                     {advisory.guidanceSource === 'raw_material_fallback' ? 'manual guidance fallback' : 'workbook linked'}
                   </p>
                 </AlertDescription>
@@ -179,7 +182,7 @@ const FormulaWorkbookSimulationPanel = ({
                     <div className="truncate text-sm font-medium">{row.name}</div>
                     <div className="text-[11px] text-muted-foreground">
                       {row.reference_profile?.reference_code || 'linked profile'}
-                      {' · '}
+                      {' / '}
                       {row.guidanceSource === 'raw_material_fallback' ? 'manual guidance' : 'workbook linked'}
                     </div>
                   </div>
@@ -208,3 +211,4 @@ const FormulaWorkbookSimulationPanel = ({
 };
 
 export default FormulaWorkbookSimulationPanel;
+

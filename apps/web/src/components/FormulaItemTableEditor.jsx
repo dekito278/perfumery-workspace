@@ -24,6 +24,7 @@ const FormulaItemTableEditor = ({
     ...material,
     type: material.type === 'solvent' ? 'solvent' : 'raw_material',
   }));
+  const isFilledRow = (item) => Boolean(item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-[#d7cfbf] bg-white shadow-sm">
@@ -42,12 +43,16 @@ const FormulaItemTableEditor = ({
         <div className="space-y-3 p-3 md:hidden">
           {items.map((item, index) => {
             const rowNumber = index + 1;
+            const composerRow = index === 0 && !isFilledRow(item);
+            const disableRemove = items.length === 1 && composerRow;
 
             return (
               <div
                 key={index}
                 className={`overflow-hidden rounded-2xl border px-3 py-3 shadow-sm transition-colors ${
-                  index === activeRowIndex
+                  composerRow
+                    ? 'border-[#dfbf7d] bg-[linear-gradient(180deg,#fff8ea_0%,#fffdf7_100%)]'
+                    : index === activeRowIndex
                     ? 'border-[#dfbf7d] bg-[#fff7e8]'
                     : index === 0
                       ? 'border-[#eadfc8] bg-[#fffaf1]'
@@ -55,14 +60,22 @@ const FormulaItemTableEditor = ({
                 }`}
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                  <div className="rounded-full border border-[#ded1b2] bg-[#f6eedc] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f603d]">
-                    Row {rowNumber}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="rounded-full border border-[#ded1b2] bg-[#f6eedc] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6f603d]">
+                      {composerRow ? 'Composer row' : `Row ${rowNumber}`}
+                    </div>
+                    {index === activeRowIndex ? (
+                      <div className="rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#4f6537]">
+                        Active
+                      </div>
+                    ) : null}
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => onRemove(index)}
+                    disabled={disableRemove}
                     className="h-8 w-8 rounded-full text-destructive hover:text-destructive"
                     title="Remove row"
                   >
@@ -71,6 +84,11 @@ const FormulaItemTableEditor = ({
                 </div>
 
                 <div className="space-y-3">
+                  {composerRow ? (
+                    <div className="rounded-xl border border-dashed border-[#dcc89a] bg-[#fff8e8] px-3 py-2 text-[11px] text-[#6f603d]">
+                      Pilih bahan dari library lalu isi amount untuk mengunci row ini sebagai bahan aktif berikutnya.
+                    </div>
+                  ) : null}
                   <div className="min-w-0">
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
                       Raw material
@@ -168,12 +186,16 @@ const FormulaItemTableEditor = ({
         <div className="max-md:hidden">
           {items.map((item, index) => {
             const rowNumber = index + 1;
+            const composerRow = index === 0 && !isFilledRow(item);
+            const disableRemove = items.length === 1 && composerRow;
 
             return (
               <div
                 key={index}
                 className={`grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] items-center gap-2 border-b border-[#ece4d3] px-4 py-2 transition-colors ${
-                  index === activeRowIndex
+                  composerRow
+                    ? 'bg-[linear-gradient(90deg,#fff7e6_0%,#fffdf8_100%)]'
+                    : index === activeRowIndex
                     ? 'bg-[#fff6e6]'
                     : index === 0
                       ? 'bg-[#fffaf0]'
@@ -181,7 +203,7 @@ const FormulaItemTableEditor = ({
                 }`}
               >
                 <div className="text-xs font-semibold tabular-nums text-[#5e5239]">
-                  {rowNumber}
+                  {composerRow ? 'New' : rowNumber}
                 </div>
 
                 <div className="min-w-0">
@@ -257,6 +279,7 @@ const FormulaItemTableEditor = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => onRemove(index)}
+                    disabled={disableRemove}
                     className="h-8 w-8 rounded-md text-destructive hover:text-destructive"
                     title="Remove row"
                   >

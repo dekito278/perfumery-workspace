@@ -7,7 +7,6 @@ import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
-import SignupPage from '@/pages/SignupPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
 import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
@@ -36,7 +35,6 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
         
         <Route path="/dashboard" element={
           <ProtectedRoute>

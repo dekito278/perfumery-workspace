@@ -366,7 +366,7 @@ const RawMaterialDetailPage = () => {
                     <div className="flex flex-wrap gap-2">
                       {referenceProfile.odour_facets.map((facet) => (
                         <Badge key={facet.id} variant="outline" className="rounded-full px-3 py-1 text-xs">
-                          {facet.letter} · {facet.family || 'Family'} · {formatQuantity(facet.value)}%
+                          {facet.letter} / {facet.family || 'Family'} / {formatQuantity(facet.value)}%
                         </Badge>
                       ))}
                     </div>

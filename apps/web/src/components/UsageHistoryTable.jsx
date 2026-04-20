@@ -53,7 +53,7 @@ const UsageHistoryTable = ({ usageRecords = [], isLoading = false }) => {
   };
 
   return (
-    <div className="rounded-lg border bg-card overflow-x-auto">
+    <div className="table-container">
       <Table>
         <TableHeader>
           <TableRow>
