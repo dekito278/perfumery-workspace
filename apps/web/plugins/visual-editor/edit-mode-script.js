@@ -1,5 +1,4 @@
-// eslint-disable-next-line import/no-unresolved
-import { POPUP_STYLES } from "./plugins/visual-editor/visual-editor-config.js";
+/* global POPUP_STYLES */
 
 const PLUGIN_APPLY_EDIT_API_URL = "/api/apply-edit";
 

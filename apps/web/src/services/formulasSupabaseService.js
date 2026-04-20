@@ -67,7 +67,6 @@ export const getFormulas = async () => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching formulas:', error);
     throw new Error('Failed to fetch formulas');
   }
 

@@ -351,7 +351,7 @@ const FormulaDetailPage = () => {
 
         <div className="space-y-5 print-full-width">
           <DetailSection title="Snapshot">
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl border bg-card p-4">
                 <div className="text-xs text-muted-foreground mb-1">Total items</div>
                 <div className="text-lg font-semibold">{items.length}</div>
@@ -374,7 +374,7 @@ const FormulaDetailPage = () => {
           <DetailSection title="Reference guidance">
             {hasFormulaItems ? (
               <>
-                <div className="grid gap-3 md:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="rounded-xl border bg-card p-4">
                     <div className="text-xs text-muted-foreground mb-1">Reference-linked items</div>
                     <div className="text-lg font-semibold">{referenceCoverageCount}</div>
@@ -457,7 +457,7 @@ const FormulaDetailPage = () => {
               <DetailField label="Category" value={formatNullable(formula.category)} />
               <DetailField label="Version" value={formatNullable(formula.version)} />
             </DetailFieldGroup>
-            <div className="mt-3 grid grid-cols-2 gap-4">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
               <DetailField 
                 label="Total amount" 
                 value={formatGramAmount(totalGrams)} 
@@ -502,7 +502,96 @@ const FormulaDetailPage = () => {
           <DetailSection title="Composition">
             {hasFormulaItems ? (
               <>
-                <div className="rounded-lg border bg-card overflow-x-auto">
+                <div className="space-y-3 md:hidden">
+                  {items.map((item, index) => {
+                    const ingredientCost = item.ingredient_cost ?? calculateIngredientCost(item.gram_amount, item.unit_price);
+                    const isDiluted = item.is_diluted && item.dilution_percentage;
+                    const composition = isDiluted
+                      ? calculateDilutionComposition(item.gram_amount, item.dilution_percentage)
+                      : null;
+
+                    return (
+                      <div key={index} className="rounded-xl border bg-card p-4 shadow-sm">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold">
+                              {item.item_type === 'raw_material' || item.item_type === 'solvent' ? (
+                                <button
+                                  onClick={() => navigate(`/raw-material/${item.item_id}`)}
+                                  className="text-left text-primary hover:underline"
+                                >
+                                  {item.name}
+                                </button>
+                              ) : (
+                                item.name
+                              )}
+                            </div>
+                            {isDiluted ? (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {item.dilution_percentage}% in {item.dilution_solvent_name || '-'}
+                              </div>
+                            ) : null}
+                          </div>
+                          <Badge variant="outline" className="shrink-0 capitalize text-[10px]">
+                            {formatStatus(item.item_type)}
+                          </Badge>
+                        </div>
+
+                        {item.reference_profile ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Badge variant="secondary" className="text-[10px]">
+                              Ref {item.reference_profile.reference_code}
+                            </Badge>
+                            {item.advisories?.map((advisory) => (
+                              <Badge
+                                key={`${item.item_id}-${advisory.type}`}
+                                variant={advisory.type === 'ifra' ? 'destructive' : 'outline'}
+                                className="text-[10px]"
+                              >
+                                {advisory.label}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
+                          <div>
+                            <div className="text-muted-foreground">Amount</div>
+                            <div className="mt-1 font-mono text-sm">{formatGramAmount(item.gram_amount)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Percentage</div>
+                            <div className="mt-1 font-mono text-sm">{formatPercentage(item.percentage)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Unit price</div>
+                            <div className="mt-1 font-mono">{formatPricePerUnit(item.unit_price, item.unit)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Cost</div>
+                            <div className="mt-1 font-mono">{formatPrice(ingredientCost)}</div>
+                          </div>
+                        </div>
+
+                        {(item.item_type === 'raw_material' || item.item_type === 'solvent') ? (
+                          <div className="mt-3">
+                            <Badge variant={item.is_low_stock ? 'destructive' : 'default'} className="text-[10px]">
+                              {item.is_low_stock ? 'Low stock' : 'In stock'}
+                            </Badge>
+                          </div>
+                        ) : null}
+
+                        {isDiluted && composition ? (
+                          <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                            Active: {formatGramAmount(composition.activeAmount)} + Solvent: {formatGramAmount(composition.solventAmount)}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden rounded-lg border bg-card overflow-x-auto md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -626,7 +715,34 @@ const FormulaDetailPage = () => {
 
           {batches.length > 0 && (
             <DetailSection title="Related batches">
-              <div className="rounded-lg border bg-card overflow-x-auto">
+              <div className="space-y-3 md:hidden">
+                {batches.map((batch) => (
+                  <div key={batch.id} className="rounded-xl border bg-card p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <button
+                        onClick={() => navigate(`/batches/${batch.id}`)}
+                        className="font-medium font-mono text-left text-primary hover:underline text-sm"
+                      >
+                        {batch.batch_code}
+                      </button>
+                      <BatchStatusBadge status={batch.status} />
+                    </div>
+                    <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
+                      <div>
+                        <div className="text-muted-foreground">Quantity</div>
+                        <div className="mt-1 font-mono text-sm">
+                          {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Production date</div>
+                        <div className="mt-1 text-sm">{formatDate(batch.production_date)}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden rounded-lg border bg-card overflow-x-auto md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>

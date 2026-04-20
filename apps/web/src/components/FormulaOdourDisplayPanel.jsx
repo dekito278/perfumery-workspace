@@ -111,7 +111,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
 
         <div className="p-5">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <DisplayToggle
                 active={displayMode === 'pie'}
                 icon={PieChartIcon}
@@ -124,7 +124,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                 label="Bar"
                 onClick={() => setDisplayMode('bar')}
               />
-              <div className="ml-auto rounded-full border border-dashed border-[#d6c8a2] bg-[#faf6ea] px-3 py-1 text-[11px] font-medium text-[#7a6a3b]">
+              <div className="rounded-full border border-dashed border-[#d6c8a2] bg-[#faf6ea] px-3 py-1 text-[11px] font-medium text-[#7a6a3b] sm:ml-auto">
                 Lead facet {charts.dominantFacet?.facet || '-'}
               </div>
             </div>
@@ -137,7 +137,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
           {hasLinkedData ? (
             <div className="mt-5 rounded-[24px] border border-[#dbd2bc] bg-[radial-gradient(circle_at_top,#fffdf7_0%,#fbf7ec_48%,#f2ebda_100%)] p-4">
               <div className="space-y-4">
-                <ChartContainer config={CHART_CONFIG} className="h-[360px] w-full">
+                <ChartContainer config={CHART_CONFIG} className="h-[240px] w-full sm:h-[360px]">
                   {displayMode === 'pie' ? (
                     <PieChart>
                       <Pie
@@ -145,7 +145,7 @@ const FormulaOdourDisplayPanel = ({ items, rawMaterialsById, referenceLinksMap, 
                         dataKey="weight"
                         nameKey="facet"
                         innerRadius={0}
-                        outerRadius={132}
+                        outerRadius={96}
                         paddingAngle={1}
                         strokeWidth={0}
                       >

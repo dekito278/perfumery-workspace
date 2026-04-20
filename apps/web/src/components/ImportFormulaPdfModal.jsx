@@ -422,7 +422,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-6">
+      <DialogContent className="max-h-[92vh] max-w-[calc(100vw-1rem)] overflow-y-auto p-4 sm:max-w-5xl sm:p-6">
         <DialogHeader>
           <DialogTitle>Import formula from Perfume Workbook PDF</DialogTitle>
           <DialogDescription>
@@ -463,7 +463,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                     <Badge variant="outline">{matchedItems.length - missingMaterialEntries.length} matched materials</Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       label="Formula name"
                       value={formulaName}
@@ -479,7 +479,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormSelect
                       label="Formula category"
                       value={formulaCategory}
@@ -541,7 +541,39 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                 <div className="border-b bg-muted/30 px-4 py-3">
                   <p className="text-sm font-medium">Parsed formula items</p>
                 </div>
-                <div className="max-h-72 overflow-y-auto">
+                <div className="space-y-3 p-4 md:hidden">
+                  {matchedItems.map((item) => (
+                    <div key={`${item.lineNumber}-${item.workbookCode}-${item.materialName}`} className="rounded-xl border bg-white p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                            Row {item.lineNumber}
+                          </div>
+                          <div className="mt-1 text-sm font-medium">{item.pureMaterialName}</div>
+                          {item.isDilutedInFormula ? (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {item.dilutionPercent}% in {item.dilutionSolventName}
+                            </div>
+                          ) : null}
+                        </div>
+                        <Badge variant={item.matchedMaterial ? 'outline' : 'secondary'} className="shrink-0 text-[10px]">
+                          {item.matchedMaterial ? 'Matched' : 'New'}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <div className="text-muted-foreground">Workbook code</div>
+                          <div className="mt-1 font-mono">{item.workbookCode}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Amount</div>
+                          <div className="mt-1 font-mono">{item.grams.toFixed(4)} g</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden max-h-72 overflow-y-auto md:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -673,8 +705,8 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                           </div>
 
                           <div className="grid gap-4 md:grid-cols-3">
-                          <FormNumber
-                            label={`Unit price (per 10 ${draft.unit || 'ml'})`}
+                            <FormNumber
+                              label={`Unit price (per 10 ${draft.unit || 'ml'})`}
                               value={draft.cost_per_unit}
                               onChange={(event) => updateMissingMaterialDraft(key, 'cost_per_unit', event.target.value)}
                               min="0"

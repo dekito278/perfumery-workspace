@@ -154,8 +154,24 @@ console.error = function(...args) {
 const configWindowFetchMonkeyPatch = `
 const originalFetch = window.fetch;
 
+function isIgnorableSupabaseReadFailure(url, options, error) {
+	const method = String(options?.method || 'GET').toUpperCase();
+	const message = String(error?.message || error || '');
+	return method === 'GET'
+		&& String(url || '').includes('supabase.co')
+		&& message.includes('Failed to fetch');
+}
+
+function isIgnorableHandledConflict(url, responseText) {
+	return String(url || '').includes('supabase.co')
+		&& String(responseText || '').includes('"code":"23505"');
+}
+
 window.fetch = function(...args) {
 	const url = args[0] instanceof Request ? args[0].url : args[0];
+	const requestOptions = args[0] instanceof Request ? {
+		method: args[0].method,
+	} : (args[1] || {});
 
 	// Skip WebSocket URLs
 	if (url.startsWith('ws:') || url.startsWith('wss:')) {
@@ -175,13 +191,15 @@ window.fetch = function(...args) {
 					const responseClone = response.clone();
 					const errorFromRes = await responseClone.text();
 					const requestUrl = response.url;
-					console.error(\`Fetch error from \${requestUrl}: \${errorFromRes}\`);
+					if (!isIgnorableHandledConflict(requestUrl, errorFromRes)) {
+						console.error(\`Fetch error from \${requestUrl}: \${errorFromRes}\`);
+					}
 			}
 
 			return response;
 		})
 		.catch(error => {
-			if (!url.match(/\.html?$/i)) {
+			if (!url.match(/\.html?$/i) && !isIgnorableSupabaseReadFailure(url, requestOptions, error)) {
 				console.error(error);
 			}
 

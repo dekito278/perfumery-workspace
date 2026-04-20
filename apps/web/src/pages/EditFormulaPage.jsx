@@ -41,7 +41,7 @@ const ensureTrailingEmptyItem = (items) => {
 
   return nextItems;
 };
-const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-6 shadow-sm';
+const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
 
 const EditFormulaPage = () => {
   const { id } = useParams();
@@ -415,7 +415,7 @@ const EditFormulaPage = () => {
           </Button>
         </div>
 
-        <div className={`mb-3 shrink-0 px-4 py-3 lg:mb-3 ${composerSectionClass}`}>
+        <div className={`mb-3 shrink-0 px-3 py-3 sm:px-4 lg:mb-3 ${composerSectionClass}`}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -428,12 +428,12 @@ const EditFormulaPage = () => {
                 Edit formula memakai workspace yang sama seperti halaman create supaya proses racik dan revisi tetap konsisten.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setMetadataDialogOpen(true)}
-                className="h-10 rounded-2xl px-4"
+                className="h-10 w-full rounded-2xl px-4 sm:w-auto"
               >
                 Edit formula info
               </Button>
@@ -441,7 +441,7 @@ const EditFormulaPage = () => {
                 type="submit"
                 form="edit-formula-form"
                 disabled={loading || hasErrors || activeFormulaItems.length === 0 || hasLegacyAccordItems}
-                className="h-10 rounded-2xl gap-2 px-5"
+                className="h-10 w-full rounded-2xl gap-2 px-5 sm:w-auto"
               >
                 <Save className="h-4 w-4" />
                 {loading ? 'Updating...' : 'Update formula'}
@@ -449,7 +449,7 @@ const EditFormulaPage = () => {
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-[16px] border border-[#e5dcc7] bg-[linear-gradient(135deg,#fff9ec_0%,#f8f1dc_100%)] px-3 py-2">
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8b7650]">Name</div>
               <div className="mt-1 text-sm font-semibold text-[#443822]">{name || 'Untitled formula'}</div>
@@ -520,7 +520,7 @@ const EditFormulaPage = () => {
                 ) : null}
 
                 <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
-                  <div className="flex items-center justify-between gap-3 border-b border-[#e7decb] px-4 py-3">
+                  <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
                         Material library
@@ -529,7 +529,7 @@ const EditFormulaPage = () => {
                         Klik material untuk mengisi row aktif. Double click untuk langsung masukkan ke daftar seperti di halaman create.
                       </div>
                     </div>
-                    <div className="rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
+                    <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
                       Active row {activeRowIndex + 1}
                     </div>
                   </div>

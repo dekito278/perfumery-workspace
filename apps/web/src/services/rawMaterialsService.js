@@ -164,7 +164,6 @@ export const getRawMaterials = async () => {
 
     return (data || []).map((row) => mapRawMaterial(row, solventMap));
   } catch (error) {
-    console.error('Error fetching raw materials:', error);
     throw new Error('Failed to fetch raw materials');
   }
 };
@@ -272,6 +271,26 @@ export const createRawMaterial = async (data) => {
       if (!data.dilution_percentage || data.dilution_percentage <= 0 || data.dilution_percentage > 100) {
         throw new Error('Dilution percentage must be between 0 and 100');
       }
+    }
+
+    const existingByWorkbookCode = payload.workbook_code
+      ? await findExistingRawMaterialByWorkbookCode(userId, payload.workbook_code)
+      : null;
+    if (existingByWorkbookCode) {
+      const solventMap = await getSolventMap(
+        existingByWorkbookCode.dilution_solvent_id ? [existingByWorkbookCode.dilution_solvent_id] : []
+      );
+      return mapRawMaterial(existingByWorkbookCode, solventMap);
+    }
+
+    const existingByName = payload.name
+      ? await findExistingRawMaterialByName(userId, payload.name)
+      : null;
+    if (existingByName) {
+      const solventMap = await getSolventMap(
+        existingByName.dilution_solvent_id ? [existingByName.dilution_solvent_id] : []
+      );
+      return mapRawMaterial(existingByName, solventMap);
     }
 
     const { data: record, error } = await supabase
