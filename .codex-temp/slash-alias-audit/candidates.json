@@ -1,0 +1,1694 @@
+[
+  {
+    "alias": {
+      "id": "fba884c7-9966-4459-ae7f-b8079a7af7f3",
+      "name": "3-Methyl Butraldehyde / Isovalerdehyde",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 34100,
+      "cas_number": "590-86-3",
+      "category": "v - vanilla",
+      "scent_family": "Gourmand",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Isovaleraldehyde | Profile: https://www.thegoodscentscompany.com/data/rw1023131.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "2d0c5964-c582-4123-8ee9-b96387131316",
+        "name": "6-Methyl Coumarin",
+        "workbook_code": "1VD00002",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 60000,
+        "cas_number": "92-48-8",
+        "category": "V - VANILLA",
+        "scent_family": "Gourmand",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1VD00002 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "8b8453f1-e81c-433c-b6f2-455b9832ed7d",
+          "name": "Amber Solid",
+          "workbook_code": "6VU09627",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "Mixture",
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6VU09627 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "8674e424-bc43-4dcb-a3de-d6cd309e97cf",
+          "name": "CHOCOLATE F-TEC",
+          "workbook_code": "6VE18548",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6VE18548 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "4860b0ce-3a85-4aed-8ba0-fe13abbd7186",
+          "name": "Chocolate Fleuressence",
+          "workbook_code": "6VE12421",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6VE12421 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "43bce53b-308b-4c3a-8048-a84271b9a6ec",
+          "name": "Coumarin",
+          "workbook_code": "1VD00129",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 19502,
+          "cas_number": "91-64-5",
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1VD00129 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "48588303-fe07-4ace-b13c-9eb99b52a6c7",
+      "name": "Aldehyde C-6 / Hexanal",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 426026,
+      "cas_number": "66-25-1",
+      "category": "a - ali-fat-ic",
+      "scent_family": "Fatty",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Caproic Aldehyde | Profile: https://www.thegoodscentscompany.com/data/rw1011071.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "b3339994-2a7f-4387-85ff-4e811360a89f",
+        "name": "Aldehyde C-10 Decanal",
+        "workbook_code": "4AC00018",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 39120,
+        "cas_number": "112-31-2",
+        "category": "A - ALI-FAT-IC",
+        "scent_family": "Fatty",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AC00018 Workbook supplier: PerfumersWorld"
+      },
+      "score": 11,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "969779f5-9e44-45bf-9367-c50211014cce",
+          "name": "Aldehyde C-11 Undecanal",
+          "workbook_code": "4AR00020",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 71280,
+          "cas_number": "112-44-7",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR00020 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "35bd7916-1815-446e-ba8c-2f15061f5280",
+          "name": "Aldehyde C-11 Undecylenic",
+          "workbook_code": "4AR01236",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 104000,
+          "cas_number": "112-45-8",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR01236 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "949149fd-be7c-41ca-a452-8b214027b84f",
+          "name": "Aldehyde C-12 Lauric Dodecanal",
+          "workbook_code": "4AA00021",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 35002,
+          "cas_number": "112-54-9",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AA00021 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "c3cd8d6d-2a20-406e-98d9-a1b849ed9cbe",
+          "name": "Aldehyde C-12 MNA",
+          "workbook_code": "4AG00022",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 195072,
+          "cas_number": "110-41-8",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AG00022 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "b952bde1-722f-4027-8da4-0a8ce1dcb7ec",
+      "name": "Aldehyde C-6 / Hexanal 10-TEC",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 160160,
+      "cas_number": null,
+      "category": "a - ali-fat-ic",
+      "scent_family": "Fatty",
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "b3339994-2a7f-4387-85ff-4e811360a89f",
+        "name": "Aldehyde C-10 Decanal",
+        "workbook_code": "4AC00018",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 39120,
+        "cas_number": "112-31-2",
+        "category": "A - ALI-FAT-IC",
+        "scent_family": "Fatty",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AC00018 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "variant_keep_separate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "47876581-82c9-44bd-8753-d50136237785",
+          "name": "A-ALDEHYDE F-TEC",
+          "workbook_code": "6AN18003",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AN18003 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "969779f5-9e44-45bf-9367-c50211014cce",
+          "name": "Aldehyde C-11 Undecanal",
+          "workbook_code": "4AR00020",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 71280,
+          "cas_number": "112-44-7",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR00020 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "35bd7916-1815-446e-ba8c-2f15061f5280",
+          "name": "Aldehyde C-11 Undecylenic",
+          "workbook_code": "4AR01236",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 104000,
+          "cas_number": "112-45-8",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR01236 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "949149fd-be7c-41ca-a452-8b214027b84f",
+          "name": "Aldehyde C-12 Lauric Dodecanal",
+          "workbook_code": "4AA00021",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 35002,
+          "cas_number": "112-54-9",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AA00021 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "f36f4a0a-9189-49cc-9ee6-655d969fc19b",
+      "name": "Allyl Heptenoate / Allyl Heptilate",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 25008,
+      "cas_number": "142-19-8",
+      "category": "f - fruit",
+      "scent_family": "Fruity",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Heptanoic Acid, 2-Propenyl Ester | Profile: https://www.thegoodscentscompany.com/data/rw1021051.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "0626f4bb-4f04-43c9-839d-c347ae0603c8",
+        "name": "Allyl Amyl Glycolate",
+        "workbook_code": "4FG00029",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 127500,
+        "cas_number": "67634-00-8",
+        "category": "F - FRUIT",
+        "scent_family": "Fruity",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4FG00029 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "96ce60e1-005d-4820-9609-6b13afb398d4",
+          "name": "Allyl Caproate",
+          "workbook_code": "4FC02995",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 21000,
+          "cas_number": "123-68-2",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4FC02995 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "d13b864d-a06e-406d-9bf1-42e7c152ed4b",
+          "name": "Allyl Cyclohexyl Propionate",
+          "workbook_code": "4FC00030",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 20020,
+          "cas_number": "2705-87-5",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4FC00030 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "bea2d0d4-1ee8-4eb4-bae9-aabfc3fc36cb",
+          "name": "Allyl Ionone Cetone V",
+          "workbook_code": "4IN10857",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 240000,
+          "cas_number": "79-78-7",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4IN10857 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "abf31692-6ed6-4ccd-ab38-a8c102ed27c5",
+          "name": "(R)-1-octen-3-ol",
+          "workbook_code": "4YE09171",
+          "vendor": null,
+          "cost_per_unit": 0,
+          "cas_number": "3687-48-7",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4YE09171"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "6b22ba62-cc14-437a-b933-2e7f9513a21d",
+      "name": "Ethyl Caproate / Hexanoate",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 19080,
+      "cas_number": "123-66-0",
+      "category": "f - fruit",
+      "scent_family": "Fruity",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Ethyl Caproate / Caproic Acid Ethyl Ester | Profile: https://www.thegoodscentscompany.com/data/rw1004811.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "2e244ccf-f5b0-43fb-b91e-48cc90c07f97",
+        "name": "Aldehyde C-16 Ethyl Methyl Phenyl Glycidate",
+        "workbook_code": "4FC00176",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 35000,
+        "cas_number": "77-83-8",
+        "category": "F - FRUIT",
+        "scent_family": "Fruity",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4FC00176 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "96ce60e1-005d-4820-9609-6b13afb398d4",
+          "name": "Allyl Caproate",
+          "workbook_code": "4FC02995",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 21000,
+          "cas_number": "123-68-2",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4FC02995 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "e9a9588c-9367-455e-8df3-f2dbc6b9053d",
+          "name": "Berry hexanoate",
+          "workbook_code": "3FG19149",
+          "vendor": null,
+          "cost_per_unit": 0,
+          "cas_number": "104986-28-9",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3FG19149"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "fce68375-3313-4f8f-9864-3e03e08f9e3d",
+          "name": "Ethyl 2-Methylbutyrate",
+          "workbook_code": "4FD04118",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 22050,
+          "cas_number": "7452-79-1",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4FD04118 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "b940eed9-71ad-49cc-83a0-794b83c175ab",
+          "name": "Ethyl Acetate",
+          "workbook_code": "9FC01313",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 14004,
+          "cas_number": "141-78-6",
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 9FC01313 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "22d414e6-53b7-4400-86d0-c55933e494e8",
+      "name": "Ethylene Brassylate / Musk T",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 23002,
+      "cas_number": "95-3",
+      "category": "x - x-rated musk",
+      "scent_family": "Musky",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: 1,11-Undecanedicarboxylic Acid, Ester With Ethylene Glycol | Profile: https://www.thegoodscentscompany.com/data/rw1002472.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "946d1c42-d910-4ead-bbf3-3955aa96db5f",
+        "name": "Ethylene Brassylate",
+        "workbook_code": "3XU00180",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 25000,
+        "cas_number": "105-95-3",
+        "category": "X - X-rated MUSK",
+        "scent_family": "Musky",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3XU00180 Workbook supplier: PerfumersWorld"
+      },
+      "score": 22,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "992a3763-b40b-4e45-98fd-616a62a30a74",
+          "name": "Cashmere Musk F-TEC",
+          "workbook_code": "6XB18881",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "X - X-rated MUSK",
+          "scent_family": "Musky",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6XB18881 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "87371592-a8e7-432b-9cd0-9c9443bf9a9b",
+          "name": "Cashmere Musk Fleuressence",
+          "workbook_code": "6XB09681",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "X - X-rated MUSK",
+          "scent_family": "Musky",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6XB09681 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "df425b45-1630-4412-8438-4da9cdef5fb9",
+          "name": "Musk amberol:",
+          "workbook_code": "4XU11429",
+          "vendor": null,
+          "cost_per_unit": 0,
+          "cas_number": "37609-25-9",
+          "category": "X - X-rated MUSK",
+          "scent_family": "Musky",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4XU11429"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "117ea65f-8b7d-4894-8365-38a28b4d3232",
+          "name": "Musk Ketone",
+          "workbook_code": "1XU00308",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "81-14-1",
+          "category": "X - X-rated MUSK",
+          "scent_family": "Musky",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1XU00308 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "7cc1b3b4-aeab-4316-9551-4a8f1f23a765",
+      "name": "Floralozone / Ozone Propanal 10-TEC",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 46074,
+      "cas_number": null,
+      "category": "Uncategorized",
+      "scent_family": null,
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "b4ad52fd-cf0d-4aff-ba8f-6be0ff5e4f15",
+        "name": "Floral Ozone",
+        "workbook_code": "4YM00191",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 215012,
+        "cas_number": "67634-15-5",
+        "category": "Y - EARTHY MOSSY",
+        "scent_family": "Earthy",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4YM00191 Workbook supplier: PerfumersWorld\nMerged duplicate raw material \"Floralozone\" (2005b27d-9b97-42dc-91aa-0907c3606128) into \"Floral Ozone\" (b4ad52fd-cf0d-4aff-ba8f-6be0ff5e4f15).\nSafe alias merge from live alias audit: Floralozone -> Floral Ozone"
+      },
+      "score": 11,
+      "classification": "variant_keep_separate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "3497651d-ee5a-4944-a99e-2a959b1ed1b3",
+          "name": "Methyl Pample Mousse 10 in TEC",
+          "workbook_code": "5FC19406",
+          "vendor": null,
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "F - FRUIT",
+          "scent_family": "Fruity",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 5FC19406"
+        },
+        "score": 6
+      },
+      {
+        "master": {
+          "id": "63f63ba6-3381-49bf-a9c0-36af7c6a6320",
+          "name": "OZONE F-TEC",
+          "workbook_code": "6YG18599",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "Y - EARTHY MOSSY",
+          "scent_family": "Earthy",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6YG18599 Workbook supplier: PerfumersWorld"
+        },
+        "score": 6
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "0481e569-7536-4d38-a444-1a313642db41",
+      "name": "Hexalactone Gamma / Aldehyde C-6 Lactones",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 42000,
+      "cas_number": null,
+      "category": "a - ali-fat-ic",
+      "scent_family": "Fatty",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Hexano-1,4-Lactone / Ethyl Butyrolactone | Profile: https://www.thegoodscentscompany.com/data/rw1006382.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "1b98200d-b596-48e9-a245-1a591f3d6d79",
+        "name": "Hexalactone, gamma-",
+        "workbook_code": "4DH02050",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "695-06-7",
+        "category": "H - HERB (Cool)",
+        "scent_family": "Herbal",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4DH02050 Workbook supplier: PerfumersWorld"
+      },
+      "score": 19,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "b3339994-2a7f-4387-85ff-4e811360a89f",
+          "name": "Aldehyde C-10 Decanal",
+          "workbook_code": "4AC00018",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 39120,
+          "cas_number": "112-31-2",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AC00018 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "969779f5-9e44-45bf-9367-c50211014cce",
+          "name": "Aldehyde C-11 Undecanal",
+          "workbook_code": "4AR00020",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 71280,
+          "cas_number": "112-44-7",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR00020 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "35bd7916-1815-446e-ba8c-2f15061f5280",
+          "name": "Aldehyde C-11 Undecylenic",
+          "workbook_code": "4AR01236",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 104000,
+          "cas_number": "112-45-8",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR01236 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "949149fd-be7c-41ca-a452-8b214027b84f",
+          "name": "Aldehyde C-12 Lauric Dodecanal",
+          "workbook_code": "4AA00021",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 35002,
+          "cas_number": "112-54-9",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AA00021 Workbook supplier: PerfumersWorld"
+        },
+        "score": 11
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "db0361e6-c7ac-45bc-a5e8-f7fecd887aad",
+      "name": "Maple Lactone / Methyl Cyclopentenolone",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 64000,
+      "cas_number": "765-70-8",
+      "category": "d - dairy",
+      "scent_family": "Dairy",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Cyclotene / 3-Methylcyclopentane-1,2-Dione | Profile: https://www.thegoodscentscompany.com/data/rw1012711.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "99cd6e76-2bd8-4816-8e2d-fb9a305cc18a",
+        "name": "Maple Lactone",
+        "workbook_code": "1VE00286",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "80-71-7",
+        "category": "V - VANILLA",
+        "scent_family": "Gourmand",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1VE00286 Workbook supplier: PerfumersWorld"
+      },
+      "score": 19,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "0b91301b-e334-4b65-bc2d-33528d41cf17",
+          "name": "Acetoin",
+          "workbook_code": "4DV02664",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 40000,
+          "cas_number": "513-86-0",
+          "category": "D - DAIRY",
+          "scent_family": "Dairy",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4DV02664 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "c5cf24f6-1e8c-41de-9cfc-ed804f41d99a",
+          "name": "Aldehyde C-14 Gamma Undecalactone",
+          "workbook_code": "4DD00454",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 36018,
+          "cas_number": "104-67-6",
+          "category": "D - DAIRY",
+          "scent_family": "Dairy",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4DD00454 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "57a1a1ca-9786-4269-bf52-93be3e3636a6",
+          "name": "Aldehyde C-18 Gamma Nonalactone",
+          "workbook_code": "4DD00324",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 37008,
+          "cas_number": "104-61-0",
+          "category": "D - DAIRY",
+          "scent_family": "Dairy",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4DD00324 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "4346936a-94dc-4438-b36a-17412418af79",
+          "name": "ANIMALISSIMO F-TEC",
+          "workbook_code": "6DU18084",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "D - DAIRY",
+          "scent_family": "Dairy",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6DU18084 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "e4eea954-3b7f-4b58-b995-1bc409df67da",
+      "name": "Methyl Cedryl Ether / Cedramber",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 50003,
+      "cas_number": null,
+      "category": "w - wood",
+      "scent_family": "Woody",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Cedramber / Cedrol Methyl Ether / (3R,3aS,6R,7R,8aS)-Octahydro-6-Methoxy-3,6,8,8-Tetramethyl-1H-3a,7-Methanoazulene | Profile: https://www.thegoodscentscompany.com/data/rw1020571.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "e74bd01c-e1b1-4fe5-b2dd-8c6fe26f49da",
+        "name": "Cedramber",
+        "workbook_code": "3WW00097",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 55000,
+        "cas_number": "19870-74-7",
+        "category": "W - WOOD",
+        "scent_family": "Woody",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3WW00097 Workbook supplier: PerfumersWorld"
+      },
+      "score": 21,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "af4cd46b-6c44-4a6f-ac6e-8d18c8732bfa",
+          "name": "Cedryl Acetate",
+          "workbook_code": "2WW00099",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "77-54-3",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 2WW00099 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "290e5a9c-96fc-435b-89e8-b44a12eceeba",
+          "name": "Methyl Isoeugenol",
+          "workbook_code": "9SP02300",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "93-16-3",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 9SP02300 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "b79c7612-385d-4bf5-837b-726fed073f59",
+          "name": "Agarwood F-TEC",
+          "workbook_code": "6WU18875",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6WU18875 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "2ea4c701-c94d-447e-866a-fe7159be7b37",
+          "name": "Agarwood Fleuressence",
+          "workbook_code": "6WU08483",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6WU08483 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "0e94ca12-e1d9-4162-a3ce-82576b8987fc",
+      "name": "Methyl Cedryl Ketone / Vertofix Coeur",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 50003,
+      "cas_number": null,
+      "category": "w - wood",
+      "scent_family": "Woody",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Cedartone V | Profile: https://www.thegoodscentscompany.com/data/rw1026472.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "af4cd46b-6c44-4a6f-ac6e-8d18c8732bfa",
+        "name": "Cedryl Acetate",
+        "workbook_code": "2WW00099",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "77-54-3",
+        "category": "W - WOOD",
+        "scent_family": "Woody",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 2WW00099 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "290e5a9c-96fc-435b-89e8-b44a12eceeba",
+          "name": "Methyl Isoeugenol",
+          "workbook_code": "9SP02300",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "93-16-3",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 9SP02300 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "145263cc-7330-412e-a4e8-5548aa1246e8",
+          "name": "Vertofix Couer",
+          "workbook_code": "3WY00465",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "32388-55-9",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3WY00465 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "b79c7612-385d-4bf5-837b-726fed073f59",
+          "name": "Agarwood F-TEC",
+          "workbook_code": "6WU18875",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6WU18875 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "2ea4c701-c94d-447e-866a-fe7159be7b37",
+          "name": "Agarwood Fleuressence",
+          "workbook_code": "6WU08483",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6WU08483 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "7b59426c-b082-4d45-bfaf-3a19d28e2b70",
+      "name": "Musconsandrol / Ebanol",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 55013,
+      "cas_number": "67801-20-1",
+      "category": "w - wood",
+      "scent_family": "Woody",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Sandal Pentenol / Matsunol / Prabanol / Muscosandrol / Ebanol | Profile: https://www.thegoodscentscompany.com/data/rw1061371.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "d1f1251b-9cd0-4ad7-bd2d-eed67519da04",
+        "name": "Ebanol",
+        "workbook_code": "4WX07563",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "667801-20-1",
+        "category": "W - WOOD",
+        "scent_family": "Woody",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4WX07563 Workbook supplier: PerfumersWorld"
+      },
+      "score": 21,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "b79c7612-385d-4bf5-837b-726fed073f59",
+          "name": "Agarwood F-TEC",
+          "workbook_code": "6WU18875",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6WU18875 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "2ea4c701-c94d-447e-866a-fe7159be7b37",
+          "name": "Agarwood Fleuressence",
+          "workbook_code": "6WU08483",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6WU08483 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "5ba8592a-c5a3-4f33-bdcd-d317510a8d4d",
+          "name": "Agarwood Oil Siam",
+          "workbook_code": "7WU09890",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "94350-09-1",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7WU09890 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "f09fed77-4c3d-42fb-86be-7a117182e04f",
+          "name": "Amber Core",
+          "workbook_code": "4WW17035",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "139504-68-0",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4WW17035 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "2a87bf64-e8ab-4062-9c2c-acec21ff8a6e",
+      "name": "Nectarine / Honey Accord",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 208000,
+      "cas_number": null,
+      "category": "p - phenol",
+      "scent_family": "Phenolic",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Profile: https://www.thegoodscentscompany.com/data/fl1084191.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "7e4873ef-69f4-4f01-a331-3963b8bc4902",
+        "name": "BASIL F-TEC",
+        "workbook_code": "6PS18638",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": null,
+        "category": "P - PHENOL",
+        "scent_family": "Phenolic",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6PS18638 Workbook supplier: PerfumersWorld"
+      },
+      "score": 9,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "bfcb92a5-0ebc-49ee-a5a4-5ad848bab36b",
+          "name": "Basil Fleuressence",
+          "workbook_code": "6PS12413",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "P - PHENOL",
+          "scent_family": "Phenolic",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6PS12413 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "d635f6ac-319b-4a78-8f30-be2a1b97c9ea",
+          "name": "Guaiacol",
+          "workbook_code": "9PT00213",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 35002,
+          "cas_number": "90-05-1",
+          "category": "P - PHENOL",
+          "scent_family": "Phenolic",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 9PT00213 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "1c203c76-3481-4926-a8b5-d4dab3a1d642",
+          "name": "Methyl Chavicol",
+          "workbook_code": "4PS02272",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "140-67-0",
+          "category": "P - PHENOL",
+          "scent_family": "Phenolic",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4PS02272 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "613845ce-5f80-4d62-a44c-229b8f20961a",
+          "name": "Oregano Essential Oil",
+          "workbook_code": "7PS00342",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "2230843",
+          "category": "P - PHENOL",
+          "scent_family": "Phenolic",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7PS00342 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "5ae9a0fb-0a12-49df-9c19-64963f694e9d",
+      "name": "Nonadienal / Cucumber Aldehyde",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 696960,
+      "cas_number": null,
+      "category": "a - ali-fat-ic",
+      "scent_family": "Fatty",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: (E,Z)-2,6-Nonadienal / Trans-2,Cis-6-Nonadienal / Nona-2-Trans-6-Cis-Dienal / Violet Leaf Aldehyde | Profile: https://www.thegoodscentscompany.com/data/rw1031611.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "47876581-82c9-44bd-8753-d50136237785",
+        "name": "A-ALDEHYDE F-TEC",
+        "workbook_code": "6AN18003",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": null,
+        "category": "A - ALI-FAT-IC",
+        "scent_family": "Fatty",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AN18003 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "6931c449-460c-4362-8114-2306f4555540",
+          "name": "A-Aldehyde Fleuressence",
+          "workbook_code": "6AN07832",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AN07832 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "b3339994-2a7f-4387-85ff-4e811360a89f",
+          "name": "Aldehyde C-10 Decanal",
+          "workbook_code": "4AC00018",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 39120,
+          "cas_number": "112-31-2",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AC00018 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "969779f5-9e44-45bf-9367-c50211014cce",
+          "name": "Aldehyde C-11 Undecanal",
+          "workbook_code": "4AR00020",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 71280,
+          "cas_number": "112-44-7",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR00020 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "35bd7916-1815-446e-ba8c-2f15061f5280",
+          "name": "Aldehyde C-11 Undecylenic",
+          "workbook_code": "4AR01236",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 104000,
+          "cas_number": "112-45-8",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AR01236 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "6007e4c9-06a5-46d5-9ee2-d90e3c9b44c7",
+      "name": "Nonadienal / Cucumber Aldehyde 10-TEC",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 120000,
+      "cas_number": null,
+      "category": "a - ali-fat-ic",
+      "scent_family": "Fatty",
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "47876581-82c9-44bd-8753-d50136237785",
+        "name": "A-ALDEHYDE F-TEC",
+        "workbook_code": "6AN18003",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": null,
+        "category": "A - ALI-FAT-IC",
+        "scent_family": "Fatty",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AN18003 Workbook supplier: PerfumersWorld"
+      },
+      "score": 9,
+      "classification": "variant_keep_separate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "b3339994-2a7f-4387-85ff-4e811360a89f",
+          "name": "Aldehyde C-10 Decanal",
+          "workbook_code": "4AC00018",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 39120,
+          "cas_number": "112-31-2",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4AC00018 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "4743fd1f-51cd-4dd7-9fd0-de44ee41f331",
+          "name": "Citrus Aldehyde F-TEC",
+          "workbook_code": "6AC18110",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AC18110 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "7404db93-5803-4bfe-9912-7f6747f53418",
+          "name": "GREEN ALDEHYDE F-TEC",
+          "workbook_code": "6AG18116",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AG18116 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "b5e7f117-7b67-4f7f-91b2-78dd2a385ccf",
+          "name": "ROSE ALDEHYDE F-TEC",
+          "workbook_code": "6AR18117",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6AR18117 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "52ba5863-bff9-4f91-b768-f25ae17f2f33",
+      "name": "Nonanoic Acid / Pelargonic Acid",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 40000,
+      "cas_number": "112-05-0",
+      "category": "v - vanilla",
+      "scent_family": "Gourmand",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Pelargonic Acid / Pelargic Acid / N-Nonylic Acid | Profile: https://www.thegoodscentscompany.com/data/rw1012131.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "2d0c5964-c582-4123-8ee9-b96387131316",
+        "name": "6-Methyl Coumarin",
+        "workbook_code": "1VD00002",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 60000,
+        "cas_number": "92-48-8",
+        "category": "V - VANILLA",
+        "scent_family": "Gourmand",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1VD00002 Workbook supplier: PerfumersWorld"
+      },
+      "score": 9,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "8b8453f1-e81c-433c-b6f2-455b9832ed7d",
+          "name": "Amber Solid",
+          "workbook_code": "6VU09627",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "Mixture",
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6VU09627 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "8674e424-bc43-4dcb-a3de-d6cd309e97cf",
+          "name": "CHOCOLATE F-TEC",
+          "workbook_code": "6VE18548",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6VE18548 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "4860b0ce-3a85-4aed-8ba0-fe13abbd7186",
+          "name": "Chocolate Fleuressence",
+          "workbook_code": "6VE12421",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": null,
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 6VE12421 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "43bce53b-308b-4c3a-8048-a84271b9a6ec",
+          "name": "Coumarin",
+          "workbook_code": "1VD00129",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 19502,
+          "cas_number": "91-64-5",
+          "category": "V - VANILLA",
+          "scent_family": "Gourmand",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1VD00129 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "18647bf8-9370-4237-9754-3d4ebcabe3b7",
+      "name": "Phenylacetaldehyde 85 / PEA",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 64000,
+      "cas_number": "122-78-1",
+      "category": "r - rose",
+      "scent_family": "Rose",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Profile: https://www.thegoodscentscompany.com/data/rw1009941.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "ae7af0d3-f7fa-4edc-bfbc-478150afdead",
+        "name": "Phenyl Ethyl Alcohol (PEA)",
+        "workbook_code": "3RM00358",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 25005,
+        "cas_number": "60-12-8",
+        "category": "R - ROSE",
+        "scent_family": "Rose",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3RM00358 Workbook supplier: PerfumersWorld"
+      },
+      "score": 10,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "b46888d4-24eb-4346-bf22-6e625382650d",
+          "name": "Benzophenone",
+          "workbook_code": "1RP00051",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "119-61-9",
+          "category": "R - ROSE",
+          "scent_family": "Rose",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1RP00051 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "d58aa65d-94e3-4a5f-b5e8-6b87e1cb291f",
+          "name": "Citronellol",
+          "workbook_code": "3RM00116",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 30030,
+          "cas_number": "106-22-9",
+          "category": "R - ROSE",
+          "scent_family": "Rose",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3RM00116 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "ac8e6fab-3e2f-4233-9a7b-603039ef59aa",
+          "name": "Citronellyl Acetate",
+          "workbook_code": "3RL00118",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "150-84-5",
+          "category": "R - ROSE",
+          "scent_family": "Rose",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3RL00118 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "527b27dc-35da-4d49-94f9-dbd4be9368ba",
+          "name": "Citronellyl Formate",
+          "workbook_code": "4RC03548",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "105-85-1",
+          "category": "R - ROSE",
+          "scent_family": "Rose",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4RC03548 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "fe35b6f8-802c-4871-8906-35d4e0627f72",
+      "name": "Propyl Alcohol / Propanol",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 25080,
+      "cas_number": null,
+      "category": "Uncategorized",
+      "scent_family": null,
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "9dad211b-3e03-4fb3-9a4d-b10816f343f2",
+        "name": "Phenyl Propyl Alcohol",
+        "workbook_code": "3GN00379",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "122-97-4",
+        "category": "G - GREEN",
+        "scent_family": "Green",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3GN00379 Workbook supplier: PerfumersWorld"
+      },
+      "score": 8,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "fe55c4f7-06d2-4517-8f4e-740d0035026f",
+          "name": "2-iso Propyl 4 Methyl Thiazole",
+          "workbook_code": "4ES11805",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "15679-13-7",
+          "category": "E - EDIBLE",
+          "scent_family": "Edible",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4ES11805 Workbook supplier: PerfumersWorld"
+        },
+        "score": 7
+      },
+      {
+        "master": {
+          "id": "5994ac92-5868-49ca-add6-a75a1cf855b6",
+          "name": "Alcohol C-7 Heptanol",
+          "workbook_code": "3AE13387",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "111-70-6",
+          "category": "A - ALI-FAT-IC",
+          "scent_family": "Fatty",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3AE13387 Workbook supplier: PerfumersWorld"
+        },
+        "score": 7
+      },
+      {
+        "master": {
+          "id": "e2b530bd-e48b-4c0d-a5f0-0a9e3ba8bed1",
+          "name": "Anisyl Alcohol",
+          "workbook_code": "3NL00044",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 69000,
+          "cas_number": "105-13-5",
+          "category": "N - NARCOTIC",
+          "scent_family": "Floral",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3NL00044 Workbook supplier: PerfumersWorld"
+        },
+        "score": 7
+      },
+      {
+        "master": {
+          "id": "5e6c7a78-f510-4512-9bb1-413aa93fff34",
+          "name": "Benzyl Alcohol",
+          "workbook_code": "0ZN00053",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 14508,
+          "cas_number": "100-51-6",
+          "category": "Z - ZOLVENTS",
+          "scent_family": "Solvent",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 0ZN00053 Workbook supplier: PerfumersWorld"
+        },
+        "score": 7
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "2ad56dc8-26fb-4106-82d4-78be971c2842",
+      "name": "Santal Sumba / Sandalwood OIl",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 450000,
+      "cas_number": null,
+      "category": "w - wood",
+      "scent_family": "Woody",
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "397daeca-735d-4e97-b364-df7f9d944472",
+        "name": "Sandalwood Essential Oil",
+        "workbook_code": "7WX00406",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "84787-70-2",
+        "category": "W - WOOD",
+        "scent_family": "Woody",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7WX00406 Workbook supplier: PerfumersWorld"
+      },
+      "score": 11,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "181d8dec-81d9-42fd-b691-8d6439b74f18",
+          "name": "Sandalwood oil east indian",
+          "workbook_code": "7WX21054",
+          "vendor": null,
+          "cost_per_unit": 0,
+          "cas_number": "8006-87-9",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7WX21054"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "a1e4eccb-127e-4b96-a179-bfa010d97a8b",
+          "name": "Sandalwood oil west australia (santalum spicata)",
+          "workbook_code": "7WX21055",
+          "vendor": null,
+          "cost_per_unit": 0,
+          "cas_number": "8024-35-9",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7WX21055"
+        },
+        "score": 11
+      },
+      {
+        "master": {
+          "id": "5ba8592a-c5a3-4f33-bdcd-d317510a8d4d",
+          "name": "Agarwood Oil Siam",
+          "workbook_code": "7WU09890",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "94350-09-1",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7WU09890 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      },
+      {
+        "master": {
+          "id": "5d5da26b-227b-437a-a76d-48edf4d31c14",
+          "name": "Amyris Essential Oil",
+          "workbook_code": "7WX00917",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "8015-65-4",
+          "category": "W - WOOD",
+          "scent_family": "Woody",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 7WX00917 Workbook supplier: PerfumersWorld"
+        },
+        "score": 10
+      }
+    ]
+  },
+  {
+    "alias": {
+      "id": "eaba293b-01eb-4a7e-9068-a3052bf42296",
+      "name": "Triplal / Ligustral",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 45018,
+      "cas_number": null,
+      "category": "g - green",
+      "scent_family": "Green",
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "3f37b67c-c64d-4c00-bd53-ece452e5d860",
+        "name": "Triplal",
+        "workbook_code": "4GH00450",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "68039-49-6",
+        "category": "G - GREEN",
+        "scent_family": "Green",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4GH00450 Workbook supplier: PerfumersWorld"
+      },
+      "score": 21,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": [
+      {
+        "master": {
+          "id": "dbd1db34-5e3f-4f7f-ad22-e95df720ff21",
+          "name": "Adoxal",
+          "workbook_code": "4GA00012",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 85050,
+          "cas_number": "141-13-9",
+          "category": "G - GREEN",
+          "scent_family": "Green",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4GA00012 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "a0e34e5e-d763-4730-8b32-1ad310d4b98c",
+          "name": "cis-3 Hexenol",
+          "workbook_code": "4GL00225",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 85000,
+          "cas_number": "928-96-1",
+          "category": "G - GREEN",
+          "scent_family": "Green",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4GL00225 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "3746a313-14cc-4389-bd0b-0967c35aeebd",
+          "name": "cis-3 Hexenyl Acetate",
+          "workbook_code": "4GF00226",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 115005,
+          "cas_number": "3681-71-8",
+          "category": "G - GREEN",
+          "scent_family": "Green",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4GF00226 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      },
+      {
+        "master": {
+          "id": "51777bc4-491f-4f83-b343-0a77cb9f2129",
+          "name": "cis-3 Hexenyl Benzoate",
+          "workbook_code": "3GN00227",
+          "vendor": "PerfumersWorld",
+          "cost_per_unit": 0,
+          "cas_number": "25152-85-6",
+          "category": "G - GREEN",
+          "scent_family": "Green",
+          "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3GN00227 Workbook supplier: PerfumersWorld"
+        },
+        "score": 9
+      }
+    ]
+  }
+]

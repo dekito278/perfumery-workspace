@@ -1,0 +1,205 @@
+[
+  {
+    "alias": {
+      "id": "22d414e6-53b7-4400-86d0-c55933e494e8",
+      "name": "Ethylene Brassylate / Musk T",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 23002,
+      "cas_number": "95-3",
+      "category": "x - x-rated musk",
+      "scent_family": "Musky",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: 1,11-Undecanedicarboxylic Acid, Ester With Ethylene Glycol | Profile: https://www.thegoodscentscompany.com/data/rw1002472.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "946d1c42-d910-4ead-bbf3-3955aa96db5f",
+        "name": "Ethylene Brassylate",
+        "workbook_code": "3XU00180",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 25000,
+        "cas_number": "105-95-3",
+        "category": "X - X-rated MUSK",
+        "scent_family": "Musky",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3XU00180 Workbook supplier: PerfumersWorld"
+      },
+      "score": 58,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": []
+  },
+  {
+    "alias": {
+      "id": "7cc1b3b4-aeab-4316-9551-4a8f1f23a765",
+      "name": "Floralozone / Ozone Propanal 10-TEC",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 46074,
+      "cas_number": null,
+      "category": "Uncategorized",
+      "scent_family": null,
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "b4ad52fd-cf0d-4aff-ba8f-6be0ff5e4f15",
+        "name": "Floral Ozone",
+        "workbook_code": "4YM00191",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 215012,
+        "cas_number": "67634-15-5",
+        "category": "Y - EARTHY MOSSY",
+        "scent_family": "Earthy",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4YM00191 Workbook supplier: PerfumersWorld\nMerged duplicate raw material \"Floralozone\" (2005b27d-9b97-42dc-91aa-0907c3606128) into \"Floral Ozone\" (b4ad52fd-cf0d-4aff-ba8f-6be0ff5e4f15).\nSafe alias merge from live alias audit: Floralozone -> Floral Ozone"
+      },
+      "score": 29,
+      "classification": "variant_keep_separate"
+    },
+    "alternatives": []
+  },
+  {
+    "alias": {
+      "id": "0481e569-7536-4d38-a444-1a313642db41",
+      "name": "Hexalactone Gamma / Aldehyde C-6 Lactones",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 42000,
+      "cas_number": null,
+      "category": "a - ali-fat-ic",
+      "scent_family": "Fatty",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Hexano-1,4-Lactone / Ethyl Butyrolactone | Profile: https://www.thegoodscentscompany.com/data/rw1006382.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "1b98200d-b596-48e9-a245-1a591f3d6d79",
+        "name": "Hexalactone, gamma-",
+        "workbook_code": "4DH02050",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "695-06-7",
+        "category": "H - HERB (Cool)",
+        "scent_family": "Herbal",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4DH02050 Workbook supplier: PerfumersWorld"
+      },
+      "score": 55,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": []
+  },
+  {
+    "alias": {
+      "id": "db0361e6-c7ac-45bc-a5e8-f7fecd887aad",
+      "name": "Maple Lactone / Methyl Cyclopentenolone",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 64000,
+      "cas_number": "765-70-8",
+      "category": "d - dairy",
+      "scent_family": "Dairy",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Cyclotene / 3-Methylcyclopentane-1,2-Dione | Profile: https://www.thegoodscentscompany.com/data/rw1012711.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "99cd6e76-2bd8-4816-8e2d-fb9a305cc18a",
+        "name": "Maple Lactone",
+        "workbook_code": "1VE00286",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "80-71-7",
+        "category": "V - VANILLA",
+        "scent_family": "Gourmand",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 1VE00286 Workbook supplier: PerfumersWorld"
+      },
+      "score": 55,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": []
+  },
+  {
+    "alias": {
+      "id": "e4eea954-3b7f-4b58-b995-1bc409df67da",
+      "name": "Methyl Cedryl Ether / Cedramber",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 50003,
+      "cas_number": null,
+      "category": "w - wood",
+      "scent_family": "Woody",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Cedramber / Cedrol Methyl Ether / (3R,3aS,6R,7R,8aS)-Octahydro-6-Methoxy-3,6,8,8-Tetramethyl-1H-3a,7-Methanoazulene | Profile: https://www.thegoodscentscompany.com/data/rw1020571.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "e74bd01c-e1b1-4fe5-b2dd-8c6fe26f49da",
+        "name": "Cedramber",
+        "workbook_code": "3WW00097",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 55000,
+        "cas_number": "19870-74-7",
+        "category": "W - WOOD",
+        "scent_family": "Woody",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 3WW00097 Workbook supplier: PerfumersWorld"
+      },
+      "score": 57,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": []
+  },
+  {
+    "alias": {
+      "id": "7b59426c-b082-4d45-bfaf-3a19d28e2b70",
+      "name": "Musconsandrol / Ebanol",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 55013,
+      "cas_number": "67801-20-1",
+      "category": "w - wood",
+      "scent_family": "Woody",
+      "notes": "Imported from Eco Fragrantica 2026 price list | Synonym: Sandal Pentenol / Matsunol / Prabanol / Muscosandrol / Ebanol | Profile: https://www.thegoodscentscompany.com/data/rw1061371.html"
+    },
+    "best_match": {
+      "master": {
+        "id": "d1f1251b-9cd0-4ad7-bd2d-eed67519da04",
+        "name": "Ebanol",
+        "workbook_code": "4WX07563",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "667801-20-1",
+        "category": "W - WOOD",
+        "scent_family": "Woody",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4WX07563 Workbook supplier: PerfumersWorld"
+      },
+      "score": 57,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": []
+  },
+  {
+    "alias": {
+      "id": "eaba293b-01eb-4a7e-9068-a3052bf42296",
+      "name": "Triplal / Ligustral",
+      "workbook_code": null,
+      "vendor": "Eco Fragrantica",
+      "cost_per_unit": 45018,
+      "cas_number": null,
+      "category": "g - green",
+      "scent_family": "Green",
+      "notes": "Imported from Eco Fragrantica 2026 price list"
+    },
+    "best_match": {
+      "master": {
+        "id": "3f37b67c-c64d-4c00-bd53-ece452e5d860",
+        "name": "Triplal",
+        "workbook_code": "4GH00450",
+        "vendor": "PerfumersWorld",
+        "cost_per_unit": 0,
+        "cas_number": "68039-49-6",
+        "category": "G - GREEN",
+        "scent_family": "Green",
+        "notes": "Seeded from Perfumer's Workbook no-dilute export. Reference code: 4GH00450 Workbook supplier: PerfumersWorld"
+      },
+      "score": 57,
+      "classification": "safe_merge_candidate"
+    },
+    "alternatives": []
+  }
+]

@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-04-21T05:38:37.322Z",
+  "base_url": "http://127.0.0.1:3002",
+  "total_routes_checked": 8,
+  "total_console_issues": 0,
+  "total_page_errors": 0,
+  "routes": [
+    {
+      "route": "/dashboard",
+      "finalUrl": "http://127.0.0.1:3002/dashboard",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 93,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\dashboard.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/raw-materials",
+      "finalUrl": "http://127.0.0.1:3002/raw-materials",
+      "title": "Raw Materials - Perfumer Studio",
+      "contentLength": 2804,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\raw-materials.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas",
+      "finalUrl": "http://127.0.0.1:3002/formulas",
+      "title": "Formulas - Perfumer Studio",
+      "contentLength": 511,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\formulas.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas/new",
+      "finalUrl": "http://127.0.0.1:3002/formulas/new",
+      "title": "Create Formula - Perfumer Studio",
+      "contentLength": 48035,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\formulas-new.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/production-costing",
+      "finalUrl": "http://127.0.0.1:3002/production-costing",
+      "title": "Production Costing - Perfumer Studio",
+      "contentLength": 1351,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\production-costing.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/raw-material/3f37b67c-c64d-4c00-bd53-ece452e5d860",
+      "finalUrl": "http://127.0.0.1:3002/raw-material/3f37b67c-c64d-4c00-bd53-ece452e5d860",
+      "title": "Triplal - Material Details",
+      "contentLength": 2486,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\raw-material-3f37b67c-c64d-4c00-bd53-ece452e5d860.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas/44ce0cb8-5bf7-482f-a931-5388078adec2",
+      "finalUrl": "http://127.0.0.1:3002/formulas/44ce0cb8-5bf7-482f-a931-5388078adec2",
+      "title": "RESONANCE 1+1 V2 - Formula Details",
+      "contentLength": 11586,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\formulas-44ce0cb8-5bf7-482f-a931-5388078adec2.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas/44ce0cb8-5bf7-482f-a931-5388078adec2/edit",
+      "finalUrl": "http://127.0.0.1:3002/formulas/44ce0cb8-5bf7-482f-a931-5388078adec2/edit",
+      "title": "RESONANCE 1+1 V2 - Perfumer Studio",
+      "contentLength": 67781,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit-deep\\formulas-44ce0cb8-5bf7-482f-a931-5388078adec2-edit.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-04-21T05:34:12.286Z",
+  "base_url": "http://127.0.0.1:3002",
+  "total_routes_checked": 5,
+  "total_console_issues": 0,
+  "total_page_errors": 0,
+  "routes": [
+    {
+      "route": "/dashboard",
+      "finalUrl": "http://127.0.0.1:3002/dashboard",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 93,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit\\dashboard.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/raw-materials",
+      "finalUrl": "http://127.0.0.1:3002/raw-materials",
+      "title": "Raw Materials - Perfumer Studio",
+      "contentLength": 2804,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit\\raw-materials.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas",
+      "finalUrl": "http://127.0.0.1:3002/formulas",
+      "title": "Formulas - Perfumer Studio",
+      "contentLength": 511,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit\\formulas.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas/new",
+      "finalUrl": "http://127.0.0.1:3002/formulas/new",
+      "title": "Create Formula - Perfumer Studio",
+      "contentLength": 48035,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit\\formulas-new.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/production-costing",
+      "finalUrl": "http://127.0.0.1:3002/production-costing",
+      "title": "Production Costing - Perfumer Studio",
+      "contentLength": 1351,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\.codex-temp\\browser-auth-audit\\production-costing.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    }
+  ]
+}

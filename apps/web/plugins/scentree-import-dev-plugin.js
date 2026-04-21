@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer';
+
 const SCENTREE_HOSTS = new Set(['www.scentree.co', 'scentree.co']);
 const PERFUMERSWORLD_HOSTS = new Set(['www.perfumersworld.com', 'perfumersworld.com']);
 

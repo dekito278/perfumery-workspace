@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-04-21T05:30:30.526Z",
+  "base_url": "http://127.0.0.1:3002",
+  "routes": [
+    {
+      "route": "/login",
+      "targetUrl": "http://127.0.0.1:3002/login",
+      "finalUrl": "http://127.0.0.1:3002/login",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 76,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\apps\\web\\.codex-temp\\browser-smoke-audit\\login.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/dashboard",
+      "targetUrl": "http://127.0.0.1:3002/dashboard",
+      "finalUrl": "http://127.0.0.1:3002/login",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 76,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\apps\\web\\.codex-temp\\browser-smoke-audit\\dashboard.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/formulas",
+      "targetUrl": "http://127.0.0.1:3002/formulas",
+      "finalUrl": "http://127.0.0.1:3002/login",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 76,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\apps\\web\\.codex-temp\\browser-smoke-audit\\formulas.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/raw-materials",
+      "targetUrl": "http://127.0.0.1:3002/raw-materials",
+      "finalUrl": "http://127.0.0.1:3002/login",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 76,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\apps\\web\\.codex-temp\\browser-smoke-audit\\raw-materials.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/production-costing",
+      "targetUrl": "http://127.0.0.1:3002/production-costing",
+      "finalUrl": "http://127.0.0.1:3002/login",
+      "title": "Login - Perfumer Studio",
+      "contentLength": 76,
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\apps\\web\\.codex-temp\\browser-smoke-audit\\production-costing.png",
+      "consoleIssues": [],
+      "pageErrors": []
+    }
+  ],
+  "total_console_issues": 0,
+  "total_page_errors": 0
+}
