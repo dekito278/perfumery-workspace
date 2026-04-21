@@ -1,7 +1,14 @@
 
 import supabase from '@/lib/supabaseClient.js';
 import { deriveScentFamilyFromCategory, inferRawMaterialTypeFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
-import { syncManualReferenceProfileForRawMaterial } from '@/services/materialReferenceService.js';
+import { getPrimaryReferenceRawMaterialIds, syncManualReferenceProfileForRawMaterial } from '@/services/materialReferenceService.js';
+
+const RAW_MATERIAL_OPTIONS_TTL_MS = 5 * 60 * 1000;
+let rawMaterialOptionsCache = {
+  data: null,
+  loadedAt: 0,
+  promise: null,
+};
 
 const mapRawMaterial = (row, solventMap = new Map()) => ({
   ...row,
@@ -112,6 +119,14 @@ const getSolventMap = async (solventIds) => {
   return new Map((data || []).map((item) => [item.id, item]));
 };
 
+export const clearRawMaterialOptionsCache = () => {
+  rawMaterialOptionsCache = {
+    data: null,
+    loadedAt: 0,
+    promise: null,
+  };
+};
+
 const findExistingRawMaterialByName = async (userId, name) => {
   const normalizedName = String(name || '').trim();
   if (!normalizedName) {
@@ -134,19 +149,24 @@ const findExistingRawMaterialByName = async (userId, name) => {
   return data || null;
 };
 
-const findExistingRawMaterialByWorkbookCode = async (userId, workbookCode) => {
+const findExistingRawMaterialByWorkbookCode = async (userId, workbookCode, excludedRawMaterialId = null) => {
   const normalizedWorkbookCode = String(workbookCode || '').trim();
   if (!normalizedWorkbookCode) {
     return null;
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('raw_materials')
     .select('*')
     .eq('user_id', userId)
     .ilike('workbook_code', normalizedWorkbookCode)
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+
+  if (excludedRawMaterialId) {
+    query = query.neq('id', excludedRawMaterialId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     console.error('Error checking existing raw material by workbook code:', error);
@@ -173,6 +193,222 @@ export const getRawMaterials = async () => {
     return (data || []).map((row) => mapRawMaterial(row, solventMap));
   } catch (error) {
     throw new Error('Failed to fetch raw materials');
+  }
+};
+
+export const getRawMaterialsPage = async ({
+  page = 1,
+  pageSize = 20,
+  searchTerm = '',
+  typeFilter = 'all',
+  categoryFilter = 'all',
+  stockFilter = 'all',
+  referenceFilter = 'all',
+} = {}) => {
+  try {
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safePageSize = Math.max(Number(pageSize) || 20, 1);
+    const from = (safePage - 1) * safePageSize;
+    const to = from + safePageSize - 1;
+    const normalizedSearch = String(searchTerm || '').trim();
+
+    const referenceScope = await getPrimaryReferenceRawMaterialIds({
+      searchTerm: normalizedSearch,
+      referenceFilter,
+    });
+
+    let query = supabase
+      .from('raw_materials')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (normalizedSearch) {
+      const escapedQuery = normalizedSearch.replace(/[%_,]/g, ' ');
+      const searchConditions = [
+        `name.ilike.%${escapedQuery}%`,
+        `category.ilike.%${escapedQuery}%`,
+        `vendor.ilike.%${escapedQuery}%`,
+        `cas_number.ilike.%${escapedQuery}%`,
+        `workbook_code.ilike.%${escapedQuery}%`,
+        `scent_family.ilike.%${escapedQuery}%`,
+      ];
+
+      if (referenceScope.hasFilteredIds) {
+        searchConditions.push(`id.in.${referenceScope.formatPostgrestInList(referenceScope.filteredIds)}`);
+      }
+
+      query = query.or(searchConditions.join(','));
+    }
+
+    if (typeFilter !== 'all') {
+      query = query.eq('type', typeFilter);
+    }
+
+    if (categoryFilter !== 'all') {
+      query = query.ilike('category', categoryFilter);
+    }
+
+    if (stockFilter === 'low') {
+      query = query.filter('stock_quantity', 'lt', 'minimum_stock');
+    } else if (stockFilter === 'in_stock') {
+      query = query.filter('stock_quantity', 'gte', 'minimum_stock');
+    }
+
+    if (referenceFilter === 'matched' || referenceFilter === 'ifra_limited' || referenceFilter === 'has_guidance') {
+      if (!referenceScope.hasFilteredIds) {
+        return {
+          items: [],
+          total: 0,
+          page: safePage,
+          pageSize: safePageSize,
+        };
+      }
+
+      query = query.in('id', referenceScope.filteredIds);
+    } else if (referenceFilter === 'unmatched') {
+      if (referenceScope.hasAnyMatchedIds) {
+        query = query.not('id', 'in', referenceScope.formatPostgrestInList(referenceScope.matchedIds));
+      }
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const solventIds = [...new Set((data || []).map((item) => item.dilution_solvent_id).filter(Boolean))];
+    const solventMap = await getSolventMap(solventIds);
+
+    return {
+      items: (data || []).map((row) => mapRawMaterial(row, solventMap)),
+      total: Number(count || 0),
+      page: safePage,
+      pageSize: safePageSize,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated raw materials:', error);
+    throw new Error('Failed to fetch raw materials');
+  }
+};
+
+export const getRawMaterialsSummary = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('raw_materials')
+      .select('id, type, category, stock_quantity, minimum_stock, low_stock_threshold, cost_per_unit');
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching raw material summary:', error);
+    throw new Error('Failed to fetch raw material summary');
+  }
+};
+
+export const getRawMaterialOptions = async ({ forceRefresh = false } = {}) => {
+  try {
+    const now = Date.now();
+    if (!forceRefresh && rawMaterialOptionsCache.data && (now - rawMaterialOptionsCache.loadedAt) < RAW_MATERIAL_OPTIONS_TTL_MS) {
+      return rawMaterialOptionsCache.data;
+    }
+
+    if (!forceRefresh && rawMaterialOptionsCache.promise) {
+      return rawMaterialOptionsCache.promise;
+    }
+
+    rawMaterialOptionsCache.promise = (async () => {
+      const { data, error } = await supabase
+        .from('raw_materials')
+        .select(`
+          id,
+          name,
+          type,
+          unit,
+          category,
+          vendor,
+          workbook_code,
+          cost_per_unit,
+          stock_quantity,
+          minimum_stock,
+          low_stock_threshold,
+          scent_family,
+          reference_abc_primary_family,
+          reference_impact,
+          reference_life_hours,
+          reference_use_level_typical_percent,
+          reference_use_level_max_percent,
+          ifra_limit,
+          cas_number,
+          notes,
+          description,
+          dilution_percentage,
+          dilution_solvent_id,
+          is_diluted
+        `)
+        .order('name', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      const solventIds = [...new Set((data || []).map((item) => item.dilution_solvent_id).filter(Boolean))];
+      const solventMap = await getSolventMap(solventIds);
+      const mappedData = (data || []).map((row) => mapRawMaterial(row, solventMap));
+
+      rawMaterialOptionsCache = {
+        data: mappedData,
+        loadedAt: Date.now(),
+        promise: null,
+      };
+
+      return mappedData;
+    })();
+
+    return await rawMaterialOptionsCache.promise;
+  } catch (error) {
+    rawMaterialOptionsCache.promise = null;
+    console.error('Error fetching raw material options:', error);
+    throw new Error('Failed to fetch raw material options');
+  }
+};
+
+export const getRawMaterialsReferenceSummary = async () => {
+  try {
+    const [
+      { count: matchedReferenceCount, error: matchedError },
+      { count: ifraReferenceCount, error: ifraError },
+    ] = await Promise.all([
+      supabase
+        .from('raw_material_reference_links')
+        .select('raw_material_id', { count: 'exact', head: true })
+        .eq('is_primary', true),
+      supabase
+        .from('raw_material_reference_links')
+        .select('raw_material_id, material_reference_profiles!inner(id)', { count: 'exact', head: true })
+        .eq('is_primary', true)
+        .not('material_reference_profiles.ifra_limit_percent', 'is', null),
+    ]);
+
+    if (matchedError) {
+      throw matchedError;
+    }
+
+    if (ifraError) {
+      throw ifraError;
+    }
+
+    return {
+      matchedReferenceCount: Number(matchedReferenceCount || 0),
+      ifraReferenceCount: Number(ifraReferenceCount || 0),
+    };
+  } catch (error) {
+    console.error('Error fetching raw material reference summary:', error);
+    throw new Error('Failed to fetch raw material reference summary');
   }
 };
 
@@ -331,6 +567,7 @@ export const createRawMaterial = async (data) => {
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
     await syncManualReferenceProfileForRawMaterial(record);
+    clearRawMaterialOptionsCache();
     return mapRawMaterial(record, solventMap);
   } catch (error) {
     console.error('Error creating raw material:', error);
@@ -340,14 +577,35 @@ export const createRawMaterial = async (data) => {
 
 export const updateRawMaterial = async (id, data) => {
   try {
-    const payload = buildRawMaterialPayload(data);
+    const { data: currentRecord, error: currentRecordError } = await supabase
+      .from('raw_materials')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    // Validate dilution fields
-    if (data.is_diluted) {
-      if (!data.dilution_solvent_id) {
-        throw new Error('Dilution solvent is required for diluted materials');
+    if (currentRecordError) {
+      throw currentRecordError;
+    }
+
+      const mergedData = {
+        ...currentRecord,
+        ...data,
+      };
+      const payload = buildRawMaterialPayload(mergedData);
+
+      const duplicateWorkbookCodeRecord = payload.workbook_code
+        ? await findExistingRawMaterialByWorkbookCode(currentRecord.user_id, payload.workbook_code, id)
+        : null;
+      if (duplicateWorkbookCodeRecord) {
+        throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material "${duplicateWorkbookCodeRecord.name}".`);
       }
-      if (!data.dilution_percentage || data.dilution_percentage <= 0 || data.dilution_percentage > 100) {
+
+      // Validate dilution fields
+      if (mergedData.is_diluted) {
+        if (!mergedData.dilution_solvent_id) {
+          throw new Error('Dilution solvent is required for diluted materials');
+      }
+      if (!mergedData.dilution_percentage || mergedData.dilution_percentage <= 0 || mergedData.dilution_percentage > 100) {
         throw new Error('Dilution percentage must be between 0 and 100');
       }
     }
@@ -359,12 +617,16 @@ export const updateRawMaterial = async (id, data) => {
       .select('*')
       .single();
 
-    if (error) {
-      throw error;
-    }
+      if (error) {
+        if (error.code === '23505' && error.message?.includes('raw_materials_unique_workbook_code_per_user')) {
+          throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material lain.`);
+        }
+        throw error;
+      }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
     await syncManualReferenceProfileForRawMaterial(record);
+    clearRawMaterialOptionsCache();
     return mapRawMaterial(record, solventMap);
   } catch (error) {
     console.error('Error updating raw material:', error);
@@ -382,6 +644,7 @@ export const deleteRawMaterial = async (id) => {
     if (error) {
       throw error;
     }
+    clearRawMaterialOptionsCache();
   } catch (error) {
     console.error('Error deleting raw material:', error);
     throw new Error('Failed to delete raw material');

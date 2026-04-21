@@ -44,7 +44,7 @@ const runWithRetry = async (loader, retries = 1) => {
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { fetchMaterials } = useRawMaterials();
+  const { fetchMaterialsSummary } = useRawMaterials();
   const { getFormulas } = useFormulas();
   const { getBatches } = useBatches();
 
@@ -57,7 +57,7 @@ const DashboardPage = () => {
     setLoading(true);
     try {
       const results = await Promise.allSettled([
-        runWithRetry(() => fetchMaterials()),
+        runWithRetry(() => fetchMaterialsSummary()),
         runWithRetry(() => getFormulas()),
         runWithRetry(() => getBatches())
       ]);

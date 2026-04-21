@@ -12,7 +12,7 @@ import FormField from '@/components/FormField.jsx';
 import FormNumber from '@/components/FormNumber.jsx';
 import FormSelect from '@/components/FormSelect.jsx';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
-import { createRawMaterial, getRawMaterials } from '@/services/rawMaterialsService.js';
+import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
@@ -93,7 +93,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       setLoadingReferenceData(true);
       try {
         const [materialsData, categories] = await Promise.all([
-          getRawMaterials(),
+          getRawMaterialOptions(),
           getRawMaterialCategories(),
         ]);
 

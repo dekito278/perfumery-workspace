@@ -30,75 +30,16 @@ import { formatGramAmount, formatPercentage, formatNullable, formatStatus, forma
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
+import { buildReferenceAdvisories } from '@/utils/formulaWorkbookSimulation.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
 import { getBatches } from '@/services/batchesSupabaseService.js';
-import { getRawMaterialById, getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
-
-const buildReferenceAdvisories = (item) => {
-  const referenceProfile = item.reference_profile;
-  if (!referenceProfile || item.item_type !== 'raw_material') {
-    return {
-      effectivePercentage: null,
-      advisories: [],
-    };
-  }
-
-  const listedPercentage = Number(item.percentage || 0);
-  const dilutionFactor = item.is_diluted && item.dilution_percentage
-    ? Number(item.dilution_percentage) / 100
-    : 1;
-  const effectivePercentage = listedPercentage * dilutionFactor;
-  const advisories = [];
-
-  if (
-    referenceProfile.use_level_typical_percent !== null
-    && effectivePercentage > Number(referenceProfile.use_level_typical_percent || 0)
-  ) {
-    advisories.push({
-      type: 'typical',
-      severity: 'info',
-      label: 'Above typical use level',
-      limit: Number(referenceProfile.use_level_typical_percent),
-      message: `Effective concentration ${formatPercentage(effectivePercentage, 2)} is above the typical reference level of ${formatPercentage(referenceProfile.use_level_typical_percent, 2)}.`,
-    });
-  }
-
-  if (
-    referenceProfile.use_level_max_percent !== null
-    && effectivePercentage > Number(referenceProfile.use_level_max_percent || 0)
-  ) {
-    advisories.push({
-      type: 'max',
-      severity: 'warning',
-      label: 'Above max use level',
-      limit: Number(referenceProfile.use_level_max_percent),
-      message: `Effective concentration ${formatPercentage(effectivePercentage, 2)} is above the suggested max reference level of ${formatPercentage(referenceProfile.use_level_max_percent, 2)}.`,
-    });
-  }
-
-  if (
-    referenceProfile.ifra_limit_percent !== null
-    && effectivePercentage > Number(referenceProfile.ifra_limit_percent || 0)
-  ) {
-    advisories.push({
-      type: 'ifra',
-      severity: 'danger',
-      label: 'Above IFRA reference limit',
-      limit: Number(referenceProfile.ifra_limit_percent),
-      message: `Effective concentration ${formatPercentage(effectivePercentage, 2)} is above the reference IFRA limit of ${formatPercentage(referenceProfile.ifra_limit_percent, 2)}.`,
-    });
-  }
-
-  return {
-    effectivePercentage,
-    advisories,
-  };
-};
+import { fetchRawMaterialsMap } from '@/services/supabaseDataHelpers.js';
 
 const normalizeFormulaItemType = (item, itemDetails) => {
   if (item?.item_type === 'accord') {
@@ -135,12 +76,21 @@ const FormulaDetailPage = () => {
       setFormula(formulaData);
 
       const itemsData = await getFormulaItems(id);
-      const rawMaterials = await getRawMaterials();
-      setRawMaterialsById(new Map(rawMaterials.map((material) => [material.id, material])));
-      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
+      const rawMaterials = await getRawMaterialOptions();
+      const rawMaterialsMap = new Map(rawMaterials.map((material) => [material.id, material]));
+      const missingMaterialIds = [...new Set(
+        itemsData
+          .flatMap((item) => [item.item_id, item.dilution_solvent_id])
+          .filter(Boolean)
+          .filter((materialId) => !rawMaterialsMap.has(materialId))
+      )];
+      const missingMaterialsMap = await fetchRawMaterialsMap(missingMaterialIds);
+      const mergedRawMaterialsMap = new Map([...rawMaterialsMap, ...missingMaterialsMap]);
+      setRawMaterialsById(mergedRawMaterialsMap);
+      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, [...mergedRawMaterialsMap.values()]);
       const selectedRawMaterials = itemsData
         .filter((item) => item.item_type === 'raw_material' || item.item_type === 'solvent')
-        .map((item) => rawMaterials.find((material) => material.id === item.item_id))
+        .map((item) => mergedRawMaterialsMap.get(item.item_id))
         .filter(Boolean);
       const referenceLinksMap = await ensureReferenceLinksForRawMaterials(selectedRawMaterials);
 
@@ -155,7 +105,28 @@ const FormulaDetailPage = () => {
         let dilutionSolventName = null;
 
         if (item.item_type === 'raw_material' || item.item_type === 'solvent') {
-          itemDetails = itemDetails || await getRawMaterialById(item.item_id);
+          itemDetails = itemDetails || mergedRawMaterialsMap.get(item.item_id) || null;
+          if (!itemDetails) {
+            return {
+              ...item,
+              item_type: normalizeFormulaItemType(item, null),
+              name: 'Unknown',
+              workbook_code: null,
+              unit: 'g',
+              is_low_stock: false,
+              gram_amount: item.grams || item.percentage || 0,
+              unit_price: 0,
+              ingredient_cost: 0,
+              category: null,
+              component_family: null,
+              scent_family: null,
+              is_diluted: isDiluted,
+              dilution_percentage: dilutionPercentage,
+              dilution_solvent_name: null,
+              reference_link: null,
+              reference_profile: null,
+            };
+          }
           isLowStock = itemDetails.low_stock_threshold 
             ? itemDetails.stock_quantity < itemDetails.low_stock_threshold
             : itemDetails.stock_quantity < itemDetails.minimum_stock;
@@ -167,7 +138,7 @@ const FormulaDetailPage = () => {
             dilutionPercentage = itemDetails.dilution_percentage || null;
           }
           if (item.dilution_solvent_id) {
-            const dilutionSolvent = referenceMaps.rawMaterialsMap.get(item.dilution_solvent_id) || await getRawMaterialById(item.dilution_solvent_id);
+            const dilutionSolvent = mergedRawMaterialsMap.get(item.dilution_solvent_id) || null;
             dilutionSolventName = dilutionSolvent?.name || null;
           }
         } else if (item.item_type === 'accord') {

@@ -12,6 +12,7 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
+import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { useIsMobile } from '@/hooks/use-mobile.jsx';
@@ -19,8 +20,10 @@ import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalcu
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount } from '@/utils/formatting.js';
-import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
+import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const createEmptyFormulaItem = () => ({
   item_id: '',
@@ -41,6 +44,24 @@ const normalizeFormulaItemType = (item, material) => {
   }
 
   return 'raw_material';
+};
+
+const pickPreferredPositiveNumber = (primaryValue, fallbackValue) => {
+  const primaryNumber = Number(primaryValue);
+  if (Number.isFinite(primaryNumber) && primaryNumber > 0) {
+    return primaryNumber;
+  }
+
+  const fallbackNumber = Number(fallbackValue);
+  if (Number.isFinite(fallbackNumber) && fallbackNumber > 0) {
+    return fallbackNumber;
+  }
+
+  if (primaryValue === null || primaryValue === undefined || primaryValue === '') {
+    return fallbackValue ?? null;
+  }
+
+  return primaryValue;
 };
 
 const getActiveFormulaItems = (items) =>
@@ -73,6 +94,8 @@ const EditFormulaPage = () => {
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
   const [mobileComposerTab, setMobileComposerTab] = useState('compose');
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
+  const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
+  const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -83,7 +106,7 @@ const EditFormulaPage = () => {
       try {
         const [formulaData, materialsData, itemsData] = await Promise.all([
           getFormulaById(id),
-          getRawMaterials(),
+          getRawMaterialOptions(),
           getFormulaItems(id),
         ]);
 
@@ -295,6 +318,110 @@ const EditFormulaPage = () => {
       material.name.toLowerCase().includes(normalizedQuery)
     );
   }, [materialLibraryQuery, sortedRawMaterials]);
+
+  const getItemGuidanceStatus = (item) => {
+    const rawMaterial = rawMaterialsById.get(item?.item_id) || null;
+    const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
+    const fallbackReferenceProfile = linkedReferenceProfile
+      ? null
+      : buildFallbackReferenceProfileFromRawMaterial(rawMaterial);
+    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
+    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
+    const primaryClass = classDistribution[0] || null;
+
+    const resolvedValues = {
+      cas_number: referenceProfile?.cas_no || rawMaterial?.cas_number || '',
+      ifra_limit: referenceProfile?.ifra_limit_percent ?? rawMaterial?.ifra_limit ?? null,
+      reference_abc_primary_family: primaryClass?.familyName
+        || referenceProfile?.abc_primary_family
+        || rawMaterial?.reference_abc_primary_family
+        || '',
+      reference_impact: pickPreferredPositiveNumber(
+        referenceProfile?.impact,
+        rawMaterial?.reference_impact
+      ),
+      reference_life_hours: pickPreferredPositiveNumber(
+        referenceProfile?.life_hours,
+        rawMaterial?.reference_life_hours
+      ),
+    };
+
+    const missingGuidance = !referenceProfile;
+    const missingImpact = resolvedValues.reference_impact === null || resolvedValues.reference_impact === undefined || Number(resolvedValues.reference_impact) <= 0;
+    const missingLife = resolvedValues.reference_life_hours === null || resolvedValues.reference_life_hours === undefined || Number(resolvedValues.reference_life_hours) <= 0;
+    const missingClass = !classDistribution.length && !resolvedValues.reference_abc_primary_family;
+    const missingCas = !String(resolvedValues.cas_number || '').trim();
+    const missingIfra = resolvedValues.ifra_limit === null || resolvedValues.ifra_limit === undefined;
+
+    return {
+      rawMaterial,
+      referenceProfile,
+      classDistribution,
+      missingGuidance,
+      missingImpact,
+      missingLife,
+      missingClass,
+      missingCas,
+      missingIfra,
+      hasWarning: missingGuidance || missingImpact || missingLife || missingClass || missingCas || missingIfra,
+    };
+  };
+
+  const getItemGuidanceDetails = (item) => {
+    const guidanceStatus = getItemGuidanceStatus(item);
+    const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
+    const fallbackReferenceProfile = linkedReferenceProfile
+      ? null
+      : buildFallbackReferenceProfileFromRawMaterial(guidanceStatus.rawMaterial);
+    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
+    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
+    const primaryClass = classDistribution[0] || null;
+
+    return {
+      ...guidanceStatus,
+      referenceProfile,
+      classDistribution,
+      resolvedValues: {
+        workbook_code: referenceProfile?.reference_code || guidanceStatus.rawMaterial?.workbook_code || '',
+        cas_number: referenceProfile?.cas_no || guidanceStatus.rawMaterial?.cas_number || '',
+        ifra_limit: referenceProfile?.ifra_limit_percent ?? guidanceStatus.rawMaterial?.ifra_limit ?? null,
+        reference_abc_primary_family: primaryClass?.familyName
+          || referenceProfile?.abc_primary_family
+          || guidanceStatus.rawMaterial?.reference_abc_primary_family
+          || '',
+        reference_impact: pickPreferredPositiveNumber(
+          referenceProfile?.impact,
+          guidanceStatus.rawMaterial?.reference_impact
+        ),
+        reference_life_hours: pickPreferredPositiveNumber(
+          referenceProfile?.life_hours,
+          guidanceStatus.rawMaterial?.reference_life_hours
+        ),
+        reference_use_level_typical_percent: referenceProfile?.use_level_typical_percent ?? guidanceStatus.rawMaterial?.reference_use_level_typical_percent ?? null,
+        reference_use_level_max_percent: referenceProfile?.use_level_max_percent ?? guidanceStatus.rawMaterial?.reference_use_level_max_percent ?? null,
+      },
+    };
+  };
+
+  const handleOpenGuidanceEditor = (item) => {
+    const guidanceDetails = getItemGuidanceDetails(item);
+    if (!guidanceDetails.rawMaterial) {
+      return;
+    }
+
+    setGuidanceEditorMaterial({
+      ...guidanceDetails.rawMaterial,
+      guidance_resolved_values: guidanceDetails.resolvedValues,
+    });
+    setGuidanceEditorOpen(true);
+  };
+
+  const handleGuidanceSaved = (updatedMaterial) => {
+    setRawMaterials((current) => current.map((material) => (
+      material.id === updatedMaterial.id ? updatedMaterial : material
+    )));
+    setGuidanceEditorMaterial(updatedMaterial);
+  };
 
   useEffect(() => {
     let active = true;
@@ -632,6 +759,8 @@ const EditFormulaPage = () => {
                             onDilutionChange={updateDilutionConfig}
                             onRemove={removeFormulaItem}
                             validationErrors={validationErrors}
+                            getGuidanceStatus={getItemGuidanceStatus}
+                            onOpenGuidanceEditor={handleOpenGuidanceEditor}
                           />
                         </div>
                       </section>
@@ -803,6 +932,8 @@ const EditFormulaPage = () => {
                         onDilutionChange={updateDilutionConfig}
                         onRemove={removeFormulaItem}
                         validationErrors={validationErrors}
+                        getGuidanceStatus={getItemGuidanceStatus}
+                        onOpenGuidanceEditor={handleOpenGuidanceEditor}
                       />
                     </div>
                   </section>
@@ -819,6 +950,14 @@ const EditFormulaPage = () => {
             )}
           </>
         )}
+
+        <RawMaterialGuidanceQuickEditDialog
+          open={guidanceEditorOpen}
+          onOpenChange={setGuidanceEditorOpen}
+          material={guidanceEditorMaterial}
+          guidanceStatus={guidanceEditorMaterial ? getItemGuidanceStatus({ item_id: guidanceEditorMaterial.id }) : null}
+          onSaved={handleGuidanceSaved}
+        />
       </div>
     </AuthenticatedLayout>
   );

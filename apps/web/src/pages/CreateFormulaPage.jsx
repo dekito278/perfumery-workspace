@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, Save } from 'lucide-react';
@@ -12,15 +12,39 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
+import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { calculatePercentages, calculateTotalGrams, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
-import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
+import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
+
+const createFormulaItemRowKey = () => `formula-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const pickPreferredPositiveNumber = (primaryValue, fallbackValue) => {
+  const primaryNumber = Number(primaryValue);
+  if (Number.isFinite(primaryNumber) && primaryNumber > 0) {
+    return primaryNumber;
+  }
+
+  const fallbackNumber = Number(fallbackValue);
+  if (Number.isFinite(fallbackNumber) && fallbackNumber > 0) {
+    return fallbackNumber;
+  }
+
+  if (primaryValue === null || primaryValue === undefined || primaryValue === '') {
+    return fallbackValue ?? null;
+  }
+
+  return primaryValue;
+};
 
 const createEmptyFormulaItem = () => ({
+  row_key: createFormulaItemRowKey(),
   item_id: '',
   gram_amount: '',
   dilution_percent: '',
@@ -31,6 +55,13 @@ const createEmptyFormulaItem = () => ({
 
 const getActiveFormulaItems = (items) =>
   items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
+
+const hasEmptyFormulaItem = (items) =>
+  items.some((item) => !item.item_id && !item.gram_amount && !item.dilution_percent && !item.dilution_solvent_id);
+
+const ensureFormulaComposerRow = (items) => (
+  hasEmptyFormulaItem(items) ? items : [...items, createEmptyFormulaItem()]
+);
 
 const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
 const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
@@ -56,7 +87,19 @@ const CreateFormulaPage = () => {
   const [metadataConfirmed, setMetadataConfirmed] = useState(false);
   const [mobileComposerTab, setMobileComposerTab] = useState('compose');
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
+  const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
+  const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const isMobile = useIsMobile();
+  const activeRowIndexRef = useRef(0);
+  const formulaItemsRef = useRef(formulaItems);
+
+  useEffect(() => {
+    activeRowIndexRef.current = activeRowIndex;
+  }, [activeRowIndex]);
+
+  useEffect(() => {
+    formulaItemsRef.current = formulaItems;
+  }, [formulaItems]);
 
   useEffect(() => {
     let active = true;
@@ -64,7 +107,7 @@ const CreateFormulaPage = () => {
     const loadData = async () => {
       setLoadingData(true);
       try {
-        const materialsData = await getRawMaterials();
+        const materialsData = await getRawMaterialOptions();
         if (active) {
           setRawMaterials(materialsData);
         }
@@ -86,7 +129,9 @@ const CreateFormulaPage = () => {
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, itemIndex) => itemIndex !== index);
-    setFormulaItems(normalizeFormulaItems(remainingItems));
+    const nextItems = normalizeFormulaItems(remainingItems);
+    formulaItemsRef.current = nextItems;
+    setFormulaItems(nextItems);
     setActiveRowIndex((current) => {
       if (current === index) {
         return 0;
@@ -99,17 +144,28 @@ const CreateFormulaPage = () => {
   };
 
   const updateItem = (index, itemId) => {
-    const updated = [...formulaItems];
-    updated[index].item_id = itemId;
-    updated[index].item_type = '';
+    setFormulaItems((currentItems) => {
+      const updated = [...currentItems];
+      const previousItem = updated[index] || createEmptyFormulaItem();
+      const wasComposerRow = index === 0
+        && !previousItem.item_id
+        && !previousItem.gram_amount
+        && !previousItem.dilution_percent
+        && !previousItem.dilution_solvent_id;
 
-    const material = rawMaterials.find((row) => row.id === itemId);
-    if (material) {
-      updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
+      updated[index] = buildItemWithMaterial(previousItem, itemId);
+      const nextItems = wasComposerRow
+        ? normalizeFormulaItems(updated)
+        : ensureFormulaComposerRow(updated);
+      formulaItemsRef.current = nextItems;
+      return nextItems;
+    });
+    const nextActiveRowIndex = index === 0 ? 0 : index;
+    activeRowIndexRef.current = nextActiveRowIndex;
+    setActiveRowIndex(nextActiveRowIndex);
+    if (index === 0) {
+      setFocusRowIndex(0);
     }
-
-    setFormulaItems(updated);
-    setActiveRowIndex(index);
   };
 
   const buildItemWithMaterial = (baseItem, itemId) => {
@@ -117,34 +173,48 @@ const CreateFormulaPage = () => {
 
     return {
       ...baseItem,
+      row_key: baseItem?.row_key || createFormulaItemRowKey(),
       item_id: itemId,
       item_type: material ? (material.type === 'solvent' ? 'solvent' : 'raw_material') : '',
     };
   };
 
   const handleLibrarySelect = (itemId) => {
-    if (selectedRawMaterialIdsSet.has(itemId)) {
+    const rowIndex = Math.min(activeRowIndexRef.current, Math.max(formulaItemsRef.current.length - 1, 0));
+    const currentRowItemId = formulaItemsRef.current[rowIndex]?.item_id;
+    const alreadyAddedInAnotherRow = formulaItemsRef.current.some(
+      (item, index) => index !== rowIndex && item.item_id === itemId
+    );
+
+    if (alreadyAddedInAnotherRow && currentRowItemId !== itemId) {
       return;
     }
 
-    updateItem(activeRowIndex, itemId);
+    updateItem(rowIndex, itemId);
   };
 
   const handleLibraryDoubleClick = (itemId) => {
-    const currentRowItemId = formulaItems[activeRowIndex]?.item_id;
-    if (selectedRawMaterialIdsSet.has(itemId) && currentRowItemId !== itemId) {
+    const rowIndex = Math.min(activeRowIndexRef.current, Math.max(formulaItemsRef.current.length - 1, 0));
+    const currentRowItemId = formulaItemsRef.current[rowIndex]?.item_id;
+    const alreadyAddedInAnotherRow = formulaItemsRef.current.some(
+      (item, index) => index !== rowIndex && item.item_id === itemId
+    );
+
+    if (alreadyAddedInAnotherRow && currentRowItemId !== itemId) {
       return;
     }
 
     setFormulaItems((currentItems) => {
       const nextItems = [...currentItems];
-      const rowIndex = Math.min(activeRowIndex, Math.max(nextItems.length - 1, 0));
-      nextItems[rowIndex] = buildItemWithMaterial(nextItems[rowIndex] || createEmptyFormulaItem(), itemId);
+      const targetRowIndex = Math.min(activeRowIndexRef.current, Math.max(nextItems.length - 1, 0));
+      nextItems[targetRowIndex] = buildItemWithMaterial(nextItems[targetRowIndex] || createEmptyFormulaItem(), itemId);
 
-      const committedItem = nextItems[rowIndex];
-      const remainingItems = nextItems.filter((_, itemIndex) => itemIndex !== rowIndex);
+      const committedItem = nextItems[targetRowIndex];
+      const remainingItems = nextItems.filter((_, itemIndex) => itemIndex !== targetRowIndex);
       const normalizedItems = [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
 
+      formulaItemsRef.current = normalizedItems;
+      activeRowIndexRef.current = 0;
       setActiveRowIndex(0);
       setFocusRowIndex(0);
       return normalizedItems;
@@ -166,16 +236,21 @@ const CreateFormulaPage = () => {
       }
 
       const remainingItems = currentItems.filter((_, itemIndex) => itemIndex !== index);
+      const normalizedItems = [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
+      formulaItemsRef.current = normalizedItems;
+      activeRowIndexRef.current = 0;
       setFocusRowIndex(0);
       setActiveRowIndex(0);
-      return [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
+      return normalizedItems;
     });
   };
 
   const updateGramAmount = (index, gramAmount) => {
     const updated = [...formulaItems];
     updated[index].gram_amount = gramAmount;
+    formulaItemsRef.current = updated;
     setFormulaItems(updated);
+    activeRowIndexRef.current = index;
     setActiveRowIndex(index);
 
     const error = validateGramAmount(gramAmount);
@@ -210,7 +285,9 @@ const CreateFormulaPage = () => {
       updated[index].dilution_solvent_name = '';
     }
 
+    formulaItemsRef.current = updated;
     setFormulaItems(updated);
+    activeRowIndexRef.current = index;
     setActiveRowIndex(index);
     const nextErrors = { ...validationErrors };
     delete nextErrors.ingredients;
@@ -252,6 +329,108 @@ const CreateFormulaPage = () => {
       material.name.toLowerCase().includes(normalizedQuery)
     );
   }, [materialLibraryQuery, sortedRawMaterials]);
+
+  const getItemGuidanceStatus = (item) => {
+    const rawMaterial = rawMaterialsById.get(item?.item_id) || null;
+    const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
+    const fallbackReferenceProfile = linkedReferenceProfile
+      ? null
+      : buildFallbackReferenceProfileFromRawMaterial(rawMaterial);
+    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
+    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
+    const primaryClass = classDistribution[0] || null;
+
+    const resolvedValues = {
+      cas_number: referenceProfile?.cas_no || rawMaterial?.cas_number || '',
+      ifra_limit: referenceProfile?.ifra_limit_percent ?? rawMaterial?.ifra_limit ?? null,
+      reference_abc_primary_family: primaryClass?.familyName
+        || referenceProfile?.abc_primary_family
+        || rawMaterial?.reference_abc_primary_family
+        || '',
+      reference_impact: pickPreferredPositiveNumber(
+        referenceProfile?.impact,
+        rawMaterial?.reference_impact
+      ),
+      reference_life_hours: pickPreferredPositiveNumber(
+        referenceProfile?.life_hours,
+        rawMaterial?.reference_life_hours
+      ),
+    };
+
+    const missingGuidance = !referenceProfile;
+    const missingImpact = resolvedValues.reference_impact === null || resolvedValues.reference_impact === undefined || Number(resolvedValues.reference_impact) <= 0;
+    const missingLife = resolvedValues.reference_life_hours === null || resolvedValues.reference_life_hours === undefined || Number(resolvedValues.reference_life_hours) <= 0;
+    const missingClass = !classDistribution.length && !resolvedValues.reference_abc_primary_family;
+    const missingCas = !String(resolvedValues.cas_number || '').trim();
+    const missingIfra = resolvedValues.ifra_limit === null || resolvedValues.ifra_limit === undefined;
+
+    return {
+      hasWarning: missingGuidance || missingImpact || missingLife || missingClass || missingCas || missingIfra,
+      missingGuidance,
+      missingImpact,
+      missingLife,
+      missingClass,
+      missingCas,
+      missingIfra,
+      rawMaterial,
+    };
+  };
+
+  const getItemGuidanceDetails = (item) => {
+    const guidanceStatus = getItemGuidanceStatus(item);
+    const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
+    const fallbackReferenceProfile = linkedReferenceProfile
+      ? null
+      : buildFallbackReferenceProfileFromRawMaterial(guidanceStatus.rawMaterial);
+    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
+    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
+    const primaryClass = classDistribution[0] || null;
+
+    return {
+      ...guidanceStatus,
+      referenceProfile,
+      classDistribution,
+      resolvedValues: {
+        workbook_code: referenceProfile?.reference_code || guidanceStatus.rawMaterial?.workbook_code || '',
+        cas_number: referenceProfile?.cas_no || guidanceStatus.rawMaterial?.cas_number || '',
+        ifra_limit: referenceProfile?.ifra_limit_percent ?? guidanceStatus.rawMaterial?.ifra_limit ?? null,
+        reference_abc_primary_family: primaryClass?.familyName
+          || referenceProfile?.abc_primary_family
+          || guidanceStatus.rawMaterial?.reference_abc_primary_family
+          || '',
+        reference_impact: pickPreferredPositiveNumber(
+          referenceProfile?.impact,
+          guidanceStatus.rawMaterial?.reference_impact
+        ),
+        reference_life_hours: pickPreferredPositiveNumber(
+          referenceProfile?.life_hours,
+          guidanceStatus.rawMaterial?.reference_life_hours
+        ),
+        reference_use_level_typical_percent: referenceProfile?.use_level_typical_percent ?? guidanceStatus.rawMaterial?.reference_use_level_typical_percent ?? null,
+        reference_use_level_max_percent: referenceProfile?.use_level_max_percent ?? guidanceStatus.rawMaterial?.reference_use_level_max_percent ?? null,
+      },
+    };
+  };
+
+  const handleOpenGuidanceEditor = (item) => {
+    const guidanceDetails = getItemGuidanceDetails(item);
+    if (!guidanceDetails.rawMaterial) {
+      return;
+    }
+
+    setGuidanceEditorMaterial({
+      ...guidanceDetails.rawMaterial,
+      guidance_resolved_values: guidanceDetails.resolvedValues,
+    });
+    setGuidanceEditorOpen(true);
+  };
+
+  const handleGuidanceSaved = (updatedMaterial) => {
+    setRawMaterials((current) => current.map((material) => (
+      material.id === updatedMaterial.id ? updatedMaterial : material
+    )));
+    setGuidanceEditorMaterial(updatedMaterial);
+  };
 
   useEffect(() => {
     let active = true;
@@ -384,7 +563,9 @@ const CreateFormulaPage = () => {
     <div className={mobile ? 'space-y-2' : 'space-y-1.5'}>
       {filteredLibraryMaterials.map((material) => {
         const currentRowItemId = formulaItems[activeRowIndex]?.item_id;
-        const alreadyAdded = selectedRawMaterialIdsSet.has(material.id) && currentRowItemId !== material.id;
+        const selectedInFormula = selectedRawMaterialIdsSet.has(material.id);
+        const selectedInActiveRow = currentRowItemId === material.id;
+        const disableLibraryPick = selectedInFormula;
 
         return (
           <button
@@ -392,9 +573,9 @@ const CreateFormulaPage = () => {
             type="button"
             onClick={() => (mobile ? handleMobileLibraryPick(material.id) : handleLibrarySelect(material.id))}
             onDoubleClick={mobile ? undefined : () => handleLibraryDoubleClick(material.id)}
-            disabled={alreadyAdded}
+            disabled={disableLibraryPick}
             className={`flex w-full min-w-0 flex-col items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
-              alreadyAdded
+              disableLibraryPick
                 ? 'cursor-not-allowed border-[#e7dfcf] bg-[#f3eee4] text-muted-foreground opacity-70'
                 : 'border-transparent bg-white hover:border-[#decda6] hover:bg-[#fff9ec]'
             }`}
@@ -407,11 +588,17 @@ const CreateFormulaPage = () => {
               </div>
             </div>
             <div className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-              alreadyAdded
+              disableLibraryPick
                 ? 'bg-[#e4dccb] text-[#8b7d63]'
                 : 'bg-[#f6efe0] text-[#7d6942]'
             }`}>
-              {alreadyAdded ? 'Added' : mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`}
+              {selectedInActiveRow
+                ? 'Selected'
+                : selectedInFormula
+                  ? 'Added'
+                  : mobile
+                    ? 'Tap to add'
+                    : `Row ${activeRowIndex + 1}`}
             </div>
           </button>
         );
@@ -617,6 +804,8 @@ const CreateFormulaPage = () => {
                             onDilutionChange={updateDilutionConfig}
                             onRemove={removeFormulaItem}
                             validationErrors={validationErrors}
+                            getGuidanceStatus={getItemGuidanceStatus}
+                            onOpenGuidanceEditor={handleOpenGuidanceEditor}
                           />
                         </div>
                       </section>
@@ -779,6 +968,8 @@ const CreateFormulaPage = () => {
                     onDilutionChange={updateDilutionConfig}
                     onRemove={removeFormulaItem}
                     validationErrors={validationErrors}
+                    getGuidanceStatus={getItemGuidanceStatus}
+                    onOpenGuidanceEditor={handleOpenGuidanceEditor}
                   />
                 </div>
               </section>
@@ -795,6 +986,14 @@ const CreateFormulaPage = () => {
             )}
           </>
         )}
+
+        <RawMaterialGuidanceQuickEditDialog
+          open={guidanceEditorOpen}
+          onOpenChange={setGuidanceEditorOpen}
+          material={guidanceEditorMaterial}
+          guidanceStatus={guidanceEditorMaterial ? getItemGuidanceStatus({ item_id: guidanceEditorMaterial.id }) : null}
+          onSaved={handleGuidanceSaved}
+        />
       </div>
     </AuthenticatedLayout>
   );

@@ -20,6 +20,8 @@ import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesServic
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { getRawMaterialCategoryMeta } from '@/utils/rawMaterialCategoryMeta.js';
 
+const normalizeCategoryValue = (value) => String(value || '').trim().toLowerCase();
+
 const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
   const { addMaterial, loading } = useRawMaterials();
   const [solvents, setSolvents] = useState([]);
@@ -197,11 +199,12 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
 
   const handleChange = (field, value) => {
     setFormData(prev => {
-      const next = { ...prev, [field]: value };
+      const normalizedValue = field === 'category' ? normalizeCategoryValue(value) : value;
+      const next = { ...prev, [field]: normalizedValue };
       if (field === 'category') {
-        const meta = getRawMaterialCategoryMeta(value, prev.type, prev.scent_family);
+        const meta = getRawMaterialCategoryMeta(normalizedValue, prev.type, prev.scent_family);
         const previousCategoryCode = findPerfumersWorldCategoryByValue(prev.category)?.code || '';
-        const nextCategoryCode = findPerfumersWorldCategoryByValue(value)?.code || '';
+        const nextCategoryCode = findPerfumersWorldCategoryByValue(normalizedValue)?.code || '';
         next.type = meta.type;
         next.scent_family = meta.scentFamily;
         if (nextCategoryCode && (!prev.workbook_code || prev.workbook_code === previousCategoryCode)) {
@@ -214,7 +217,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       return next;
     });
     if (touched[field]) {
-      const error = validateField(field, value);
+      const error = validateField(field, field === 'category' ? normalizeCategoryValue(value) : value);
       setErrors(prev => ({ ...prev, [field]: error }));
     }
   };
@@ -545,6 +548,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   onChange={(e) => handleChange('reference_use_level_typical_percent', e.target.value)}
                   onBlur={() => handleBlur('reference_use_level_typical_percent')}
                   error={errors.reference_use_level_typical_percent}
+                  helperText="Kisaran pakai yang biasanya nyaman dipakai di formula."
                   placeholder="0.0"
                   min="0"
                   max="100"
@@ -557,6 +561,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   onChange={(e) => handleChange('reference_use_level_max_percent', e.target.value)}
                   onBlur={() => handleBlur('reference_use_level_max_percent')}
                   error={errors.reference_use_level_max_percent}
+                  helperText="Batas saran praktis sebelum bahan terasa terlalu dominan."
                   placeholder="0.0"
                   min="0"
                   max="100"

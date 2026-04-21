@@ -2,12 +2,33 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile.jsx';
 
-const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'No items found', mobileCard }) => {
+const DataTable = ({
+  columns,
+  data,
+  onEdit,
+  onDelete,
+  actions,
+  emptyMessage = 'No items found',
+  mobileCard,
+  selectable = false,
+  selectedRowIds = [],
+  onToggleRow,
+  onToggleAll,
+  getRowId = (row) => row.id,
+}) => {
   const isMobile = useIsMobile();
   const hasActions = Boolean(onEdit || onDelete || actions);
+  const selectedIdSet = new Set(selectedRowIds);
+  const selectableRows = data
+    .map((row) => getRowId(row))
+    .filter(Boolean);
+  const selectedOnPageCount = selectableRows.filter((id) => selectedIdSet.has(id)).length;
+  const allSelected = selectableRows.length > 0 && selectedOnPageCount === selectableRows.length;
+  const partiallySelected = selectedOnPageCount > 0 && selectedOnPageCount < selectableRows.length;
 
   if (isMobile && mobileCard) {
     return (
@@ -32,6 +53,15 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
       <Table>
         <TableHeader>
           <TableRow>
+            {selectable && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={allSelected ? true : (partiallySelected ? 'indeterminate' : false)}
+                  onCheckedChange={() => onToggleAll?.(data)}
+                  aria-label="Select all rows"
+                />
+              </TableHead>
+            )}
             {columns.map((column) => (
               <TableHead
                 key={column.key}
@@ -55,6 +85,15 @@ const DataTable = ({ columns, data, onEdit, onDelete, actions, emptyMessage = 'N
           ) : (
             data.map((row, rowIndex) => (
               <TableRow key={row.id || rowIndex}>
+                {selectable && (
+                  <TableCell className="w-12">
+                    <Checkbox
+                      checked={selectedIdSet.has(getRowId(row))}
+                      onCheckedChange={() => onToggleRow?.(row)}
+                      aria-label={`Select ${row.name || row.code || 'item'}`}
+                    />
+                  </TableCell>
+                )}
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}

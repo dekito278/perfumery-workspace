@@ -17,7 +17,7 @@ import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
-import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
 
@@ -71,7 +71,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     setLoadingData(true);
     try {
       const [materialsData, itemsData] = await Promise.all([
-        getRawMaterials(),
+        getRawMaterialOptions(),
         getFormulaItems(formula.id)
       ]);
 

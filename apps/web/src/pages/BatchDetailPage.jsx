@@ -32,7 +32,8 @@ import { formatQuantity, formatPercentage, formatStatus, formatDate } from '@/ut
 import { formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
-import { getRawMaterialById, getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import { fetchRawMaterialsMap } from '@/services/supabaseDataHelpers.js';
 
 const BatchDetailPage = () => {
   const { id } = useParams();
@@ -69,19 +70,22 @@ const BatchDetailPage = () => {
       const formulaData = await getFormulaById(batchData.formula_id);
       setFormula(formulaData);
 
-      let solventData = null;
-      if (batchData.solvent_id) {
-        solventData = await getRawMaterialById(batchData.solvent_id);
-        setSolvent(solventData);
-      } else {
-        setSolvent(null);
-      }
-
       const [itemsData, rawMaterials] = await Promise.all([
         getFormulaItems(batchData.formula_id),
-        getRawMaterials(),
+        getRawMaterialOptions(),
       ]);
-      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
+      const rawMaterialsMap = new Map(rawMaterials.map((material) => [material.id, material]));
+      const missingMaterialIds = [...new Set(
+        [batchData.solvent_id, ...itemsData.flatMap((item) => [item.item_id, item.dilution_solvent_id])]
+          .filter(Boolean)
+          .filter((materialId) => !rawMaterialsMap.has(materialId))
+      )];
+      const missingMaterialsMap = await fetchRawMaterialsMap(missingMaterialIds);
+      const mergedRawMaterialsMap = new Map([...rawMaterialsMap, ...missingMaterialsMap]);
+      const solventData = batchData.solvent_id ? (mergedRawMaterialsMap.get(batchData.solvent_id) || null) : null;
+      setSolvent(solventData);
+
+      const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, [...mergedRawMaterialsMap.values()]);
       setFormulaPreviewItems(
         itemsData.map((item) => {
           const sourceItem = resolveFormulaItemReference(item, referenceMaps);

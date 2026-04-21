@@ -20,6 +20,40 @@ export const useRawMaterials = () => {
     }
   }, []);
 
+  const fetchMaterialsPage = useCallback(async (params) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await rawMaterialsService.getRawMaterialsPage(params);
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchMaterialsSummary = useCallback(async () => {
+    setError(null);
+    try {
+      return await rawMaterialsService.getRawMaterialsSummary();
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, []);
+
+  const fetchMaterialsReferenceSummary = useCallback(async () => {
+    setError(null);
+    try {
+      return await rawMaterialsService.getRawMaterialsReferenceSummary();
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, []);
+
   const addMaterial = useCallback(async (data) => {
     setLoading(true);
     setError(null);
@@ -65,6 +99,9 @@ export const useRawMaterials = () => {
     loading,
     error,
     fetchMaterials,
+    fetchMaterialsPage,
+    fetchMaterialsSummary,
+    fetchMaterialsReferenceSummary,
     addMaterial,
     updateMaterial,
     deleteMaterial

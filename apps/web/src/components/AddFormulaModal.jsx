@@ -15,7 +15,7 @@ import { calculatePercentages, calculateTotalGrams, validateFormulaItems } from 
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
-import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
 
@@ -70,7 +70,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const materialsData = await getRawMaterials();
+      const materialsData = await getRawMaterialOptions();
       setRawMaterials(materialsData);
     } catch (error) {
       toast.error('Failed to load raw materials');

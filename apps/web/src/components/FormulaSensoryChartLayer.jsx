@@ -60,7 +60,7 @@ const FormulaSensoryChartLayer = ({
     referenceLinksMap,
   }), [items, rawMaterialsById, referenceLinksMap]);
 
-  if (!charts.simulation.linkedItemCount) {
+  if (!charts.simulation.guidanceBackedCount) {
     return null;
   }
 

@@ -163,6 +163,8 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
           name,
           abc_code,
           abc_primary_family,
+          impact,
+          life_hours,
           cas_no,
           ifra_limit_percent,
           use_level_max_percent
@@ -177,6 +179,14 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
       for (const profile of referenceProfiles || []) {
         referenceProfilesById.set(profile.id, {
           ...profile,
+          impact:
+            profile.impact === null || profile.impact === undefined
+              ? null
+              : Number(profile.impact),
+          life_hours:
+            profile.life_hours === null || profile.life_hours === undefined
+              ? null
+              : Number(profile.life_hours),
           ifra_limit_percent:
             profile.ifra_limit_percent === null || profile.ifra_limit_percent === undefined
               ? null
@@ -205,6 +215,109 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
       },
     ])
   );
+};
+
+const formatPostgrestInList = (values) => (
+  `(${values.map((value) => `"${String(value).replace(/"/g, '\\"')}"`).join(',')})`
+);
+
+export const getPrimaryReferenceRawMaterialIds = async ({
+  searchTerm = '',
+  referenceFilter = 'all',
+} = {}) => {
+  const normalizedSearch = String(searchTerm || '').trim();
+  const normalizedReferenceFilter = String(referenceFilter || 'all');
+  const matchedIds = new Set();
+
+  let linksQuery = supabase
+    .from('raw_material_reference_links')
+    .select('raw_material_id, reference_profile_id')
+    .eq('is_primary', true);
+
+  if (normalizedReferenceFilter === 'matched') {
+    // keep base primary links
+  }
+
+  const { data: links, error: linksError } = await linksQuery;
+
+  if (linksError) {
+    console.error('Error fetching primary reference raw material ids:', linksError);
+    throw new Error(linksError.message || 'Failed to fetch reference ids');
+  }
+
+  for (const row of links || []) {
+    if (row.raw_material_id) {
+      matchedIds.add(row.raw_material_id);
+    }
+  }
+
+  let filteredIds = new Set(matchedIds);
+  const referenceProfileIds = [...new Set((links || []).map((row) => row.reference_profile_id).filter(Boolean))];
+
+  if (normalizedSearch || ['ifra_limited', 'has_guidance'].includes(normalizedReferenceFilter)) {
+    const matchingProfileIds = new Set();
+    const chunkedProfileIds = chunkValues(referenceProfileIds);
+
+    for (const idChunk of chunkedProfileIds) {
+      let profileQuery = supabase
+        .from('material_reference_profiles')
+        .select('id, ifra_limit_percent, use_level_max_percent')
+        .in('id', idChunk);
+
+      if (normalizedSearch) {
+        const escapedQuery = normalizedSearch.replace(/[%_,]/g, ' ');
+        profileQuery = profileQuery.or([
+          `reference_code.ilike.%${escapedQuery}%`,
+          `name.ilike.%${escapedQuery}%`,
+          `abc_code.ilike.%${escapedQuery}%`,
+          `abc_primary_family.ilike.%${escapedQuery}%`,
+          `cas_no.ilike.%${escapedQuery}%`,
+        ].join(','));
+      } else if (normalizedReferenceFilter === 'ifra_limited') {
+        profileQuery = profileQuery.not('ifra_limit_percent', 'is', null);
+      } else if (normalizedReferenceFilter === 'has_guidance') {
+        profileQuery = profileQuery.or('ifra_limit_percent.not.is.null,use_level_max_percent.not.is.null');
+      }
+
+      const { data: profiles, error: profilesError } = await profileQuery;
+
+      if (profilesError) {
+        console.error('Error fetching filtered reference profile ids:', profilesError);
+        throw new Error(profilesError.message || 'Failed to fetch filtered reference profiles');
+      }
+
+      for (const profile of profiles || []) {
+        matchingProfileIds.add(profile.id);
+      }
+    }
+
+    if (normalizedSearch || ['ifra_limited', 'has_guidance'].includes(normalizedReferenceFilter)) {
+      filteredIds = new Set(
+        (links || [])
+          .filter((row) => matchingProfileIds.has(row.reference_profile_id))
+          .map((row) => row.raw_material_id)
+          .filter(Boolean)
+      );
+    }
+  }
+
+  if (normalizedReferenceFilter === 'all') {
+    return {
+      matchedIds: [...matchedIds],
+      filteredIds: normalizedSearch ? [...filteredIds] : [],
+      hasFilteredIds: normalizedSearch && filteredIds.size > 0,
+      hasAnyMatchedIds: matchedIds.size > 0,
+      formatPostgrestInList,
+    };
+  }
+
+  return {
+    matchedIds: [...matchedIds],
+    filteredIds: [...filteredIds],
+    hasFilteredIds: filteredIds.size > 0,
+    hasAnyMatchedIds: matchedIds.size > 0,
+    formatPostgrestInList,
+  };
 };
 
 export const getReferenceLinksByRawMaterialIds = async (rawMaterialIds) => {

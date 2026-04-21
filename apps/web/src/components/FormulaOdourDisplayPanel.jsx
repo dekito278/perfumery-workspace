@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, XAxis, YAxis } from 'recharts';
-import { BarChart3, ChevronDown, Pause, PieChartIcon, Play } from 'lucide-react';
+import { AlertTriangle, BarChart3, ChevronDown, Pause, PieChartIcon, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx';
@@ -271,7 +271,7 @@ const FormulaOdourDisplayPanel = ({
       ? entry
       : closest;
   }, null);
-  const hasLinkedData = charts.simulation.linkedItemCount > 0;
+  const hasGuidanceChartData = charts.simulation.guidanceBackedCount > 0;
   const leadFacetLabel = 'Lead class';
   const elapsedTotalLoad = odourData.reduce((sum, entry) => sum + Number(entry.weight || 0), 0);
   const elapsedStageShares = elapsedDecayPoint && elapsedDecayPoint.total > 0
@@ -286,6 +286,26 @@ const FormulaOdourDisplayPanel = ({
     : elapsedStageShares.base >= elapsedStageShares.middle
       ? 'Base'
       : 'Middle';
+  const workbookWarningSummary = useMemo(() => {
+    const eligibleRows = charts.simulation.rows || [];
+    const missingGuidanceRows = eligibleRows.filter((row) => !row.reference_profile);
+    const missingImpactRows = eligibleRows.filter((row) => row.reference_profile && row.impact === null);
+    const missingLifeRows = eligibleRows.filter((row) => row.reference_profile && row.lifeHours === null);
+    const missingClassRows = eligibleRows.filter((row) => row.reference_profile && (!row.classDistribution || row.classDistribution.length === 0));
+
+    return {
+      missingGuidanceRows,
+      missingImpactRows,
+      missingLifeRows,
+      missingClassRows,
+      hasWarnings:
+        missingGuidanceRows.length > 0
+        || missingImpactRows.length > 0
+        || missingLifeRows.length > 0
+        || missingClassRows.length > 0,
+    };
+  }, [charts.simulation.rows]);
+
   return (
     <aside className={`space-y-4 ${className}`.trim()}>
       <div className="overflow-hidden rounded-[28px] border border-white/80 bg-white/90 shadow-sm">
@@ -339,9 +359,20 @@ const FormulaOdourDisplayPanel = ({
                 className="border-slate-200 bg-slate-50 text-slate-700"
               />
             </div>
+
+            {workbookWarningSummary.hasWarnings ? (
+              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-950">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+                  <span>
+                    Beberapa material masih kurang data workbook. Impact, life, pie, dan bar bisa belum akurat.
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          {hasLinkedData ? (
+          {hasGuidanceChartData ? (
             <div className="mt-5 rounded-[24px] border border-[#dbd2bc] bg-[radial-gradient(circle_at_top,#fffdf7_0%,#fbf7ec_48%,#f2ebda_100%)] p-4">
               <div className="space-y-4">
                 <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 p-3">

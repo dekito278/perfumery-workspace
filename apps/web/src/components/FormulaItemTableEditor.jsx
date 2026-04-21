@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +18,8 @@ const FormulaItemTableEditor = ({
   onDilutionChange,
   onRemove,
   validationErrors,
+  getGuidanceStatus,
+  onOpenGuidanceEditor,
 }) => {
   const solventOptions = rawMaterials.filter((material) => material.type === 'solvent');
   const ingredientOptions = rawMaterials.map((material) => ({
@@ -27,7 +29,7 @@ const FormulaItemTableEditor = ({
   const isFilledRow = (item) => Boolean(item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[#d7cfbf] bg-white shadow-sm">
+    <div className="overflow-visible rounded-[18px] border border-[#d7cfbf] bg-white shadow-sm">
       <div className="shrink-0 border-b border-[#ddd3bf] bg-[#f3ecdd] px-4 py-2.5 max-md:hidden">
         <div className="grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
           <span>No.</span>
@@ -39,17 +41,20 @@ const FormulaItemTableEditor = ({
         </div>
       </div>
 
-      <div className="overflow-hidden">
+      <div className="overflow-visible">
         <div className="space-y-3 p-3 md:hidden">
           {items.map((item, index) => {
             const rowNumber = index + 1;
             const composerRow = index === 0 && !isFilledRow(item);
             const disableRemove = items.length === 1 && composerRow;
+            const guidanceStatus = getGuidanceStatus?.(item);
+            const showGuidanceEditor = Boolean(item.item_id);
+            const hasGuidanceWarning = Boolean(guidanceStatus?.hasWarning);
 
             return (
               <div
-                key={index}
-                className={`overflow-hidden rounded-2xl border px-3 py-3 shadow-sm transition-colors ${
+                key={item.row_key || `${item.item_id || 'empty'}-${index}`}
+                className={`overflow-visible rounded-2xl border px-3 py-3 shadow-sm transition-colors ${
                   composerRow
                     ? 'border-[#dfbf7d] bg-[linear-gradient(180deg,#fff8ea_0%,#fffdf7_100%)]'
                     : index === activeRowIndex
@@ -90,8 +95,30 @@ const FormulaItemTableEditor = ({
                     </div>
                   ) : null}
                   <div className="min-w-0">
-                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-                      Raw material
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+                        Raw material
+                      </div>
+                      {showGuidanceEditor ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onOpenGuidanceEditor?.(item)}
+                          className={`h-7 rounded-full px-2 text-[10px] ${
+                            hasGuidanceWarning
+                              ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                          }`}
+                        >
+                          {hasGuidanceWarning ? (
+                            <AlertTriangle className="mr-1 h-3.5 w-3.5 text-amber-700" />
+                          ) : (
+                            <CheckCircle2 className="mr-1 h-3.5 w-3.5 text-emerald-700" />
+                          )}
+                          {hasGuidanceWarning ? 'Fill workbook data' : 'Edit workbook data'}
+                        </Button>
+                      ) : null}
                     </div>
                     <IngredientSelect
                       value={item.item_id}
@@ -101,7 +128,6 @@ const FormulaItemTableEditor = ({
                       autoFocus={focusRowIndex === index}
                       onAutoFocusHandled={onAutoFocusHandled}
                       compact
-                      showSuggestions={false}
                       onActivate={() => onActivateRow?.(index)}
                     />
                     {validationErrors[`item_${index}`] ? (
@@ -188,10 +214,13 @@ const FormulaItemTableEditor = ({
             const rowNumber = index + 1;
             const composerRow = index === 0 && !isFilledRow(item);
             const disableRemove = items.length === 1 && composerRow;
+            const guidanceStatus = getGuidanceStatus?.(item);
+            const showGuidanceEditor = Boolean(item.item_id);
+            const hasGuidanceWarning = Boolean(guidanceStatus?.hasWarning);
 
             return (
               <div
-                key={index}
+                key={item.row_key || `${item.item_id || 'empty'}-${index}`}
                 className={`grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] items-center gap-2 border-b border-[#ece4d3] px-4 py-2 transition-colors ${
                   composerRow
                     ? 'bg-[linear-gradient(90deg,#fff7e6_0%,#fffdf8_100%)]'
@@ -207,17 +236,41 @@ const FormulaItemTableEditor = ({
                 </div>
 
                 <div className="min-w-0">
-                  <IngredientSelect
-                    value={item.item_id}
-                    onChange={(ingredientId) => onItemChange(index, ingredientId)}
-                    placeholder="Type material name"
-                    ingredients={ingredientOptions}
-                    autoFocus={focusRowIndex === index}
-                    onAutoFocusHandled={onAutoFocusHandled}
-                    compact
-                    showSuggestions={false}
-                    onActivate={() => onActivateRow?.(index)}
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <IngredientSelect
+                        value={item.item_id}
+                        onChange={(ingredientId) => onItemChange(index, ingredientId)}
+                        placeholder="Type material name"
+                        ingredients={ingredientOptions}
+                        autoFocus={focusRowIndex === index}
+                        onAutoFocusHandled={onAutoFocusHandled}
+                        compact
+                        onActivate={() => onActivateRow?.(index)}
+                      />
+                    </div>
+                    {showGuidanceEditor ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onOpenGuidanceEditor?.(item)}
+                        className={`h-8 w-8 shrink-0 rounded-md ${
+                          hasGuidanceWarning
+                            ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                            : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                        }`}
+                        title={hasGuidanceWarning ? 'Complete workbook guidance' : 'Edit workbook guidance'}
+                        aria-label={`${hasGuidanceWarning ? 'Complete' : 'Edit'} workbook guidance for ${item.item_id}`}
+                      >
+                        {hasGuidanceWarning ? (
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                        )}
+                      </Button>
+                    ) : null}
+                  </div>
                   {validationErrors[`item_${index}`] ? (
                     <div className="mt-1 truncate text-[10px] text-destructive">{validationErrors[`item_${index}`]}</div>
                   ) : null}

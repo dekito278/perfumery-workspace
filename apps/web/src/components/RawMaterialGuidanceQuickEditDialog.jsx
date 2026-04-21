@@ -1,0 +1,605 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertTriangle, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useRawMaterials } from '@/hooks/useRawMaterials.js';
+import { WORKBOOK_ABC_CLASSIFICATIONS } from '@/utils/workbookAbcClassification.js';
+import { importPerfumersWorldByUrl, importScentreeByUrl } from '@/services/scentreeImportService.js';
+
+const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
+  value: entry.familyName,
+  label: `${entry.letter} - ${entry.familyName}`,
+}));
+
+const parseOptionalNumber = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
+
+const hasMeaningfulText = (value) => Boolean(String(value || '').trim());
+
+const hasMeaningfulNumber = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return false;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0;
+};
+
+const shouldOverrideNumericGuidance = ({
+  currentValue,
+  nextValue,
+  applyMissingOnly,
+  nextSourceKind,
+}) => {
+  if (nextValue === null || nextValue === undefined || nextValue === '') {
+    return false;
+  }
+
+  if (!applyMissingOnly) {
+    return true;
+  }
+
+  if (!hasMeaningfulNumber(currentValue)) {
+    return true;
+  }
+
+  return nextSourceKind === 'explicit';
+};
+
+const isSyntheticWorkbookCode = (value) => /^RAW-(?:MANUAL|[A-Z0-9]+)/i.test(String(value || '').trim());
+
+const normalizeWorkbookCodeForForm = (preferredValue, fallbackValue = '') => {
+  if (preferredValue && !isSyntheticWorkbookCode(preferredValue)) {
+    return String(preferredValue).trim();
+  }
+
+  if (fallbackValue && !isSyntheticWorkbookCode(fallbackValue)) {
+    return String(fallbackValue).trim();
+  }
+
+  return '';
+};
+
+const displayGuidanceNumber = (value, suffix = '') => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return 'Not set';
+  }
+
+  return `${numericValue}${suffix}`;
+};
+
+const RawMaterialGuidanceQuickEditDialog = ({
+  open,
+  onOpenChange,
+  material,
+  guidanceStatus,
+  onSaved,
+}) => {
+  const { updateMaterial, loading } = useRawMaterials();
+  const [formData, setFormData] = useState({
+    workbook_code: '',
+    cas_number: '',
+    ifra_limit: '',
+    reference_abc_primary_family: '',
+    reference_impact: '',
+    reference_life_hours: '',
+    reference_use_level_typical_percent: '',
+    reference_use_level_max_percent: '',
+  });
+  const [scentreeUrl, setScentreeUrl] = useState('');
+  const [perfumersWorldUrl, setPerfumersWorldUrl] = useState('');
+  const [inferenceLines, setInferenceLines] = useState([]);
+  const [suggestedDescription, setSuggestedDescription] = useState('');
+  const [importingUrl, setImportingUrl] = useState(false);
+
+  useEffect(() => {
+    if (!material) {
+      return;
+    }
+
+    const resolvedValues = material.guidance_resolved_values || {};
+
+    setFormData({
+      workbook_code: normalizeWorkbookCodeForForm(material.workbook_code, resolvedValues.workbook_code),
+      cas_number: resolvedValues.cas_number || material.cas_number || '',
+      ifra_limit: resolvedValues.ifra_limit?.toString() || material.ifra_limit?.toString() || '',
+      reference_abc_primary_family: resolvedValues.reference_abc_primary_family || material.reference_abc_primary_family || '',
+      reference_impact: resolvedValues.reference_impact?.toString() || material.reference_impact?.toString() || '',
+      reference_life_hours: resolvedValues.reference_life_hours?.toString() || material.reference_life_hours?.toString() || '',
+      reference_use_level_typical_percent: resolvedValues.reference_use_level_typical_percent?.toString() || material.reference_use_level_typical_percent?.toString() || '',
+      reference_use_level_max_percent: resolvedValues.reference_use_level_max_percent?.toString() || material.reference_use_level_max_percent?.toString() || '',
+    });
+    setScentreeUrl('');
+    setPerfumersWorldUrl('');
+    setInferenceLines([]);
+    setSuggestedDescription('');
+  }, [material]);
+
+  const warningLines = useMemo(() => {
+    if (!guidanceStatus) {
+      return [];
+    }
+
+    return [
+      guidanceStatus.missingGuidance ? 'Belum ada workbook/manual guidance.' : null,
+      guidanceStatus.missingImpact ? 'Nilai impact belum ada.' : null,
+      guidanceStatus.missingLife ? 'Nilai life belum ada.' : null,
+      guidanceStatus.missingClass ? 'Family/class workbook untuk pie-bar display belum ada.' : null,
+      guidanceStatus.missingCas ? 'CAS number belum ada.' : null,
+      guidanceStatus.missingIfra ? 'IFRA limit belum ada.' : null,
+    ].filter(Boolean);
+  }, [guidanceStatus]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!material?.id) {
+      return;
+    }
+
+    try {
+      const nextPayload = {
+        workbook_code: formData.workbook_code || null,
+        cas_number: formData.cas_number || null,
+        ifra_limit: parseOptionalNumber(formData.ifra_limit),
+        reference_abc_primary_family: formData.reference_abc_primary_family || null,
+        reference_impact: parseOptionalNumber(formData.reference_impact),
+        reference_life_hours: parseOptionalNumber(formData.reference_life_hours),
+        reference_use_level_typical_percent: parseOptionalNumber(formData.reference_use_level_typical_percent),
+        reference_use_level_max_percent: parseOptionalNumber(formData.reference_use_level_max_percent),
+        description: suggestedDescription || material.description,
+      };
+
+      const updatedMaterial = await updateMaterial(material.id, nextPayload);
+
+      toast.success(`Workbook guidance for ${material.name} updated`);
+      onOpenChange(false);
+      onSaved?.(updatedMaterial);
+    } catch (error) {
+      const duplicateWorkbookCode = String(error.message || '').includes('Workbook code');
+      if (duplicateWorkbookCode) {
+        try {
+          const updatedMaterial = await updateMaterial(material.id, {
+            workbook_code: material.workbook_code || null,
+            cas_number: formData.cas_number || null,
+            ifra_limit: parseOptionalNumber(formData.ifra_limit),
+            reference_abc_primary_family: formData.reference_abc_primary_family || null,
+            reference_impact: parseOptionalNumber(formData.reference_impact),
+            reference_life_hours: parseOptionalNumber(formData.reference_life_hours),
+            reference_use_level_typical_percent: parseOptionalNumber(formData.reference_use_level_typical_percent),
+            reference_use_level_max_percent: parseOptionalNumber(formData.reference_use_level_max_percent),
+            description: suggestedDescription || material.description,
+          });
+
+          setFormData((current) => ({
+            ...current,
+            workbook_code: material.workbook_code || '',
+          }));
+          toast.success(`Workbook guidance for ${material.name} updated tanpa workbook code yang bentrok`);
+          onOpenChange(false);
+          onSaved?.(updatedMaterial);
+          return;
+        } catch (retryError) {
+          toast.error(retryError.message || error.message || 'Failed to update workbook guidance');
+          return;
+        }
+      }
+
+      toast.error(error.message || 'Failed to update workbook guidance');
+    }
+  };
+
+  const handleImportScentreeUrl = async () => {
+    if (!scentreeUrl.trim()) {
+      toast.error('Masukkan URL ScenTree dulu');
+      return;
+    }
+
+    setImportingUrl(true);
+    try {
+      const imported = await importScentreeByUrl(scentreeUrl.trim());
+
+      setFormData((current) => ({
+        workbook_code: imported.workbook_code || current.workbook_code,
+        cas_number: imported.cas_number || current.cas_number,
+        ifra_limit: imported.ifra_limit !== null && imported.ifra_limit !== undefined ? String(imported.ifra_limit) : current.ifra_limit,
+        reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
+        reference_impact: shouldOverrideNumericGuidance({
+          currentValue: current.reference_impact,
+          nextValue: imported.reference_impact,
+          applyMissingOnly: false,
+          nextSourceKind: imported.reference_impact_source,
+        })
+          ? String(imported.reference_impact)
+          : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({
+          currentValue: current.reference_life_hours,
+          nextValue: imported.reference_life_hours,
+          applyMissingOnly: false,
+          nextSourceKind: imported.reference_life_hours_source,
+        })
+          ? String(imported.reference_life_hours)
+          : current.reference_life_hours,
+        reference_use_level_typical_percent: imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined
+          ? String(imported.reference_use_level_typical_percent)
+          : current.reference_use_level_typical_percent,
+        reference_use_level_max_percent: imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined
+          ? String(imported.reference_use_level_max_percent)
+          : current.reference_use_level_max_percent,
+      }));
+
+      setSuggestedDescription(imported.description || material?.description || '');
+      setInferenceLines([
+        imported.classification_path?.length ? `ScenTree path: ${imported.classification_path.join(' > ')}` : 'ScenTree path tidak tersedia.',
+        imported.volatility ? `Volatility: ${imported.volatility}` : 'Volatility tidak tersedia di ScenTree.',
+        imported.detection_threshold ? `Detection threshold: ${imported.detection_threshold}` : 'Detection threshold tidak tersedia di ScenTree.',
+        imported.uses_in_perfumery ? `Uses in perfumery: ${imported.uses_in_perfumery}` : 'Uses in perfumery tidak tersedia di ScenTree.',
+        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA note tidak tersedia di ScenTree.',
+      ]);
+      toast.success('ScenTree URL imported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to import ScenTree URL');
+    } finally {
+      setImportingUrl(false);
+    }
+  };
+
+  const handleImportPerfumersWorldUrl = async () => {
+    if (!perfumersWorldUrl.trim()) {
+      toast.error('Masukkan URL PerfumersWorld dulu');
+      return;
+    }
+
+    setImportingUrl(true);
+    try {
+      const imported = await importPerfumersWorldByUrl(perfumersWorldUrl.trim());
+
+      setFormData((current) => ({
+        workbook_code: imported.workbook_code || current.workbook_code,
+        cas_number: imported.cas_number || current.cas_number,
+        ifra_limit: current.ifra_limit,
+        reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
+        reference_impact: shouldOverrideNumericGuidance({
+          currentValue: current.reference_impact,
+          nextValue: imported.reference_impact,
+          applyMissingOnly: false,
+          nextSourceKind: imported.reference_impact_source,
+        })
+          ? String(imported.reference_impact)
+          : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({
+          currentValue: current.reference_life_hours,
+          nextValue: imported.reference_life_hours,
+          applyMissingOnly: false,
+          nextSourceKind: imported.reference_life_hours_source,
+        })
+          ? String(imported.reference_life_hours)
+          : current.reference_life_hours,
+        reference_use_level_typical_percent: imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined
+          ? String(imported.reference_use_level_typical_percent)
+          : current.reference_use_level_typical_percent,
+        reference_use_level_max_percent: imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined
+          ? String(imported.reference_use_level_max_percent)
+          : current.reference_use_level_max_percent,
+      }));
+
+      setSuggestedDescription(imported.description || material?.description || '');
+      setInferenceLines([
+        imported.workbook_code ? `Workbook code: ${imported.workbook_code}` : 'Workbook code tidak tersedia di PerfumersWorld.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di PerfumersWorld.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di PerfumersWorld.',
+        imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Typical use level: ${imported.reference_use_level_typical_percent}%` : 'Typical use level tidak tersedia di PerfumersWorld.',
+        imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Max use level: ${imported.reference_use_level_max_percent}%` : 'Max use level tidak tersedia di PerfumersWorld.',
+        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA numeric limit tidak tersedia langsung di halaman PerfumersWorld.',
+      ]);
+      toast.success('PerfumersWorld URL imported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to import PerfumersWorld URL');
+    } finally {
+      setImportingUrl(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto rounded-[24px] border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(249,246,239,1)_100%)] p-6">
+        <DialogHeader>
+          <DialogTitle className="text-xl tracking-[-0.02em]">Workbook guidance</DialogTitle>
+          <DialogDescription>
+            Lengkapi data penting untuk {material?.name || 'material ini'} agar impact, life, pie, dan bar display lebih akurat.
+          </DialogDescription>
+        </DialogHeader>
+
+        {material?.guidance_resolved_values ? (
+          <div className="rounded-2xl border border-[#e6deca] bg-white/80 px-4 py-4">
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+              Current values
+            </div>
+            <div className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-7">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">CAS</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {material.guidance_resolved_values.cas_number || 'Not set'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">IFRA</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {displayGuidanceNumber(material.guidance_resolved_values.ifra_limit, ' %')}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Family</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {material.guidance_resolved_values.reference_abc_primary_family || 'No family selected'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Impact</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {displayGuidanceNumber(material.guidance_resolved_values.reference_impact)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Life</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {displayGuidanceNumber(material.guidance_resolved_values.reference_life_hours, ' h')}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Typical</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {displayGuidanceNumber(material.guidance_resolved_values.reference_use_level_typical_percent, ' %')}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max</div>
+                <div className="mt-1 font-medium text-foreground">
+                  {displayGuidanceNumber(material.guidance_resolved_values.reference_use_level_max_percent, ' %')}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {warningLines.length ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <div className="space-y-1">
+                {warningLines.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2 rounded-2xl border border-[#e6deca] bg-white/75 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+              Import URL
+            </div>
+            <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="quick-guidance-perfumersworld-url">PerfumersWorld URL</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tempel link produk PerfumersWorld untuk import workbook code, impact, life, CAS, dan use level.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" onClick={handleImportPerfumersWorldUrl} className="rounded-2xl" disabled={importingUrl}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  {importingUrl ? 'Importing...' : 'Import URL'}
+                </Button>
+              </div>
+              <Input
+                id="quick-guidance-perfumersworld-url"
+                value={perfumersWorldUrl}
+                onChange={(event) => setPerfumersWorldUrl(event.target.value)}
+                placeholder="https://www.perfumersworld.com/view.php?pro_id=..."
+                className="h-11 rounded-2xl"
+              />
+            </div>
+
+            <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="quick-guidance-scentree-url">ScenTree URL</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tempel URL ingredient dari ScenTree untuk import family, CAS, IFRA, volatility, dan descriptor ringkas.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" onClick={handleImportScentreeUrl} className="rounded-2xl" disabled={importingUrl}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  {importingUrl ? 'Importing...' : 'Import URL'}
+                </Button>
+              </div>
+              <Input
+                id="quick-guidance-scentree-url"
+                value={scentreeUrl}
+                onChange={(event) => setScentreeUrl(event.target.value)}
+                placeholder="https://www.scentree.co/en/Adoxal%C2%AE.html"
+                className="h-11 rounded-2xl"
+              />
+            </div>
+
+            {inferenceLines.length ? (
+              <div className="rounded-xl border border-[#e7decb] bg-[#fcfaf4] px-3 py-3 text-xs text-[#5e5239]">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+                  Suggestion notes
+                </div>
+                <div className="space-y-1">
+                  {inferenceLines.map((line) => (
+                    <div key={line}>{line}</div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {suggestedDescription ? (
+              <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3 text-xs text-[#5e5239]">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+                  Workbook summary short
+                </div>
+                <div>{suggestedDescription}</div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded-2xl border border-[#e6deca] bg-white/80 p-4">
+            <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+              Editable result
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-guidance-workbook-code">Workbook code</Label>
+                  <Input
+                    id="quick-guidance-workbook-code"
+                    value={formData.workbook_code}
+                    onChange={(event) => setFormData((current) => ({ ...current, workbook_code: event.target.value }))}
+                    placeholder="Optional workbook code"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quick-guidance-cas">CAS number</Label>
+                  <Input
+                    id="quick-guidance-cas"
+                    value={formData.cas_number}
+                    onChange={(event) => setFormData((current) => ({ ...current, cas_number: event.target.value }))}
+                    placeholder="e.g. 79-09-4"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quick-guidance-family">Workbook family / class</Label>
+                <Select
+                  value={formData.reference_abc_primary_family || '__none__'}
+                  onValueChange={(value) => setFormData((current) => ({
+                    ...current,
+                    reference_abc_primary_family: value === '__none__' ? '' : value,
+                  }))}
+                >
+                  <SelectTrigger id="quick-guidance-family" className="h-11 rounded-2xl">
+                    <SelectValue placeholder="Select workbook family" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No family selected</SelectItem>
+                    {familyOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-guidance-impact">Impact</Label>
+                  <Input
+                    id="quick-guidance-impact"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.reference_impact}
+                    onChange={(event) => setFormData((current) => ({ ...current, reference_impact: event.target.value }))}
+                    placeholder="0.0"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quick-guidance-life">Life (hours)</Label>
+                  <Input
+                    id="quick-guidance-life"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.reference_life_hours}
+                    onChange={(event) => setFormData((current) => ({ ...current, reference_life_hours: event.target.value }))}
+                    placeholder="0.0"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="quick-guidance-typical-use">Typical use level (%)</Label>
+                  <Input
+                    id="quick-guidance-typical-use"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={formData.reference_use_level_typical_percent}
+                    onChange={(event) => setFormData((current) => ({ ...current, reference_use_level_typical_percent: event.target.value }))}
+                    placeholder="0.0"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quick-guidance-max-use">Max use level (%)</Label>
+                  <Input
+                    id="quick-guidance-max-use"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={formData.reference_use_level_max_percent}
+                    onChange={(event) => setFormData((current) => ({ ...current, reference_use_level_max_percent: event.target.value }))}
+                    placeholder="0.0"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quick-guidance-ifra">IFRA limit (%)</Label>
+                <Input
+                  id="quick-guidance-ifra"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={formData.ifra_limit}
+                  onChange={(event) => setFormData((current) => ({ ...current, ifra_limit: event.target.value }))}
+                  placeholder="Optional IFRA limit"
+                  className="h-11 rounded-2xl"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-2xl">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading} className="rounded-2xl">
+              {loading ? 'Saving...' : 'OK'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default RawMaterialGuidanceQuickEditDialog;

@@ -258,17 +258,39 @@ const RawMaterialDetailPage = () => {
               <DetailField label="Name" value={material.name} />
               <DetailField label="Type" value={formatStatus(material.type)} />
               <DetailField label="Category" value={formatStatus(material.category)} />
+              <DetailField label="Vendor" value={formatNullable(material.vendor)} />
+            </DetailFieldGroup>
+            <div className="mt-3">
+              <DetailFieldGroup columns={4}>
+                <DetailField label="Workbook code" value={formatNullable(material.workbook_code)} />
+                <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
+                <DetailField label="Reference family" value={formatNullable(material.reference_abc_primary_family || scentFamily)} />
               <DetailField 
                 label="Unit price" 
                 value={formatPricePerUnit(material.cost_per_unit, material.unit)} 
               />
-            </DetailFieldGroup>
+              </DetailFieldGroup>
+            </div>
             <div className="mt-3">
-              <DetailFieldGroup columns={3}>
-                <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
+              <DetailFieldGroup columns={4}>
                 <DetailField label="IFRA limit" value={material.ifra_limit ? formatPercentage(material.ifra_limit) : 'N/A'} />
+                <DetailField
+                  label="Typical use level"
+                  value={material.reference_use_level_typical_percent !== null && material.reference_use_level_typical_percent !== undefined
+                    ? formatPercentage(material.reference_use_level_typical_percent, 2)
+                    : 'N/A'}
+                />
+                <DetailField
+                  label="Max use level"
+                  value={material.reference_use_level_max_percent !== null && material.reference_use_level_max_percent !== undefined
+                    ? formatPercentage(material.reference_use_level_max_percent, 2)
+                    : 'N/A'}
+                />
                 <DetailField label="Inventory value" value={formatPrice(inventoryValue)} />
               </DetailFieldGroup>
+            </div>
+            <div className="mt-3 text-sm text-muted-foreground">
+              Typical use level adalah kisaran pakai yang umum dipakai saat merancang formula. Max use level adalah batas saran praktis sebelum bahan terasa terlalu dominan, dan tetap perlu dibaca bersama IFRA bila tersedia.
             </div>
           </DetailSection>
 
@@ -349,8 +371,15 @@ const RawMaterialDetailPage = () => {
                 <DetailFieldGroup columns={4}>
                   <DetailField label="Impact" value={referenceProfile.impact !== null ? formatQuantity(referenceProfile.impact) : 'N/A'} />
                   <DetailField label="Life hours" value={referenceProfile.life_hours !== null ? formatQuantity(referenceProfile.life_hours) : 'N/A'} />
+                  <DetailField label="Typical use level" value={referenceProfile.use_level_typical_percent !== null ? formatPercentage(referenceProfile.use_level_typical_percent, 2) : 'N/A'} />
                   <DetailField label="Use level max" value={referenceProfile.use_level_max_percent !== null ? formatPercentage(referenceProfile.use_level_max_percent, 2) : 'N/A'} />
+                </DetailFieldGroup>
+
+                <DetailFieldGroup columns={4}>
                   <DetailField label="IFRA reference limit" value={referenceProfile.ifra_limit_percent !== null ? formatPercentage(referenceProfile.ifra_limit_percent, 2) : 'N/A'} />
+                  <DetailField label="Supplier" value={formatNullable(referenceProfile.supplier)} />
+                  <DetailField label="Catalog unit" value={formatNullable(referenceProfile.catalog_unit)} />
+                  <DetailField label="Catalog price" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : 'N/A'} />
                 </DetailFieldGroup>
 
                 {referenceDescription ? (
@@ -399,10 +428,10 @@ const RawMaterialDetailPage = () => {
                 ) : null}
 
                 <DetailFieldGroup columns={4}>
-                  <DetailField label="Supplier" value={formatNullable(referenceProfile.supplier)} />
-                  <DetailField label="Catalog unit" value={formatNullable(referenceProfile.catalog_unit)} />
-                  <DetailField label="Catalog price" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : 'N/A'} />
                   <DetailField label="Function labels" value={formatNullable(referenceProfile.function_labels)} />
+                  <DetailField label="Reference category" value={formatNullable(referenceProfile.category)} />
+                  <DetailField label="Classification" value={formatNullable(referenceProfile.classification)} />
+                  <DetailField label="Order no." value={formatNullable(referenceProfile.order_no)} />
                 </DetailFieldGroup>
 
                 <DetailFieldGroup columns={4}>

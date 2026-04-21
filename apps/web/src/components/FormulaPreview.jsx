@@ -7,7 +7,7 @@ import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 import { getFormulaItems } from '@/services/formulasSupabaseService.js';
-import { getRawMaterials } from '@/services/rawMaterialsService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 
 const normalizeFormulaItemType = (item, itemDetails) => {
   if (item?.item_type === 'accord') {
@@ -35,7 +35,7 @@ const FormulaPreview = ({ formula }) => {
     setLoading(true);
     try {
       const itemsData = await getFormulaItems(formula.id);
-      const rawMaterials = await getRawMaterials();
+      const rawMaterials = await getRawMaterialOptions();
       const referenceMaps = await buildFormulaItemReferenceMaps(itemsData, rawMaterials);
 
       const enrichedItems = itemsData.map((item) => {

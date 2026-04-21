@@ -29,7 +29,11 @@ export const calculateBatchComposition = async (batch, formulaItems, solvent) =>
   const materialIds = formulaItems
     .filter((item) => item.item_type === 'raw_material' || item.item_type === 'solvent')
     .map((item) => item.item_id);
+  const dilutionSolventIds = formulaItems
+    .map((item) => item.dilution_solvent_id)
+    .filter(Boolean);
   const materialsMap = await fetchRawMaterialsMap(materialIds);
+  const dilutionSolventsMap = await fetchRawMaterialsMap(dilutionSolventIds);
   const accordIds = formulaItems
     .filter((item) => item.item_type === 'accord')
     .map((item) => item.item_id);
@@ -60,7 +64,7 @@ export const calculateBatchComposition = async (batch, formulaItems, solvent) =>
         source,
       });
 
-      const dilutionSolvent = (await fetchRawMaterialsMap([dilutionSolventId])).get(dilutionSolventId);
+      const dilutionSolvent = dilutionSolventsMap.get(dilutionSolventId) || materialsMap.get(dilutionSolventId) || null;
       if (dilutionSolvent) {
         composition.push({
           type: 'dilution_solvent',

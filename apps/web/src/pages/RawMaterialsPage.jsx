@@ -4,7 +4,8 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Package, Eye, AlertTriangle, Layers3, Droplets, Wand2, Banknote, Shapes } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RefreshCw, Home, Plus, Package, Eye, AlertTriangle, CheckCircle2, Layers3, Droplets, Wand2, Banknote, Shapes, FlaskConical, FolderTree, Radar, Link2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -17,24 +18,32 @@ import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import AddRawMaterialModal from '@/components/AddRawMaterialModal.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
+import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCategoriesModal.jsx';
 import { formatQuantity } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
-import { getReferenceMatchStatusMap } from '@/services/materialReferenceService.js';
+import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const hasReferenceValue = (value) => value !== null && value !== undefined;
 
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
-  const { fetchMaterials, deleteMaterial } = useRawMaterials();
+  const { fetchMaterials, fetchMaterialsPage, fetchMaterialsSummary, fetchMaterialsReferenceSummary, deleteMaterial } = useRawMaterials();
   const [materials, setMaterials] = useState([]);
+  const [remapMaterials, setRemapMaterials] = useState([]);
+  const [summaryMaterials, setSummaryMaterials] = useState([]);
   const [referenceStatusMap, setReferenceStatusMap] = useState(new Map());
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [matchedReferenceCount, setMatchedReferenceCount] = useState(0);
+  const [ifraReferenceCount, setIfraReferenceCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -44,27 +53,71 @@ const RawMaterialsPage = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [remapModalOpen, setRemapModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
+  const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 6;
+  const [totalMaterials, setTotalMaterials] = useState(0);
+  const pageSize = 12;
+  const showInitialLoading = loading && materials.length === 0 && totalMaterials === 0;
+  const showRefreshing = loading && !showInitialLoading;
+  const selectedMaterials = useMemo(
+    () => materials.filter((material) => selectedMaterialIds.includes(material.id)),
+    [materials, selectedMaterialIds]
+  );
+  const isBulkDeleting = deletingId === 'bulk';
+
+  const refreshReferenceStatusMap = async (items) => {
+    try {
+      const nextReferenceStatusMap = await ensureReferenceLinksForRawMaterials(items);
+      setReferenceStatusMap(nextReferenceStatusMap);
+    } catch (referenceError) {
+      console.error('Failed to load raw material reference status map:', referenceError);
+      setReferenceStatusMap(new Map());
+    }
+  };
 
   const loadMaterials = async () => {
     setLoading(true);
     try {
-      const data = await fetchMaterials();
-      setMaterials(data);
-      try {
-        const nextReferenceStatusMap = await getReferenceMatchStatusMap(data.map((material) => material.id));
-        setReferenceStatusMap(nextReferenceStatusMap);
-      } catch (referenceError) {
-        console.error('Failed to load raw material reference status map:', referenceError);
-        setReferenceStatusMap(new Map());
-      }
+      const { items, total } = await fetchMaterialsPage({
+        page: currentPage,
+        pageSize,
+        searchTerm,
+        typeFilter,
+        categoryFilter,
+        stockFilter,
+        referenceFilter,
+      });
+      setMaterials(items);
+      setTotalMaterials(total);
+      await refreshReferenceStatusMap(items);
     } catch (error) {
       toast.error('Failed to load materials');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSummary = async () => {
+    setSummaryLoading(true);
+    try {
+      const [data, referenceSummary] = await Promise.all([
+        fetchMaterialsSummary(),
+        fetchMaterialsReferenceSummary(),
+      ]);
+      setSummaryMaterials(data);
+      setMatchedReferenceCount(referenceSummary.matchedReferenceCount || 0);
+      setIfraReferenceCount(referenceSummary.ifraReferenceCount || 0);
+    } catch (error) {
+      console.error('Failed to load raw material summary:', error);
+      setSummaryMaterials([]);
+      setMatchedReferenceCount(0);
+      setIfraReferenceCount(0);
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -79,75 +132,44 @@ const RawMaterialsPage = () => {
   };
 
   useEffect(() => {
-    loadMaterials();
     loadCategories();
+    loadSummary();
   }, []);
 
-  const filteredMaterials = useMemo(() => {
-    return materials.filter(material => {
-      const searchLower = searchTerm.toLowerCase();
-      const family = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
-      const referenceStatus = referenceStatusMap.get(material.id);
-      const referenceProfile = referenceStatus?.reference_profile || null;
-      const hasReferenceGuidance =
-        Boolean(referenceProfile)
-        && (
-          hasReferenceValue(referenceProfile.ifra_limit_percent)
-          || hasReferenceValue(referenceProfile.use_level_max_percent)
-        );
-      const matchesSearch = 
-        material.name.toLowerCase().includes(searchLower) ||
-        (material.category && material.category.toLowerCase().includes(searchLower)) ||
-        (family && family.toLowerCase().includes(searchLower)) ||
-        (material.vendor && material.vendor.toLowerCase().includes(searchLower)) ||
-        (material.cas_number && material.cas_number.toLowerCase().includes(searchLower)) ||
-        (material.workbook_code && material.workbook_code.toLowerCase().includes(searchLower)) ||
-        (referenceProfile?.reference_code && referenceProfile.reference_code.toLowerCase().includes(searchLower)) ||
-        (referenceProfile?.name && referenceProfile.name.toLowerCase().includes(searchLower)) ||
-        (referenceProfile?.abc_code && referenceProfile.abc_code.toLowerCase().includes(searchLower)) ||
-        (referenceProfile?.abc_primary_family && referenceProfile.abc_primary_family.toLowerCase().includes(searchLower)) ||
-        (referenceProfile?.cas_no && referenceProfile.cas_no.toLowerCase().includes(searchLower));
-      
-      const matchesType = typeFilter === 'all' || material.type === typeFilter;
-      const matchesCategory =
-        categoryFilter === 'all' ||
-        String(material.category || '').toLowerCase() === String(categoryFilter || '').toLowerCase();
-      
-      let matchesStock = true;
-      if (stockFilter === 'low') {
-        const threshold = material.low_stock_threshold || material.minimum_stock;
-        matchesStock = material.stock_quantity < threshold;
-      } else if (stockFilter === 'in_stock') {
-        const threshold = material.low_stock_threshold || material.minimum_stock;
-        matchesStock = material.stock_quantity >= threshold;
+  useEffect(() => {
+    const loadRemapMaterials = async () => {
+      if (!remapModalOpen) {
+        return;
       }
 
-      const matchesReference =
-        referenceFilter === 'all'
-        || (referenceFilter === 'matched' && Boolean(referenceProfile))
-        || (referenceFilter === 'unmatched' && !referenceProfile)
-        || (referenceFilter === 'ifra_limited' && Boolean(referenceProfile) && hasReferenceValue(referenceProfile.ifra_limit_percent))
-        || (referenceFilter === 'has_guidance' && hasReferenceGuidance);
-      
-      return matchesSearch && matchesType && matchesCategory && matchesStock && matchesReference;
-    });
-  }, [materials, referenceStatusMap, searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
+      try {
+        const data = await fetchMaterials();
+        setRemapMaterials(data);
+      } catch (error) {
+        console.error('Failed to load remap materials:', error);
+        setRemapMaterials([]);
+      }
+    };
 
-  const paginatedMaterials = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredMaterials.slice(startIndex, startIndex + pageSize);
-  }, [currentPage, filteredMaterials]);
+    loadRemapMaterials();
+  }, [remapModalOpen, fetchMaterials]);
+
+  useEffect(() => {
+    loadMaterials();
+  }, [currentPage, searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
+
+  const filteredMaterials = useMemo(() => {
+    return materials;
+  }, [materials]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / pageSize));
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, filteredMaterials.length]);
+    const materialIds = new Set(materials.map((material) => material.id));
+    setSelectedMaterialIds((current) => current.filter((id) => materialIds.has(id)));
+  }, [materials]);
 
   const categoryColorMap = useMemo(
     () => new Map(categories.map((category) => [category.name.toLowerCase(), category.color])),
@@ -156,44 +178,30 @@ const RawMaterialsPage = () => {
 
   const lowStockCount = useMemo(
     () =>
-      materials.filter((material) => {
+      summaryMaterials.filter((material) => {
         const threshold = material.low_stock_threshold || material.minimum_stock;
         return Number(material.stock_quantity) < Number(threshold);
       }).length,
-    [materials]
+    [summaryMaterials]
   );
 
   const solventCount = useMemo(
-    () => materials.filter((material) => material.type === 'solvent').length,
-    [materials]
+    () => summaryMaterials.filter((material) => material.type === 'solvent').length,
+    [summaryMaterials]
   );
 
   const categoryCount = useMemo(
-    () => new Set(materials.map((material) => String(material.category || '').trim()).filter(Boolean)).size,
-    [materials]
+    () => new Set(summaryMaterials.map((material) => String(material.category || '').trim()).filter(Boolean)).size,
+    [summaryMaterials]
   );
 
   const inventoryValue = useMemo(
     () =>
-      materials.reduce(
+      summaryMaterials.reduce(
         (sum, material) => sum + calculateIngredientCost(material.stock_quantity || 0, material.cost_per_unit || 0),
         0
       ),
-    [materials]
-  );
-
-  const matchedReferenceCount = useMemo(
-    () => materials.filter((material) => Boolean(referenceStatusMap.get(material.id)?.reference_profile)).length,
-    [materials, referenceStatusMap]
-  );
-
-  const ifraReferenceCount = useMemo(
-    () =>
-      materials.filter((material) => {
-        const referenceProfile = referenceStatusMap.get(material.id)?.reference_profile || null;
-        return Boolean(referenceProfile) && hasReferenceValue(referenceProfile.ifra_limit_percent);
-      }).length,
-    [materials, referenceStatusMap]
+    [summaryMaterials]
   );
 
   const handleEdit = (material) => {
@@ -206,18 +214,68 @@ const RawMaterialsPage = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleToggleMaterialSelection = (material) => {
+    setSelectedMaterialIds((current) => (
+      current.includes(material.id)
+        ? current.filter((id) => id !== material.id)
+        : [...current, material.id]
+    ));
+  };
+
+  const handleToggleAllMaterials = (rows) => {
+    const rowIds = rows.map((row) => row.id).filter(Boolean);
+    if (!rowIds.length) {
+      return;
+    }
+
+    setSelectedMaterialIds((current) => {
+      const allSelected = rowIds.every((id) => current.includes(id));
+      if (allSelected) {
+        return current.filter((id) => !rowIds.includes(id));
+      }
+
+      return [...new Set([...current, ...rowIds])];
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (!selectedMaterials.length) {
+      return;
+    }
+
+    setSelectedMaterial(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const clearSelection = () => {
+    setSelectedMaterialIds([]);
+  };
+
   const confirmDelete = async () => {
-    if (!selectedMaterial) return;
-    
-    setDeletingId(selectedMaterial.id);
+    const materialsToDelete = selectedMaterial ? [selectedMaterial] : selectedMaterials;
+    if (!materialsToDelete.length) return;
+
+    setDeletingId(selectedMaterial ? selectedMaterial.id : 'bulk');
     try {
-      await deleteMaterial(selectedMaterial.id);
-      toast.success('Material deleted successfully');
+      for (const material of materialsToDelete) {
+        await deleteMaterial(material.id);
+      }
+      toast.success(
+        materialsToDelete.length === 1
+          ? 'Material deleted successfully'
+          : `${materialsToDelete.length} materials deleted successfully`
+      );
       setDeleteDialogOpen(false);
       setSelectedMaterial(null);
+      clearSelection();
       loadMaterials();
+      loadSummary();
     } catch (error) {
-      toast.error('Failed to delete material');
+      toast.error(
+        materialsToDelete.length === 1
+          ? 'Failed to delete material'
+          : 'Failed to delete selected materials'
+      );
     } finally {
       setDeletingId(null);
     }
@@ -227,6 +285,71 @@ const RawMaterialsPage = () => {
     navigate(`/raw-material/${material.id}`, {
       state: { from: '/raw-materials' },
     });
+  };
+
+  const getMaterialGuidanceDetails = (material) => {
+    const linkedReferenceProfile = referenceStatusMap.get(material.id)?.reference_profile || null;
+    const fallbackReferenceProfile = linkedReferenceProfile
+      ? null
+      : buildFallbackReferenceProfileFromRawMaterial(material);
+    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
+    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
+    const primaryClass = classDistribution[0] || null;
+    const resolvedValues = {
+      workbook_code: referenceProfile?.reference_code || material.workbook_code || '',
+      cas_number: referenceProfile?.cas_no || material.cas_number || '',
+      ifra_limit: referenceProfile?.ifra_limit_percent ?? material.ifra_limit ?? null,
+      reference_abc_primary_family: primaryClass?.familyName
+        || referenceProfile?.abc_primary_family
+        || material.reference_abc_primary_family
+        || '',
+      reference_impact: referenceProfile?.impact ?? material.reference_impact ?? null,
+      reference_life_hours: referenceProfile?.life_hours ?? material.reference_life_hours ?? null,
+      reference_use_level_typical_percent: referenceProfile?.use_level_typical_percent ?? material.reference_use_level_typical_percent ?? null,
+      reference_use_level_max_percent: referenceProfile?.use_level_max_percent ?? material.reference_use_level_max_percent ?? null,
+    };
+    const missingGuidance = !referenceProfile;
+    const missingImpact = resolvedValues.reference_impact === null || resolvedValues.reference_impact === undefined || Number(resolvedValues.reference_impact) <= 0;
+    const missingLife = resolvedValues.reference_life_hours === null || resolvedValues.reference_life_hours === undefined || Number(resolvedValues.reference_life_hours) <= 0;
+    const missingClass = !classDistribution.length && !resolvedValues.reference_abc_primary_family;
+    const missingCas = !String(resolvedValues.cas_number || '').trim();
+    const missingIfra = resolvedValues.ifra_limit === null || resolvedValues.ifra_limit === undefined;
+
+      return {
+        material,
+        referenceProfile,
+        resolvedValues,
+        hasCoreGuidance: !missingImpact && !missingLife,
+        hasWarning: missingGuidance || missingImpact || missingLife || missingClass || missingCas || missingIfra,
+        missingGuidance,
+        missingImpact,
+      missingLife,
+      missingClass,
+      missingCas,
+      missingIfra,
+    };
+  };
+
+  const openGuidanceEditor = (material) => {
+    const guidanceDetails = getMaterialGuidanceDetails(material);
+    setGuidanceEditorMaterial({
+      ...material,
+      guidance_resolved_values: guidanceDetails.resolvedValues,
+    });
+    setGuidanceEditorOpen(true);
+  };
+
+  const handleGuidanceSaved = (updatedMaterial) => {
+    const nextMaterials = materials.map((material) => (
+      material.id === updatedMaterial.id ? updatedMaterial : material
+    ));
+    setMaterials(nextMaterials);
+    setSummaryMaterials((current) => current.map((material) => (
+      material.id === updatedMaterial.id ? { ...material, ...updatedMaterial } : material
+    )));
+    setGuidanceEditorMaterial(updatedMaterial);
+    refreshReferenceStatusMap(nextMaterials);
+    loadSummary();
   };
 
   const handleClearFilters = () => {
@@ -268,25 +391,19 @@ const RawMaterialsPage = () => {
       )
     },
     {
-      key: 'category',
-      label: 'Category',
+      key: 'type',
+      label: 'Type',
       render: (row) => (
-        <span className="inline-flex items-center gap-2">
+        <div className="min-w-[120px]">
+          <div className="text-sm capitalize text-foreground">{row.type}</div>
+          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
             <span
               className="h-2.5 w-2.5 rounded-full border border-border/60"
               style={{ backgroundColor: categoryColorMap.get(String(row.category || '').toLowerCase()) || '#CBD5E1' }}
             />
-          <Badge variant="outline" className="capitalize">
-            {row.category}
-          </Badge>
-        </span>
-      )
-    },
-    {
-      key: 'type',
-      label: 'Type',
-      render: (row) => (
-        <span className="text-muted-foreground capitalize">{row.type}</span>
+            <span className="truncate">{row.category || 'Uncategorized'}</span>
+          </div>
+        </div>
       )
     },
     {
@@ -309,32 +426,40 @@ const RawMaterialsPage = () => {
       }
     },
     {
-      key: 'vendor',
-      label: 'Vendor / CAS',
-      render: (row) => (
-        <div className="min-w-[180px]">
-          <div className="text-sm font-medium">{row.vendor || '-'}</div>
-          <div className="text-xs text-muted-foreground">{row.cas_number || 'No CAS number'}</div>
-        </div>
-      )
-    },
-    {
-      key: 'reference',
-      label: 'Reference',
+      key: 'guidance',
+      label: 'Guidance',
       render: (row) => {
-        const referenceProfile = referenceStatusMap.get(row.id)?.reference_profile || null;
+        const guidance = getMaterialGuidanceDetails(row);
         return (
-          <div className="min-w-[180px]">
-            <div className="text-sm font-medium">
-              {referenceProfile?.name || 'No linked profile'}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {referenceProfile
+          <div className="min-w-[190px]">
+            <button
+              type="button"
+              onClick={() => openGuidanceEditor(row)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  guidance.hasWarning
+                    ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                }`}
+              >
+                {guidance.hasWarning ? (
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                )}
+                {guidance.hasWarning
+                  ? (guidance.hasCoreGuidance ? 'Guidance partial' : 'Needs guidance')
+                  : 'Guidance ready'}
+              </button>
+              <div className="mt-2 text-xs text-muted-foreground">
+                {guidance.hasWarning
                 ? [
-                    referenceProfile.reference_code,
-                    referenceProfile.abc_code || null,
-                  ].filter(Boolean).join(' / ')
-                : 'Open detail page to review and match'}
+                    guidance.missingClass ? 'family' : null,
+                    guidance.missingImpact ? 'impact' : null,
+                    guidance.missingLife ? 'life' : null,
+                    guidance.missingCas ? 'CAS' : null,
+                    guidance.missingIfra ? 'IFRA' : null,
+                  ].filter(Boolean).join(', ')
+                : 'Impact, life, CAS, dan IFRA sudah ada.'}
             </div>
           </div>
         );
@@ -360,6 +485,7 @@ const RawMaterialsPage = () => {
       id: 'type',
       value: typeFilter,
       placeholder: 'All types',
+      icon: FlaskConical,
       options: [
         { value: 'all', label: 'All types' },
         { value: 'material', label: 'Material' },
@@ -370,6 +496,7 @@ const RawMaterialsPage = () => {
       id: 'category',
       value: categoryFilter,
       placeholder: 'All categories',
+      icon: FolderTree,
       options: [
         { value: 'all', label: 'All categories' },
         ...categories.map((category) => ({
@@ -384,6 +511,7 @@ const RawMaterialsPage = () => {
       id: 'stock',
       value: stockFilter,
       placeholder: 'All stock levels',
+      icon: Radar,
       options: [
         { value: 'all', label: 'All stock levels' },
         { value: 'low', label: 'Low stock' },
@@ -394,6 +522,7 @@ const RawMaterialsPage = () => {
       id: 'reference',
       value: referenceFilter,
       placeholder: 'All reference states',
+      icon: Link2,
       options: [
         { value: 'all', label: 'All reference states' },
         { value: 'matched', label: 'Matched' },
@@ -454,7 +583,7 @@ const RawMaterialsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="list-summary-label">Total materials</p>
-                <span className="list-summary-value">{materials.length}</span>
+                <span className="list-summary-value">{summaryLoading ? '...' : totalMaterials}</span>
                 <p className="list-summary-note">{matchedReferenceCount} linked to workbook references.</p>
               </div>
               <Layers3 className="h-5 w-5 text-muted-foreground" />
@@ -520,6 +649,7 @@ const RawMaterialsPage = () => {
                 value={searchTerm}
                 onChange={setSearchTerm}
                 placeholder="Search by name, vendor, CAS, workbook code, reference code, or ABC family..."
+                disabled={showRefreshing}
               />
             </div>
             <div className="flex items-end">
@@ -529,25 +659,52 @@ const RawMaterialsPage = () => {
             </div>
           </div>
 
-          <FilterBar
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onClearAll={handleClearFilters}
-          />
+          <div className="mt-3 rounded-[24px] border border-white/70 bg-white/55 p-3">
+            <FilterBar
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearAll={handleClearFilters}
+              compact
+              disabled={showRefreshing}
+            />
+          </div>
 
-          {!loading && materials.length > 0 && (
+          {selectedMaterialIds.length > 0 ? (
+            <div className="mt-3 flex flex-col gap-3 rounded-[24px] border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold">{selectedMaterialIds.length} material selected on this page</p>
+                <p className="text-sm text-muted-foreground">Use bulk delete to clean up duplicate or unused raw materials faster.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={clearSelection} className="rounded-2xl">
+                  Clear selection
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleBulkDelete}
+                  className="gap-2 rounded-2xl"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete selected
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {!loading && totalMaterials > 0 && (
             <div className="results-count">
-              Showing {filteredMaterials.length} of {materials.length} materials
+              Showing {filteredMaterials.length} of {totalMaterials} materials
               {hasActiveFilters ? ' with active filters applied' : ''}
+              {referenceFilter !== 'all' ? ' on this page' : ''}
             </div>
           )}
         </div>
 
-        {loading ? (
+        {showInitialLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : materials.length === 0 ? (
+        ) : !summaryLoading && summaryMaterials.length === 0 ? (
           <EmptyState
             icon={Package}
             title="No materials yet"
@@ -563,109 +720,154 @@ const RawMaterialsPage = () => {
           />
         ) : (
           <>
-            <DataTable
-              columns={columns}
-              data={paginatedMaterials}
-              mobileCard={(row) => (
-                <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <button onClick={() => handleView(row)} className="w-full text-left">
-                        <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
-                      </button>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
-                        </span>
-                        {referenceStatusMap.get(row.id)?.reference_profile ? (
-                          <Badge variant="secondary" className="text-[10px]">
-                            Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px]">
-                            Unmatched
-                          </Badge>
-                        )}
-                        {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
-                        && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
-                          <Badge variant="outline" className="text-[10px]">
-                            IFRA ref
-                          </Badge>
-                        ) : null}
+            <div className="relative">
+              <DataTable
+                columns={columns}
+                data={filteredMaterials}
+                selectable
+                selectedRowIds={selectedMaterialIds}
+                onToggleRow={handleToggleMaterialSelection}
+                onToggleAll={handleToggleAllMaterials}
+                mobileCard={(row) => (
+                  <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                        <Checkbox
+                          checked={selectedMaterialIds.includes(row.id)}
+                          onCheckedChange={() => handleToggleMaterialSelection(row)}
+                          aria-label={`Select ${row.name}`}
+                          className="mt-1"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <button onClick={() => handleView(row)} className="w-full text-left">
+                            <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
+                          </button>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+                            </span>
+                            {referenceStatusMap.get(row.id)?.reference_profile ? (
+                              <Badge variant="secondary" className="text-[10px]">
+                                Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px]">
+                                Unmatched
+                              </Badge>
+                            )}
+                            {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
+                            && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
+                              <Badge variant="outline" className="text-[10px]">
+                                IFRA ref
+                              </Badge>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => openGuidanceEditor(row)}
+                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                  getMaterialGuidanceDetails(row).hasWarning
+                                    ? 'border-amber-200 bg-amber-50 text-amber-900'
+                                    : 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                }`}
+                              >
+                                {getMaterialGuidanceDetails(row).hasWarning
+                                  ? (getMaterialGuidanceDetails(row).hasCoreGuidance ? 'Guidance partial' : 'Need guidance')
+                                  : 'Guidance ready'}
+                              </button>
+                            </div>
+                          </div>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 capitalize text-[11px]">
+                        {row.type}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Type</div>
+                        <div className="mt-1 truncate text-sm capitalize">{row.type}</div>
+                      </div>
+                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Stock</div>
+                        <div className="mt-1 text-sm">{formatQuantity(row.stock_quantity)} {row.unit}</div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="shrink-0 capitalize text-[11px]">
-                      {row.type}
-                    </Badge>
-                  </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-2xl bg-muted/45 px-3 py-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Vendor</div>
-                      <div className="mt-1 truncate text-sm">{row.vendor || '-'}</div>
-                    </div>
-                    <div className="rounded-2xl bg-muted/45 px-3 py-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Stock</div>
-                      <div className="mt-1 text-sm">{formatQuantity(row.stock_quantity)} {row.unit}</div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0 text-xs text-muted-foreground">
+                        {row.cas_number || row.workbook_code || 'Open detail to review vendor, category, and reference'}
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openGuidanceEditor(row)}
+                          className="h-9 rounded-xl px-3 text-xs"
+                          title="Workbook guidance"
+                          aria-label={`Workbook guidance for ${row.name}`}
+                        >
+                          {getMaterialGuidanceDetails(row).hasWarning ? 'Guidance' : 'Guidance OK'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleView(row)}
+                          className="h-9 rounded-xl px-4"
+                        >
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(row)}
+                          className="h-9 rounded-xl px-3 text-xs"
+                          title="Edit"
+                          aria-label={`Edit ${row.name}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(row)}
+                          className="h-9 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Delete"
+                          aria-label={`Delete ${row.name}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0 text-xs text-muted-foreground">
-                      {row.category || 'Uncategorized'}
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleView(row)}
-                        className="h-9 rounded-xl px-4"
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(row)}
-                        className="h-9 rounded-xl px-3 text-xs"
-                        title="Edit"
-                        aria-label={`Edit ${row.name}`}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(row)}
-                        className="h-9 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                        title="Delete"
-                        aria-label={`Delete ${row.name}`}
-                      >
-                        Delete
-                      </Button>
-                    </div>
+                )}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                actions={(row) => (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleView(row)}
+                    className="table-action-button"
+                    title="View details"
+                    aria-label={`View details for ${row.name}`}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                )}
+              />
+              {showRefreshing ? (
+                <div className="absolute inset-0 flex items-start justify-center rounded-[24px] bg-background/55 pt-8 backdrop-blur-[1px]">
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm shadow-sm">
+                    <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                    Updating results...
                   </div>
                 </div>
-              )}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              actions={(row) => (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleView(row)}
-                  className="table-action-button"
-                  title="View details"
-                  aria-label={`View details for ${row.name}`}
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              )}
-            />
+              ) : null}
+            </div>
             <ListPagination
               currentPage={currentPage}
               pageSize={pageSize}
-              totalItems={filteredMaterials.length}
+              totalItems={totalMaterials}
               itemLabel="materials"
               onPageChange={setCurrentPage}
             />
@@ -676,7 +878,10 @@ const RawMaterialsPage = () => {
       <AddRawMaterialModal
         open={addModalOpen}
         onOpenChange={setAddModalOpen}
-        onSuccess={loadMaterials}
+        onSuccess={() => {
+          loadMaterials();
+          loadSummary();
+        }}
       />
 
       <EditRawMaterialModal
@@ -685,23 +890,37 @@ const RawMaterialsPage = () => {
         material={selectedMaterial}
         onSuccess={() => {
           loadMaterials();
+          loadSummary();
         }}
       />
 
       <RemapRawMaterialCategoriesModal
         open={remapModalOpen}
         onOpenChange={setRemapModalOpen}
-        materials={materials}
-        onSuccess={loadMaterials}
+        materials={remapMaterials}
+        onSuccess={() => {
+          loadMaterials();
+          loadSummary();
+        }}
       />
 
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={confirmDelete}
-        title="Delete material"
-        description={`Are you sure you want to delete "${selectedMaterial?.name}"? This action cannot be undone.`}
-        confirmText={deletingId ? 'Deleting...' : 'Delete'}
+        title={selectedMaterial ? 'Delete material' : 'Delete selected materials'}
+        description={selectedMaterial
+          ? `Are you sure you want to delete "${selectedMaterial?.name}"? This action cannot be undone.`
+          : `Are you sure you want to delete ${selectedMaterialIds.length} selected materials? This action cannot be undone.`}
+        confirmText={deletingId ? (isBulkDeleting ? 'Deleting selected...' : 'Deleting...') : 'Delete'}
+      />
+
+      <RawMaterialGuidanceQuickEditDialog
+        open={guidanceEditorOpen}
+        onOpenChange={setGuidanceEditorOpen}
+        material={guidanceEditorMaterial}
+        guidanceStatus={guidanceEditorMaterial ? getMaterialGuidanceDetails(guidanceEditorMaterial) : null}
+        onSaved={handleGuidanceSaved}
       />
     </AuthenticatedLayout>
   );

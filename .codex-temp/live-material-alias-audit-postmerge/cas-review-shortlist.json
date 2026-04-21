@@ -1,0 +1,325 @@
+[
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "acc1ae89-83a1-46b3-8f0f-0da67e83c9a3",
+      "name": "Alpha-Male Concentrate",
+      "workbook_code": "ALP06024",
+      "ifra_limit": 0.01,
+      "description": "Alpha-Male-Musk"
+    },
+    "b": {
+      "id": "0024f681-e480-43c8-be46-c5f4ef7f76c1",
+      "name": "Alpha-Male Factor",
+      "workbook_code": "ALP06025",
+      "ifra_limit": 0.1,
+      "description": "Alpha-Male-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "fa807f93-4860-4f4a-a296-4cab6ed1f228",
+      "name": "Bonding Concentrate",
+      "workbook_code": "BON06020",
+      "ifra_limit": 0.01,
+      "description": "Bonding-Musk"
+    },
+    "b": {
+      "id": "172346e3-751e-471b-b422-fc27df553c44",
+      "name": "Bonding Factor",
+      "workbook_code": "BON06021",
+      "ifra_limit": 0.1,
+      "description": "Bonding-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "58f42f43-8d86-4e69-8478-757cece96d3a",
+      "name": "Female Concentrate",
+      "workbook_code": "FEM06032",
+      "ifra_limit": 0.01,
+      "description": "Female-Musk"
+    },
+    "b": {
+      "id": "ba59e745-36ff-44fe-a2bc-2788cf6aa7ff",
+      "name": "Female Factor",
+      "workbook_code": "FEM06033",
+      "ifra_limit": 0.1,
+      "description": "Female-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "bd3769d0-bb29-4c55-9990-a000d25b5177",
+      "name": "Male Concentrate",
+      "workbook_code": "MAL06022",
+      "ifra_limit": 0.01,
+      "description": "Male-Musk"
+    },
+    "b": {
+      "id": "bde62a7c-0fcf-4e66-b245-766f8eae7410",
+      "name": "Male Factor",
+      "workbook_code": "MAL06023",
+      "ifra_limit": 0.1,
+      "description": "Male-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "7c25a4a7-177c-4620-abcc-f98694df37bb",
+      "name": "Truffle Concentrate",
+      "workbook_code": "TRU06028",
+      "ifra_limit": 0.01,
+      "description": "Truffle-Musk"
+    },
+    "b": {
+      "id": "b9d457b4-e897-4db4-b5c8-098f3cd8a29f",
+      "name": "Truffle Factor",
+      "workbook_code": "TRU06029",
+      "ifra_limit": 0.1,
+      "description": "Truffle-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "a973c889-9619-43df-97b0-234d5c9ac726",
+      "name": "Ultra-Feminine Concentrate",
+      "workbook_code": "ULT06030",
+      "ifra_limit": 0.01,
+      "description": "Feminine-Musk"
+    },
+    "b": {
+      "id": "6f41eee7-0974-4da3-bd06-aba6a89ebf79",
+      "name": "Ultra-Feminine Factor",
+      "workbook_code": "ULT06031",
+      "ifra_limit": 0.1,
+      "description": "Feminine-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-1",
+    "cas_number": "odiferous mixture",
+    "score": 1.0,
+    "a": {
+      "id": "1c8971ae-f02d-4274-8fb8-adb396c82df9",
+      "name": "Unisex Concentrate",
+      "workbook_code": "UNI06026",
+      "ifra_limit": 0.01,
+      "description": "Unisex-Musk"
+    },
+    "b": {
+      "id": "6521e3da-d075-4034-89f4-c762df31c1d8",
+      "name": "Unisex Factor",
+      "workbook_code": "UNI06027",
+      "ifra_limit": 0.1,
+      "description": "Unisex-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-23",
+    "cas_number": "1222 05 5",
+    "score": 1.0,
+    "a": {
+      "id": "cc7383ab-38b2-4d56-883e-b41097424791",
+      "name": "Galaxolide 50 DEP",
+      "workbook_code": "3XA00199",
+      "ifra_limit": 60,
+      "description": "Clear-Musk"
+    },
+    "b": {
+      "id": "4372e0d8-d4a1-4ad5-8b33-873d30b34589",
+      "name": "Galaxolide 100 (Undiliuted)",
+      "workbook_code": "4XA13770",
+      "ifra_limit": 60,
+      "description": "Clear-Laundry-Musk"
+    }
+  },
+  {
+    "candidate_id": "cas-27",
+    "cas_number": "24851 98 7",
+    "score": 1.0,
+    "a": {
+      "id": "0a25bb3b-32b7-4e3a-97e8-904d179193ea",
+      "name": "Hedione High Cis",
+      "workbook_code": "4JJ10013",
+      "ifra_limit": 50,
+      "description": "Hedione"
+    },
+    "b": {
+      "id": "f55cfdb2-8fe5-4836-92cb-c2b51f306b05",
+      "name": "Hedione",
+      "workbook_code": "3JJ00218",
+      "ifra_limit": 50,
+      "description": "Hedione"
+    }
+  },
+  {
+    "candidate_id": "cas-11",
+    "cas_number": "91771 50 5",
+    "score": 0.833,
+    "a": {
+      "id": "658ea4b7-6e45-467d-b070-e81bf7f09583",
+      "name": "Citrus Hystrix Lime Essential Oil",
+      "workbook_code": "7CK01152",
+      "ifra_limit": 20,
+      "description": "Kaffir-Lime"
+    },
+    "b": {
+      "id": "f5578de0-31c7-4b45-b44e-769cf62b7cb5",
+      "name": "Citrus Hystrix Lime Leaf Essential Oil",
+      "workbook_code": "7CK01077",
+      "ifra_limit": 0.1,
+      "description": "Kaffir-Lime-Leaf"
+    }
+  },
+  {
+    "candidate_id": "cas-25",
+    "cas_number": "8000 46 2",
+    "score": 0.75,
+    "a": {
+      "id": "1792827e-bd02-487e-9f31-f61e7d8e0e3e",
+      "name": "Geranium Bourbon Essential Oil",
+      "workbook_code": "7RB00930",
+      "ifra_limit": 15,
+      "description": "Geranium"
+    },
+    "b": {
+      "id": "2baa5240-2333-4078-99cc-ba27b1d6a501",
+      "name": "Geranium Essential Oil",
+      "workbook_code": "7RB00205",
+      "ifra_limit": 4.7,
+      "description": "Geranium"
+    }
+  },
+  {
+    "candidate_id": "cas-36",
+    "cas_number": "8022 15 9",
+    "score": 0.75,
+    "a": {
+      "id": "eaa044d6-dbbf-4677-a675-ec23156c3417",
+      "name": "Lavandin Essential Oil",
+      "workbook_code": "7HB00265",
+      "ifra_limit": 8.3,
+      "description": "Lavandin"
+    },
+    "b": {
+      "id": "3f0c0ca5-f090-4696-9b14-d9f4bf823237",
+      "name": "Lavandin Grosso Essential Oil",
+      "workbook_code": "7HB07675",
+      "ifra_limit": 8.3,
+      "description": "Lavandin"
+    }
+  },
+  {
+    "candidate_id": "cas-47",
+    "cas_number": "8006 81 3",
+    "score": 0.75,
+    "a": {
+      "id": "8ee0039a-830f-45f8-ab6a-f8fc75c85cdd",
+      "name": "Ylang Ylang Essential Oil",
+      "workbook_code": "7NJ00472",
+      "ifra_limit": 6.7,
+      "description": "Ylang"
+    },
+    "b": {
+      "id": "1f6ae47e-40d4-432f-87aa-dd01ac50e8b5",
+      "name": "Ylang Ylang Essential Oil Extra",
+      "workbook_code": "7NJ07496",
+      "ifra_limit": 6.7,
+      "description": "Ylang"
+    }
+  },
+  {
+    "candidate_id": "cas-10",
+    "cas_number": "8015 91 6",
+    "score": 0.6,
+    "a": {
+      "id": "5f74f9a9-35f6-49ce-ac9a-05c1bc2adbb2",
+      "name": "Cinnamon Bark Essential Oil",
+      "workbook_code": "7SV00107",
+      "ifra_limit": 0.05,
+      "description": "Cinnamon-Spicy-Sweet"
+    },
+    "b": {
+      "id": "420913e3-3373-4b9d-a884-03659294ae00",
+      "name": "Cinnamon Leaf Essential Oil",
+      "workbook_code": "7SV00108",
+      "ifra_limit": 1,
+      "description": "Cinnamon-Fresh-Spicy"
+    }
+  },
+  {
+    "candidate_id": "cas-13",
+    "cas_number": "8000 34 8",
+    "score": 0.6,
+    "a": {
+      "id": "69354b30-53e4-46fe-bdb0-62ab74bd6624",
+      "name": "Clove Bud Essential Oil",
+      "workbook_code": "7SP00122",
+      "ifra_limit": 3.6,
+      "description": "Clove-Bud-Spicy-Carnation"
+    },
+    "b": {
+      "id": "38c0d5ee-336a-4253-a610-953e33771b4f",
+      "name": "Clove Leaf Essential Oil",
+      "workbook_code": "7SP00123",
+      "ifra_limit": 3.6,
+      "description": "Fresh-Terpene-Clove-Spice"
+    }
+  },
+  {
+    "candidate_id": "cas-19",
+    "cas_number": "8000 48 4",
+    "score": 0.6,
+    "a": {
+      "id": "83b37a81-a682-49d5-80c7-418dc612429e",
+      "name": "Eucalyptus Citriodora Essential Oil",
+      "workbook_code": "7CC00914",
+      "ifra_limit": 1,
+      "description": "Citrus"
+    },
+    "b": {
+      "id": "8f112236-5465-4893-a9c3-323c21cda74d",
+      "name": "Eucalyptus Globulus Essential Oil",
+      "workbook_code": "7BH00182",
+      "ifra_limit": 10,
+      "description": "Eucalyptus"
+    }
+  },
+  {
+    "candidate_id": "cas-26",
+    "cas_number": "8016 20 4",
+    "score": 0.6,
+    "a": {
+      "id": "01f291ee-efec-4630-9741-a3ed4b012c39",
+      "name": "Grapefruit Pink Essential Oil",
+      "workbook_code": "7CN00210",
+      "ifra_limit": 4,
+      "description": "Grapefruit"
+    },
+    "b": {
+      "id": "8b7e2073-9a29-4e8d-9a39-a1238de04191",
+      "name": "Grapefruit White Essential Oil",
+      "workbook_code": "7CA00868",
+      "ifra_limit": 4,
+      "description": "Grapefruit"
+    }
+  }
+]
