@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Home, Plus, Boxes, Eye, FlaskConical, ClipboardList, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ import { formatQuantity } from '@/utils/formatting.js';
 
 const BatchesPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getBatches, deleteBatch } = useBatches();
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +147,9 @@ const BatchesPage = () => {
   };
 
   const handleView = (batch) => {
-    navigate(`/batches/${batch.id}`);
+    navigate(`/batches/${batch.id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   };
 
   const handleClearFilters = () => {
@@ -172,7 +175,9 @@ const BatchesPage = () => {
       label: 'Formula',
       render: (row) => (
         <button
-          onClick={() => navigate(`/formulas/${row.formula_id}`)}
+          onClick={() => navigate(`/formulas/${row.formula_id}`, {
+            state: { from: `${location.pathname}${location.search}` },
+          })}
           className="text-primary hover:underline font-medium transition-colors text-sm"
         >
           {row.expand?.formula_id?.name || 'Unknown'}

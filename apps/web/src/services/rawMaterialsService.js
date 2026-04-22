@@ -10,6 +10,14 @@ let rawMaterialOptionsCache = {
   promise: null,
 };
 
+const MATCH_RESOLUTION_ACTION = 'matched_existing';
+
+const normalizeLookupValue = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+const collapseLookupValue = (value) => normalizeLookupValue(value).replace(/[^a-z0-9]+/g, '');
+const normalizeCasValue = (value) => normalizeLookupValue(value).replace(/[^a-z0-9]+/g, '');
+const DILUTION_MARKER_PATTERN = /(?:^|\b)(\d+\s*[- ]?\s*(?:tec|dpg|dep)|50\s*dep|100(?:\b|\s*\())/i;
+const INVALID_CAS_MATCH_VALUES = new Set(['', 'mixture', 'mix', 'na', 'n/a', 'unknown', 'odiferousmixture']);
+
 const mapRawMaterial = (row, solventMap = new Map()) => ({
   ...row,
   created: row.created_at,
@@ -48,6 +56,48 @@ const normalizeOptionalNumber = (value) => {
 
   const normalized = Number(value);
   return Number.isFinite(normalized) ? normalized : null;
+};
+
+const hasDilutionMarker = (value) => DILUTION_MARKER_PATTERN.test(String(value || ''));
+
+const extractSynonymCandidates = (notes) => {
+  const synonymMatch = String(notes || '').match(/synonym:\s*([^|\n]+)/i);
+  if (!synonymMatch?.[1]) {
+    return [];
+  }
+
+  return synonymMatch[1]
+    .split(/\s*\/\s*/)
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+};
+
+const buildNameCandidates = ({ name, notes }) => {
+  const baseName = String(name || '').trim();
+  const slashSegments = baseName.split('/').map((item) => item.trim()).filter(Boolean);
+  const synonymCandidates = extractSynonymCandidates(notes);
+
+  return [...new Set([baseName, ...slashSegments, ...synonymCandidates].filter(Boolean))];
+};
+
+export const normalizeRawMaterialLookupValue = normalizeLookupValue;
+export const collapseRawMaterialLookupValue = collapseLookupValue;
+export const normalizeRawMaterialCasValue = normalizeCasValue;
+export const rawMaterialHasDilutionMarker = hasDilutionMarker;
+export const buildRawMaterialNameCandidates = buildNameCandidates;
+
+const buildResolution = ({ record, matchMethod, incomingName, matchedName }) => ({
+  action: MATCH_RESOLUTION_ACTION,
+  matchMethod,
+  message: incomingName && matchedName && incomingName !== matchedName
+    ? `Matched "${incomingName}" to existing raw material "${matchedName}" via ${matchMethod}.`
+    : `Matched to existing raw material via ${matchMethod}.`,
+  matchedRawMaterialId: record.id,
+});
+
+const withCreationResolution = (record, solventMap, resolution = null) => {
+  const mapped = mapRawMaterial(record, solventMap);
+  return resolution ? { ...mapped, _creationResolution: resolution } : mapped;
 };
 
 const buildRawMaterialPayload = (data) => {
@@ -125,6 +175,158 @@ export const clearRawMaterialOptionsCache = () => {
     loadedAt: 0,
     promise: null,
   };
+};
+
+const getCachedRawMaterialMatchCandidates = async () => {
+  const rows = await getRawMaterialOptions();
+  return rows || [];
+};
+
+const pickPreferredExistingMatch = (matches) => {
+  if (!matches.length) {
+    return null;
+  }
+
+  return [...matches].sort((left, right) => {
+    const leftWorkbookScore = left.workbook_code ? 1 : 0;
+    const rightWorkbookScore = right.workbook_code ? 1 : 0;
+    if (rightWorkbookScore !== leftWorkbookScore) {
+      return rightWorkbookScore - leftWorkbookScore;
+    }
+
+    const leftGuidanceScore =
+      (Number(left.reference_impact) > 0 ? 1 : 0)
+      + (Number(left.reference_life_hours) > 0 ? 1 : 0)
+      + (Number(left.ifra_limit) > 0 ? 1 : 0)
+      + (left.cas_number ? 1 : 0);
+    const rightGuidanceScore =
+      (Number(right.reference_impact) > 0 ? 1 : 0)
+      + (Number(right.reference_life_hours) > 0 ? 1 : 0)
+      + (Number(right.ifra_limit) > 0 ? 1 : 0)
+      + (right.cas_number ? 1 : 0);
+    if (rightGuidanceScore !== leftGuidanceScore) {
+      return rightGuidanceScore - leftGuidanceScore;
+    }
+
+    return String(left.name || '').localeCompare(String(right.name || ''));
+  })[0];
+};
+
+const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
+  const normalizedName = String(payload.name || '').trim();
+  if (!normalizedName) {
+    return null;
+  }
+
+  const candidateRows = (await getCachedRawMaterialMatchCandidates())
+    .filter((row) => row.user_id === userId);
+
+  const normalizedWorkbookCode = normalizeLookupValue(payload.workbook_code);
+  if (normalizedWorkbookCode) {
+    const workbookMatch = candidateRows.find((row) => normalizeLookupValue(row.workbook_code) === normalizedWorkbookCode);
+    if (workbookMatch) {
+      return {
+        record: workbookMatch,
+        resolution: buildResolution({
+          record: workbookMatch,
+          matchMethod: 'workbook code',
+          incomingName: payload.name,
+          matchedName: workbookMatch.name,
+        }),
+      };
+    }
+  }
+
+  const exactNameMatch = candidateRows.find((row) => normalizeLookupValue(row.name) === normalizeLookupValue(payload.name));
+  if (exactNameMatch) {
+    return {
+      record: exactNameMatch,
+      resolution: buildResolution({
+        record: exactNameMatch,
+        matchMethod: 'exact name',
+        incomingName: payload.name,
+        matchedName: exactNameMatch.name,
+      }),
+    };
+  }
+
+  const incomingIsDilutionVariant = hasDilutionMarker(payload.name);
+  const incomingCas = normalizeCasValue(payload.cas_number);
+  const safeCas = incomingCas && !INVALID_CAS_MATCH_VALUES.has(incomingCas) ? incomingCas : null;
+  const nameCandidates = buildNameCandidates({
+    name: payload.name,
+    notes: payload.notes,
+  });
+  const normalizedCandidateNames = nameCandidates.map((item) => normalizeLookupValue(item));
+  const collapsedCandidateNames = nameCandidates.map((item) => collapseLookupValue(item));
+
+  const exactAliasMatches = candidateRows.filter((row) => {
+    if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
+      return false;
+    }
+
+    const rowName = normalizeLookupValue(row.name);
+    return normalizedCandidateNames.includes(rowName);
+  });
+  const pickedExactAliasMatch = pickPreferredExistingMatch(exactAliasMatches);
+  if (pickedExactAliasMatch) {
+    return {
+      record: pickedExactAliasMatch,
+      resolution: buildResolution({
+        record: pickedExactAliasMatch,
+        matchMethod: 'alias name',
+        incomingName: payload.name,
+        matchedName: pickedExactAliasMatch.name,
+      }),
+    };
+  }
+
+  const collapsedAliasMatches = candidateRows.filter((row) => {
+    if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
+      return false;
+    }
+
+    const rowName = collapseLookupValue(row.name);
+    return collapsedCandidateNames.includes(rowName);
+  });
+  const pickedCollapsedAliasMatch = pickPreferredExistingMatch(collapsedAliasMatches);
+  if (pickedCollapsedAliasMatch) {
+    return {
+      record: pickedCollapsedAliasMatch,
+      resolution: buildResolution({
+        record: pickedCollapsedAliasMatch,
+        matchMethod: 'normalized alias',
+        incomingName: payload.name,
+        matchedName: pickedCollapsedAliasMatch.name,
+      }),
+    };
+  }
+
+  if (safeCas) {
+    const casMatches = candidateRows.filter((row) => {
+      if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
+        return false;
+      }
+
+      const rowCas = normalizeCasValue(row.cas_number);
+      return rowCas && !INVALID_CAS_MATCH_VALUES.has(rowCas) && rowCas === safeCas;
+    });
+
+    const pickedCasMatch = pickPreferredExistingMatch(casMatches);
+    if (pickedCasMatch) {
+      return {
+        record: pickedCasMatch,
+        resolution: buildResolution({
+          record: pickedCasMatch,
+          matchMethod: 'CAS number',
+          incomingName: payload.name,
+          matchedName: pickedCasMatch.name,
+        }),
+      };
+    }
+  }
+
+  return null;
 };
 
 const findExistingRawMaterialByName = async (userId, name) => {
@@ -326,6 +528,7 @@ export const getRawMaterialOptions = async ({ forceRefresh = false } = {}) => {
         .from('raw_materials')
         .select(`
           id,
+          user_id,
           name,
           type,
           unit,
@@ -517,6 +720,14 @@ export const createRawMaterial = async (data) => {
       }
     }
 
+    const smartMatch = await findExistingRawMaterialBySmartMatch(userId, payload);
+    if (smartMatch?.record) {
+      const solventMap = await getSolventMap(
+        smartMatch.record.dilution_solvent_id ? [smartMatch.record.dilution_solvent_id] : []
+      );
+      return withCreationResolution(smartMatch.record, solventMap, smartMatch.resolution);
+    }
+
     const existingByWorkbookCode = payload.workbook_code
       ? await findExistingRawMaterialByWorkbookCode(userId, payload.workbook_code)
       : null;
@@ -524,7 +735,16 @@ export const createRawMaterial = async (data) => {
       const solventMap = await getSolventMap(
         existingByWorkbookCode.dilution_solvent_id ? [existingByWorkbookCode.dilution_solvent_id] : []
       );
-      return mapRawMaterial(existingByWorkbookCode, solventMap);
+      return withCreationResolution(
+        existingByWorkbookCode,
+        solventMap,
+        buildResolution({
+          record: existingByWorkbookCode,
+          matchMethod: 'workbook code',
+          incomingName: payload.name,
+          matchedName: existingByWorkbookCode.name,
+        }),
+      );
     }
 
     const existingByName = payload.name
@@ -534,7 +754,16 @@ export const createRawMaterial = async (data) => {
       const solventMap = await getSolventMap(
         existingByName.dilution_solvent_id ? [existingByName.dilution_solvent_id] : []
       );
-      return mapRawMaterial(existingByName, solventMap);
+      return withCreationResolution(
+        existingByName,
+        solventMap,
+        buildResolution({
+          record: existingByName,
+          matchMethod: 'exact name',
+          incomingName: payload.name,
+          matchedName: existingByName.name,
+        }),
+      );
     }
 
     const { data: record, error } = await supabase
@@ -551,7 +780,16 @@ export const createRawMaterial = async (data) => {
         const existingRecord = await findExistingRawMaterialByWorkbookCode(userId, payload.workbook_code);
         if (existingRecord) {
           const solventMap = await getSolventMap(existingRecord.dilution_solvent_id ? [existingRecord.dilution_solvent_id] : []);
-          return mapRawMaterial(existingRecord, solventMap);
+          return withCreationResolution(
+            existingRecord,
+            solventMap,
+            buildResolution({
+              record: existingRecord,
+              matchMethod: 'workbook code',
+              incomingName: payload.name,
+              matchedName: existingRecord.name,
+            }),
+          );
         }
       }
 
@@ -559,7 +797,16 @@ export const createRawMaterial = async (data) => {
         const existingRecord = await findExistingRawMaterialByName(userId, payload.name);
         if (existingRecord) {
           const solventMap = await getSolventMap(existingRecord.dilution_solvent_id ? [existingRecord.dilution_solvent_id] : []);
-          return mapRawMaterial(existingRecord, solventMap);
+          return withCreationResolution(
+            existingRecord,
+            solventMap,
+            buildResolution({
+              record: existingRecord,
+              matchMethod: 'exact name',
+              incomingName: payload.name,
+              matchedName: existingRecord.name,
+            }),
+          );
         }
       }
       throw error;
@@ -568,7 +815,7 @@ export const createRawMaterial = async (data) => {
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
     await syncManualReferenceProfileForRawMaterial(record);
     clearRawMaterialOptionsCache();
-    return mapRawMaterial(record, solventMap);
+    return withCreationResolution(record, solventMap);
   } catch (error) {
     console.error('Error creating raw material:', error);
     throw new Error(error.message || 'Failed to create raw material');

@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FlaskConical, FileUp } from 'lucide-react';
@@ -24,6 +24,7 @@ const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfMo
 
 const FormulasPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getFormulas, duplicateFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
   const [formulas, setFormulas] = useState([]);
@@ -143,7 +144,9 @@ const FormulasPage = () => {
   };
 
   const handleView = (formula) => {
-    navigate(`/formulas/${formula.id}`);
+    navigate(`/formulas/${formula.id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   };
 
   const handleCreateBatch = (formula) => {

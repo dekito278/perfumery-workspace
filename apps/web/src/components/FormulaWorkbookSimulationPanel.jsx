@@ -15,7 +15,7 @@ const formatHours = (value) => {
 };
 
 const MetricCard = ({ label, value, tone = 'default' }) => (
-  <div className={`rounded-2xl border p-4 ${
+  <div className={`rounded-[1.15rem] border px-3.5 py-3 ${
     tone === 'danger'
       ? 'border-destructive/25 bg-destructive/5'
       : tone === 'accent'
@@ -23,13 +23,13 @@ const MetricCard = ({ label, value, tone = 'default' }) => (
         : 'bg-background/80'
   }`}
   >
-    <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-    <div className="mt-2 text-lg font-semibold">{value}</div>
+    <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+    <div className="mt-1.5 text-[1.05rem] font-semibold">{value}</div>
   </div>
 );
 
 const SourceBadge = ({ label, value, toneClass = 'border-border bg-background text-foreground' }) => (
-  <div className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClass}`}>
+  <div className={`rounded-full border px-2.5 py-1 text-[10px] font-medium ${toneClass}`}>
     {label}: {value}
   </div>
 );
@@ -68,19 +68,19 @@ const FormulaWorkbookSimulationPanel = ({
   }
 
   return (
-    <div className="space-y-4 rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm">
+    <div className="space-y-3.5 rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm">
       <div>
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold">{title}</h3>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge variant="outline" className="ml-auto rounded-full px-2.5 text-[10px]">
             {simulation.guidanceBackedCount}/{simulation.eligibleItemCount} with guidance
           </Badge>
         </div>
         {description ? (
-          <p className="pt-1 text-sm text-muted-foreground">{description}</p>
+          <p className="pt-1 text-[13px] leading-relaxed text-muted-foreground">{description}</p>
         ) : null}
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-1.5 pt-1.5">
           <SourceBadge
             label="Workbook link"
             value={simulation.linkedProfileCount}
@@ -99,7 +99,7 @@ const FormulaWorkbookSimulationPanel = ({
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Reference Coverage"
           value={formatPercentage(simulation.coveragePercent, 0)}
@@ -119,8 +119,8 @@ const FormulaWorkbookSimulationPanel = ({
         />
       </div>
 
-      <div className="rounded-2xl border bg-background/70 p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
+        <div className="mb-2.5 flex items-center justify-between gap-3">
           <div className="text-sm font-semibold">Top / middle / base balance</div>
           <TimerReset className="h-4 w-4 text-muted-foreground" />
         </div>
@@ -138,22 +138,26 @@ const FormulaWorkbookSimulationPanel = ({
       />
 
       <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border bg-background/70 p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
             <div className="text-sm font-semibold">IFRA warnings</div>
-            <Badge variant={simulation.ifraAdvisories.length ? 'destructive' : 'secondary'} className="text-[10px]">
+            <Badge variant={simulation.ifraAdvisories.length ? 'destructive' : 'secondary'} className="rounded-full px-2.5 text-[10px]">
               {simulation.ifraAdvisories.length} alert{simulation.ifraAdvisories.length === 1 ? '' : 's'}
             </Badge>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {simulation.ifraAdvisories.length ? simulation.ifraAdvisories.map((advisory) => (
-              <Alert key={`${advisory.itemId}-${advisory.type}`} variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>{advisory.itemName}</AlertTitle>
-                <AlertDescription>
+              <Alert
+                key={`${advisory.itemId}-${advisory.type}`}
+                variant="destructive"
+                className="rounded-[1rem] border-destructive/30 bg-destructive/[0.045] px-3.5 py-3 text-[13px] [&>svg]:left-3.5 [&>svg]:top-3.5 [&>svg~*]:pl-6"
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTitle className="mb-1 text-[13px] font-semibold text-destructive">{advisory.itemName}</AlertTitle>
+                <AlertDescription className="text-[12px] leading-relaxed text-destructive/85">
                   <p>{advisory.message}</p>
-                  <p className="mt-1 text-xs opacity-80">
+                  <p className="mt-1 text-[11px] opacity-80">
                     Reference {advisory.referenceCode || 'linked profile'}
                     {' / '}
                     {advisory.guidanceSource === 'raw_material_fallback' ? 'manual guidance fallback' : 'workbook linked'}
@@ -161,10 +165,10 @@ const FormulaWorkbookSimulationPanel = ({
                 </AlertDescription>
               </Alert>
             )) : (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>No IFRA exceedance detected</AlertTitle>
-                <AlertDescription>
+              <Alert className="rounded-[1rem] border-border/80 bg-background/85 px-3.5 py-3 text-[13px] [&>svg]:left-3.5 [&>svg]:top-3.5 [&>svg~*]:pl-6">
+                <Info className="h-3.5 w-3.5" />
+                <AlertTitle className="mb-1 text-[13px] font-semibold">No IFRA exceedance detected</AlertTitle>
+                <AlertDescription className="text-[12px] leading-relaxed text-muted-foreground">
                   Guidance-backed materials are currently within the IFRA reference limit where workbook data is available.
                 </AlertDescription>
               </Alert>
@@ -172,8 +176,8 @@ const FormulaWorkbookSimulationPanel = ({
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-background/70 p-4">
-          <div className="mb-3 text-sm font-semibold">Main impact contributors</div>
+        <div className="rounded-[1.2rem] border bg-background/70 p-3.5">
+          <div className="mb-2.5 text-sm font-semibold">Main impact contributors</div>
           <div className="space-y-3">
             {simulation.topImpactContributors.length ? simulation.topImpactContributors.map((row) => (
               <div key={`${row.item_id}-${row.reference_profile?.reference_code || row.name}`} className="space-y-1">

@@ -33,6 +33,7 @@ const FormulaItemRow = ({
   const canCommit = Boolean(item.item_id && parseFloat(item.gram_amount) > 0);
   const isReady = Boolean(item.item_id || item.gram_amount);
   const [showDilutionPanel, setShowDilutionPanel] = useState(dilutionEnabled);
+  const materialTypeLabel = selectedIngredient?.type === 'solvent' ? 'Solvent' : 'Raw material';
 
   useEffect(() => {
     if (dilutionEnabled) {
@@ -56,21 +57,15 @@ const FormulaItemRow = ({
           : 'border-white/80 bg-white/72'
       }`}>
         <div className="flex items-start gap-3">
-          <div className="flex-1 space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="rounded-full border-[#d8cfb5] bg-white/85 text-[10px] uppercase tracking-[0.16em] text-[#72664c]">
+          <div className="flex-1 space-y-3.5">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              <Badge variant="outline" className="rounded-full border-[#d8cfb5] bg-white/85 px-2.5 text-[10px] uppercase tracking-[0.16em] text-[#72664c]">
                 Row {index + 1}
               </Badge>
               {selectedIngredient ? (
-                <Badge variant="secondary" className="rounded-full text-[10px] capitalize">
-                  {selectedIngredient.type === 'solvent' ? 'Solvent' : 'Raw material'}
-                </Badge>
+                <span className="font-medium text-foreground/80">{materialTypeLabel}</span>
               ) : null}
-              {dilutionEnabled ? (
-                <Badge variant="outline" className="rounded-full text-[10px]">
-                  Diluted
-                </Badge>
-              ) : null}
+              {dilutionEnabled ? <span className="text-[#7d6840]">Diluted</span> : null}
             </div>
 
             <div className="grid gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(148px,0.65fr)]">
@@ -113,14 +108,14 @@ const FormulaItemRow = ({
                     size="icon"
                     onClick={() => onCommit?.(index)}
                     disabled={!canCommit}
-                    className="h-10 w-10 shrink-0 rounded-xl"
+                    className="h-10 w-10 shrink-0 rounded-[0.95rem]"
                     title="Save ingredient and continue"
                   >
                     <Check className="w-4 h-4" />
                   </Button>
                   <span className="text-sm text-muted-foreground shrink-0">g</span>
                 </div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-[11px] leading-relaxed text-muted-foreground">
                   {canCommit
                     ? 'Ready to commit into composition.'
                     : 'Choose a material and amount to add it into the formula.'}
@@ -136,14 +131,14 @@ const FormulaItemRow = ({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowDilutionPanel((current) => !current)}
-                    className="h-8 gap-2 rounded-xl border-[#d9cfbb] bg-white/70 px-3"
+                    className="h-8 gap-2 rounded-xl border-[#d9cfbb] bg-white/70 px-3 text-xs"
                   >
                     <Droplets className="h-3.5 w-3.5" />
                     {dilutionEnabled ? 'Diluted' : 'Dilution'}
                     <ChevronDown className={`h-4 w-4 transition-transform ${showDilutionPanel ? 'rotate-180' : ''}`} />
                   </Button>
                   {dilutionEnabled && (
-                    <div className="min-w-0 rounded-full bg-[#f8f2e1] px-3 py-1 text-right text-xs text-[#71623f]">
+                    <div className="min-w-0 rounded-full border border-[#e5dac3] bg-[#f8f2e1] px-2.5 py-1 text-right text-[11px] text-[#71623f]">
                       {item.dilution_percent}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''}
                     </div>
                   )}

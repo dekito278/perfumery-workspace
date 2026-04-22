@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Package, Beaker, Activity, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -43,6 +43,7 @@ const runWithRetry = async (loader, retries = 1) => {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary } = useRawMaterials();
   const { getFormulas } = useFormulas();
@@ -219,7 +220,9 @@ const DashboardPage = () => {
                 }
               ]}
               emptyMessage="No formulas yet"
-              onRowClick={(item) => navigate(`/formulas/${item.id}`)}
+              onRowClick={(item) => navigate(`/formulas/${item.id}`, {
+                state: { from: `${location.pathname}${location.search}` },
+              })}
               isLoading={loading}
             />
 
@@ -243,7 +246,9 @@ const DashboardPage = () => {
                 }
               ]}
               emptyMessage="No batches yet"
-              onRowClick={(item) => navigate(`/batches/${item.id}`)}
+              onRowClick={(item) => navigate(`/batches/${item.id}`, {
+                state: { from: `${location.pathname}${location.search}` },
+              })}
               isLoading={loading}
             />
           </div>
@@ -277,7 +282,9 @@ const DashboardPage = () => {
               emptyMessage="No active batches"
               color="text-blue-600"
               badgeVariant="default"
-              onItemClick={(item) => navigate(`/batches/${item.id}`)}
+              onItemClick={(item) => navigate(`/batches/${item.id}`, {
+                state: { from: `${location.pathname}${location.search}` },
+              })}
               isLoading={loading}
             />
           </div>

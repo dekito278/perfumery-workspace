@@ -9,6 +9,7 @@ import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
+import RawMaterialAuditPage from '@/pages/RawMaterialAuditPage.jsx';
 import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
 import FormulasPage from '@/pages/FormulasPage.jsx';
 import CreateFormulaPage from '@/pages/CreateFormulaPage.jsx';
@@ -45,6 +46,12 @@ function AppRoutes() {
         <Route path="/raw-materials" element={
           <ProtectedRoute>
             <RawMaterialsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/raw-material-audit" element={
+          <ProtectedRoute>
+            <RawMaterialAuditPage />
           </ProtectedRoute>
         } />
         

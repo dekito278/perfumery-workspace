@@ -2,7 +2,8 @@ import { useLocation, useNavigationType } from 'react-router-dom';
 import { useLayoutEffect } from 'react';
 
 const ScrollToTop = () => {
-    const { pathname, search } = useLocation();
+    const location = useLocation();
+    const { pathname, search, state } = location;
     const navigationType = useNavigationType();
     const storageKey = `scroll:${pathname}${search}`;
 
@@ -19,15 +20,50 @@ const ScrollToTop = () => {
     }, [storageKey]);
 
     useLayoutEffect(() => {
+        const shouldRestore = navigationType === 'POP' || Boolean(state?.restoreScroll);
         const savedPosition = sessionStorage.getItem(storageKey);
+        let timeoutId = null;
+        let cancelled = false;
 
-        if (navigationType === 'POP' && savedPosition !== null) {
-            window.scrollTo({ top: Number(savedPosition), left: 0, behavior: 'instant' });
-            return;
+        const restoreScrollPosition = (targetPosition, attempt = 0) => {
+            if (cancelled) {
+                return;
+            }
+
+            window.scrollTo(0, targetPosition);
+
+            const maxScrollableTop = Math.max(
+                document.documentElement.scrollHeight,
+                document.body.scrollHeight
+            ) - window.innerHeight;
+
+            if (
+                attempt >= 10
+                || targetPosition <= 0
+                || maxScrollableTop >= targetPosition
+                || Math.abs(window.scrollY - targetPosition) <= 2
+            ) {
+                return;
+            }
+
+            timeoutId = window.setTimeout(() => {
+                restoreScrollPosition(targetPosition, attempt + 1);
+            }, 140);
         }
 
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    }, [navigationType, storageKey]);
+        if (shouldRestore && savedPosition !== null) {
+            restoreScrollPosition(Number(savedPosition));
+        } else {
+            window.scrollTo(0, 0);
+        }
+
+        return () => {
+            cancelled = true;
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, [navigationType, state?.restoreScroll, storageKey]);
 
     return null;
 }

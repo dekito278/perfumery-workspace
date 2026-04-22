@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, Info, Plus, Pencil, Trash2, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -14,13 +15,10 @@ import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
 import DetailPageHeader from '@/components/DetailPageHeader.jsx';
 import DetailSection from '@/components/DetailSection.jsx';
-import DetailField from '@/components/DetailField.jsx';
-import DetailFieldGroup from '@/components/DetailFieldGroup.jsx';
 import DetailMetadata from '@/components/DetailMetadata.jsx';
 import CreateBatchModal from '@/components/CreateBatchModal.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
-import PyramidSummary from '@/components/PyramidSummary.jsx';
 import ExportFormulaButton from '@/components/ExportFormulaButton.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
@@ -53,9 +51,18 @@ const normalizeFormulaItemType = (item, itemDetails) => {
   return 'raw_material';
 };
 
+const getCompositionGroupLabel = (item) => {
+  if (item?.item_type === 'solvent') {
+    return item.name || 'Solvent';
+  }
+
+  return item?.component_family || item?.scent_family || item?.category || 'Material';
+};
+
 const FormulaDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { getFormulaItems } = useFormulaItems();
   const [formula, setFormula] = useState(null);
   const [items, setItems] = useState([]);
@@ -64,6 +71,7 @@ const FormulaDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [createBatchModalOpen, setCreateBatchModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showAllReferenceAlerts, setShowAllReferenceAlerts] = useState(false);
 
   useEffect(() => {
     loadFormulaDetails();
@@ -198,6 +206,37 @@ const FormulaDetailPage = () => {
     printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
   };
 
+  const handleBack = () => {
+    if (location.state?.from) {
+      navigate(location.state.from, { state: { restoreScroll: true } });
+      return;
+    }
+
+    navigate('/formulas');
+  };
+
+  const compactCompositionRows = useMemo(() => {
+    const grouped = items.reduce((accumulator, item) => {
+      const label = getCompositionGroupLabel(item);
+      const current = accumulator.get(label) || {
+        label,
+        percentage: 0,
+        grams: 0,
+        count: 0,
+      };
+
+      current.percentage += Number(item.percentage || 0);
+      current.grams += Number(item.gram_amount || 0);
+      current.count += 1;
+      accumulator.set(label, current);
+      return accumulator;
+    }, new Map());
+
+    return [...grouped.values()]
+      .sort((left, right) => right.percentage - left.percentage)
+      .slice(0, 6);
+  }, [items]);
+
   if (loading) {
     return (
       <DetailPageLayout>
@@ -232,6 +271,10 @@ const FormulaDetailPage = () => {
   const ifraAdvisoryCount = formulaReferenceAdvisories.filter((item) => item.type === 'ifra').length;
   const maxUseAdvisoryCount = formulaReferenceAdvisories.filter((item) => item.type === 'max').length;
   const typicalUseAdvisoryCount = formulaReferenceAdvisories.filter((item) => item.type === 'typical').length;
+  const totalReferenceAlertCount = formulaReferenceAdvisories.length;
+  const visibleReferenceAdvisories = showAllReferenceAlerts
+    ? formulaReferenceAdvisories
+    : formulaReferenceAdvisories.slice(0, 4);
   const workbookSimulation = buildWorkbookSimulation({
     items,
     rawMaterialsById,
@@ -241,6 +284,15 @@ const FormulaDetailPage = () => {
         .map((item) => [item.item_id, item.reference_link])
     ),
   });
+  const hiddenCompositionGroupCount = Math.max(0, new Set(items.map(getCompositionGroupLabel)).size - compactCompositionRows.length);
+  const workbookBoardStats = [
+    { label: 'Guidance-backed', value: `${workbookSimulation.guidanceBackedCount}/${items.length}` },
+    { label: 'Workbook link', value: workbookSimulation.linkedProfileCount },
+    { label: 'Manual guidance', value: workbookSimulation.fallbackGuidanceCount },
+    { label: 'Missing', value: workbookSimulation.missingGuidanceCount },
+    { label: 'Reference alerts', value: totalReferenceAlertCount },
+    { label: 'Material cost', value: formatPrice(totalCost) },
+  ];
 
   return (
     <>
@@ -265,7 +317,7 @@ const FormulaDetailPage = () => {
               </Badge>
             )
           }
-          onBack={() => navigate('/formulas')}
+          onBack={handleBack}
           backLabel="Back to formulas"
           meta={
             <>
@@ -307,181 +359,264 @@ const FormulaDetailPage = () => {
         />
 
         <div className="space-y-5 print-full-width">
-          <DetailSection title="Snapshot">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Total items</div>
-                <div className="text-lg font-semibold">{items.length}</div>
-              </div>
-              <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Low stock ingredients</div>
-                <div className={`text-lg font-semibold ${lowStockCount > 0 ? 'text-destructive' : ''}`}>{lowStockCount}</div>
-              </div>
-              <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Diluted ingredients</div>
-                <div className="text-lg font-semibold">{dilutedItemCount}</div>
-              </div>
-              <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Recent batches</div>
-                <div className="text-lg font-semibold">{batches.length}</div>
-              </div>
-            </div>
-          </DetailSection>
+          <div className="rounded-[28px] border border-white/80 bg-white/90 p-3 shadow-sm sm:p-4">
+            <Tabs defaultValue="overview" className="space-y-4">
+              <TabsList className="h-auto flex-wrap justify-start rounded-2xl bg-muted/70 p-1">
+                <TabsTrigger value="overview" className="rounded-xl">Overview</TabsTrigger>
+                <TabsTrigger value="workbook" className="rounded-xl">Workbook</TabsTrigger>
+                <TabsTrigger value="composition" className="rounded-xl">Composition</TabsTrigger>
+                <TabsTrigger value="batches" className="rounded-xl">Batches</TabsTrigger>
+              </TabsList>
 
-          <DetailSection title="Reference guidance">
-            {hasFormulaItems ? (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Guidance-backed items</div>
-                    <div className="text-lg font-semibold">{referenceCoverageCount}</div>
+              <TabsContent value="overview" className="space-y-5">
+                <DetailSection title="Overview">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Items</div>
+                      <div className="text-lg font-semibold">{items.length}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Low stock</div>
+                      <div className={`text-lg font-semibold ${lowStockCount > 0 ? 'text-destructive' : ''}`}>{lowStockCount}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Diluted</div>
+                      <div className="text-lg font-semibold">{dilutedItemCount}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Guidance-backed</div>
+                      <div className="text-lg font-semibold">{referenceCoverageCount}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Reference alerts</div>
+                      <div className={`text-lg font-semibold ${totalReferenceAlertCount > 0 ? 'text-amber-600' : ''}`}>{totalReferenceAlertCount}</div>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Material cost</div>
+                      <div className="text-lg font-semibold font-mono text-primary">{formatPrice(totalCost)}</div>
+                    </div>
                   </div>
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Workbook links</div>
-                    <div className="text-lg font-semibold">{workbookSimulation.linkedProfileCount}</div>
-                  </div>
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Manual guidance</div>
-                    <div className="text-lg font-semibold">{workbookSimulation.fallbackGuidanceCount}</div>
-                  </div>
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">IFRA alerts</div>
-                    <div className={`text-lg font-semibold ${ifraAdvisoryCount > 0 ? 'text-destructive' : ''}`}>{ifraAdvisoryCount}</div>
-                  </div>
-                </div>
+                </DetailSection>
 
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Max use alerts</div>
-                    <div className={`text-lg font-semibold ${maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''}`}>{maxUseAdvisoryCount}</div>
-                  </div>
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-1">Typical use nudges</div>
-                    <div className={`text-lg font-semibold ${typicalUseAdvisoryCount > 0 ? 'text-blue-600' : ''}`}>{typicalUseAdvisoryCount}</div>
-                  </div>
-                </div>
+                <DetailSection title="Reference guidance">
+                  {hasFormulaItems ? (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="rounded-xl border bg-card p-4">
+                          <div className="text-xs text-muted-foreground mb-1">Workbook links</div>
+                          <div className="text-lg font-semibold">{workbookSimulation.linkedProfileCount}</div>
+                        </div>
+                        <div className="rounded-xl border bg-card p-4">
+                          <div className="text-xs text-muted-foreground mb-1">Manual guidance</div>
+                          <div className="text-lg font-semibold">{workbookSimulation.fallbackGuidanceCount}</div>
+                        </div>
+                        <div className="rounded-xl border bg-card p-4">
+                          <div className="text-xs text-muted-foreground mb-1">Missing guidance</div>
+                          <div className="text-lg font-semibold">{workbookSimulation.missingGuidanceCount}</div>
+                        </div>
+                        <div className="rounded-xl border bg-card p-4">
+                          <div className="text-xs text-muted-foreground mb-1">IFRA alerts</div>
+                          <div className={`text-lg font-semibold ${ifraAdvisoryCount > 0 ? 'text-destructive' : ''}`}>{ifraAdvisoryCount}</div>
+                        </div>
+                        <div className="rounded-xl border bg-card p-4">
+                          <div className="text-xs text-muted-foreground mb-1">Max use alerts</div>
+                          <div className={`text-lg font-semibold ${maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''}`}>{maxUseAdvisoryCount}</div>
+                        </div>
+                        <div className="rounded-xl border bg-card p-4">
+                          <div className="text-xs text-muted-foreground mb-1">Typical nudges</div>
+                          <div className={`text-lg font-semibold ${typicalUseAdvisoryCount > 0 ? 'text-blue-600' : ''}`}>{typicalUseAdvisoryCount}</div>
+                        </div>
+                      </div>
 
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Guidance now distinguishes workbook-linked profiles from manual raw material guidance. For diluted ingredients, the advisory is calculated from the effective active percentage, not the listed diluted percentage in the formula.
-                </p>
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Untuk bahan diluted, advisory dihitung dari effective active percentage, bukan sekadar persen diluted yang tertulis.
+                      </p>
 
-                <div className="mt-4 space-y-3">
-                  {!hasReferenceCoverage ? (
+                      <div className="mt-4 space-y-3">
+                        {!hasReferenceCoverage ? (
+                          <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>No guidance-backed materials yet</AlertTitle>
+                            <AlertDescription>
+                              Add raw materials that already have workbook reference links or manual guidance to unlock IFRA guidance, odour facets, and lifetime-based charting for this formula.
+                            </AlertDescription>
+                          </Alert>
+                        ) : formulaReferenceAdvisories.length ? visibleReferenceAdvisories.map((advisory) => (
+                          <Alert
+                            key={`${advisory.itemId}-${advisory.type}`}
+                            variant={advisory.severity === 'danger' ? 'destructive' : 'default'}
+                            className={advisory.severity === 'warning' ? 'border-amber-300 bg-amber-50 text-amber-950 [&>svg]:text-amber-700' : ''}
+                          >
+                            {advisory.severity === 'danger' || advisory.severity === 'warning' ? (
+                              <AlertTriangle className="h-4 w-4" />
+                            ) : (
+                              <Info className="h-4 w-4" />
+                            )}
+                            <AlertTitle>{advisory.itemName} / {advisory.label}</AlertTitle>
+                            <AlertDescription>
+                              <p>{advisory.message}</p>
+                              <p className="mt-1 text-xs opacity-80">
+                                Reference {advisory.referenceCode || 'profile linked'}
+                                {advisory.dilutionPercentage ? ` / diluted ${formatPercentage(advisory.dilutionPercentage, 1)}` : ''}
+                              </p>
+                            </AlertDescription>
+                          </Alert>
+                        )) : (
+                          <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>No reference alerts in this formula</AlertTitle>
+                            <AlertDescription>
+                              Linked raw materials are currently within their typical guidance, max use level, and IFRA reference limit where that data is available.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        {formulaReferenceAdvisories.length > 4 ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAllReferenceAlerts((current) => !current)}
+                            className="rounded-xl"
+                          >
+                            {showAllReferenceAlerts
+                              ? 'Show fewer alerts'
+                              : `Show ${formulaReferenceAdvisories.length - 4} more alerts`}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
                     <Alert>
                       <Info className="h-4 w-4" />
-                      <AlertTitle>No guidance-backed materials yet</AlertTitle>
+                      <AlertTitle>This formula does not have any ingredients yet</AlertTitle>
                       <AlertDescription>
-                        Add raw materials that already have workbook reference links or manual guidance to unlock IFRA guidance, odour facets, and lifetime-based charting for this formula.
-                      </AlertDescription>
-                    </Alert>
-                  ) : formulaReferenceAdvisories.length ? formulaReferenceAdvisories.map((advisory) => (
-                    <Alert
-                      key={`${advisory.itemId}-${advisory.type}`}
-                      variant={advisory.severity === 'danger' ? 'destructive' : 'default'}
-                      className={advisory.severity === 'warning' ? 'border-amber-300 bg-amber-50 text-amber-950 [&>svg]:text-amber-700' : ''}
-                    >
-                      {advisory.severity === 'danger' || advisory.severity === 'warning' ? (
-                        <AlertTriangle className="h-4 w-4" />
-                      ) : (
-                        <Info className="h-4 w-4" />
-                      )}
-                      <AlertTitle>{advisory.itemName} / {advisory.label}</AlertTitle>
-                      <AlertDescription>
-                        <p>{advisory.message}</p>
-                        <p className="mt-1 text-xs opacity-80">
-                          Reference {advisory.referenceCode || 'profile linked'}
-                          {advisory.dilutionPercentage ? ` / diluted ${formatPercentage(advisory.dilutionPercentage, 1)}` : ''}
-                        </p>
-                      </AlertDescription>
-                    </Alert>
-                  )) : (
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertTitle>No reference alerts in this formula</AlertTitle>
-                      <AlertDescription>
-                        Linked raw materials are currently within their typical guidance, max use level, and IFRA reference limit where that data is available.
+                        Add at least one raw material to start reference guidance, workbook charting, and concentration alerts for this formula.
                       </AlertDescription>
                     </Alert>
                   )}
-                </div>
-              </>
-            ) : (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>This formula does not have any ingredients yet</AlertTitle>
-                <AlertDescription>
-                  Add at least one raw material to start reference guidance, workbook charting, and concentration alerts for this formula.
-                </AlertDescription>
-              </Alert>
-            )}
-          </DetailSection>
+                </DetailSection>
+              </TabsContent>
 
-          <DetailSection title="Summary">
-            <DetailFieldGroup columns={4}>
-              <DetailField label="Code" value={formula.code} />
-              <DetailField label="By" value={formatNullable(formula.author_name)} />
-              <DetailField label="Status" value={formatStatus(formula.status || 'draft')} />
-              <DetailField label="Material cost" value={formatPrice(totalCost)} />
-              <DetailField label="Category" value={formatNullable(formula.category)} />
-              <DetailField label="Version" value={formatNullable(formula.version)} />
-            </DetailFieldGroup>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <DetailField 
-                label="Total amount" 
-                value={formatGramAmount(totalGrams)} 
-              />
-              <DetailField 
-                label="Created" 
-                value={formatDate(formula.created)} 
-              />
-            </div>
-          </DetailSection>
-
-          <DetailSection title="Composition profile">
-            {hasFormulaItems ? (
-              <PyramidSummary items={items} />
-            ) : (
-              <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                Composition profile will appear here after the formula has at least one ingredient with a gram amount.
-              </div>
-            )}
-          </DetailSection>
-
-          <DetailSection title="Chart layer">
-            {hasFormulaItems ? (
-              <div className="space-y-4">
-                <FormulaOdourDisplayPanel
-                  items={items}
-                  rawMaterialsById={rawMaterialsById}
-                  referenceLinksMap={new Map(
-                    items
-                      .filter((item) => item.reference_link)
-                      .map((item) => [item.item_id, item.reference_link])
+              <TabsContent value="workbook" className="space-y-5">
+                <DetailSection title="Workbook visualisation">
+                  {hasFormulaItems ? (
+                    <div className="space-y-4">
+                      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] xl:items-start">
+                        <div className="space-y-3">
+                          <div className="overflow-hidden rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,244,235,0.96)_100%)] shadow-sm">
+                            <div className="border-b border-[#e2d8c2] px-4 py-3">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7e6c42]">
+                                Composition board
+                              </div>
+                              <div className="mt-1 text-sm text-[#5f5239]">
+                                Dominant groups in a tighter workbook-style table.
+                              </div>
+                            </div>
+                            <div className="px-4 py-3">
+                              <div className="grid grid-cols-[minmax(0,1.4fr)_76px_76px_58px] gap-3 border-b border-[#ece4d3] pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+                                <div>Group</div>
+                                <div className="text-right">% share</div>
+                                <div className="text-right">Amount</div>
+                                <div className="text-right">Rows</div>
+                              </div>
+                              <div className="divide-y divide-[#f0e8d8]">
+                                {compactCompositionRows.map((row) => (
+                                  <div key={row.label} className="grid grid-cols-[minmax(0,1.4fr)_76px_76px_58px] gap-3 py-2 text-sm">
+                                    <div className="min-w-0">
+                                      <div className="truncate font-medium text-[#3f3524]">{row.label}</div>
+                                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#efe9da]">
+                                        <div
+                                          className="h-full rounded-full bg-[#f2a323]"
+                                          style={{ width: `${Math.min(Math.max(row.percentage, 0), 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="text-right font-mono text-[#3f3524]">{formatPercentage(row.percentage, 1)}</div>
+                                    <div className="text-right font-mono text-[#6b5d41]">{formatGramAmount(row.grams)}</div>
+                                    <div className="text-right font-mono text-[#8a7a58]">{row.count}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              {hiddenCompositionGroupCount > 0 ? (
+                                <div className="border-t border-[#ece4d3] pt-2 text-xs text-muted-foreground">
+                                  +{hiddenCompositionGroupCount} more groups hidden for a cleaner desktop view.
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="overflow-hidden rounded-[24px] border border-[#ddd3bf] bg-white shadow-sm">
+                            <div className="border-b border-[#eee4d0] px-4 py-3">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7e6c42]">
+                                Formula ledger
+                              </div>
+                              <div className="mt-1 text-sm text-[#5f5239]">
+                                Quick workbook coverage and formula economics.
+                              </div>
+                            </div>
+                            <div className="divide-y divide-[#f1eadc]">
+                              {workbookBoardStats.map((stat) => (
+                                <div key={stat.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 text-sm">
+                                  <div className="text-[#6c5f46]">{stat.label}</div>
+                                  <div className="font-mono font-semibold text-[#3f3524]">{stat.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <FormulaOdourDisplayPanel
+                            items={items}
+                            rawMaterialsById={rawMaterialsById}
+                            referenceLinksMap={new Map(
+                              items
+                                .filter((item) => item.reference_link)
+                                .map((item) => [item.item_id, item.reference_link])
+                            )}
+                            isVisible
+                          />
+                        </div>
+                      </div>
+                      <div className="mx-auto w-full max-w-[1120px]">
+                        <FormulaWorkbookSimulationPanel
+                          items={items}
+                          rawMaterialsById={rawMaterialsById}
+                          referenceLinksMap={new Map(
+                            items
+                              .filter((item) => item.reference_link)
+                              .map((item) => [item.item_id, item.reference_link])
+                          )}
+                          title="Workbook diagnostics"
+                          description="Reference coverage, lifetime estimate, and IFRA-oriented diagnostics for the current formula."
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                      Workbook charts and composition profile will appear after the formula has ingredients. Linked workbook materials will unlock odour facets, family spread, and top-middle-base decay curves.
+                    </div>
                   )}
-                  isVisible
-                />
-                <FormulaWorkbookSimulationPanel
-                  items={items}
-                  rawMaterialsById={rawMaterialsById}
-                  referenceLinksMap={new Map(
-                    items
-                      .filter((item) => item.reference_link)
-                      .map((item) => [item.item_id, item.reference_link])
-                  )}
-                  title="Workbook diagnostics"
-                  description="Reference coverage, lifetime estimate, and IFRA-oriented diagnostics for the current formula."
-                />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                Workbook charts will appear after the formula has ingredients. Linked workbook materials will unlock odour facets, family spread, and top-middle-base decay curves.
-              </div>
-            )}
-          </DetailSection>
+                </DetailSection>
+              </TabsContent>
 
-          <DetailSection title="Composition">
+              <TabsContent value="composition" className="space-y-5">
+                <DetailSection title="Composition">
             {hasFormulaItems ? (
               <>
+                <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Total amount</div>
+                    <div className="text-lg font-semibold font-mono">{formatGramAmount(totalGrams)}</div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Total percentage</div>
+                    <div className="text-lg font-semibold font-mono">{formatPercentage(totalPercentage)}</div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Material cost</div>
+                    <div className="text-lg font-semibold font-mono text-primary">{formatPrice(totalCost)}</div>
+                  </div>
+                </div>
+
                 <div className="space-y-3 md:hidden">
                   {items.map((item, index) => {
                     const ingredientCost = item.ingredient_cost ?? calculateIngredientCost(item.gram_amount, item.unit_price);
@@ -497,7 +632,9 @@ const FormulaDetailPage = () => {
                             <div className="text-sm font-semibold">
                               {item.item_type === 'raw_material' || item.item_type === 'solvent' ? (
                                 <button
-                                  onClick={() => navigate(`/raw-material/${item.item_id}`)}
+                                  onClick={() => navigate(`/raw-material/${item.item_id}`, {
+                                    state: { from: `${location.pathname}${location.search}` },
+                                  })}
                                   className="text-left text-primary hover:underline"
                                 >
                                   {item.name}
@@ -544,18 +681,18 @@ const FormulaDetailPage = () => {
                             <div className="mt-1 font-mono text-sm">{formatPercentage(item.percentage)}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Unit price</div>
-                            <div className="mt-1 font-mono">{formatPricePerUnit(item.unit_price, item.unit)}</div>
-                          </div>
-                          <div>
                             <div className="text-muted-foreground">Cost</div>
                             <div className="mt-1 font-mono">{formatPrice(ingredientCost)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Unit price</div>
+                            <div className="mt-1 font-mono">{formatPricePerUnit(item.unit_price, item.unit)}</div>
                           </div>
                         </div>
 
                         {(item.item_type === 'raw_material' || item.item_type === 'solvent') ? (
-                          <div className="mt-3">
-                            <Badge variant={item.is_low_stock ? 'destructive' : 'default'} className="text-[10px]">
+                        <div className="mt-3">
+                            <Badge variant={item.is_low_stock ? 'destructive' : 'outline'} className="text-[10px]">
                               {item.is_low_stock ? 'Low stock' : 'In stock'}
                             </Badge>
                           </div>
@@ -572,17 +709,15 @@ const FormulaDetailPage = () => {
                 </div>
 
                 <div className="hidden table-container md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[150px]">Material name</TableHead>
-                        <TableHead className="min-w-[100px]">Item type</TableHead>
-                        <TableHead className="text-right min-w-[100px]">Amount</TableHead>
-                        <TableHead className="text-right min-w-[100px]">Percentage</TableHead>
-                        <TableHead className="text-right min-w-[140px]">Unit price</TableHead>
-                        <TableHead className="text-right min-w-[100px]">Cost</TableHead>
-                        <TableHead className="text-right min-w-[100px]">Stock status</TableHead>
-                      </TableRow>
+                  <div className="overflow-hidden rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(248,244,235,0.94)_100%)] shadow-sm">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-[#e6dcc8]">
+                          <TableHead className="min-w-[230px] pl-5">Material</TableHead>
+                          <TableHead className="min-w-[220px]">Guidance</TableHead>
+                          <TableHead className="text-right min-w-[120px]">Usage</TableHead>
+                          <TableHead className="text-right min-w-[140px] pr-5">Cost</TableHead>
+                        </TableRow>
                     </TableHeader>
                     <TableBody>
                       {items.map((item, index) => {
@@ -594,68 +729,90 @@ const FormulaDetailPage = () => {
 
                         return (
                           <React.Fragment key={index}>
-                            <TableRow>
-                              <TableCell>
+                            <TableRow className="border-[#eee5d3] align-top">
+                              <TableCell className="pl-5 py-3">
                                 {item.item_type === 'raw_material' || item.item_type === 'solvent' ? (
-                                  <div>
+                                  <div className="space-y-1.5">
                                     <button
-                                      onClick={() => navigate(`/raw-material/${item.item_id}`)}
-                                      className="font-medium text-primary hover:underline text-sm"
+                                      onClick={() => navigate(`/raw-material/${item.item_id}`, {
+                                        state: { from: `${location.pathname}${location.search}` },
+                                      })}
+                                      className="text-left text-sm font-semibold text-[#3f3524] transition hover:text-primary hover:underline"
                                     >
                                       {item.name}
-                                      {isDiluted && (
-                                        <span className="ml-2 text-xs text-muted-foreground">
-                                          ({item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''})
-                                        </span>
-                                      )}
                                     </button>
-                                    {item.reference_profile ? (
-                                      <div className="mt-2 flex flex-wrap gap-2">
-                                        <Badge variant="secondary" className="text-[10px]">
-                                          Ref {item.reference_profile.reference_code}
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
+                                        {formatStatus(item.item_type)}
+                                      </Badge>
+                                      {(item.item_type === 'raw_material' || item.item_type === 'solvent') ? (
+                                        <Badge variant={item.is_low_stock ? 'destructive' : 'outline'} className="rounded-full px-2 py-0.5 text-[10px]">
+                                          {item.is_low_stock ? 'Low stock' : 'In stock'}
                                         </Badge>
-                                        {item.advisories?.map((advisory) => (
-                                          <Badge
-                                            key={`${item.item_id}-${advisory.type}`}
-                                            variant={advisory.type === 'ifra' ? 'destructive' : 'outline'}
-                                            className="text-[10px]"
-                                          >
-                                            {advisory.label}
-                                          </Badge>
-                                        ))}
+                                      ) : null}
+                                    </div>
+                                    {isDiluted ? (
+                                      <div className="text-xs text-muted-foreground">
+                                        {item.dilution_percentage}%{item.dilution_solvent_name ? ` in ${item.dilution_solvent_name}` : ''}
                                       </div>
                                     ) : null}
                                   </div>
                                 ) : (
-                                  <div className="font-medium text-sm">
-                                    {item.name}
+                                  <div className="space-y-1.5">
+                                    <div className="font-semibold text-sm text-[#3f3524]">{item.name}</div>
+                                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
+                                      {formatStatus(item.item_type)}
+                                    </Badge>
                                   </div>
                                 )}
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="capitalize text-xs">
-                                  {formatStatus(item.item_type)}
-                                </Badge>
+                              <TableCell className="py-3">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {item.reference_profile ? (
+                                    <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
+                                      Ref {item.reference_profile.reference_code}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px]">
+                                      No workbook ref
+                                    </Badge>
+                                  )}
+                                  {item.advisories?.slice(0, 2).map((advisory) => (
+                                    <Badge
+                                      key={`${item.item_id}-${advisory.type}`}
+                                      variant={advisory.type === 'ifra' ? 'destructive' : 'outline'}
+                                      className="rounded-full px-2 py-0.5 text-[10px]"
+                                    >
+                                      {advisory.label}
+                                    </Badge>
+                                  ))}
+                                  {item.advisories?.length > 2 ? (
+                                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px]">
+                                      +{item.advisories.length - 2} more
+                                    </Badge>
+                                  ) : null}
+                                </div>
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm">{formatGramAmount(item.gram_amount)}</TableCell>
-                              <TableCell className="text-right font-mono text-sm">{formatPercentage(item.percentage)}</TableCell>
-                              <TableCell className="text-right font-mono text-xs">
-                                {formatPricePerUnit(item.unit_price, item.unit)}
+                              <TableCell className="py-3 text-right">
+                                <div className="font-mono text-sm font-semibold text-[#3f3524]">
+                                  {formatGramAmount(item.gram_amount)}
+                                </div>
+                                <div className="mt-1 font-mono text-xs text-muted-foreground">
+                                  {formatPercentage(item.percentage)}
+                                </div>
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm">
-                                {formatPrice(ingredientCost)}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {(item.item_type === 'raw_material' || item.item_type === 'solvent') && (
-                                  <Badge variant={item.is_low_stock ? 'destructive' : 'default'} className="text-xs">
-                                    {item.is_low_stock ? 'Low stock' : 'In stock'}
-                                  </Badge>
-                                )}
+                              <TableCell className="py-3 pr-5 text-right">
+                                <div className="font-mono text-sm font-semibold text-[#3f3524]">
+                                  {formatPrice(ingredientCost)}
+                                </div>
+                                <div className="mt-1 font-mono text-xs text-muted-foreground">
+                                  {formatPricePerUnit(item.unit_price, item.unit)}
+                                </div>
                               </TableCell>
                             </TableRow>
                             {isDiluted && composition && (
-                              <TableRow className="bg-muted/30">
-                                <TableCell colSpan={7} className="py-2 px-4">
+                              <TableRow className="bg-[#f7f2e8]">
+                                <TableCell colSpan={4} className="px-5 py-2.5">
                                   <div className="text-xs text-muted-foreground">
                                     Active: {formatGramAmount(composition.activeAmount)} + Solvent: {formatGramAmount(composition.solventAmount)}
                                   </div>
@@ -665,22 +822,20 @@ const FormulaDetailPage = () => {
                           </React.Fragment>
                         );
                       })}
-                      <TableRow className="font-semibold bg-muted/50">
-                        <TableCell colSpan={2} className="text-sm">Total</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{formatGramAmount(totalGrams)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{formatPercentage(totalPercentage)}</TableCell>
-                        <TableCell></TableCell>
-                        <TableCell className="text-right font-mono text-sm text-primary">
+                      <TableRow className="border-[#e0d6c1] bg-[#f6efe2] font-semibold">
+                        <TableCell className="pl-5 text-sm text-[#3f3524]">Total</TableCell>
+                        <TableCell className="text-sm text-[#6b5d41]">{items.length} rows</TableCell>
+                        <TableCell className="text-right font-mono text-sm text-[#3f3524]">
+                          <div>{formatGramAmount(totalGrams)}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{formatPercentage(totalPercentage)}</div>
+                        </TableCell>
+                        <TableCell className="pr-5 text-right font-mono text-sm text-primary">
                           {formatPrice(totalCost)}
                         </TableCell>
-                        <TableCell></TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
-                </div>
-                <div className="mt-4 rounded-lg border border-primary/20 bg-primary/10 p-4">
-                  <div className="text-xs text-muted-foreground">Formula material cost</div>
-                  <div className="mt-1 text-lg font-bold font-mono text-primary">{formatPrice(totalCost)}</div>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Percentages are calculated from gram amounts. Formula detail stays focused on raw materials and solvent-related costs only.
@@ -693,72 +848,88 @@ const FormulaDetailPage = () => {
             )}
           </DetailSection>
 
-          {batches.length > 0 && (
-            <DetailSection title="Related batches">
-              <div className="space-y-3 md:hidden">
-                {batches.map((batch) => (
-                  <div key={batch.id} className="rounded-xl border bg-card p-4 shadow-sm">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <button
-                        onClick={() => navigate(`/batches/${batch.id}`)}
-                        className="font-medium font-mono text-left text-primary hover:underline text-sm"
-                      >
-                        {batch.batch_code}
-                      </button>
-                      <BatchStatusBadge status={batch.status} />
-                    </div>
-                    <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
-                      <div>
-                        <div className="text-muted-foreground">Quantity</div>
-                        <div className="mt-1 font-mono text-sm">
-                          {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
-                        </div>
+              </TabsContent>
+
+              <TabsContent value="batches" className="space-y-5">
+                <DetailSection title="Related batches">
+                  {batches.length > 0 ? (
+                    <>
+                      <div className="space-y-3 md:hidden">
+                        {batches.map((batch) => (
+                          <div key={batch.id} className="rounded-xl border bg-card p-4 shadow-sm">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <button
+                                onClick={() => navigate(`/batches/${batch.id}`, {
+                                  state: { from: `${location.pathname}${location.search}` },
+                                })}
+                                className="font-medium font-mono text-left text-primary hover:underline text-sm"
+                              >
+                                {batch.batch_code}
+                              </button>
+                              <BatchStatusBadge status={batch.status} />
+                            </div>
+                            <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
+                              <div>
+                                <div className="text-muted-foreground">Quantity</div>
+                                <div className="mt-1 font-mono text-sm">
+                                  {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">Production date</div>
+                                <div className="mt-1 text-sm">{formatDate(batch.production_date)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <div className="text-muted-foreground">Production date</div>
-                        <div className="mt-1 text-sm">{formatDate(batch.production_date)}</div>
+                      <div className="hidden table-container md:block">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="min-w-[120px]">Batch code</TableHead>
+                              <TableHead className="min-w-[100px]">Status</TableHead>
+                              <TableHead className="text-right min-w-[100px]">Quantity</TableHead>
+                              <TableHead className="text-right min-w-[120px]">Production date</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {batches.map((batch) => (
+                              <TableRow key={batch.id}>
+                                <TableCell>
+                                  <button
+                                    onClick={() => navigate(`/batches/${batch.id}`, {
+                                      state: { from: `${location.pathname}${location.search}` },
+                                    })}
+                                    className="font-medium font-mono text-primary hover:underline text-sm"
+                                  >
+                                    {batch.batch_code}
+                                  </button>
+                                </TableCell>
+                                <TableCell>
+                                  <BatchStatusBadge status={batch.status} />
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm">
+                                  {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
+                                </TableCell>
+                                <TableCell className="text-right text-sm">
+                                  {formatDate(batch.production_date)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
+                    </>
+                  ) : (
+                    <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                      No related batches yet. Create one from the action bar when this formula is ready for production.
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div className="hidden table-container md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[120px]">Batch code</TableHead>
-                      <TableHead className="min-w-[100px]">Status</TableHead>
-                      <TableHead className="text-right min-w-[100px]">Quantity</TableHead>
-                      <TableHead className="text-right min-w-[120px]">Production date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {batches.map((batch) => (
-                      <TableRow key={batch.id}>
-                        <TableCell>
-                          <button
-                            onClick={() => navigate(`/batches/${batch.id}`)}
-                            className="font-medium font-mono text-primary hover:underline text-sm"
-                          >
-                            {batch.batch_code}
-                          </button>
-                        </TableCell>
-                        <TableCell>
-                          <BatchStatusBadge status={batch.status} />
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
-                        </TableCell>
-                        <TableCell className="text-right text-sm">
-                          {formatDate(batch.production_date)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </DetailSection>
-          )}
+                  )}
+                </DetailSection>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {formula.notes && (
             <DetailSection title="Notes">

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -34,6 +34,7 @@ const hasReferenceValue = (value) => value !== null && value !== undefined;
 
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { fetchMaterials, fetchMaterialsPage, fetchMaterialsSummary, fetchMaterialsReferenceSummary, deleteMaterial } = useRawMaterials();
   const [materials, setMaterials] = useState([]);
   const [remapMaterials, setRemapMaterials] = useState([]);
@@ -283,7 +284,7 @@ const RawMaterialsPage = () => {
 
   const handleView = (material) => {
     navigate(`/raw-material/${material.id}`, {
-      state: { from: '/raw-materials' },
+      state: { from: `${location.pathname}${location.search}` },
     });
   };
 
@@ -366,24 +367,24 @@ const RawMaterialsPage = () => {
       label: 'Name',
       render: (row) => (
         <button onClick={() => handleView(row)} className="text-left">
-          <div className="font-medium text-primary hover:underline">{row.name}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">
+          <div className="text-sm font-semibold text-primary transition hover:underline">{row.name}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground">
               {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
             </span>
             {referenceStatusMap.get(row.id)?.reference_profile ? (
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
                 Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
                 Unmatched
               </Badge>
             )}
             {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
             && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
-              <Badge variant="outline" className="text-[10px]">
-                IFRA ref
+              <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
+                IFRA
               </Badge>
             ) : null}
           </div>
@@ -394,9 +395,11 @@ const RawMaterialsPage = () => {
       key: 'type',
       label: 'Type',
       render: (row) => (
-        <div className="min-w-[120px]">
-          <div className="text-sm capitalize text-foreground">{row.type}</div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="min-w-[132px]">
+          <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize">
+            {row.type}
+          </Badge>
+          <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
             <span
               className="h-2.5 w-2.5 rounded-full border border-border/60"
               style={{ backgroundColor: categoryColorMap.get(String(row.category || '').toLowerCase()) || '#CBD5E1' }}
@@ -415,10 +418,10 @@ const RawMaterialsPage = () => {
         const isLowStock = row.stock_quantity < threshold;
         return (
           <div className="text-right">
-            <div className={`font-mono ${isLowStock ? 'text-destructive font-semibold' : ''}`}>
+            <div className={`font-mono text-sm ${isLowStock ? 'text-destructive font-semibold' : 'font-medium text-foreground'}`}>
               {formatQuantity(row.stock_quantity)} {row.unit}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-1 text-[11px] text-muted-foreground">
               Min {formatQuantity(threshold)} {row.unit}
             </div>
           </div>
@@ -435,31 +438,31 @@ const RawMaterialsPage = () => {
             <button
               type="button"
               onClick={() => openGuidanceEditor(row)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  guidance.hasWarning
-                    ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                    : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
-                }`}
-              >
-                {guidance.hasWarning ? (
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
-                ) : (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                )}
-                {guidance.hasWarning
-                  ? (guidance.hasCoreGuidance ? 'Guidance partial' : 'Needs guidance')
-                  : 'Guidance ready'}
-              </button>
-              <div className="mt-2 text-xs text-muted-foreground">
-                {guidance.hasWarning
-                ? [
-                    guidance.missingClass ? 'family' : null,
-                    guidance.missingImpact ? 'impact' : null,
-                    guidance.missingLife ? 'life' : null,
-                    guidance.missingCas ? 'CAS' : null,
-                    guidance.missingIfra ? 'IFRA' : null,
-                  ].filter(Boolean).join(', ')
-                : 'Impact, life, CAS, dan IFRA sudah ada.'}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+                guidance.hasWarning
+                  ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+              }`}
+            >
+              {guidance.hasWarning ? (
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+              )}
+              {guidance.hasWarning
+                ? (guidance.hasCoreGuidance ? 'Guidance partial' : 'Needs guidance')
+                : 'Guidance ready'}
+            </button>
+            <div className="mt-1.5 text-[11px] leading-5 text-muted-foreground">
+              {guidance.hasWarning
+              ? [
+                  guidance.missingClass ? 'family' : null,
+                  guidance.missingImpact ? 'impact' : null,
+                  guidance.missingLife ? 'life' : null,
+                  guidance.missingCas ? 'CAS' : null,
+                  guidance.missingIfra ? 'IFRA' : null,
+                ].filter(Boolean).join(', ')
+              : 'Impact, life, CAS, dan IFRA sudah ada.'}
             </div>
           </div>
         );
@@ -471,8 +474,8 @@ const RawMaterialsPage = () => {
       align: 'right',
       render: (row) => (
         <div className="text-right">
-          <div className="font-mono text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="font-mono text-sm font-medium text-foreground">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
+          <div className="mt-1 text-[11px] text-muted-foreground">
             Stock value {formatPrice(calculateIngredientCost(row.stock_quantity || 0, row.cost_per_unit || 0))}
           </div>
         </div>

@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { WORKBOOK_ABC_CLASSIFICATIONS } from '@/utils/workbookAbcClassification.js';
-import { importPerfumersWorldByUrl, importScentreeByUrl } from '@/services/scentreeImportService.js';
+import { importPerfumersWorldByUrl, importScentreeByUrl, importTgscByUrl } from '@/services/scentreeImportService.js';
 
 const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
   value: entry.familyName,
@@ -99,9 +100,11 @@ const RawMaterialGuidanceQuickEditDialog = ({
   });
   const [scentreeUrl, setScentreeUrl] = useState('');
   const [perfumersWorldUrl, setPerfumersWorldUrl] = useState('');
+  const [tgscUrl, setTgscUrl] = useState('');
   const [inferenceLines, setInferenceLines] = useState([]);
   const [suggestedDescription, setSuggestedDescription] = useState('');
   const [importingUrl, setImportingUrl] = useState(false);
+  const [workbookCodeNotice, setWorkbookCodeNotice] = useState('');
 
   useEffect(() => {
     if (!material) {
@@ -122,8 +125,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
     });
     setScentreeUrl('');
     setPerfumersWorldUrl('');
+    setTgscUrl('');
     setInferenceLines([]);
     setSuggestedDescription('');
+    setWorkbookCodeNotice('');
   }, [material]);
 
   const warningLines = useMemo(() => {
@@ -147,6 +152,8 @@ const RawMaterialGuidanceQuickEditDialog = ({
     if (!material?.id) {
       return;
     }
+
+    setWorkbookCodeNotice('');
 
     try {
       const nextPayload = {
@@ -186,8 +193,8 @@ const RawMaterialGuidanceQuickEditDialog = ({
             ...current,
             workbook_code: material.workbook_code || '',
           }));
-          toast.success(`Workbook guidance for ${material.name} updated tanpa workbook code yang bentrok`);
-          onOpenChange(false);
+          setWorkbookCodeNotice(error.message || 'Workbook code bentrok dengan raw material lain, jadi field ini tidak ikut disimpan.');
+          toast.success(`Workbook guidance for ${material.name} updated. Workbook code tidak diubah karena bentrok.`);
           onSaved?.(updatedMaterial);
           return;
         } catch (retryError) {
@@ -306,6 +313,57 @@ const RawMaterialGuidanceQuickEditDialog = ({
       toast.success('PerfumersWorld URL imported');
     } catch (error) {
       toast.error(error.message || 'Failed to import PerfumersWorld URL');
+    } finally {
+      setImportingUrl(false);
+    }
+  };
+
+  const handleImportTgscUrl = async () => {
+    if (!tgscUrl.trim()) {
+      toast.error('Masukkan URL TGSC dulu');
+      return;
+    }
+
+    setImportingUrl(true);
+    try {
+      const imported = await importTgscByUrl(tgscUrl.trim());
+
+      setFormData((current) => ({
+        workbook_code: current.workbook_code,
+        cas_number: imported.cas_number || current.cas_number,
+        ifra_limit: current.ifra_limit,
+        reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
+        reference_impact: shouldOverrideNumericGuidance({
+          currentValue: current.reference_impact,
+          nextValue: imported.reference_impact,
+          applyMissingOnly: false,
+          nextSourceKind: imported.reference_impact_source,
+        })
+          ? String(imported.reference_impact)
+          : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({
+          currentValue: current.reference_life_hours,
+          nextValue: imported.reference_life_hours,
+          applyMissingOnly: false,
+          nextSourceKind: imported.reference_life_hours_source,
+        })
+          ? String(imported.reference_life_hours)
+          : current.reference_life_hours,
+        reference_use_level_typical_percent: current.reference_use_level_typical_percent,
+        reference_use_level_max_percent: current.reference_use_level_max_percent,
+      }));
+
+      setSuggestedDescription(imported.description || material?.description || '');
+      setInferenceLines([
+        imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di TGSC.',
+        imported.odor_type ? `Odor type: ${imported.odor_type}` : 'Odor type tidak tersedia di TGSC.',
+        imported.odor_strength ? `Odor strength: ${imported.odor_strength}` : 'Odor strength tidak tersedia di TGSC.',
+        imported.substantivity_hours !== null && imported.substantivity_hours !== undefined ? `Substantivity: ${imported.substantivity_hours} h` : 'Substantivity tidak tersedia di TGSC.',
+        imported.odor_description ? `Odor description: ${imported.odor_description}` : 'Odor description tidak tersedia di TGSC.',
+      ]);
+      toast.success('TGSC URL imported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to import TGSC URL');
     } finally {
       setImportingUrl(false);
     }
@@ -435,6 +493,28 @@ const RawMaterialGuidanceQuickEditDialog = ({
               />
             </div>
 
+            <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                  <Label htmlFor="quick-guidance-tgsc-url">TGSC URL</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tempel URL The Good Scents Company untuk import CAS, odor profile, impact heuristic, dan life dari substantivity.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" onClick={handleImportTgscUrl} className="rounded-2xl" disabled={importingUrl}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  {importingUrl ? 'Importing...' : 'Import URL'}
+                </Button>
+              </div>
+              <Input
+                id="quick-guidance-tgsc-url"
+                value={tgscUrl}
+                onChange={(event) => setTgscUrl(event.target.value)}
+                placeholder="https://www.thegoodscentscompany.com/data/es1002952.html"
+                className="h-11 rounded-2xl"
+              />
+            </div>
+
             {inferenceLines.length ? (
               <div className="rounded-xl border border-[#e7decb] bg-[#fcfaf4] px-3 py-3 text-xs text-[#5e5239]">
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
@@ -473,6 +553,9 @@ const RawMaterialGuidanceQuickEditDialog = ({
                     placeholder="Optional workbook code"
                     className="h-11 rounded-2xl"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Jika code bentrok dengan material lain, field lain tetap disimpan dan workbook code akan dikembalikan ke nilai sebelumnya.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="quick-guidance-cas">CAS number</Label>
@@ -485,6 +568,14 @@ const RawMaterialGuidanceQuickEditDialog = ({
                   />
                 </div>
               </div>
+
+              {workbookCodeNotice ? (
+                <Alert variant="default" className="border-amber-200 bg-amber-50 text-amber-950 [&>svg]:text-amber-700">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Workbook code tidak disimpan</AlertTitle>
+                  <AlertDescription>{workbookCodeNotice}</AlertDescription>
+                </Alert>
+              ) : null}
 
               <div className="space-y-2">
                 <Label htmlFor="quick-guidance-family">Workbook family / class</Label>

@@ -319,6 +319,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     try {
       const createdMaterials = new Map();
       const createdSolvents = new Map();
+      const reusedMatches = [];
 
       for (const item of missingMaterialEntries) {
         const key = buildMissingMaterialKey(item);
@@ -344,6 +345,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         });
 
         createdMaterials.set(key, createdMaterial);
+        if (createdMaterial?._creationResolution?.action === 'matched_existing') {
+          reusedMatches.push(createdMaterial._creationResolution.message);
+        }
       }
 
       for (const solventName of missingSolventEntries) {
@@ -370,6 +374,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         });
 
         createdSolvents.set(key, createdSolvent);
+        if (createdSolvent?._creationResolution?.action === 'matched_existing') {
+          reusedMatches.push(createdSolvent._creationResolution.message);
+        }
       }
 
       const itemsForSubmit = matchedItems.map((item, index) => {
@@ -406,6 +413,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         itemsForSubmit
       );
 
+      if (reusedMatches.length) {
+        toast.info(`Reused ${reusedMatches.length} existing raw material ${reusedMatches.length === 1 ? 'match' : 'matches'} during import.`);
+      }
       toast.success('Formula imported successfully');
       onOpenChange(false);
       if (onSuccess) {

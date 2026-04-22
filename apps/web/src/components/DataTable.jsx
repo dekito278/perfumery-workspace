@@ -65,20 +65,20 @@ const DataTable = ({
             {columns.map((column) => (
               <TableHead
                 key={column.key}
-                className={column.align === 'right' ? 'text-right' : ''}
+                className={`${column.align === 'right' ? 'text-right' : ''} py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground`}
               >
                 {column.label}
               </TableHead>
             ))}
             {hasActions && (
-              <TableHead className="table-action-head">Actions</TableHead>
+              <TableHead className="table-action-head py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="text-center py-12 text-muted-foreground">
+              <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="py-12 text-center text-sm text-muted-foreground">
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -97,13 +97,13 @@ const DataTable = ({
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}
-                    className={`${column.align === 'right' ? 'text-right' : ''} ${column.className || ''}`}
+                    className={`${column.align === 'right' ? 'text-right' : ''} align-top py-3 ${column.className || ''}`}
                   >
                     {column.render ? column.render(row) : row[column.key]}
                   </TableCell>
                 ))}
                 {hasActions && (
-                  <TableCell className="table-action-cell">
+                  <TableCell className="table-action-cell align-top py-3">
                     <div className="table-action-group">
                       {actions && actions(row)}
                       {onEdit && (

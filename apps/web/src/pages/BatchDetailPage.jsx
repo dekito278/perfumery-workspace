@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,7 @@ import { fetchRawMaterialsMap } from '@/services/supabaseDataHelpers.js';
 const BatchDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { deleteBatch } = useBatches();
   const { getFormulaItems } = useFormulaItems();
   const [batch, setBatch] = useState(null);
@@ -273,6 +274,15 @@ const BatchDetailPage = () => {
     [usageRecords]
   );
 
+  const handleBack = () => {
+    if (location.state?.from) {
+      navigate(location.state.from, { state: { restoreScroll: true } });
+      return;
+    }
+
+    navigate('/batches');
+  };
+
   if (loading) {
     return (
       <DetailPageLayout>
@@ -310,7 +320,7 @@ const BatchDetailPage = () => {
             `${formatQuantity(batch.target_quantity)} ${batch.unit}`,
           ].filter(Boolean).join(' / ')}
           badge={<BatchStatusBadge status={batch.status} showIcon />}
-          onBack={() => navigate('/batches')}
+          onBack={handleBack}
           backLabel="Back to batches"
           meta={
             <>
@@ -444,7 +454,14 @@ const BatchDetailPage = () => {
                 </div>
               )}
               <div className="mt-4">
-                <Button variant="outline" size="sm" onClick={() => navigate(`/formulas/${formula.id}`)} className="gap-2 h-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/formulas/${formula.id}`, {
+                    state: { from: `${location.pathname}${location.search}` },
+                  })}
+                  className="gap-2 h-8"
+                >
                   Open formula detail
                   <ExternalLink className="w-3 h-3" />
                 </Button>
@@ -459,7 +476,9 @@ const BatchDetailPage = () => {
                 value={
                   solvent ? (
                     <button
-                      onClick={() => navigate(`/raw-material/${solvent.id}`)}
+                      onClick={() => navigate(`/raw-material/${solvent.id}`, {
+                        state: { from: `${location.pathname}${location.search}` },
+                      })}
                       className="text-primary hover:underline font-medium text-sm"
                     >
                       {solvent.name}
@@ -486,7 +505,14 @@ const BatchDetailPage = () => {
             </div>
             {solvent && (
               <div className="mt-3">
-                <Button variant="outline" size="sm" onClick={() => navigate(`/raw-material/${solvent.id}`)} className="gap-2 h-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/raw-material/${solvent.id}`, {
+                    state: { from: `${location.pathname}${location.search}` },
+                  })}
+                  className="gap-2 h-8"
+                >
                   Open solvent detail
                   <ExternalLink className="w-3 h-3" />
                 </Button>

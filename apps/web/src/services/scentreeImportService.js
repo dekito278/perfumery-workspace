@@ -35,3 +35,21 @@ export const importPerfumersWorldByUrl = async (url) => {
 
 	return payload;
 };
+
+export const importTgscByUrl = async (url) => {
+	const response = await fetch(`${API_BASE_URL}/imports/tgsc`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ url }),
+	});
+
+	const payload = await response.json().catch(() => ({}));
+
+	if (!response.ok) {
+		throw new Error(payload?.message || 'Failed to import TGSC data');
+	}
+
+	return payload;
+};

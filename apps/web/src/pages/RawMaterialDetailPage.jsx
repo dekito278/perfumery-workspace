@@ -113,6 +113,15 @@ const RawMaterialDetailPage = () => {
     }
   };
 
+  const handleBack = () => {
+    if (location.state?.from) {
+      navigate(location.state.from, { state: { restoreScroll: true } });
+      return;
+    }
+
+    navigate('/raw-materials');
+  };
+
   if (loading) {
     return (
       <DetailPageLayout>
@@ -173,13 +182,7 @@ const RawMaterialDetailPage = () => {
               {formatStatus(material.type)}
             </Badge>
           }
-          onBack={() => {
-            if (location.state?.from === '/raw-materials') {
-              navigate(-1);
-              return;
-            }
-            navigate('/raw-materials');
-          }}
+          onBack={handleBack}
           backLabel="Back to materials"
           meta={
             <>

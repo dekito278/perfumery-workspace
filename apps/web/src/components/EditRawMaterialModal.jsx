@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCircle, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import FormField from '@/components/FormField.jsx';
@@ -19,8 +21,22 @@ import { getSolvents } from '@/services/rawMaterialsService.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { getRawMaterialCategoryMeta } from '@/utils/rawMaterialCategoryMeta.js';
+import { importPerfumersWorldByUrl, importScentreeByUrl, importTgscByUrl } from '@/services/scentreeImportService.js';
+import { WORKBOOK_ABC_CLASSIFICATIONS } from '@/utils/workbookAbcClassification.js';
 
 const normalizeCategoryValue = (value) => String(value || '').trim().toLowerCase();
+const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
+  value: entry.familyName,
+  label: `${entry.letter} - ${entry.familyName}`,
+}));
+const shouldOverrideNumericGuidance = ({ currentValue, nextValue }) => {
+  if (nextValue === null || nextValue === undefined || nextValue === '') {
+    return false;
+  }
+
+  const currentNumericValue = Number(currentValue);
+  return !Number.isFinite(currentNumericValue) || currentNumericValue <= 0;
+};
 
 const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
   const { updateMaterial, loading } = useRawMaterials();
@@ -54,6 +70,11 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [warnings, setWarnings] = useState({});
   const [touched, setTouched] = useState({});
+  const [scentreeUrl, setScentreeUrl] = useState('');
+  const [perfumersWorldUrl, setPerfumersWorldUrl] = useState('');
+  const [tgscUrl, setTgscUrl] = useState('');
+  const [inferenceLines, setInferenceLines] = useState([]);
+  const [importingUrl, setImportingUrl] = useState(false);
 
   const isSolvent = formData.type === 'solvent';
 
@@ -94,6 +115,10 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
       setErrors({});
       setWarnings({});
       setTouched({});
+      setScentreeUrl('');
+      setPerfumersWorldUrl('');
+      setTgscUrl('');
+      setInferenceLines([]);
     }
   }, [material]);
 
@@ -259,6 +284,133 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
     checkWarnings();
   };
 
+  const applyImportedGuidance = (updater) => {
+    setFormData((current) => ({
+      ...updater(current),
+    }));
+  };
+
+  const handleImportPerfumersWorldUrl = async () => {
+    if (!perfumersWorldUrl.trim()) {
+      toast.error('Masukkan URL PerfumersWorld dulu');
+      return;
+    }
+
+    setImportingUrl(true);
+    try {
+      const imported = await importPerfumersWorldByUrl(perfumersWorldUrl.trim());
+
+      applyImportedGuidance((current) => ({
+        ...current,
+        workbook_code: imported.workbook_code || current.workbook_code,
+        cas_number: imported.cas_number || current.cas_number,
+        description: imported.description || current.description,
+        reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
+        reference_impact: shouldOverrideNumericGuidance({ currentValue: current.reference_impact, nextValue: imported.reference_impact })
+          ? String(imported.reference_impact)
+          : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({ currentValue: current.reference_life_hours, nextValue: imported.reference_life_hours })
+          ? String(imported.reference_life_hours)
+          : current.reference_life_hours,
+        reference_use_level_typical_percent: imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined
+          ? String(imported.reference_use_level_typical_percent)
+          : current.reference_use_level_typical_percent,
+        reference_use_level_max_percent: imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined
+          ? String(imported.reference_use_level_max_percent)
+          : current.reference_use_level_max_percent,
+      }));
+
+      setInferenceLines([
+        imported.workbook_code ? `Workbook code: ${imported.workbook_code}` : 'Workbook code tidak tersedia di PerfumersWorld.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di PerfumersWorld.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di PerfumersWorld.',
+        imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Typical use level: ${imported.reference_use_level_typical_percent}%` : 'Typical use level tidak tersedia di PerfumersWorld.',
+        imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Max use level: ${imported.reference_use_level_max_percent}%` : 'Max use level tidak tersedia di PerfumersWorld.',
+      ]);
+      toast.success('PerfumersWorld URL imported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to import PerfumersWorld URL');
+    } finally {
+      setImportingUrl(false);
+    }
+  };
+
+  const handleImportScentreeUrl = async () => {
+    if (!scentreeUrl.trim()) {
+      toast.error('Masukkan URL ScenTree dulu');
+      return;
+    }
+
+    setImportingUrl(true);
+    try {
+      const imported = await importScentreeByUrl(scentreeUrl.trim());
+
+      applyImportedGuidance((current) => ({
+        ...current,
+        cas_number: imported.cas_number || current.cas_number,
+        description: imported.description || current.description,
+        ifra_limit: imported.ifra_limit !== null && imported.ifra_limit !== undefined ? String(imported.ifra_limit) : current.ifra_limit,
+        reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
+        reference_impact: shouldOverrideNumericGuidance({ currentValue: current.reference_impact, nextValue: imported.reference_impact })
+          ? String(imported.reference_impact)
+          : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({ currentValue: current.reference_life_hours, nextValue: imported.reference_life_hours })
+          ? String(imported.reference_life_hours)
+          : current.reference_life_hours,
+      }));
+
+      setInferenceLines([
+        imported.classification_path?.length ? `ScenTree path: ${imported.classification_path.join(' > ')}` : 'ScenTree path tidak tersedia.',
+        imported.volatility ? `Volatility: ${imported.volatility}` : 'Volatility tidak tersedia di ScenTree.',
+        imported.detection_threshold ? `Detection threshold: ${imported.detection_threshold}` : 'Detection threshold tidak tersedia di ScenTree.',
+        imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA note tidak tersedia di ScenTree.',
+      ]);
+      toast.success('ScenTree URL imported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to import ScenTree URL');
+    } finally {
+      setImportingUrl(false);
+    }
+  };
+
+  const handleImportTgscUrl = async () => {
+    if (!tgscUrl.trim()) {
+      toast.error('Masukkan URL TGSC dulu');
+      return;
+    }
+
+    setImportingUrl(true);
+    try {
+      const imported = await importTgscByUrl(tgscUrl.trim());
+
+      applyImportedGuidance((current) => ({
+        ...current,
+        cas_number: imported.cas_number || current.cas_number,
+        description: imported.description || current.description,
+        reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
+        reference_impact: shouldOverrideNumericGuidance({ currentValue: current.reference_impact, nextValue: imported.reference_impact })
+          ? String(imported.reference_impact)
+          : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({ currentValue: current.reference_life_hours, nextValue: imported.reference_life_hours })
+          ? String(imported.reference_life_hours)
+          : current.reference_life_hours,
+      }));
+
+      setInferenceLines([
+        imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di TGSC.',
+        imported.odor_type ? `Odor type: ${imported.odor_type}` : 'Odor type tidak tersedia di TGSC.',
+        imported.odor_strength ? `Odor strength: ${imported.odor_strength}` : 'Odor strength tidak tersedia di TGSC.',
+        imported.substantivity_hours !== null && imported.substantivity_hours !== undefined ? `Substantivity: ${imported.substantivity_hours} h` : 'Substantivity tidak tersedia di TGSC.',
+        imported.odor_description ? `Odor description: ${imported.odor_description}` : 'Odor description tidak tersedia di TGSC.',
+      ]);
+      toast.success('TGSC URL imported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to import TGSC URL');
+    } finally {
+      setImportingUrl(false);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     Object.keys(formData).forEach(key => {
@@ -414,6 +566,98 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
             </div>
           )}
 
+          {!isSolvent && (
+            <div className="border-t pt-3 space-y-3">
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Workbook guidance import</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Gunakan importer workbook guidance untuk mengisi CAS, family, impact, life, dan use level langsung dari sumber referensi.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <Label htmlFor="edit-material-perfumersworld-url">PerfumersWorld URL</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Tempel link produk PerfumersWorld untuk import workbook code, impact, life, CAS, dan use level.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={handleImportPerfumersWorldUrl} className="rounded-2xl" disabled={importingUrl}>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      {importingUrl ? 'Importing...' : 'Import URL'}
+                    </Button>
+                  </div>
+                  <Input
+                    id="edit-material-perfumersworld-url"
+                    value={perfumersWorldUrl}
+                    onChange={(e) => setPerfumersWorldUrl(e.target.value)}
+                    placeholder="https://www.perfumersworld.com/view.php?pro_id=..."
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+
+                <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <Label htmlFor="edit-material-scentree-url">ScenTree URL</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Tempel URL ingredient dari ScenTree untuk import family, CAS, IFRA, volatility, dan descriptor ringkas.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={handleImportScentreeUrl} className="rounded-2xl" disabled={importingUrl}>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      {importingUrl ? 'Importing...' : 'Import URL'}
+                    </Button>
+                  </div>
+                  <Input
+                    id="edit-material-scentree-url"
+                    value={scentreeUrl}
+                    onChange={(e) => setScentreeUrl(e.target.value)}
+                    placeholder="https://www.scentree.co/en/Adoxal%C2%AE.html"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+
+                <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <Label htmlFor="edit-material-tgsc-url">TGSC URL</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Tempel URL The Good Scents Company untuk import CAS, odor profile, impact heuristic, dan life dari substantivity.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={handleImportTgscUrl} className="rounded-2xl" disabled={importingUrl}>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      {importingUrl ? 'Importing...' : 'Import URL'}
+                    </Button>
+                  </div>
+                  <Input
+                    id="edit-material-tgsc-url"
+                    value={tgscUrl}
+                    onChange={(e) => setTgscUrl(e.target.value)}
+                    placeholder="https://www.thegoodscentscompany.com/data/es1002952.html"
+                    className="h-11 rounded-2xl"
+                  />
+                </div>
+
+                {inferenceLines.length > 0 && (
+                  <div className="rounded-xl border border-border/60 bg-background px-3 py-3 text-xs text-muted-foreground">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                      Import notes
+                    </div>
+                    <div className="space-y-1">
+                      {inferenceLines.map((line) => (
+                        <div key={line}>{line}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="border-t pt-3 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <FormNumber
@@ -511,14 +755,28 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
                 </p>
               </div>
 
-              <FormField
-                label="ABC family"
-                value={formData.reference_abc_primary_family}
-                onChange={(e) => handleChange('reference_abc_primary_family', e.target.value)}
-                onBlur={() => handleBlur('reference_abc_primary_family')}
-                error={errors.reference_abc_primary_family}
-                placeholder="e.g., Floral, Woody, Citrus"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="edit-material-workbook-family">Workbook family / class</Label>
+                <Select
+                  value={formData.reference_abc_primary_family || '__none__'}
+                  onValueChange={(value) => handleChange('reference_abc_primary_family', value === '__none__' ? '' : value)}
+                >
+                  <SelectTrigger id="edit-material-workbook-family" className="h-10 rounded-xl">
+                    <SelectValue placeholder="Select workbook family" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No family selected</SelectItem>
+                    {familyOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.reference_abc_primary_family ? (
+                  <p className="text-xs text-destructive">{errors.reference_abc_primary_family}</p>
+                ) : null}
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormNumber
