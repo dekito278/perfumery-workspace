@@ -381,49 +381,59 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
         {material?.guidance_resolved_values ? (
           <div className="rounded-2xl border border-[#e6deca] bg-white/80 px-4 py-4">
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
-              Current values
+            <div className="mb-4 flex flex-col gap-1.5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
+                Current values
+              </div>
+              <div className="text-lg font-semibold tracking-[-0.02em] text-[#433821]">
+                {material?.name || 'Unknown material'}
+              </div>
+              {hasMeaningfulText(material?.guidance_resolved_values?.workbook_code) ? (
+                <div className="text-xs text-muted-foreground">
+                  Workbook code {material.guidance_resolved_values.workbook_code}
+                </div>
+              ) : null}
             </div>
-            <div className="grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-7">
-              <div>
+            <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">CAS</div>
-                <div className="mt-1 font-medium text-foreground">
+                <div className="mt-1.5 font-medium text-foreground">
                   {material.guidance_resolved_values.cas_number || 'Not set'}
                 </div>
               </div>
-              <div>
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">IFRA</div>
-                <div className="mt-1 font-medium text-foreground">
+                <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.ifra_limit, ' %')}
                 </div>
               </div>
-              <div>
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Family</div>
-                <div className="mt-1 font-medium text-foreground">
+                <div className="mt-1.5 font-medium text-foreground">
                   {material.guidance_resolved_values.reference_abc_primary_family || 'No family selected'}
                 </div>
               </div>
-              <div>
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Impact</div>
-                <div className="mt-1 font-medium text-foreground">
+                <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_impact)}
                 </div>
               </div>
-              <div>
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Life</div>
-                <div className="mt-1 font-medium text-foreground">
+                <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_life_hours, ' h')}
                 </div>
               </div>
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Typical</div>
-                <div className="mt-1 font-medium text-foreground">
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Typical use level</div>
+                <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_use_level_typical_percent, ' %')}
                 </div>
               </div>
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max</div>
-                <div className="mt-1 font-medium text-foreground">
+              <div className="rounded-xl border border-[#ece4d3] bg-[#fcfaf4] px-3 py-3 md:col-span-2 xl:col-span-1">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Max use level</div>
+                <div className="mt-1.5 font-medium text-foreground">
                   {displayGuidanceNumber(material.guidance_resolved_values.reference_use_level_max_percent, ' %')}
                 </div>
               </div>

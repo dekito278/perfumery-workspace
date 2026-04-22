@@ -82,7 +82,12 @@ const AppShell = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="app-shell">
+      <div
+        className="app-shell"
+        style={{
+          '--shell-sidebar-width': desktopSidebarCollapsed ? '6.75rem' : '19rem',
+        }}
+      >
         <aside className={`app-sidebar no-print hidden lg:flex ${desktopSidebarCollapsed ? 'app-sidebar-collapsed' : ''}`}>
           <div className="app-sidebar-panel">
             <div className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>

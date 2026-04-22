@@ -113,6 +113,8 @@ const FormulaItemTableEditor = ({
             return (
               <div
                 key={item.row_key || `${item.item_id || 'empty'}-${index}`}
+                onClick={() => onActivateRow?.(index)}
+                aria-selected={index === activeRowIndex}
                 className={`overflow-visible rounded-2xl border px-3 py-3 shadow-sm transition-colors ${
                   composerRow
                     ? 'border-[#dfbf7d] bg-[linear-gradient(180deg,#fff8ea_0%,#fffdf7_100%)]'
@@ -121,7 +123,7 @@ const FormulaItemTableEditor = ({
                     : index === 0
                       ? 'border-[#eadfc8] bg-[#fffaf1]'
                       : 'border-[#ece4d3] bg-white'
-                }`}
+                } cursor-pointer`}
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -280,6 +282,8 @@ const FormulaItemTableEditor = ({
             return (
               <div
                 key={item.row_key || `${item.item_id || 'empty'}-${index}`}
+                onClick={() => onActivateRow?.(index)}
+                aria-selected={index === activeRowIndex}
                 className={`grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] items-center gap-2 border-b border-[#ece4d3] px-4 py-2 transition-colors ${
                   composerRow
                     ? 'bg-[linear-gradient(90deg,#fff7e6_0%,#fffdf8_100%)]'
@@ -288,7 +292,7 @@ const FormulaItemTableEditor = ({
                     : index === 0
                       ? 'bg-[#fffaf0]'
                       : 'bg-white'
-                }`}
+                } cursor-pointer`}
               >
                 <div className="text-xs font-semibold tabular-nums text-[#5e5239]">
                   {composerRow ? 'New' : rowNumber}

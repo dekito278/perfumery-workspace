@@ -611,7 +611,7 @@ const EditFormulaPage = () => {
         />
       </Helmet>
 
-      <div className="page-container overflow-x-hidden">
+      <div className="page-container">
         <FormulaMetadataDialog
           open={metadataDialogOpen}
           onOpenChange={setMetadataDialogOpen}
@@ -779,7 +779,7 @@ const EditFormulaPage = () => {
                           </Button>
                         </div>
 
-                        <div className="mt-4">
+                        <div className="mt-4 max-h-[42rem] overflow-y-auto pr-1">
                           <FormulaItemTableEditor
                             items={formulaItems}
                             rawMaterials={rawMaterials}
@@ -948,12 +948,12 @@ const EditFormulaPage = () => {
                         />
                       </div>
 
-                      <div className="max-h-[240px] overflow-y-auto px-3 py-3">
+                      <div className="max-h-[20.5rem] overflow-y-auto px-3 py-3">
                         {renderMaterialLibraryList()}
                       </div>
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-4 max-h-[42rem] overflow-y-auto pr-1">
                       <FormulaItemTableEditor
                         items={formulaItems}
                         rawMaterials={rawMaterials}
@@ -974,13 +974,14 @@ const EditFormulaPage = () => {
                   </section>
                 </form>
 
-                <FormulaOdourDisplayPanel
-                  items={itemsWithPercentages}
-                  rawMaterialsById={rawMaterialsById}
-                  referenceLinksMap={referenceLinksMap}
-                  className="xl:sticky xl:top-24 xl:self-start"
-                  isVisible
-                />
+                <div className="h-fit lg:sticky lg:top-24 lg:self-start">
+                  <FormulaOdourDisplayPanel
+                    items={itemsWithPercentages}
+                    rawMaterialsById={rawMaterialsById}
+                    referenceLinksMap={referenceLinksMap}
+                    isVisible
+                  />
+                </div>
               </div>
             )}
           </>

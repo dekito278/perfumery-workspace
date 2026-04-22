@@ -308,7 +308,7 @@ const FormulaOdourDisplayPanel = ({
 
   return (
     <aside className={`space-y-4 ${className}`.trim()}>
-      <div className="overflow-hidden rounded-[28px] border border-white/80 bg-white/90 shadow-sm">
+        <div className="overflow-hidden rounded-[28px] border border-white/80 bg-white/90 shadow-sm">
         <div className="border-b border-[#d7cfbf] bg-[linear-gradient(135deg,#f7f1e1_0%,#efe5ca_52%,#f7f4ec_100%)] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -574,48 +574,49 @@ const FormulaOdourDisplayPanel = ({
             </div>
           )}
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div data-testid="impact-card">
-              <MetricCard
+        </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div data-testid="impact-card">
+            <MetricCard
               label="Impact"
               value={charts.simulation.hasImpactData ? formatQuantity(charts.simulation.impactEstimate, 1) : '-'}
-              />
-            </div>
-            <div data-testid="life-card">
-              <MetricCard
+            />
+          </div>
+          <div data-testid="life-card">
+            <MetricCard
               label="Life"
               value={charts.simulation.hasLifeData ? formatHours(charts.simulation.simpleLifeHours) : '-'}
-              />
-            </div>
+            />
           </div>
         </div>
-      </div>
 
-      <div className="rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-5 shadow-sm">
-        <button
-          type="button"
-          onClick={() => setBalanceExpanded((current) => !current)}
-          className="flex w-full items-center justify-between gap-3 text-left"
-        >
-          <div className="text-sm font-semibold text-[#3c3222]">Balance preview</div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="border border-[#ded3be] bg-[#f5efde] text-[10px] text-[#6f623f]">
-              {charts.dominantClass?.familyName || charts.dominantFamily?.family || 'No class'}
-            </Badge>
-            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${balanceExpanded ? 'rotate-180' : ''}`} />
-          </div>
-        </button>
-
-        {balanceExpanded ? (
-          <>
-            <div className="mt-4 space-y-3">
-              <BalanceRow label="Top" value={charts.simulation.topPercent} toneClass="bg-sky-500" />
-              <BalanceRow label="Middle" value={charts.simulation.middlePercent} toneClass="bg-amber-500" />
-              <BalanceRow label="Base" value={charts.simulation.basePercent} toneClass="bg-emerald-600" />
+        <div className="mt-4 rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setBalanceExpanded((current) => !current)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
+            <div className="text-sm font-semibold text-[#3c3222]">Balance preview</div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="border border-[#ded3be] bg-[#f5efde] text-[10px] text-[#6f623f]">
+                {charts.dominantClass?.familyName || charts.dominantFamily?.family || 'No class'}
+              </Badge>
+              <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${balanceExpanded ? 'rotate-180' : ''}`} />
             </div>
-          </>
-        ) : null}
-      </div>
+          </button>
+
+          {balanceExpanded ? (
+            <>
+              <div className="mt-4 space-y-3">
+                <BalanceRow label="Top" value={charts.simulation.topPercent} toneClass="bg-sky-500" />
+                <BalanceRow label="Middle" value={charts.simulation.middlePercent} toneClass="bg-amber-500" />
+                <BalanceRow label="Base" value={charts.simulation.basePercent} toneClass="bg-emerald-600" />
+              </div>
+            </>
+          ) : null}
+        </div>
     </aside>
   );
 };
