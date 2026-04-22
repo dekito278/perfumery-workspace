@@ -174,7 +174,7 @@ const RawMaterialAuditPage = () => {
         <title>Material Audit - Perfumer Studio</title>
       </Helmet>
 
-      <div className="page-content space-y-6">
+      <div className="page-container space-y-6">
         <PageHeader
           eyebrow="Data quality"
           title="Raw material audit"

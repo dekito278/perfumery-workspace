@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import IngredientSelect from '@/components/IngredientSelect.jsx';
+import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
 
 const FormulaItemTableEditor = ({
@@ -20,6 +21,7 @@ const FormulaItemTableEditor = ({
   validationErrors,
   getGuidanceStatus,
   onOpenGuidanceEditor,
+  activeItemInsight,
 }) => {
   const solventOptions = rawMaterials.filter((material) => material.type === 'solvent');
   const ingredientOptions = rawMaterials.map((material) => ({
@@ -27,9 +29,66 @@ const FormulaItemTableEditor = ({
     type: material.type === 'solvent' ? 'solvent' : 'raw_material',
   }));
   const isFilledRow = (item) => Boolean(item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
+  const formatImpactValue = (value) => (
+    value === null || value === undefined || Number.isNaN(Number(value))
+      ? '-'
+      : formatQuantity(value, 1)
+  );
+  const formatLifeValue = (value) => (
+    value === null || value === undefined || Number.isNaN(Number(value))
+      ? '-'
+      : `${formatQuantity(value, 1)} h`
+  );
+  const activeInsightSourceLabel = activeItemInsight?.guidanceSource === 'linked_profile'
+    ? `Workbook linked${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
+    : activeItemInsight?.guidanceSource === 'raw_material_fallback'
+      ? 'Manual guidance from raw material'
+      : 'Guidance missing';
 
   return (
     <div className="overflow-visible rounded-[18px] border border-[#d7cfbf] bg-white shadow-sm">
+      {activeItemInsight ? (
+        <div className="border-b border-[#e5dcc7] bg-[linear-gradient(180deg,#fffaf0_0%,#fffdf8_100%)] px-4 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
+                Selected material insight
+              </div>
+              <div className="mt-1 text-sm font-semibold text-[#433821]">
+                {activeItemInsight.name}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {activeInsightSourceLabel}
+              </div>
+            </div>
+            {activeItemInsight.effectivePercentage !== null && activeItemInsight.effectivePercentage !== undefined ? (
+              <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-[11px] font-semibold text-[#5e5239]">
+                Formula share {formatPercentage(activeItemInsight.effectivePercentage, 2)}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-[#e5dcc7] bg-white px-3 py-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b7650]">Material impact</div>
+              <div className="mt-1 text-sm font-semibold text-[#443822]">{formatImpactValue(activeItemInsight.impact)}</div>
+            </div>
+            <div className="rounded-2xl border border-[#d9def0] bg-white px-3 py-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#61709a]">Material life</div>
+              <div className="mt-1 text-sm font-semibold text-[#26314e]">{formatLifeValue(activeItemInsight.lifeHours)}</div>
+            </div>
+            <div className="rounded-2xl border border-[#dce6d1] bg-white px-3 py-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f8454]">Impact in formula</div>
+              <div className="mt-1 text-sm font-semibold text-[#31451f]">{formatImpactValue(activeItemInsight.impactContribution)}</div>
+            </div>
+            <div className="rounded-2xl border border-[#ead7cf] bg-white px-3 py-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6d5d]">Life in formula</div>
+              <div className="mt-1 text-sm font-semibold text-[#4e2c26]">{formatLifeValue(activeItemInsight.lifeContribution)}</div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="shrink-0 border-b border-[#ddd3bf] bg-[#f3ecdd] px-4 py-2.5 max-md:hidden">
         <div className="grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
           <span>No.</span>

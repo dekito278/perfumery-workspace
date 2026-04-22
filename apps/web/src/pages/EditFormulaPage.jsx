@@ -23,6 +23,7 @@ import { formatGramAmount } from '@/utils/formatting.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const createEmptyFormulaItem = () => ({
@@ -456,6 +457,38 @@ const EditFormulaPage = () => {
     };
   }, [selectedRawMaterialIds, rawMaterialsById]);
 
+  const workbookSimulation = useMemo(() => buildWorkbookSimulation({
+    items: itemsWithPercentages,
+    rawMaterialsById,
+    referenceLinksMap,
+  }), [itemsWithPercentages, rawMaterialsById, referenceLinksMap]);
+
+  const simulationRowsByItemId = useMemo(
+    () => new Map(workbookSimulation.rows.map((row) => [row.item_id, row])),
+    [workbookSimulation.rows]
+  );
+
+  const activeItemInsight = useMemo(() => {
+    const activeItem = formulaItems[activeRowIndex];
+    if (!activeItem?.item_id) {
+      return null;
+    }
+
+    const guidanceDetails = getItemGuidanceDetails(activeItem);
+    const simulationRow = simulationRowsByItemId.get(activeItem.item_id) || null;
+
+    return {
+      name: guidanceDetails.rawMaterial?.name || 'Unknown material',
+      guidanceSource: simulationRow?.guidanceSource || (guidanceDetails.referenceProfile ? 'raw_material_fallback' : 'none'),
+      referenceCode: guidanceDetails.referenceProfile?.reference_code || null,
+      impact: guidanceDetails.resolvedValues.reference_impact ?? null,
+      lifeHours: guidanceDetails.resolvedValues.reference_life_hours ?? null,
+      effectivePercentage: simulationRow?.effectivePercentage ?? null,
+      impactContribution: simulationRow?.impactContribution ?? null,
+      lifeContribution: simulationRow?.lifeContribution ?? null,
+    };
+  }, [activeRowIndex, formulaItems, getItemGuidanceDetails, simulationRowsByItemId]);
+
   const validateForm = () => {
     const errors = {};
 
@@ -761,6 +794,7 @@ const EditFormulaPage = () => {
                             validationErrors={validationErrors}
                             getGuidanceStatus={getItemGuidanceStatus}
                             onOpenGuidanceEditor={handleOpenGuidanceEditor}
+                            activeItemInsight={activeItemInsight}
                           />
                         </div>
                       </section>
@@ -934,6 +968,7 @@ const EditFormulaPage = () => {
                         validationErrors={validationErrors}
                         getGuidanceStatus={getItemGuidanceStatus}
                         onOpenGuidanceEditor={handleOpenGuidanceEditor}
+                        activeItemInsight={activeItemInsight}
                       />
                     </div>
                   </section>
