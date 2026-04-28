@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Info, Plus, Pencil, Trash2, Printer } from 'lucide-react';
+import { AlertTriangle, Info, Pencil, Trash2, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { useFormulas } from '@/hooks/useFormulas.js';
@@ -16,15 +16,17 @@ import DetailPageLayout from '@/components/DetailPageLayout.jsx';
 import DetailPageHeader from '@/components/DetailPageHeader.jsx';
 import DetailSection from '@/components/DetailSection.jsx';
 import DetailMetadata from '@/components/DetailMetadata.jsx';
-import CreateBatchModal from '@/components/CreateBatchModal.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
-import BatchStatusBadge from '@/components/BatchStatusBadge.jsx';
 import ExportFormulaButton from '@/components/ExportFormulaButton.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
+import FormulaEvaluationPanel from '@/components/FormulaEvaluationPanel.jsx';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
+import { useBriefs } from '@/hooks/useBriefs.js';
+import { useBriefProjects } from '@/hooks/useBriefProjects.js';
+import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { calculatePercentages } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
-import { formatGramAmount, formatPercentage, formatNullable, formatStatus, formatDate, formatQuantity } from '@/utils/formatting.js';
+import { formatDate, formatGramAmount, formatPercentage, formatNullable, formatStatus, formatQuantity } from '@/utils/formatting.js';
 import { formatPrice, formatPricePerUnit, calculateIngredientCost, calculateTotalCost } from '@/utils/pricingUtils.js';
 import { calculateDilutionComposition } from '@/utils/calculateDilutionCost.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
@@ -33,11 +35,66 @@ import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.j
 import { buildFormulaItemReferenceMaps, resolveFormulaItemReference } from '@/utils/legacyFormulaItemSources.js';
 import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import {
+  PACE_PRIORITY_QUERY_KEY,
+  getPacePriorityModeMeta,
+  normalizePacePriorityMode,
+} from '@/utils/pacePriority.js';
 import { getFormulaById } from '@/services/formulasSupabaseService.js';
-import { getBatches } from '@/services/batchesSupabaseService.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { fetchRawMaterialsMap } from '@/services/supabaseDataHelpers.js';
+
+const roundToThree = (value) => Math.round(Number(value || 0) * 1000) / 1000;
+
+const buildPacedRevisionVersion = (currentVersion) => {
+  const normalized = String(currentVersion || '').trim();
+  if (!normalized) {
+    return 'PACED';
+  }
+
+  if (/paced/i.test(normalized)) {
+    return `${normalized}-R2`;
+  }
+
+  return `${normalized}-PACED`;
+};
+
+const buildPacedRevisionItems = (items, recommendations) => {
+  const recommendationMap = new Map((recommendations || []).map((recommendation) => [recommendation.itemId, recommendation]));
+  const adjustedItems = (items || []).map((item, index) => {
+    const recommendation = recommendationMap.get(item.item_id);
+    const currentGrams = Number(item.gram_amount || item.grams || 0);
+    let nextGrams = currentGrams;
+
+    if (recommendation?.action === 'increase') {
+      nextGrams += Number(recommendation.delta || 0);
+    } else if (recommendation?.action === 'decrease') {
+      nextGrams = Math.max(currentGrams - Number(recommendation.delta || 0), 0);
+    }
+
+    return {
+      ...item,
+      gram_amount: roundToThree(nextGrams),
+      grams: roundToThree(nextGrams),
+      sort_order: item.sort_order ?? index,
+    };
+  }).filter((item) => Number(item.gram_amount || 0) > 0);
+
+  const totalGrams = adjustedItems.reduce((sum, item) => sum + Number(item.gram_amount || 0), 0);
+  const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(adjustedItems, totalGrams) : adjustedItems;
+
+  return itemsWithPercentages.map((item, index) => ({
+    item_type: item.item_type,
+    item_id: item.item_id,
+    percentage: Number(item.percentage || 0),
+    sort_order: item.sort_order ?? index,
+    grams: roundToThree(item.gram_amount || item.grams || 0),
+    dilution_percent: item.dilution_percentage ?? item.dilution_percent ?? null,
+    dilution_solvent_id: item.dilution_solvent_id || null,
+    concentrate_amount: item.concentrate_amount ?? null,
+  }));
+};
 
 const normalizeFormulaItemType = (item, itemDetails) => {
   if (item?.item_type === 'accord') {
@@ -63,19 +120,65 @@ const FormulaDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { createFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
+  const { getBriefs } = useBriefs();
+  const { getBriefProjectByBriefId, getBriefProjectStageItems } = useBriefProjects();
+  const { getValidationLogs } = useValidationLogs();
   const [formula, setFormula] = useState(null);
   const [items, setItems] = useState([]);
-  const [batches, setBatches] = useState([]);
   const [rawMaterialsById, setRawMaterialsById] = useState(new Map());
+  const [linkedBriefs, setLinkedBriefs] = useState([]);
+  const [linkedProject, setLinkedProject] = useState(null);
+  const [linkedProjectStageItems, setLinkedProjectStageItems] = useState([]);
+  const [validationLogs, setValidationLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [createBatchModalOpen, setCreateBatchModalOpen] = useState(false);
+  const [validationLoading, setValidationLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showAllReferenceAlerts, setShowAllReferenceAlerts] = useState(false);
+  const [isCreatingPacedRevision, setIsCreatingPacedRevision] = useState(false);
+  const pacePriorityMode = normalizePacePriorityMode(searchParams.get(PACE_PRIORITY_QUERY_KEY));
 
   useEffect(() => {
     loadFormulaDetails();
   }, [id]);
+
+  useEffect(() => {
+    loadFormulaValidationLogs();
+  }, [id]);
+
+  useEffect(() => {
+    loadLinkedBriefs();
+  }, [id]);
+
+  useEffect(() => {
+    const loadProjectContext = async () => {
+      if (!linkedBriefs.length) {
+        setLinkedProject(null);
+        setLinkedProjectStageItems([]);
+        return;
+      }
+
+      try {
+        const project = await getBriefProjectByBriefId(linkedBriefs[0].id);
+        const stageMap = project?.id ? await getBriefProjectStageItems(project.id) : new Map();
+        const selectedItems = project?.id
+          ? ['top', 'middle', 'base']
+              .flatMap((stage) => stageMap.get(stage) || [])
+              .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual')
+          : [];
+        setLinkedProject(project);
+        setLinkedProjectStageItems(selectedItems);
+      } catch (error) {
+        console.error('Failed to load linked project context:', error);
+        setLinkedProject(null);
+        setLinkedProjectStageItems([]);
+      }
+    };
+
+    loadProjectContext();
+  }, [getBriefProjectByBriefId, getBriefProjectStageItems, linkedBriefs]);
 
   const loadFormulaDetails = async () => {
     setLoading(true);
@@ -104,7 +207,6 @@ const FormulaDetailPage = () => {
 
       const enrichedItems = await Promise.all(itemsData.map(async (item) => {
         let itemDetails = resolveFormulaItemReference(item, referenceMaps);
-        let isLowStock = false;
         let unitPrice = 0;
         let category = null;
         let componentFamily = null;
@@ -121,7 +223,6 @@ const FormulaDetailPage = () => {
               name: 'Unknown',
               workbook_code: null,
               unit: 'g',
-              is_low_stock: false,
               gram_amount: item.grams || item.percentage || 0,
               unit_price: 0,
               ingredient_cost: 0,
@@ -135,9 +236,6 @@ const FormulaDetailPage = () => {
               reference_profile: null,
             };
           }
-          isLowStock = itemDetails.low_stock_threshold 
-            ? itemDetails.stock_quantity < itemDetails.low_stock_threshold
-            : itemDetails.stock_quantity < itemDetails.minimum_stock;
           unitPrice = itemDetails.cost_per_unit || 0;
           category = itemDetails.category || null;
           componentFamily = itemDetails.scent_family || deriveScentFamilyFromCategory(itemDetails.category, '') || null;
@@ -165,7 +263,6 @@ const FormulaDetailPage = () => {
           name: itemDetails?.name || 'Unknown',
           workbook_code: itemDetails?.workbook_code || null,
           unit: itemDetails?.unit || 'g',
-          is_low_stock: isLowStock,
           gram_amount: gramAmount,
           unit_price: unitPrice,
           ingredient_cost: calculateIngredientCost(gramAmount, unitPrice),
@@ -191,8 +288,6 @@ const FormulaDetailPage = () => {
       }));
       setItems(itemsWithAdvisories);
 
-      const batchesData = await getBatches();
-      setBatches(batchesData.filter((batch) => batch.formula_id === id).slice(0, 5));
     } catch (error) {
       toast.error('Failed to load formula details');
       navigate('/formulas');
@@ -201,9 +296,72 @@ const FormulaDetailPage = () => {
     }
   };
 
+  const loadFormulaValidationLogs = async () => {
+    setValidationLoading(true);
+    try {
+      const logs = await getValidationLogs({ formulaId: id });
+      setValidationLogs(logs);
+    } catch (error) {
+      toast.error('Failed to load validation logs');
+    } finally {
+      setValidationLoading(false);
+    }
+  };
+
+  const loadLinkedBriefs = async () => {
+    try {
+      const briefs = await getBriefs();
+      setLinkedBriefs(briefs.filter((brief) => brief.formula_id === id));
+    } catch (error) {
+      toast.error('Failed to load linked briefs');
+    }
+  };
+
   const handlePrint = async () => {
     const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
     printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
+  };
+
+  const handleCreatePacedRevision = async (recommendations = [], priorityMode = 'balance') => {
+    if (!formula || !items.length || !recommendations.length) {
+      toast.error('PACE revision needs at least one actionable recommendation');
+      return;
+    }
+
+    setIsCreatingPacedRevision(true);
+    try {
+      const priorityModeMeta = getPacePriorityModeMeta(priorityMode);
+      const pacedItems = buildPacedRevisionItems(items, recommendations);
+      const pacedFormula = await createFormula({
+        name: `${formula.name} PACED`,
+        code: `${formula.code || 'FORMULA'}-PACED`,
+        author_name: formula.author_name || null,
+        notes: [
+          formula.notes ? String(formula.notes).trim() : null,
+          `PACE revision source: ${formula.name}`,
+          `PACE priority mode: ${priorityModeMeta.label}`,
+          `Applied ${recommendations.length} PACE adjustment${recommendations.length === 1 ? '' : 's'} to create this revision.`,
+        ].filter(Boolean).join('\n\n'),
+        category: formula.category || null,
+        status: 'draft',
+        version: buildPacedRevisionVersion(formula.version),
+      }, pacedItems);
+
+      toast.success('PACED revision created');
+      navigate(`/formulas/${pacedFormula.id}`);
+    } catch (error) {
+      console.error('Failed to create PACED revision:', error);
+      toast.error(error.message || 'Failed to create PACED revision');
+    } finally {
+      setIsCreatingPacedRevision(false);
+    }
+  };
+
+  const handlePacePriorityModeChange = (nextMode) => {
+    const normalizedMode = normalizePacePriorityMode(nextMode);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set(PACE_PRIORITY_QUERY_KEY, normalizedMode);
+    setSearchParams(nextSearchParams, { replace: true, preventScrollReset: true });
   };
 
   const handleBack = () => {
@@ -254,8 +412,8 @@ const FormulaDetailPage = () => {
   const totalPercentage = items.reduce((sum, item) => sum + (item.percentage || 0), 0);
   const totalCost = calculateTotalCost(items);
   const hasFormulaItems = items.length > 0;
-  const lowStockCount = items.filter((item) => item.is_low_stock).length;
   const dilutedItemCount = items.filter((item) => item.is_diluted && item.dilution_percentage).length;
+  const legacyAccordCount = items.filter((item) => item.item_type === 'accord').length;
   const referenceCoverageCount = items.filter((item) => item.reference_profile).length;
   const hasReferenceCoverage = referenceCoverageCount > 0;
   const formulaReferenceAdvisories = items
@@ -329,19 +487,22 @@ const FormulaDetailPage = () => {
                 <span className="detail-page-meta-label">Material cost</span>
                 <span className="detail-page-meta-value">{formatPrice(totalCost)}</span>
               </div>
-              <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Related batches</span>
-                <span className="detail-page-meta-value">{batches.length}</span>
-              </div>
             </>
           }
           actions={
             <>
-              <Button onClick={() => setCreateBatchModalOpen(true)} className="gap-2 h-9">
-                <Plus className="w-4 h-4" />
-                Create batch
-              </Button>
-              <Button variant="outline" onClick={() => navigate(`/formulas/${id}/edit`)} className="gap-2 h-9">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const nextSearchParams = new URLSearchParams();
+                  if (linkedBriefs[0]) {
+                    nextSearchParams.set('briefId', linkedBriefs[0].id);
+                  }
+                  nextSearchParams.set(PACE_PRIORITY_QUERY_KEY, pacePriorityMode);
+                  navigate(`/formulas/${id}/edit?${nextSearchParams.toString()}`);
+                }}
+                className="gap-2 h-9"
+              >
                 <Pencil className="w-4 h-4" />
                 Edit
               </Button>
@@ -365,7 +526,6 @@ const FormulaDetailPage = () => {
                 <TabsTrigger value="overview" className="rounded-xl">Overview</TabsTrigger>
                 <TabsTrigger value="workbook" className="rounded-xl">Workbook</TabsTrigger>
                 <TabsTrigger value="composition" className="rounded-xl">Composition</TabsTrigger>
-                <TabsTrigger value="batches" className="rounded-xl">Batches</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-5">
@@ -376,8 +536,8 @@ const FormulaDetailPage = () => {
                       <div className="text-lg font-semibold">{items.length}</div>
                     </div>
                     <div className="rounded-xl border bg-card p-4">
-                      <div className="text-xs text-muted-foreground mb-1">Low stock</div>
-                      <div className={`text-lg font-semibold ${lowStockCount > 0 ? 'text-destructive' : ''}`}>{lowStockCount}</div>
+                      <div className="text-xs text-muted-foreground mb-1">Legacy accord items</div>
+                      <div className="text-lg font-semibold">{legacyAccordCount}</div>
                     </div>
                     <div className="rounded-xl border bg-card p-4">
                       <div className="text-xs text-muted-foreground mb-1">Diluted</div>
@@ -577,17 +737,21 @@ const FormulaDetailPage = () => {
                         </div>
                       </div>
                       <div className="mx-auto w-full max-w-[1120px]">
-                        <FormulaWorkbookSimulationPanel
-                          items={items}
-                          rawMaterialsById={rawMaterialsById}
-                          referenceLinksMap={new Map(
-                            items
-                              .filter((item) => item.reference_link)
-                              .map((item) => [item.item_id, item.reference_link])
-                          )}
-                          title="Workbook diagnostics"
-                          description="Reference coverage, lifetime estimate, and IFRA-oriented diagnostics for the current formula."
-                        />
+                          <FormulaWorkbookSimulationPanel
+                            items={items}
+                            rawMaterialsById={rawMaterialsById}
+                            referenceLinksMap={new Map(
+                              items
+                                .filter((item) => item.reference_link)
+                                .map((item) => [item.item_id, item.reference_link])
+                            )}
+                            title="Workbook diagnostics"
+                            description="Reference coverage, lifetime estimate, and IFRA-oriented diagnostics for the current formula."
+                            onCreatePacedRevision={handleCreatePacedRevision}
+                            isCreatingPacedRevision={isCreatingPacedRevision}
+                            priorityMode={pacePriorityMode}
+                            onPriorityModeChange={handlePacePriorityModeChange}
+                          />
                       </div>
                     </div>
                   ) : (
@@ -690,14 +854,6 @@ const FormulaDetailPage = () => {
                           </div>
                         </div>
 
-                        {(item.item_type === 'raw_material' || item.item_type === 'solvent') ? (
-                        <div className="mt-3">
-                            <Badge variant={item.is_low_stock ? 'destructive' : 'outline'} className="text-[10px]">
-                              {item.is_low_stock ? 'Low stock' : 'In stock'}
-                            </Badge>
-                          </div>
-                        ) : null}
-
                         {isDiluted && composition ? (
                           <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                             Active: {formatGramAmount(composition.activeAmount)} + Solvent: {formatGramAmount(composition.solventAmount)}
@@ -745,11 +901,6 @@ const FormulaDetailPage = () => {
                                       <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
                                         {formatStatus(item.item_type)}
                                       </Badge>
-                                      {(item.item_type === 'raw_material' || item.item_type === 'solvent') ? (
-                                        <Badge variant={item.is_low_stock ? 'destructive' : 'outline'} className="rounded-full px-2 py-0.5 text-[10px]">
-                                          {item.is_low_stock ? 'Low stock' : 'In stock'}
-                                        </Badge>
-                                      ) : null}
                                     </div>
                                     {isDiluted ? (
                                       <div className="text-xs text-muted-foreground">
@@ -850,84 +1001,6 @@ const FormulaDetailPage = () => {
 
               </TabsContent>
 
-              <TabsContent value="batches" className="space-y-5">
-                <DetailSection title="Related batches">
-                  {batches.length > 0 ? (
-                    <>
-                      <div className="space-y-3 md:hidden">
-                        {batches.map((batch) => (
-                          <div key={batch.id} className="rounded-xl border bg-card p-4 shadow-sm">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                              <button
-                                onClick={() => navigate(`/batches/${batch.id}`, {
-                                  state: { from: `${location.pathname}${location.search}` },
-                                })}
-                                className="font-medium font-mono text-left text-primary hover:underline text-sm"
-                              >
-                                {batch.batch_code}
-                              </button>
-                              <BatchStatusBadge status={batch.status} />
-                            </div>
-                            <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
-                              <div>
-                                <div className="text-muted-foreground">Quantity</div>
-                                <div className="mt-1 font-mono text-sm">
-                                  {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-muted-foreground">Production date</div>
-                                <div className="mt-1 text-sm">{formatDate(batch.production_date)}</div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="hidden table-container md:block">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="min-w-[120px]">Batch code</TableHead>
-                              <TableHead className="min-w-[100px]">Status</TableHead>
-                              <TableHead className="text-right min-w-[100px]">Quantity</TableHead>
-                              <TableHead className="text-right min-w-[120px]">Production date</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {batches.map((batch) => (
-                              <TableRow key={batch.id}>
-                                <TableCell>
-                                  <button
-                                    onClick={() => navigate(`/batches/${batch.id}`, {
-                                      state: { from: `${location.pathname}${location.search}` },
-                                    })}
-                                    className="font-medium font-mono text-primary hover:underline text-sm"
-                                  >
-                                    {batch.batch_code}
-                                  </button>
-                                </TableCell>
-                                <TableCell>
-                                  <BatchStatusBadge status={batch.status} />
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-sm">
-                                  {formatQuantity(batch.target_quantity)} {batch.unit || 'ml'}
-                                </TableCell>
-                                <TableCell className="text-right text-sm">
-                                  {formatDate(batch.production_date)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                      No related batches yet. Create one from the action bar when this formula is ready for production.
-                    </div>
-                  )}
-                </DetailSection>
-              </TabsContent>
             </Tabs>
           </div>
 
@@ -937,27 +1010,122 @@ const FormulaDetailPage = () => {
             </DetailSection>
           )}
 
+          <DetailSection title="Brief context">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Brief memberi arah sebelum evaluasi. Link formula ini ke brief supaya revision notes tidak kehilangan tujuan awal.
+                </div>
+                <Button variant="outline" className="rounded-xl" onClick={() => navigate(`/briefs?formulaId=${id}`)}>
+                  Open brief workspace
+                </Button>
+              </div>
+
+              {linkedBriefs.length ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {linkedBriefs.map((brief) => (
+                    <div key={brief.id} className="rounded-xl border bg-card p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm font-semibold">{brief.title}</div>
+                        <Badge variant="outline" className="capitalize text-[10px]">
+                          {brief.status || 'draft'}
+                        </Badge>
+                      </div>
+                      {brief.mood_story ? (
+                        <p className="mt-3 text-sm text-muted-foreground">{brief.mood_story}</p>
+                      ) : null}
+                      {brief.performance_target ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Performance: {brief.performance_target}
+                        </p>
+                      ) : null}
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        Updated {formatDate(brief.updated || brief.created)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                  No linked brief yet. Add one to anchor the formula&apos;s mood, audience, and performance target.
+                </div>
+              )}
+
+              {linkedProject ? (
+                <div className="rounded-xl border bg-card p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold">Project stage summary</div>
+                    <Badge variant="outline" className="capitalize text-[10px]">
+                      {linkedProject.current_stage || 'top'}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {linkedProjectStageItems.length
+                      ? `${linkedProjectStageItems.length} project stage materials shaped this formula before adjustment.`
+                      : 'This brief project does not have selected stage materials yet.'}
+                  </div>
+                  {linkedProjectStageItems.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {['top', 'middle', 'base'].map((stage) => {
+                        const stageCount = linkedProjectStageItems.filter((item) => item.stage === stage).length;
+                        return (
+                          <Badge key={stage} variant="secondary" className="capitalize text-[10px]">
+                            {stage} {stageCount}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Validation workflow">
+            {validationLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Saved notes</div>
+                    <div className="text-lg font-semibold">{validationLogs.length}</div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Action needed</div>
+                    <div className="text-lg font-semibold text-amber-600">
+                      {validationLogs.filter((log) => log.status === 'action_needed').length}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <div className="text-xs text-muted-foreground mb-1">Last logged</div>
+                    <div className="text-lg font-semibold">
+                      {validationLogs[0] ? formatDate(validationLogs[0].tested_at || validationLogs[0].created) : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <FormulaEvaluationPanel
+                  formulas={formula ? [formula] : []}
+                  validationLogs={validationLogs}
+                  selectedFormulaId={formula?.id || null}
+                  onOpenFormula={() => navigate(`/formulas/${id}`)}
+                  onOpenValidationWorkspace={() => navigate(`/validation?formulaId=${id}`)}
+                />
+              </div>
+            )}
+          </DetailSection>
+
           <DetailSection>
             <DetailMetadata 
               created={formula.created} 
               updated={formula.updated}
-              additionalFields={formula.batch_date ? [
-                { label: 'Batch date', value: formatDate(formula.batch_date) }
-              ] : []}
             />
           </DetailSection>
         </div>
       </DetailPageLayout>
-
-      <CreateBatchModal
-        open={createBatchModalOpen}
-        onOpenChange={setCreateBatchModalOpen}
-        preSelectedFormulaId={id}
-        onSuccess={() => {
-          toast.success('Batch created successfully');
-          navigate('/batches');
-        }}
-      />
 
       <DeleteFormulaModal
         isOpen={isDeleteModalOpen}

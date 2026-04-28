@@ -118,7 +118,7 @@ const ManualReferenceMatchModal = ({
         <div className="grid gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
           <div className="border-b border-border/60 bg-white/70 px-6 py-5 lg:border-b-0 lg:border-r">
             <div className="rounded-2xl border border-border/60 bg-white/90 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Inventory material</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Library material</div>
               <div className="mt-3 text-lg font-semibold">{material?.name || 'Unknown material'}</div>
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <div>Workbook code: {formatNullable(material?.workbook_code)}</div>

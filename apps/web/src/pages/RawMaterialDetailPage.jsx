@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, Trash2, AlertTriangle, Link as LinkIcon } from 'lucide-react';
+import { Pencil, Trash2, Link as LinkIcon, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
@@ -16,29 +15,43 @@ import DetailFieldGroup from '@/components/DetailFieldGroup.jsx';
 import DetailMetadata from '@/components/DetailMetadata.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
-import UsageHistoryTable from '@/components/UsageHistoryTable.jsx';
 import ManualReferenceMatchModal from '@/components/ManualReferenceMatchModal.jsx';
-import { formatQuantity, formatPercentage, formatNullable, formatStatus } from '@/utils/formatting.js';
-import { calculateIngredientCost, formatPricePerUnit, formatPrice } from '@/utils/pricingUtils.js';
-import { getRawMaterialById, getRawMaterialUsageHistory } from '@/services/rawMaterialsService.js';
+import { formatPercentage, formatNullable, formatStatus, formatQuantity } from '@/utils/formatting.js';
+import { formatPricePerUnit, formatPrice } from '@/utils/pricingUtils.js';
+import { getRawMaterialById, getRawMaterialDeletionDependencies } from '@/services/rawMaterialsService.js';
 import { getReferenceProfileByRawMaterialId } from '@/services/materialReferenceService.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 
-const stripHtml = (value) =>
-  String(value || '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\|/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+const renderDeleteDependencySummary = (dependencies, loading) => {
+  if (loading) {
+    return (
+      <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+        Checking where this material is still used...
+      </div>
+    );
+  }
 
-const toKeywordList = (value) =>
-  stripHtml(value)
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 16);
+  if (dependencies.length) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <div className="font-medium">This material is still referenced in:</div>
+        <ul className="mt-2 list-disc pl-5">
+          {dependencies.map((entry) => (
+            <li key={entry.label}>
+              {entry.count} {entry.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+      No blocking references found. This material is ready to delete, and its linked workbook/reference artifacts will be removed too.
+    </div>
+  );
+};
 
 const RawMaterialDetailPage = () => {
   const { id } = useParams();
@@ -46,21 +59,47 @@ const RawMaterialDetailPage = () => {
   const location = useLocation();
   const { deleteMaterial } = useRawMaterials();
   const [material, setMaterial] = useState(null);
-  const [usageRecords, setUsageRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [usageLoading, setUsageLoading] = useState(true);
   const [referenceLink, setReferenceLink] = useState(null);
   const [referenceLoading, setReferenceLoading] = useState(true);
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteDependencies, setDeleteDependencies] = useState([]);
+  const [deleteDependencyLoading, setDeleteDependencyLoading] = useState(false);
 
   useEffect(() => {
     loadMaterial();
-    loadUsageHistory();
     loadReferenceProfile();
   }, [id]);
+
+  useEffect(() => {
+    const loadDeleteDependencies = async () => {
+      if (!deleteDialogOpen || !id) {
+        setDeleteDependencyLoading(false);
+        return;
+      }
+
+      setDeleteDependencyLoading(true);
+      try {
+        const blockers = await getRawMaterialDeletionDependencies(id);
+        setDeleteDependencies(blockers);
+      } catch (error) {
+        console.error('Failed to load raw material delete dependencies:', error);
+        setDeleteDependencies([]);
+      } finally {
+        setDeleteDependencyLoading(false);
+      }
+    };
+
+    if (!deleteDialogOpen) {
+      setDeleteDependencies([]);
+      return;
+    }
+
+    loadDeleteDependencies();
+  }, [deleteDialogOpen, id]);
 
   const loadMaterial = async () => {
     setLoading(true);
@@ -72,19 +111,6 @@ const RawMaterialDetailPage = () => {
       navigate('/raw-materials');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadUsageHistory = async () => {
-    setUsageLoading(true);
-    try {
-      const records = await getRawMaterialUsageHistory(id);
-      setUsageRecords(records);
-    } catch (error) {
-      console.error('Failed to load usage history:', error);
-      setUsageRecords([]);
-    } finally {
-      setUsageLoading(false);
     }
   };
 
@@ -108,7 +134,7 @@ const RawMaterialDetailPage = () => {
       toast.success('Material deleted successfully');
       navigate('/raw-materials');
     } catch (error) {
-      toast.error('Failed to delete material');
+      toast.error(error.message || 'Failed to delete material');
       setDeleting(false);
     }
   };
@@ -119,7 +145,7 @@ const RawMaterialDetailPage = () => {
       return;
     }
 
-    navigate('/raw-materials');
+    navigate('/home');
   };
 
   if (loading) {
@@ -135,56 +161,32 @@ const RawMaterialDetailPage = () => {
     return null;
   }
 
-  const isLowStock = material.low_stock_threshold 
-    ? material.stock_quantity < material.low_stock_threshold
-    : material.stock_quantity < material.minimum_stock;
-
-  const stockStatus = isLowStock ? 'Low stock' : 'In stock';
   const scentFamily = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
-  const stockThreshold = material.low_stock_threshold || material.minimum_stock || 0;
-  const inventoryValue = calculateIngredientCost(material.stock_quantity || 0, material.cost_per_unit || 0);
-  const reorderGap = Math.max(stockThreshold - Number(material.stock_quantity || 0), 0);
   const dilutionSolventName = material.expand?.dilution_solvent_id?.name || null;
   const referenceProfile = referenceLink?.reference_profile || null;
-  const referenceKeywords = toKeywordList(referenceProfile?.perfume_uses);
-  const flavourKeywords = toKeywordList(referenceProfile?.flavour_uses);
-  const referenceDescription = stripHtml(referenceProfile?.odour_description || referenceProfile?.brief_description);
-  const stabilityNotes = [
-    referenceProfile?.stability_heat ? `Heat: ${referenceProfile.stability_heat}` : null,
-    referenceProfile?.stability_discolour ? `Discolour: ${referenceProfile.stability_discolour}` : null,
-    referenceProfile?.stability_storage ? `Storage: ${referenceProfile.stability_storage}` : null,
-    referenceProfile?.stability_antioxidant ? `Antioxidant: ${referenceProfile.stability_antioxidant}` : null,
-  ].filter(Boolean);
-
-  // Calculate total quantity used
-  const totalQuantityUsed = usageRecords.reduce((sum, record) => {
-    return sum + (record.quantity_deducted || 0);
-  }, 0);
-
   return (
     <>
       <Helmet>
         <title>{`${material.name} - Material Details`}</title>
-        <meta name="description" content={`Detailed view of ${material.name} raw material with stock and properties.`} />
+        <meta name="description" content={`Detailed view of ${material.name} material with guidance and reference data.`} />
       </Helmet>
-      
+
       <DetailPageLayout>
         <DetailPageHeader
-          eyebrow="Raw material"
+          eyebrow="Material"
           title={material.name}
           subtitle={[
-            material.vendor ? `Vendor: ${material.vendor}` : null,
             material.category ? formatStatus(material.category) : 'Uncategorized material',
             scentFamily || null,
           ].filter(Boolean).join(' / ')}
-          badge={
+          badge={(
             <Badge variant="outline" className="capitalize text-xs">
               {formatStatus(material.type)}
             </Badge>
-          }
+          )}
           onBack={handleBack}
-          backLabel="Back to materials"
-          meta={
+          backLabel={location.state?.from ? 'Back to materials' : 'Back to home'}
+          meta={(
             <>
               {referenceProfile ? (
                 <div className="detail-page-meta-chip">
@@ -193,25 +195,25 @@ const RawMaterialDetailPage = () => {
                 </div>
               ) : null}
               <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Current stock</span>
-                <span className="detail-page-meta-value">
-                  {formatQuantity(material.stock_quantity)} {material.unit}
-                </span>
+                <span className="detail-page-meta-label">Workbook code</span>
+                <span className="detail-page-meta-value">{formatNullable(material.workbook_code, '-')}</span>
+              </div>
+              <div className="detail-page-meta-chip">
+                <span className="detail-page-meta-label">Unit</span>
+                <span className="detail-page-meta-value">{material.unit || '-'}</span>
               </div>
               <div className="detail-page-meta-chip">
                 <span className="detail-page-meta-label">Unit price</span>
                 <span className="detail-page-meta-value">{formatPricePerUnit(material.cost_per_unit, material.unit)}</span>
               </div>
-              <div className="detail-page-meta-chip">
-                <span className="detail-page-meta-label">Total used</span>
-                <span className="detail-page-meta-value">
-                  {formatQuantity(totalQuantityUsed)} {material.unit}
-                </span>
-              </div>
             </>
-          }
-          actions={
+          )}
+          actions={(
             <>
+              <Button variant="outline" onClick={() => navigate('/home')} className="gap-2 h-9">
+                <Home className="w-4 h-4" />
+                Home
+              </Button>
               <Button variant="outline" onClick={() => setEditModalOpen(true)} className="gap-2 h-9">
                 <Pencil className="w-4 h-4" />
                 Edit
@@ -225,33 +227,27 @@ const RawMaterialDetailPage = () => {
                 Delete
               </Button>
             </>
-          }
+          )}
         />
 
         <div className="space-y-5">
           <DetailSection title="Snapshot">
             <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Available stock</div>
-                <div className={`text-lg font-semibold font-mono ${isLowStock ? 'text-destructive' : ''}`}>
-                  {formatQuantity(material.stock_quantity)} {material.unit}
-                </div>
+                <div className="text-xs text-muted-foreground mb-1">Workbook code</div>
+                <div className="text-lg font-semibold font-mono">{formatNullable(material.workbook_code, '-')}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Reorder point</div>
-                <div className="text-lg font-semibold font-mono">
-                  {formatQuantity(stockThreshold)} {material.unit}
-                </div>
+                <div className="text-xs text-muted-foreground mb-1">IFRA limit</div>
+                <div className="text-lg font-semibold">{material.ifra_limit ? formatPercentage(material.ifra_limit) : 'N/A'}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Inventory value</div>
-                <div className="text-lg font-semibold font-mono">{formatPrice(inventoryValue)}</div>
+                <div className="text-xs text-muted-foreground mb-1">Impact</div>
+                <div className="text-lg font-semibold">{material.reference_impact ? formatQuantity(material.reference_impact) : 'N/A'}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Usage recorded</div>
-                <div className="text-lg font-semibold font-mono">
-                  {formatQuantity(totalQuantityUsed)} {material.unit}
-                </div>
+                <div className="text-xs text-muted-foreground mb-1">Life hours</div>
+                <div className="text-lg font-semibold">{material.reference_life_hours ? formatQuantity(material.reference_life_hours) : 'N/A'}</div>
               </div>
             </div>
           </DetailSection>
@@ -268,85 +264,27 @@ const RawMaterialDetailPage = () => {
                 <DetailField label="Workbook code" value={formatNullable(material.workbook_code)} />
                 <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
                 <DetailField label="Reference family" value={formatNullable(material.reference_abc_primary_family || scentFamily)} />
-              <DetailField 
-                label="Unit price" 
-                value={formatPricePerUnit(material.cost_per_unit, material.unit)} 
-              />
+                <DetailField label="Unit price" value={formatPricePerUnit(material.cost_per_unit, material.unit)} />
               </DetailFieldGroup>
             </div>
             <div className="mt-3">
               <DetailFieldGroup columns={4}>
                 <DetailField label="IFRA limit" value={material.ifra_limit ? formatPercentage(material.ifra_limit) : 'N/A'} />
                 <DetailField
-                  label="Typical use level"
+                  label="Typical use"
                   value={material.reference_use_level_typical_percent !== null && material.reference_use_level_typical_percent !== undefined
                     ? formatPercentage(material.reference_use_level_typical_percent, 2)
                     : 'N/A'}
                 />
                 <DetailField
-                  label="Max use level"
+                  label="Max use"
                   value={material.reference_use_level_max_percent !== null && material.reference_use_level_max_percent !== undefined
                     ? formatPercentage(material.reference_use_level_max_percent, 2)
                     : 'N/A'}
                 />
-                <DetailField label="Inventory value" value={formatPrice(inventoryValue)} />
+                <DetailField label="Family" value={formatNullable(scentFamily)} />
               </DetailFieldGroup>
             </div>
-            <div className="mt-3 text-sm text-muted-foreground">
-              Typical use level adalah kisaran pakai yang umum dipakai saat merancang formula. Max use level adalah batas saran praktis sebelum bahan terasa terlalu dominan, dan tetap perlu dibaca bersama IFRA bila tersedia.
-            </div>
-          </DetailSection>
-
-          <DetailSection title="Stock information">
-            {isLowStock && (
-              <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
-                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-semibold text-destructive text-sm">Low stock alert</div>
-                  <div className="text-xs text-muted-foreground">
-                    Current stock is below the threshold. Consider reordering.
-                  </div>
-                </div>
-              </div>
-            )}
-            <DetailFieldGroup columns={4}>
-              <DetailField 
-                label="Current stock" 
-                value={`${formatQuantity(material.stock_quantity)} ${material.unit}`} 
-              />
-              <DetailField 
-                label="Alert threshold" 
-                value={`${formatQuantity(stockThreshold)} ${material.unit}`} 
-              />
-              <DetailField 
-                label="Stock status" 
-                value={
-                  <Badge variant={isLowStock ? 'destructive' : 'default'} className="text-xs">
-                    {stockStatus}
-                  </Badge>
-                } 
-              />
-              <DetailField 
-                label="Reorder gap" 
-                value={isLowStock ? `${formatQuantity(reorderGap)} ${material.unit}` : 'No gap'} 
-              />
-            </DetailFieldGroup>
-            <div className="mt-3 text-sm text-muted-foreground">
-              {isLowStock
-                ? `Reorder recommendation: add at least ${formatQuantity(reorderGap)} ${material.unit} to get back above the active threshold.`
-                : `This material is currently above its reorder threshold by ${formatQuantity(Number(material.stock_quantity || 0) - stockThreshold)} ${material.unit}.`}
-            </div>
-          </DetailSection>
-
-          <DetailSection title="Classification">
-            <DetailFieldGroup columns={3}>
-              <DetailField 
-                label="Family" 
-                value={formatNullable(scentFamily)} 
-              />
-              <DetailField label="Category system" value="Perfumer's Workbook A-Z" />
-              <DetailField label="Type" value={formatStatus(material.type)} />
-            </DetailFieldGroup>
           </DetailSection>
 
           <DetailSection title="Reference profile">
@@ -385,13 +323,6 @@ const RawMaterialDetailPage = () => {
                   <DetailField label="Catalog price" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : 'N/A'} />
                 </DetailFieldGroup>
 
-                {referenceDescription ? (
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-2">Odour description</div>
-                    <p className="text-sm leading-6 text-foreground">{referenceDescription}</p>
-                  </div>
-                ) : null}
-
                 {referenceProfile.odour_facets?.length ? (
                   <div className="space-y-3">
                     <div className="text-sm font-semibold">Odour profile</div>
@@ -401,31 +332,6 @@ const RawMaterialDetailPage = () => {
                           {facet.letter} / {facet.family || 'Family'} / {formatQuantity(facet.value)}%
                         </Badge>
                       ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {(referenceKeywords.length || flavourKeywords.length) ? (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-xl border bg-card p-4">
-                      <div className="text-xs text-muted-foreground mb-2">Perfume uses</div>
-                      <div className="flex flex-wrap gap-2">
-                        {referenceKeywords.length ? referenceKeywords.map((keyword) => (
-                          <Badge key={keyword} variant="secondary" className="rounded-full text-xs">
-                            {keyword}
-                          </Badge>
-                        )) : <span className="text-sm text-muted-foreground">No perfume use notes</span>}
-                      </div>
-                    </div>
-                    <div className="rounded-xl border bg-card p-4">
-                      <div className="text-xs text-muted-foreground mb-2">Flavour uses</div>
-                      <div className="flex flex-wrap gap-2">
-                        {flavourKeywords.length ? flavourKeywords.map((keyword) => (
-                          <Badge key={keyword} variant="secondary" className="rounded-full text-xs">
-                            {keyword}
-                          </Badge>
-                        )) : <span className="text-sm text-muted-foreground">No flavour use notes</span>}
-                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -443,33 +349,10 @@ const RawMaterialDetailPage = () => {
                   <DetailField label="Molecular weight" value={referenceProfile.molecular_weight !== null ? formatQuantity(referenceProfile.molecular_weight, 2) : 'N/A'} />
                   <DetailField label="Safety note" value={formatNullable(referenceProfile.safety)} />
                 </DetailFieldGroup>
-
-                {stabilityNotes.length || referenceProfile.stability_summary ? (
-                  <div className="rounded-xl border bg-card p-4">
-                    <div className="text-xs text-muted-foreground mb-2">Stability</div>
-                    {referenceProfile.stability_summary ? (
-                      <p className="text-sm text-foreground mb-3">{referenceProfile.stability_summary}</p>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      {stabilityNotes.map((note) => (
-                        <Badge key={note} variant="outline" className="rounded-full text-xs">
-                          {note}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="text-sm text-muted-foreground">
-                  Linked by {referenceLink.match_method || 'manual'}
-                  {referenceLink.match_confidence !== null ? ` with ${(referenceLink.match_confidence * 100).toFixed(0)}% confidence` : ''}.
-                </div>
               </div>
             ) : (
               <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                <p>
-                  This material does not have a workbook reference profile yet. The inventory workflow still works normally, and we can attach a reference profile later during the matching or import phase.
-                </p>
+                <p>No linked reference profile yet.</p>
                 <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="mt-4 gap-2">
                   <LinkIcon className="w-4 h-4" />
                   Match reference profile
@@ -483,11 +366,11 @@ const RawMaterialDetailPage = () => {
               <DetailFieldGroup columns={3}>
                 <DetailField
                   label="Diluted material"
-                  value={
+                  value={(
                     <Badge variant="outline" className="text-xs">
                       Yes
                     </Badge>
-                  }
+                  )}
                 />
                 <DetailField
                   label="Dilution percentage"
@@ -498,9 +381,6 @@ const RawMaterialDetailPage = () => {
                   value={formatNullable(dilutionSolventName)}
                 />
               </DetailFieldGroup>
-              <div className="mt-3 text-sm text-muted-foreground">
-                This inventory item is treated as a pre-diluted material and will expand into active material plus solvent usage when formulas or batches consume it.
-              </div>
             </DetailSection>
           )}
 
@@ -510,27 +390,10 @@ const RawMaterialDetailPage = () => {
             </DetailSection>
           )}
 
-          <DetailSection title="Usage history">
-            {usageRecords.length > 0 && (
-              <div className="mb-4 p-3 bg-muted/30 rounded-lg border">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Total quantity used across all batches:</span>
-                  <span className="ml-2 font-mono font-semibold">
-                    {formatQuantity(totalQuantityUsed)} {material.unit}
-                  </span>
-                  <span className="ml-3 text-muted-foreground">
-                    (Total cost: {formatPrice(usageRecords.reduce((sum, r) => sum + (r.cost || 0), 0))})
-                  </span>
-                </div>
-              </div>
-            )}
-            <UsageHistoryTable usageRecords={usageRecords} isLoading={usageLoading} />
-          </DetailSection>
-
           <DetailSection>
-            <DetailMetadata 
-              created={material.created} 
-              updated={material.updated} 
+            <DetailMetadata
+              created={material.created}
+              updated={material.updated}
             />
           </DetailSection>
         </div>
@@ -542,7 +405,6 @@ const RawMaterialDetailPage = () => {
         material={material}
         onSuccess={() => {
           loadMaterial();
-          loadUsageHistory();
           loadReferenceProfile();
         }}
       />
@@ -552,9 +414,12 @@ const RawMaterialDetailPage = () => {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
         title="Delete material"
-        description={`Are you sure you want to delete "${material.name}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${material.name}"? This action cannot be undone, and linked workbook/reference artifacts will be removed too.`}
         confirmText={deleting ? 'Deleting...' : 'Delete'}
-      />
+        confirmDisabled={deleting}
+      >
+        {renderDeleteDependencySummary(deleteDependencies, deleteDependencyLoading)}
+      </ConfirmDialog>
 
       <ManualReferenceMatchModal
         open={matchModalOpen}
@@ -571,4 +436,3 @@ const RawMaterialDetailPage = () => {
 };
 
 export default RawMaterialDetailPage;
-

@@ -1,3 +1,5 @@
+import { resolveCanonicalReferenceProfile } from '@/utils/canonicalReferenceProfile.js';
+
 const normalizeNumber = (value) => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
@@ -26,7 +28,7 @@ export const buildFallbackReferenceProfileFromRawMaterial = (rawMaterial) => {
   const fallbackReferenceCode = normalizeText(rawMaterial?.workbook_code)
     || (rawMaterialId ? `RAW-${rawMaterialId}` : 'RAW-MANUAL');
 
-  return {
+  const fallbackProfile = {
     id: `raw-material-guidance-${rawMaterial?.id || fallbackReferenceCode}`,
     reference_code: fallbackReferenceCode,
     name: normalizeText(rawMaterial?.name) || fallbackReferenceCode,
@@ -44,5 +46,29 @@ export const buildFallbackReferenceProfileFromRawMaterial = (rawMaterial) => {
     cas_no: normalizeText(rawMaterial?.cas_number),
     odour_facets: [],
     source_kind: 'raw_material_guidance',
+  };
+
+  const canonicalProfile = resolveCanonicalReferenceProfile({
+    referenceProfile: fallbackProfile,
+    rawMaterial,
+  });
+
+  return {
+    ...fallbackProfile,
+    canonical_profile: canonicalProfile,
+    abc_distribution: canonicalProfile?.abc_distribution || [],
+    abc_primary_family: canonicalProfile?.abc_primary_family || fallbackProfile.abc_primary_family,
+    abc_secondary_family: canonicalProfile?.abc_secondary_family || fallbackProfile.abc_secondary_family,
+    impact: canonicalProfile?.impact ?? fallbackProfile.impact,
+    life_hours: canonicalProfile?.life_hours ?? fallbackProfile.life_hours,
+    use_level_typical_percent: canonicalProfile?.use_level_typical_percent ?? fallbackProfile.use_level_typical_percent,
+    use_level_max_percent: canonicalProfile?.use_level_max_percent ?? fallbackProfile.use_level_max_percent,
+    ifra_limit_percent: canonicalProfile?.ifra_limit_percent ?? fallbackProfile.ifra_limit_percent,
+    cas_no: canonicalProfile?.cas_number || fallbackProfile.cas_no,
+    top_middle_base_tendency: canonicalProfile?.top_middle_base_tendency || null,
+    confidence_score: canonicalProfile?.confidence_score ?? null,
+    confidence_reason: canonicalProfile?.confidence_reason || null,
+    field_locks: canonicalProfile?.field_locks || {},
+    source_snapshots: canonicalProfile?.source_snapshots || {},
   };
 };

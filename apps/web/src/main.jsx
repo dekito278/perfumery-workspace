@@ -11,15 +11,34 @@ const RESIZE_OBSERVER_MESSAGES = [
 const isResizeObserverNoise = (value) =>
   RESIZE_OBSERVER_MESSAGES.some((message) => String(value || '').includes(message));
 
+const EXTENSION_ERROR_MESSAGES = [
+  'Attempting to use a disconnected port object',
+];
+
+const isExtensionNoise = ({ message, filename, reason }) => {
+  const messageText = String(message || reason?.message || reason || '');
+  const filenameText = String(filename || '');
+  const stackText = String(reason?.stack || '');
+
+  return (
+    filenameText.includes('chrome-extension://')
+    || stackText.includes('chrome-extension://')
+    || EXTENSION_ERROR_MESSAGES.some((entry) => messageText.includes(entry))
+  );
+};
+
 window.addEventListener('error', (event) => {
-  if (isResizeObserverNoise(event.message)) {
+  if (isResizeObserverNoise(event.message) || isExtensionNoise(event)) {
     event.stopImmediatePropagation();
     event.preventDefault();
   }
 }, true);
 
 window.addEventListener('unhandledrejection', (event) => {
-  if (isResizeObserverNoise(event.reason?.message || event.reason)) {
+  if (
+    isResizeObserverNoise(event.reason?.message || event.reason)
+    || isExtensionNoise({ reason: event.reason })
+  ) {
     event.preventDefault();
   }
 });

@@ -2,14 +2,23 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Package, Beaker, Boxes, ArrowRight, Calculator } from 'lucide-react';
+import { Package, Beaker, ArrowRight, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const HomePage = () => {
   const navigationCards = [
     {
-      title: 'Raw materials',
-      description: 'Manage your inventory of essential oils, aroma chemicals, and solvents',
+      title: 'Briefs',
+      description: 'Mulai dari brief dan arah formula.',
+      icon: ClipboardList,
+      path: '/briefs',
+      color: 'from-primary/10 to-amber-500/10',
+      iconColor: 'text-primary',
+      hoverColor: 'hover:border-primary/30'
+    },
+    {
+      title: 'Materials',
+      description: 'Kelola library bahan dan shortlist.',
       icon: Package,
       path: '/raw-materials',
       color: 'from-amber-500/10 to-orange-500/10',
@@ -18,38 +27,20 @@ const HomePage = () => {
     },
     {
       title: 'Formulas',
-      description: 'Build complete perfume and accord formulas around raw materials and solvent composition',
+      description: 'Compose, review, dan evaluasi formula.',
       icon: Beaker,
       path: '/formulas',
-      color: 'from-primary/10 to-amber-500/10',
-      iconColor: 'text-primary',
-      hoverColor: 'hover:border-primary/30'
-    },
-    {
-      title: 'Batches',
-      description: 'Track production batches and manage material usage',
-      icon: Boxes,
-      path: '/batches',
       color: 'from-emerald-500/10 to-teal-500/10',
       iconColor: 'text-emerald-600',
       hoverColor: 'hover:border-emerald-500/30'
-    },
-    {
-      title: 'Production Costing',
-      description: 'Convert batch volume into bottle output and calculate extra bottle, cap, and packaging costs',
-      icon: Calculator,
-      path: '/production-costing',
-      color: 'from-sky-500/10 to-cyan-500/10',
-      iconColor: 'text-sky-600',
-      hoverColor: 'hover:border-sky-500/30'
     }
   ];
 
   return (
     <>
       <Helmet>
-        <title>Dashboard - Perfumer Studio</title>
-        <meta name="description" content="Manage your perfume production workflow with tools for raw materials, formulas, and batches." />
+        <title>Dashboard - Formulation Workspace</title>
+        <meta name="description" content="Build perfume formulas with briefs, materials, workbook guidance, and performance analysis." />
       </Helmet>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
@@ -60,14 +51,14 @@ const HomePage = () => {
             className="mb-12 sm:mb-16"
           >
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4" style={{ letterSpacing: '-0.02em' }}>
-              Perfumer Studio
+              Formulation Workspace
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl">
-              Manage your perfume production workflow
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl">
+              Workspace formulasi untuk brief, shortlist, formula, dan validation.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
             {navigationCards.map((card, index) => {
               const Icon = card.icon;
               return (
@@ -79,18 +70,18 @@ const HomePage = () => {
                 >
                   <Link to={card.path}>
                     <div
-                      className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br ${card.color} p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${card.hoverColor}`}
+                      className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br ${card.color} p-5 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${card.hoverColor}`}
                     >
-                      <div className="flex items-start justify-between mb-6">
+                      <div className="mb-4 flex items-start justify-between">
                         <div className={`p-3 rounded-xl bg-background/80 backdrop-blur-sm ${card.iconColor} transition-transform duration-300 group-hover:scale-110`}>
-                          <Icon className="w-8 h-8" />
+                          <Icon className="w-6 h-6 sm:w-8 sm:h-8" />
                         </div>
                         <ArrowRight className="w-5 h-5 text-muted-foreground transition-all duration-300 group-hover:translate-x-1 group-hover:text-foreground" />
                       </div>
-                      <h2 className="text-2xl font-semibold mb-3 transition-colors duration-300 group-hover:text-foreground">
+                      <h2 className="mb-2 text-xl font-semibold transition-colors duration-300 group-hover:text-foreground">
                         {card.title}
                       </h2>
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {card.description}
                       </p>
                     </div>
@@ -100,26 +91,18 @@ const HomePage = () => {
             })}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-16 p-6 rounded-xl bg-muted/50 border"
-          >
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Getting started</h3>
-                <p className="text-muted-foreground">
-                  Begin by adding raw materials to your inventory, then create perfume or accord formulas to build your collection.
-                </p>
-              </div>
-              <Link to="/raw-materials">
-                <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium transition-all duration-200 hover:bg-primary/90 active:scale-[0.98]">
-                  Add materials
-                </button>
-              </Link>
-            </div>
-          </motion.div>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link to="/briefs">
+              <button className="rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 active:scale-[0.98]">
+                Start from briefs
+              </button>
+            </Link>
+            <Link to="/formulas">
+              <button className="rounded-xl border bg-white/80 px-5 py-3 font-medium transition-all duration-200 hover:bg-white">
+                Open formulas
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -29,14 +28,6 @@ const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
   value: entry.familyName,
   label: `${entry.letter} - ${entry.familyName}`,
 }));
-const parseOptionalNumber = (value) => {
-  if (value === '' || value === null || value === undefined) {
-    return null;
-  }
-
-  const numericValue = Number(value);
-  return Number.isFinite(numericValue) ? numericValue : null;
-};
 
 const shouldOverrideNumericGuidance = ({ currentValue, nextValue }) => {
   if (nextValue === null || nextValue === undefined || nextValue === '') {
@@ -47,35 +38,34 @@ const shouldOverrideNumericGuidance = ({ currentValue, nextValue }) => {
   return !Number.isFinite(currentNumericValue) || currentNumericValue <= 0;
 };
 
+const createInitialFormData = () => ({
+  name: '',
+  workbook_code: '',
+  category: '',
+  type: 'material',
+  scent_family: '',
+  unit: 'ml',
+  cost_per_unit: '',
+  vendor: '',
+  description: '',
+  cas_number: '',
+  ifra_limit: '',
+  reference_abc_primary_family: '',
+  reference_impact: '',
+  reference_life_hours: '',
+  reference_use_level_typical_percent: '',
+  reference_use_level_max_percent: '',
+  notes: '',
+  is_diluted: false,
+  dilution_solvent_id: '',
+  dilution_percentage: '',
+});
+
 const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
   const { addMaterial, loading } = useRawMaterials();
   const [solvents, setSolvents] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    workbook_code: '',
-    category: '',
-    type: 'material',
-    scent_family: '',
-    stock_quantity: '',
-    unit: 'ml',
-    cost_per_unit: '',
-    minimum_stock: '',
-    low_stock_threshold: '',
-    vendor: '',
-    description: '',
-    cas_number: '',
-    ifra_limit: '',
-    reference_abc_primary_family: '',
-    reference_impact: '',
-    reference_life_hours: '',
-    reference_use_level_typical_percent: '',
-    reference_use_level_max_percent: '',
-    notes: '',
-    is_diluted: false,
-    dilution_solvent_id: '',
-    dilution_percentage: ''
-  });
+  const [formData, setFormData] = useState(createInitialFormData());
   const [errors, setErrors] = useState({});
   const [warnings, setWarnings] = useState({});
   const [touched, setTouched] = useState({});
@@ -121,7 +111,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
 
   const validateField = (name, value) => {
     let error = '';
-    
+
     switch (name) {
       case 'name':
         error = validateRequired(value, 'Name') || validateMaxLength(value, FIELD_CONSTRAINTS.name.maxLength, 'Name');
@@ -135,37 +125,18 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       case 'workbook_code':
         error = validateMaxLength(value, FIELD_CONSTRAINTS.code.maxLength, 'Workbook code');
         break;
-      case 'stock_quantity':
-        error = validateRequired(value, 'Stock quantity') || validateNonNegativeNumber(value, 'Stock quantity');
-        break;
       case 'unit':
         error = validateRequired(value, 'Unit');
         break;
       case 'cost_per_unit':
         error = validateNonNegativeNumber(value, 'Purchase price');
-        if (!error && value !== '') {
-          const strValue = String(value);
-          const decimalIndex = strValue.indexOf('.');
-          if (decimalIndex !== -1) {
-            const decimalPart = strValue.substring(decimalIndex + 1);
-            if (decimalPart.length > 2) {
-              error = 'Purchase price must have at most 2 decimal places';
-            }
-          }
-        }
-        break;
-      case 'minimum_stock':
-        error = '';
-        break;
-      case 'low_stock_threshold':
-        error = validateRequired(value, 'Low stock alert') || validateNonNegativeNumber(value, 'Low stock alert');
         break;
       case 'ifra_limit':
       case 'reference_use_level_typical_percent':
       case 'reference_use_level_max_percent':
         if (value !== '') {
           const numValue = Number(value);
-          if (isNaN(numValue)) {
+          if (Number.isNaN(numValue)) {
             error = 'Reference percentage must be a valid number';
           } else if (numValue < 0 || numValue > 100) {
             error = 'Reference percentage must be between 0 and 100';
@@ -189,7 +160,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
             error = 'Dilution percentage is required';
           } else {
             const numValue = Number(value);
-            if (isNaN(numValue)) {
+            if (Number.isNaN(numValue)) {
               error = 'Dilution percentage must be a valid number';
             } else if (numValue <= 0 || numValue > 100) {
               error = 'Dilution percentage must be between 0 and 100';
@@ -203,34 +174,28 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       case 'reference_abc_primary_family':
         error = validateMaxLength(value, 120, 'ABC family');
         break;
+      default:
+        break;
     }
-    
+
     return error;
   };
 
   const checkWarnings = () => {
     const newWarnings = {};
-    
+
     if (formData.cost_per_unit && parseFloat(formData.cost_per_unit) === 0) {
       newWarnings.cost_per_unit = 'Purchase price is 0 - this may affect formula calculations';
     }
-    
-    if (formData.stock_quantity && parseFloat(formData.stock_quantity) > 10000) {
-      newWarnings.stock_quantity = 'Stock quantity is very high - please verify';
-    }
-    
-    if (formData.low_stock_threshold && formData.stock_quantity && 
-        parseFloat(formData.low_stock_threshold) > parseFloat(formData.stock_quantity)) {
-      newWarnings.low_stock_threshold = 'Low stock threshold is higher than current stock';
-    }
-    
+
     setWarnings(newWarnings);
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const normalizedValue = field === 'category' ? normalizeCategoryValue(value) : value;
       const next = { ...prev, [field]: normalizedValue };
+
       if (field === 'category') {
         const meta = getRawMaterialCategoryMeta(normalizedValue, prev.type, prev.scent_family);
         const previousCategoryCode = findPerfumersWorldCategoryByValue(prev.category)?.code || '';
@@ -240,22 +205,21 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         if (nextCategoryCode && (!prev.workbook_code || prev.workbook_code === previousCategoryCode)) {
           next.workbook_code = nextCategoryCode;
         }
-        if (!next.low_stock_threshold) {
-          next.low_stock_threshold = prev.minimum_stock || '';
-        }
       }
+
       return next;
     });
+
     if (touched[field]) {
       const error = validateField(field, field === 'category' ? normalizeCategoryValue(value) : value);
-      setErrors(prev => ({ ...prev, [field]: error }));
+      setErrors((prev) => ({ ...prev, [field]: error }));
     }
   };
 
   const handleBlur = (field) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
     const error = validateField(field, formData[field]);
-    setErrors(prev => ({ ...prev, [field]: error }));
+    setErrors((prev) => ({ ...prev, [field]: error }));
     checkWarnings();
   };
 
@@ -289,16 +253,10 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         cas_number: imported.cas_number || current.cas_number,
         description: imported.description || current.description,
         reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
-        reference_impact: shouldOverrideNumericGuidance({
-          currentValue: current.reference_impact,
-          nextValue: imported.reference_impact,
-        })
+        reference_impact: shouldOverrideNumericGuidance({ currentValue: current.reference_impact, nextValue: imported.reference_impact })
           ? String(imported.reference_impact)
           : current.reference_impact,
-        reference_life_hours: shouldOverrideNumericGuidance({
-          currentValue: current.reference_life_hours,
-          nextValue: imported.reference_life_hours,
-        })
+        reference_life_hours: shouldOverrideNumericGuidance({ currentValue: current.reference_life_hours, nextValue: imported.reference_life_hours })
           ? String(imported.reference_life_hours)
           : current.reference_life_hours,
         reference_use_level_typical_percent: imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined
@@ -344,16 +302,10 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
           ? String(imported.ifra_limit)
           : current.ifra_limit,
         reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
-        reference_impact: shouldOverrideNumericGuidance({
-          currentValue: current.reference_impact,
-          nextValue: imported.reference_impact,
-        })
+        reference_impact: shouldOverrideNumericGuidance({ currentValue: current.reference_impact, nextValue: imported.reference_impact })
           ? String(imported.reference_impact)
           : current.reference_impact,
-        reference_life_hours: shouldOverrideNumericGuidance({
-          currentValue: current.reference_life_hours,
-          nextValue: imported.reference_life_hours,
-        })
+        reference_life_hours: shouldOverrideNumericGuidance({ currentValue: current.reference_life_hours, nextValue: imported.reference_life_hours })
           ? String(imported.reference_life_hours)
           : current.reference_life_hours,
         reference_use_level_typical_percent: imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined
@@ -394,16 +346,10 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         cas_number: imported.cas_number || current.cas_number,
         description: imported.description || current.description,
         reference_abc_primary_family: imported.reference_abc_primary_family || current.reference_abc_primary_family,
-        reference_impact: shouldOverrideNumericGuidance({
-          currentValue: current.reference_impact,
-          nextValue: imported.reference_impact,
-        })
+        reference_impact: shouldOverrideNumericGuidance({ currentValue: current.reference_impact, nextValue: imported.reference_impact })
           ? String(imported.reference_impact)
           : current.reference_impact,
-        reference_life_hours: shouldOverrideNumericGuidance({
-          currentValue: current.reference_life_hours,
-          nextValue: imported.reference_life_hours,
-        })
+        reference_life_hours: shouldOverrideNumericGuidance({ currentValue: current.reference_life_hours, nextValue: imported.reference_life_hours })
           ? String(imported.reference_life_hours)
           : current.reference_life_hours,
       }));
@@ -424,19 +370,32 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    Object.keys(formData).forEach(key => {
+    const nextErrors = {};
+    Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
+      if (error) {
+        nextErrors[key] = error;
+      }
     });
-    setErrors(newErrors);
+    setErrors(nextErrors);
     checkWarnings();
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const resetForm = () => {
+    setFormData(createInitialFormData());
+    setErrors({});
+    setWarnings({});
+    setTouched({});
+    setScentreeUrl('');
+    setPerfumersWorldUrl('');
+    setTgscUrl('');
+    setInferenceLines([]);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
     if (!validateForm()) {
       toast.error('Please fix all errors before submitting');
       return;
@@ -449,11 +408,8 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         category: formData.category,
         type: formData.type,
         scent_family: isSolvent ? null : (formData.scent_family || null),
-        stock_quantity: parseFloat(formData.stock_quantity),
         unit: formData.unit,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : 0,
-        minimum_stock: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : 0,
-        low_stock_threshold: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : null,
         vendor: formData.vendor || null,
         description: formData.description || null,
         cas_number: formData.cas_number || null,
@@ -466,7 +422,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         notes: formData.notes || null,
         is_diluted: formData.is_diluted,
         dilution_solvent_id: formData.is_diluted ? formData.dilution_solvent_id : null,
-        dilution_percentage: formData.is_diluted ? parseFloat(formData.dilution_percentage) : null
+        dilution_percentage: formData.is_diluted ? parseFloat(formData.dilution_percentage) : null,
       });
 
       if (result?._creationResolution?.action === 'matched_existing') {
@@ -474,73 +430,41 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
       } else {
         toast.success('Material added successfully');
       }
-      setFormData({
-        name: '',
-        workbook_code: '',
-        category: '',
-        type: 'material',
-        scent_family: '',
-        stock_quantity: '',
-        unit: 'ml',
-        cost_per_unit: '',
-        minimum_stock: '',
-        low_stock_threshold: '',
-        vendor: '',
-        description: '',
-        cas_number: '',
-        ifra_limit: '',
-        reference_abc_primary_family: '',
-        reference_impact: '',
-        reference_life_hours: '',
-        reference_use_level_typical_percent: '',
-        reference_use_level_max_percent: '',
-        notes: '',
-        is_diluted: false,
-        dilution_solvent_id: '',
-        dilution_percentage: ''
-      });
-      setErrors({});
-      setWarnings({});
-      setTouched({});
-      setScentreeUrl('');
-      setPerfumersWorldUrl('');
-      setTgscUrl('');
-      setInferenceLines([]);
+
+      resetForm();
       onOpenChange(false);
-      if (onSuccess) onSuccess();
+      onSuccess?.();
     } catch (error) {
       toast.error(error.message || 'Failed to add material');
     }
   };
 
-  const hasErrors = Object.values(errors).some(error => error);
+  const hasErrors = Object.values(errors).some(Boolean);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[500px] max-h-[90vh] overflow-y-auto p-5">
         <DialogHeader>
           <DialogTitle className="text-lg">Add new material</DialogTitle>
-          <DialogDescription className="text-xs">Enter the details of the raw material you want to add to your inventory.</DialogDescription>
+          <DialogDescription className="text-xs">Capture a material profile, guidance, and dilution setup for the formulation library.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div className="space-y-3">
-            <div className="space-y-2">
-              <FormField
-                label="Name"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                onBlur={() => handleBlur('name')}
-                error={errors.name}
-                required
-                placeholder="e.g., Bergamot Essential Oil"
-                maxLength={FIELD_CONSTRAINTS.name.maxLength}
-              />
-            </div>
+            <FormField
+              label="Name"
+              value={formData.name}
+              onChange={(event) => handleChange('name', event.target.value)}
+              onBlur={() => handleBlur('name')}
+              error={errors.name}
+              required
+              placeholder="e.g., Bergamot Essential Oil"
+              maxLength={FIELD_CONSTRAINTS.name.maxLength}
+            />
 
             <FormField
               label="Workbook code"
               value={formData.workbook_code}
-              onChange={(e) => handleChange('workbook_code', e.target.value)}
+              onChange={(event) => handleChange('workbook_code', event.target.value)}
               onBlur={() => handleBlur('workbook_code')}
               error={errors.workbook_code}
               placeholder="e.g., 3JJ00005"
@@ -591,7 +515,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   <FormNumber
                     label="Dilution percentage"
                     value={formData.dilution_percentage}
-                    onChange={(e) => handleChange('dilution_percentage', e.target.value)}
+                    onChange={(event) => handleChange('dilution_percentage', event.target.value)}
                     onBlur={() => handleBlur('dilution_percentage')}
                     error={errors.dilution_percentage}
                     required
@@ -620,7 +544,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 <div>
                   <p className="text-sm font-medium">Workbook guidance import</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Gunakan importer seperti workflow workbook untuk mengisi workbook code, CAS, family, impact, life, typical, dan max use level.
+                    Import workbook-style guidance to enrich impact, life, CAS, IFRA, and use-level data.
                   </p>
                 </div>
 
@@ -640,7 +564,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   <Input
                     id="add-material-perfumersworld-url"
                     value={perfumersWorldUrl}
-                    onChange={(e) => setPerfumersWorldUrl(e.target.value)}
+                    onChange={(event) => setPerfumersWorldUrl(event.target.value)}
                     placeholder="https://www.perfumersworld.com/view.php?pro_id=..."
                     className="h-11 rounded-2xl"
                   />
@@ -662,8 +586,8 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   <Input
                     id="add-material-scentree-url"
                     value={scentreeUrl}
-                    onChange={(e) => setScentreeUrl(e.target.value)}
-                    placeholder="https://www.scentree.co/en/Adoxal%C2%AE.html"
+                    onChange={(event) => setScentreeUrl(event.target.value)}
+                    placeholder="https://www.scentree.co/en/..."
                     className="h-11 rounded-2xl"
                   />
                 </div>
@@ -684,8 +608,8 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   <Input
                     id="add-material-tgsc-url"
                     value={tgscUrl}
-                    onChange={(e) => setTgscUrl(e.target.value)}
-                    placeholder="https://www.thegoodscentscompany.com/data/es1002952.html"
+                    onChange={(event) => setTgscUrl(event.target.value)}
+                    placeholder="https://www.thegoodscentscompany.com/data/..."
                     className="h-11 rounded-2xl"
                   />
                 </div>
@@ -708,17 +632,6 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
 
           <div className="border-t pt-3 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <FormNumber
-                label="Stock quantity"
-                value={formData.stock_quantity}
-                onChange={(e) => handleChange('stock_quantity', e.target.value)}
-                onBlur={() => handleBlur('stock_quantity')}
-                error={errors.stock_quantity}
-                required
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
               <FormSelect
                 label="Unit"
                 value={formData.unit}
@@ -728,14 +641,11 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 error={errors.unit}
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <FormNumber
                   label={`Unit price (per 10 ${formData.unit || 'ml'})`}
                   value={formData.cost_per_unit}
-                  onChange={(e) => handleChange('cost_per_unit', e.target.value)}
+                  onChange={(event) => handleChange('cost_per_unit', event.target.value)}
                   onBlur={() => handleBlur('cost_per_unit')}
                   error={errors.cost_per_unit}
                   placeholder="e.g., 25000"
@@ -748,44 +658,30 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                   </p>
                 )}
               </div>
-              <FormNumber
-                label="Low stock alert"
-                value={formData.low_stock_threshold}
-                onChange={(e) => handleChange('low_stock_threshold', e.target.value)}
-                onBlur={() => handleBlur('low_stock_threshold')}
-                error={errors.low_stock_threshold}
-                helperText="Warn when stock goes below this amount."
-                required
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
             </div>
           </div>
 
           <div className="border-t pt-3 space-y-3">
-            <div className="grid grid-cols-1 gap-3">
-              <FormField
-                label="Vendor"
-                value={formData.vendor}
-                onChange={(e) => handleChange('vendor', e.target.value)}
-                placeholder="e.g., PerfumersWorld"
-              />
+            <FormField
+              label="Vendor"
+              value={formData.vendor}
+              onChange={(event) => handleChange('vendor', event.target.value)}
+              placeholder="e.g., PerfumersWorld"
+            />
 
-              <FormField
-                label="CAS number"
-                value={formData.cas_number}
-                onChange={(e) => handleChange('cas_number', e.target.value)}
-                onBlur={() => handleBlur('cas_number')}
-                error={errors.cas_number}
-                placeholder="e.g., 8007-75-8"
-              />
-            </div>
+            <FormField
+              label="CAS number"
+              value={formData.cas_number}
+              onChange={(event) => handleChange('cas_number', event.target.value)}
+              onBlur={() => handleBlur('cas_number')}
+              error={errors.cas_number}
+              placeholder="e.g., 8007-75-8"
+            />
 
             <FormNumber
               label="IFRA limit"
               value={formData.ifra_limit}
-              onChange={(e) => handleChange('ifra_limit', e.target.value)}
+              onChange={(event) => handleChange('ifra_limit', event.target.value)}
               onBlur={() => handleBlur('ifra_limit')}
               error={errors.ifra_limit}
               placeholder="0.0"
@@ -799,7 +695,7 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
               <div>
                 <p className="text-sm font-medium">Manual reference guidance</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Optional. Fill this if the material is new and not linked to workbook reference data yet. We will create a manual reference profile from these values.
+                  Optional. Fill this if the material is not linked to workbook reference data yet.
                 </p>
               </div>
 
@@ -821,29 +717,24 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.reference_abc_primary_family ? (
-                  <p className="text-xs text-destructive">{errors.reference_abc_primary_family}</p>
-                ) : null}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormNumber
                   label="Impact"
                   value={formData.reference_impact}
-                  onChange={(e) => handleChange('reference_impact', e.target.value)}
+                  onChange={(event) => handleChange('reference_impact', event.target.value)}
                   onBlur={() => handleBlur('reference_impact')}
                   error={errors.reference_impact}
-                  placeholder="0.0"
                   min="0"
                   step="0.1"
                 />
                 <FormNumber
-                  label="Lifetime (hours)"
+                  label="Life hours"
                   value={formData.reference_life_hours}
-                  onChange={(e) => handleChange('reference_life_hours', e.target.value)}
+                  onChange={(event) => handleChange('reference_life_hours', event.target.value)}
                   onBlur={() => handleBlur('reference_life_hours')}
                   error={errors.reference_life_hours}
-                  placeholder="0.0"
                   min="0"
                   step="0.1"
                 />
@@ -853,11 +744,9 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 <FormNumber
                   label="Typical use level"
                   value={formData.reference_use_level_typical_percent}
-                  onChange={(e) => handleChange('reference_use_level_typical_percent', e.target.value)}
+                  onChange={(event) => handleChange('reference_use_level_typical_percent', event.target.value)}
                   onBlur={() => handleBlur('reference_use_level_typical_percent')}
                   error={errors.reference_use_level_typical_percent}
-                  helperText="Kisaran pakai yang biasanya nyaman dipakai di formula."
-                  placeholder="0.0"
                   min="0"
                   max="100"
                   step="0.1"
@@ -866,11 +755,9 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
                 <FormNumber
                   label="Max use level"
                   value={formData.reference_use_level_max_percent}
-                  onChange={(e) => handleChange('reference_use_level_max_percent', e.target.value)}
+                  onChange={(event) => handleChange('reference_use_level_max_percent', event.target.value)}
                   onBlur={() => handleBlur('reference_use_level_max_percent')}
                   error={errors.reference_use_level_max_percent}
-                  helperText="Batas saran praktis sebelum bahan terasa terlalu dominan."
-                  placeholder="0.0"
                   min="0"
                   max="100"
                   step="0.1"
@@ -880,47 +767,47 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="raw-material-description">Description</Label>
+              <Label htmlFor="add-material-description">Description</Label>
               <Textarea
-                id="raw-material-description"
+                id="add-material-description"
                 value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Short material description or odour summary"
+                onChange={(event) => handleChange('description', event.target.value)}
                 rows={3}
-                className="text-foreground text-sm"
+                placeholder="Short description or odour profile"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="raw-material-notes">Notes</Label>
+              <Label htmlFor="add-material-notes">Notes</Label>
               <Textarea
-                id="raw-material-notes"
+                id="add-material-notes"
                 value={formData.notes}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                placeholder="Optional notes about vendor, origin, or handling"
+                onChange={(event) => handleChange('notes', event.target.value)}
                 rows={3}
-                className="text-foreground text-sm"
+                placeholder="Optional notes, source context, or evaluation remarks"
               />
             </div>
           </div>
 
           {Object.keys(warnings).length > 0 && (
-            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1">
-              {Object.values(warnings).map((warning, index) => (
-                <div key={index} className="flex items-start gap-2 text-xs text-amber-800">
-                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>{warning}</span>
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4" />
+                <div className="space-y-1">
+                  {Object.values(warnings).map((warning) => (
+                    <div key={warning}>{warning}</div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           )}
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || hasErrors} size="sm">
-              {loading ? 'Adding...' : 'Add material'}
+            <Button type="submit" disabled={loading || hasErrors}>
+              {loading ? 'Saving...' : 'Add material'}
             </Button>
           </DialogFooter>
         </form>

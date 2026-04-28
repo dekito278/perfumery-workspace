@@ -3,10 +3,13 @@ import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FlaskConical, FileUp } from 'lucide-react';
+import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
+import { useBriefs } from '@/hooks/useBriefs.js';
+import { useValidationLogs } from '@/hooks/useValidationLogs.js';
+import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import SearchBar from '@/components/SearchBar.jsx';
@@ -15,7 +18,6 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
-import CreateBatchModal from '@/components/CreateBatchModal.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { formatGramAmount, formatNullable } from '@/utils/formatting.js';
@@ -27,16 +29,18 @@ const FormulasPage = () => {
   const location = useLocation();
   const { getFormulas, duplicateFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
+  const { getBriefs } = useBriefs();
+  const { getValidationLogs } = useValidationLogs();
+  const { getBriefMaterialShortlistsByBriefIds } = useBriefMaterialShortlists();
   const [formulas, setFormulas] = useState([]);
   const [formulaMetrics, setFormulaMetrics] = useState({});
+  const [pipelineByFormulaId, setPipelineByFormulaId] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [createBatchModalOpen, setCreateBatchModalOpen] = useState(false);
   const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, formulaId: null, formulaName: null });
-  const [selectedFormula, setSelectedFormula] = useState(null);
   const [duplicatingId, setDuplicatingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
@@ -47,20 +51,66 @@ const FormulasPage = () => {
       const data = await getFormulas();
       setFormulas(data);
 
-      const metricEntries = await Promise.all(
-        data.map(async (formula) => {
-          const items = await getFormulaItems(formula.id);
-          return [
-            formula.id,
-            {
-              itemCount: items.length,
-              totalGrams: calculateTotalAmount(items),
-            },
-          ];
-        })
-      );
+      const [briefs, validationLogs, metricEntries] = await Promise.all([
+        getBriefs(),
+        getValidationLogs(),
+        Promise.all(
+          data.map(async (formula) => {
+            const items = await getFormulaItems(formula.id);
+            return [
+              formula.id,
+              {
+                itemCount: items.length,
+                totalGrams: calculateTotalAmount(items),
+              },
+            ];
+          })
+        ),
+      ]);
 
       setFormulaMetrics(Object.fromEntries(metricEntries));
+
+      const briefsByFormulaId = new Map();
+      briefs.forEach((brief) => {
+        if (!brief.formula_id) {
+          return;
+        }
+
+        const current = briefsByFormulaId.get(brief.formula_id) || [];
+        current.push(brief);
+        briefsByFormulaId.set(brief.formula_id, current);
+      });
+
+      const shortlistByBriefId = await getBriefMaterialShortlistsByBriefIds(briefs.map((brief) => brief.id));
+
+      const validationCountsByFormulaId = validationLogs.reduce((accumulator, log) => {
+        const current = accumulator.get(log.formula_id) || { total: 0, actionNeeded: 0 };
+        current.total += 1;
+        if (log.status === 'action_needed') {
+          current.actionNeeded += 1;
+        }
+        accumulator.set(log.formula_id, current);
+        return accumulator;
+      }, new Map());
+
+      const nextPipelineByFormulaId = {};
+      data.forEach((formula) => {
+        const linkedBriefs = briefsByFormulaId.get(formula.id) || [];
+        const shortlistCount = linkedBriefs.reduce(
+          (sum, brief) => sum + Number(shortlistByBriefId.get(brief.id)?.length || 0),
+          0
+        );
+        const validationSummary = validationCountsByFormulaId.get(formula.id) || { total: 0, actionNeeded: 0 };
+
+        nextPipelineByFormulaId[formula.id] = {
+          briefCount: linkedBriefs.length,
+          shortlistCount,
+          validationCount: validationSummary.total,
+          actionNeededCount: validationSummary.actionNeeded,
+        };
+      });
+
+      setPipelineByFormulaId(nextPipelineByFormulaId);
     } catch (error) {
       toast.error('Failed to load formulas');
     } finally {
@@ -149,11 +199,6 @@ const FormulasPage = () => {
     });
   };
 
-  const handleCreateBatch = (formula) => {
-    setSelectedFormula(formula);
-    setCreateBatchModalOpen(true);
-  };
-
   const handleClearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
@@ -208,6 +253,37 @@ const FormulasPage = () => {
         );
       },
     },
+    {
+      key: 'pipeline',
+      label: 'Pipeline',
+      render: (row) => {
+        const pipeline = pipelineByFormulaId[row.id] || {
+          briefCount: 0,
+          shortlistCount: 0,
+          validationCount: 0,
+          actionNeededCount: 0,
+        };
+
+        return (
+          <div className="flex min-w-[250px] flex-wrap gap-1.5">
+            <Badge variant={pipeline.briefCount ? 'secondary' : 'outline'} className="text-[10px]">
+              Brief {pipeline.briefCount}
+            </Badge>
+            <Badge variant={pipeline.shortlistCount ? 'secondary' : 'outline'} className="text-[10px]">
+              Shortlist {pipeline.shortlistCount}
+            </Badge>
+            <Badge variant={pipeline.validationCount ? 'secondary' : 'outline'} className="text-[10px]">
+              Logs {pipeline.validationCount}
+            </Badge>
+            {pipeline.actionNeededCount ? (
+              <Badge variant="destructive" className="text-[10px]">
+                Action {pipeline.actionNeededCount}
+              </Badge>
+            ) : null}
+          </div>
+        );
+      },
+    },
   ];
 
   const filters = [
@@ -228,10 +304,7 @@ const FormulasPage = () => {
       placeholder: 'All categories',
       options: [
         { value: 'all', label: 'All categories' },
-        ...formulaCategories.map((category) => ({
-          value: category,
-          label: formatNullable(category, 'uncategorized'),
-        })),
+        ...formulaCategories.map((category) => ({ value: category, label: category })),
       ],
     },
   ];
@@ -239,21 +312,23 @@ const FormulasPage = () => {
   const handleFilterChange = (filterId, value) => {
     if (filterId === 'status') {
       setStatusFilter(value);
-    }
-    if (filterId === 'category') {
+    } else if (filterId === 'category') {
       setCategoryFilter(value);
     }
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || searchTerm;
-  const perfumeCount = formulas.filter((formula) => String(formula.category || '').toLowerCase() === 'perfume').length;
+  const hasActiveFilters =
+    statusFilter !== 'all'
+    || categoryFilter !== 'all'
+    || searchTerm;
 
   return (
     <AuthenticatedLayout>
       <Helmet>
         <title>Formulas - Perfumer Studio</title>
-        <meta name="description" content="Define fragrance formulas with gram-based ingredient specifications." />
+        <meta name="description" content="Manage formula compositions, workbook imports, and revision-ready perfume formulas." />
       </Helmet>
+
       <div className="page-container">
         <div className="mb-6">
           <Button
@@ -268,60 +343,61 @@ const FormulasPage = () => {
 
         <PageHeader
           title="Formulas"
-          description="Semua formula ada di satu tempat. Cari cepat, edit cepat, lalu lanjut bikin batch."
-          action="Create formula"
+          description="Compose formulas after brief and shortlist work. Direct creation still works, but the cleanest path starts from a brief board."
+          action="Start from brief"
           actionIcon={Plus}
-          onAction={() => navigate('/formulas/new')}
-          eyebrow="Library"
+          onAction={() => navigate('/briefs')}
+          secondaryAction="New formula"
+          secondaryActionIcon={Plus}
+          onSecondaryAction={() => navigate('/formulas/new')}
         />
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Total</div>
-            <div className="mt-3 text-3xl font-bold">{formulas.length}</div>
-          </div>
-          <div className="rounded-[24px] border border-white/80 bg-white/90 p-5 shadow-sm">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Perfume</div>
-            <div className="mt-3 text-3xl font-bold">{perfumeCount}</div>
-          </div>
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Button variant="outline" className="rounded-2xl" onClick={() => navigate('/briefs')}>
+            Brief to shortlist to formula
+          </Button>
+          <Button variant="outline" className="rounded-2xl" onClick={() => setImportModalOpen(true)}>
+            <FileUp className="mr-2 h-4 w-4" />
+            Import PDF
+          </Button>
         </div>
 
-        <div className="mb-6 rounded-[28px] border border-white/80 bg-white/80 p-4 shadow-sm">
-          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex-1">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="list-toolbar-panel mb-6">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Search formulas
               </div>
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
-                placeholder="Search by formula name, code, status, or category..."
+                placeholder="Search by name, code, status, or category..."
+                disabled={loading}
               />
             </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setImportModalOpen(true)} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-4">
-                <FileUp className="w-4 h-4" />
-                Import PDF
-              </Button>
-              <Button onClick={loadFormulas} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-2xl border-white/70 bg-white/80">
+            <div className="flex items-end">
+              <Button onClick={loadFormulas} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-2xl">
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="mt-3 rounded-[24px] border border-white/70 bg-white/55 p-3">
             <FilterBar
               filters={filters}
               onFilterChange={handleFilterChange}
               onClearAll={handleClearFilters}
+              compact
+              disabled={loading}
             />
-
-            {!loading && formulas.length > 0 && (
-              <div className="results-count">
-                Showing {filteredFormulas.length} of {formulas.length} formulas
-              </div>
-            )}
           </div>
+
+          {!loading && formulas.length > 0 && (
+            <div className="results-count">
+              Showing {paginatedFormulas.length} of {filteredFormulas.length} formulas
+              {hasActiveFilters ? ' with active filters applied' : ''}
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -332,8 +408,8 @@ const FormulasPage = () => {
           <EmptyState
             icon={Beaker}
             title="No formulas yet"
-            description="Create your first perfume formula by combining raw materials with precise gram amounts."
-            action="Create formula"
+            description="Create your first formula to start composing guidance-aware, performance-ready formulas."
+            action="New formula"
             actionIcon={Plus}
             onAction={() => navigate('/formulas/new')}
           />
@@ -347,102 +423,51 @@ const FormulasPage = () => {
             <DataTable
               columns={columns}
               data={paginatedFormulas}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
               mobileCard={(row) => {
                 const metrics = formulaMetrics[row.id];
-                const statusColors = {
-                  draft: 'secondary',
-                  active: 'default',
-                  archived: 'outline',
-                };
-
+                const pipeline = pipelineByFormulaId[row.id] || {};
                 return (
                   <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <button onClick={() => handleView(row)} className="w-full text-left">
-                          <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
-                        </button>
+                      <div>
+                        <div className="text-base font-semibold text-primary">{row.name}</div>
                         <div className="mt-1 text-xs font-mono text-muted-foreground">{row.code}</div>
                       </div>
-                      <Badge variant={statusColors[row.status] || 'secondary'} className="shrink-0 capitalize text-[11px]">
+                      <Badge variant="outline" className="capitalize text-xs">
                         {row.status || 'draft'}
                       </Badge>
                     </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Category</div>
-                        <div className="mt-1 text-sm capitalize">{formatNullable(row.category, 'uncategorized')}</div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Category</div>
+                        <div className="mt-1">{formatNullable(row.category, 'uncategorized')}</div>
                       </div>
-                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Total</div>
-                        <div className="mt-1 text-sm">{metrics ? formatGramAmount(metrics.totalGrams) : '-'}</div>
+                      <div>
+                        <div className="text-muted-foreground">Total amount</div>
+                        <div className="mt-1 font-mono">{metrics ? formatGramAmount(metrics.totalGrams) : '-'}</div>
                       </div>
                     </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div className="text-xs text-muted-foreground">
-                        {metrics ? `${metrics.itemCount} ingredients` : 'No composition yet'}
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleView(row)}
-                          className="table-action-button"
-                          title="View details"
-                          aria-label={`View ${row.name}`}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCreateBatch(row)}
-                          className="table-action-button"
-                          title="Create batch"
-                          aria-label={`Create batch from ${row.name}`}
-                        >
-                          <FlaskConical className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDuplicate(row)}
-                          className="table-action-button"
-                          title="Duplicate formula"
-                          aria-label={`Duplicate ${row.name}`}
-                          disabled={duplicatingId === row.id}
-                        >
-                          <Copy className={`w-4 h-4 ${duplicatingId === row.id ? 'animate-spin' : ''}`} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(row)}
-                          className="h-8 rounded-xl px-3 text-xs"
-                          title="Edit"
-                          aria-label={`Edit ${row.name}`}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(row)}
-                          className="h-8 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                          title="Delete"
-                          aria-label={`Delete ${row.name}`}
-                        >
-                          Delete
-                        </Button>
-                      </div>
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      <Badge variant={pipeline.briefCount ? 'secondary' : 'outline'} className="text-[10px]">
+                        Brief {pipeline.briefCount || 0}
+                      </Badge>
+                      <Badge variant={pipeline.shortlistCount ? 'secondary' : 'outline'} className="text-[10px]">
+                        Shortlist {pipeline.shortlistCount || 0}
+                      </Badge>
+                      <Badge variant={pipeline.validationCount ? 'secondary' : 'outline'} className="text-[10px]">
+                        Logs {pipeline.validationCount || 0}
+                      </Badge>
+                      {pipeline.actionNeededCount ? (
+                        <Badge variant="destructive" className="text-[10px]">
+                          Action {pipeline.actionNeededCount}
+                        </Badge>
+                      ) : null}
                     </div>
                   </div>
                 );
               }}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
               actions={(row) => (
                 <>
                   <Button
@@ -454,16 +479,6 @@ const FormulasPage = () => {
                     aria-label={`View ${row.name}`}
                   >
                     <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCreateBatch(row)}
-                    className="table-action-button"
-                    title="Create batch"
-                    aria-label={`Create batch from ${row.name}`}
-                  >
-                    <FlaskConical className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -499,17 +514,6 @@ const FormulasPage = () => {
           />
         </Suspense>
       )}
-
-      <CreateBatchModal
-        open={createBatchModalOpen}
-        onOpenChange={setCreateBatchModalOpen}
-        preSelectedFormulaId={selectedFormula?.id}
-        onSuccess={() => {
-          toast.success('Batch created successfully');
-          setCreateBatchModalOpen(false);
-          navigate('/batches');
-        }}
-      />
 
       <DeleteFormulaModal
         isOpen={deleteModalState.isOpen}

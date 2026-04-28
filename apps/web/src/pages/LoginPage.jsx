@@ -38,7 +38,7 @@ const LoginPage = () => {
     <>
       <Helmet>
         <title>Login - Perfumer Studio</title>
-        <meta name="description" content="Sign in to your Perfumer Studio account to manage materials, formulas, and batches." />
+        <meta name="description" content="Sign in to your Perfumer Studio account to manage briefs, materials, formulas, and validation work." />
       </Helmet>
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
         <Card className="w-full max-w-md shadow-lg">

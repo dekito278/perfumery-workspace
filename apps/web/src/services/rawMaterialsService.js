@@ -1,7 +1,11 @@
 
 import supabase from '@/lib/supabaseClient.js';
 import { deriveScentFamilyFromCategory, inferRawMaterialTypeFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
-import { getPrimaryReferenceRawMaterialIds, syncManualReferenceProfileForRawMaterial } from '@/services/materialReferenceService.js';
+import {
+  getPrimaryReferenceRawMaterialIds,
+  removeReferenceArtifactsForRawMaterial,
+  syncManualReferenceProfileForRawMaterial,
+} from '@/services/materialReferenceService.js';
 
 const RAW_MATERIAL_OPTIONS_TTL_MS = 5 * 60 * 1000;
 let rawMaterialOptionsCache = {
@@ -27,21 +31,6 @@ const mapRawMaterial = (row, solventMap = new Map()) => ({
         dilution_solvent_id: solventMap.get(row.dilution_solvent_id) || null,
       }
     : undefined,
-});
-
-const mapUsageRecord = (row) => ({
-  id: row.id,
-  type: row.type,
-  source: row.source,
-  quantity_deducted: row.quantity_deducted,
-  cost: row.cost,
-  created_at: row.created_at,
-  expand: {
-    batch_id: row.batches ? { batch_code: row.batches.batch_code } : null,
-    raw_material_id: row.raw_materials
-      ? { name: row.raw_materials.name, unit: row.raw_materials.unit }
-      : null,
-  },
 });
 
 const normalizeOptionalText = (value) => {
@@ -110,15 +99,12 @@ const buildRawMaterialPayload = (data) => {
     name: String(data.name || '').trim(),
     category: normalizedCategory,
     type: normalizedType,
-    stock_quantity: Number(data.stock_quantity || 0),
     unit: data.unit,
     cost_per_unit: Number(data.cost_per_unit || 0),
-    minimum_stock: Number(data.minimum_stock || 0),
     description: normalizeOptionalText(data.description),
     notes: normalizeOptionalText(data.notes),
     workbook_code: normalizeOptionalText(data.workbook_code),
     scent_family: normalizedFamily || null,
-    low_stock_threshold: normalizeOptionalNumber(data.low_stock_threshold),
     supplier_name: normalizeOptionalText(data.supplier_name),
     vendor: normalizeOptionalText(data.vendor),
     cas_number: normalizeOptionalText(data.cas_number),
@@ -404,7 +390,6 @@ export const getRawMaterialsPage = async ({
   searchTerm = '',
   typeFilter = 'all',
   categoryFilter = 'all',
-  stockFilter = 'all',
   referenceFilter = 'all',
 } = {}) => {
   try {
@@ -451,12 +436,6 @@ export const getRawMaterialsPage = async ({
       query = query.ilike('category', categoryFilter);
     }
 
-    if (stockFilter === 'low') {
-      query = query.filter('stock_quantity', 'lt', 'minimum_stock');
-    } else if (stockFilter === 'in_stock') {
-      query = query.filter('stock_quantity', 'gte', 'minimum_stock');
-    }
-
     if (referenceFilter === 'matched' || referenceFilter === 'ifra_limited' || referenceFilter === 'has_guidance') {
       if (!referenceScope.hasFilteredIds) {
         return {
@@ -499,13 +478,30 @@ export const getRawMaterialsSummary = async () => {
   try {
     const { data, error } = await supabase
       .from('raw_materials')
-      .select('id, type, category, stock_quantity, minimum_stock, low_stock_threshold, cost_per_unit');
+      .select(`
+        id,
+        name,
+        type,
+        category,
+        workbook_code,
+        cost_per_unit,
+        reference_abc_primary_family,
+        reference_impact,
+        reference_life_hours,
+        ifra_limit,
+        created_at,
+        updated_at
+      `);
 
     if (error) {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map((row) => ({
+      ...row,
+      created: row.created_at,
+      updated: row.updated_at,
+    }));
   } catch (error) {
     console.error('Error fetching raw material summary:', error);
     throw new Error('Failed to fetch raw material summary');
@@ -536,9 +532,6 @@ export const getRawMaterialOptions = async ({ forceRefresh = false } = {}) => {
           vendor,
           workbook_code,
           cost_per_unit,
-          stock_quantity,
-          minimum_stock,
-          low_stock_threshold,
           scent_family,
           reference_abc_primary_family,
           reference_impact,
@@ -676,35 +669,6 @@ export const getRawMaterialVendorSuggestions = async () => {
   }
 };
 
-export const getRawMaterialUsageHistory = async (id) => {
-  try {
-    const { data, error } = await supabase
-      .from('batch_usage_records')
-      .select(`
-        id,
-        type,
-        source,
-        quantity_deducted,
-        cost,
-        created_at,
-        batches(batch_code),
-        raw_materials(name, unit)
-      `)
-      .eq('raw_material_id', id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching raw material usage history:', error);
-      return [];
-    }
-
-    return (data || []).map(mapUsageRecord);
-  } catch (error) {
-    console.error('Error fetching raw material usage history:', error);
-    return [];
-  }
-};
-
 export const createRawMaterial = async (data) => {
   try {
     const userId = await getCurrentUserId();
@@ -813,7 +777,11 @@ export const createRawMaterial = async (data) => {
     }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
-    await syncManualReferenceProfileForRawMaterial(record);
+    await syncManualReferenceProfileForRawMaterial({
+      ...record,
+      __referenceSourceSnapshots: data?.__referenceSourceSnapshots || null,
+      __referenceFieldLocks: data?.__referenceFieldLocks || null,
+    });
     clearRawMaterialOptionsCache();
     return withCreationResolution(record, solventMap);
   } catch (error) {
@@ -872,7 +840,11 @@ export const updateRawMaterial = async (id, data) => {
       }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
-    await syncManualReferenceProfileForRawMaterial(record);
+    await syncManualReferenceProfileForRawMaterial({
+      ...record,
+      __referenceSourceSnapshots: data?.__referenceSourceSnapshots || null,
+      __referenceFieldLocks: data?.__referenceFieldLocks || null,
+    });
     clearRawMaterialOptionsCache();
     return mapRawMaterial(record, solventMap);
   } catch (error) {
@@ -881,8 +853,65 @@ export const updateRawMaterial = async (id, data) => {
   }
 };
 
+export const getRawMaterialDeletionDependencies = async (id) => {
+  const [
+    formulaUsageResult,
+    formulaDilutionUsageResult,
+  ] = await Promise.all([
+    supabase
+      .from('formula_items')
+      .select('id', { count: 'exact', head: true })
+      .in('item_type', ['raw_material', 'solvent'])
+      .eq('item_id', id),
+    supabase
+      .from('formula_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('dilution_solvent_id', id),
+  ]);
+
+  const dependencyErrors = [
+    formulaUsageResult,
+    formulaDilutionUsageResult,
+  ].filter((result) => result.error);
+
+  if (dependencyErrors.length) {
+    throw dependencyErrors[0].error;
+  }
+
+  return [
+    { label: 'formula items', count: formulaUsageResult.count || 0 },
+    { label: 'formula dilution solvents', count: formulaDilutionUsageResult.count || 0 },
+  ].filter((entry) => entry.count > 0);
+};
+
 export const deleteRawMaterial = async (id) => {
   try {
+    const blockers = await getRawMaterialDeletionDependencies(id);
+
+    if (blockers.length) {
+      const blockerSummary = blockers
+        .map((entry) => `${entry.count} ${entry.label}`)
+        .join(', ');
+      throw new Error(`Cannot delete raw material because it is still used in ${blockerSummary}. Remove those references first.`);
+    }
+
+    await removeReferenceArtifactsForRawMaterial(id);
+
+    const [deleteAccordItemsError, deleteAccordDilutionItemsError] = await Promise.all([
+      supabase
+        .from('accord_items')
+        .delete()
+        .eq('raw_material_id', id),
+      supabase
+        .from('accord_items')
+        .delete()
+        .eq('dilution_solvent_id', id),
+    ]).then((results) => results.map((result) => result.error));
+
+    if (deleteAccordItemsError || deleteAccordDilutionItemsError) {
+      throw deleteAccordItemsError || deleteAccordDilutionItemsError;
+    }
+
     const { error } = await supabase
       .from('raw_materials')
       .delete()
@@ -894,6 +923,10 @@ export const deleteRawMaterial = async (id) => {
     clearRawMaterialOptionsCache();
   } catch (error) {
     console.error('Error deleting raw material:', error);
-    throw new Error('Failed to delete raw material');
+    if (error?.code === '23503') {
+      throw new Error('Cannot delete raw material because it is still referenced by other records.');
+    }
+
+    throw new Error(error.message || 'Failed to delete raw material');
   }
 };

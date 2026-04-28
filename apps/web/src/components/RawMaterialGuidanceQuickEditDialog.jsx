@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertTriangle, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
+import { createReferenceMetadataPatch, REFERENCE_FIELD_KEYS } from '@/utils/canonicalReferenceProfile.js';
 import { WORKBOOK_ABC_CLASSIFICATIONS } from '@/utils/workbookAbcClassification.js';
 import { importPerfumersWorldByUrl, importScentreeByUrl, importTgscByUrl } from '@/services/scentreeImportService.js';
 
@@ -105,6 +107,8 @@ const RawMaterialGuidanceQuickEditDialog = ({
   const [suggestedDescription, setSuggestedDescription] = useState('');
   const [importingUrl, setImportingUrl] = useState(false);
   const [workbookCodeNotice, setWorkbookCodeNotice] = useState('');
+  const [fieldLocks, setFieldLocks] = useState(Object.fromEntries(REFERENCE_FIELD_KEYS.map((key) => [key, true])));
+  const [sourceSnapshots, setSourceSnapshots] = useState({});
 
   useEffect(() => {
     if (!material) {
@@ -129,7 +133,32 @@ const RawMaterialGuidanceQuickEditDialog = ({
     setInferenceLines([]);
     setSuggestedDescription('');
     setWorkbookCodeNotice('');
+    setFieldLocks({
+      workbook_code: material.guidance_reference_profile?.field_locks?.workbook_code ?? true,
+      cas_number: material.guidance_reference_profile?.field_locks?.cas_number ?? true,
+      ifra_limit: material.guidance_reference_profile?.field_locks?.ifra_limit ?? true,
+      reference_abc_primary_family: material.guidance_reference_profile?.field_locks?.reference_abc_primary_family ?? true,
+      reference_impact: material.guidance_reference_profile?.field_locks?.reference_impact ?? true,
+      reference_life_hours: material.guidance_reference_profile?.field_locks?.reference_life_hours ?? true,
+      reference_use_level_typical_percent: material.guidance_reference_profile?.field_locks?.reference_use_level_typical_percent ?? true,
+      reference_use_level_max_percent: material.guidance_reference_profile?.field_locks?.reference_use_level_max_percent ?? true,
+    });
+    setSourceSnapshots(material.guidance_reference_profile?.source_snapshots || {});
   }, [material]);
+
+  const toggleFieldLock = (fieldKey, checked) => {
+    setFieldLocks((current) => ({
+      ...current,
+      [fieldKey]: Boolean(checked),
+    }));
+  };
+
+  const appendSourceSnapshot = (sourceKey, payload) => {
+    setSourceSnapshots((current) => ({
+      ...current,
+      [sourceKey]: payload,
+    }));
+  };
 
   const warningLines = useMemo(() => {
     if (!guidanceStatus) {
@@ -166,6 +195,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
         reference_use_level_typical_percent: parseOptionalNumber(formData.reference_use_level_typical_percent),
         reference_use_level_max_percent: parseOptionalNumber(formData.reference_use_level_max_percent),
         description: suggestedDescription || material.description,
+        ...createReferenceMetadataPatch({
+          sourceSnapshots,
+          fieldLocks,
+        }),
       };
 
       const updatedMaterial = await updateMaterial(material.id, nextPayload);
@@ -187,6 +220,10 @@ const RawMaterialGuidanceQuickEditDialog = ({
             reference_use_level_typical_percent: parseOptionalNumber(formData.reference_use_level_typical_percent),
             reference_use_level_max_percent: parseOptionalNumber(formData.reference_use_level_max_percent),
             description: suggestedDescription || material.description,
+            ...createReferenceMetadataPatch({
+              sourceSnapshots,
+              fieldLocks,
+            }),
           });
 
           setFormData((current) => ({
@@ -247,6 +284,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
+      appendSourceSnapshot('perfumersworld', imported);
       setInferenceLines([
         imported.classification_path?.length ? `ScenTree path: ${imported.classification_path.join(' > ')}` : 'ScenTree path tidak tersedia.',
         imported.volatility ? `Volatility: ${imported.volatility}` : 'Volatility tidak tersedia di ScenTree.',
@@ -302,6 +340,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
+      appendSourceSnapshot('scentree', imported);
       setInferenceLines([
         imported.workbook_code ? `Workbook code: ${imported.workbook_code}` : 'Workbook code tidak tersedia di PerfumersWorld.',
         imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di PerfumersWorld.',
@@ -354,6 +393,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
+      appendSourceSnapshot('tgsc', imported);
       setInferenceLines([
         imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di TGSC.',
         imported.odor_type ? `Odor type: ${imported.odor_type}` : 'Odor type tidak tersedia di TGSC.',
@@ -555,7 +595,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="quick-guidance-workbook-code">Workbook code</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="quick-guidance-workbook-code">Workbook code</Label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={fieldLocks.workbook_code} onCheckedChange={(checked) => toggleFieldLock('workbook_code', checked)} />
+                      <span>Lock</span>
+                    </div>
+                  </div>
                   <Input
                     id="quick-guidance-workbook-code"
                     value={formData.workbook_code}
@@ -568,7 +614,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quick-guidance-cas">CAS number</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="quick-guidance-cas">CAS number</Label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={fieldLocks.cas_number} onCheckedChange={(checked) => toggleFieldLock('cas_number', checked)} />
+                      <span>Lock</span>
+                    </div>
+                  </div>
                   <Input
                     id="quick-guidance-cas"
                     value={formData.cas_number}
@@ -588,7 +640,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
               ) : null}
 
               <div className="space-y-2">
-                <Label htmlFor="quick-guidance-family">Workbook family / class</Label>
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="quick-guidance-family">Workbook family / class</Label>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox checked={fieldLocks.reference_abc_primary_family} onCheckedChange={(checked) => toggleFieldLock('reference_abc_primary_family', checked)} />
+                    <span>Lock</span>
+                  </div>
+                </div>
                 <Select
                   value={formData.reference_abc_primary_family || '__none__'}
                   onValueChange={(value) => setFormData((current) => ({
@@ -612,7 +670,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="quick-guidance-impact">Impact</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="quick-guidance-impact">Impact</Label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={fieldLocks.reference_impact} onCheckedChange={(checked) => toggleFieldLock('reference_impact', checked)} />
+                      <span>Lock</span>
+                    </div>
+                  </div>
                   <Input
                     id="quick-guidance-impact"
                     type="number"
@@ -626,7 +690,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="quick-guidance-life">Life (hours)</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="quick-guidance-life">Life (hours)</Label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={fieldLocks.reference_life_hours} onCheckedChange={(checked) => toggleFieldLock('reference_life_hours', checked)} />
+                      <span>Lock</span>
+                    </div>
+                  </div>
                   <Input
                     id="quick-guidance-life"
                     type="number"
@@ -642,7 +712,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="quick-guidance-typical-use">Typical use level (%)</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="quick-guidance-typical-use">Typical use level (%)</Label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={fieldLocks.reference_use_level_typical_percent} onCheckedChange={(checked) => toggleFieldLock('reference_use_level_typical_percent', checked)} />
+                      <span>Lock</span>
+                    </div>
+                  </div>
                   <Input
                     id="quick-guidance-typical-use"
                     type="number"
@@ -657,7 +733,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="quick-guidance-max-use">Max use level (%)</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="quick-guidance-max-use">Max use level (%)</Label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={fieldLocks.reference_use_level_max_percent} onCheckedChange={(checked) => toggleFieldLock('reference_use_level_max_percent', checked)} />
+                      <span>Lock</span>
+                    </div>
+                  </div>
                   <Input
                     id="quick-guidance-max-use"
                     type="number"
@@ -673,7 +755,13 @@ const RawMaterialGuidanceQuickEditDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="quick-guidance-ifra">IFRA limit (%)</Label>
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="quick-guidance-ifra">IFRA limit (%)</Label>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox checked={fieldLocks.ifra_limit} onCheckedChange={(checked) => toggleFieldLock('ifra_limit', checked)} />
+                    <span>Lock</span>
+                  </div>
+                </div>
                 <Input
                   id="quick-guidance-ifra"
                   type="number"

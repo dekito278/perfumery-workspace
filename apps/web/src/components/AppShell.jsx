@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Package, Beaker, FlaskConical, LogOut, Calculator, ChevronsLeft, ChevronsRight, Radar } from 'lucide-react';
+import { Menu, Home, Beaker, LogOut, ChevronsLeft, ChevronsRight, ClipboardList, NotebookPen, LibraryBig } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const DESKTOP_SIDEBAR_STORAGE_KEY = 'perfumer-studio.sidebar-collapsed';
@@ -40,11 +40,10 @@ const AppShell = ({ children }) => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
-    { path: '/raw-materials', label: 'Raw materials', icon: Package },
-    { path: '/raw-material-audit', label: 'Material Audit', icon: Radar },
+    { path: '/briefs', label: 'Briefs', icon: ClipboardList },
+    { path: '/raw-materials', label: 'Raw Materials', icon: LibraryBig },
     { path: '/formulas', label: 'Formulas', icon: Beaker },
-    { path: '/batches', label: 'Batches', icon: FlaskConical },
-    { path: '/production-costing', label: 'Production cost', icon: Calculator }
+    { path: '/validation', label: 'Validation', icon: NotebookPen },
   ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -98,7 +97,7 @@ const AppShell = ({ children }) => {
               {!desktopSidebarCollapsed && (
                 <span>
                   <span className="app-brand-title">Perfumer Studio</span>
-                  <span className="app-brand-subtitle">Small batch lab</span>
+                  <span className="app-brand-subtitle">Formulation workspace</span>
                 </span>
               )}
               </Link>
@@ -122,7 +121,7 @@ const AppShell = ({ children }) => {
               {!desktopSidebarCollapsed && (
                 <>
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Session</p>
-                  <p className="mt-2 text-sm font-semibold text-foreground">{displayName} is in the lab</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">{displayName} is building formulas</p>
                 </>
               )}
               <Button
@@ -156,7 +155,7 @@ const AppShell = ({ children }) => {
                       </span>
                       <span>
                         <span className="app-brand-title">Perfumer Studio</span>
-                        <span className="app-brand-subtitle">Small batch lab</span>
+                        <span className="app-brand-subtitle">Formulation workspace</span>
                       </span>
                     </Link>
                     <div className="mt-6">

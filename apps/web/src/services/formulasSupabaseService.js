@@ -9,10 +9,6 @@ const normalizeFormulaPayload = (formulaData) => ({
   category: formulaData.category || null,
   status: formulaData.status || 'draft',
   version: formulaData.version ? String(formulaData.version) : null,
-  batch_size: formulaData.batch_size !== undefined && formulaData.batch_size !== null && formulaData.batch_size !== ''
-    ? Number(formulaData.batch_size)
-    : null,
-  batch_date: formulaData.batch_date || null,
 });
 
 const VERSIONED_CODE_PATTERN = /-V(\d+)$/i;

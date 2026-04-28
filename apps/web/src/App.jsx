@@ -6,18 +6,21 @@ import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
+import HomePage from '@/pages/HomePage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
+import BriefsPage from '@/pages/BriefsPage.jsx';
+import BriefEditorPage from '@/pages/BriefEditorPage.jsx';
+import BriefDetailPage from '@/pages/BriefDetailPage.jsx';
 import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
 import RawMaterialAuditPage from '@/pages/RawMaterialAuditPage.jsx';
 import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
+import CategoriesPage from '@/pages/CategoriesPage.jsx';
 import FormulasPage from '@/pages/FormulasPage.jsx';
 import CreateFormulaPage from '@/pages/CreateFormulaPage.jsx';
 import EditFormulaPage from '@/pages/EditFormulaPage.jsx';
 import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
-import BatchesPage from '@/pages/BatchesPage.jsx';
-import BatchDetailPage from '@/pages/BatchDetailPage.jsx';
-import ProductionCostPage from '@/pages/ProductionCostPage.jsx';
+import ValidationLogPage from '@/pages/ValidationLogPage.jsx';
 
 const RootRedirect = () => {
   const { isAuthenticated, initialLoading } = useAuth();
@@ -35,11 +38,33 @@ function AppRoutes() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<RootRedirect />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/briefs" element={
+          <ProtectedRoute>
+            <BriefsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/briefs/new" element={
+          <ProtectedRoute>
+            <BriefEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/briefs/:id/edit" element={
+          <ProtectedRoute>
+            <BriefEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/briefs/:id" element={
+          <ProtectedRoute>
+            <BriefDetailPage />
           </ProtectedRoute>
         } />
         
@@ -61,9 +86,14 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         
-        <Route path="/categories" element={<Navigate to="/raw-materials" replace />} />
+        <Route path="/categories" element={
+          <ProtectedRoute>
+            <CategoriesPage />
+          </ProtectedRoute>
+        } />
         
         <Route path="/accords" element={<Navigate to="/formulas" replace />} />
+        <Route path="/accords/new" element={<Navigate to="/formulas/new" replace />} />
         <Route path="/accord/:id" element={<Navigate to="/formulas" replace />} />
         <Route path="/accords/:id" element={<Navigate to="/formulas" replace />} />
         
@@ -91,21 +121,13 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         
-        <Route path="/batches" element={
-          <ProtectedRoute>
-            <BatchesPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/batches/:id" element={
-          <ProtectedRoute>
-            <BatchDetailPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/batches" element={<Navigate to="/formulas" replace />} />
+        <Route path="/batches/:id" element={<Navigate to="/formulas" replace />} />
 
-        <Route path="/production-costing" element={
+        <Route path="/production-costing" element={<Navigate to="/formulas" replace />} />
+        <Route path="/validation" element={
           <ProtectedRoute>
-            <ProductionCostPage />
+            <ValidationLogPage />
           </ProtectedRoute>
         } />
       </Routes>

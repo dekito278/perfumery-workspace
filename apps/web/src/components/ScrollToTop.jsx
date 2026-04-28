@@ -1,11 +1,12 @@
 import { useLocation, useNavigationType } from 'react-router-dom';
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 const ScrollToTop = () => {
     const location = useLocation();
     const { pathname, search, state } = location;
     const navigationType = useNavigationType();
     const storageKey = `scroll:${pathname}${search}`;
+    const previousPathnameRef = useRef(null);
 
     useLayoutEffect(() => {
         const handleScroll = () => {
@@ -21,6 +22,7 @@ const ScrollToTop = () => {
 
     useLayoutEffect(() => {
         const shouldRestore = navigationType === 'POP' || Boolean(state?.restoreScroll);
+        const isSamePathNavigation = previousPathnameRef.current === pathname;
         const savedPosition = sessionStorage.getItem(storageKey);
         let timeoutId = null;
         let cancelled = false;
@@ -53,9 +55,19 @@ const ScrollToTop = () => {
 
         if (shouldRestore && savedPosition !== null) {
             restoreScrollPosition(Number(savedPosition));
+        } else if (isSamePathNavigation) {
+            previousPathnameRef.current = pathname;
+            return () => {
+                cancelled = true;
+                if (timeoutId) {
+                    window.clearTimeout(timeoutId);
+                }
+            };
         } else {
             window.scrollTo(0, 0);
         }
+
+        previousPathnameRef.current = pathname;
 
         return () => {
             cancelled = true;

@@ -29,11 +29,8 @@ const createMissingMaterialDraft = (item) => ({
   workbook_code: item.workbookCode,
   category: suggestPerfumersWorldCategory({ workbookCode: item.workbookCode, name: item.materialName }).category?.label.toLowerCase() || '',
   type: 'material',
-  stock_quantity: '1000',
   unit: 'ml',
   cost_per_unit: '',
-  minimum_stock: '1',
-  low_stock_threshold: '',
   vendor: '',
   notes: '',
 });
@@ -43,11 +40,8 @@ const createMissingSolventDraft = (solventName) => ({
   workbook_code: '',
   category: 'z - zolvents',
   type: 'solvent',
-  stock_quantity: '1000',
   unit: 'ml',
   cost_per_unit: '',
-  minimum_stock: '1',
-  low_stock_threshold: '',
   vendor: '',
   notes: '',
 });
@@ -284,16 +278,8 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         nextErrors[`${key}.category`] = 'Category is required';
       }
 
-      if (draft?.stock_quantity === '' || Number.isNaN(Number(draft.stock_quantity))) {
-        nextErrors[`${key}.stock_quantity`] = 'Stock quantity is required';
-      }
-
       if (!draft?.unit) {
         nextErrors[`${key}.unit`] = 'Unit is required';
-      }
-
-      if (draft?.minimum_stock === '' || Number.isNaN(Number(draft.minimum_stock))) {
-        nextErrors[`${key}.minimum_stock`] = 'Minimum stock is required';
       }
     });
 
@@ -329,11 +315,8 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           workbook_code: draft.workbook_code.trim(),
           category: draft.category,
           type: draft.type || 'material',
-          stock_quantity: Number(draft.stock_quantity),
           unit: draft.unit,
           cost_per_unit: draft.cost_per_unit === '' ? 0 : Number(draft.cost_per_unit),
-          minimum_stock: Number(draft.minimum_stock),
-          low_stock_threshold: draft.low_stock_threshold === '' ? null : Number(draft.low_stock_threshold),
           vendor: draft.vendor.trim() || null,
           cas_number: null,
           ifra_limit: null,
@@ -358,11 +341,8 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
           workbook_code: null,
           category: draft.category,
           type: 'solvent',
-          stock_quantity: Number(draft.stock_quantity),
           unit: draft.unit,
           cost_per_unit: draft.cost_per_unit === '' ? 0 : Number(draft.cost_per_unit),
-          minimum_stock: Number(draft.minimum_stock),
-          low_stock_threshold: draft.low_stock_threshold === '' ? null : Number(draft.low_stock_threshold),
           vendor: draft.vendor.trim() || null,
           cas_number: null,
           ifra_limit: null,
@@ -436,7 +416,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         <DialogHeader>
           <DialogTitle>Import formula from Perfume Workbook PDF</DialogTitle>
           <DialogDescription>
-            Upload a workbook PDF, review the parsed formula, then complete any new raw materials before saving it into the system.
+            Upload a workbook PDF, review the parsed formula, then complete any new materials before saving it into the system.
           </DialogDescription>
         </DialogHeader>
 
@@ -534,11 +514,11 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                     </div>
                     <div className="flex items-center gap-2 text-amber-700">
                       <AlertTriangle className="h-4 w-4" />
-                      <span>{missingMaterialEntries.length} materials need inventory details</span>
+                      <span>{missingMaterialEntries.length} materials need library details</span>
                     </div>
                     <div className="flex items-center gap-2 text-amber-700">
                       <AlertTriangle className="h-4 w-4" />
-                      <span>{missingSolventEntries.length} dilution solvents may need inventory details</span>
+                      <span>{missingSolventEntries.length} dilution solvents may need library details</span>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -629,7 +609,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
               {(missingMaterialEntries.length > 0 || missingSolventEntries.length > 0) && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium">New inventory materials to create</p>
+                    <p className="text-sm font-medium">New materials to create</p>
                     <p className="text-xs text-muted-foreground">
                       Fill these fields once. Pure materials and dilution solvents created here will be reused automatically on future imports.
                     </p>
@@ -680,15 +660,6 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               required
                               placeholder={categoryOptions.length ? 'Select category' : 'Create category first'}
                             />
-                            <FormNumber
-                              label="Stock quantity"
-                              value={draft.stock_quantity}
-                              onChange={(event) => updateMissingMaterialDraft(key, 'stock_quantity', event.target.value)}
-                              error={validationErrors[`${key}.stock_quantity`]}
-                              required
-                              min="0"
-                              step="0.01"
-                            />
                             <FormSelect
                               label="Unit"
                               value={draft.unit}
@@ -703,18 +674,15 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               error={validationErrors[`${key}.unit`]}
                               required
                             />
-                            <FormNumber
-                              label="Minimum stock"
-                              value={draft.minimum_stock}
-                              onChange={(event) => updateMissingMaterialDraft(key, 'minimum_stock', event.target.value)}
-                              error={validationErrors[`${key}.minimum_stock`]}
-                              required
-                              min="0"
-                              step="0.01"
+                            <FormField
+                              label="Vendor"
+                              value={draft.vendor}
+                              onChange={(event) => updateMissingMaterialDraft(key, 'vendor', event.target.value)}
+                              placeholder="Optional"
                             />
                           </div>
 
-                          <div className="grid gap-4 md:grid-cols-3">
+                          <div className="grid gap-4 md:grid-cols-2">
                             <FormNumber
                               label={`Unit price (per 10 ${draft.unit || 'ml'})`}
                               value={draft.cost_per_unit}
@@ -722,19 +690,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               min="0"
                               step="0.01"
                             />
-                            <FormNumber
-                              label="Low stock threshold"
-                              value={draft.low_stock_threshold}
-                              onChange={(event) => updateMissingMaterialDraft(key, 'low_stock_threshold', event.target.value)}
-                              min="0"
-                              step="0.01"
-                            />
-                            <FormField
-                              label="Vendor"
-                              value={draft.vendor}
-                              onChange={(event) => updateMissingMaterialDraft(key, 'vendor', event.target.value)}
-                              placeholder="Optional"
-                            />
+                            <div className="rounded-xl border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                              This imported material will be created as a library record with guidance-ready metadata.
+                            </div>
                           </div>
 
                           <div className="space-y-2">
@@ -774,15 +732,6 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               error={validationErrors[`${key}.category`]}
                               required
                             />
-                            <FormNumber
-                              label="Stock quantity"
-                              value={draft.stock_quantity}
-                              onChange={(event) => updateMissingMaterialDraft(key, 'stock_quantity', event.target.value)}
-                              error={validationErrors[`${key}.stock_quantity`]}
-                              required
-                              min="0"
-                              step="0.01"
-                            />
                             <FormSelect
                               label="Unit"
                               value={draft.unit}
@@ -798,11 +747,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                               required
                             />
                             <FormNumber
-                              label="Minimum stock"
-                              value={draft.minimum_stock}
-                              onChange={(event) => updateMissingMaterialDraft(key, 'minimum_stock', event.target.value)}
-                              error={validationErrors[`${key}.minimum_stock`]}
-                              required
+                              label={`Unit price (per 10 ${draft.unit || 'ml'})`}
+                              value={draft.cost_per_unit}
+                              onChange={(event) => updateMissingMaterialDraft(key, 'cost_per_unit', event.target.value)}
                               min="0"
                               step="0.01"
                             />

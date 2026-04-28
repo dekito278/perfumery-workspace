@@ -1,20 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, Save } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { AlertCircle, ChevronLeft, Save, ClipboardList, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer.jsx';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog.jsx';
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
+import FormulaComposerPacePanel from '@/components/FormulaComposerPacePanel.jsx';
+import FormulaReferenceProfileSidebar from '@/components/FormulaReferenceProfileSidebar.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
+import { useBriefs } from '@/hooks/useBriefs.js';
+import { useBriefProjects } from '@/hooks/useBriefProjects.js';
 import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
@@ -22,10 +35,15 @@ import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
+import { buildStageTargetProfile, getStageLabel, getWizardQuestionsForStage } from '@/utils/briefProjectWizard.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import { buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
+import { rankMaterialRecommendations } from '@/utils/materialCompositionProfile.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
+import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 
+const STAGES = ['top', 'middle', 'base'];
 const createEmptyFormulaItem = () => ({
   item_id: '',
   gram_amount: '',
@@ -70,12 +88,34 @@ const getActiveFormulaItems = (items) =>
 
 const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
 const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
+const roundComposerGram = (value) => Math.round(Number(value || 0) * 1000) / 1000;
+const getSelectedStageItems = (stageItemsMap, stage) =>
+  (stageItemsMap.get(stage) || []).filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual');
+const getFirstIncompleteQuestionIndex = (questions, answers = {}) => {
+  const firstIncompleteIndex = questions.findIndex((question) => !answers?.[question.id]);
+  return firstIncompleteIndex >= 0 ? firstIncompleteIndex : Math.max(questions.length - 1, 0);
+};
 
 const EditFormulaPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { getFormulaById, updateFormula, loading } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
+  const { getBriefs } = useBriefs();
+  const {
+    ensureBriefProject,
+    getBriefProjectByBriefId,
+    getBriefProjectStages,
+    getBriefProjectStageItems,
+    upsertBriefProjectStage,
+    upsertBriefProjectStageItems,
+    deleteBriefProjectStageItemsByStage,
+    updateBriefProject,
+  } = useBriefProjects();
+  const briefIdFromQuery = searchParams.get('briefId') || '';
+  const [pendingBriefWizardOpen, setPendingBriefWizardOpen] = useState(() => searchParams.get('openBriefWizard') === '1');
+  const pacePriorityMode = normalizePacePriorityMode(searchParams.get(PACE_PRIORITY_QUERY_KEY));
   const [formula, setFormula] = useState(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -97,6 +137,16 @@ const EditFormulaPage = () => {
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
+  const [linkedBrief, setLinkedBrief] = useState(null);
+  const [linkedProject, setLinkedProject] = useState(null);
+  const [projectUnavailable, setProjectUnavailable] = useState(false);
+  const [linkedProjectStageItems, setLinkedProjectStageItems] = useState([]);
+  const [wizardStageItemsMap, setWizardStageItemsMap] = useState(new Map(STAGES.map((stage) => [stage, []])));
+  const [draftAnswers, setDraftAnswers] = useState({ top: {}, middle: {}, base: {} });
+  const [activeStage, setActiveStage] = useState('top');
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardQuestionIndex, setWizardQuestionIndex] = useState(0);
+  const [busyStage, setBusyStage] = useState('');
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -105,10 +155,11 @@ const EditFormulaPage = () => {
     const loadData = async () => {
       setLoadingData(true);
       try {
-        const [formulaData, materialsData, itemsData] = await Promise.all([
+        const [formulaData, materialsData, itemsData, briefs] = await Promise.all([
           getFormulaById(id),
           getRawMaterialOptions(),
           getFormulaItems(id),
+          getBriefs(),
         ]);
 
         if (!active) {
@@ -117,6 +168,43 @@ const EditFormulaPage = () => {
 
         setFormula(formulaData);
         setRawMaterials(materialsData);
+        const resolvedBrief = briefs.find((brief) => brief.formula_id === id)
+          || briefs.find((brief) => brief.id === briefIdFromQuery)
+          || null;
+        let resolvedProject = null;
+        let resolvedProjectStageAnswerMap = new Map();
+        let resolvedProjectStageMap = new Map();
+        let nextProjectUnavailable = false;
+
+        if (resolvedBrief) {
+          try {
+            resolvedProject = await getBriefProjectByBriefId(resolvedBrief.id);
+            [resolvedProjectStageAnswerMap, resolvedProjectStageMap] = resolvedProject?.id
+              ? await Promise.all([
+                  getBriefProjectStages(resolvedProject.id),
+                  getBriefProjectStageItems(resolvedProject.id),
+                ])
+              : [new Map(), new Map()];
+          } catch (projectError) {
+            console.error('Edit formula project layer unavailable:', projectError);
+            nextProjectUnavailable = true;
+          }
+        }
+        const resolvedProjectStageItems = resolvedProject?.id
+          ? ['top', 'middle', 'base']
+              .flatMap((stage) => resolvedProjectStageMap.get(stage) || [])
+              .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual')
+          : [];
+        setLinkedBrief(resolvedBrief);
+        setLinkedProject(resolvedProject);
+        setProjectUnavailable(nextProjectUnavailable);
+        setLinkedProjectStageItems(resolvedProjectStageItems);
+        setWizardStageItemsMap(resolvedProjectStageMap?.size ? resolvedProjectStageMap : new Map(STAGES.map((stage) => [stage, []])));
+        setDraftAnswers({
+          top: resolvedProjectStageAnswerMap.get('top')?.answers || {},
+          middle: resolvedProjectStageAnswerMap.get('middle')?.answers || {},
+          base: resolvedProjectStageAnswerMap.get('base')?.answers || {},
+        });
 
         const hiddenLegacyAccordItems = itemsData.filter((item) => item.item_type === 'accord');
         setLegacyAccordItems(hiddenLegacyAccordItems);
@@ -164,7 +252,21 @@ const EditFormulaPage = () => {
     return () => {
       active = false;
     };
-  }, [getFormulaById, getFormulaItems, id, navigate]);
+  }, [briefIdFromQuery, getBriefProjectByBriefId, getBriefProjectStages, getBriefProjectStageItems, getBriefs, getFormulaById, getFormulaItems, id, navigate]);
+
+  useEffect(() => {
+    if (loadingData || !linkedBrief || !pendingBriefWizardOpen) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete('openBriefWizard');
+    setSearchParams(nextSearchParams, { replace: true, preventScrollReset: true });
+    setPendingBriefWizardOpen(false);
+    setActiveStage('top');
+    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(getWizardQuestionsForStage('top', draftAnswers.top || {}), draftAnswers.top || {}));
+    setWizardOpen(true);
+  }, [draftAnswers.top, linkedBrief, loadingData, pendingBriefWizardOpen, searchParams, setSearchParams]);
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, itemIndex) => itemIndex !== index);
@@ -283,6 +385,44 @@ const EditFormulaPage = () => {
     delete nextErrors.ingredients;
     delete nextErrors[`item_${index}`];
     setValidationErrors(nextErrors);
+  };
+
+  const applyPaceRecommendation = (recommendation) => {
+    if (!recommendation?.itemId) {
+      return;
+    }
+
+    const targetGramAmount = String(roundComposerGram(recommendation.target));
+    let updatedIndex = -1;
+
+    setFormulaItems((currentItems) => currentItems.map((item, index) => {
+      if (item.item_id !== recommendation.itemId) {
+        return item;
+      }
+
+      updatedIndex = index;
+      return {
+        ...item,
+        gram_amount: targetGramAmount,
+      };
+    }));
+
+    if (updatedIndex >= 0) {
+      setActiveRowIndex(updatedIndex);
+      setValidationErrors((current) => {
+        const nextErrors = { ...current };
+        delete nextErrors[`item_${updatedIndex}`];
+        return nextErrors;
+      });
+      toast.success(`${recommendation.title} applied`);
+    }
+  };
+
+  const handlePacePriorityModeChange = (nextMode) => {
+    const normalizedMode = normalizePacePriorityMode(nextMode);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set(PACE_PRIORITY_QUERY_KEY, normalizedMode);
+    setSearchParams(nextSearchParams, { replace: true, preventScrollReset: true });
   };
 
   const activeFormulaItems = getActiveFormulaItems(formulaItems);
@@ -424,6 +564,229 @@ const EditFormulaPage = () => {
     setGuidanceEditorMaterial(updatedMaterial);
   };
 
+  const setStageAnswer = (stage, questionId, value) => {
+    setDraftAnswers((current) => {
+      const stageDraft = { ...(current[stage] || {}), [questionId]: value };
+      if (questionId === 'family') {
+        delete stageDraft.nuance;
+      }
+      return {
+        ...current,
+        [stage]: stageDraft,
+      };
+    });
+  };
+
+  const handleWizardOptionSelect = (questionId, value) => {
+    setStageAnswer(activeStage, questionId, value);
+    if (wizardQuestionIndex < currentQuestions.length - 1) {
+      setWizardQuestionIndex((current) => current + 1);
+    }
+  };
+
+  const handleWizardBack = () => {
+    setWizardQuestionIndex((current) => Math.max(current - 1, 0));
+  };
+
+  const handleWizardNext = () => {
+    setWizardQuestionIndex((current) => Math.min(current + 1, Math.max(currentQuestions.length - 1, 0)));
+  };
+
+  const handleWizardNextStage = () => {
+    const nextStage = STAGES[Math.min(STAGES.indexOf(activeStage) + 1, STAGES.length - 1)];
+    setActiveStage(nextStage);
+    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(getWizardQuestionsForStage(nextStage, draftAnswers[nextStage] || {}), draftAnswers[nextStage] || {}));
+  };
+
+  const persistSeededFormulaItems = async (stageItems) => {
+    const seededComposerItems = buildComposerItemsFromProjectStageItems(stageItems, rawMaterials);
+    const activeSeededItems = getActiveFormulaItems(seededComposerItems);
+    const seededTotalAmount = calculateTotalAmount(activeSeededItems);
+    const seededItemsWithPercentages = seededTotalAmount > 0
+      ? calculatePercentages(activeSeededItems, seededTotalAmount)
+      : [];
+
+    await updateFormula(id, {
+      name,
+      code,
+      category,
+      version: version || null,
+      status,
+      notes: notes || null,
+      total_amount: seededTotalAmount,
+    }, seededItemsWithPercentages.map((item) => ({
+      item_type: item.item_type,
+      item_id: item.item_id,
+      percentage: item.percentage,
+      grams: parseFloat(item.gram_amount),
+      dilution_percent: item.dilution_percent ? parseFloat(item.dilution_percent) : null,
+      dilution_solvent_id: item.dilution_solvent_id || null,
+      concentrate_amount: item.dilution_percent
+        ? Number(((parseFloat(item.gram_amount) * parseFloat(item.dilution_percent)) / 100).toFixed(3))
+        : null,
+    })));
+
+    setFormulaItems(normalizeFormulaItems(seededComposerItems));
+  };
+
+  const refreshLinkedProjectStageItems = async (projectId) => {
+    const [nextProject, nextStageMap] = await Promise.all([
+      getBriefProjectByBriefId(linkedBrief.id),
+      getBriefProjectStageItems(projectId),
+    ]);
+    const nextProjectStageItems = STAGES
+      .flatMap((stage) => nextStageMap.get(stage) || [])
+      .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual');
+
+    setLinkedProject(nextProject);
+    setLinkedProjectStageItems(nextProjectStageItems);
+    setWizardStageItemsMap(nextStageMap);
+    setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials)));
+    return nextProjectStageItems;
+  };
+
+  const buildLocalWizardStageItems = (ranked, stage) => ranked.map((row) => {
+    const material = rawMaterials.find((item) => item.id === row.raw_material_id) || null;
+    return {
+      id: `local-${stage}-${row.raw_material_id}`,
+      project_id: null,
+      stage,
+      raw_material_id: row.raw_material_id,
+      selection_state: 'selected',
+      role: row.primary_function || 'support',
+      rank_order: row.rank_order,
+      fit_score: row.fit_score,
+      primary_function: row.primary_function,
+      secondary_function: row.secondary_function,
+      recommendation_reason: row.recommendation_reason,
+      warning: row.warning,
+      expand: {
+        raw_material_id: material,
+      },
+    };
+  });
+
+  const handleGenerateWizardMaterials = async () => {
+    if (!linkedBrief) {
+      return;
+    }
+
+    const stageAnswers = draftAnswers[activeStage] || {};
+    if (!stageAnswers.family) {
+      toast.error('Choose the aroma direction first');
+      return;
+    }
+
+    setBusyStage(activeStage);
+    try {
+      const targetProfile = buildStageTargetProfile(activeStage, stageAnswers, linkedBrief);
+      const ranked = rankMaterialRecommendations({
+        materials: rawMaterials.filter((item) => item.type !== 'solvent'),
+        referenceLinksMap: new Map(),
+        stage: activeStage,
+        answers: stageAnswers,
+        briefText: wizardBriefText,
+        limit: 8,
+      });
+
+      let nextProjectStageItems = [];
+      if (projectUnavailable) {
+        const localStageRows = buildLocalWizardStageItems(ranked, activeStage);
+        const nextStageMap = new Map(wizardStageItemsMap);
+        nextStageMap.set(activeStage, localStageRows);
+        setWizardStageItemsMap(nextStageMap);
+        nextProjectStageItems = STAGES
+          .flatMap((stage) => nextStageMap.get(stage) || [])
+          .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual');
+      } else {
+        let project = linkedProject;
+        if (!project) {
+          try {
+            project = await ensureBriefProject(linkedBrief.id);
+            setLinkedProject(project);
+          } catch (projectError) {
+            console.error('Formula wizard project layer unavailable:', projectError);
+            setProjectUnavailable(true);
+
+            const localStageRows = buildLocalWizardStageItems(ranked, activeStage);
+            const nextStageMap = new Map(wizardStageItemsMap);
+            nextStageMap.set(activeStage, localStageRows);
+            setWizardStageItemsMap(nextStageMap);
+            nextProjectStageItems = STAGES
+              .flatMap((stage) => nextStageMap.get(stage) || [])
+              .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual');
+
+            await persistSeededFormulaItems(nextProjectStageItems);
+            toast.success(`${getStageLabel(activeStage)} materials added to formula composer`);
+
+            if (activeStage === 'base') {
+              setWizardOpen(false);
+              if (nextProjectStageItems.length) {
+                setActiveRowIndex(0);
+                setFocusRowIndex(0);
+              }
+            } else {
+              handleWizardNextStage();
+            }
+            return;
+          }
+        }
+
+        await upsertBriefProjectStage(project.id, activeStage, {
+          status: ranked.length ? 'completed' : 'reviewed',
+          answers: stageAnswers,
+          target_profile: targetProfile,
+          recommendation_note: targetProfile.summary,
+        });
+        await deleteBriefProjectStageItemsByStage(project.id, activeStage, ['recommended', 'rejected', 'selected']);
+        await upsertBriefProjectStageItems(project.id, ranked.map((row) => ({
+          stage: activeStage,
+          raw_material_id: row.raw_material_id,
+          selection_state: 'selected',
+          role: row.primary_function || 'support',
+          rank_order: row.rank_order,
+          fit_score: row.fit_score,
+          primary_function: row.primary_function,
+          secondary_function: row.secondary_function,
+          recommendation_reason: row.recommendation_reason,
+          warning: row.warning,
+        })));
+
+        const allStagesReady = STAGES.every((stage) => {
+          if (stage === activeStage) {
+            return ranked.length > 0;
+          }
+          return getSelectedStageItems(wizardStageItemsMap, stage).length > 0;
+        });
+
+        await updateBriefProject(project.id, {
+          status: allStagesReady ? 'ready_for_formula' : 'in_progress',
+          current_stage: allStagesReady ? 'formula' : activeStage,
+        });
+
+        nextProjectStageItems = await refreshLinkedProjectStageItems(project.id);
+      }
+
+      await persistSeededFormulaItems(nextProjectStageItems);
+      toast.success(`${getStageLabel(activeStage)} materials added to formula composer`);
+
+      if (activeStage === 'base') {
+        setWizardOpen(false);
+        if (nextProjectStageItems.length) {
+          setActiveRowIndex(0);
+          setFocusRowIndex(0);
+        }
+        return;
+      }
+
+      handleWizardNextStage();
+    } catch (error) {
+      toast.error(error.message || 'Failed to generate wizard materials');
+    } finally {
+      setBusyStage('');
+    }
+  };
+
   useEffect(() => {
     let active = true;
 
@@ -462,6 +825,19 @@ const EditFormulaPage = () => {
     rawMaterialsById,
     referenceLinksMap,
   }), [itemsWithPercentages, rawMaterialsById, referenceLinksMap]);
+  const wizardBriefText = useMemo(
+    () => [linkedBrief?.mood_story, linkedBrief?.audience_usage, linkedBrief?.performance_target, linkedBrief?.budget_direction].filter(Boolean).join(' '),
+    [linkedBrief]
+  );
+  const currentQuestions = useMemo(
+    () => getWizardQuestionsForStage(activeStage, draftAnswers[activeStage] || {}),
+    [activeStage, draftAnswers]
+  );
+  const currentQuestion = currentQuestions[wizardQuestionIndex] || currentQuestions[currentQuestions.length - 1] || null;
+  const activeTargetProfile = useMemo(
+    () => buildStageTargetProfile(activeStage, draftAnswers[activeStage] || {}, linkedBrief),
+    [activeStage, draftAnswers, linkedBrief]
+  );
 
   const simulationRowsByItemId = useMemo(
     () => new Map(workbookSimulation.rows.map((row) => [row.item_id, row])),
@@ -488,6 +864,14 @@ const EditFormulaPage = () => {
       lifeContribution: simulationRow?.lifeContribution ?? null,
     };
   }, [activeRowIndex, formulaItems, getItemGuidanceDetails, simulationRowsByItemId]);
+  const activeReferenceProfileDetails = useMemo(() => {
+    const activeItem = formulaItems[activeRowIndex];
+    if (!activeItem?.item_id) {
+      return null;
+    }
+
+    return getItemGuidanceDetails(activeItem);
+  }, [activeRowIndex, formulaItems, getItemGuidanceDetails]);
 
   const validateForm = () => {
     const errors = {};
@@ -612,6 +996,110 @@ const EditFormulaPage = () => {
       </Helmet>
 
       <div className="page-container">
+        <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+          <DialogContent className="max-w-3xl rounded-[28px] border bg-background p-0">
+            <DialogHeader className="border-b px-6 py-5">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="capitalize">
+                  {getStageLabel(activeStage)}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Step {Math.min(wizardQuestionIndex + 1, Math.max(currentQuestions.length, 1))} of {Math.max(currentQuestions.length, 1)}
+                </span>
+              </div>
+              <DialogTitle className="mt-3 text-xl">Arah brief untuk formula baru ini</DialogTitle>
+              <DialogDescription>
+                Wizard ini hanya muncul sekali saat formula baru dibuat dari brief. Pilih karakter aromanya, lalu composer formula akan terisi kandidat material awal.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="px-6 py-5">
+              {currentQuestion ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm font-semibold">{currentQuestion.title}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      Pilihan ini membantu menentukan material awal untuk stage {getStageLabel(activeStage).toLowerCase()}.
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {currentQuestion.options.map((option) => {
+                      const selected = draftAnswers[activeStage]?.[currentQuestion.id] === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleWizardOptionSelect(currentQuestion.id, option.value)}
+                          className={`rounded-2xl border px-4 py-4 text-left transition ${
+                            selected
+                              ? 'border-primary bg-primary/10 text-foreground shadow-sm'
+                              : 'bg-card hover:border-primary/40'
+                          }`}
+                        >
+                          <div className="font-medium">{option.label}</div>
+                          {option.tags?.length ? (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              {option.tags.join(', ')}
+                            </div>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {projectUnavailable ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      Sinkronisasi project belum aktif, jadi wizard ini langsung mengisi formula tanpa menyimpan stage board ke `brief_projects`.
+                    </div>
+                  ) : null}
+
+                  <div className="rounded-2xl border bg-background/70 p-4">
+                    <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current target</div>
+                    <div className="mt-2 text-sm font-semibold">{activeTargetProfile.summary}</div>
+                    <div className="mt-2 text-xs text-muted-foreground">{activeTargetProfile.stage_goal}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                  Wizard untuk stage ini belum punya pertanyaan.
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="border-t px-6 py-5">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" className="rounded-xl" onClick={handleWizardBack} disabled={wizardQuestionIndex === 0}>
+                    Back
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={handleWizardNext}
+                    disabled={!currentQuestion || wizardQuestionIndex >= currentQuestions.length - 1}
+                  >
+                    Next question
+                  </Button>
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={handleWizardNextStage}
+                    disabled={activeStage === 'base'}
+                  >
+                    Next stage
+                  </Button>
+                  <Button className="rounded-xl gap-2" onClick={handleGenerateWizardMaterials} disabled={busyStage === activeStage}>
+                    <Sparkles className="h-4 w-4" />
+                    {busyStage === activeStage ? 'Generating...' : activeStage === 'base' ? 'Finish wizard' : 'Generate materials'}
+                  </Button>
+                </div>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <FormulaMetadataDialog
           open={metadataDialogOpen}
           onOpenChange={setMetadataDialogOpen}
@@ -719,6 +1207,87 @@ const EditFormulaPage = () => {
           </div>
         </div>
 
+        {linkedBrief || linkedProject ? (
+          <div className={`mb-4 space-y-4 ${composerSectionClass}`}>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Composition context
+                </div>
+                <h2 className="mt-2 text-lg font-semibold">What am I composing from right now?</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Keep the brief as the intent anchor. Use project stage selections and direct materials to refine the formula directly in the composer.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {linkedBrief ? (
+                  <Button variant="outline" className="rounded-2xl" onClick={() => navigate(`/briefs/${linkedBrief.id}`)}>
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Open brief board
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-[22px] border bg-white/85 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-sm font-semibold">Brief intent</div>
+                  {linkedBrief ? (
+                    <>
+                      <Badge variant="secondary" className="rounded-full">{linkedBrief.title}</Badge>
+                      {linkedBrief.status ? <Badge variant="outline" className="rounded-full capitalize">{linkedBrief.status}</Badge> : null}
+                    </>
+                  ) : (
+                    <Badge variant="outline" className="rounded-full">No linked brief</Badge>
+                  )}
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {linkedBrief?.mood_story || 'This formula is not linked to a brief yet. Use the brief workspace if you want to re-anchor the composition direction.'}
+                </p>
+              </div>
+
+              <div className="rounded-[22px] border bg-white/85 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-sm font-semibold">Editing mode</div>
+                  <Badge variant="outline" className="rounded-full">Direct formula refinement</Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Accord-first rebuilding has been retired. Edit this formula directly from its current material composition.
+                </p>
+              </div>
+
+              {linkedProject ? (
+                <div className="rounded-[22px] border bg-white/85 p-4 lg:col-span-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold">Project stage anchor</div>
+                    <Badge variant="outline" className="rounded-full capitalize">
+                      {linkedProject.current_stage || 'top'}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {linkedProjectStageItems.length
+                      ? `${linkedProjectStageItems.length} stage-selected materials exist in the project. Use them as the structural reference while editing.`
+                      : 'This brief project does not have stage selections yet.'}
+                  </p>
+                  {linkedProjectStageItems.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {['top', 'middle', 'base'].map((stage) => {
+                        const stageCount = linkedProjectStageItems.filter((item) => item.stage === stage).length;
+                        return (
+                          <Badge key={stage} variant="secondary" className="rounded-full capitalize">
+                            {stage} {stageCount}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {loadingData ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
             <div className="space-y-4">
@@ -740,7 +1309,7 @@ const EditFormulaPage = () => {
 
                     <TabsContent value="compose" className="mt-0">
                       <section className={composerSectionClass}>
-                        <h2 className="text-lg font-semibold">Formula ingredients</h2>
+                        <h2 className="text-lg font-semibold">Formula composition</h2>
 
                         <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                           <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
@@ -772,14 +1341,14 @@ const EditFormulaPage = () => {
 
                         <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4] px-4 py-3">
                           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                            Material library
+                            Direct raw materials
                           </div>
                           <Button type="button" className="rounded-xl" onClick={() => setMobileLibraryOpen(true)}>
                             Add material
                           </Button>
                         </div>
 
-                        <div className="mt-4 max-h-[42rem] overflow-y-auto pr-1">
+                        <div className="mt-4 max-h-[25rem] overflow-y-auto pr-1">
                           <FormulaItemTableEditor
                             items={formulaItems}
                             rawMaterials={rawMaterials}
@@ -795,6 +1364,17 @@ const EditFormulaPage = () => {
                             getGuidanceStatus={getItemGuidanceStatus}
                             onOpenGuidanceEditor={handleOpenGuidanceEditor}
                             activeItemInsight={activeItemInsight}
+                          />
+                        </div>
+
+                        <div className="mt-4">
+                          <FormulaComposerPacePanel
+                            items={itemsWithPercentages}
+                            rawMaterialsById={rawMaterialsById}
+                            referenceLinksMap={referenceLinksMap}
+                            onApplyRecommendation={applyPaceRecommendation}
+                            priorityMode={pacePriorityMode}
+                            onPriorityModeChange={handlePacePriorityModeChange}
                           />
                         </div>
                       </section>
@@ -840,6 +1420,10 @@ const EditFormulaPage = () => {
                               {notes || 'No notes yet'}
                             </div>
                           </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <FormulaReferenceProfileSidebar details={activeReferenceProfileDetails} />
                         </div>
                       </section>
                     </TabsContent>
@@ -899,7 +1483,7 @@ const EditFormulaPage = () => {
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
                 <form id="edit-formula-form" onSubmit={handleSubmit} className="space-y-4">
                   <section className={composerSectionClass}>
-                    <h2 className="text-lg font-semibold">Formula ingredients</h2>
+                    <h2 className="text-lg font-semibold">Formula composition</h2>
 
                     <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                       <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
@@ -932,7 +1516,7 @@ const EditFormulaPage = () => {
                     <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
                       <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                          Material library
+                          Direct raw materials
                         </div>
                         <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
                           Active row {activeRowIndex + 1}
@@ -948,12 +1532,12 @@ const EditFormulaPage = () => {
                         />
                       </div>
 
-                      <div className="max-h-[20.5rem] overflow-y-auto px-3 py-3">
+                      <div className="max-h-[10.75rem] overflow-y-auto px-3 py-3">
                         {renderMaterialLibraryList()}
                       </div>
                     </div>
 
-                    <div className="mt-4 max-h-[42rem] overflow-y-auto pr-1">
+                    <div className="mt-4 max-h-[25rem] overflow-y-auto pr-1">
                       <FormulaItemTableEditor
                         items={formulaItems}
                         rawMaterials={rawMaterials}
@@ -971,16 +1555,30 @@ const EditFormulaPage = () => {
                         activeItemInsight={activeItemInsight}
                       />
                     </div>
+
+                    <div className="mt-4">
+                      <FormulaComposerPacePanel
+                        items={itemsWithPercentages}
+                        rawMaterialsById={rawMaterialsById}
+                        referenceLinksMap={referenceLinksMap}
+                        onApplyRecommendation={applyPaceRecommendation}
+                        priorityMode={pacePriorityMode}
+                        onPriorityModeChange={handlePacePriorityModeChange}
+                      />
+                    </div>
                   </section>
                 </form>
 
                 <div className="h-fit lg:sticky lg:top-24 lg:self-start">
-                  <FormulaOdourDisplayPanel
-                    items={itemsWithPercentages}
-                    rawMaterialsById={rawMaterialsById}
-                    referenceLinksMap={referenceLinksMap}
-                    isVisible
-                  />
+                  <div className="space-y-4">
+                    <FormulaReferenceProfileSidebar details={activeReferenceProfileDetails} />
+                    <FormulaOdourDisplayPanel
+                      items={itemsWithPercentages}
+                      rawMaterialsById={rawMaterialsById}
+                      referenceLinksMap={referenceLinksMap}
+                      isVisible
+                    />
+                  </div>
                 </div>
               </div>
             )}

@@ -126,6 +126,20 @@ export const getWorkbookAbcClassificationByFamilyName = (familyName) => (
 );
 
 export const extractWorkbookClassDistribution = (referenceProfile) => {
+  const canonicalDistribution = Array.isArray(referenceProfile?.abc_distribution)
+    ? referenceProfile.abc_distribution
+    : Array.isArray(referenceProfile?.canonical_profile?.abc_distribution)
+      ? referenceProfile.canonical_profile.abc_distribution
+      : [];
+
+  if (canonicalDistribution.length) {
+    return canonicalDistribution.map((entry) => ({
+      ...getWorkbookAbcClassificationByLetter(entry.letter),
+      share: Number(entry.share || 0),
+      source: 'canonical_profile',
+    })).filter(Boolean);
+  }
+
   const fromRawPayload = parseRawPayloadDistribution(referenceProfile?.raw_payload);
   if (fromRawPayload.length) {
     return fromRawPayload;

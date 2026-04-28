@@ -1,5 +1,6 @@
 import supabase from '@/lib/supabaseClient.js';
 import { toAppRecord } from '@/services/supabaseDataHelpers.js';
+import { buildCanonicalReferencePayload, resolveCanonicalReferenceProfile } from '@/utils/canonicalReferenceProfile.js';
 
 const mapOdourFacet = (row) => ({
   ...toAppRecord(row),
@@ -11,7 +12,7 @@ const mapReferenceProfile = (row) => {
     return null;
   }
 
-  return {
+  const baseProfile = {
     ...toAppRecord(row),
     impact: row.impact === null || row.impact === undefined ? null : Number(row.impact),
     life_hours: row.life_hours === null || row.life_hours === undefined ? null : Number(row.life_hours),
@@ -27,6 +28,31 @@ const mapReferenceProfile = (row) => {
           .map(mapOdourFacet)
           .sort((left, right) => Number(left.sort_order || 0) - Number(right.sort_order || 0))
       : [],
+  };
+
+  const canonicalProfile = resolveCanonicalReferenceProfile({
+    referenceProfile: baseProfile,
+  });
+
+  return {
+    ...baseProfile,
+    canonical_profile: canonicalProfile,
+    source_kind: canonicalProfile?.source_kind || baseProfile.source_kind,
+    reference_code: canonicalProfile?.reference_code || baseProfile.reference_code,
+    abc_primary_family: canonicalProfile?.abc_primary_family || baseProfile.abc_primary_family,
+    abc_secondary_family: canonicalProfile?.abc_secondary_family || baseProfile.abc_secondary_family,
+    abc_distribution: canonicalProfile?.abc_distribution || [],
+    impact: canonicalProfile?.impact ?? baseProfile.impact,
+    life_hours: canonicalProfile?.life_hours ?? baseProfile.life_hours,
+    use_level_typical_percent: canonicalProfile?.use_level_typical_percent ?? baseProfile.use_level_typical_percent,
+    use_level_max_percent: canonicalProfile?.use_level_max_percent ?? baseProfile.use_level_max_percent,
+    ifra_limit_percent: canonicalProfile?.ifra_limit_percent ?? baseProfile.ifra_limit_percent,
+    cas_no: canonicalProfile?.cas_number || baseProfile.cas_no,
+    top_middle_base_tendency: canonicalProfile?.top_middle_base_tendency || null,
+    confidence_score: canonicalProfile?.confidence_score ?? null,
+    confidence_reason: canonicalProfile?.confidence_reason || null,
+    field_locks: canonicalProfile?.field_locks || {},
+    source_snapshots: canonicalProfile?.source_snapshots || {},
   };
 };
 
@@ -73,6 +99,12 @@ const hasManualReferenceGuidance = (rawMaterial) => [
 
 const buildManualReferencePayload = (rawMaterial, userId) => {
   const manualReferenceCode = `MAN-${String(rawMaterial.id || '').replace(/-/g, '').slice(0, 12).toUpperCase()}`;
+  const rawPayload = buildCanonicalReferencePayload({
+    rawMaterial,
+    existingRawPayload: rawMaterial?.__existingManualReferenceRawPayload || {},
+    sourceSnapshots: rawMaterial?.__referenceSourceSnapshots || null,
+    fieldLocks: rawMaterial?.__referenceFieldLocks || null,
+  });
 
   return {
     owner_user_id: userId,
@@ -93,7 +125,7 @@ const buildManualReferencePayload = (rawMaterial, userId) => {
     ifra_limit_percent: normalizeOptionalNumber(rawMaterial.ifra_limit),
     cas_no: normalizeOptionalText(rawMaterial.cas_number),
     raw_payload: {
-      source: 'manual_raw_material_form',
+      ...rawPayload,
       raw_material_id: rawMaterial.id,
       workbook_code: normalizeOptionalText(rawMaterial.workbook_code),
       type: normalizeOptionalText(rawMaterial.type),
@@ -163,11 +195,15 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
           name,
           abc_code,
           abc_primary_family,
+          abc_secondary_family,
           impact,
           life_hours,
           cas_no,
           ifra_limit_percent,
-          use_level_max_percent
+          use_level_typical_percent,
+          use_level_max_percent,
+          source_kind,
+          raw_payload
         `)
         .in('id', idChunk);
 
@@ -177,25 +213,7 @@ export const getReferenceMatchStatusMap = async (rawMaterialIds) => {
       }
 
       for (const profile of referenceProfiles || []) {
-        referenceProfilesById.set(profile.id, {
-          ...profile,
-          impact:
-            profile.impact === null || profile.impact === undefined
-              ? null
-              : Number(profile.impact),
-          life_hours:
-            profile.life_hours === null || profile.life_hours === undefined
-              ? null
-              : Number(profile.life_hours),
-          ifra_limit_percent:
-            profile.ifra_limit_percent === null || profile.ifra_limit_percent === undefined
-              ? null
-              : Number(profile.ifra_limit_percent),
-          use_level_max_percent:
-            profile.use_level_max_percent === null || profile.use_level_max_percent === undefined
-              ? null
-              : Number(profile.use_level_max_percent),
-        });
+        referenceProfilesById.set(profile.id, mapReferenceProfile(profile));
       }
     }
   }
@@ -526,7 +544,7 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
   const { data: existingManualProfile, error: existingProfileError } = await supabase
     .from('material_reference_profiles')
-    .select('id')
+    .select('id, raw_payload')
     .eq('source_kind', 'manual')
     .eq('source_raw_material_id', rawMaterial.id)
     .maybeSingle();
@@ -552,7 +570,10 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
     return null;
   }
 
-  const payload = buildManualReferencePayload(rawMaterial, user.id);
+  const payload = buildManualReferencePayload({
+    ...rawMaterial,
+    __existingManualReferenceRawPayload: existingManualProfile?.raw_payload || {},
+  }, user.id);
   let referenceProfileId = existingManualProfile?.id || null;
 
   if (referenceProfileId) {
@@ -587,4 +608,31 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
   );
 
   return referenceProfileId;
+};
+
+export const removeReferenceArtifactsForRawMaterial = async (rawMaterialId) => {
+  if (!rawMaterialId) {
+    return;
+  }
+
+  const { error: deleteLinksError } = await supabase
+    .from('raw_material_reference_links')
+    .delete()
+    .eq('raw_material_id', rawMaterialId);
+
+  if (deleteLinksError) {
+    console.error('Error deleting raw material reference links:', deleteLinksError);
+    throw new Error(deleteLinksError.message || 'Failed to delete raw material reference links');
+  }
+
+  const { error: deleteManualProfilesError } = await supabase
+    .from('material_reference_profiles')
+    .delete()
+    .eq('source_kind', 'manual')
+    .eq('source_raw_material_id', rawMaterialId);
+
+  if (deleteManualProfilesError) {
+    console.error('Error deleting manual reference profiles for raw material:', deleteManualProfilesError);
+    throw new Error(deleteManualProfilesError.message || 'Failed to delete manual reference profile');
+  }
 };

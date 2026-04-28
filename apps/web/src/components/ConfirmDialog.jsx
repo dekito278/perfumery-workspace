@@ -18,10 +18,15 @@ const ConfirmDialog = ({
   onConfirm, 
   title, 
   description, 
+  children = null,
   confirmText = 'Delete',
   cancelText = 'Cancel',
-  variant = 'destructive'
+  variant = 'destructive',
+  confirmDisabled = false,
+  destructive = false,
 }) => {
+  const resolvedVariant = destructive ? 'destructive' : variant;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -36,11 +41,13 @@ const ConfirmDialog = ({
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm} 
-            className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+            disabled={confirmDisabled}
+            className={resolvedVariant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
           >
             {confirmText}
           </AlertDialogAction>

@@ -1,13 +1,15 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RefreshCw, Home, Plus, Package, Eye, AlertTriangle, CheckCircle2, Layers3, Droplets, Wand2, Banknote, Shapes, FlaskConical, FolderTree, Radar, Link2, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RefreshCw, Home, Plus, Package, AlertTriangle, CheckCircle2, Layers3, Droplets, Wand2, Shapes, FolderTree, Link2, Trash2, ArrowRight, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
+import { useBriefs } from '@/hooks/useBriefs.js';
+import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import SearchBar from '@/components/SearchBar.jsx';
@@ -21,8 +23,8 @@ import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCategoriesModal.jsx';
-import { formatQuantity } from '@/utils/formatting.js';
-import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
+import { formatPricePerUnit } from '@/utils/pricingUtils.js';
+import { getRawMaterialDeletionDependencies } from '@/services/rawMaterialsService.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
@@ -31,11 +33,54 @@ import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceG
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const hasReferenceValue = (value) => value !== null && value !== undefined;
+const shortlistRoles = ['candidate', 'hero', 'support', 'bridge', 'base'];
+
+const renderDeleteDependencySummary = ({ dependencies, loading, selectedMaterial, selectedMaterials }) => {
+  if (!selectedMaterial) {
+    return (
+      <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+        Bulk delete will process {selectedMaterials.length} selected material(s) one by one and stop on the first blocked item.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+        Checking where this material is still used...
+      </div>
+    );
+  }
+
+  if (dependencies.length) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <div className="font-medium">This material is still referenced in:</div>
+        <ul className="mt-2 list-disc pl-5">
+          {dependencies.map((entry) => (
+            <li key={entry.label}>
+              {entry.count} {entry.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+      No blocking references found. This material is ready to delete, and its linked workbook/reference artifacts will be removed too.
+    </div>
+  );
+};
 
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const briefId = searchParams.get('briefId') || '';
   const { fetchMaterials, fetchMaterialsPage, fetchMaterialsSummary, fetchMaterialsReferenceSummary, deleteMaterial } = useRawMaterials();
+  const { getBriefs } = useBriefs();
+  const { getBriefMaterialShortlist, upsertBriefMaterialShortlist, deleteBriefMaterialShortlistItem } = useBriefMaterialShortlists();
   const [materials, setMaterials] = useState([]);
   const [remapMaterials, setRemapMaterials] = useState([]);
   const [summaryMaterials, setSummaryMaterials] = useState([]);
@@ -43,12 +88,14 @@ const RawMaterialsPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [briefContext, setBriefContext] = useState(null);
+  const [shortlistItems, setShortlistItems] = useState([]);
+  const [shortlistLoading, setShortlistLoading] = useState(false);
   const [matchedReferenceCount, setMatchedReferenceCount] = useState(0);
   const [ifraReferenceCount, setIfraReferenceCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [stockFilter, setStockFilter] = useState('all');
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -58,6 +105,8 @@ const RawMaterialsPage = () => {
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteDependencies, setDeleteDependencies] = useState([]);
+  const [deleteDependencyLoading, setDeleteDependencyLoading] = useState(false);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalMaterials, setTotalMaterials] = useState(0);
@@ -67,6 +116,10 @@ const RawMaterialsPage = () => {
   const selectedMaterials = useMemo(
     () => materials.filter((material) => selectedMaterialIds.includes(material.id)),
     [materials, selectedMaterialIds]
+  );
+  const shortlistMaterialIds = useMemo(
+    () => shortlistItems.map((item) => item.raw_material_id).filter(Boolean),
+    [shortlistItems]
   );
   const isBulkDeleting = deletingId === 'bulk';
 
@@ -89,7 +142,6 @@ const RawMaterialsPage = () => {
         searchTerm,
         typeFilter,
         categoryFilter,
-        stockFilter,
         referenceFilter,
       });
       setMaterials(items);
@@ -138,6 +190,32 @@ const RawMaterialsPage = () => {
   }, []);
 
   useEffect(() => {
+    const loadBriefContext = async () => {
+      if (!briefId) {
+        setBriefContext(null);
+        setShortlistItems([]);
+        return;
+      }
+
+      setShortlistLoading(true);
+      try {
+        const [briefs, shortlist] = await Promise.all([
+          getBriefs(),
+          getBriefMaterialShortlist(briefId),
+        ]);
+        setBriefContext(briefs.find((item) => item.id === briefId) || null);
+        setShortlistItems(shortlist);
+      } catch (error) {
+        toast.error('Failed to load shortlist workspace');
+      } finally {
+        setShortlistLoading(false);
+      }
+    };
+
+    loadBriefContext();
+  }, [briefId]);
+
+  useEffect(() => {
     const loadRemapMaterials = async () => {
       if (!remapModalOpen) {
         return;
@@ -157,33 +235,53 @@ const RawMaterialsPage = () => {
 
   useEffect(() => {
     loadMaterials();
-  }, [currentPage, searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
-
-  const filteredMaterials = useMemo(() => {
-    return materials;
-  }, [materials]);
+  }, [currentPage, searchTerm, typeFilter, categoryFilter, referenceFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, typeFilter, categoryFilter, stockFilter, referenceFilter]);
+  }, [searchTerm, typeFilter, categoryFilter, referenceFilter]);
 
   useEffect(() => {
     const materialIds = new Set(materials.map((material) => material.id));
     setSelectedMaterialIds((current) => current.filter((id) => materialIds.has(id)));
   }, [materials]);
 
+  useEffect(() => {
+    const loadDeleteDependencies = async () => {
+      if (!deleteDialogOpen || !selectedMaterial?.id) {
+        setDeleteDependencyLoading(false);
+        return;
+      }
+
+      setDeleteDependencyLoading(true);
+      try {
+        const blockers = await getRawMaterialDeletionDependencies(selectedMaterial.id);
+        setDeleteDependencies(blockers);
+      } catch (error) {
+        console.error('Failed to load raw material delete dependencies:', error);
+        setDeleteDependencies([]);
+      } finally {
+        setDeleteDependencyLoading(false);
+      }
+    };
+
+    if (!deleteDialogOpen) {
+      setDeleteDependencies([]);
+      return;
+    }
+
+    if (!selectedMaterial) {
+      setDeleteDependencies([]);
+      setDeleteDependencyLoading(false);
+      return;
+    }
+
+    loadDeleteDependencies();
+  }, [deleteDialogOpen, selectedMaterial]);
+
   const categoryColorMap = useMemo(
     () => new Map(categories.map((category) => [category.name.toLowerCase(), category.color])),
     [categories]
-  );
-
-  const lowStockCount = useMemo(
-    () =>
-      summaryMaterials.filter((material) => {
-        const threshold = material.low_stock_threshold || material.minimum_stock;
-        return Number(material.stock_quantity) < Number(threshold);
-      }).length,
-    [summaryMaterials]
   );
 
   const solventCount = useMemo(
@@ -196,12 +294,14 @@ const RawMaterialsPage = () => {
     [summaryMaterials]
   );
 
-  const inventoryValue = useMemo(
-    () =>
-      summaryMaterials.reduce(
-        (sum, material) => sum + calculateIngredientCost(material.stock_quantity || 0, material.cost_per_unit || 0),
-        0
-      ),
+  const guidanceGapCount = useMemo(
+    () => summaryMaterials.filter((material) => (
+      !material.workbook_code
+      && !material.reference_abc_primary_family
+      && !material.reference_impact
+      && !material.reference_life_hours
+      && !material.ifra_limit
+    )).length,
     [summaryMaterials]
   );
 
@@ -252,113 +352,148 @@ const RawMaterialsPage = () => {
     setSelectedMaterialIds([]);
   };
 
+  const refreshShortlist = async () => {
+    if (!briefId) {
+      return;
+    }
+
+    const shortlist = await getBriefMaterialShortlist(briefId);
+    setShortlistItems(shortlist);
+  };
+
+  const handleSaveSelectionToShortlist = async () => {
+    if (!briefId || !selectedMaterials.length) {
+      return;
+    }
+
+    try {
+      await upsertBriefMaterialShortlist(
+        briefId,
+        selectedMaterials.map((material) => ({
+          raw_material_id: material.id,
+          role: 'candidate',
+        }))
+      );
+      toast.success('Materials added to shortlist');
+      await refreshShortlist();
+    } catch (error) {
+      toast.error(error.message || 'Failed to save shortlist');
+    }
+  };
+
+  const handleRemoveShortlistItem = async (itemId) => {
+    try {
+      await deleteBriefMaterialShortlistItem(itemId);
+      toast.success('Removed from shortlist');
+      await refreshShortlist();
+    } catch (error) {
+      toast.error(error.message || 'Failed to remove shortlist item');
+    }
+  };
+
+  const handleUpdateShortlistRole = async (itemId, role) => {
+    const shortlistItem = shortlistItems.find((item) => item.id === itemId);
+    if (!briefId || !shortlistItem) {
+      return;
+    }
+
+    try {
+      await upsertBriefMaterialShortlist(briefId, [{
+        raw_material_id: shortlistItem.raw_material_id,
+        role,
+        note: shortlistItem.note || null,
+      }]);
+      toast.success('Shortlist role updated');
+      await refreshShortlist();
+    } catch (error) {
+      toast.error(error.message || 'Failed to update shortlist role');
+    }
+  };
+
+  const openFormulaWizard = (materialIds) => {
+    const uniqueIds = [...new Set((materialIds || []).filter(Boolean))];
+    if (!uniqueIds.length) {
+      toast.error('Select or shortlist materials first');
+      return;
+    }
+
+    const nextSearch = new URLSearchParams();
+    if (briefId) {
+      nextSearch.set('briefId', briefId);
+    }
+    nextSearch.set('materialIds', uniqueIds.join(','));
+    navigate(`/formulas/new?${nextSearch.toString()}`);
+  };
+
   const confirmDelete = async () => {
     const materialsToDelete = selectedMaterial ? [selectedMaterial] : selectedMaterials;
-    if (!materialsToDelete.length) return;
+    if (!materialsToDelete.length) {
+      return;
+    }
 
     setDeletingId(selectedMaterial ? selectedMaterial.id : 'bulk');
     try {
       for (const material of materialsToDelete) {
         await deleteMaterial(material.id);
       }
+
       toast.success(
         materialsToDelete.length === 1
           ? 'Material deleted successfully'
           : `${materialsToDelete.length} materials deleted successfully`
       );
+
       setDeleteDialogOpen(false);
       setSelectedMaterial(null);
       clearSelection();
-      loadMaterials();
-      loadSummary();
+      await Promise.all([loadMaterials(), loadSummary()]);
     } catch (error) {
-      toast.error(
-        materialsToDelete.length === 1
-          ? 'Failed to delete material'
-          : 'Failed to delete selected materials'
-      );
+      toast.error(error.message || 'Failed to delete material');
     } finally {
       setDeletingId(null);
     }
   };
 
   const handleView = (material) => {
-    navigate(`/raw-material/${material.id}`, {
-      state: { from: `${location.pathname}${location.search}` },
-    });
+    navigate(`/raw-material/${material.id}`);
   };
 
   const getMaterialGuidanceDetails = (material) => {
-    const linkedReferenceProfile = referenceStatusMap.get(material.id)?.reference_profile || null;
-    const fallbackReferenceProfile = linkedReferenceProfile
-      ? null
-      : buildFallbackReferenceProfileFromRawMaterial(material);
-    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
-    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
-    const primaryClass = classDistribution[0] || null;
-    const resolvedValues = {
-      workbook_code: referenceProfile?.reference_code || material.workbook_code || '',
-      cas_number: referenceProfile?.cas_no || material.cas_number || '',
-      ifra_limit: referenceProfile?.ifra_limit_percent ?? material.ifra_limit ?? null,
-      reference_abc_primary_family: primaryClass?.familyName
-        || referenceProfile?.abc_primary_family
-        || material.reference_abc_primary_family
-        || '',
-      reference_impact: referenceProfile?.impact ?? material.reference_impact ?? null,
-      reference_life_hours: referenceProfile?.life_hours ?? material.reference_life_hours ?? null,
-      reference_use_level_typical_percent: referenceProfile?.use_level_typical_percent ?? material.reference_use_level_typical_percent ?? null,
-      reference_use_level_max_percent: referenceProfile?.use_level_max_percent ?? material.reference_use_level_max_percent ?? null,
-    };
-    const missingGuidance = !referenceProfile;
-    const missingImpact = resolvedValues.reference_impact === null || resolvedValues.reference_impact === undefined || Number(resolvedValues.reference_impact) <= 0;
-    const missingLife = resolvedValues.reference_life_hours === null || resolvedValues.reference_life_hours === undefined || Number(resolvedValues.reference_life_hours) <= 0;
-    const missingClass = !classDistribution.length && !resolvedValues.reference_abc_primary_family;
-    const missingCas = !String(resolvedValues.cas_number || '').trim();
-    const missingIfra = resolvedValues.ifra_limit === null || resolvedValues.ifra_limit === undefined;
+    const resolvedReference = referenceStatusMap.get(material.id)?.reference_profile || buildFallbackReferenceProfileFromRawMaterial(material);
+    const classDistribution = extractWorkbookClassDistribution(resolvedReference);
+    const resolvedClass = resolvedReference?.abc_primary_family || material.reference_abc_primary_family || classDistribution.primaryFamily || null;
+    const resolvedImpact = resolvedReference?.impact ?? material.reference_impact ?? null;
+    const resolvedLife = resolvedReference?.life_hours ?? material.reference_life_hours ?? null;
+    const resolvedCas = resolvedReference?.cas_number ?? material.cas_number ?? null;
+    const resolvedIfra = resolvedReference?.ifra_limit_percent ?? material.ifra_limit ?? null;
 
-      return {
-        material,
-        referenceProfile,
-        resolvedValues,
-        hasCoreGuidance: !missingImpact && !missingLife,
-        hasWarning: missingGuidance || missingImpact || missingLife || missingClass || missingCas || missingIfra,
-        missingGuidance,
-        missingImpact,
-      missingLife,
+    const missingClass = !resolvedClass;
+    const missingImpact = !hasReferenceValue(resolvedImpact);
+    const missingLife = !hasReferenceValue(resolvedLife);
+    const missingCas = !resolvedCas;
+    const missingIfra = !hasReferenceValue(resolvedIfra);
+    const hasCoreGuidance = !missingClass && !missingImpact && !missingLife;
+    const hasWarning = missingClass || missingImpact || missingLife || missingCas || missingIfra;
+
+    return {
+      hasWarning,
+      hasCoreGuidance,
       missingClass,
+      missingImpact,
+      missingLife,
       missingCas,
       missingIfra,
+      resolvedClass,
+      resolvedImpact,
+      resolvedLife,
+      resolvedCas,
+      resolvedIfra,
     };
   };
 
   const openGuidanceEditor = (material) => {
-    const guidanceDetails = getMaterialGuidanceDetails(material);
-    setGuidanceEditorMaterial({
-      ...material,
-      guidance_resolved_values: guidanceDetails.resolvedValues,
-    });
+    setGuidanceEditorMaterial(material);
     setGuidanceEditorOpen(true);
-  };
-
-  const handleGuidanceSaved = (updatedMaterial) => {
-    const nextMaterials = materials.map((material) => (
-      material.id === updatedMaterial.id ? updatedMaterial : material
-    ));
-    setMaterials(nextMaterials);
-    setSummaryMaterials((current) => current.map((material) => (
-      material.id === updatedMaterial.id ? { ...material, ...updatedMaterial } : material
-    )));
-    setGuidanceEditorMaterial(updatedMaterial);
-    refreshReferenceStatusMap(nextMaterials);
-    loadSummary();
-  };
-
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setTypeFilter('all');
-    setCategoryFilter('all');
-    setStockFilter('all');
-    setReferenceFilter('all');
   };
 
   const columns = [
@@ -381,15 +516,9 @@ const RawMaterialsPage = () => {
                 Unmatched
               </Badge>
             )}
-            {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
-            && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
-              <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
-                IFRA
-              </Badge>
-            ) : null}
           </div>
         </button>
-      )
+      ),
     },
     {
       key: 'type',
@@ -407,32 +536,14 @@ const RawMaterialsPage = () => {
             <span className="truncate">{row.category || 'Uncategorized'}</span>
           </div>
         </div>
-      )
-    },
-    {
-      key: 'stock_quantity',
-      label: 'Stock',
-      align: 'right',
-      render: (row) => {
-        const threshold = row.low_stock_threshold || row.minimum_stock;
-        const isLowStock = row.stock_quantity < threshold;
-        return (
-          <div className="text-right">
-            <div className={`font-mono text-sm ${isLowStock ? 'text-destructive font-semibold' : 'font-medium text-foreground'}`}>
-              {formatQuantity(row.stock_quantity)} {row.unit}
-            </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">
-              Min {formatQuantity(threshold)} {row.unit}
-            </div>
-          </div>
-        );
-      }
+      ),
     },
     {
       key: 'guidance',
       label: 'Guidance',
       render: (row) => {
         const guidance = getMaterialGuidanceDetails(row);
+        const linkedReference = referenceStatusMap.get(row.id)?.reference_profile || null;
         return (
           <div className="min-w-[190px]">
             <button
@@ -455,18 +566,28 @@ const RawMaterialsPage = () => {
             </button>
             <div className="mt-1.5 text-[11px] leading-5 text-muted-foreground">
               {guidance.hasWarning
-              ? [
-                  guidance.missingClass ? 'family' : null,
-                  guidance.missingImpact ? 'impact' : null,
-                  guidance.missingLife ? 'life' : null,
-                  guidance.missingCas ? 'CAS' : null,
-                  guidance.missingIfra ? 'IFRA' : null,
-                ].filter(Boolean).join(', ')
-              : 'Impact, life, CAS, dan IFRA sudah ada.'}
+                ? [
+                    guidance.missingClass ? 'family' : null,
+                    guidance.missingImpact ? 'impact' : null,
+                    guidance.missingLife ? 'life' : null,
+                    guidance.missingCas ? 'CAS' : null,
+                    guidance.missingIfra ? 'IFRA' : null,
+                  ].filter(Boolean).join(', ')
+                : 'Impact, life, CAS, dan IFRA sudah ada.'}
+            </div>
+            <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
+              <div>{row.workbook_code ? `Workbook ${row.workbook_code}` : 'No workbook code'}</div>
+              <div>{linkedReference?.reference_code ? `Reference ${linkedReference.reference_code}` : 'No linked reference profile'}</div>
+              <div>{guidance.resolvedClass ? `Family ${guidance.resolvedClass}` : 'Family not set'}</div>
+              <div>
+                {guidance.resolvedImpact || guidance.resolvedLife
+                  ? `Impact ${guidance.resolvedImpact ?? '-'} | Life ${guidance.resolvedLife ?? '-'}h`
+                  : 'Impact/life not set'}
+              </div>
             </div>
           </div>
         );
-      }
+      },
     },
     {
       key: 'cost_per_unit',
@@ -476,11 +597,11 @@ const RawMaterialsPage = () => {
         <div className="text-right">
           <div className="font-mono text-sm font-medium text-foreground">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
           <div className="mt-1 text-[11px] text-muted-foreground">
-            Stock value {formatPrice(calculateIngredientCost(row.stock_quantity || 0, row.cost_per_unit || 0))}
+            {row.workbook_code ? `Workbook ${row.workbook_code}` : 'No workbook code'}
           </div>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   const filters = [
@@ -488,12 +609,12 @@ const RawMaterialsPage = () => {
       id: 'type',
       value: typeFilter,
       placeholder: 'All types',
-      icon: FlaskConical,
+      icon: Droplets,
       options: [
         { value: 'all', label: 'All types' },
         { value: 'material', label: 'Material' },
-        { value: 'solvent', label: 'Solvent' }
-      ]
+        { value: 'solvent', label: 'Solvent' },
+      ],
     },
     {
       id: 'category',
@@ -508,18 +629,7 @@ const RawMaterialsPage = () => {
             ? `${category.name} - ${findPerfumersWorldCategoryByValue(category.name).description}`
             : category.name,
         })),
-      ]
-    },
-    {
-      id: 'stock',
-      value: stockFilter,
-      placeholder: 'All stock levels',
-      icon: Radar,
-      options: [
-        { value: 'all', label: 'All stock levels' },
-        { value: 'low', label: 'Low stock' },
-        { value: 'in_stock', label: 'In stock' }
-      ]
+      ],
     },
     {
       id: 'reference',
@@ -531,9 +641,9 @@ const RawMaterialsPage = () => {
         { value: 'matched', label: 'Matched' },
         { value: 'unmatched', label: 'Unmatched' },
         { value: 'ifra_limited', label: 'Has IFRA reference' },
-        { value: 'has_guidance', label: 'Has reference guidance' }
-      ]
-    }
+        { value: 'has_guidance', label: 'Has reference guidance' },
+      ],
+    },
   ];
 
   const handleFilterChange = (filterId, value) => {
@@ -541,25 +651,29 @@ const RawMaterialsPage = () => {
       setTypeFilter(value);
     } else if (filterId === 'category') {
       setCategoryFilter(value);
-    } else if (filterId === 'stock') {
-      setStockFilter(value);
     } else if (filterId === 'reference') {
       setReferenceFilter(value);
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setTypeFilter('all');
+    setCategoryFilter('all');
+    setReferenceFilter('all');
+  };
+
   const hasActiveFilters =
     typeFilter !== 'all'
     || categoryFilter !== 'all'
-    || stockFilter !== 'all'
     || referenceFilter !== 'all'
     || searchTerm;
 
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Raw Materials - Perfumer Studio</title>
-        <meta name="description" content="Manage your raw materials inventory with stock tracking and cost management." />
+        <title>Materials - Perfumer Studio</title>
+        <meta name="description" content="Browse your material library, guidance coverage, and dilution readiness from one formulation workspace." />
       </Helmet>
       <div className="page-container">
         <div className="mb-6">
@@ -574,12 +688,140 @@ const RawMaterialsPage = () => {
         </div>
 
         <PageHeader
-          title="Raw materials"
-          description="Audit inventory health, vendor coverage, dilution readiness, and workbook reference coverage from one master list before you dive into detail pages."
+          title="Materials"
+          description={briefId
+            ? 'Pilih kandidat bahan untuk brief ini, beri peran struktural, lalu kirim langsung ke formula wizard.'
+            : 'Review material coverage, vendor metadata, dilution readiness, and workbook reference guidance from one master library.'}
           action="Add material"
           actionIcon={Plus}
           onAction={() => setAddModalOpen(true)}
         />
+
+        {briefId ? (
+          <div className="mb-6 rounded-[26px] border bg-[linear-gradient(180deg,rgba(255,250,243,0.95)_0%,rgba(250,244,234,0.92)_100%)] p-5 shadow-sm">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  Material shortlist workspace
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {briefContext
+                    ? `You are shortlisting materials for "${briefContext.title}". Pilih kandidat dari tabel, simpan ke shortlist, lalu kirim langsung ke formula wizard.`
+                    : 'You are working in shortlist mode for a brief. Pick candidates from the table, save them, then move directly into formula composition.'}
+                </p>
+                {briefContext?.mood_story ? (
+                  <div className="mt-3 rounded-[18px] border bg-white/75 px-4 py-3 text-sm text-muted-foreground">
+                    <strong className="text-foreground">Brief mood:</strong> {briefContext.mood_story}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-2xl"
+                  onClick={() => navigate(briefContext ? `/briefs/${briefContext.id}` : '/briefs')}
+                >
+                  Open brief board
+                </Button>
+                <Button
+                  className="rounded-2xl gap-2"
+                  onClick={() => openFormulaWizard(selectedMaterialIds.length ? selectedMaterialIds : shortlistMaterialIds)}
+                >
+                  Continue to formula
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="rounded-[22px] border bg-white/80 p-4">
+                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current selection</div>
+                <div className="mt-2 text-2xl font-bold">{selectedMaterialIds.length}</div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Select rows from the table, then save them to this brief shortlist.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="rounded-2xl"
+                    disabled={!selectedMaterialIds.length}
+                    onClick={handleSaveSelectionToShortlist}
+                  >
+                    Save selection to shortlist
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-2xl"
+                    disabled={!selectedMaterialIds.length}
+                    onClick={() => openFormulaWizard(selectedMaterialIds)}
+                  >
+                    Compose from selection
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-[22px] border bg-white/80 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Saved shortlist</div>
+                    <div className="mt-2 text-2xl font-bold">{shortlistLoading ? '...' : shortlistItems.length}</div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-2xl"
+                    disabled={!shortlistItems.length}
+                    onClick={() => openFormulaWizard(shortlistMaterialIds)}
+                  >
+                    Compose from shortlist
+                  </Button>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {shortlistLoading ? (
+                    <div className="text-sm text-muted-foreground">Loading shortlist...</div>
+                  ) : shortlistItems.length ? shortlistItems.slice(0, 6).map((item) => (
+                    <div key={item.id} className="grid gap-3 rounded-[18px] border bg-background/75 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_150px_auto] lg:items-center">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {item.expand?.raw_material_id?.category || item.expand?.raw_material_id?.type || 'Material'}
+                        </div>
+                      </div>
+                      <Select value={item.role || 'candidate'} onValueChange={(value) => handleUpdateShortlistRole(item.id, value)}>
+                        <SelectTrigger className="h-10 rounded-xl bg-white">
+                          <SelectValue placeholder="Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shortlistRoles.map((role) => (
+                            <SelectItem key={role} value={role} className="capitalize">
+                              {role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="rounded-xl px-3"
+                        onClick={() => handleRemoveShortlistItem(item.id)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )) : (
+                    <div className="rounded-[18px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                      No saved shortlist yet. Pick materials from the table and save them here first.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="list-summary-grid list-summary-grid-4">
           <div className="list-summary-card">
@@ -595,11 +837,11 @@ const RawMaterialsPage = () => {
           <div className="list-summary-card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="list-summary-label">Low stock alerts</p>
-                <span className="list-summary-value text-destructive">{lowStockCount}</span>
-                <p className="list-summary-note">Materials already below their reorder threshold.</p>
+                <p className="list-summary-label">Guidance gaps</p>
+                <span className="list-summary-value text-amber-700">{guidanceGapCount}</span>
+                <p className="list-summary-note">Materials that still need reference signals.</p>
               </div>
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <AlertTriangle className="h-5 w-5 text-amber-700" />
             </div>
           </div>
           <div className="list-summary-card">
@@ -607,7 +849,7 @@ const RawMaterialsPage = () => {
               <div>
                 <p className="list-summary-label">Solvents ready</p>
                 <span className="list-summary-value">{solventCount}</span>
-                <p className="list-summary-note">Solvents available for dilution and batch production.</p>
+                <p className="list-summary-note">Solvents available for dilution-aware composition work.</p>
               </div>
               <Droplets className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -615,11 +857,11 @@ const RawMaterialsPage = () => {
           <div className="list-summary-card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="list-summary-label">Estimated stock value</p>
-                <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{formatPrice(inventoryValue)}</span>
-                <p className="list-summary-note">{categoryCount} categories in use / {ifraReferenceCount} IFRA reference profiles linked.</p>
+                <p className="list-summary-label">Categories in use</p>
+                <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{categoryCount}</span>
+                <p className="list-summary-note">{ifraReferenceCount} IFRA reference profiles linked.</p>
               </div>
-              <Banknote className="h-5 w-5 text-muted-foreground" />
+              <Package className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
         </div>
@@ -630,9 +872,11 @@ const RawMaterialsPage = () => {
               <div className="flex items-start gap-3">
                 <Shapes className="mt-0.5 h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-sm font-semibold">Inventory review flow</p>
+                  <p className="text-sm font-semibold">{briefId ? 'Library maintenance' : 'Material review flow'}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Use this page to clean up categorization and stock health, then open each material&apos;s detail page for usage history and dilution context.
+                    {briefId
+                      ? 'Shortlist mode is active above. The controls below are maintenance tools for cleaning categories, guidance, and reference coverage.'
+                      : 'Use this page to clean up categorization, guidance coverage, and dilution context before opening each material detail page.'}
                   </p>
                 </div>
               </div>
@@ -646,17 +890,17 @@ const RawMaterialsPage = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
             <div className="space-y-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Search inventory or reference data
+                Search material library or reference data
               </div>
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
-                placeholder="Search by name, vendor, CAS, workbook code, reference code, or ABC family..."
+                placeholder="Search by name, vendor, CAS, workbook code, reference code, or family..."
                 disabled={showRefreshing}
               />
             </div>
             <div className="flex items-end">
-              <Button onClick={() => { loadMaterials(); loadCategories(); }} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-2xl">
+              <Button onClick={() => { loadMaterials(); loadCategories(); loadSummary(); }} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-2xl">
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
@@ -676,7 +920,7 @@ const RawMaterialsPage = () => {
             <div className="mt-3 flex flex-col gap-3 rounded-[24px] border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold">{selectedMaterialIds.length} material selected on this page</p>
-                <p className="text-sm text-muted-foreground">Use bulk delete to clean up duplicate or unused raw materials faster.</p>
+                <p className="text-sm text-muted-foreground">Use bulk delete to clean up duplicate or unused materials faster.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={clearSelection} className="rounded-2xl">
@@ -696,7 +940,7 @@ const RawMaterialsPage = () => {
 
           {!loading && totalMaterials > 0 && (
             <div className="results-count">
-              Showing {filteredMaterials.length} of {totalMaterials} materials
+              Showing {materials.length} of {totalMaterials} materials
               {hasActiveFilters ? ' with active filters applied' : ''}
               {referenceFilter !== 'all' ? ' on this page' : ''}
             </div>
@@ -711,12 +955,12 @@ const RawMaterialsPage = () => {
           <EmptyState
             icon={Package}
             title="No materials yet"
-            description="Add your first raw material to start building your perfume inventory."
+            description="Add your first material to start building your formulation library."
             action="Add material"
             actionIcon={Plus}
             onAction={() => setAddModalOpen(true)}
           />
-        ) : filteredMaterials.length === 0 ? (
+        ) : materials.length === 0 ? (
           <NoResultsState
             searchTerm={searchTerm}
             onClearFilters={hasActiveFilters ? handleClearFilters : null}
@@ -726,147 +970,62 @@ const RawMaterialsPage = () => {
             <div className="relative">
               <DataTable
                 columns={columns}
-                data={filteredMaterials}
+                data={materials}
                 selectable
                 selectedRowIds={selectedMaterialIds}
                 onToggleRow={handleToggleMaterialSelection}
                 onToggleAll={handleToggleAllMaterials}
-                mobileCard={(row) => (
-                  <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 flex-1 items-start gap-3">
-                        <Checkbox
-                          checked={selectedMaterialIds.includes(row.id)}
-                          onCheckedChange={() => handleToggleMaterialSelection(row)}
-                          aria-label={`Select ${row.name}`}
-                          className="mt-1"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <button onClick={() => handleView(row)} className="w-full text-left">
-                            <div className="truncate text-sm font-semibold text-primary hover:underline">{row.name}</div>
-                          </button>
-                          <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
+                mobileCard={(row) => {
+                  const guidance = getMaterialGuidanceDetails(row);
+                  return (
+                    <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <Checkbox
+                            checked={selectedMaterialIds.includes(row.id)}
+                            onCheckedChange={() => handleToggleMaterialSelection(row)}
+                            aria-label={`Select ${row.name}`}
+                            className="mt-1"
+                          />
+                          <button onClick={() => handleView(row)} className="min-w-0 flex-1 text-left">
+                            <div className="truncate text-base font-semibold text-primary">{row.name}</div>
+                            <div className="mt-1 text-xs text-muted-foreground">
                               {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
-                            </span>
-                            {referenceStatusMap.get(row.id)?.reference_profile ? (
-                              <Badge variant="secondary" className="text-[10px]">
-                                Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[10px]">
-                                Unmatched
-                              </Badge>
-                            )}
-                            {Boolean(referenceStatusMap.get(row.id)?.reference_profile)
-                            && hasReferenceValue(referenceStatusMap.get(row.id)?.reference_profile?.ifra_limit_percent) ? (
-                              <Badge variant="outline" className="text-[10px]">
-                                IFRA ref
-                              </Badge>
-                            ) : null}
-                            <button
-                              type="button"
-                              onClick={() => openGuidanceEditor(row)}
-                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                                  getMaterialGuidanceDetails(row).hasWarning
-                                    ? 'border-amber-200 bg-amber-50 text-amber-900'
-                                    : 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                                }`}
-                              >
-                                {getMaterialGuidanceDetails(row).hasWarning
-                                  ? (getMaterialGuidanceDetails(row).hasCoreGuidance ? 'Guidance partial' : 'Need guidance')
-                                  : 'Guidance ready'}
-                              </button>
                             </div>
-                          </div>
+                          </button>
+                        </div>
+                        <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] capitalize">
+                          {row.type}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="shrink-0 capitalize text-[11px]">
-                        {row.type}
-                      </Badge>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Type</div>
-                        <div className="mt-1 truncate text-sm capitalize">{row.type}</div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Category</div>
+                          <div className="mt-1 text-sm">{row.category || 'Uncategorized'}</div>
+                        </div>
+                        <div className="rounded-2xl bg-muted/45 px-3 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Price</div>
+                          <div className="mt-1 text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
+                        </div>
                       </div>
-                      <div className="rounded-2xl bg-muted/45 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Stock</div>
-                        <div className="mt-1 text-sm">{formatQuantity(row.stock_quantity)} {row.unit}</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div className="min-w-0 text-xs text-muted-foreground">
-                        {row.cas_number || row.workbook_code || 'Open detail to review vendor, category, and reference'}
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openGuidanceEditor(row)}
-                          className="h-9 rounded-xl px-3 text-xs"
-                          title="Workbook guidance"
-                          aria-label={`Workbook guidance for ${row.name}`}
-                        >
-                          {getMaterialGuidanceDetails(row).hasWarning ? 'Guidance' : 'Guidance OK'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleView(row)}
-                          className="h-9 rounded-xl px-4"
-                        >
-                          View
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(row)}
-                          className="h-9 rounded-xl px-3 text-xs"
-                          title="Edit"
-                          aria-label={`Edit ${row.name}`}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(row)}
-                          className="h-9 rounded-xl px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                          title="Delete"
-                          aria-label={`Delete ${row.name}`}
-                        >
-                          Delete
-                        </Button>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Badge variant={guidance.hasWarning ? 'outline' : 'secondary'} className="rounded-full px-2.5 py-1 text-[10px]">
+                          {guidance.hasWarning ? 'Needs guidance' : 'Guidance ready'}
+                        </Badge>
+                        {referenceStatusMap.get(row.id)?.reference_profile ? (
+                          <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[10px]">
+                            Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
+                          </Badge>
+                        ) : null}
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                }}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                actions={(row) => (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleView(row)}
-                    className="table-action-button"
-                    title="View details"
-                    aria-label={`View details for ${row.name}`}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                )}
               />
-              {showRefreshing ? (
-                <div className="absolute inset-0 flex items-start justify-center rounded-[24px] bg-background/55 pt-8 backdrop-blur-[1px]">
-                  <div className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm shadow-sm">
-                    <RefreshCw className="h-4 w-4 animate-spin text-primary" />
-                    Updating results...
-                  </div>
-                </div>
-              ) : null}
             </div>
+
             <ListPagination
               currentPage={currentPage}
               pageSize={pageSize}
@@ -881,9 +1040,8 @@ const RawMaterialsPage = () => {
       <AddRawMaterialModal
         open={addModalOpen}
         onOpenChange={setAddModalOpen}
-        onSuccess={() => {
-          loadMaterials();
-          loadSummary();
+        onSuccess={async () => {
+          await Promise.all([loadMaterials(), loadSummary()]);
         }}
       />
 
@@ -891,9 +1049,22 @@ const RawMaterialsPage = () => {
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         material={selectedMaterial}
-        onSuccess={() => {
-          loadMaterials();
-          loadSummary();
+        onSuccess={async () => {
+          await Promise.all([loadMaterials(), loadSummary()]);
+          setSelectedMaterial(null);
+        }}
+      />
+
+      <RawMaterialGuidanceQuickEditDialog
+        open={guidanceEditorOpen}
+        onOpenChange={setGuidanceEditorOpen}
+        material={guidanceEditorMaterial}
+        guidanceStatus={guidanceEditorMaterial ? getMaterialGuidanceDetails(guidanceEditorMaterial) : null}
+        onSaved={async () => {
+          await Promise.all([loadMaterials(), loadSummary()]);
+          if (materials.length) {
+            await refreshReferenceStatusMap(materials);
+          }
         }}
       />
 
@@ -901,9 +1072,10 @@ const RawMaterialsPage = () => {
         open={remapModalOpen}
         onOpenChange={setRemapModalOpen}
         materials={remapMaterials}
-        onSuccess={() => {
-          loadMaterials();
-          loadSummary();
+        onSuccess={async () => {
+          await Promise.all([loadMaterials(), loadSummary()]);
+          const refreshedMaterials = await fetchMaterials();
+          setRemapMaterials(refreshedMaterials);
         }}
       />
 
@@ -913,18 +1085,19 @@ const RawMaterialsPage = () => {
         onConfirm={confirmDelete}
         title={selectedMaterial ? 'Delete material' : 'Delete selected materials'}
         description={selectedMaterial
-          ? `Are you sure you want to delete "${selectedMaterial?.name}"? This action cannot be undone.`
-          : `Are you sure you want to delete ${selectedMaterialIds.length} selected materials? This action cannot be undone.`}
-        confirmText={deletingId ? (isBulkDeleting ? 'Deleting selected...' : 'Deleting...') : 'Delete'}
-      />
-
-      <RawMaterialGuidanceQuickEditDialog
-        open={guidanceEditorOpen}
-        onOpenChange={setGuidanceEditorOpen}
-        material={guidanceEditorMaterial}
-        guidanceStatus={guidanceEditorMaterial ? getMaterialGuidanceDetails(guidanceEditorMaterial) : null}
-        onSaved={handleGuidanceSaved}
-      />
+          ? `Are you sure you want to delete "${selectedMaterial.name}"? This action cannot be undone, and linked workbook/reference artifacts will be removed too.`
+          : `Are you sure you want to delete ${selectedMaterials.length} selected materials? This action cannot be undone, and each linked workbook/reference artifact will be removed too.`}
+        confirmText={deletingId ? 'Deleting...' : 'Delete'}
+        confirmDisabled={Boolean(deletingId)}
+        destructive
+      >
+        {renderDeleteDependencySummary({
+          dependencies: deleteDependencies,
+          loading: deleteDependencyLoading,
+          selectedMaterial,
+          selectedMaterials,
+        })}
+      </ConfirmDialog>
     </AuthenticatedLayout>
   );
 };

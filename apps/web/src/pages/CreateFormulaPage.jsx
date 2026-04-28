@@ -1,19 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, Save } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertCircle, ChevronLeft, Save, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
+import FormulaComposerPacePanel from '@/components/FormulaComposerPacePanel.jsx';
+import FormulaReferenceProfileSidebar from '@/components/FormulaReferenceProfileSidebar.jsx';
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { useBriefs } from '@/hooks/useBriefs.js';
+import { useBriefProjects } from '@/hooks/useBriefProjects.js';
 import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { calculatePercentages, calculateTotalGrams, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
@@ -23,6 +28,8 @@ import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenc
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
+import { buildComposerItemsFromMaterialIds, buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
+import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 
 const createFormulaItemRowKey = () => `formula-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -66,10 +73,27 @@ const ensureFormulaComposerRow = (items) => (
 
 const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
 const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
+const roundComposerGram = (value) => Math.round(Number(value || 0) * 1000) / 1000;
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { createFormula, loading } = useFormulas();
+  const { getBriefs, updateBrief } = useBriefs();
+  const { getBriefProjectByBriefId, getBriefProjectStageItems, updateBriefProject } = useBriefProjects();
+  const briefId = searchParams.get('briefId') || '';
+  const projectId = searchParams.get('projectId') || '';
+  const seedMaterialIdsKey = String(searchParams.get('materialIds') || '');
+  const seedMaterialIds = useMemo(
+    () => [...new Set(
+      seedMaterialIdsKey
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+    )],
+    [seedMaterialIdsKey]
+  );
+  const pacePriorityMode = normalizePacePriorityMode(searchParams.get(PACE_PRIORITY_QUERY_KEY));
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [category, setCategory] = useState('perfume');
@@ -90,6 +114,9 @@ const CreateFormulaPage = () => {
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
+  const [briefContext, setBriefContext] = useState(null);
+  const [projectContext, setProjectContext] = useState(null);
+  const [projectStageItems, setProjectStageItems] = useState([]);
   const isMobile = useIsMobile();
   const activeRowIndexRef = useRef(0);
   const formulaItemsRef = useRef(formulaItems);
@@ -108,9 +135,48 @@ const CreateFormulaPage = () => {
     const loadData = async () => {
       setLoadingData(true);
       try {
-        const materialsData = await getRawMaterialOptions();
+        const [materialsData, briefs] = await Promise.all([
+          getRawMaterialOptions(),
+          getBriefs(),
+        ]);
+
+        const resolvedBrief = briefId
+          ? briefs.find((brief) => brief.id === briefId) || null
+          : null;
+        let resolvedProject = null;
+        let resolvedProjectStageMap = new Map();
+        try {
+          resolvedProject = projectId
+            ? { ...(await getBriefProjectByBriefId(briefId) || {}), id: projectId }
+            : (briefId ? await getBriefProjectByBriefId(briefId) : null);
+          resolvedProjectStageMap = resolvedProject?.id ? await getBriefProjectStageItems(resolvedProject.id) : new Map();
+        } catch (projectError) {
+          console.error('Formula create project layer unavailable:', projectError);
+        }
+        const resolvedProjectStageItems = resolvedProject?.id
+          ? ['top', 'middle', 'base']
+              .flatMap((stage) => resolvedProjectStageMap.get(stage) || [])
+              .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual')
+          : [];
+
         if (active) {
           setRawMaterials(materialsData);
+          setBriefContext(resolvedBrief);
+          setProjectContext(resolvedProject);
+          setProjectStageItems(resolvedProjectStageItems);
+
+          if (resolvedBrief) {
+            setNotes((current) => current || resolvedBrief.mood_story || '');
+          }
+
+          if (resolvedBrief) {
+            setName((current) => current || `${resolvedBrief.title} formula`);
+          }
+          if (resolvedProjectStageItems.length) {
+            setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(resolvedProjectStageItems, materialsData)));
+          } else if (seedMaterialIds.length) {
+            setFormulaItems(normalizeFormulaItems(buildComposerItemsFromMaterialIds(seedMaterialIds, materialsData)));
+          }
         }
       } catch (error) {
         toast.error('Failed to load raw materials');
@@ -126,7 +192,7 @@ const CreateFormulaPage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [briefId, getBriefProjectByBriefId, getBriefProjectStageItems, getBriefs, projectId, seedMaterialIds]);
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, itemIndex) => itemIndex !== index);
@@ -294,6 +360,50 @@ const CreateFormulaPage = () => {
     delete nextErrors.ingredients;
     delete nextErrors[`item_${index}`];
     setValidationErrors(nextErrors);
+  };
+
+  const applyPaceRecommendation = (recommendation) => {
+    if (!recommendation?.itemId) {
+      return;
+    }
+
+    const targetGramAmount = String(roundComposerGram(recommendation.target));
+    let updatedIndex = -1;
+
+    setFormulaItems((currentItems) => {
+      const nextItems = currentItems.map((item, index) => {
+        if (item.item_id !== recommendation.itemId) {
+          return item;
+        }
+
+        updatedIndex = index;
+        return {
+          ...item,
+          gram_amount: targetGramAmount,
+        };
+      });
+
+      formulaItemsRef.current = nextItems;
+      return nextItems;
+    });
+
+    if (updatedIndex >= 0) {
+      activeRowIndexRef.current = updatedIndex;
+      setActiveRowIndex(updatedIndex);
+      setValidationErrors((current) => {
+        const nextErrors = { ...current };
+        delete nextErrors[`item_${updatedIndex}`];
+        return nextErrors;
+      });
+      toast.success(`${recommendation.title} applied`);
+    }
+  };
+
+  const handlePacePriorityModeChange = (nextMode) => {
+    const normalizedMode = normalizePacePriorityMode(nextMode);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set(PACE_PRIORITY_QUERY_KEY, normalizedMode);
+    setSearchParams(nextSearchParams, { replace: true, preventScrollReset: true });
   };
 
   const activeFormulaItems = getActiveFormulaItems(formulaItems);
@@ -497,6 +607,14 @@ const CreateFormulaPage = () => {
       lifeContribution: simulationRow?.lifeContribution ?? null,
     };
   }, [activeRowIndex, formulaItems, getItemGuidanceDetails, simulationRowsByItemId]);
+  const activeReferenceProfileDetails = useMemo(() => {
+    const activeItem = formulaItems[activeRowIndex];
+    if (!activeItem?.item_id) {
+      return null;
+    }
+
+    return getItemGuidanceDetails(activeItem);
+  }, [activeRowIndex, formulaItems, getItemGuidanceDetails]);
 
   const validateForm = () => {
     const errors = {};
@@ -555,6 +673,24 @@ const CreateFormulaPage = () => {
         status,
         notes: notes || null,
       }, itemsForSubmit);
+
+      if (briefContext && briefContext.formula_id !== createdFormula.id) {
+        await updateBrief(briefContext.id, {
+          ...briefContext,
+          formula_id: createdFormula.id,
+        });
+      }
+
+      if (projectContext?.id) {
+        try {
+          await updateBriefProject(projectContext.id, {
+            status: 'ready_for_formula',
+            current_stage: 'formula',
+          });
+        } catch (projectError) {
+          console.error('Failed to update project after formula creation:', projectError);
+        }
+      }
 
       toast.success('Formula created successfully');
       navigate(`/formulas/${createdFormula.id}`);
@@ -651,7 +787,7 @@ const CreateFormulaPage = () => {
     }
 
     if (!metadataConfirmed) {
-      navigate('/formulas');
+      navigate(briefContext ? `/briefs/${briefContext.id}` : '/formulas');
       return;
     }
 
@@ -691,11 +827,11 @@ const CreateFormulaPage = () => {
         <div className="mb-4 shrink-0">
           <Button
             variant="ghost"
-            onClick={() => navigate('/formulas')}
+            onClick={() => navigate(briefContext ? `/briefs/${briefContext.id}` : '/formulas')}
             className="gap-2 mb-4 h-9"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back to formulas
+            {briefContext ? 'Back to brief board' : 'Back to formulas'}
           </Button>
         </div>
 
@@ -773,6 +909,99 @@ const CreateFormulaPage = () => {
           </div>
         </div>
 
+        {briefContext || projectContext || seedMaterialIds.length ? (
+          <div className={`mb-4 space-y-4 ${composerSectionClass}`}>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Composition context
+                </div>
+                <h2 className="mt-2 text-lg font-semibold">
+                  {projectStageItems.length ? 'Compose from project stages' : seedMaterialIds.length ? 'Compose from shortlisted materials' : 'Compose from brief intent'}
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {projectStageItems.length
+                      ? 'This formula starts from project stage picks. Use the library below only to refine or rebalance the selected structure.'
+                      : seedMaterialIds.length
+                        ? 'This formula starts from shortlisted materials chosen in the library workspace. Use the composer below to refine the structure.'
+                        : 'This formula is linked to a brief. Keep the composition anchored to the story, audience, and performance target below.'}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {briefContext ? (
+                  <Button variant="outline" className="rounded-2xl" onClick={() => navigate(`/briefs/${briefContext.id}`)}>
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Open brief board
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {briefContext ? (
+                <div className="rounded-[22px] border bg-white/85 p-4">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="rounded-full">{briefContext.title}</Badge>
+                    {briefContext.status ? <Badge variant="outline" className="rounded-full capitalize">{briefContext.status}</Badge> : null}
+                  </div>
+                  {briefContext.mood_story ? (
+                    <p className="mt-3 text-sm text-muted-foreground">{briefContext.mood_story}</p>
+                  ) : null}
+                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
+                    {briefContext.audience_usage ? <div>Audience: {briefContext.audience_usage}</div> : null}
+                    {briefContext.performance_target ? <div>Performance: {briefContext.performance_target}</div> : null}
+                    {briefContext.budget_direction ? <div>Budget: {briefContext.budget_direction}</div> : null}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-[22px] border bg-white/85 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-sm font-semibold">Formula source</div>
+                  <Badge variant="outline" className="rounded-full">
+                    {projectStageItems.length ? 'Stage preload' : seedMaterialIds.length ? 'Shortlist preload' : 'Direct composition'}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {projectStageItems.length
+                    ? `${projectStageItems.length} stage-selected materials were loaded into the composer as a starting structure.`
+                    : seedMaterialIds.length
+                      ? `${seedMaterialIds.length} shortlisted materials were loaded into the composer as a starting structure.`
+                      : 'No preload source was selected. You can still compose directly from the raw material library.'}
+                </p>
+              </div>
+
+              {projectContext ? (
+                <div className="rounded-[22px] border bg-white/85 p-4 lg:col-span-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold">Project stage summary</div>
+                    <Badge variant="outline" className="rounded-full capitalize">
+                      {projectContext.current_stage || 'top'}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {projectStageItems.length
+                      ? `${projectStageItems.length} selected stage materials were loaded into the composer.`
+                      : 'No stage materials have been selected yet in the project board.'}
+                  </p>
+                  {projectStageItems.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {['top', 'middle', 'base'].map((stage) => {
+                        const stageCount = projectStageItems.filter((item) => item.stage === stage).length;
+                        return (
+                          <Badge key={stage} variant="secondary" className="rounded-full capitalize">
+                            {stage} {stageCount}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {loadingData ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
             <div className="space-y-4">
@@ -794,7 +1023,7 @@ const CreateFormulaPage = () => {
 
                     <TabsContent value="compose" className="mt-0">
                       <section className={composerSectionClass}>
-                        <h2 className="text-lg font-semibold">Formula ingredients</h2>
+                        <h2 className="text-lg font-semibold">Formula composition</h2>
 
                         <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                           <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
@@ -824,7 +1053,7 @@ const CreateFormulaPage = () => {
                           </Button>
                         </div>
 
-                        <div className="mt-4 max-h-[42rem] overflow-y-auto pr-1">
+                        <div className="mt-4 max-h-[25rem] overflow-y-auto pr-1">
                           <FormulaItemTableEditor
                             items={formulaItems}
                             rawMaterials={rawMaterials}
@@ -841,6 +1070,17 @@ const CreateFormulaPage = () => {
                           onOpenGuidanceEditor={handleOpenGuidanceEditor}
                           activeItemInsight={activeItemInsight}
                         />
+                        </div>
+
+                        <div className="mt-4">
+                          <FormulaComposerPacePanel
+                            items={itemsWithPercentages}
+                            rawMaterialsById={rawMaterialsById}
+                            referenceLinksMap={referenceLinksMap}
+                            onApplyRecommendation={applyPaceRecommendation}
+                            priorityMode={pacePriorityMode}
+                            onPriorityModeChange={handlePacePriorityModeChange}
+                          />
                         </div>
                       </section>
                     </TabsContent>
@@ -885,6 +1125,10 @@ const CreateFormulaPage = () => {
                               {notes || 'No notes yet'}
                             </div>
                           </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <FormulaReferenceProfileSidebar details={activeReferenceProfileDetails} />
                         </div>
                       </section>
                     </TabsContent>
@@ -944,7 +1188,7 @@ const CreateFormulaPage = () => {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
             <form id="create-formula-form" onSubmit={handleSubmit} className="space-y-4">
               <section className={composerSectionClass}>
-                <h2 className="text-lg font-semibold">Formula ingredients</h2>
+                        <h2 className="text-lg font-semibold">Formula composition</h2>
 
                 <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
                   <div className="rounded-full border border-[#e5dcc7] bg-[#fcf8ef] px-3 py-1.5 text-xs font-semibold text-[#443822]">
@@ -968,7 +1212,7 @@ const CreateFormulaPage = () => {
                 <div className="mt-4 rounded-[18px] border border-[#ddd3bf] bg-[#fcfaf4]">
                   <div className="flex flex-col gap-3 border-b border-[#e7decb] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
-                      Material library
+                          Material library
                     </div>
                     <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-xs font-semibold text-[#5e5239]">
                       Active row {activeRowIndex + 1}
@@ -984,12 +1228,12 @@ const CreateFormulaPage = () => {
                     />
                   </div>
 
-                  <div className="max-h-[20.5rem] overflow-y-auto px-3 py-3">
+                  <div className="max-h-[10.75rem] overflow-y-auto px-3 py-3">
                     {renderMaterialLibraryList()}
                   </div>
                 </div>
 
-                <div className="mt-4 max-h-[42rem] overflow-y-auto pr-1">
+                <div className="mt-4 max-h-[25rem] overflow-y-auto pr-1">
                   <FormulaItemTableEditor
                     items={formulaItems}
                     rawMaterials={rawMaterials}
@@ -1007,16 +1251,30 @@ const CreateFormulaPage = () => {
                     activeItemInsight={activeItemInsight}
                   />
                 </div>
+
+                <div className="mt-4">
+                  <FormulaComposerPacePanel
+                    items={itemsWithPercentages}
+                    rawMaterialsById={rawMaterialsById}
+                    referenceLinksMap={referenceLinksMap}
+                    onApplyRecommendation={applyPaceRecommendation}
+                    priorityMode={pacePriorityMode}
+                    onPriorityModeChange={handlePacePriorityModeChange}
+                  />
+                </div>
               </section>
             </form>
 
             <div className="h-fit lg:sticky lg:top-24 lg:self-start">
-              <FormulaOdourDisplayPanel
-                items={itemsWithPercentages}
-                rawMaterialsById={rawMaterialsById}
-                referenceLinksMap={referenceLinksMap}
-                isVisible
-              />
+              <div className="space-y-4">
+                <FormulaReferenceProfileSidebar details={activeReferenceProfileDetails} />
+                <FormulaOdourDisplayPanel
+                  items={itemsWithPercentages}
+                  rawMaterialsById={rawMaterialsById}
+                  referenceLinksMap={referenceLinksMap}
+                  isVisible
+                />
+              </div>
             </div>
           </div>
             )}
