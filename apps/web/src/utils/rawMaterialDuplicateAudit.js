@@ -1,5 +1,6 @@
 import {
   buildRawMaterialNameCandidates,
+  buildRawMaterialSemanticLookupKey,
   collapseRawMaterialLookupValue,
   normalizeRawMaterialCasValue,
   normalizeRawMaterialLookupValue,
@@ -7,6 +8,12 @@ import {
 } from '@/services/rawMaterialsService.js';
 
 const INVALID_CAS_VALUES = new Set(['', 'mixture', 'mix', 'na', 'n/a', 'unknown', 'odiferousmixture']);
+
+const uniqueNonEmpty = (values) => [...new Set(
+  (values || [])
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+)];
 
 const scoreGuidance = (material) => (
   (Number(material.reference_impact) > 0 ? 1 : 0)
@@ -33,7 +40,7 @@ const buildCollapsedNameGroups = (materials) => {
   const groups = new Map();
 
   for (const material of materials) {
-    const key = collapseRawMaterialLookupValue(material.name);
+    const key = buildRawMaterialSemanticLookupKey(material.name) || collapseRawMaterialLookupValue(material.name);
     if (!key) {
       continue;
     }
@@ -58,7 +65,7 @@ const buildCollapsedNameGroups = (materials) => {
         master,
         duplicates: sortedItems.filter((item) => item.id !== master.id),
         materials: sortedItems,
-        reason: 'Nama hanya berbeda spasi, tanda baca, atau penulisan kecil/besar.',
+        reason: 'Nama hanya berbeda format penulisan, tanda baca, atau notasi kimia yang setara.',
       };
     })
     .sort((left, right) => left.label.localeCompare(right.label));
@@ -67,7 +74,7 @@ const buildCollapsedNameGroups = (materials) => {
 const buildSlashAliasCandidates = (materials) => {
   const primaryNameMap = new Map();
   for (const material of materials) {
-    const primaryKey = collapseRawMaterialLookupValue(material.name);
+    const primaryKey = buildRawMaterialSemanticLookupKey(material.name) || collapseRawMaterialLookupValue(material.name);
     if (!primaryKey) {
       continue;
     }
@@ -91,8 +98,9 @@ const buildSlashAliasCandidates = (materials) => {
 
     const sourceIsDilution = rawMaterialHasDilutionMarker(material.name);
     for (const alias of aliases) {
-      const aliasKey = collapseRawMaterialLookupValue(alias);
-      if (!aliasKey || aliasKey === collapseRawMaterialLookupValue(material.name)) {
+      const aliasKey = buildRawMaterialSemanticLookupKey(alias) || collapseRawMaterialLookupValue(alias);
+      const materialPrimaryKey = buildRawMaterialSemanticLookupKey(material.name) || collapseRawMaterialLookupValue(material.name);
+      if (!aliasKey || aliasKey === materialPrimaryKey) {
         continue;
       }
 
@@ -106,6 +114,10 @@ const buildSlashAliasCandidates = (materials) => {
       }
 
       const target = pickPreferredMaster(targets);
+      const sourceAliases = buildRawMaterialNameCandidates({
+        name: material.name,
+        notes: material.notes,
+      });
       const id = `alias:${material.id}:${target.id}:${aliasKey}`;
       candidateMap.set(id, {
         id,
@@ -113,6 +125,7 @@ const buildSlashAliasCandidates = (materials) => {
         alias,
         source: material,
         target,
+        sourceAliases,
         reason: 'Nama mengandung alias atau sinonim yang sudah ada sebagai raw material terpisah.',
       });
     }
@@ -140,7 +153,7 @@ const buildCasGroups = (materials) => {
     .filter(([, items]) => items.length > 1)
     .map(([casKey, items]) => {
       const sortedItems = [...items].sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')));
-      const collapsedNames = new Set(sortedItems.map((item) => collapseRawMaterialLookupValue(item.name)));
+      const collapsedNames = new Set(sortedItems.map((item) => buildRawMaterialSemanticLookupKey(item.name) || collapseRawMaterialLookupValue(item.name)));
       const dilutionKinds = new Set(sortedItems.map((item) => rawMaterialHasDilutionMarker(item.name)));
 
       let classification = 'keep-separate';
@@ -174,6 +187,46 @@ const buildCasGroups = (materials) => {
     .sort((left, right) => left.casNumber.localeCompare(right.casNumber));
 };
 
+const buildPracticalMergeCandidates = ({ collapsedNameGroups, slashAliasCandidates }) => {
+  const candidates = [
+    ...collapsedNameGroups.flatMap((group) => group.duplicates.map((duplicate) => ({
+      id: `practical:${group.master.id}:${duplicate.id}`,
+      type: 'collapsed-group',
+      confidence: 'high',
+      master: group.master,
+      duplicate,
+      reason: group.reason,
+      actionLabel: 'Merge now',
+      synonymNames: uniqueNonEmpty(group.materials.map((material) => material.name)),
+      note: 'Aman untuk merge karena nama hanya beda format penulisan.',
+    }))),
+    ...slashAliasCandidates.map((candidate) => ({
+      id: `practical:${candidate.target.id}:${candidate.source.id}`,
+      type: 'alias-pair',
+      confidence: 'medium',
+      master: candidate.target,
+      duplicate: candidate.source,
+      reason: candidate.reason,
+      actionLabel: 'Review then merge',
+      synonymNames: uniqueNonEmpty([
+        candidate.target.name,
+        candidate.source.name,
+        candidate.alias,
+        ...(candidate.sourceAliases || []),
+      ]),
+      note: `Sinonim terdeteksi lewat alias "${candidate.alias}".`,
+    })),
+  ];
+
+  return candidates.sort((left, right) => {
+    if (left.confidence !== right.confidence) {
+      return left.confidence === 'high' ? -1 : 1;
+    }
+
+    return String(left.master?.name || '').localeCompare(String(right.master?.name || ''));
+  });
+};
+
 export const buildRawMaterialDuplicateAudit = (materials) => {
   const rows = Array.isArray(materials) ? materials.filter(Boolean) : [];
   const collapsedNameGroups = buildCollapsedNameGroups(rows);
@@ -181,6 +234,10 @@ export const buildRawMaterialDuplicateAudit = (materials) => {
   const casGroups = buildCasGroups(rows);
   const reviewGroups = casGroups.filter((group) => group.classification === 'worth-review');
   const keepSeparateGroups = casGroups.filter((group) => group.classification === 'keep-separate');
+  const practicalMergeCandidates = buildPracticalMergeCandidates({
+    collapsedNameGroups,
+    slashAliasCandidates,
+  });
 
   return {
     summary: {
@@ -189,7 +246,9 @@ export const buildRawMaterialDuplicateAudit = (materials) => {
       slashAliasCandidateCount: slashAliasCandidates.length,
       reviewGroupCount: reviewGroups.length,
       keepSeparateGroupCount: keepSeparateGroups.length,
+      practicalMergeCandidateCount: practicalMergeCandidates.length,
     },
+    practicalMergeCandidates,
     collapsedNameGroups,
     slashAliasCandidates,
     reviewGroups,

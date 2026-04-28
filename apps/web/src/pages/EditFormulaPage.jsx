@@ -32,13 +32,13 @@ import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { validateGramAmount } from '@/utils/validation.js';
-import { formatGramAmount } from '@/utils/formatting.js';
+import { formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { buildStageTargetProfile, getStageLabel, getWizardQuestionsForStage } from '@/utils/briefProjectWizard.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
-import { rankMaterialRecommendations } from '@/utils/materialCompositionProfile.js';
+import { buildStageDecisionAssist, explainMaterialForStage, rankMaterialRecommendations } from '@/utils/materialCompositionProfile.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
@@ -95,6 +95,7 @@ const getFirstIncompleteQuestionIndex = (questions, answers = {}) => {
   const firstIncompleteIndex = questions.findIndex((question) => !answers?.[question.id]);
   return firstIncompleteIndex >= 0 ? firstIncompleteIndex : Math.max(questions.length - 1, 0);
 };
+const formatDebugPercent = (value) => `${Math.round(Number(value || 0))}%`;
 
 const EditFormulaPage = () => {
   const { id } = useParams();
@@ -599,7 +600,7 @@ const EditFormulaPage = () => {
   };
 
   const persistSeededFormulaItems = async (stageItems) => {
-    const seededComposerItems = buildComposerItemsFromProjectStageItems(stageItems, rawMaterials);
+    const seededComposerItems = buildComposerItemsFromProjectStageItems(stageItems, rawMaterials, referenceLinksMap);
     const activeSeededItems = getActiveFormulaItems(seededComposerItems);
     const seededTotalAmount = calculateTotalAmount(activeSeededItems);
     const seededItemsWithPercentages = seededTotalAmount > 0
@@ -641,7 +642,7 @@ const EditFormulaPage = () => {
     setLinkedProject(nextProject);
     setLinkedProjectStageItems(nextProjectStageItems);
     setWizardStageItemsMap(nextStageMap);
-    setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials)));
+      setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials, referenceLinksMap)));
     return nextProjectStageItems;
   };
 
@@ -686,6 +687,7 @@ const EditFormulaPage = () => {
         stage: activeStage,
         answers: stageAnswers,
         briefText: wizardBriefText,
+        targetProfile,
         limit: 8,
       });
 
@@ -820,24 +822,52 @@ const EditFormulaPage = () => {
     };
   }, [selectedRawMaterialIds, rawMaterialsById]);
 
+  const activeTargetProfile = useMemo(
+    () => buildStageTargetProfile(activeStage, draftAnswers[activeStage] || {}, linkedBrief),
+    [activeStage, draftAnswers, linkedBrief]
+  );
+  const wizardBriefText = useMemo(
+    () => [linkedBrief?.mood_story, linkedBrief?.audience_usage, linkedBrief?.performance_target, linkedBrief?.budget_direction].filter(Boolean).join(' '),
+    [linkedBrief]
+  );
+  const currentWizardStageRows = useMemo(() => wizardStageItemsMap.get(activeStage) || [], [activeStage, wizardStageItemsMap]);
+  const wizardStageExplainMap = useMemo(() => new Map(
+    currentWizardStageRows.map((item) => {
+      const material = item.expand?.raw_material_id || null;
+      if (!material?.id) {
+        return [item.raw_material_id, null];
+      }
+
+      const explanation = explainMaterialForStage({
+        material,
+        referenceLink: referenceLinksMap.get(material.id) || null,
+        stage: activeStage,
+        answers: draftAnswers[activeStage] || {},
+        briefText: wizardBriefText,
+        targetProfile: activeTargetProfile,
+      });
+
+      return [item.raw_material_id, explanation];
+    }),
+  ), [activeStage, activeTargetProfile, currentWizardStageRows, draftAnswers, referenceLinksMap, wizardBriefText]);
+  const wizardCompareCandidates = useMemo(
+    () => [...currentWizardStageRows].sort((left, right) => Number(right.fit_score || 0) - Number(left.fit_score || 0)).slice(0, 8),
+    [currentWizardStageRows]
+  );
+  const wizardDecisionAssist = useMemo(() => buildStageDecisionAssist({
+    items: wizardCompareCandidates,
+    explanationMap: wizardStageExplainMap,
+  }), [wizardCompareCandidates, wizardStageExplainMap]);
   const workbookSimulation = useMemo(() => buildWorkbookSimulation({
     items: itemsWithPercentages,
     rawMaterialsById,
     referenceLinksMap,
   }), [itemsWithPercentages, rawMaterialsById, referenceLinksMap]);
-  const wizardBriefText = useMemo(
-    () => [linkedBrief?.mood_story, linkedBrief?.audience_usage, linkedBrief?.performance_target, linkedBrief?.budget_direction].filter(Boolean).join(' '),
-    [linkedBrief]
-  );
   const currentQuestions = useMemo(
     () => getWizardQuestionsForStage(activeStage, draftAnswers[activeStage] || {}),
     [activeStage, draftAnswers]
   );
   const currentQuestion = currentQuestions[wizardQuestionIndex] || currentQuestions[currentQuestions.length - 1] || null;
-  const activeTargetProfile = useMemo(
-    () => buildStageTargetProfile(activeStage, draftAnswers[activeStage] || {}, linkedBrief),
-    [activeStage, draftAnswers, linkedBrief]
-  );
 
   const simulationRowsByItemId = useMemo(
     () => new Map(workbookSimulation.rows.map((row) => [row.item_id, row])),
@@ -1053,13 +1083,93 @@ const EditFormulaPage = () => {
                     </div>
                   ) : null}
 
-                  <div className="rounded-2xl border bg-background/70 p-4">
-                    <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current target</div>
-                    <div className="mt-2 text-sm font-semibold">{activeTargetProfile.summary}</div>
-                    <div className="mt-2 text-xs text-muted-foreground">{activeTargetProfile.stage_goal}</div>
+                    <div className="rounded-2xl border bg-background/70 p-4">
+                      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current target</div>
+                      <div className="mt-2 text-sm font-semibold">{activeTargetProfile.summary}</div>
+                      <div className="mt-2 text-xs text-muted-foreground">{activeTargetProfile.stage_goal}</div>
+                    </div>
+
+                    {wizardCompareCandidates.length ? (
+                      <div className="rounded-2xl border bg-background/70 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Compare candidates</div>
+                            <div className="mt-1 text-sm text-muted-foreground">
+                              Kandidat stage ini bisa dibandingkan langsung sebelum disalurkan ke composer formula.
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="rounded-full">
+                            {wizardCompareCandidates.length} compared
+                          </Badge>
+                        </div>
+
+                        <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                          {wizardCompareCandidates.map((item) => {
+                            const explanation = wizardStageExplainMap.get(item.raw_material_id);
+                            const breakdown = explanation?.score_breakdown || null;
+                            return (
+                              <div key={`wizard-compare-${item.id}`} className="rounded-xl border bg-background/80 p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
+                                    <div className="mt-1 text-xs text-muted-foreground">
+                                      {item.recommendation_reason || 'Generated from stage fit'}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm font-semibold">{Number(item.fit_score || 0).toFixed(2)}</div>
+                                    <div className="text-[11px] text-muted-foreground">fit score</div>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <Badge variant={item.selection_state === 'rejected' ? 'outline' : 'secondary'} className="rounded-full text-[10px] capitalize">
+                                    {item.selection_state === 'manual' ? 'manual' : item.selection_state}
+                                  </Badge>
+                                  {item.primary_function ? (
+                                    <Badge variant="outline" className="rounded-full text-[10px] capitalize">
+                                      {formatStatus(item.primary_function)}
+                                    </Badge>
+                                  ) : null}
+                                  {item.secondary_function ? (
+                                    <Badge variant="outline" className="rounded-full text-[10px] capitalize">
+                                      {formatStatus(item.secondary_function)}
+                                    </Badge>
+                                  ) : null}
+                                </div>
+
+                                {breakdown ? (
+                                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                    <div className="rounded-lg border bg-background/60 px-3 py-2 text-[11px] text-muted-foreground">
+                                      Stage {Number(breakdown.stage_natural_score || 0).toFixed(1)} • Class {formatDebugPercent(breakdown.class_fit_score)}
+                                    </div>
+                                    <div className="rounded-lg border bg-background/60 px-3 py-2 text-[11px] text-muted-foreground">
+                                      Function {formatDebugPercent(breakdown.function_fit_score)} • Life {formatDebugPercent(breakdown.life_fit_score)}
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {wizardDecisionAssist.suggestions.length ? (
+                          <div className="mt-4 rounded-xl border bg-background/80 p-4">
+                            <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Decision assist</div>
+                            <div className="mt-3 space-y-3">
+                              {wizardDecisionAssist.suggestions.map((suggestion, index) => (
+                                <div key={`${suggestion.type}-${index}`} className="rounded-lg border bg-background px-3 py-3">
+                                  <div className="text-sm font-semibold">{suggestion.title}</div>
+                                  <div className="mt-1 text-xs text-muted-foreground">{suggestion.message}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ) : (
+                ) : (
                 <div className="rounded-2xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
                   Wizard untuk stage ini belum punya pertanyaan.
                 </div>

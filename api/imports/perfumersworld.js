@@ -110,8 +110,13 @@ const importPerfumersWorldByUrl = async (url) => {
 
 	return {
 		source: 'perfumersworld',
+		source_kind: 'perfumersworld',
+		source_url: parsedUrl.toString(),
 		url: parsedUrl.toString(),
+		extracted_at: new Date().toISOString(),
+		review_status: 'approved_pw',
 		name: title || null,
+		reference_code: sku || null,
 		workbook_code: sku || null,
 		cas_number: casNumber || null,
 		ifra_limit: null,

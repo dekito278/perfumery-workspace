@@ -38,6 +38,8 @@ const hasMeaningfulNumber = (value) => {
   return Number.isFinite(numericValue) && numericValue > 0;
 };
 
+const normalizeWorkbookCode = (value) => String(value || '').trim().toUpperCase();
+
 const shouldOverrideNumericGuidance = ({
   currentValue,
   nextValue,
@@ -89,7 +91,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
   guidanceStatus,
   onSaved,
 }) => {
-  const { updateMaterial, loading } = useRawMaterials();
+  const { fetchMaterials, updateMaterial, loading } = useRawMaterials();
   const [formData, setFormData] = useState({
     workbook_code: '',
     cas_number: '',
@@ -109,6 +111,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
   const [workbookCodeNotice, setWorkbookCodeNotice] = useState('');
   const [fieldLocks, setFieldLocks] = useState(Object.fromEntries(REFERENCE_FIELD_KEYS.map((key) => [key, true])));
   const [sourceSnapshots, setSourceSnapshots] = useState({});
+  const [pendingWorkbookBulkImport, setPendingWorkbookBulkImport] = useState(null);
 
   useEffect(() => {
     if (!material) {
@@ -144,6 +147,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       reference_use_level_max_percent: material.guidance_reference_profile?.field_locks?.reference_use_level_max_percent ?? true,
     });
     setSourceSnapshots(material.guidance_reference_profile?.source_snapshots || {});
+    setPendingWorkbookBulkImport(null);
   }, [material]);
 
   const toggleFieldLock = (fieldKey, checked) => {
@@ -158,6 +162,60 @@ const RawMaterialGuidanceQuickEditDialog = ({
       ...current,
       [sourceKey]: payload,
     }));
+  };
+
+  const buildBulkWorkbookPayload = (targetMaterial, importedPayload) => ({
+    workbook_code: targetMaterial.workbook_code || importedPayload.workbook_code || null,
+    cas_number: importedPayload.cas_number || targetMaterial.cas_number || null,
+    ifra_limit: targetMaterial.ifra_limit ?? null,
+    reference_abc_primary_family: importedPayload.reference_abc_primary_family || targetMaterial.reference_abc_primary_family || null,
+    reference_impact: importedPayload.reference_impact ?? targetMaterial.reference_impact ?? null,
+    reference_life_hours: importedPayload.reference_life_hours ?? targetMaterial.reference_life_hours ?? null,
+    reference_use_level_typical_percent: importedPayload.reference_use_level_typical_percent ?? targetMaterial.reference_use_level_typical_percent ?? null,
+    reference_use_level_max_percent: importedPayload.reference_use_level_max_percent ?? targetMaterial.reference_use_level_max_percent ?? null,
+    description: importedPayload.description || targetMaterial.description || null,
+    ...createReferenceMetadataPatch({
+      sourceSnapshots: {
+        ...(targetMaterial.guidance_reference_profile?.source_snapshots || {}),
+        perfumersworld: importedPayload,
+      },
+      fieldLocks: {
+        ...(targetMaterial.guidance_reference_profile?.field_locks || {}),
+        workbook_code: true,
+        cas_number: true,
+        reference_abc_primary_family: true,
+        reference_impact: true,
+        reference_life_hours: true,
+        reference_use_level_typical_percent: true,
+        reference_use_level_max_percent: true,
+      },
+    }),
+  });
+
+  const applyWorkbookImportToMatchingMaterials = async (importedPayload) => {
+    const normalizedWorkbookCode = normalizeWorkbookCode(importedPayload?.workbook_code);
+    if (!normalizedWorkbookCode) {
+      return { syncedCount: 0, workbookCode: null };
+    }
+
+    const materials = await fetchMaterials();
+    const matchingMaterials = (materials || []).filter((entry) => (
+      entry?.id
+      && normalizeWorkbookCode(entry.workbook_code) === normalizedWorkbookCode
+    ));
+
+    for (const targetMaterial of matchingMaterials) {
+      if (!targetMaterial?.id || targetMaterial.id === material?.id) {
+        continue;
+      }
+
+      await updateMaterial(targetMaterial.id, buildBulkWorkbookPayload(targetMaterial, importedPayload));
+    }
+
+    return {
+      syncedCount: Math.max(0, matchingMaterials.length - 1),
+      workbookCode: normalizedWorkbookCode,
+    };
   };
 
   const warningLines = useMemo(() => {
@@ -202,8 +260,15 @@ const RawMaterialGuidanceQuickEditDialog = ({
       };
 
       const updatedMaterial = await updateMaterial(material.id, nextPayload);
+      const workbookImportResult = pendingWorkbookBulkImport
+        ? await applyWorkbookImportToMatchingMaterials(pendingWorkbookBulkImport)
+        : { syncedCount: 0, workbookCode: null };
 
-      toast.success(`Workbook guidance for ${material.name} updated`);
+      toast.success(
+        workbookImportResult.syncedCount > 0
+          ? `Workbook guidance for ${material.name} updated. ${workbookImportResult.syncedCount} matching material(s) on workbook ${workbookImportResult.workbookCode} also synced.`
+          : `Workbook guidance for ${material.name} updated`
+      );
       onOpenChange(false);
       onSaved?.(updatedMaterial);
     } catch (error) {
@@ -231,7 +296,14 @@ const RawMaterialGuidanceQuickEditDialog = ({
             workbook_code: material.workbook_code || '',
           }));
           setWorkbookCodeNotice(error.message || 'Workbook code bentrok dengan raw material lain, jadi field ini tidak ikut disimpan.');
-          toast.success(`Workbook guidance for ${material.name} updated. Workbook code tidak diubah karena bentrok.`);
+            const workbookImportResult = pendingWorkbookBulkImport
+              ? await applyWorkbookImportToMatchingMaterials(pendingWorkbookBulkImport)
+              : { syncedCount: 0, workbookCode: null };
+            toast.success(
+              workbookImportResult.syncedCount > 0
+                ? `Workbook guidance for ${material.name} updated. Workbook code tidak diubah karena bentrok, tetapi ${workbookImportResult.syncedCount} matching material(s) on workbook ${workbookImportResult.workbookCode} also synced.`
+                : `Workbook guidance for ${material.name} updated. Workbook code tidak diubah karena bentrok.`
+            );
           onSaved?.(updatedMaterial);
           return;
         } catch (retryError) {
@@ -284,7 +356,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
-      appendSourceSnapshot('perfumersworld', imported);
+      appendSourceSnapshot('scentree', imported);
       setInferenceLines([
         imported.classification_path?.length ? `ScenTree path: ${imported.classification_path.join(' > ')}` : 'ScenTree path tidak tersedia.',
         imported.volatility ? `Volatility: ${imported.volatility}` : 'Volatility tidak tersedia di ScenTree.',
@@ -340,7 +412,8 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
-      appendSourceSnapshot('scentree', imported);
+      appendSourceSnapshot('perfumersworld', imported);
+      setPendingWorkbookBulkImport(imported.workbook_code ? imported : null);
       setInferenceLines([
         imported.workbook_code ? `Workbook code: ${imported.workbook_code}` : 'Workbook code tidak tersedia di PerfumersWorld.',
         imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di PerfumersWorld.',
@@ -348,6 +421,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
         imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Typical use level: ${imported.reference_use_level_typical_percent}%` : 'Typical use level tidak tersedia di PerfumersWorld.',
         imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Max use level: ${imported.reference_use_level_max_percent}%` : 'Max use level tidak tersedia di PerfumersWorld.',
         imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA numeric limit tidak tersedia langsung di halaman PerfumersWorld.',
+        imported.workbook_code ? `Saat disimpan, workbook ${imported.workbook_code} akan disinkronkan ke semua raw material dengan workbook code yang sama.` : 'Workbook code belum terbaca, jadi sinkronisasi massal tidak akan dijalankan.',
       ]);
       toast.success('PerfumersWorld URL imported');
     } catch (error) {

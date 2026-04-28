@@ -4,7 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, Trash2, Link as LinkIcon, Home } from 'lucide-react';
+import { Pencil, Trash2, Link as LinkIcon, Home, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
@@ -19,8 +19,36 @@ import ManualReferenceMatchModal from '@/components/ManualReferenceMatchModal.js
 import { formatPercentage, formatNullable, formatStatus, formatQuantity } from '@/utils/formatting.js';
 import { formatPricePerUnit, formatPrice } from '@/utils/pricingUtils.js';
 import { getRawMaterialById, getRawMaterialDeletionDependencies } from '@/services/rawMaterialsService.js';
-import { getReferenceProfileByRawMaterialId } from '@/services/materialReferenceService.js';
+import {
+  approveReferenceCandidateForRawMaterial,
+  getReferenceProfileByRawMaterialId,
+  markReferenceConflictForRawMaterial,
+  resetReferenceCandidateToProvisional,
+} from '@/services/materialReferenceService.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
+
+const REFERENCE_STATUS_LABELS = {
+  approved_pw: 'Perfumer\'s World',
+  approved_external: 'External approved',
+  provisional_external: 'Needs review',
+  conflict_review: 'Conflict review',
+  fallback_manual: 'Manual fallback',
+};
+
+const getReferenceStatusBadgeClassName = (status) => {
+  switch (status) {
+    case 'approved_pw':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-900';
+    case 'approved_external':
+      return 'border-sky-200 bg-sky-50 text-sky-900';
+    case 'provisional_external':
+      return 'border-amber-200 bg-amber-50 text-amber-900';
+    case 'conflict_review':
+      return 'border-rose-200 bg-rose-50 text-rose-900';
+    default:
+      return 'border-border bg-background text-foreground';
+  }
+};
 
 const renderDeleteDependencySummary = (dependencies, loading) => {
   if (loading) {
@@ -139,6 +167,40 @@ const RawMaterialDetailPage = () => {
     }
   };
 
+  const refreshReferenceContext = async () => {
+    await Promise.all([loadMaterial(), loadReferenceProfile()]);
+  };
+
+  const handleApproveReference = async () => {
+    try {
+      await approveReferenceCandidateForRawMaterial(id);
+      toast.success('Reference candidate approved');
+      await refreshReferenceContext();
+    } catch (error) {
+      toast.error(error.message || 'Failed to approve reference candidate');
+    }
+  };
+
+  const handleMarkConflict = async () => {
+    try {
+      await markReferenceConflictForRawMaterial(id);
+      toast.success('Reference marked for conflict review');
+      await refreshReferenceContext();
+    } catch (error) {
+      toast.error(error.message || 'Failed to mark conflict');
+    }
+  };
+
+  const handleResetToProvisional = async () => {
+    try {
+      await resetReferenceCandidateToProvisional(id);
+      toast.success('Reference returned to provisional review');
+      await refreshReferenceContext();
+    } catch (error) {
+      toast.error(error.message || 'Failed to reset review state');
+    }
+  };
+
   const handleBack = () => {
     if (location.state?.from) {
       navigate(location.state.from, { state: { restoreScroll: true } });
@@ -164,6 +226,7 @@ const RawMaterialDetailPage = () => {
   const scentFamily = material.scent_family || deriveScentFamilyFromCategory(material.category, '');
   const dilutionSolventName = material.expand?.dilution_solvent_id?.name || null;
   const referenceProfile = referenceLink?.reference_profile || null;
+  const referenceStatus = referenceProfile?.review_status || 'fallback_manual';
   return (
     <>
       <Helmet>
@@ -192,6 +255,12 @@ const RawMaterialDetailPage = () => {
                 <div className="detail-page-meta-chip">
                   <span className="detail-page-meta-label">Reference</span>
                   <span className="detail-page-meta-value">{referenceProfile.reference_code}</span>
+                </div>
+              ) : null}
+              {referenceProfile ? (
+                <div className="detail-page-meta-chip">
+                  <span className="detail-page-meta-label">Status</span>
+                  <span className="detail-page-meta-value">{REFERENCE_STATUS_LABELS[referenceStatus] || 'Reference'}</span>
                 </div>
               ) : null}
               <div className="detail-page-meta-chip">
@@ -296,11 +365,45 @@ const RawMaterialDetailPage = () => {
               </div>
             ) : referenceProfile ? (
               <div className="space-y-5">
-                <div className="flex justify-end">
-                  <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="gap-2">
-                    <LinkIcon className="w-4 h-4" />
-                    Change linked profile
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className={getReferenceStatusBadgeClassName(referenceStatus)}>
+                      {REFERENCE_STATUS_LABELS[referenceStatus] || 'Reference'}
+                    </Badge>
+                    {referenceProfile.confidence_score !== null ? (
+                      <Badge variant="outline">
+                        Confidence {referenceProfile.confidence_score}
+                      </Badge>
+                    ) : null}
+                    {referenceProfile.provenance_summary?.primary_source_kind ? (
+                      <Badge variant="outline" className="capitalize">
+                        Winner {referenceProfile.provenance_summary.primary_source_kind}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {referenceStatus === 'provisional_external' ? (
+                      <Button variant="outline" size="sm" onClick={handleApproveReference} className="gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Approve external
+                      </Button>
+                    ) : null}
+                    {referenceStatus !== 'conflict_review' ? (
+                      <Button variant="outline" size="sm" onClick={handleMarkConflict} className="gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        Mark conflict
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={handleResetToProvisional} className="gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Return to review
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => setMatchModalOpen(true)} className="gap-2">
+                      <LinkIcon className="w-4 h-4" />
+                      Change linked profile
+                    </Button>
+                  </div>
                 </div>
                 <DetailFieldGroup columns={4}>
                   <DetailField label="Reference code" value={referenceProfile.reference_code} />
@@ -322,6 +425,52 @@ const RawMaterialDetailPage = () => {
                   <DetailField label="Catalog unit" value={formatNullable(referenceProfile.catalog_unit)} />
                   <DetailField label="Catalog price" value={referenceProfile.catalog_price !== null ? formatPrice(referenceProfile.catalog_price) : 'N/A'} />
                 </DetailFieldGroup>
+
+                <div className="rounded-2xl border bg-muted/20 p-4">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold">Reference provenance</div>
+                    {referenceProfile.provenance_summary?.conflict_fields?.length ? (
+                      <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-900">
+                        Conflict on {referenceProfile.provenance_summary.conflict_fields.join(', ')}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <DetailFieldGroup columns={4}>
+                    <DetailField label="Primary source" value={formatNullable(referenceProfile.provenance_summary?.primary_source_kind)} />
+                    <DetailField label="Total sources" value={formatNullable(referenceProfile.provenance_summary?.total_sources)} />
+                    <DetailField label="Pending review" value={formatNullable(referenceProfile.provenance_summary?.pending_review_sources)} />
+                    <DetailField label="Approved external" value={formatNullable(referenceProfile.provenance_summary?.approved_external_sources)} />
+                  </DetailFieldGroup>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {Object.entries(referenceProfile.source_snapshots || {}).map(([snapshotKey, snapshot]) => (
+                      <div key={snapshotKey} className="rounded-xl border bg-background px-3 py-3 text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium capitalize">{snapshot.source_kind || snapshotKey}</span>
+                          <Badge variant="outline" className={getReferenceStatusBadgeClassName(snapshot.review_status)}>
+                            {REFERENCE_STATUS_LABELS[snapshot.review_status] || snapshot.review_status || 'Snapshot'}
+                          </Badge>
+                        </div>
+                        <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          <div>{snapshot.reference_code || snapshot.workbook_code ? `Reference ${snapshot.reference_code || snapshot.workbook_code}` : 'No reference code'}</div>
+                          <div>{snapshot.cas_number ? `CAS ${snapshot.cas_number}` : 'No CAS'}</div>
+                          <div>{snapshot.reference_abc_primary_family ? `Family ${snapshot.reference_abc_primary_family}` : 'No family mapping'}</div>
+                          <div>
+                            {snapshot.reference_impact !== null && snapshot.reference_impact !== undefined
+                              ? `Impact ${snapshot.reference_impact}`
+                              : 'No impact'}
+                            {' | '}
+                            {snapshot.reference_life_hours !== null && snapshot.reference_life_hours !== undefined
+                              ? `Life ${snapshot.reference_life_hours}h`
+                              : 'No life'}
+                          </div>
+                          {snapshot.source_url ? (
+                            <div className="break-all">{snapshot.source_url}</div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {referenceProfile.odour_facets?.length ? (
                   <div className="space-y-3">

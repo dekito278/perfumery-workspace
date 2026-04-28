@@ -4,8 +4,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Home, Plus, Package, AlertTriangle, CheckCircle2, Layers3, Droplets, Wand2, Shapes, FolderTree, Link2, Trash2, ArrowRight, ClipboardList } from 'lucide-react';
+import { RefreshCw, Home, Plus, Package, AlertTriangle, CheckCircle2, Layers3, Droplets, Wand2, Shapes, FolderTree, Link2, Trash2, ArrowRight, ClipboardList, WandSparkles, ScanSearch, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
@@ -19,21 +21,51 @@ import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
 import AddRawMaterialModal from '@/components/AddRawMaterialModal.jsx';
+import BulkWorkbookGuidanceImportDialog from '@/components/BulkWorkbookGuidanceImportDialog.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCategoriesModal.jsx';
 import { formatPricePerUnit } from '@/utils/pricingUtils.js';
-import { getRawMaterialDeletionDependencies } from '@/services/rawMaterialsService.js';
+import { getRawMaterialDeletionDependencies, getRawMaterialOptions, mergeRawMaterialIntoMaster } from '@/services/rawMaterialsService.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
+import { buildRawMaterialDuplicateAudit } from '@/utils/rawMaterialDuplicateAudit.js';
 
 const hasReferenceValue = (value) => value !== null && value !== undefined;
 const shortlistRoles = ['candidate', 'hero', 'support', 'bridge', 'base'];
+const MATERIALS_DESK_MODES = [
+  { id: 'coverage', label: 'Coverage' },
+  { id: 'gaps', label: 'Guidance gaps' },
+  { id: 'queue', label: 'Merge queue' },
+];
+
+const REFERENCE_STATUS_LABELS = {
+  approved_pw: 'PW',
+  approved_external: 'External approved',
+  provisional_external: 'Provisional',
+  conflict_review: 'Conflict',
+  fallback_manual: 'Manual fallback',
+};
+
+const getReferenceStatusBadgeClassName = (status) => {
+  switch (status) {
+    case 'approved_pw':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-900';
+    case 'approved_external':
+      return 'border-sky-200 bg-sky-50 text-sky-900';
+    case 'provisional_external':
+      return 'border-amber-200 bg-amber-50 text-amber-900';
+    case 'conflict_review':
+      return 'border-rose-200 bg-rose-50 text-rose-900';
+    default:
+      return 'border-border bg-background text-foreground';
+  }
+};
 
 const renderDeleteDependencySummary = ({ dependencies, loading, selectedMaterial, selectedMaterials }) => {
   if (!selectedMaterial) {
@@ -74,6 +106,16 @@ const renderDeleteDependencySummary = ({ dependencies, loading, selectedMaterial
   );
 };
 
+const renderSynonymList = (names) => (
+  <div className="flex flex-wrap gap-2">
+    {(names || []).map((name) => (
+      <Badge key={name} variant="secondary" className="font-normal">
+        {name}
+      </Badge>
+    ))}
+  </div>
+);
+
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,6 +126,7 @@ const RawMaterialsPage = () => {
   const [materials, setMaterials] = useState([]);
   const [remapMaterials, setRemapMaterials] = useState([]);
   const [summaryMaterials, setSummaryMaterials] = useState([]);
+  const [auditMaterials, setAuditMaterials] = useState([]);
   const [referenceStatusMap, setReferenceStatusMap] = useState(new Map());
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +145,14 @@ const RawMaterialsPage = () => {
   const [remapModalOpen, setRemapModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
+  const [bulkGuidanceImportOpen, setBulkGuidanceImportOpen] = useState(false);
+  const [auditMergeIntent, setAuditMergeIntent] = useState(null);
+  const [auditMergeSubmitting, setAuditMergeSubmitting] = useState(false);
+  const [bulkAuditMergeIntentOpen, setBulkAuditMergeIntentOpen] = useState(false);
+  const [bulkAuditMergeSubmitting, setBulkAuditMergeSubmitting] = useState(false);
+  const [expandedPracticalMergeIds, setExpandedPracticalMergeIds] = useState([]);
+  const [materialsDeskMode, setMaterialsDeskMode] = useState('coverage');
+  const [materialsDeskOpen, setMaterialsDeskOpen] = useState(true);
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -157,16 +208,19 @@ const RawMaterialsPage = () => {
   const loadSummary = async () => {
     setSummaryLoading(true);
     try {
-      const [data, referenceSummary] = await Promise.all([
+      const [data, referenceSummary, auditRows] = await Promise.all([
         fetchMaterialsSummary(),
         fetchMaterialsReferenceSummary(),
+        getRawMaterialOptions({ forceRefresh: true }),
       ]);
       setSummaryMaterials(data);
+      setAuditMaterials(auditRows || []);
       setMatchedReferenceCount(referenceSummary.matchedReferenceCount || 0);
       setIfraReferenceCount(referenceSummary.ifraReferenceCount || 0);
     } catch (error) {
       console.error('Failed to load raw material summary:', error);
       setSummaryMaterials([]);
+      setAuditMaterials([]);
       setMatchedReferenceCount(0);
       setIfraReferenceCount(0);
     } finally {
@@ -304,6 +358,78 @@ const RawMaterialsPage = () => {
     )).length,
     [summaryMaterials]
   );
+  const audit = useMemo(() => buildRawMaterialDuplicateAudit(auditMaterials), [auditMaterials]);
+  const practicalMergeCandidates = audit.practicalMergeCandidates || [];
+  const practicalMergePreview = practicalMergeCandidates.slice(0, 4);
+  const practicalMergeCandidateCount = audit.summary?.practicalMergeCandidateCount || 0;
+  const guidanceReadyCount = Math.max(totalMaterials - guidanceGapCount, 0);
+  const referenceCoverageRate = totalMaterials ? Math.round((matchedReferenceCount / totalMaterials) * 100) : 0;
+  const guidanceCoverageRate = totalMaterials ? Math.round((guidanceReadyCount / totalMaterials) * 100) : 0;
+  const ifraCoverageRate = totalMaterials ? Math.round((ifraReferenceCount / totalMaterials) * 100) : 0;
+  const materialsDeskSummary = useMemo(() => {
+    if (materialsDeskMode === 'gaps') {
+      return {
+        eyebrow: 'Gap priority',
+        title: `${guidanceGapCount} materials still need guidance cleanup`,
+        description: 'Use workbook sync first, then open the remaining rows for manual class, impact, life, CAS, or IFRA fixes.',
+      };
+    }
+
+    if (materialsDeskMode === 'queue') {
+      return {
+        eyebrow: 'Queue priority',
+        title: `${practicalMergeCandidateCount} practical merge candidate${practicalMergeCandidateCount === 1 ? '' : 's'} ready`,
+        description: 'Clear duplicate and synonym collisions here before doing deeper workbook or guidance maintenance.',
+      };
+    }
+
+    return {
+      eyebrow: 'Coverage priority',
+      title: `${referenceCoverageRate}% workbook coverage across ${totalMaterials} materials`,
+      description: 'Start from the broad health snapshot, then drill into guidance gaps or merge cleanup only where the signals are weakest.',
+    };
+  }, [guidanceGapCount, materialsDeskMode, practicalMergeCandidateCount, referenceCoverageRate, totalMaterials]);
+
+  useEffect(() => {
+    const previewIds = practicalMergePreview.map((candidate) => candidate.id).filter(Boolean);
+
+    setExpandedPracticalMergeIds((current) => {
+      const next = current.filter((id) => previewIds.includes(id));
+      if (next.length || !previewIds.length) {
+        return next;
+      }
+      return [previewIds[0]];
+    });
+  }, [practicalMergePreview]);
+
+  const allPracticalPreviewExpanded = practicalMergePreview.length > 0
+    && practicalMergePreview.every((candidate) => expandedPracticalMergeIds.includes(candidate.id));
+
+  const togglePracticalMergeItem = (candidateId, open) => {
+    setExpandedPracticalMergeIds((current) => {
+      if (open) {
+        return current.includes(candidateId) ? current : [...current, candidateId];
+      }
+
+      return current.filter((id) => id !== candidateId);
+    });
+  };
+
+  const toggleAllPracticalMergePreview = () => {
+    if (!practicalMergePreview.length) {
+      return;
+    }
+
+    setExpandedPracticalMergeIds((current) => {
+      const previewIds = practicalMergePreview.map((candidate) => candidate.id);
+      const everyOpen = previewIds.every((id) => current.includes(id));
+      if (everyOpen) {
+        return current.filter((id) => !previewIds.includes(id));
+      }
+
+      return [...new Set([...current, ...previewIds])];
+    });
+  };
 
   const handleEdit = (material) => {
     setSelectedMaterial(material);
@@ -458,6 +584,83 @@ const RawMaterialsPage = () => {
     navigate(`/raw-material/${material.id}`);
   };
 
+  const openAuditMergeIntent = (candidate) => {
+    setAuditMergeIntent({
+      title: candidate.type === 'collapsed-group' ? 'Merge duplicate material' : 'Merge synonym candidate',
+      description: `Duplicate row "${candidate.duplicate.name}" will be merged into "${candidate.master.name}". Workbook, reference, and usage links will stay on the master row.`,
+      master: candidate.master,
+      duplicates: [candidate.duplicate],
+    });
+  };
+
+  const confirmAuditMerge = async () => {
+    if (!auditMergeIntent?.master?.id || !auditMergeIntent.duplicates?.length) {
+      return;
+    }
+
+    setAuditMergeSubmitting(true);
+    try {
+      for (const duplicate of auditMergeIntent.duplicates) {
+        await mergeRawMaterialIntoMaster(auditMergeIntent.master.id, duplicate.id);
+      }
+
+      toast.success(`Duplicate raw material berhasil digabung ke ${auditMergeIntent.master.name}.`);
+      setAuditMergeIntent(null);
+      await Promise.all([loadMaterials(), loadSummary()]);
+    } catch (error) {
+      console.error('Failed to merge practical audit candidate:', error);
+      toast.error(error.message || 'Failed to merge raw material');
+    } finally {
+      setAuditMergeSubmitting(false);
+    }
+  };
+
+  const confirmBulkAuditMerge = async () => {
+    if (!practicalMergeCandidates.length) {
+      setBulkAuditMergeIntentOpen(false);
+      toast.info('Belum ada kandidat merge praktis.');
+      return;
+    }
+
+    setBulkAuditMergeSubmitting(true);
+    let successCount = 0;
+    const failures = [];
+
+    try {
+      for (const candidate of practicalMergeCandidates) {
+        try {
+          await mergeRawMaterialIntoMaster(candidate.master.id, candidate.duplicate.id);
+          successCount += 1;
+        } catch (error) {
+          failures.push({
+            duplicateName: candidate.duplicate.name,
+            masterName: candidate.master.name,
+            message: error.message || 'Unknown merge error',
+          });
+        }
+      }
+
+      setBulkAuditMergeIntentOpen(false);
+      await Promise.all([loadMaterials(), loadSummary()]);
+
+      if (successCount && !failures.length) {
+        toast.success(`${successCount} kandidat merge praktis berhasil dirapikan.`);
+        return;
+      }
+
+      if (successCount && failures.length) {
+        toast.warning(
+          `${successCount} merge berhasil, ${failures.length} kandidat dilewati. Contoh: ${failures[0].duplicateName} -> ${failures[0].masterName} (${failures[0].message})`
+        );
+        return;
+      }
+
+      toast.error(failures[0]?.message || 'Bulk merge gagal.');
+    } finally {
+      setBulkAuditMergeSubmitting(false);
+    }
+  };
+
   const getMaterialGuidanceDetails = (material) => {
     const resolvedReference = referenceStatusMap.get(material.id)?.reference_profile || buildFallbackReferenceProfileFromRawMaterial(material);
     const classDistribution = extractWorkbookClassDistribution(resolvedReference);
@@ -478,6 +681,9 @@ const RawMaterialsPage = () => {
     return {
       hasWarning,
       hasCoreGuidance,
+      resolvedReference,
+      reviewStatus: resolvedReference?.review_status || 'fallback_manual',
+      confidenceScore: resolvedReference?.confidence_score ?? null,
       missingClass,
       missingImpact,
       missingLife,
@@ -492,7 +698,21 @@ const RawMaterialsPage = () => {
   };
 
   const openGuidanceEditor = (material) => {
-    setGuidanceEditorMaterial(material);
+    const guidance = getMaterialGuidanceDetails(material);
+    setGuidanceEditorMaterial({
+      ...material,
+      guidance_reference_profile: guidance.resolvedReference,
+      guidance_resolved_values: {
+        workbook_code: guidance.resolvedReference?.reference_code || material.workbook_code || null,
+        cas_number: guidance.resolvedCas,
+        ifra_limit: guidance.resolvedIfra,
+        reference_abc_primary_family: guidance.resolvedClass,
+        reference_impact: guidance.resolvedImpact,
+        reference_life_hours: guidance.resolvedLife,
+        reference_use_level_typical_percent: guidance.resolvedReference?.use_level_typical_percent ?? material.reference_use_level_typical_percent ?? null,
+        reference_use_level_max_percent: guidance.resolvedReference?.use_level_max_percent ?? material.reference_use_level_max_percent ?? null,
+      },
+    });
     setGuidanceEditorOpen(true);
   };
 
@@ -500,25 +720,35 @@ const RawMaterialsPage = () => {
     {
       key: 'name',
       label: 'Name',
-      render: (row) => (
-        <button onClick={() => handleView(row)} className="text-left">
-          <div className="text-sm font-semibold text-primary transition hover:underline">{row.name}</div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground">
-              {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
-            </span>
-            {referenceStatusMap.get(row.id)?.reference_profile ? (
-              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
-                Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
-                Unmatched
-              </Badge>
-            )}
-          </div>
-        </button>
-      ),
+      render: (row) => {
+        const guidance = getMaterialGuidanceDetails(row);
+        const linkedReference = guidance.resolvedReference;
+
+        return (
+          <button onClick={() => handleView(row)} className="text-left">
+            <div className="text-sm font-semibold text-primary transition hover:underline">{row.name}</div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-muted-foreground">
+                {row.scent_family || deriveScentFamilyFromCategory(row.category, '') || 'Family not set'}
+              </span>
+              {linkedReference ? (
+                <>
+                  <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
+                    Ref {linkedReference.reference_code}
+                  </Badge>
+                  <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getReferenceStatusBadgeClassName(guidance.reviewStatus)}`}>
+                    {REFERENCE_STATUS_LABELS[guidance.reviewStatus] || 'Reference'}
+                  </Badge>
+                </>
+              ) : (
+                <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
+                  Unmatched
+                </Badge>
+              )}
+            </div>
+          </button>
+        );
+      },
     },
     {
       key: 'type',
@@ -543,7 +773,7 @@ const RawMaterialsPage = () => {
       label: 'Guidance',
       render: (row) => {
         const guidance = getMaterialGuidanceDetails(row);
-        const linkedReference = referenceStatusMap.get(row.id)?.reference_profile || null;
+        const linkedReference = guidance.resolvedReference || null;
         return (
           <div className="min-w-[190px]">
             <button
@@ -574,6 +804,16 @@ const RawMaterialsPage = () => {
                     guidance.missingIfra ? 'IFRA' : null,
                   ].filter(Boolean).join(', ')
                 : 'Impact, life, CAS, dan IFRA sudah ada.'}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getReferenceStatusBadgeClassName(guidance.reviewStatus)}`}>
+                {REFERENCE_STATUS_LABELS[guidance.reviewStatus] || 'Reference'}
+              </Badge>
+              {guidance.confidenceScore !== null ? (
+                <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
+                  Confidence {guidance.confidenceScore}
+                </Badge>
+              ) : null}
             </div>
             <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
               <div>{row.workbook_code ? `Workbook ${row.workbook_code}` : 'No workbook code'}</div>
@@ -642,6 +882,10 @@ const RawMaterialsPage = () => {
         { value: 'unmatched', label: 'Unmatched' },
         { value: 'ifra_limited', label: 'Has IFRA reference' },
         { value: 'has_guidance', label: 'Has reference guidance' },
+        { value: 'approved_pw', label: 'PW approved' },
+        { value: 'approved_external', label: 'External approved' },
+        { value: 'provisional_review', label: 'Needs review' },
+        { value: 'conflict_review', label: 'Conflict review' },
       ],
     },
   ];
@@ -857,36 +1101,369 @@ const RawMaterialsPage = () => {
           <div className="list-summary-card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="list-summary-label">Categories in use</p>
+                <p className="list-summary-label">Reference and audit</p>
                 <span className="list-summary-value text-[1.45rem] sm:text-[1.7rem]">{categoryCount}</span>
-                <p className="list-summary-note">{ifraReferenceCount} IFRA reference profiles linked.</p>
+                <p className="list-summary-note">{ifraReferenceCount} IFRA linked, {practicalMergeCandidateCount} merge candidates.</p>
               </div>
               <Package className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
         </div>
 
-        <div className="list-toolbar-panel mb-6">
-          <div className="mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-            <div className="list-subtle-panel max-w-3xl">
-              <div className="flex items-start gap-3">
-                <Shapes className="mt-0.5 h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-sm font-semibold">{briefId ? 'Library maintenance' : 'Material review flow'}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {briefId
-                      ? 'Shortlist mode is active above. The controls below are maintenance tools for cleaning categories, guidance, and reference coverage.'
-                      : 'Use this page to clean up categorization, guidance coverage, and dilution context before opening each material detail page.'}
-                  </p>
-                </div>
+        <Collapsible open={materialsDeskOpen} onOpenChange={setMaterialsDeskOpen} className="materials-desk-panel mb-6">
+          <div className="materials-desk-header">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                <ScanSearch className="h-4 w-4 text-primary" />
+                Workbook, reference, and audit desk
+                <Badge variant="outline" className="rounded-full bg-white/80">Live cleanup workspace</Badge>
               </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Scan coverage, spot missing guidance, and resolve practical duplicate names from one compact desk before you dive into row-by-row edits.
+              </p>
             </div>
-            <Button variant="outline" onClick={() => setRemapModalOpen(true)} className="gap-2 h-10 rounded-2xl xl:self-start">
-              <Wand2 className="w-4 h-4" />
-              Remap categories
-            </Button>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl gap-2 bg-white/80"
+                disabled={summaryLoading || bulkAuditMergeSubmitting || practicalMergeCandidateCount === 0}
+                onClick={() => setBulkAuditMergeIntentOpen(true)}
+              >
+                <WandSparkles className="h-4 w-4" />
+                {bulkAuditMergeSubmitting ? 'Merging...' : `Merge practical queue (${practicalMergeCandidateCount})`}
+              </Button>
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="ghost" size="sm" className="rounded-full px-3">
+                  {materialsDeskOpen ? 'Minimize' : 'Show desk'}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${materialsDeskOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+            </div>
           </div>
 
+          <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+            <Tabs value={materialsDeskMode} onValueChange={setMaterialsDeskMode} className="mt-4">
+              <div className="flex flex-col gap-3 rounded-[18px] border border-white/70 bg-white/55 px-3 py-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{materialsDeskSummary.eyebrow}</div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{materialsDeskSummary.title}</span>
+                    {' '}
+                    <span>{materialsDeskSummary.description}</span>
+                  </p>
+                </div>
+                <TabsList className="materials-desk-tabs-list">
+                  {MATERIALS_DESK_MODES.map((mode) => (
+                    <TabsTrigger key={mode.id} value={mode.id} className="materials-desk-tab-trigger">
+                      {mode.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+
+              <div className="mt-3 flex flex-col gap-3 rounded-[18px] border border-white/70 bg-white/55 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex items-start gap-3">
+                  <Shapes className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold">{briefId ? 'Library maintenance' : 'Material review flow'}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {briefId
+                        ? 'Shortlist mode is active above. Use the quick actions here for category cleanup, workbook sync, and reference maintenance.'
+                        : 'Use this workspace to clean workbook links, reference coverage, duplicate names, and dilution context before opening each material detail page.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setBulkGuidanceImportOpen(true)} className="gap-2 h-10 rounded-2xl bg-white/80">
+                    <Link2 className="w-4 h-4" />
+                    Auto workbook sync
+                  </Button>
+                  <Button variant="outline" onClick={() => setRemapModalOpen(true)} className="gap-2 h-10 rounded-2xl bg-white/80">
+                    <Wand2 className="w-4 h-4" />
+                    Remap categories
+                  </Button>
+                </div>
+              </div>
+
+              <TabsContent value="coverage" className="materials-desk-tab-content">
+                <div className="rounded-[24px] border border-white/80 bg-white/86 p-4 sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Coverage snapshot</div>
+                      <div className="mt-2 text-lg font-semibold text-foreground">Workbook and guidance health</div>
+                    </div>
+                    <Badge variant="outline" className="rounded-full">
+                      {summaryLoading ? 'Updating...' : `${totalMaterials} materials`}
+                    </Badge>
+                  </div>
+
+                  <div className="materials-desk-metric-grid mt-4">
+                    <div className="materials-desk-metric-card materials-desk-metric-card-active">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Workbook linked</div>
+                          <div className="mt-2 text-2xl font-bold">{matchedReferenceCount}</div>
+                        </div>
+                        <Link2 className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">{referenceCoverageRate}% coverage from workbook-linked references.</div>
+                    </div>
+
+                    <div className="materials-desk-metric-card materials-desk-metric-card-active">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Guidance ready</div>
+                          <div className="mt-2 text-2xl font-bold text-emerald-700">{guidanceReadyCount}</div>
+                        </div>
+                        <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">{guidanceCoverageRate}% already has usable workbook or reference signals.</div>
+                    </div>
+
+                    <div className="materials-desk-metric-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Guidance gaps</div>
+                          <div className="mt-2 text-2xl font-bold text-amber-700">{guidanceGapCount}</div>
+                        </div>
+                        <AlertTriangle className="h-4 w-4 text-amber-700" />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">Rows still missing class, impact, life, CAS, or IFRA cues.</div>
+                    </div>
+
+                    <div className="materials-desk-metric-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">IFRA linked</div>
+                          <div className="mt-2 text-2xl font-bold">{ifraReferenceCount}</div>
+                        </div>
+                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">{ifraCoverageRate}% has IFRA reference coverage ready for safety review.</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-[20px] border border-amber-100/80 bg-[linear-gradient(135deg,rgba(255,250,241,0.96),rgba(252,244,230,0.86))] p-4">
+                    <div className="flex items-start gap-3">
+                      <FolderTree className="mt-0.5 h-4 w-4 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold">Review order</div>
+                        <div className="mt-3 space-y-3">
+                          <div className="materials-desk-progress-row">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span>Workbook coverage</span>
+                              <span className="font-medium text-foreground">{referenceCoverageRate}%</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
+                              <div className="h-full rounded-full bg-primary/80" style={{ width: `${referenceCoverageRate}%` }} />
+                            </div>
+                          </div>
+                          <div className="materials-desk-progress-row">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span>Guidance readiness</span>
+                              <span className="font-medium text-foreground">{guidanceCoverageRate}%</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
+                              <div className="h-full rounded-full bg-emerald-500/80" style={{ width: `${guidanceCoverageRate}%` }} />
+                            </div>
+                          </div>
+                          <div className="materials-desk-progress-row">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span>IFRA reference coverage</span>
+                              <span className="font-medium text-foreground">{ifraCoverageRate}%</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
+                              <div className="h-full rounded-full bg-sky-500/75" style={{ width: `${ifraCoverageRate}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          Best next move: clear the practical merge queue first, then run workbook sync for anything still showing guidance gaps.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="gaps" className="materials-desk-tab-content">
+                <div className="rounded-[24px] border border-white/80 bg-white/86 p-4 sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Guidance gaps</div>
+                      <div className="mt-2 text-lg font-semibold text-foreground">Clean unresolved workbook and reference signals</div>
+                    </div>
+                    <Badge variant="outline" className="rounded-full bg-amber-50 text-amber-900">
+                      {guidanceGapCount} gaps
+                    </Badge>
+                  </div>
+
+                  <div className="materials-desk-metric-grid mt-4">
+                    <div className="materials-desk-metric-card materials-desk-metric-card-active materials-desk-metric-card-warning">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Guidance gaps</div>
+                          <div className="mt-2 text-2xl font-bold text-amber-700">{guidanceGapCount}</div>
+                        </div>
+                        <AlertTriangle className="h-4 w-4 text-amber-700" />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">Rows still missing class, impact, life, CAS, or IFRA cues.</div>
+                    </div>
+
+                    <div className="materials-desk-metric-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">IFRA linked</div>
+                          <div className="mt-2 text-2xl font-bold">{ifraReferenceCount}</div>
+                        </div>
+                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">{ifraCoverageRate}% has IFRA reference coverage ready for safety review.</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-[20px] border border-amber-100/80 bg-[linear-gradient(135deg,rgba(255,250,241,0.96),rgba(252,244,230,0.86))] p-4 materials-desk-focus-callout">
+                    <div className="flex items-start gap-3">
+                      <FolderTree className="mt-0.5 h-4 w-4 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold">Gap cleanup order</div>
+                        <div className="mt-3 space-y-3">
+                          <div className="materials-desk-progress-row">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span>Guidance readiness</span>
+                              <span className="font-medium text-foreground">{guidanceCoverageRate}%</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
+                              <div className="h-full rounded-full bg-emerald-500/80" style={{ width: `${guidanceCoverageRate}%` }} />
+                            </div>
+                          </div>
+                          <div className="materials-desk-progress-row">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span>IFRA reference coverage</span>
+                              <span className="font-medium text-foreground">{ifraCoverageRate}%</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/80">
+                              <div className="h-full rounded-full bg-sky-500/75" style={{ width: `${ifraCoverageRate}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          Best next move: run workbook sync, then review the remaining materials that still do not resolve class, impact, life, CAS, or IFRA fields.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="queue" className="materials-desk-tab-content">
+                <div className="rounded-[24px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(249,243,234,0.9))] p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Practical merge queue</div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <div className="text-2xl font-bold">{summaryLoading ? '...' : practicalMergeCandidateCount}</div>
+                        <Badge variant="outline" className="rounded-full bg-white/80">Synonym aware</Badge>
+                      </div>
+                    </div>
+                    <div className="rounded-full border border-white/80 bg-white/80 px-3 py-1 text-xs text-muted-foreground">
+                      {practicalMergeCandidateCount > practicalMergePreview.length
+                        ? `Showing ${practicalMergePreview.length} priority items`
+                        : 'Ready for quick cleanup'}
+                    </div>
+                  </div>
+
+                  {!summaryLoading && practicalMergePreview.length ? (
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-[18px] border border-white/70 bg-white/70 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">
+                        Default view stays compact so you can scan the queue first, then expand only the candidates you want to inspect.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-full px-3 text-xs"
+                        onClick={toggleAllPracticalMergePreview}
+                      >
+                        {allPracticalPreviewExpanded ? 'Collapse all' : 'Expand all'}
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 space-y-3">
+                    {summaryLoading ? (
+                      <div className="text-sm text-muted-foreground">Loading practical audit...</div>
+                    ) : practicalMergePreview.length ? practicalMergePreview.map((candidate, index) => (
+                      <Collapsible
+                        key={candidate.id}
+                        open={expandedPracticalMergeIds.includes(candidate.id)}
+                        onOpenChange={(open) => togglePracticalMergeItem(candidate.id, open)}
+                        className="materials-desk-queue-item"
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary/12 px-2 text-xs font-semibold text-primary">
+                                  {index + 1}
+                                </span>
+                                <div className="text-sm font-semibold">
+                                  Keep <span className="text-primary">{candidate.master.name}</span>
+                                  <ArrowRight className="mx-1 inline h-3.5 w-3.5 text-muted-foreground" />
+                                  merge <span className="text-foreground">{candidate.duplicate.name}</span>
+                                </div>
+                                {candidate.synonymNames?.length ? (
+                                  <Badge variant="outline" className="rounded-full bg-white/80 text-[10px]">
+                                    {candidate.synonymNames.length} synonym{candidate.synonymNames.length === 1 ? '' : 's'}
+                                  </Badge>
+                                ) : null}
+                              </div>
+                              <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{candidate.note}</p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <Button type="button" variant="ghost" className="rounded-2xl" onClick={() => handleView(candidate.master)}>
+                                Open master
+                              </Button>
+                              <Button type="button" variant="outline" className="rounded-2xl bg-white/80" onClick={() => openAuditMergeIntent(candidate)}>
+                                Merge
+                              </Button>
+                              <CollapsibleTrigger asChild>
+                                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedPracticalMergeIds.includes(candidate.id) ? 'rotate-180' : ''}`} />
+                                </Button>
+                              </CollapsibleTrigger>
+                            </div>
+                          </div>
+
+                          <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                            <div className="materials-desk-queue-detail">
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Detected synonyms</div>
+                                <div className="mt-2">{renderSynonymList(candidate.synonymNames)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Merge note</div>
+                                <p className="mt-2 text-sm text-muted-foreground">{candidate.note}</p>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    )) : (
+                      <div className="rounded-[18px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                        Belum ada kandidat merge praktis. Fokus sekarang bisa langsung ke workbook sync dan guidance cleanup.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="list-toolbar-panel mb-6">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
             <div className="space-y-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -1068,6 +1645,17 @@ const RawMaterialsPage = () => {
         }}
       />
 
+      <BulkWorkbookGuidanceImportDialog
+        open={bulkGuidanceImportOpen}
+        onOpenChange={setBulkGuidanceImportOpen}
+        onSuccess={async () => {
+          await Promise.all([loadMaterials(), loadSummary()]);
+          if (materials.length) {
+            await refreshReferenceStatusMap(materials);
+          }
+        }}
+      />
+
       <RemapRawMaterialCategoriesModal
         open={remapModalOpen}
         onOpenChange={setRemapModalOpen}
@@ -1078,6 +1666,68 @@ const RawMaterialsPage = () => {
           setRemapMaterials(refreshedMaterials);
         }}
       />
+
+      <ConfirmDialog
+        open={Boolean(auditMergeIntent)}
+        onOpenChange={(open) => {
+          if (!open && !auditMergeSubmitting) {
+            setAuditMergeIntent(null);
+          }
+        }}
+        onConfirm={confirmAuditMerge}
+        title={auditMergeIntent?.title || 'Merge practical candidate'}
+        description={auditMergeIntent?.description || 'This merge will keep the master row and remove the duplicate row.'}
+        confirmText={auditMergeSubmitting ? 'Merging...' : 'Merge now'}
+        confirmDisabled={auditMergeSubmitting}
+        cancelText="Cancel"
+        destructive={false}
+        variant="default"
+      >
+        {auditMergeIntent ? (
+          <div className="space-y-3 rounded-2xl border bg-muted/30 p-4 text-sm">
+            <div>
+              <div className="font-medium text-foreground">Master</div>
+              <div className="text-muted-foreground">{auditMergeIntent.master.name}</div>
+            </div>
+            <div>
+              <div className="font-medium text-foreground">Will be removed</div>
+              <div className="space-y-1 text-muted-foreground">
+                {auditMergeIntent.duplicates.map((material) => (
+                  <div key={material.id}>{material.name}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={bulkAuditMergeIntentOpen}
+        onOpenChange={(open) => {
+          if (!open && !bulkAuditMergeSubmitting) {
+            setBulkAuditMergeIntentOpen(false);
+          }
+        }}
+        onConfirm={confirmBulkAuditMerge}
+        title="Merge practical queue"
+        description="Semua kandidat merge praktis akan diproses berurutan. Kandidat yang gagal akan dilewati, sisanya tetap lanjut."
+        confirmText={bulkAuditMergeSubmitting ? 'Merging...' : 'Merge practical queue'}
+        confirmDisabled={bulkAuditMergeSubmitting || practicalMergeCandidateCount === 0}
+        cancelText="Cancel"
+        destructive={false}
+        variant="default"
+      >
+        <div className="space-y-3 rounded-2xl border bg-muted/30 p-4 text-sm">
+          <div>
+            <div className="font-medium text-foreground">Will be processed</div>
+            <div className="text-muted-foreground">{practicalMergeCandidateCount} practical merge candidate(s).</div>
+          </div>
+          <div>
+            <div className="font-medium text-foreground">Scope</div>
+            <div className="text-muted-foreground">Workbook, reference links, shortlist rows, formula usage, and dilution links will be reassigned to the chosen master row.</div>
+          </div>
+        </div>
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={deleteDialogOpen}

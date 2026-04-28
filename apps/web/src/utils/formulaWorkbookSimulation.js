@@ -1,4 +1,5 @@
-import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
+import { resolvePyramidPlacement, resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
+import { buildGuidanceLimitAdvisories, getDilutionFactor } from '@/utils/rawMaterialGuidanceAdvisories.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const toFiniteNumber = (value) => {
@@ -41,29 +42,13 @@ const average = (values) => {
 };
 
 export const inferReferencePyramidPlacement = (lifeHours) => {
-  const numericLifeHours = toFiniteNumber(lifeHours);
-  if (numericLifeHours === null) {
-    return null;
-  }
-
-  if (numericLifeHours < 12) {
-    return 'top';
-  }
-
-  if (numericLifeHours < 120) {
-    return 'middle';
-  }
-
-  return 'base';
+  return resolvePyramidPlacement({
+    lifeHours: toFiniteNumber(lifeHours),
+  });
 };
 
 export const getFormulaItemDilutionFactor = (item) => {
-  const dilutionPercent = toFiniteNumber(item?.dilution_percent ?? item?.dilution_percentage);
-  if (dilutionPercent === null || dilutionPercent <= 0) {
-    return 1;
-  }
-
-  return dilutionPercent / 100;
+  return getDilutionFactor(item?.dilution_percent ?? item?.dilution_percentage);
 };
 
 export const buildReferenceAdvisories = (item) => {
@@ -78,49 +63,10 @@ export const buildReferenceAdvisories = (item) => {
   const listedPercentage = Number(item?.percentage || 0);
   const dilutionFactor = getFormulaItemDilutionFactor(item);
   const effectivePercentage = listedPercentage * dilutionFactor;
-  const advisories = [];
-
-  if (
-    referenceProfile.use_level_typical_percent !== null
-    && referenceProfile.use_level_typical_percent !== undefined
-    && effectivePercentage > Number(referenceProfile.use_level_typical_percent || 0)
-  ) {
-    advisories.push({
-      type: 'typical',
-      severity: 'info',
-      label: 'Above typical use level',
-      limit: Number(referenceProfile.use_level_typical_percent),
-      message: `Effective concentration ${effectivePercentage.toFixed(2)}% is above the typical reference level of ${Number(referenceProfile.use_level_typical_percent).toFixed(2)}%.`,
-    });
-  }
-
-  if (
-    referenceProfile.use_level_max_percent !== null
-    && referenceProfile.use_level_max_percent !== undefined
-    && effectivePercentage > Number(referenceProfile.use_level_max_percent || 0)
-  ) {
-    advisories.push({
-      type: 'max',
-      severity: 'warning',
-      label: 'Above max use level',
-      limit: Number(referenceProfile.use_level_max_percent),
-      message: `Effective concentration ${effectivePercentage.toFixed(2)}% is above the suggested max reference level of ${Number(referenceProfile.use_level_max_percent).toFixed(2)}%.`,
-    });
-  }
-
-  if (
-    referenceProfile.ifra_limit_percent !== null
-    && referenceProfile.ifra_limit_percent !== undefined
-    && effectivePercentage > Number(referenceProfile.ifra_limit_percent || 0)
-  ) {
-    advisories.push({
-      type: 'ifra',
-      severity: 'danger',
-      label: 'Above IFRA reference limit',
-      limit: Number(referenceProfile.ifra_limit_percent),
-      message: `Effective concentration ${effectivePercentage.toFixed(2)}% is above the reference IFRA limit of ${Number(referenceProfile.ifra_limit_percent).toFixed(2)}%.`,
-    });
-  }
+  const advisories = buildGuidanceLimitAdvisories({
+    referenceProfile,
+    effectivePercentage,
+  });
 
   return {
     effectivePercentage,
@@ -435,31 +381,26 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
   const rows = eligibleItems.map((item) => {
     const rawMaterial = rawMaterialsById?.get(item.item_id) || null;
     const referenceLink = referenceLinksMap?.get(item.item_id) || null;
-    const linkedReferenceProfile = referenceLink?.reference_profile || null;
-    const fallbackReferenceProfile = linkedReferenceProfile
-      ? null
-      : buildFallbackReferenceProfileFromRawMaterial(rawMaterial);
-    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
-    const guidanceSource = linkedReferenceProfile
-      ? 'linked_profile'
-      : fallbackReferenceProfile
-        ? 'raw_material_fallback'
-        : 'none';
+    const guidance = resolveRawMaterialGuidanceSnapshot(rawMaterial, referenceLink);
+    const referenceProfile = guidance.referenceProfile;
+    const guidanceSource = guidance.guidanceSource;
     const listedPercentage = Number(item.percentage || 0);
     const listedGrams = Number(item.gram_amount ?? item.grams ?? 0);
     const dilutionFactor = getFormulaItemDilutionFactor(item);
     const effectivePercentage = listedPercentage * dilutionFactor;
     const effectiveActiveGrams = listedGrams * dilutionFactor;
-    const impact = toFiniteNumber(referenceProfile?.impact);
-    const lifeHours = toFiniteNumber(referenceProfile?.life_hours);
+    const impact = guidance.impact;
+    const lifeHours = guidance.lifeHours;
     const impactContribution = impact === null ? null : (effectivePercentage / 100) * impact;
     const odourWeight = impactContribution ?? effectivePercentage ?? effectiveActiveGrams;
     const lifeContribution = lifeHours === null ? null : (effectivePercentage / 100) * lifeHours;
     const weightedLifeContribution = impactContribution === null || lifeHours === null
       ? null
       : impactContribution * lifeHours;
-    const pyramidPlacement = inferReferencePyramidPlacement(lifeHours);
-    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
+    const pyramidPlacement = guidance.pyramidPlacement;
+    const classDistribution = guidance.classDistribution.length
+      ? guidance.classDistribution
+      : extractWorkbookClassDistribution(referenceProfile);
     const advisoryPayload = buildReferenceAdvisories({
       ...item,
       reference_profile: referenceProfile,

@@ -306,9 +306,14 @@ export default async (req, res, next) => {
 
 		return res.json({
 			source: 'scentree',
+			source_kind: 'scentree',
+			source_url: parsedUrl.toString(),
 			url: parsedUrl.toString(),
+			extracted_at: new Date().toISOString(),
+			review_status: 'provisional_external',
 			name: title || null,
 			classification_path: classificationPath,
+			reference_code: `EXT-SCENTREE-${(casNumber || title || 'UNMAPPED').replace(/[^A-Za-z0-9]+/g, '').slice(0, 12).toUpperCase()}`,
 			workbook_code: null,
 			cas_number: casNumber || null,
 			ifra_limit: ifra.ifra_limit,
@@ -316,6 +321,8 @@ export default async (req, res, next) => {
 			reference_abc_primary_family: workbookFamily,
 			reference_impact: referenceImpact,
 			reference_life_hours: referenceLifeHours,
+			reference_impact_source: detectionThreshold ? 'heuristic' : null,
+			reference_life_hours_source: volatility ? 'heuristic' : null,
 			description: description || null,
 			volatility: volatility || null,
 			detection_threshold: detectionThreshold || null,

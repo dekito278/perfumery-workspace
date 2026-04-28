@@ -125,8 +125,13 @@ const importTgscByUrl = async (url) => {
 
 	return {
 		source: 'tgsc',
+		source_kind: 'tgsc',
+		source_url: parsedUrl.toString(),
 		url: parsedUrl.toString(),
+		extracted_at: new Date().toISOString(),
+		review_status: 'provisional_external',
 		name: title || null,
+		reference_code: `EXT-TGSC-${(casNumber || title || 'UNMAPPED').replace(/[^A-Za-z0-9]+/g, '').slice(0, 12).toUpperCase()}`,
 		workbook_code: null,
 		cas_number: casNumber || null,
 		ifra_limit: null,

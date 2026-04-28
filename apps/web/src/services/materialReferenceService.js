@@ -38,6 +38,7 @@ const mapReferenceProfile = (row) => {
     ...baseProfile,
     canonical_profile: canonicalProfile,
     source_kind: canonicalProfile?.source_kind || baseProfile.source_kind,
+    review_status: canonicalProfile?.review_status || null,
     reference_code: canonicalProfile?.reference_code || baseProfile.reference_code,
     abc_primary_family: canonicalProfile?.abc_primary_family || baseProfile.abc_primary_family,
     abc_secondary_family: canonicalProfile?.abc_secondary_family || baseProfile.abc_secondary_family,
@@ -53,6 +54,9 @@ const mapReferenceProfile = (row) => {
     confidence_reason: canonicalProfile?.confidence_reason || null,
     field_locks: canonicalProfile?.field_locks || {},
     source_snapshots: canonicalProfile?.source_snapshots || {},
+    field_resolution: canonicalProfile?.field_resolution || {},
+    field_conflicts: canonicalProfile?.field_conflicts || {},
+    provenance_summary: canonicalProfile?.provenance_summary || {},
   };
 };
 
@@ -132,6 +136,83 @@ const buildManualReferencePayload = (rawMaterial, userId) => {
       unit: normalizeOptionalText(rawMaterial.unit),
     },
   };
+};
+
+const applyReviewStatusToSnapshots = (sourceSnapshots, reviewStatus) => Object.fromEntries(
+  Object.entries(sourceSnapshots || {}).map(([key, snapshot]) => ([
+    key,
+    snapshot?.source_kind === 'perfumersworld'
+      ? snapshot
+      : {
+          ...snapshot,
+          review_status: reviewStatus,
+        },
+  ]))
+);
+
+const loadManualReferenceProfileForRawMaterial = async (rawMaterialId) => {
+  const { data: manualProfile, error } = await supabase
+    .from('material_reference_profiles')
+    .select('id, raw_payload')
+    .eq('source_kind', 'manual')
+    .eq('source_raw_material_id', rawMaterialId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error loading manual reference profile:', error);
+    throw new Error(error.message || 'Failed to load manual reference profile');
+  }
+
+  return manualProfile || null;
+};
+
+const loadRawMaterialForReferenceUpdate = async (rawMaterialId) => {
+  const { data: rawMaterial, error } = await supabase
+    .from('raw_materials')
+    .select('*')
+    .eq('id', rawMaterialId)
+    .single();
+
+  if (error) {
+    console.error('Error loading raw material for reference update:', error);
+    throw new Error(error.message || 'Failed to load raw material');
+  }
+
+  return rawMaterial;
+};
+
+const updateManualReferenceMetadataForRawMaterial = async (rawMaterialId, transformRawPayload) => {
+  const [manualProfile, rawMaterial] = await Promise.all([
+    loadManualReferenceProfileForRawMaterial(rawMaterialId),
+    loadRawMaterialForReferenceUpdate(rawMaterialId),
+  ]);
+
+  if (!manualProfile?.id) {
+    return syncManualReferenceProfileForRawMaterial(rawMaterial);
+  }
+
+  const existingRawPayload = manualProfile.raw_payload || {};
+  const nextRawPayloadSeed = transformRawPayload(existingRawPayload);
+  const rebuiltRawPayload = buildCanonicalReferencePayload({
+    rawMaterial,
+    existingRawPayload: nextRawPayloadSeed,
+    sourceSnapshots: nextRawPayloadSeed?.source_snapshots || null,
+    fieldLocks: nextRawPayloadSeed?.field_locks || null,
+  });
+
+  const { error: updateError } = await supabase
+    .from('material_reference_profiles')
+    .update({
+      raw_payload: rebuiltRawPayload,
+    })
+    .eq('id', manualProfile.id);
+
+  if (updateError) {
+    console.error('Error updating manual reference raw payload:', updateError);
+    throw new Error(updateError.message || 'Failed to update reference review state');
+  }
+
+  return manualProfile.id;
 };
 
 export const getReferenceProfileByRawMaterialId = async (rawMaterialId) => {
@@ -246,6 +327,8 @@ export const getPrimaryReferenceRawMaterialIds = async ({
   const normalizedSearch = String(searchTerm || '').trim();
   const normalizedReferenceFilter = String(referenceFilter || 'all');
   const matchedIds = new Set();
+  const requiresProfileInspection = ['ifra_limited', 'has_guidance', 'provisional_review', 'conflict_review', 'approved_external', 'approved_pw'].includes(normalizedReferenceFilter)
+    || Boolean(normalizedSearch);
 
   let linksQuery = supabase
     .from('raw_material_reference_links')
@@ -272,14 +355,14 @@ export const getPrimaryReferenceRawMaterialIds = async ({
   let filteredIds = new Set(matchedIds);
   const referenceProfileIds = [...new Set((links || []).map((row) => row.reference_profile_id).filter(Boolean))];
 
-  if (normalizedSearch || ['ifra_limited', 'has_guidance'].includes(normalizedReferenceFilter)) {
+  if (requiresProfileInspection) {
     const matchingProfileIds = new Set();
     const chunkedProfileIds = chunkValues(referenceProfileIds);
 
     for (const idChunk of chunkedProfileIds) {
       let profileQuery = supabase
         .from('material_reference_profiles')
-        .select('id, ifra_limit_percent, use_level_max_percent')
+        .select('id, reference_code, name, abc_code, abc_primary_family, cas_no, ifra_limit_percent, use_level_max_percent, source_kind, raw_payload')
         .in('id', idChunk);
 
       if (normalizedSearch) {
@@ -291,10 +374,6 @@ export const getPrimaryReferenceRawMaterialIds = async ({
           `abc_primary_family.ilike.%${escapedQuery}%`,
           `cas_no.ilike.%${escapedQuery}%`,
         ].join(','));
-      } else if (normalizedReferenceFilter === 'ifra_limited') {
-        profileQuery = profileQuery.not('ifra_limit_percent', 'is', null);
-      } else if (normalizedReferenceFilter === 'has_guidance') {
-        profileQuery = profileQuery.or('ifra_limit_percent.not.is.null,use_level_max_percent.not.is.null');
       }
 
       const { data: profiles, error: profilesError } = await profileQuery;
@@ -305,11 +384,30 @@ export const getPrimaryReferenceRawMaterialIds = async ({
       }
 
       for (const profile of profiles || []) {
-        matchingProfileIds.add(profile.id);
+        const mappedProfile = mapReferenceProfile(profile);
+        const profileMatchesFilter = (
+          (normalizedReferenceFilter === 'ifra_limited' && mappedProfile?.ifra_limit_percent !== null)
+          || (normalizedReferenceFilter === 'has_guidance' && (
+            mappedProfile?.ifra_limit_percent !== null
+            || mappedProfile?.use_level_max_percent !== null
+            || mappedProfile?.impact !== null
+            || mappedProfile?.life_hours !== null
+          ))
+          || (normalizedReferenceFilter === 'provisional_review' && mappedProfile?.review_status === 'provisional_external')
+          || (normalizedReferenceFilter === 'conflict_review' && mappedProfile?.review_status === 'conflict_review')
+          || (normalizedReferenceFilter === 'approved_external' && mappedProfile?.review_status === 'approved_external')
+          || (normalizedReferenceFilter === 'approved_pw' && mappedProfile?.review_status === 'approved_pw')
+          || normalizedReferenceFilter === 'all'
+          || normalizedSearch
+        );
+
+        if (profileMatchesFilter) {
+          matchingProfileIds.add(profile.id);
+        }
       }
     }
 
-    if (normalizedSearch || ['ifra_limited', 'has_guidance'].includes(normalizedReferenceFilter)) {
+    if (requiresProfileInspection) {
       filteredIds = new Set(
         (links || [])
           .filter((row) => matchingProfileIds.has(row.reference_profile_id))
@@ -609,6 +707,31 @@ export const syncManualReferenceProfileForRawMaterial = async (rawMaterial) => {
 
   return referenceProfileId;
 };
+
+export const recalculateReferenceProfileForRawMaterial = async (rawMaterial) => (
+  syncManualReferenceProfileForRawMaterial(rawMaterial)
+);
+
+export const approveReferenceCandidateForRawMaterial = async (rawMaterialId) => (
+  updateManualReferenceMetadataForRawMaterial(rawMaterialId, (existingRawPayload) => ({
+    ...existingRawPayload,
+    source_snapshots: applyReviewStatusToSnapshots(existingRawPayload?.source_snapshots || {}, 'approved_external'),
+  }))
+);
+
+export const markReferenceConflictForRawMaterial = async (rawMaterialId) => (
+  updateManualReferenceMetadataForRawMaterial(rawMaterialId, (existingRawPayload) => ({
+    ...existingRawPayload,
+    source_snapshots: applyReviewStatusToSnapshots(existingRawPayload?.source_snapshots || {}, 'conflict_review'),
+  }))
+);
+
+export const resetReferenceCandidateToProvisional = async (rawMaterialId) => (
+  updateManualReferenceMetadataForRawMaterial(rawMaterialId, (existingRawPayload) => ({
+    ...existingRawPayload,
+    source_snapshots: applyReviewStatusToSnapshots(existingRawPayload?.source_snapshots || {}, 'provisional_external'),
+  }))
+);
 
 export const removeReferenceArtifactsForRawMaterial = async (rawMaterialId) => {
   if (!rawMaterialId) {

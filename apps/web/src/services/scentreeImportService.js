@@ -1,5 +1,14 @@
 const API_BASE_URL = '/api';
 
+export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
+	const normalizedCode = String(workbookCode || '').trim().toUpperCase();
+	if (!normalizedCode) {
+		return '';
+	}
+
+	return `https://www.perfumersworld.com/view.php?pro_id=${encodeURIComponent(normalizedCode)}`;
+};
+
 export const importScentreeByUrl = async (url) => {
 	const response = await fetch(`${API_BASE_URL}/imports/scentree`, {
 		method: 'POST',

@@ -24,7 +24,7 @@ import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { buildStageTargetProfile, getStageLabel, getWizardQuestionsForStage } from '@/utils/briefProjectWizard.js';
-import { rankMaterialRecommendations } from '@/utils/materialCompositionProfile.js';
+import { buildStageDecisionAssist, explainMaterialForStage, rankMaterialRecommendations } from '@/utils/materialCompositionProfile.js';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
 
 const STAGES = ['top', 'middle', 'base'];
@@ -67,6 +67,8 @@ const getFirstIncompleteQuestionIndex = (questions, answers = {}) => {
   const firstIncompleteIndex = questions.findIndex((question) => !answers?.[question.id]);
   return firstIncompleteIndex >= 0 ? firstIncompleteIndex : Math.max(questions.length - 1, 0);
 };
+
+const formatDebugPercent = (value) => `${Math.round(Number(value || 0))}%`;
 
 const BriefDetailPage = () => {
   const { id } = useParams();
@@ -234,6 +236,34 @@ const BriefDetailPage = () => {
     () => [brief?.mood_story, brief?.audience_usage, brief?.performance_target, brief?.budget_direction].filter(Boolean).join(' '),
     [brief]
   );
+  const stageMaterialExplainMap = useMemo(() => new Map(
+    currentStageRows.map((item) => {
+      const material = item.expand?.raw_material_id || null;
+      if (!material?.id) {
+        return [item.raw_material_id, null];
+      }
+
+      const explanation = explainMaterialForStage({
+        material,
+        referenceLink: referenceLinksMap.get(material.id) || null,
+        stage: activeStage,
+        answers: draftAnswers[activeStage] || {},
+        briefText,
+        targetProfile: activeTargetProfile,
+      });
+
+      return [item.raw_material_id, explanation];
+    }),
+  ), [activeStage, activeTargetProfile, briefText, currentStageRows, draftAnswers, referenceLinksMap]);
+  const compareCandidates = useMemo(() => (
+    [...currentStageRows]
+      .sort((left, right) => Number(right.fit_score || 0) - Number(left.fit_score || 0))
+      .slice(0, 8)
+  ), [currentStageRows]);
+  const decisionAssist = useMemo(() => buildStageDecisionAssist({
+    items: compareCandidates,
+    explanationMap: stageMaterialExplainMap,
+  }), [compareCandidates, stageMaterialExplainMap]);
 
   const handleBack = () => {
     if (location.state?.from) {
@@ -361,6 +391,7 @@ const BriefDetailPage = () => {
         stage: activeStage,
         answers: stageAnswers,
         briefText,
+        targetProfile,
         limit: 8,
       });
       const existingStageRows = stageItemsMap.get(activeStage) || [];
@@ -801,6 +832,37 @@ const BriefDetailPage = () => {
                                     </Badge>
                                   ) : null}
                                 </div>
+                                {stageMaterialExplainMap.get(item.raw_material_id)?.score_breakdown ? (
+                                  <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                    <div className="rounded-xl border bg-background/65 px-3 py-2">
+                                      <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Score fit</div>
+                                      <div className="mt-1 text-sm font-semibold">
+                                        {Number(stageMaterialExplainMap.get(item.raw_material_id).fit_score || item.fit_score || 0).toFixed(2)}
+                                      </div>
+                                      <div className="text-[11px] text-muted-foreground">
+                                        Stage {Number(stageMaterialExplainMap.get(item.raw_material_id).score_breakdown.stage_natural_score || 0).toFixed(1)}
+                                      </div>
+                                    </div>
+                                    <div className="rounded-xl border bg-background/65 px-3 py-2">
+                                      <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Target alignment</div>
+                                      <div className="mt-1 text-sm font-semibold">
+                                        Class {formatDebugPercent(stageMaterialExplainMap.get(item.raw_material_id).score_breakdown.class_fit_score)}
+                                      </div>
+                                      <div className="text-[11px] text-muted-foreground">
+                                        Function {formatDebugPercent(stageMaterialExplainMap.get(item.raw_material_id).score_breakdown.function_fit_score)}
+                                      </div>
+                                    </div>
+                                    <div className="rounded-xl border bg-background/65 px-3 py-2">
+                                      <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Performance fit</div>
+                                      <div className="mt-1 text-sm font-semibold">
+                                        Impact {formatDebugPercent(stageMaterialExplainMap.get(item.raw_material_id).score_breakdown.impact_fit_score)}
+                                      </div>
+                                      <div className="text-[11px] text-muted-foreground">
+                                        Life {formatDebugPercent(stageMaterialExplainMap.get(item.raw_material_id).score_breakdown.life_fit_score)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : null}
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 <Button size="sm" variant="outline" className="rounded-xl" onClick={() => handleStageItemState(item, 'rejected')}>
@@ -836,6 +898,98 @@ const BriefDetailPage = () => {
                               </Button>
                             ))}
                           </div>
+                        </div>
+                      ) : null}
+
+                      {compareCandidates.length ? (
+                        <div className="mt-4 rounded-xl border bg-background/55 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Compare candidates</div>
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                Lihat ranking stage ini berdampingan supaya keputusan keep atau exclude lebih mudah diaudit.
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="rounded-full">
+                              {compareCandidates.length} compared
+                            </Badge>
+                          </div>
+
+                          <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                            {compareCandidates.map((item) => {
+                              const explanation = stageMaterialExplainMap.get(item.raw_material_id);
+                              const breakdown = explanation?.score_breakdown || null;
+                              return (
+                                <div key={`compare-${item.id}`} className="rounded-xl border bg-background/75 p-4">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <div className="text-sm font-semibold">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
+                                      <div className="mt-1 text-xs text-muted-foreground">
+                                        {item.recommendation_reason || 'Generated from stage fit'}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-semibold">{Number(item.fit_score || 0).toFixed(2)}</div>
+                                      <div className="text-[11px] text-muted-foreground">fit score</div>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    <Badge variant={item.selection_state === 'rejected' ? 'outline' : 'secondary'} className="rounded-full text-[10px] capitalize">
+                                      {item.selection_state === 'manual' ? 'manual' : item.selection_state}
+                                    </Badge>
+                                    {item.primary_function ? (
+                                      <Badge variant="outline" className="rounded-full text-[10px] capitalize">
+                                        {formatStatus(item.primary_function)}
+                                      </Badge>
+                                    ) : null}
+                                    {item.secondary_function ? (
+                                      <Badge variant="outline" className="rounded-full text-[10px] capitalize">
+                                        {formatStatus(item.secondary_function)}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+
+                                  {breakdown ? (
+                                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                      <div className="rounded-lg border bg-background/60 px-3 py-2 text-[11px] text-muted-foreground">
+                                        Stage {Number(breakdown.stage_natural_score || 0).toFixed(1)} • Class {formatDebugPercent(breakdown.class_fit_score)}
+                                      </div>
+                                      <div className="rounded-lg border bg-background/60 px-3 py-2 text-[11px] text-muted-foreground">
+                                        Function {formatDebugPercent(breakdown.function_fit_score)} • Life {formatDebugPercent(breakdown.life_fit_score)}
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {decisionAssist.suggestions.length ? (
+                            <div className="mt-4 rounded-xl border bg-background/65 p-4">
+                              <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Decision assist</div>
+                              <div className="mt-3 space-y-3">
+                                {decisionAssist.suggestions.map((suggestion, index) => (
+                                  <div key={`${suggestion.type}-${index}`} className="rounded-lg border bg-background/80 px-3 py-3">
+                                    <div className="text-sm font-semibold">{suggestion.title}</div>
+                                    <div className="mt-1 text-xs text-muted-foreground">{suggestion.message}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              {decisionAssist.duplicatePairs.length ? (
+                                <div className="mt-4 grid gap-2 xl:grid-cols-2">
+                                  {decisionAssist.duplicatePairs.slice(0, 4).map((pair) => (
+                                    <div key={`${pair.keep_item_id}-${pair.drop_item_id}`} className="rounded-lg border bg-background/80 px-3 py-3">
+                                      <div className="text-sm font-medium">{pair.keep_name} vs {pair.drop_name}</div>
+                                      <div className="mt-1 text-xs text-muted-foreground">
+                                        Overlap {pair.overlap_score}% • {pair.reason}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

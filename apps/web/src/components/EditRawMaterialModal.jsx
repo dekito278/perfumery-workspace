@@ -22,6 +22,7 @@ import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategor
 import { getRawMaterialCategoryMeta } from '@/utils/rawMaterialCategoryMeta.js';
 import { importPerfumersWorldByUrl, importScentreeByUrl, importTgscByUrl } from '@/services/scentreeImportService.js';
 import { WORKBOOK_ABC_CLASSIFICATIONS } from '@/utils/workbookAbcClassification.js';
+import { createReferenceMetadataPatch } from '@/utils/canonicalReferenceProfile.js';
 
 const normalizeCategoryValue = (value) => String(value || '').trim().toLowerCase();
 const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
@@ -74,6 +75,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
   const [tgscUrl, setTgscUrl] = useState('');
   const [inferenceLines, setInferenceLines] = useState([]);
   const [importingUrl, setImportingUrl] = useState(false);
+  const [sourceSnapshots, setSourceSnapshots] = useState({});
 
   const isSolvent = formData.type === 'solvent';
 
@@ -118,6 +120,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
     setPerfumersWorldUrl('');
     setTgscUrl('');
     setInferenceLines([]);
+    setSourceSnapshots(material.guidance_reference_profile?.source_snapshots || {});
   }, [material]);
 
   const loadSolvents = async () => {
@@ -265,6 +268,13 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
     }));
   };
 
+  const appendSourceSnapshot = (sourceKey, payload) => {
+    setSourceSnapshots((current) => ({
+      ...current,
+      [sourceKey]: payload,
+    }));
+  };
+
   const handleImportPerfumersWorldUrl = async () => {
     if (!perfumersWorldUrl.trim()) {
       toast.error('Masukkan URL PerfumersWorld dulu');
@@ -302,6 +312,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Typical use level: ${imported.reference_use_level_typical_percent}%` : 'Typical use level tidak tersedia di PerfumersWorld.',
         imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Max use level: ${imported.reference_use_level_max_percent}%` : 'Max use level tidak tersedia di PerfumersWorld.',
       ]);
+      appendSourceSnapshot('perfumersworld', imported);
       toast.success('PerfumersWorld URL imported');
     } catch (error) {
       toast.error(error.message || 'Failed to import PerfumersWorld URL');
@@ -340,6 +351,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         imported.detection_threshold ? `Detection threshold: ${imported.detection_threshold}` : 'Detection threshold tidak tersedia di ScenTree.',
         imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA note tidak tersedia di ScenTree.',
       ]);
+      appendSourceSnapshot('scentree', imported);
       toast.success('ScenTree URL imported');
     } catch (error) {
       toast.error(error.message || 'Failed to import ScenTree URL');
@@ -378,6 +390,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         imported.substantivity_hours !== null && imported.substantivity_hours !== undefined ? `Substantivity: ${imported.substantivity_hours} h` : 'Substantivity tidak tersedia di TGSC.',
         imported.odor_description ? `Odor description: ${imported.odor_description}` : 'Odor description tidak tersedia di TGSC.',
       ]);
+      appendSourceSnapshot('tgsc', imported);
       toast.success('TGSC URL imported');
     } catch (error) {
       toast.error(error.message || 'Failed to import TGSC URL');
@@ -429,6 +442,9 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         is_diluted: formData.is_diluted,
         dilution_solvent_id: formData.is_diluted ? formData.dilution_solvent_id : null,
         dilution_percentage: formData.is_diluted ? parseFloat(formData.dilution_percentage) : null,
+        ...createReferenceMetadataPatch({
+          sourceSnapshots,
+        }),
       });
 
       toast.success('Material updated successfully');

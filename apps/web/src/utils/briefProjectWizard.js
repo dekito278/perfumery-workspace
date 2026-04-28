@@ -4,6 +4,79 @@ const STAGE_LABELS = {
   base: 'Base',
 };
 
+const DEFAULT_STAGE_TARGETS = {
+  top: {
+    preferred_letters: ['C', 'G', 'H', 'F', 'B', 'L', 'M'],
+    preferred_functions: ['diffuser', 'modifier', 'support', 'hero'],
+    impact_band: 'medium',
+    life_range_hours: [2, 24],
+  },
+  middle: {
+    preferred_letters: ['R', 'J', 'M', 'L', 'S', 'F', 'O', 'N'],
+    preferred_functions: ['hero', 'bridge', 'support', 'blender', 'modifier'],
+    impact_band: 'medium',
+    life_range_hours: [10, 96],
+  },
+  base: {
+    preferred_letters: ['W', 'Q', 'X', 'Y', 'V', 'T', 'U'],
+    preferred_functions: ['fixative', 'support', 'blender', 'bridge', 'hero'],
+    impact_band: 'medium',
+    life_range_hours: [36, 240],
+  },
+};
+
+const TAG_SIGNAL_MAP = {
+  citrus: { letters: ['C'], functions: ['diffuser', 'modifier'], impact_band: 'medium', life_hint: [2, 16] },
+  sparkling: { letters: ['B', 'C'], functions: ['diffuser'], impact_band: 'high', life_hint: [2, 12] },
+  bright: { letters: ['B', 'C', 'L'], functions: ['diffuser', 'modifier'], impact_band: 'high', life_hint: [2, 18] },
+  aromatic: { letters: ['H', 'G'], functions: ['diffuser', 'support'], impact_band: 'medium', life_hint: [4, 30] },
+  clean: { letters: ['A', 'L', 'M', 'X'], functions: ['blender', 'support'], impact_band: 'low', life_hint: [4, 72] },
+  fresh: { letters: ['C', 'G', 'H', 'M'], functions: ['diffuser', 'modifier'], impact_band: 'medium', life_hint: [2, 24] },
+  fruit: { letters: ['F'], functions: ['hero', 'modifier'], impact_band: 'medium', life_hint: [6, 36] },
+  juicy: { letters: ['F'], functions: ['hero', 'modifier'], impact_band: 'high', life_hint: [4, 30] },
+  green: { letters: ['G', 'H'], functions: ['modifier', 'support'], impact_band: 'medium', life_hint: [4, 36] },
+  crisp: { letters: ['G', 'C', 'M'], functions: ['diffuser', 'modifier'], impact_band: 'medium', life_hint: [2, 18] },
+  spice: { letters: ['S', 'P'], functions: ['modifier', 'hero'], impact_band: 'medium', life_hint: [8, 96] },
+  airy: { letters: ['B', 'L', 'M'], functions: ['diffuser', 'bridge'], impact_band: 'low', life_hint: [2, 18] },
+  lift: { letters: ['B', 'C', 'L'], functions: ['diffuser'], impact_band: 'high', life_hint: [2, 18] },
+  petal: { letters: ['R', 'M', 'J'], functions: ['hero', 'bridge'], impact_band: 'medium', life_hint: [6, 72] },
+  floral: { letters: ['J', 'L', 'M', 'N', 'R'], functions: ['hero', 'bridge', 'support'], impact_band: 'medium', life_hint: [8, 96] },
+  rose: { letters: ['R'], functions: ['hero', 'bridge'], impact_band: 'medium', life_hint: [10, 120] },
+  tea: { letters: ['H', 'M', 'L'], functions: ['bridge', 'modifier'], impact_band: 'low', life_hint: [6, 48] },
+  powder: { letters: ['I', 'X'], functions: ['blender', 'support'], impact_band: 'low', life_hint: [18, 120] },
+  soft: { letters: ['L', 'M', 'X'], functions: ['blender', 'support'], impact_band: 'low', life_hint: [6, 72] },
+  warm: { letters: ['Q', 'V', 'W'], functions: ['support', 'hero'], impact_band: 'medium', life_hint: [18, 168] },
+  creamy: { letters: ['D', 'V', 'W'], functions: ['blender', 'support'], impact_band: 'medium', life_hint: [18, 144] },
+  milky: { letters: ['D', 'V'], functions: ['blender', 'support'], impact_band: 'low', life_hint: [18, 120] },
+  sandalwood: { letters: ['W'], functions: ['support', 'fixative', 'bridge'], impact_band: 'medium', life_hint: [36, 240] },
+  vanilla: { letters: ['V'], functions: ['support', 'blender'], impact_band: 'medium', life_hint: [30, 240] },
+  cedar: { letters: ['W'], functions: ['support', 'fixative'], impact_band: 'medium', life_hint: [30, 240] },
+  vetiver: { letters: ['W', 'Y'], functions: ['support', 'fixative'], impact_band: 'medium', life_hint: [30, 240] },
+  woody: { letters: ['W', 'Y'], functions: ['support', 'fixative', 'bridge'], impact_band: 'medium', life_hint: [24, 240] },
+  amber: { letters: ['Q', 'V'], functions: ['support', 'fixative', 'hero'], impact_band: 'medium', life_hint: [30, 240] },
+  resin: { letters: ['Q', 'T'], functions: ['support', 'fixative'], impact_band: 'medium', life_hint: [30, 240] },
+  musk: { letters: ['X'], functions: ['fixative', 'blender', 'support'], impact_band: 'low', life_hint: [36, 240] },
+  skin: { letters: ['X', 'I'], functions: ['blender', 'support'], impact_band: 'low', life_hint: [24, 240] },
+  patchouli: { letters: ['Y', 'W', 'Q'], functions: ['hero', 'fixative', 'support'], impact_band: 'medium', life_hint: [36, 240] },
+  earthy: { letters: ['Y'], functions: ['support', 'fixative'], impact_band: 'low', life_hint: [36, 240] },
+  dark: { letters: ['Y', 'T', 'Q'], functions: ['hero', 'fixative'], impact_band: 'medium', life_hint: [36, 240] },
+  oud: { letters: ['T', 'W', 'Q'], functions: ['hero', 'fixative', 'support'], impact_band: 'high', life_hint: [36, 240] },
+  smoky: { letters: ['T', 'Q'], functions: ['hero', 'modifier'], impact_band: 'medium', life_hint: [24, 240] },
+  persistent: { functions: ['fixative', 'support'], impact_band: 'medium', life_hint: [72, 240] },
+  tenacious: { functions: ['fixative', 'support'], impact_band: 'medium', life_hint: [72, 240] },
+  projecting: { functions: ['diffuser', 'hero'], impact_band: 'high', life_hint: [4, 36] },
+  controlled: { functions: ['bridge', 'blender', 'support'], impact_band: 'medium', life_hint: [12, 96] },
+  balanced: { functions: ['bridge', 'support', 'blender'], impact_band: 'medium', life_hint: [12, 120] },
+  lush: { functions: ['hero', 'support'], impact_band: 'high', life_hint: [18, 144] },
+  sheer: { functions: ['diffuser', 'bridge'], impact_band: 'low', life_hint: [4, 36] },
+};
+
+const IMPACT_BAND_RANK = {
+  low: 0,
+  medium: 1,
+  high: 2,
+};
+
 const createQuestion = (id, title, optionsByBranch, defaultBranch = 'default') => ({
   id,
   title,
@@ -184,6 +257,67 @@ const getOptionsForQuestion = (question, answers) => {
 const getSelectedOption = (question, value, answers) => getOptionsForQuestion(question, answers)
   .find((option) => option.value === value) || null;
 
+const clampLifeRange = (stage, range) => {
+  const [defaultMin, defaultMax] = DEFAULT_STAGE_TARGETS[stage]?.life_range_hours || [4, 120];
+  const [inputMin, inputMax] = Array.isArray(range) ? range : [defaultMin, defaultMax];
+  const min = Math.max(0, Number.isFinite(inputMin) ? inputMin : defaultMin);
+  const max = Math.max(min, Number.isFinite(inputMax) ? inputMax : defaultMax);
+  return [min, max];
+};
+
+const mergeImpactBand = (currentBand, nextBand) => {
+  if (!nextBand) {
+    return currentBand;
+  }
+
+  if (!currentBand) {
+    return nextBand;
+  }
+
+  return IMPACT_BAND_RANK[nextBand] > IMPACT_BAND_RANK[currentBand] ? nextBand : currentBand;
+};
+
+const buildPreferenceSet = (values) => [...new Set(values.filter(Boolean))];
+
+const buildStructuredStageIntent = (stage, tags = []) => {
+  const defaults = DEFAULT_STAGE_TARGETS[stage] || DEFAULT_STAGE_TARGETS.middle;
+  const letters = [...defaults.preferred_letters];
+  const functions = [...defaults.preferred_functions];
+  let impactBand = defaults.impact_band;
+  let lifeRange = [...defaults.life_range_hours];
+
+  tags.forEach((tag) => {
+    const signal = TAG_SIGNAL_MAP[String(tag || '').trim().toLowerCase()];
+    if (!signal) {
+      return;
+    }
+
+    letters.push(...(signal.letters || []));
+    functions.push(...(signal.functions || []));
+    impactBand = mergeImpactBand(impactBand, signal.impact_band || null);
+
+    if (signal.life_hint) {
+      const [signalMin, signalMax] = signal.life_hint;
+      const [currentMin, currentMax] = lifeRange;
+      lifeRange = [
+        Math.min(currentMin, signalMin),
+        Math.max(currentMax, signalMax),
+      ];
+    }
+  });
+
+  const distinctLetters = buildPreferenceSet(letters);
+  const distinctFunctions = buildPreferenceSet(functions);
+  const normalizedLifeRange = clampLifeRange(stage, lifeRange);
+
+  return {
+    preferred_letters: distinctLetters,
+    preferred_functions: distinctFunctions,
+    impact_band: impactBand,
+    life_range_hours: normalizedLifeRange,
+  };
+};
+
 export const getWizardQuestionsForStage = (stage, answers = {}) => {
   const normalizedStage = String(stage || '').trim().toLowerCase();
   return (questionBank[normalizedStage] || []).map((question) => ({
@@ -200,6 +334,7 @@ export const buildStageTargetProfile = (stage, answers = {}, brief = null) => {
     .map((question) => getSelectedOption(question, answers[question.id], answers))
     .filter(Boolean);
   const tags = [...new Set(selectedOptions.flatMap((option) => option.tags || []))];
+  const structuredIntent = buildStructuredStageIntent(stage, tags);
   const summary = selectedOptions.map((option) => option.label).join(' - ');
   const briefContext = [
     brief?.mood_story,
@@ -218,5 +353,9 @@ export const buildStageTargetProfile = (stage, answers = {}, brief = null) => {
     tags,
     brief_context: briefContext,
     stage_goal: stageGoal,
+    preferred_letters: structuredIntent.preferred_letters,
+    preferred_functions: structuredIntent.preferred_functions,
+    impact_band: structuredIntent.impact_band,
+    life_range_hours: structuredIntent.life_range_hours,
   };
 };

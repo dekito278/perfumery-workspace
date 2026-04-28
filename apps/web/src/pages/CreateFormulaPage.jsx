@@ -173,7 +173,7 @@ const CreateFormulaPage = () => {
             setName((current) => current || `${resolvedBrief.title} formula`);
           }
           if (resolvedProjectStageItems.length) {
-            setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(resolvedProjectStageItems, materialsData)));
+            setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(resolvedProjectStageItems, materialsData, linksMap)));
           } else if (seedMaterialIds.length) {
             setFormulaItems(normalizeFormulaItems(buildComposerItemsFromMaterialIds(seedMaterialIds, materialsData)));
           }

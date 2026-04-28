@@ -19,6 +19,22 @@ const MATCH_RESOLUTION_ACTION = 'matched_existing';
 const normalizeLookupValue = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
 const collapseLookupValue = (value) => normalizeLookupValue(value).replace(/[^a-z0-9]+/g, '');
 const normalizeCasValue = (value) => normalizeLookupValue(value).replace(/[^a-z0-9]+/g, '');
+const normalizeChemicalSemanticValue = (value) => {
+  const normalized = normalizeLookupValue(value)
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]+/g, '-')
+    .replace(/\((z)\)/g, 'cis')
+    .replace(/\((e)\)/g, 'trans')
+    .replace(/\((rs|rac)\)/g, 'rac')
+    .replace(/\b(z)\s*-\s*(\d+)/g, 'cis-$2')
+    .replace(/\b(e)\s*-\s*(\d+)/g, 'trans-$2')
+    .replace(/\b(cis|trans)\s*[- ]?\s*(\d+)\b/g, '$1-$2')
+    .replace(/\b(\d+)\s*[- ]\s*([a-z])/g, '$1-$2')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return normalized;
+};
+const buildSemanticLookupKey = (value) => collapseLookupValue(normalizeChemicalSemanticValue(value));
 const DILUTION_MARKER_PATTERN = /(?:^|\b)(\d+\s*[- ]?\s*(?:tec|dpg|dep)|50\s*dep|100(?:\b|\s*\())/i;
 const INVALID_CAS_MATCH_VALUES = new Set(['', 'mixture', 'mix', 'na', 'n/a', 'unknown', 'odiferousmixture']);
 
@@ -72,6 +88,8 @@ const buildNameCandidates = ({ name, notes }) => {
 export const normalizeRawMaterialLookupValue = normalizeLookupValue;
 export const collapseRawMaterialLookupValue = collapseLookupValue;
 export const normalizeRawMaterialCasValue = normalizeCasValue;
+export const normalizeRawMaterialChemicalName = normalizeChemicalSemanticValue;
+export const buildRawMaterialSemanticLookupKey = buildSemanticLookupKey;
 export const rawMaterialHasDilutionMarker = hasDilutionMarker;
 export const buildRawMaterialNameCandidates = buildNameCandidates;
 
@@ -198,6 +216,29 @@ const pickPreferredExistingMatch = (matches) => {
   })[0];
 };
 
+const pickUniquePreferredExistingMatch = (matches) => {
+  if (!matches.length) {
+    return null;
+  }
+
+  if (matches.length === 1) {
+    return matches[0];
+  }
+
+  const uniqueIds = [...new Set(matches.map((entry) => entry.id).filter(Boolean))];
+  if (uniqueIds.length !== 1) {
+    return null;
+  }
+
+  return pickPreferredExistingMatch(matches);
+};
+
+const buildSemanticCandidateKeys = ({ name, notes }) => (
+  buildNameCandidates({ name, notes })
+    .map((candidate) => buildSemanticLookupKey(candidate))
+    .filter(Boolean)
+);
+
 const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
   const normalizedName = String(payload.name || '').trim();
   if (!normalizedName) {
@@ -223,28 +264,58 @@ const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
     }
   }
 
-  const exactNameMatch = candidateRows.find((row) => normalizeLookupValue(row.name) === normalizeLookupValue(payload.name));
-  if (exactNameMatch) {
+  const incomingIsDilutionVariant = hasDilutionMarker(payload.name);
+  const incomingCas = normalizeCasValue(payload.cas_number);
+  const safeCas = incomingCas && !INVALID_CAS_MATCH_VALUES.has(incomingCas) ? incomingCas : null;
+
+  if (safeCas) {
+    const casMatches = candidateRows.filter((row) => {
+      if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
+        return false;
+      }
+
+      const rowCas = normalizeCasValue(row.cas_number);
+      return rowCas && !INVALID_CAS_MATCH_VALUES.has(rowCas) && rowCas === safeCas;
+    });
+
+    const pickedCasMatch = pickUniquePreferredExistingMatch(casMatches);
+    if (pickedCasMatch) {
+      return {
+        record: pickedCasMatch,
+        resolution: buildResolution({
+          record: pickedCasMatch,
+          matchMethod: 'CAS number',
+          incomingName: payload.name,
+          matchedName: pickedCasMatch.name,
+        }),
+      };
+    }
+  }
+
+  const exactNameMatches = candidateRows.filter((row) => normalizeLookupValue(row.name) === normalizeLookupValue(payload.name));
+  const pickedExactNameMatch = pickUniquePreferredExistingMatch(exactNameMatches);
+  if (pickedExactNameMatch) {
     return {
-      record: exactNameMatch,
+      record: pickedExactNameMatch,
       resolution: buildResolution({
-        record: exactNameMatch,
+        record: pickedExactNameMatch,
         matchMethod: 'exact name',
         incomingName: payload.name,
-        matchedName: exactNameMatch.name,
+        matchedName: pickedExactNameMatch.name,
       }),
     };
   }
 
-  const incomingIsDilutionVariant = hasDilutionMarker(payload.name);
-  const incomingCas = normalizeCasValue(payload.cas_number);
-  const safeCas = incomingCas && !INVALID_CAS_MATCH_VALUES.has(incomingCas) ? incomingCas : null;
   const nameCandidates = buildNameCandidates({
     name: payload.name,
     notes: payload.notes,
   });
   const normalizedCandidateNames = nameCandidates.map((item) => normalizeLookupValue(item));
   const collapsedCandidateNames = nameCandidates.map((item) => collapseLookupValue(item));
+  const semanticCandidateKeys = buildSemanticCandidateKeys({
+    name: payload.name,
+    notes: payload.notes,
+  });
 
   const exactAliasMatches = candidateRows.filter((row) => {
     if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
@@ -254,7 +325,7 @@ const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
     const rowName = normalizeLookupValue(row.name);
     return normalizedCandidateNames.includes(rowName);
   });
-  const pickedExactAliasMatch = pickPreferredExistingMatch(exactAliasMatches);
+  const pickedExactAliasMatch = pickUniquePreferredExistingMatch(exactAliasMatches);
   if (pickedExactAliasMatch) {
     return {
       record: pickedExactAliasMatch,
@@ -275,7 +346,7 @@ const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
     const rowName = collapseLookupValue(row.name);
     return collapsedCandidateNames.includes(rowName);
   });
-  const pickedCollapsedAliasMatch = pickPreferredExistingMatch(collapsedAliasMatches);
+  const pickedCollapsedAliasMatch = pickUniquePreferredExistingMatch(collapsedAliasMatches);
   if (pickedCollapsedAliasMatch) {
     return {
       record: pickedCollapsedAliasMatch,
@@ -288,28 +359,29 @@ const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
     };
   }
 
-  if (safeCas) {
-    const casMatches = candidateRows.filter((row) => {
-      if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
-        return false;
-      }
+  const semanticAliasMatches = candidateRows.filter((row) => {
+    if (hasDilutionMarker(row.name) !== incomingIsDilutionVariant) {
+      return false;
+    }
 
-      const rowCas = normalizeCasValue(row.cas_number);
-      return rowCas && !INVALID_CAS_MATCH_VALUES.has(rowCas) && rowCas === safeCas;
+    const rowSemanticKeys = buildSemanticCandidateKeys({
+      name: row.name,
+      notes: row.notes,
     });
 
-    const pickedCasMatch = pickPreferredExistingMatch(casMatches);
-    if (pickedCasMatch) {
-      return {
-        record: pickedCasMatch,
-        resolution: buildResolution({
-          record: pickedCasMatch,
-          matchMethod: 'CAS number',
-          incomingName: payload.name,
-          matchedName: pickedCasMatch.name,
-        }),
-      };
-    }
+    return rowSemanticKeys.some((key) => semanticCandidateKeys.includes(key));
+  });
+  const pickedSemanticAliasMatch = pickUniquePreferredExistingMatch(semanticAliasMatches);
+  if (pickedSemanticAliasMatch) {
+    return {
+      record: pickedSemanticAliasMatch,
+      resolution: buildResolution({
+        record: pickedSemanticAliasMatch,
+        matchMethod: 'semantic alias',
+        incomingName: payload.name,
+        matchedName: pickedSemanticAliasMatch.name,
+      }),
+    };
   }
 
   return null;
@@ -853,6 +925,401 @@ export const updateRawMaterial = async (id, data) => {
   }
 };
 
+const hasMeaningfulText = (value) => String(value || '').trim().length > 0;
+
+const hasMeaningfulValue = (value) => value !== null && value !== undefined && String(value).trim() !== '';
+
+const preferMissingText = (currentValue, fallbackValue) => (
+  hasMeaningfulText(currentValue) ? currentValue : (hasMeaningfulText(fallbackValue) ? fallbackValue : null)
+);
+
+const preferPositiveNumber = (currentValue, fallbackValue) => {
+  const currentNumber = Number(currentValue);
+  if (Number.isFinite(currentNumber) && currentNumber > 0) {
+    return currentNumber;
+  }
+
+  const fallbackNumber = Number(fallbackValue);
+  return Number.isFinite(fallbackNumber) ? fallbackNumber : null;
+};
+
+const preferDefinedNumber = (currentValue, fallbackValue) => (
+  hasMeaningfulValue(currentValue) ? Number(currentValue) : (hasMeaningfulValue(fallbackValue) ? Number(fallbackValue) : null)
+);
+
+const mergeMaterialNotes = (masterRecord, duplicateRecord) => {
+  const masterNotes = String(masterRecord.notes || '').trim();
+  const duplicateNotes = String(duplicateRecord.notes || '').trim();
+
+  if (!duplicateNotes) {
+    return masterNotes || null;
+  }
+
+  if (!masterNotes) {
+    return duplicateNotes;
+  }
+
+  if (masterNotes === duplicateNotes || masterNotes.includes(duplicateNotes)) {
+    return masterNotes;
+  }
+
+  return `${masterNotes}\n\nMerged duplicate note from ${duplicateRecord.name}:\n${duplicateNotes}`;
+};
+
+const validateMergeableRawMaterials = (masterRecord, duplicateRecord) => {
+  if (!masterRecord || !duplicateRecord) {
+    throw new Error('Raw material merge requires both a master and a duplicate row.');
+  }
+
+  if (masterRecord.id === duplicateRecord.id) {
+    throw new Error('Master and duplicate raw material cannot be the same row.');
+  }
+
+  if (masterRecord.user_id !== duplicateRecord.user_id) {
+    throw new Error('Cannot merge raw materials from different users.');
+  }
+
+  if (masterRecord.type !== duplicateRecord.type) {
+    throw new Error('Cannot merge rows with different raw material types.');
+  }
+
+  if (Boolean(masterRecord.is_diluted) !== Boolean(duplicateRecord.is_diluted)) {
+    throw new Error('Cannot merge diluted and non-diluted raw materials automatically.');
+  }
+
+  if (String(masterRecord.dilution_solvent_id || '') === duplicateRecord.id || String(duplicateRecord.dilution_solvent_id || '') === masterRecord.id) {
+    throw new Error('Cannot merge rows that reference each other as dilution solvent. Review manually first.');
+  }
+
+  if (masterRecord.is_diluted) {
+    if (String(masterRecord.dilution_solvent_id || '') !== String(duplicateRecord.dilution_solvent_id || '')) {
+      throw new Error('Cannot merge diluted raw materials with different solvent links automatically.');
+    }
+
+    if (Number(masterRecord.dilution_percentage || 0) !== Number(duplicateRecord.dilution_percentage || 0)) {
+      throw new Error('Cannot merge diluted raw materials with different dilution percentages automatically.');
+    }
+  }
+
+  const masterWorkbookCode = normalizeLookupValue(masterRecord.workbook_code);
+  const duplicateWorkbookCode = normalizeLookupValue(duplicateRecord.workbook_code);
+  if (masterWorkbookCode && duplicateWorkbookCode && masterWorkbookCode !== duplicateWorkbookCode) {
+    throw new Error('Cannot merge rows that have different workbook codes.');
+  }
+
+  const masterCas = normalizeCasValue(masterRecord.cas_number);
+  const duplicateCas = normalizeCasValue(duplicateRecord.cas_number);
+  if (
+    masterCas
+    && duplicateCas
+    && !INVALID_CAS_MATCH_VALUES.has(masterCas)
+    && !INVALID_CAS_MATCH_VALUES.has(duplicateCas)
+    && masterCas !== duplicateCas
+  ) {
+    throw new Error('Cannot merge rows that have different CAS numbers.');
+  }
+};
+
+const buildMergedRawMaterialData = (masterRecord, duplicateRecord) => ({
+  ...masterRecord,
+  workbook_code: preferMissingText(masterRecord.workbook_code, duplicateRecord.workbook_code),
+  scent_family: preferMissingText(masterRecord.scent_family, duplicateRecord.scent_family),
+  supplier_name: preferMissingText(masterRecord.supplier_name, duplicateRecord.supplier_name),
+  vendor: preferMissingText(masterRecord.vendor, duplicateRecord.vendor),
+  description: preferMissingText(masterRecord.description, duplicateRecord.description),
+  notes: mergeMaterialNotes(masterRecord, duplicateRecord),
+  cas_number: preferMissingText(masterRecord.cas_number, duplicateRecord.cas_number),
+  ifra_limit: preferDefinedNumber(masterRecord.ifra_limit, duplicateRecord.ifra_limit),
+  reference_abc_primary_family: preferMissingText(
+    masterRecord.reference_abc_primary_family,
+    duplicateRecord.reference_abc_primary_family
+  ),
+  reference_impact: preferPositiveNumber(masterRecord.reference_impact, duplicateRecord.reference_impact),
+  reference_life_hours: preferPositiveNumber(masterRecord.reference_life_hours, duplicateRecord.reference_life_hours),
+  reference_use_level_typical_percent: preferDefinedNumber(
+    masterRecord.reference_use_level_typical_percent,
+    duplicateRecord.reference_use_level_typical_percent
+  ),
+  reference_use_level_max_percent: preferDefinedNumber(
+    masterRecord.reference_use_level_max_percent,
+    duplicateRecord.reference_use_level_max_percent
+  ),
+  cost_per_unit: Number(masterRecord.cost_per_unit || 0) > 0
+    ? Number(masterRecord.cost_per_unit || 0)
+    : Number(duplicateRecord.cost_per_unit || 0),
+});
+
+const moveRowsByRawMaterialId = async ({
+  table,
+  duplicateId,
+  masterId,
+  conflictColumns = [],
+}) => {
+  const baseColumns = ['id', ...conflictColumns];
+  const selectColumns = [...new Set(baseColumns)].join(', ');
+
+  const [duplicateResult, masterResult] = await Promise.all([
+    supabase
+      .from(table)
+      .select(selectColumns)
+      .eq('raw_material_id', duplicateId),
+    supabase
+      .from(table)
+      .select(selectColumns)
+      .eq('raw_material_id', masterId),
+  ]);
+
+  if (duplicateResult.error) {
+    throw duplicateResult.error;
+  }
+
+  if (masterResult.error) {
+    throw masterResult.error;
+  }
+
+  const masterConflictKeys = new Set(
+    (masterResult.data || []).map((row) => conflictColumns.map((column) => String(row[column] || '')).join('::'))
+  );
+
+  const duplicateRows = duplicateResult.data || [];
+  const conflictingDuplicateIds = duplicateRows
+    .filter((row) => conflictColumns.length > 0 && masterConflictKeys.has(conflictColumns.map((column) => String(row[column] || '')).join('::')))
+    .map((row) => row.id);
+
+  if (conflictingDuplicateIds.length) {
+    const { error: deleteError } = await supabase
+      .from(table)
+      .delete()
+      .in('id', conflictingDuplicateIds);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+  }
+
+  const remainingDuplicateIds = duplicateRows
+    .map((row) => row.id)
+    .filter((id) => !conflictingDuplicateIds.includes(id));
+
+  if (remainingDuplicateIds.length) {
+    const { error: updateError } = await supabase
+      .from(table)
+      .update({ raw_material_id: masterId })
+      .in('id', remainingDuplicateIds);
+
+    if (updateError) {
+      throw updateError;
+    }
+  }
+};
+
+const mergeReferenceLinksIntoMaster = async ({ masterId, duplicateId }) => {
+  const { data: links, error } = await supabase
+    .from('raw_material_reference_links')
+    .select('id, raw_material_id, reference_profile_id, match_method, match_confidence, is_primary, notes')
+    .in('raw_material_id', [masterId, duplicateId]);
+
+  if (error) {
+    throw error;
+  }
+
+  const masterLinks = (links || []).filter((row) => row.raw_material_id === masterId);
+  const duplicateLinks = (links || []).filter((row) => row.raw_material_id === duplicateId);
+  const masterReferenceIds = new Set(masterLinks.map((row) => row.reference_profile_id));
+  let masterHasPrimary = masterLinks.some((row) => row.is_primary);
+
+  for (const link of duplicateLinks) {
+    if (masterReferenceIds.has(link.reference_profile_id)) {
+      const { error: deleteError } = await supabase
+        .from('raw_material_reference_links')
+        .delete()
+        .eq('id', link.id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+      continue;
+    }
+
+    const nextPrimary = Boolean(link.is_primary) && !masterHasPrimary;
+    const { error: updateError } = await supabase
+      .from('raw_material_reference_links')
+      .update({
+        raw_material_id: masterId,
+        is_primary: nextPrimary,
+      })
+      .eq('id', link.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    masterReferenceIds.add(link.reference_profile_id);
+    if (nextPrimary) {
+      masterHasPrimary = true;
+    }
+  }
+};
+
+const mergeManualReferenceProfilesIntoMaster = async ({ masterId, duplicateId }) => {
+  const { data: profiles, error } = await supabase
+    .from('material_reference_profiles')
+    .select('id, source_raw_material_id')
+    .eq('source_kind', 'manual')
+    .in('source_raw_material_id', [masterId, duplicateId]);
+
+  if (error) {
+    throw error;
+  }
+
+  const masterProfile = (profiles || []).find((row) => row.source_raw_material_id === masterId) || null;
+  const duplicateProfile = (profiles || []).find((row) => row.source_raw_material_id === duplicateId) || null;
+
+  if (!duplicateProfile) {
+    return;
+  }
+
+  if (!masterProfile) {
+    const { error: reassignError } = await supabase
+      .from('material_reference_profiles')
+      .update({ source_raw_material_id: masterId })
+      .eq('id', duplicateProfile.id);
+
+    if (reassignError) {
+      throw reassignError;
+    }
+    return;
+  }
+
+  const { error: deleteError } = await supabase
+    .from('material_reference_profiles')
+    .delete()
+    .eq('id', duplicateProfile.id);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+};
+
+const getOwnedRawMaterialRecord = async (userId, rawMaterialId) => {
+  const { data, error } = await supabase
+    .from('raw_materials')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('id', rawMaterialId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};
+
+export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
+  try {
+    const userId = await getCurrentUserId();
+    const [masterRecord, duplicateRecord] = await Promise.all([
+      getOwnedRawMaterialRecord(userId, masterId),
+      getOwnedRawMaterialRecord(userId, duplicateId),
+    ]);
+
+    validateMergeableRawMaterials(masterRecord, duplicateRecord);
+    const mergedData = buildMergedRawMaterialData(masterRecord, duplicateRecord);
+
+    await moveRowsByRawMaterialId({
+      table: 'brief_material_shortlists',
+      duplicateId,
+      masterId,
+      conflictColumns: ['brief_id'],
+    });
+
+    await moveRowsByRawMaterialId({
+      table: 'brief_project_stage_items',
+      duplicateId,
+      masterId,
+      conflictColumns: ['project_id', 'stage'],
+    });
+
+    await mergeReferenceLinksIntoMaster({ masterId, duplicateId });
+    await mergeManualReferenceProfilesIntoMaster({ masterId, duplicateId });
+
+    const tableUpdates = [
+      supabase
+        .from('formula_items')
+        .update({ item_id: masterId })
+        .in('item_type', ['raw_material', 'solvent'])
+        .eq('item_id', duplicateId),
+      supabase
+        .from('formula_items')
+        .update({ dilution_solvent_id: masterId })
+        .eq('dilution_solvent_id', duplicateId),
+      supabase
+        .from('accord_items')
+        .update({ raw_material_id: masterId })
+        .eq('raw_material_id', duplicateId),
+      supabase
+        .from('accord_items')
+        .update({ dilution_solvent_id: masterId })
+        .eq('dilution_solvent_id', duplicateId),
+      supabase
+        .from('batches')
+        .update({ solvent_id: masterId })
+        .eq('solvent_id', duplicateId),
+      supabase
+        .from('batch_usage_records')
+        .update({ raw_material_id: masterId })
+        .eq('raw_material_id', duplicateId),
+      supabase
+        .from('raw_materials')
+        .update({ dilution_solvent_id: masterId })
+        .eq('dilution_solvent_id', duplicateId)
+        .neq('id', masterId),
+    ];
+
+    const results = await Promise.all(tableUpdates);
+    const failedResult = results.find((result) => result.error);
+    if (failedResult?.error) {
+      throw failedResult.error;
+    }
+
+    const { error: deleteError } = await supabase
+      .from('raw_materials')
+      .delete()
+      .eq('id', duplicateId)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    const payload = buildRawMaterialPayload(mergedData);
+    const { data: updatedMaster, error: updateError } = await supabase
+      .from('raw_materials')
+      .update(payload)
+      .eq('id', masterId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    const solventMap = await getSolventMap(updatedMaster.dilution_solvent_id ? [updatedMaster.dilution_solvent_id] : []);
+    await syncManualReferenceProfileForRawMaterial(updatedMaster);
+    clearRawMaterialOptionsCache();
+
+    return {
+      master: mapRawMaterial(updatedMaster, solventMap),
+      removedRawMaterialId: duplicateId,
+    };
+  } catch (error) {
+    console.error('Error merging raw materials:', error);
+    throw new Error(error.message || 'Failed to merge raw materials');
+  }
+};
+
 export const getRawMaterialDeletionDependencies = async (id) => {
   const [
     formulaUsageResult,
@@ -930,3 +1397,4 @@ export const deleteRawMaterial = async (id) => {
     throw new Error(error.message || 'Failed to delete raw material');
   }
 };
+

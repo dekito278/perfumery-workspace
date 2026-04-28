@@ -12,7 +12,7 @@ import FormField from '@/components/FormField.jsx';
 import FormNumber from '@/components/FormNumber.jsx';
 import FormSelect from '@/components/FormSelect.jsx';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
-import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import { buildRawMaterialSemanticLookupKey, createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
@@ -136,7 +136,8 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         byWorkbookCode.set(normalizeLookupValue(material.workbook_code), material);
       }
 
-      byName.set(normalizeLookupValue(material.name), material);
+      const semanticKey = buildRawMaterialSemanticLookupKey(material.name) || normalizeLookupValue(material.name);
+      byName.set(semanticKey, material);
     });
 
     return { byWorkbookCode, byName };
@@ -150,7 +151,9 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     return parseResult.items.map((item) => {
       const dilutionInfo = parseDilutionFromMaterialName(item.materialName);
       const workbookCodeMatch = rawMaterialLookup.byWorkbookCode.get(normalizeLookupValue(item.workbookCode));
-      const nameMatch = rawMaterialLookup.byName.get(normalizeLookupValue(dilutionInfo.pureName));
+      const nameMatch = rawMaterialLookup.byName.get(
+        buildRawMaterialSemanticLookupKey(dilutionInfo.pureName) || normalizeLookupValue(dilutionInfo.pureName)
+      );
       const solventMatch = dilutionInfo.solventName
         ? rawMaterials.find((material) => material.type === 'solvent' && normalizeLookupValue(material.name) === normalizeLookupValue(dilutionInfo.solventName)) || null
         : null;
