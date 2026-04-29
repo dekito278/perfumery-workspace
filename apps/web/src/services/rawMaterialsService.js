@@ -6,6 +6,13 @@ import {
   removeReferenceArtifactsForRawMaterial,
   syncManualReferenceProfileForRawMaterial,
 } from '@/services/materialReferenceService.js';
+import {
+  findDuplicateNameRecord,
+  findDuplicateWorkbookCodeRecord,
+  getCreationResolutionForExistingRecord,
+  translateRawMaterialUniqueConstraintError,
+  validateDilutionFields,
+} from '@/services/rawMaterialsMutationHelpers.js';
 
 const RAW_MATERIAL_OPTIONS_TTL_MS = 5 * 60 * 1000;
 let rawMaterialOptionsCache = {
@@ -746,15 +753,7 @@ export const createRawMaterial = async (data) => {
     const userId = await getCurrentUserId();
     const payload = buildRawMaterialPayload(data);
 
-    // Validate dilution fields
-    if (data.is_diluted) {
-      if (!data.dilution_solvent_id) {
-        throw new Error('Dilution solvent is required for diluted materials');
-      }
-      if (!data.dilution_percentage || data.dilution_percentage <= 0 || data.dilution_percentage > 100) {
-        throw new Error('Dilution percentage must be between 0 and 100');
-      }
-    }
+    validateDilutionFields(data);
 
     const smartMatch = await findExistingRawMaterialBySmartMatch(userId, payload);
     if (smartMatch?.record) {
@@ -764,42 +763,36 @@ export const createRawMaterial = async (data) => {
       return withCreationResolution(smartMatch.record, solventMap, smartMatch.resolution);
     }
 
-    const existingByWorkbookCode = payload.workbook_code
-      ? await findExistingRawMaterialByWorkbookCode(userId, payload.workbook_code)
-      : null;
+    const existingByWorkbookCode = await findDuplicateWorkbookCodeRecord({
+      userId,
+      workbookCode: payload.workbook_code,
+      findExistingRawMaterialByWorkbookCode,
+    });
     if (existingByWorkbookCode) {
-      const solventMap = await getSolventMap(
-        existingByWorkbookCode.dilution_solvent_id ? [existingByWorkbookCode.dilution_solvent_id] : []
-      );
-      return withCreationResolution(
-        existingByWorkbookCode,
-        solventMap,
-        buildResolution({
-          record: existingByWorkbookCode,
-          matchMethod: 'workbook code',
-          incomingName: payload.name,
-          matchedName: existingByWorkbookCode.name,
-        }),
-      );
+      return await getCreationResolutionForExistingRecord({
+        existingRecord: existingByWorkbookCode,
+        payload,
+        matchMethod: 'workbook code',
+        getSolventMap,
+        withCreationResolution,
+        buildResolution,
+      });
     }
 
-    const existingByName = payload.name
-      ? await findExistingRawMaterialByName(userId, payload.name)
-      : null;
+    const existingByName = await findDuplicateNameRecord({
+      userId,
+      name: payload.name,
+      findExistingRawMaterialByName,
+    });
     if (existingByName) {
-      const solventMap = await getSolventMap(
-        existingByName.dilution_solvent_id ? [existingByName.dilution_solvent_id] : []
-      );
-      return withCreationResolution(
-        existingByName,
-        solventMap,
-        buildResolution({
-          record: existingByName,
-          matchMethod: 'exact name',
-          incomingName: payload.name,
-          matchedName: existingByName.name,
-        }),
-      );
+      return await getCreationResolutionForExistingRecord({
+        existingRecord: existingByName,
+        payload,
+        matchMethod: 'exact name',
+        getSolventMap,
+        withCreationResolution,
+        buildResolution,
+      });
     }
 
     const { data: record, error } = await supabase
@@ -812,40 +805,17 @@ export const createRawMaterial = async (data) => {
       .single();
 
     if (error) {
-      if (error.code === '23505' && error.message?.includes('raw_materials_unique_workbook_code_per_user')) {
-        const existingRecord = await findExistingRawMaterialByWorkbookCode(userId, payload.workbook_code);
-        if (existingRecord) {
-          const solventMap = await getSolventMap(existingRecord.dilution_solvent_id ? [existingRecord.dilution_solvent_id] : []);
-          return withCreationResolution(
-            existingRecord,
-            solventMap,
-            buildResolution({
-              record: existingRecord,
-              matchMethod: 'workbook code',
-              incomingName: payload.name,
-              matchedName: existingRecord.name,
-            }),
-          );
-        }
-      }
-
-      if (error.code === '23505' && error.message?.includes('raw_materials_unique_name_per_user')) {
-        const existingRecord = await findExistingRawMaterialByName(userId, payload.name);
-        if (existingRecord) {
-          const solventMap = await getSolventMap(existingRecord.dilution_solvent_id ? [existingRecord.dilution_solvent_id] : []);
-          return withCreationResolution(
-            existingRecord,
-            solventMap,
-            buildResolution({
-              record: existingRecord,
-              matchMethod: 'exact name',
-              incomingName: payload.name,
-              matchedName: existingRecord.name,
-            }),
-          );
-        }
-      }
-      throw error;
+      return await translateRawMaterialUniqueConstraintError({
+        error,
+        userId,
+        payload,
+        mode: 'create',
+        findExistingRawMaterialByWorkbookCode,
+        findExistingRawMaterialByName,
+        getSolventMap,
+        withCreationResolution,
+        buildResolution,
+      });
     }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);
@@ -880,22 +850,27 @@ export const updateRawMaterial = async (id, data) => {
       };
       const payload = buildRawMaterialPayload(mergedData);
 
-      const duplicateWorkbookCodeRecord = payload.workbook_code
-        ? await findExistingRawMaterialByWorkbookCode(currentRecord.user_id, payload.workbook_code, id)
-        : null;
+      const duplicateWorkbookCodeRecord = await findDuplicateWorkbookCodeRecord({
+        userId: currentRecord.user_id,
+        workbookCode: payload.workbook_code,
+        excludedRawMaterialId: id,
+        findExistingRawMaterialByWorkbookCode,
+      });
       if (duplicateWorkbookCodeRecord) {
         throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material "${duplicateWorkbookCodeRecord.name}".`);
       }
 
-      // Validate dilution fields
-      if (mergedData.is_diluted) {
-        if (!mergedData.dilution_solvent_id) {
-          throw new Error('Dilution solvent is required for diluted materials');
+      const duplicateNameRecord = await findDuplicateNameRecord({
+        userId: currentRecord.user_id,
+        name: payload.name,
+        excludedRawMaterialId: id,
+        findExistingRawMaterialByName,
+      });
+      if (duplicateNameRecord) {
+        throw new Error(`Name "${payload.name}" sudah dipakai oleh raw material "${duplicateNameRecord.name}".`);
       }
-      if (!mergedData.dilution_percentage || mergedData.dilution_percentage <= 0 || mergedData.dilution_percentage > 100) {
-        throw new Error('Dilution percentage must be between 0 and 100');
-      }
-    }
+
+      validateDilutionFields(mergedData);
 
     const { data: record, error } = await supabase
       .from('raw_materials')
@@ -905,10 +880,18 @@ export const updateRawMaterial = async (id, data) => {
       .single();
 
       if (error) {
-        if (error.code === '23505' && error.message?.includes('raw_materials_unique_workbook_code_per_user')) {
-          throw new Error(`Workbook code "${payload.workbook_code}" sudah dipakai oleh raw material lain.`);
-        }
-        throw error;
+        await translateRawMaterialUniqueConstraintError({
+          error,
+          userId: currentRecord.user_id,
+          payload,
+          mode: 'update',
+          rawMaterialId: id,
+          findExistingRawMaterialByWorkbookCode,
+          findExistingRawMaterialByName,
+          getSolventMap,
+          withCreationResolution,
+          buildResolution,
+        });
       }
 
     const solventMap = await getSolventMap(record.dilution_solvent_id ? [record.dilution_solvent_id] : []);

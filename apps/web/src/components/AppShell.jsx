@@ -139,7 +139,7 @@ const AppShell = ({ children }) => {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="app-topbar no-print">
+          <header className="app-topbar-mobile no-print lg:hidden">
             <div className="flex items-center gap-3">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="lg:hidden">
@@ -186,26 +186,17 @@ const AppShell = ({ children }) => {
                 </span>
               </Link>
             </div>
+          </header>
 
-            <div className="hidden items-center gap-3 lg:flex">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setDesktopSidebarCollapsed((current) => !current)}
-                className="rounded-2xl border-white/70 bg-white/75"
-                title={desktopSidebarCollapsed ? 'Expand sidebar' : 'Minimize sidebar'}
-                aria-label={desktopSidebarCollapsed ? 'Expand sidebar' : 'Minimize sidebar'}
-              >
-                {desktopSidebarCollapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
-              </Button>
+          <div className="app-content-column">
+            <header className="app-topbar-desktop no-print hidden lg:flex">
               <div className="rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-medium text-muted-foreground">
                 Halo, {displayName}
               </div>
-            </div>
-          </header>
+            </header>
 
-          <main className="app-main">{children}</main>
+            <main className="app-main">{children}</main>
+          </div>
         </div>
       </div>
     </div>

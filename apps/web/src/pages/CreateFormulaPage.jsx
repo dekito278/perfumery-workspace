@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, Save, ClipboardList } from 'lucide-react';
@@ -15,65 +15,24 @@ import FormulaComposerPacePanel from '@/components/FormulaComposerPacePanel.jsx'
 import FormulaReferenceProfileSidebar from '@/components/FormulaReferenceProfileSidebar.jsx';
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
+import FormulaMaterialLibrary from '@/components/FormulaMaterialLibrary.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useBriefProjects } from '@/hooks/useBriefProjects.js';
+import {
+  composerSectionClass,
+  mapComposerItemsForSubmit,
+  useFormulaComposer,
+  validateComposerFields,
+} from '@/hooks/useFormulaComposer.js';
 import { useIsMobile } from '@/hooks/use-mobile.jsx';
-import { calculatePercentages, calculateTotalGrams, validateFormulaItems } from '@/utils/formulaCalculations.js';
+import { calculateTotalGrams } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
-import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
+import { formatGramAmount } from '@/utils/formatting.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
-import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
-import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
-import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
-import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 import { buildComposerItemsFromMaterialIds, buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
-
-const createFormulaItemRowKey = () => `formula-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-const pickPreferredPositiveNumber = (primaryValue, fallbackValue) => {
-  const primaryNumber = Number(primaryValue);
-  if (Number.isFinite(primaryNumber) && primaryNumber > 0) {
-    return primaryNumber;
-  }
-
-  const fallbackNumber = Number(fallbackValue);
-  if (Number.isFinite(fallbackNumber) && fallbackNumber > 0) {
-    return fallbackNumber;
-  }
-
-  if (primaryValue === null || primaryValue === undefined || primaryValue === '') {
-    return fallbackValue ?? null;
-  }
-
-  return primaryValue;
-};
-
-const createEmptyFormulaItem = () => ({
-  row_key: createFormulaItemRowKey(),
-  item_id: '',
-  gram_amount: '',
-  dilution_percent: '',
-  dilution_solvent_id: '',
-  dilution_solvent_name: '',
-  item_type: '',
-});
-
-const getActiveFormulaItems = (items) =>
-  items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
-
-const hasEmptyFormulaItem = (items) =>
-  items.some((item) => !item.item_id && !item.gram_amount && !item.dilution_percent && !item.dilution_solvent_id);
-
-const ensureFormulaComposerRow = (items) => (
-  hasEmptyFormulaItem(items) ? items : [...items, createEmptyFormulaItem()]
-);
-
-const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
-const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
-const roundComposerGram = (value) => Math.round(Number(value || 0) * 1000) / 1000;
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
@@ -100,14 +59,8 @@ const CreateFormulaPage = () => {
   const [version, setVersion] = useState('');
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
-  const [formulaItems, setFormulaItems] = useState([createEmptyFormulaItem()]);
   const [rawMaterials, setRawMaterials] = useState([]);
-  const [referenceLinksMap, setReferenceLinksMap] = useState(new Map());
   const [loadingData, setLoadingData] = useState(true);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [focusRowIndex, setFocusRowIndex] = useState(0);
-  const [activeRowIndex, setActiveRowIndex] = useState(0);
-  const [materialLibraryQuery, setMaterialLibraryQuery] = useState('');
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(true);
   const [metadataConfirmed, setMetadataConfirmed] = useState(false);
   const [mobileComposerTab, setMobileComposerTab] = useState('compose');
@@ -118,16 +71,42 @@ const CreateFormulaPage = () => {
   const [projectContext, setProjectContext] = useState(null);
   const [projectStageItems, setProjectStageItems] = useState([]);
   const isMobile = useIsMobile();
-  const activeRowIndexRef = useRef(0);
-  const formulaItemsRef = useRef(formulaItems);
-
-  useEffect(() => {
-    activeRowIndexRef.current = activeRowIndex;
-  }, [activeRowIndex]);
-
-  useEffect(() => {
-    formulaItemsRef.current = formulaItems;
-  }, [formulaItems]);
+  const composer = useFormulaComposer({
+    rawMaterials,
+    calculateTotalAmount: calculateTotalGrams,
+    validateGramAmount,
+  });
+  const {
+    formulaItems,
+    replaceFormulaItems,
+    referenceLinksMap,
+    focusRowIndex,
+    setFocusRowIndex,
+    activeRowIndex,
+    setActiveRowIndex,
+    materialLibraryQuery,
+    setMaterialLibraryQuery,
+    validationErrors,
+    setValidationErrors,
+    removeFormulaItem,
+    updateItem,
+    updateGramAmount,
+    updateDilutionConfig,
+    handleLibrarySelect,
+    handleLibraryDoubleClick,
+    applyPaceRecommendation,
+    activeFormulaItems,
+    totalGrams,
+    itemsWithPercentages,
+    rawMaterialsById,
+    selectedRawMaterialIds,
+    selectedRawMaterialIdsSet,
+    filteredLibraryMaterials,
+    getItemGuidanceStatus,
+    getItemGuidanceDetails,
+    activeItemInsight,
+    activeReferenceProfileDetails,
+  } = composer;
 
   useEffect(() => {
     let active = true;
@@ -173,9 +152,9 @@ const CreateFormulaPage = () => {
             setName((current) => current || `${resolvedBrief.title} formula`);
           }
           if (resolvedProjectStageItems.length) {
-            setFormulaItems(normalizeFormulaItems(buildComposerItemsFromProjectStageItems(resolvedProjectStageItems, materialsData, linksMap)));
+            replaceFormulaItems(buildComposerItemsFromProjectStageItems(resolvedProjectStageItems, materialsData, new Map()));
           } else if (seedMaterialIds.length) {
-            setFormulaItems(normalizeFormulaItems(buildComposerItemsFromMaterialIds(seedMaterialIds, materialsData)));
+            replaceFormulaItems(buildComposerItemsFromMaterialIds(seedMaterialIds, materialsData));
           }
         }
       } catch (error) {
@@ -192,211 +171,12 @@ const CreateFormulaPage = () => {
     return () => {
       active = false;
     };
-  }, [briefId, getBriefProjectByBriefId, getBriefProjectStageItems, getBriefs, projectId, seedMaterialIds]);
-
-  const removeFormulaItem = (index) => {
-    const remainingItems = formulaItems.filter((_, itemIndex) => itemIndex !== index);
-    const nextItems = normalizeFormulaItems(remainingItems);
-    formulaItemsRef.current = nextItems;
-    setFormulaItems(nextItems);
-    setActiveRowIndex((current) => {
-      if (current === index) {
-        return 0;
-      }
-      return Math.max(0, current > index ? current - 1 : current);
-    });
-    const nextErrors = { ...validationErrors };
-    delete nextErrors[`item_${index}`];
-    setValidationErrors(nextErrors);
-  };
-
-  const updateItem = (index, itemId) => {
-    setFormulaItems((currentItems) => {
-      const updated = [...currentItems];
-      const previousItem = updated[index] || createEmptyFormulaItem();
-      const wasComposerRow = index === 0
-        && !previousItem.item_id
-        && !previousItem.gram_amount
-        && !previousItem.dilution_percent
-        && !previousItem.dilution_solvent_id;
-
-      updated[index] = buildItemWithMaterial(previousItem, itemId);
-      const nextItems = wasComposerRow
-        ? normalizeFormulaItems(updated)
-        : ensureFormulaComposerRow(updated);
-      formulaItemsRef.current = nextItems;
-      return nextItems;
-    });
-    const nextActiveRowIndex = index === 0 ? 0 : index;
-    activeRowIndexRef.current = nextActiveRowIndex;
-    setActiveRowIndex(nextActiveRowIndex);
-    if (index === 0) {
-      setFocusRowIndex(0);
-    }
-  };
-
-  const buildItemWithMaterial = (baseItem, itemId) => {
-    const material = rawMaterials.find((row) => row.id === itemId);
-
-    return {
-      ...baseItem,
-      row_key: baseItem?.row_key || createFormulaItemRowKey(),
-      item_id: itemId,
-      item_type: material ? (material.type === 'solvent' ? 'solvent' : 'raw_material') : '',
-    };
-  };
-
-  const handleLibrarySelect = (itemId) => {
-    const rowIndex = Math.min(activeRowIndexRef.current, Math.max(formulaItemsRef.current.length - 1, 0));
-    const currentRowItemId = formulaItemsRef.current[rowIndex]?.item_id;
-    const alreadyAddedInAnotherRow = formulaItemsRef.current.some(
-      (item, index) => index !== rowIndex && item.item_id === itemId
-    );
-
-    if (alreadyAddedInAnotherRow && currentRowItemId !== itemId) {
-      return;
-    }
-
-    updateItem(rowIndex, itemId);
-  };
-
-  const handleLibraryDoubleClick = (itemId) => {
-    const rowIndex = Math.min(activeRowIndexRef.current, Math.max(formulaItemsRef.current.length - 1, 0));
-    const currentRowItemId = formulaItemsRef.current[rowIndex]?.item_id;
-    const alreadyAddedInAnotherRow = formulaItemsRef.current.some(
-      (item, index) => index !== rowIndex && item.item_id === itemId
-    );
-
-    if (alreadyAddedInAnotherRow && currentRowItemId !== itemId) {
-      return;
-    }
-
-    setFormulaItems((currentItems) => {
-      const nextItems = [...currentItems];
-      const targetRowIndex = Math.min(activeRowIndexRef.current, Math.max(nextItems.length - 1, 0));
-      nextItems[targetRowIndex] = buildItemWithMaterial(nextItems[targetRowIndex] || createEmptyFormulaItem(), itemId);
-
-      const committedItem = nextItems[targetRowIndex];
-      const remainingItems = nextItems.filter((_, itemIndex) => itemIndex !== targetRowIndex);
-      const normalizedItems = [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
-
-      formulaItemsRef.current = normalizedItems;
-      activeRowIndexRef.current = 0;
-      setActiveRowIndex(0);
-      setFocusRowIndex(0);
-      return normalizedItems;
-    });
-  };
+  }, [briefId, getBriefProjectByBriefId, getBriefProjectStageItems, getBriefs, projectId, replaceFormulaItems, seedMaterialIds]);
 
   const handleMobileLibraryPick = (itemId) => {
     handleLibraryDoubleClick(itemId);
     setMobileLibraryOpen(false);
     setMobileComposerTab('compose');
-  };
-
-  const handleCommitRow = (index) => {
-    setFormulaItems((currentItems) => {
-      const committedItem = currentItems[index];
-
-      if (!committedItem?.item_id || parseFloat(committedItem.gram_amount) <= 0) {
-        return currentItems;
-      }
-
-      const remainingItems = currentItems.filter((_, itemIndex) => itemIndex !== index);
-      const normalizedItems = [createEmptyFormulaItem(), committedItem, ...getActiveFormulaItems(remainingItems)];
-      formulaItemsRef.current = normalizedItems;
-      activeRowIndexRef.current = 0;
-      setFocusRowIndex(0);
-      setActiveRowIndex(0);
-      return normalizedItems;
-    });
-  };
-
-  const updateGramAmount = (index, gramAmount) => {
-    const updated = [...formulaItems];
-    updated[index].gram_amount = gramAmount;
-    formulaItemsRef.current = updated;
-    setFormulaItems(updated);
-    activeRowIndexRef.current = index;
-    setActiveRowIndex(index);
-
-    const error = validateGramAmount(gramAmount);
-    const nextErrors = { ...validationErrors };
-    if (error) {
-      nextErrors[`item_${index}`] = error;
-    } else {
-      delete nextErrors[`item_${index}`];
-    }
-    setValidationErrors(nextErrors);
-  };
-
-  const updateDilutionConfig = (index, field, value) => {
-    const updated = [...formulaItems];
-
-    if (field === 'clear_dilution') {
-      updated[index].dilution_percent = '';
-      updated[index].dilution_solvent_id = '';
-      updated[index].dilution_solvent_name = '';
-    } else {
-      updated[index][field] = value;
-    }
-
-    if (field === 'dilution_solvent_id') {
-      const solvent = rawMaterials.find((material) => material.id === value);
-      updated[index].dilution_solvent_name = solvent?.name || '';
-    }
-
-    if (field === 'dilution_percent' && (value === '' || Number(value) <= 0)) {
-      updated[index].dilution_percent = '';
-      updated[index].dilution_solvent_id = '';
-      updated[index].dilution_solvent_name = '';
-    }
-
-    formulaItemsRef.current = updated;
-    setFormulaItems(updated);
-    activeRowIndexRef.current = index;
-    setActiveRowIndex(index);
-    const nextErrors = { ...validationErrors };
-    delete nextErrors.ingredients;
-    delete nextErrors[`item_${index}`];
-    setValidationErrors(nextErrors);
-  };
-
-  const applyPaceRecommendation = (recommendation) => {
-    if (!recommendation?.itemId) {
-      return;
-    }
-
-    const targetGramAmount = String(roundComposerGram(recommendation.target));
-    let updatedIndex = -1;
-
-    setFormulaItems((currentItems) => {
-      const nextItems = currentItems.map((item, index) => {
-        if (item.item_id !== recommendation.itemId) {
-          return item;
-        }
-
-        updatedIndex = index;
-        return {
-          ...item,
-          gram_amount: targetGramAmount,
-        };
-      });
-
-      formulaItemsRef.current = nextItems;
-      return nextItems;
-    });
-
-    if (updatedIndex >= 0) {
-      activeRowIndexRef.current = updatedIndex;
-      setActiveRowIndex(updatedIndex);
-      setValidationErrors((current) => {
-        const nextErrors = { ...current };
-        delete nextErrors[`item_${updatedIndex}`];
-        return nextErrors;
-      });
-      toast.success(`${recommendation.title} applied`);
-    }
   };
 
   const handlePacePriorityModeChange = (nextMode) => {
@@ -406,121 +186,11 @@ const CreateFormulaPage = () => {
     setSearchParams(nextSearchParams, { replace: true, preventScrollReset: true });
   };
 
-  const activeFormulaItems = getActiveFormulaItems(formulaItems);
-  const totalGrams = calculateTotalGrams(activeFormulaItems);
-  const itemsWithPercentages = totalGrams > 0 ? calculatePercentages(activeFormulaItems, totalGrams) : [];
-  const rawMaterialsById = useMemo(
-    () => new Map(rawMaterials.map((material) => [material.id, material])),
-    [rawMaterials]
-  );
-  const selectedRawMaterialIdsKey = useMemo(
-    () => [...new Set(activeFormulaItems.map((item) => item.item_id).filter(Boolean))].sort().join('|'),
-    [activeFormulaItems]
-  );
-  const selectedRawMaterialIds = useMemo(
-    () => (selectedRawMaterialIdsKey ? selectedRawMaterialIdsKey.split('|') : []),
-    [selectedRawMaterialIdsKey]
-  );
-  const selectedRawMaterialIdsSet = useMemo(
-    () => new Set(selectedRawMaterialIds),
-    [selectedRawMaterialIds]
-  );
-  const sortedRawMaterials = useMemo(
-    () => [...rawMaterials].sort((a, b) => a.name.localeCompare(b.name)),
-    [rawMaterials]
-  );
-  const filteredLibraryMaterials = useMemo(() => {
-    const normalizedQuery = materialLibraryQuery.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return sortedRawMaterials;
+  const handleApplyPaceRecommendation = (recommendation) => {
+    const updatedIndex = applyPaceRecommendation(recommendation);
+    if (updatedIndex >= 0) {
+      toast.success(`${recommendation.title} applied`);
     }
-
-    return sortedRawMaterials.filter((material) =>
-      material.name.toLowerCase().includes(normalizedQuery)
-    );
-  }, [materialLibraryQuery, sortedRawMaterials]);
-
-  const getItemGuidanceStatus = (item) => {
-    const rawMaterial = rawMaterialsById.get(item?.item_id) || null;
-    const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
-    const fallbackReferenceProfile = linkedReferenceProfile
-      ? null
-      : buildFallbackReferenceProfileFromRawMaterial(rawMaterial);
-    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
-    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
-    const primaryClass = classDistribution[0] || null;
-
-    const resolvedValues = {
-      cas_number: referenceProfile?.cas_no || rawMaterial?.cas_number || '',
-      ifra_limit: referenceProfile?.ifra_limit_percent ?? rawMaterial?.ifra_limit ?? null,
-      reference_abc_primary_family: primaryClass?.familyName
-        || referenceProfile?.abc_primary_family
-        || rawMaterial?.reference_abc_primary_family
-        || '',
-      reference_impact: pickPreferredPositiveNumber(
-        referenceProfile?.impact,
-        rawMaterial?.reference_impact
-      ),
-      reference_life_hours: pickPreferredPositiveNumber(
-        referenceProfile?.life_hours,
-        rawMaterial?.reference_life_hours
-      ),
-    };
-
-    const missingGuidance = !referenceProfile;
-    const missingImpact = resolvedValues.reference_impact === null || resolvedValues.reference_impact === undefined || Number(resolvedValues.reference_impact) <= 0;
-    const missingLife = resolvedValues.reference_life_hours === null || resolvedValues.reference_life_hours === undefined || Number(resolvedValues.reference_life_hours) <= 0;
-    const missingClass = !classDistribution.length && !resolvedValues.reference_abc_primary_family;
-    const missingCas = !String(resolvedValues.cas_number || '').trim();
-    const missingIfra = resolvedValues.ifra_limit === null || resolvedValues.ifra_limit === undefined;
-
-    return {
-      hasWarning: missingGuidance || missingImpact || missingLife || missingClass || missingCas || missingIfra,
-      missingGuidance,
-      missingImpact,
-      missingLife,
-      missingClass,
-      missingCas,
-      missingIfra,
-      rawMaterial,
-    };
-  };
-
-  const getItemGuidanceDetails = (item) => {
-    const guidanceStatus = getItemGuidanceStatus(item);
-    const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
-    const fallbackReferenceProfile = linkedReferenceProfile
-      ? null
-      : buildFallbackReferenceProfileFromRawMaterial(guidanceStatus.rawMaterial);
-    const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
-    const classDistribution = extractWorkbookClassDistribution(referenceProfile);
-    const primaryClass = classDistribution[0] || null;
-
-    return {
-      ...guidanceStatus,
-      referenceProfile,
-      classDistribution,
-      resolvedValues: {
-        workbook_code: referenceProfile?.reference_code || guidanceStatus.rawMaterial?.workbook_code || '',
-        cas_number: referenceProfile?.cas_no || guidanceStatus.rawMaterial?.cas_number || '',
-        ifra_limit: referenceProfile?.ifra_limit_percent ?? guidanceStatus.rawMaterial?.ifra_limit ?? null,
-        reference_abc_primary_family: primaryClass?.familyName
-          || referenceProfile?.abc_primary_family
-          || guidanceStatus.rawMaterial?.reference_abc_primary_family
-          || '',
-        reference_impact: pickPreferredPositiveNumber(
-          referenceProfile?.impact,
-          guidanceStatus.rawMaterial?.reference_impact
-        ),
-        reference_life_hours: pickPreferredPositiveNumber(
-          referenceProfile?.life_hours,
-          guidanceStatus.rawMaterial?.reference_life_hours
-        ),
-        reference_use_level_typical_percent: referenceProfile?.use_level_typical_percent ?? guidanceStatus.rawMaterial?.reference_use_level_typical_percent ?? null,
-        reference_use_level_max_percent: referenceProfile?.use_level_max_percent ?? guidanceStatus.rawMaterial?.reference_use_level_max_percent ?? null,
-      },
-    };
   };
 
   const handleOpenGuidanceEditor = (item) => {
@@ -543,103 +213,8 @@ const CreateFormulaPage = () => {
     setGuidanceEditorMaterial(updatedMaterial);
   };
 
-  useEffect(() => {
-    let active = true;
-
-    const loadReferenceLinks = async () => {
-      if (!selectedRawMaterialIds.length) {
-        if (active) {
-          setReferenceLinksMap(new Map());
-        }
-        return;
-      }
-
-      try {
-        const selectedMaterials = selectedRawMaterialIds
-          .map((materialId) => rawMaterialsById.get(materialId))
-          .filter(Boolean);
-        const nextMap = await ensureReferenceLinksForRawMaterials(selectedMaterials);
-        if (active) {
-          setReferenceLinksMap(nextMap);
-        }
-      } catch (error) {
-        if (active) {
-          setReferenceLinksMap(new Map());
-        }
-      }
-    };
-
-    loadReferenceLinks();
-
-    return () => {
-      active = false;
-    };
-  }, [selectedRawMaterialIds, rawMaterialsById]);
-
-  const workbookSimulation = useMemo(() => buildWorkbookSimulation({
-    items: itemsWithPercentages,
-    rawMaterialsById,
-    referenceLinksMap,
-  }), [itemsWithPercentages, rawMaterialsById, referenceLinksMap]);
-
-  const simulationRowsByItemId = useMemo(
-    () => new Map(workbookSimulation.rows.map((row) => [row.item_id, row])),
-    [workbookSimulation.rows]
-  );
-
-  const activeItemInsight = useMemo(() => {
-    const activeItem = formulaItems[activeRowIndex];
-    if (!activeItem?.item_id) {
-      return null;
-    }
-
-    const guidanceDetails = getItemGuidanceDetails(activeItem);
-    const simulationRow = simulationRowsByItemId.get(activeItem.item_id) || null;
-
-    return {
-      name: guidanceDetails.rawMaterial?.name || 'Unknown material',
-      guidanceSource: simulationRow?.guidanceSource || (guidanceDetails.referenceProfile ? 'raw_material_fallback' : 'none'),
-      referenceCode: guidanceDetails.referenceProfile?.reference_code || null,
-      impact: guidanceDetails.resolvedValues.reference_impact ?? null,
-      lifeHours: guidanceDetails.resolvedValues.reference_life_hours ?? null,
-      effectivePercentage: simulationRow?.effectivePercentage ?? null,
-      impactContribution: simulationRow?.impactContribution ?? null,
-      lifeContribution: simulationRow?.lifeContribution ?? null,
-    };
-  }, [activeRowIndex, formulaItems, getItemGuidanceDetails, simulationRowsByItemId]);
-  const activeReferenceProfileDetails = useMemo(() => {
-    const activeItem = formulaItems[activeRowIndex];
-    if (!activeItem?.item_id) {
-      return null;
-    }
-
-    return getItemGuidanceDetails(activeItem);
-  }, [activeRowIndex, formulaItems, getItemGuidanceDetails]);
-
   const validateForm = () => {
-    const errors = {};
-
-    if (!name.trim()) {
-      errors.name = 'Formula name is required';
-    }
-    if (!code.trim()) {
-      errors.code = 'Formula code is required';
-    }
-
-    const ingredientErrors = validateFormulaItems(activeFormulaItems);
-    if (ingredientErrors.length > 0) {
-      errors.ingredients = ingredientErrors.join(', ');
-    }
-
-    const materialIds = new Set();
-    formulaItems.forEach((item, index) => {
-      if (item.item_id && materialIds.has(item.item_id)) {
-        errors[`item_${index}`] = 'Duplicate material';
-      } else if (item.item_id) {
-        materialIds.add(item.item_id);
-      }
-    });
-
+    const errors = validateComposerFields({ name, code, formulaItems, activeFormulaItems });
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -653,17 +228,7 @@ const CreateFormulaPage = () => {
     }
 
     try {
-      const itemsForSubmit = itemsWithPercentages.map((item) => ({
-        item_type: item.item_type,
-        item_id: item.item_id,
-        percentage: item.percentage,
-        grams: parseFloat(item.gram_amount),
-        dilution_percent: item.dilution_percent ? parseFloat(item.dilution_percent) : null,
-        dilution_solvent_id: item.dilution_solvent_id || null,
-        concentrate_amount: item.dilution_percent
-          ? Number(((parseFloat(item.gram_amount) * parseFloat(item.dilution_percent)) / 100).toFixed(3))
-          : null,
-      }));
+      const itemsForSubmit = mapComposerItemsForSubmit(itemsWithPercentages);
 
       const createdFormula = await createFormula({
         name,
@@ -728,57 +293,6 @@ const CreateFormulaPage = () => {
     setMetadataDialogOpen(false);
   };
 
-  const renderMaterialLibraryList = ({ mobile = false } = {}) => (
-    <div className={mobile ? 'space-y-2' : 'space-y-1.5'}>
-      {filteredLibraryMaterials.map((material) => {
-        const currentRowItemId = formulaItems[activeRowIndex]?.item_id;
-        const selectedInFormula = selectedRawMaterialIdsSet.has(material.id);
-        const selectedInActiveRow = currentRowItemId === material.id;
-        const disableLibraryPick = selectedInFormula;
-
-        return (
-          <button
-            key={material.id}
-            type="button"
-            onClick={() => (mobile ? handleMobileLibraryPick(material.id) : handleLibrarySelect(material.id))}
-            onDoubleClick={mobile ? undefined : () => handleLibraryDoubleClick(material.id)}
-            disabled={disableLibraryPick}
-            className={`flex w-full min-w-0 flex-col items-start gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${
-              disableLibraryPick
-                ? 'cursor-not-allowed border-[#e7dfcf] bg-[#f3eee4] text-muted-foreground opacity-70'
-                : 'border-transparent bg-white hover:border-[#decda6] hover:bg-[#fff9ec]'
-            }`}
-          >
-            <div className="min-w-0 w-full">
-              <div className="break-words text-sm font-medium leading-snug">{material.name}</div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground">
-                {material.type === 'solvent' ? 'Solvent' : 'Raw material'}
-                {material.unit ? ` - ${material.unit}` : ''}
-              </div>
-            </div>
-            <div className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-              disableLibraryPick
-                ? 'bg-[#e4dccb] text-[#8b7d63]'
-                : 'bg-[#f6efe0] text-[#7d6942]'
-            }`}>
-              {selectedInActiveRow
-                ? 'Selected'
-                : selectedInFormula
-                  ? 'Added'
-                  : mobile
-                    ? 'Tap to add'
-                    : `Row ${activeRowIndex + 1}`}
-            </div>
-          </button>
-        );
-      })}
-      {filteredLibraryMaterials.length === 0 ? (
-        <div className="rounded-xl bg-white px-3 py-4 text-sm text-muted-foreground">
-          No raw materials found.
-        </div>
-      ) : null}
-    </div>
-  );
 
   const handleMetadataDialogChange = (open) => {
     if (open) {
@@ -1077,7 +591,7 @@ const CreateFormulaPage = () => {
                             items={itemsWithPercentages}
                             rawMaterialsById={rawMaterialsById}
                             referenceLinksMap={referenceLinksMap}
-                            onApplyRecommendation={applyPaceRecommendation}
+                            onApplyRecommendation={handleApplyPaceRecommendation}
                             priorityMode={pacePriorityMode}
                             onPriorityModeChange={handlePacePriorityModeChange}
                           />
@@ -1152,7 +666,27 @@ const CreateFormulaPage = () => {
                       />
                     </div>
                     <div className="overflow-y-auto px-4 py-4">
-                      {renderMaterialLibraryList({ mobile: true })}
+                      <FormulaMaterialLibrary
+                        materials={filteredLibraryMaterials}
+                        activeRowIndex={activeRowIndex}
+                        currentRowItemId={formulaItems[activeRowIndex]?.item_id}
+                        selectedRawMaterialIdsSet={selectedRawMaterialIdsSet}
+                        mobile
+                        onSelect={(itemId) => handleMobileLibraryPick(itemId)}
+                        onDoubleSelect={handleLibraryDoubleClick}
+                        getDisabledState={({ material, selectedRawMaterialIdsSet: selectedIds }) => selectedIds.has(material.id)}
+                        getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
+                          const selectedInFormula = selectedIds.has(material.id);
+                          const selectedInActiveRow = currentRowItemId === material.id;
+                          if (selectedInActiveRow) {
+                            return 'Selected';
+                          }
+                          if (selectedInFormula) {
+                            return 'Added';
+                          }
+                          return mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`;
+                        }}
+                      />
                     </div>
                   </DrawerContent>
                 </Drawer>
@@ -1229,7 +763,26 @@ const CreateFormulaPage = () => {
                   </div>
 
                   <div className="max-h-[10.75rem] overflow-y-auto px-3 py-3">
-                    {renderMaterialLibraryList()}
+                    <FormulaMaterialLibrary
+                      materials={filteredLibraryMaterials}
+                      activeRowIndex={activeRowIndex}
+                      currentRowItemId={formulaItems[activeRowIndex]?.item_id}
+                      selectedRawMaterialIdsSet={selectedRawMaterialIdsSet}
+                      onSelect={(itemId) => handleLibrarySelect(itemId)}
+                      onDoubleSelect={handleLibraryDoubleClick}
+                      getDisabledState={({ material, selectedRawMaterialIdsSet: selectedIds }) => selectedIds.has(material.id)}
+                      getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
+                        const selectedInFormula = selectedIds.has(material.id);
+                        const selectedInActiveRow = currentRowItemId === material.id;
+                        if (selectedInActiveRow) {
+                          return 'Selected';
+                        }
+                        if (selectedInFormula) {
+                          return 'Added';
+                        }
+                        return mobile ? 'Tap to add' : `Row ${activeRowIndex + 1}`;
+                      }}
+                    />
                   </div>
                 </div>
 
@@ -1257,7 +810,7 @@ const CreateFormulaPage = () => {
                     items={itemsWithPercentages}
                     rawMaterialsById={rawMaterialsById}
                     referenceLinksMap={referenceLinksMap}
-                    onApplyRecommendation={applyPaceRecommendation}
+                    onApplyRecommendation={handleApplyPaceRecommendation}
                     priorityMode={pacePriorityMode}
                     onPriorityModeChange={handlePacePriorityModeChange}
                   />

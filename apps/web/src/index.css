@@ -201,6 +201,7 @@
     max-width: var(--page-max-width);
     margin: 0 auto;
     padding: var(--page-padding-y) var(--page-padding-x);
+    min-width: 0;
   }
 
   .app-shell {
@@ -208,12 +209,12 @@
     position: relative;
     isolation: isolate;
     display: flex;
-    min-height: calc(100vh - var(--app-topbar-offset));
+    min-height: 100vh;
   }
 
   .app-sidebar {
     position: relative;
-    z-index: 50;
+    z-index: 120;
     width: 19rem;
     flex-shrink: 0;
     padding: 1.5rem 1rem 1.5rem 1.5rem;
@@ -227,7 +228,7 @@
 
   .app-sidebar-panel {
     position: sticky;
-    z-index: 51;
+    z-index: 121;
     top: 1.25rem;
     display: flex;
     min-height: calc(100vh - 2.5rem);
@@ -247,11 +248,21 @@
     gap: 1rem;
   }
 
-  .app-topbar {
+  .app-content-column {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow-x: clip;
+  }
+
+  .app-topbar-mobile,
+  .app-topbar-desktop {
     position: fixed;
     top: 0;
     z-index: 40;
-    pointer-events: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -263,19 +274,14 @@
     backdrop-filter: none;
   }
 
-  .app-topbar a,
-  .app-topbar button,
-  .app-topbar [role="button"],
-  .app-topbar input,
-  .app-topbar textarea,
-  .app-topbar select {
-    pointer-events: auto;
-  }
-
-  @media (min-width: 1024px) {
-    .app-topbar {
-      left: var(--shell-sidebar-width, 19rem);
-    }
+  .app-topbar-desktop {
+    position: sticky;
+    top: 0;
+    left: auto;
+    right: auto;
+    margin: 0 1rem;
+    padding-top: 1rem;
+    z-index: 30;
   }
 
   .materials-desk-panel {
@@ -433,7 +439,8 @@
     }
   }
 
-  .app-topbar::before {
+  .app-topbar-mobile::before,
+  .app-topbar-desktop::before {
     content: "";
     position: absolute;
     inset: 0.3rem 1rem auto 1rem;
@@ -451,6 +458,7 @@
     z-index: 1;
     min-width: 0;
     flex: 1;
+    overflow-x: clip;
     background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.97));
     padding-top: var(--app-topbar-offset);
   }
@@ -1163,11 +1171,11 @@
     --app-topbar-offset: 4.85rem;
   }
 
-  .app-topbar {
+  .app-topbar-mobile {
     padding: 0.85rem 0.85rem 0;
   }
 
-  .app-topbar::before {
+  .app-topbar-mobile::before {
     inset: 0.28rem 0.85rem auto 0.85rem;
     height: calc(100% - 0.28rem);
     border-radius: 1.35rem;
@@ -1237,9 +1245,27 @@
 }
 
 @media (min-width: 1024px) {
-  .app-topbar {
-    left: var(--shell-sidebar-width, 19rem);
-    width: calc(100% - var(--shell-sidebar-width, 19rem));
+  .app-shell {
+    --app-topbar-offset: 1.25rem;
+    display: grid;
+    grid-template-columns: var(--shell-sidebar-width, 19rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .app-sidebar {
+    width: auto;
+  }
+
+  .app-topbar-desktop {
+    display: flex;
+  }
+
+  .app-topbar-desktop::before {
+    inset: 0.3rem 0 auto 0;
+  }
+
+  .app-main {
+    padding-top: 1rem;
   }
 }
 
