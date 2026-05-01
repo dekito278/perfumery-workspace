@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculatePercentages, validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
@@ -173,7 +173,7 @@ export const useFormulaComposer = ({
     formulaItemsRef.current = formulaItems;
   }, [formulaItems]);
 
-  const replaceFormulaItems = (items, { normalize = true } = {}) => {
+  const replaceFormulaItems = useCallback((items, { normalize = true } = {}) => {
     const nextItems = normalize ? normalizeFormulaItems(items) : ensureFormulaComposerRow(items);
     formulaItemsRef.current = nextItems;
     setFormulaItems(nextItems);
@@ -181,7 +181,7 @@ export const useFormulaComposer = ({
     setActiveRowIndex(0);
     setFocusRowIndex(0);
     setValidationErrors({});
-  };
+  }, []);
 
   const buildItemWithMaterial = (baseItem, itemId) => {
     const material = rawMaterials.find((row) => row.id === itemId);
@@ -467,11 +467,20 @@ export const useFormulaComposer = ({
       name: guidanceDetails.rawMaterial?.name || 'Unknown material',
       guidanceSource: simulationRow?.guidanceSource || (guidanceDetails.referenceProfile ? 'raw_material_fallback' : 'none'),
       referenceCode: guidanceDetails.referenceProfile?.reference_code || null,
-      impact: guidanceDetails.resolvedValues.reference_impact ?? null,
-      lifeHours: guidanceDetails.resolvedValues.reference_life_hours ?? null,
+      impact: simulationRow?.impact ?? guidanceDetails.resolvedValues.reference_impact ?? null,
+      lifeHours: simulationRow?.lifeHours ?? guidanceDetails.resolvedValues.reference_life_hours ?? null,
+      baseImpact: simulationRow?.baseImpact ?? guidanceDetails.resolvedValues.reference_impact ?? null,
+      baseLifeHours: simulationRow?.baseLifeHours ?? guidanceDetails.resolvedValues.reference_life_hours ?? null,
+      blendedImpact: simulationRow?.blendedImpact ?? null,
+      blendedLifeHours: simulationRow?.blendedLifeHours ?? null,
       effectivePercentage: simulationRow?.effectivePercentage ?? null,
       impactContribution: simulationRow?.impactContribution ?? null,
       lifeContribution: simulationRow?.lifeContribution ?? null,
+      dilutionFactor: simulationRow?.dilutionFactor ?? null,
+      dilutionSolventName: simulationRow?.dilutionSolvent?.name || null,
+      dilutionSolventBehaviour: simulationRow?.dilutionSolventBehaviour?.key || null,
+      dilutionSolventImpact: simulationRow?.dilutionSolventImpact ?? null,
+      dilutionSolventLifeHours: simulationRow?.dilutionSolventLifeHours ?? null,
     };
   }, [activeRowIndex, formulaItems, rawMaterialsById, referenceLinksMap, simulationRowsByItemId]);
 

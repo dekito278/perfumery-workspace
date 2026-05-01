@@ -4,6 +4,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 
+const hasCustomSolventCalibration = (row) => (
+  row.type === 'solvent'
+  && (
+    row.solvent_impact_shift_percent != null
+    || row.solvent_life_shift_percent != null
+  )
+);
+
 const RawMaterialMobileCard = ({
   row,
   guidance,
@@ -46,6 +54,18 @@ const RawMaterialMobileCard = ({
       <Badge variant={guidance.hasWarning ? 'outline' : 'secondary'} className="rounded-full px-2.5 py-1 text-[10px]">
         {guidance.hasWarning ? 'Needs guidance' : 'Guidance ready'}
       </Badge>
+      {row.type === 'solvent' ? (
+        <Badge
+          variant="outline"
+          className={`rounded-full px-2.5 py-1 text-[10px] ${
+            hasCustomSolventCalibration(row)
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+              : 'border-amber-200 bg-amber-50 text-amber-900'
+          }`}
+        >
+          {hasCustomSolventCalibration(row) ? 'Custom calibration' : 'Preset solvent'}
+        </Badge>
+      ) : null}
       {referenceStatusMap.get(row.id)?.reference_profile ? (
         <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[10px]">
           Ref {referenceStatusMap.get(row.id).reference_profile.reference_code}

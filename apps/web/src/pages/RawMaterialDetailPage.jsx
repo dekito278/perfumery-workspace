@@ -533,6 +533,34 @@ const RawMaterialDetailPage = () => {
             </DetailSection>
           )}
 
+          {material.type === 'solvent' && (
+            <DetailSection title="Solvent calibration">
+              <DetailFieldGroup columns={3}>
+                <DetailField
+                  label="Impact shift"
+                  value={material.solvent_impact_shift_percent !== null && material.solvent_impact_shift_percent !== undefined
+                    ? formatPercentage(material.solvent_impact_shift_percent, 2)
+                    : 'Default preset'}
+                />
+                <DetailField
+                  label="Life shift"
+                  value={material.solvent_life_shift_percent !== null && material.solvent_life_shift_percent !== undefined
+                    ? formatPercentage(material.solvent_life_shift_percent, 2)
+                    : 'Default preset'}
+                />
+                <DetailField
+                  label="Runtime behavior"
+                  value={
+                    material.solvent_impact_shift_percent !== null
+                    || material.solvent_life_shift_percent !== null
+                      ? 'Custom calibration'
+                      : 'Fallback preset'
+                  }
+                />
+              </DetailFieldGroup>
+            </DetailSection>
+          )}
+
           {material.notes && (
             <DetailSection title="Notes">
               <p className="text-muted-foreground whitespace-pre-wrap text-sm">{material.notes}</p>

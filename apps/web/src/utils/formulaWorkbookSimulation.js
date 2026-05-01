@@ -11,6 +11,8 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
+const normalizeText = (value) => String(value || '').trim().toLowerCase();
+
 const clamp = (value, min = 0, max = 100) => {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) {
@@ -49,6 +51,185 @@ export const inferReferencePyramidPlacement = (lifeHours) => {
 
 export const getFormulaItemDilutionFactor = (item) => {
   return getDilutionFactor(item?.dilution_percent ?? item?.dilution_percentage);
+};
+
+const resolveFormulaItemDilutionSolvent = (item, rawMaterialsById) => {
+  const solventId = String(item?.dilution_solvent_id || '').trim();
+  if (solventId && rawMaterialsById?.has(solventId)) {
+    return rawMaterialsById.get(solventId) || null;
+  }
+
+  const solventName = normalizeText(item?.dilution_solvent_name);
+  if (!solventName || !rawMaterialsById?.values) {
+    return null;
+  }
+
+  for (const material of rawMaterialsById.values()) {
+    if (material?.type !== 'solvent') {
+      continue;
+    }
+
+    if (normalizeText(material?.name) === solventName) {
+      return material;
+    }
+  }
+
+  return null;
+};
+
+const inferSolventBehaviourProfile = (solvent) => {
+  const configuredImpactShift = toFiniteNumber(solvent?.solvent_impact_shift_percent);
+  const configuredLifeShift = toFiniteNumber(solvent?.solvent_life_shift_percent);
+  if (configuredImpactShift !== null || configuredLifeShift !== null) {
+    return {
+      key: 'custom',
+      impact_shift: (configuredImpactShift ?? 0) / 100,
+      life_shift: (configuredLifeShift ?? 0) / 100,
+    };
+  }
+
+  const solventName = normalizeText(solvent?.name);
+  const solventCategory = normalizeText(solvent?.category);
+  const solventDescriptor = `${solventName} ${solventCategory}`.trim();
+
+  if (!solventDescriptor) {
+    return {
+      key: 'neutral',
+      impact_shift: 0,
+      life_shift: 0,
+    };
+  }
+
+  if (/(triethyl citrate|^tec\b|\btc\b)/i.test(solventDescriptor)) {
+    return {
+      key: 'tec',
+      impact_shift: -0.12,
+      life_shift: 0.05,
+    };
+  }
+
+  if (/(dipropylene glycol|\bdpg\b)/i.test(solventDescriptor)) {
+    return {
+      key: 'dpg',
+      impact_shift: -0.18,
+      life_shift: 0.12,
+    };
+  }
+
+  if (/(diethyl phthalate|\bdep\b)/i.test(solventDescriptor)) {
+    return {
+      key: 'dep',
+      impact_shift: -0.09,
+      life_shift: 0.08,
+    };
+  }
+
+  if (/(ethanol|alcohol|sda[-\s]*40|isopropyl myristate|\bipm\b)/i.test(solventDescriptor)) {
+    return {
+      key: 'volatile',
+      impact_shift: 0.14,
+      life_shift: -0.16,
+    };
+  }
+
+  return {
+    key: 'neutral',
+    impact_shift: -0.04,
+    life_shift: 0.03,
+  };
+};
+
+const blendAvailableMetric = (primaryValue, primaryShare, secondaryValue, secondaryShare) => {
+  const pairs = [
+    [toFiniteNumber(primaryValue), Math.max(Number(primaryShare) || 0, 0)],
+    [toFiniteNumber(secondaryValue), Math.max(Number(secondaryShare) || 0, 0)],
+  ].filter(([value, share]) => value !== null && share > 0);
+
+  if (!pairs.length) {
+    return toFiniteNumber(primaryValue) ?? toFiniteNumber(secondaryValue);
+  }
+
+  const totalShare = pairs.reduce((sum, [, share]) => sum + share, 0);
+  if (totalShare <= 0) {
+    return pairs[0]?.[0] ?? null;
+  }
+
+  const blendedValue = pairs.reduce((sum, [value, share]) => sum + (value * share), 0) / totalShare;
+  return Number(blendedValue.toFixed(4));
+};
+
+const applySolventCalibration = (value, carrierShare, shift, floor = 0) => {
+  const numericValue = toFiniteNumber(value);
+  if (numericValue === null) {
+    return null;
+  }
+
+  const share = Math.min(Math.max(Number(carrierShare) || 0, 0), 0.99);
+  const modifier = 1 + (share * Number(shift || 0));
+  return Number(Math.max(floor, numericValue * modifier).toFixed(4));
+};
+
+const resolveActualizedRowMetrics = ({
+  item,
+  rawMaterialsById,
+  guidance,
+  listedPercentage,
+  listedGrams,
+} = {}) => {
+  const dilutionFactor = getFormulaItemDilutionFactor(item);
+  const carrierShare = Math.max(0, 1 - dilutionFactor);
+  const effectivePercentage = listedPercentage * dilutionFactor;
+  const effectiveActiveGrams = listedGrams * dilutionFactor;
+  const baseImpact = toFiniteNumber(guidance?.impact);
+  const baseLifeHours = toFiniteNumber(guidance?.lifeHours);
+  const dilutionSolvent = carrierShare > 0
+    ? resolveFormulaItemDilutionSolvent(item, rawMaterialsById)
+    : null;
+  const solventGuidance = dilutionSolvent
+    ? resolveRawMaterialGuidanceSnapshot(dilutionSolvent, null)
+    : null;
+  const solventBehaviour = inferSolventBehaviourProfile(dilutionSolvent);
+  const solventImpact = toFiniteNumber(solventGuidance?.impact);
+  const solventLifeHours = toFiniteNumber(solventGuidance?.lifeHours);
+  const blendedImpact = carrierShare > 0
+    ? blendAvailableMetric(baseImpact, dilutionFactor, solventImpact, carrierShare)
+    : baseImpact;
+  const blendedLifeHours = carrierShare > 0
+    ? blendAvailableMetric(baseLifeHours, dilutionFactor, solventLifeHours, carrierShare)
+    : baseLifeHours;
+  const actualImpact = carrierShare > 0
+    ? applySolventCalibration(blendedImpact, carrierShare, solventBehaviour.impact_shift)
+    : blendedImpact;
+  const actualLifeHours = carrierShare > 0
+    ? applySolventCalibration(blendedLifeHours, carrierShare, solventBehaviour.life_shift)
+    : blendedLifeHours;
+  const impactContribution = actualImpact === null ? null : (listedPercentage / 100) * actualImpact;
+  const odourWeight = impactContribution ?? effectivePercentage ?? effectiveActiveGrams;
+  const lifeContribution = actualLifeHours === null ? null : (listedPercentage / 100) * actualLifeHours;
+  const weightedLifeContribution = impactContribution === null || actualLifeHours === null
+    ? null
+    : impactContribution * actualLifeHours;
+
+  return {
+    dilutionFactor,
+    effectivePercentage,
+    effectiveActiveGrams,
+    baseImpact,
+    baseLifeHours,
+    actualImpact,
+    actualLifeHours,
+    blendedImpact,
+    blendedLifeHours,
+    solventGuidance,
+    solventBehaviour,
+    dilutionSolvent,
+    solventImpact,
+    solventLifeHours,
+    impactContribution,
+    odourWeight,
+    lifeContribution,
+    weightedLifeContribution,
+  };
 };
 
 export const buildReferenceAdvisories = (item) => {
@@ -386,17 +567,13 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     const guidanceSource = guidance.guidanceSource;
     const listedPercentage = Number(item.percentage || 0);
     const listedGrams = Number(item.gram_amount ?? item.grams ?? 0);
-    const dilutionFactor = getFormulaItemDilutionFactor(item);
-    const effectivePercentage = listedPercentage * dilutionFactor;
-    const effectiveActiveGrams = listedGrams * dilutionFactor;
-    const impact = guidance.impact;
-    const lifeHours = guidance.lifeHours;
-    const impactContribution = impact === null ? null : (effectivePercentage / 100) * impact;
-    const odourWeight = impactContribution ?? effectivePercentage ?? effectiveActiveGrams;
-    const lifeContribution = lifeHours === null ? null : (effectivePercentage / 100) * lifeHours;
-    const weightedLifeContribution = impactContribution === null || lifeHours === null
-      ? null
-      : impactContribution * lifeHours;
+    const actualizedMetrics = resolveActualizedRowMetrics({
+      item,
+      rawMaterialsById,
+      guidance,
+      listedPercentage,
+      listedGrams,
+    });
     const pyramidPlacement = guidance.pyramidPlacement;
     const classDistribution = guidance.classDistribution.length
       ? guidance.classDistribution
@@ -416,15 +593,24 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
       guidanceSource,
       listedPercentage,
       listedGrams,
-      dilutionFactor,
-      effectivePercentage,
-      effectiveActiveGrams,
-      impact,
-      lifeHours,
-      impactContribution,
-      odourWeight,
-      lifeContribution,
-      weightedLifeContribution,
+      dilutionFactor: actualizedMetrics.dilutionFactor,
+      effectivePercentage: actualizedMetrics.effectivePercentage,
+      effectiveActiveGrams: actualizedMetrics.effectiveActiveGrams,
+      impact: actualizedMetrics.actualImpact,
+      lifeHours: actualizedMetrics.actualLifeHours,
+      baseImpact: actualizedMetrics.baseImpact,
+      baseLifeHours: actualizedMetrics.baseLifeHours,
+      blendedImpact: actualizedMetrics.blendedImpact,
+      blendedLifeHours: actualizedMetrics.blendedLifeHours,
+      impactContribution: actualizedMetrics.impactContribution,
+      odourWeight: actualizedMetrics.odourWeight,
+      lifeContribution: actualizedMetrics.lifeContribution,
+      weightedLifeContribution: actualizedMetrics.weightedLifeContribution,
+      dilutionSolvent: actualizedMetrics.dilutionSolvent,
+      dilutionSolventGuidance: actualizedMetrics.solventGuidance,
+      dilutionSolventBehaviour: actualizedMetrics.solventBehaviour,
+      dilutionSolventImpact: actualizedMetrics.solventImpact,
+      dilutionSolventLifeHours: actualizedMetrics.solventLifeHours,
       pyramidPlacement,
       classDistribution,
       effectivePercentageForAdvisory: advisoryPayload.effectivePercentage,

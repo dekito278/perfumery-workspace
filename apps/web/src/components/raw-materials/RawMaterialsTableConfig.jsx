@@ -5,6 +5,14 @@ import { formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { deriveScentFamilyFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import { REFERENCE_STATUS_LABELS, getReferenceStatusBadgeClassName } from '@/hooks/useRawMaterialsPage.js';
 
+const hasCustomSolventCalibration = (row) => (
+  row.type === 'solvent'
+  && (
+    row.solvent_impact_shift_percent != null
+    || row.solvent_life_shift_percent != null
+  )
+);
+
 export const createRawMaterialsColumns = ({
   categoryColorMap,
   getMaterialGuidanceDetails,
@@ -52,6 +60,20 @@ export const createRawMaterialsColumns = ({
         <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize">
           {row.type}
         </Badge>
+        {row.type === 'solvent' ? (
+          <div className="mt-2">
+            <Badge
+              variant="outline"
+              className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                hasCustomSolventCalibration(row)
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
+              }`}
+            >
+              {hasCustomSolventCalibration(row) ? 'Custom calibration' : 'Preset solvent'}
+            </Badge>
+          </div>
+        ) : null}
         <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
           <span
             className="h-2.5 w-2.5 rounded-full border border-border/60"

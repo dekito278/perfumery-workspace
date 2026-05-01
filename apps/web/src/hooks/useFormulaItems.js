@@ -19,6 +19,19 @@ export const useFormulaItems = () => {
     }
   }, []);
 
+  const getFormulaItemsByFormulaIds = useCallback(async (formulaIds) => {
+    setLoading(true);
+    setError(null);
+    try {
+      return await formulasService.getFormulaItemsByFormulaIds(formulaIds);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const createFormulaItem = useCallback(async (itemData) => {
     setLoading(true);
     setError(null);
@@ -62,6 +75,7 @@ export const useFormulaItems = () => {
     loading,
     error,
     getFormulaItems,
+    getFormulaItemsByFormulaIds,
     createFormulaItem,
     updateFormulaItem,
     deleteFormulaItem

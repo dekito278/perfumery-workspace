@@ -10,6 +10,12 @@ import { FIELD_CONSTRAINTS } from '@/utils/constants.js';
 import { createReferenceMetadataPatch } from '@/utils/canonicalReferenceProfile.js';
 
 export const normalizeCategoryValue = (value) => String(value || '').trim().toLowerCase();
+export const SOLVENT_CALIBRATION_PRESETS = [
+  { key: 'tec', label: 'TEC / TC', impactShiftPercent: -12, lifeShiftPercent: 5 },
+  { key: 'dpg', label: 'DPG', impactShiftPercent: -18, lifeShiftPercent: 12 },
+  { key: 'dep', label: 'DEP', impactShiftPercent: -9, lifeShiftPercent: 8 },
+  { key: 'volatile', label: 'Volatile alcohol / IPM', impactShiftPercent: 14, lifeShiftPercent: -16 },
+];
 
 export const createInitialRawMaterialFormData = () => ({
   name: '',
@@ -28,6 +34,8 @@ export const createInitialRawMaterialFormData = () => ({
   reference_life_hours: '',
   reference_use_level_typical_percent: '',
   reference_use_level_max_percent: '',
+  solvent_impact_shift_percent: '',
+  solvent_life_shift_percent: '',
   notes: '',
   is_diluted: false,
   dilution_solvent_id: '',
@@ -65,6 +73,8 @@ const createFormDataFromMaterial = (material) => {
     reference_life_hours: material.reference_life_hours?.toString() || '',
     reference_use_level_typical_percent: material.reference_use_level_typical_percent?.toString() || '',
     reference_use_level_max_percent: material.reference_use_level_max_percent?.toString() || '',
+    solvent_impact_shift_percent: material.solvent_impact_shift_percent?.toString() || '',
+    solvent_life_shift_percent: material.solvent_life_shift_percent?.toString() || '',
     notes: material.notes || '',
     is_diluted: material.is_diluted || false,
     dilution_solvent_id: material.dilution_solvent_id || '',
@@ -177,6 +187,17 @@ export const useRawMaterialForm = ({ open, material = null }) => {
       case 'reference_life_hours':
         error = value !== '' ? validateNonNegativeNumber(value, 'Lifetime') : '';
         break;
+      case 'solvent_impact_shift_percent':
+      case 'solvent_life_shift_percent':
+        if (value !== '') {
+          const numValue = Number(value);
+          if (Number.isNaN(numValue)) {
+            error = 'Calibration must be a valid number';
+          } else if (numValue < -100 || numValue > 100) {
+            error = 'Calibration must be between -100 and 100';
+          }
+        }
+        break;
       case 'dilution_solvent_id':
         if (formData.is_diluted && !value) {
           error = 'Solvent is required for diluted materials';
@@ -251,6 +272,37 @@ export const useRawMaterialForm = ({ open, material = null }) => {
       [field]: validateField(field, formData[field]),
     }));
     checkWarnings();
+  };
+
+  const applySolventCalibrationPreset = (presetKey) => {
+    const preset = SOLVENT_CALIBRATION_PRESETS.find((entry) => entry.key === presetKey);
+    if (!preset) {
+      return;
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      solvent_impact_shift_percent: String(preset.impactShiftPercent),
+      solvent_life_shift_percent: String(preset.lifeShiftPercent),
+    }));
+    setErrors((previous) => ({
+      ...previous,
+      solvent_impact_shift_percent: '',
+      solvent_life_shift_percent: '',
+    }));
+  };
+
+  const clearSolventCalibrationPreset = () => {
+    setFormData((previous) => ({
+      ...previous,
+      solvent_impact_shift_percent: '',
+      solvent_life_shift_percent: '',
+    }));
+    setErrors((previous) => ({
+      ...previous,
+      solvent_impact_shift_percent: '',
+      solvent_life_shift_percent: '',
+    }));
   };
 
   const applyImportedGuidance = (updater) => {
@@ -445,6 +497,12 @@ export const useRawMaterialForm = ({ open, material = null }) => {
     reference_life_hours: formData.reference_life_hours ? parseFloat(formData.reference_life_hours) : null,
     reference_use_level_typical_percent: formData.reference_use_level_typical_percent ? parseFloat(formData.reference_use_level_typical_percent) : null,
     reference_use_level_max_percent: formData.reference_use_level_max_percent ? parseFloat(formData.reference_use_level_max_percent) : null,
+    solvent_impact_shift_percent: isSolvent && formData.solvent_impact_shift_percent !== ''
+      ? parseFloat(formData.solvent_impact_shift_percent)
+      : null,
+    solvent_life_shift_percent: isSolvent && formData.solvent_life_shift_percent !== ''
+      ? parseFloat(formData.solvent_life_shift_percent)
+      : null,
     notes: formData.notes || null,
     is_diluted: formData.is_diluted,
     dilution_solvent_id: formData.is_diluted ? formData.dilution_solvent_id : null,
@@ -472,11 +530,14 @@ export const useRawMaterialForm = ({ open, material = null }) => {
     hasErrors: Object.values(errors).some(Boolean),
     handleChange,
     handleBlur,
+    applySolventCalibrationPreset,
+    clearSolventCalibrationPreset,
     handleImportPerfumersWorldUrl,
     handleImportScentreeUrl,
     handleImportTgscUrl,
     validateForm,
     resetForm,
     buildSubmitPayload,
+    solventCalibrationPresets: SOLVENT_CALIBRATION_PRESETS,
   };
 };

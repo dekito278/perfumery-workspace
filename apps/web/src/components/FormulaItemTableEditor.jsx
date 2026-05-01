@@ -44,6 +44,17 @@ const FormulaItemTableEditor = ({
     : activeItemInsight?.guidanceSource === 'raw_material_fallback'
       ? 'Manual guidance from raw material'
       : 'Guidance missing';
+  const hasActualizedDilutionInsight = Boolean(
+    activeItemInsight?.dilutionFactor !== null
+    && activeItemInsight?.dilutionFactor !== undefined
+    && Number(activeItemInsight.dilutionFactor) > 0
+    && Number(activeItemInsight.dilutionFactor) < 1
+  );
+  const impactCardLabel = hasActualizedDilutionInsight ? 'Actual blend impact' : 'Material impact';
+  const lifeCardLabel = hasActualizedDilutionInsight ? 'Actual blend life' : 'Material life';
+  const solventBehaviourLabel = activeItemInsight?.dilutionSolventBehaviour
+    ? String(activeItemInsight.dilutionSolventBehaviour).toUpperCase()
+    : null;
 
   return (
     <div className="overflow-visible rounded-[18px] border border-[#d7cfbf] bg-white shadow-sm">
@@ -60,6 +71,11 @@ const FormulaItemTableEditor = ({
               <div className="mt-1 text-xs text-muted-foreground">
                 {activeInsightSourceLabel}
               </div>
+              {hasActualizedDilutionInsight ? (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Diluted with {activeItemInsight.dilutionSolventName || 'carrier'}{solventBehaviourLabel ? ` (${solventBehaviourLabel})` : ''} so impact/life use the calibrated blend profile.
+                </div>
+              ) : null}
             </div>
             {activeItemInsight.effectivePercentage !== null && activeItemInsight.effectivePercentage !== undefined ? (
               <div className="w-fit rounded-full border border-[#d9cfbb] bg-white px-3 py-1 text-[11px] font-semibold text-[#5e5239]">
@@ -70,12 +86,22 @@ const FormulaItemTableEditor = ({
 
           <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-[#e5dcc7] bg-white px-3 py-2.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b7650]">Material impact</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b7650]">{impactCardLabel}</div>
               <div className="mt-1 text-sm font-semibold text-[#443822]">{formatImpactValue(activeItemInsight.impact)}</div>
+              {hasActualizedDilutionInsight ? (
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  Base {formatImpactValue(activeItemInsight.baseImpact)} • Pre-cal {formatImpactValue(activeItemInsight.blendedImpact)}
+                </div>
+              ) : null}
             </div>
             <div className="rounded-2xl border border-[#d9def0] bg-white px-3 py-2.5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#61709a]">Material life</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#61709a]">{lifeCardLabel}</div>
               <div className="mt-1 text-sm font-semibold text-[#26314e]">{formatLifeValue(activeItemInsight.lifeHours)}</div>
+              {hasActualizedDilutionInsight ? (
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  Base {formatLifeValue(activeItemInsight.baseLifeHours)} • Pre-cal {formatLifeValue(activeItemInsight.blendedLifeHours)}
+                </div>
+              ) : null}
             </div>
             <div className="rounded-2xl border border-[#dce6d1] bg-white px-3 py-2.5">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f8454]">Impact in formula</div>

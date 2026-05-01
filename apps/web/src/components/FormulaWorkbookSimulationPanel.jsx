@@ -230,7 +230,7 @@ const canSafelyIncreaseRow = (row, simulation, objective, referenceLinksMap) => 
   }
 
   const profile = getRowProfile(row, referenceLinksMap);
-  const impact = Number(profile?.impact || row?.impact || 0);
+  const impact = Number(row?.impact ?? profile?.impact ?? 0);
   const impactShare = getRowImpactShare(row, simulation);
 
   if (isRowNearUseCeiling(row, profile)) {
@@ -255,7 +255,7 @@ const scoreIncreaseCandidate = (row, simulation, objective, referenceLinksMap) =
 
   const profile = getRowProfile(row, referenceLinksMap);
   const primaryFunction = profile?.primary_function || null;
-  const impact = Number(profile?.impact || row?.impact || 0);
+  const impact = Number(row?.impact ?? profile?.impact ?? 0);
   const impactShare = getRowImpactShare(row, simulation);
   const effectivePercentage = Number(row.effectivePercentage || 0);
   const typical = Number(profile?.use_level_typical_percent || 0);

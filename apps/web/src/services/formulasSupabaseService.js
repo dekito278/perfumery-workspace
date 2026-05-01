@@ -100,6 +100,28 @@ export const getFormulaItems = async (formulaId) => {
   return (data || []).map(toAppRecord);
 };
 
+export const getFormulaItemsByFormulaIds = async (formulaIds = []) => {
+  const normalizedFormulaIds = [...new Set((formulaIds || []).filter(Boolean).map((value) => String(value)))];
+  if (!normalizedFormulaIds.length) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('formula_items')
+    .select('*')
+    .in('formula_id', normalizedFormulaIds)
+    .order('formula_id', { ascending: true })
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching formula items by formula ids:', error);
+    throw new Error(error.message || 'Failed to fetch formula items');
+  }
+
+  return (data || []).map(toAppRecord);
+};
+
 export const createFormula = async (formulaData, items) => {
   const userId = await getCurrentUserId();
   let payload = {

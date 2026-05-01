@@ -1,4 +1,4 @@
-import { resolveMaterialCompositionProfile } from '@/utils/materialCompositionProfile.js';
+import { resolveMaterialCompositionProfile, resolveRecommendedUsagePlan } from '@/utils/materialCompositionProfile.js';
 import { buildGuidanceLimitAdvisories, getDilutionFactor } from '@/utils/rawMaterialGuidanceAdvisories.js';
 
 const STAGE_GRAM_BASE = {
@@ -20,7 +20,47 @@ const ROLE_GRAM_MULTIPLIER = {
 
 const clamp = (value, min, max) => Math.min(Math.max(Number(value || 0), min), max);
 
+const DILUTION_SOLVENT_NAME_PRIORITY = [
+  'triethyl citrate',
+  'tec',
+  'dipropylene glycol',
+  'dpg',
+  'diethyl phthalate',
+  'dep',
+  'ethanol',
+  'alcool',
+  'alcohol',
+];
+
+const pickPreferredDilutionSolvent = (rawMaterials = []) => {
+  const solventRows = (rawMaterials || []).filter((material) => material?.type === 'solvent');
+  if (!solventRows.length) {
+    return null;
+  }
+
+  const rankedSolvents = [...solventRows].sort((left, right) => {
+    const leftName = String(left.name || '').toLowerCase();
+    const rightName = String(right.name || '').toLowerCase();
+    const leftRank = DILUTION_SOLVENT_NAME_PRIORITY.findIndex((label) => leftName.includes(label));
+    const rightRank = DILUTION_SOLVENT_NAME_PRIORITY.findIndex((label) => rightName.includes(label));
+    const safeLeftRank = leftRank >= 0 ? leftRank : Number.MAX_SAFE_INTEGER;
+    const safeRightRank = rightRank >= 0 ? rightRank : Number.MAX_SAFE_INTEGER;
+
+    if (safeLeftRank !== safeRightRank) {
+      return safeLeftRank - safeRightRank;
+    }
+
+    return leftName.localeCompare(rightName);
+  });
+
+  return rankedSolvents[0] || null;
+};
+
 const resolveSeedGramAmount = (item, material, referenceLink = null) => {
+  if (Number(item?.recommended_seed_grams) > 0) {
+    return String(Number(item.recommended_seed_grams).toFixed(3)).replace(/\.?0+$/, (match) => match === '.000' ? '' : match);
+  }
+
   const stageBase = STAGE_GRAM_BASE[item.stage] ?? 1;
   const roleMultiplier = ROLE_GRAM_MULTIPLIER[item.role] ?? 1;
   const rankOrder = Number(item.rank_order);
@@ -73,6 +113,7 @@ const resolveSeedGramAmount = (item, material, referenceLink = null) => {
 
 export const buildComposerItemsFromProjectStageItems = (stageItems = [], rawMaterials = [], referenceLinksMap = new Map()) => {
   const rawMaterialsById = new Map((rawMaterials || []).map((material) => [material.id, material]));
+  const preferredDilutionSolvent = pickPreferredDilutionSolvent(rawMaterials);
 
   return (stageItems || [])
     .filter((item) => item?.raw_material_id || item?.expand?.raw_material_id?.id)
@@ -88,15 +129,33 @@ export const buildComposerItemsFromProjectStageItems = (stageItems = [], rawMate
     .map((item) => {
       const materialId = item.raw_material_id || item.expand?.raw_material_id?.id;
       const material = rawMaterialsById.get(materialId) || item.expand?.raw_material_id || null;
+      const profile = material ? resolveMaterialCompositionProfile(material, referenceLinksMap.get(materialId) || null) : null;
+      const usagePlan = resolveRecommendedUsagePlan({
+        profile,
+        materialId,
+        stage: item.stage,
+        fitScore: item.fit_score,
+      });
+      const recommendedDilutionPercent = Number(item.recommended_dilution_percent) > 0
+        ? Number(item.recommended_dilution_percent)
+        : usagePlan.dilution_percent;
+      const recommendedSeedGrams = Number(item.recommended_seed_grams) > 0
+        ? Number(item.recommended_seed_grams)
+        : usagePlan.recommended_grams;
+      const dilutionSolventId = recommendedDilutionPercent ? preferredDilutionSolvent?.id || '' : '';
+      const dilutionSolventName = recommendedDilutionPercent ? preferredDilutionSolvent?.name || '' : '';
 
       return {
         item_id: materialId,
         gram_amount: item.selection_state === 'selected' || item.selection_state === 'manual'
-          ? resolveSeedGramAmount(item, material, referenceLinksMap.get(materialId) || null)
+          ? resolveSeedGramAmount({
+              ...item,
+              recommended_seed_grams: recommendedSeedGrams,
+            }, material, referenceLinksMap.get(materialId) || null)
           : '',
-        dilution_percent: '',
-        dilution_solvent_id: '',
-        dilution_solvent_name: '',
+        dilution_percent: recommendedDilutionPercent ? String(recommendedDilutionPercent) : '',
+        dilution_solvent_id: dilutionSolventId,
+        dilution_solvent_name: dilutionSolventName,
         item_type: material?.type === 'solvent' ? 'solvent' : 'raw_material',
         stage: item.stage || null,
         source_role: item.role || null,
