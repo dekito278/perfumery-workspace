@@ -216,12 +216,17 @@ const DashboardPage = () => {
             <p className="max-w-3xl text-base text-muted-foreground">
               {formulas.length > 0
                 ? `${displayName}, sekarang ada ${formulasInProgress.length} formula yang sedang berjalan, ${activeBriefs.length} brief aktif, ${pipelineSummary.shortlistCount} shortlist entries, ${missingGuidanceMaterials.length} material yang masih butuh guidance, dan ${actionNeededLogs.length} validation note yang minta tindak lanjut.`
-                : `${displayName}, belum ada formula aktif. Mulai dari brief dan material shortlist untuk membuka workspace ini.`}
+                : `${displayName}, belum ada formula aktif. Mulai langsung dari formula mandiri, atau buat brief dulu kalau butuh arah project.`}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button onClick={() => navigate('/briefs')} className="h-11 rounded-2xl gap-2 px-5">
-                Start from briefs
+              <Button onClick={() => navigate('/formulas/new')} className="h-11 rounded-2xl gap-2 px-5">
+                <Beaker className="w-4 h-4" />
+                New formula
                 <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/briefs')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
+                <ClipboardList className="w-4 h-4" />
+                Start from briefs
               </Button>
               <Button variant="outline" onClick={() => navigate('/formulas')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
                 Open formulas

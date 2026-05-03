@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FileUp } from 'lucide-react';
+import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FileUp, ClipboardList, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
@@ -267,7 +267,7 @@ const FormulasPage = () => {
         return (
           <div className="flex min-w-[250px] flex-wrap gap-1.5">
             <Badge variant={pipeline.briefCount ? 'secondary' : 'outline'} className="text-[10px]">
-              Brief {pipeline.briefCount}
+              {pipeline.briefCount ? `Brief ${pipeline.briefCount}` : 'Standalone'}
             </Badge>
             <Badge variant={pipeline.shortlistCount ? 'secondary' : 'outline'} className="text-[10px]">
               Shortlist {pipeline.shortlistCount}
@@ -343,18 +343,19 @@ const FormulasPage = () => {
 
         <PageHeader
           title="Formulas"
-          description="Compose formulas after brief and shortlist work. Direct creation still works, but the cleanest path starts from a brief board."
-          action="Start from brief"
-          actionIcon={Plus}
-          onAction={() => navigate('/briefs')}
-          secondaryAction="New formula"
-          secondaryActionIcon={Plus}
-          onSecondaryAction={() => navigate('/formulas/new')}
+          description="Buat formula mandiri langsung dari material library, atau mulai dari brief kalau memang perlu project direction dan shortlist."
+          action="New formula"
+          actionIcon={Beaker}
+          onAction={() => navigate('/formulas/new')}
+          secondaryAction="Start from brief"
+          secondaryActionIcon={ClipboardList}
+          onSecondaryAction={() => navigate('/briefs')}
         />
 
         <div className="mb-6 flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-2xl" onClick={() => navigate('/briefs')}>
-            Brief to shortlist to formula
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Brief workspace
           </Button>
           <Button variant="outline" className="rounded-2xl" onClick={() => setImportModalOpen(true)}>
             <FileUp className="mr-2 h-4 w-4" />
@@ -451,7 +452,7 @@ const FormulasPage = () => {
                     </div>
                     <div className="mt-4 flex flex-wrap gap-1.5">
                       <Badge variant={pipeline.briefCount ? 'secondary' : 'outline'} className="text-[10px]">
-                        Brief {pipeline.briefCount || 0}
+                        {pipeline.briefCount ? `Brief ${pipeline.briefCount}` : 'Standalone'}
                       </Badge>
                       <Badge variant={pipeline.shortlistCount ? 'secondary' : 'outline'} className="text-[10px]">
                         Shortlist {pipeline.shortlistCount || 0}
@@ -464,6 +465,53 @@ const FormulasPage = () => {
                           Action {pipeline.actionNeededCount}
                         </Badge>
                       ) : null}
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleView(row)}
+                        className="h-10 rounded-xl gap-2 text-xs"
+                        aria-label={`View ${row.name}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDuplicate(row)}
+                        className="h-10 rounded-xl gap-2 text-xs"
+                        disabled={duplicatingId === row.id}
+                        aria-label={`Duplicate ${row.name}`}
+                      >
+                        <Copy className={`h-4 w-4 ${duplicatingId === row.id ? 'animate-spin' : ''}`} />
+                        Duplicate
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(row)}
+                        className="h-10 rounded-xl gap-2 text-xs"
+                        aria-label={`Edit ${row.name}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(row)}
+                        className="h-10 rounded-xl gap-2 border-destructive/25 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        aria-label={`Delete ${row.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 );

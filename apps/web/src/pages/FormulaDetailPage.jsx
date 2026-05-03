@@ -210,14 +210,16 @@ const FormulaDetailPage = () => {
             </DetailSection>
           ) : null}
 
-          <DetailSection title="Brief context">
+          <DetailSection title={linkedBriefs.length ? 'Brief context' : 'Standalone formula'}>
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
-                  Brief memberi arah sebelum evaluasi. Link formula ini ke brief supaya revision notes tidak kehilangan tujuan awal.
+                  {linkedBriefs.length
+                    ? 'Brief memberi arah sebelum evaluasi. Link formula ini ke brief supaya revision notes tidak kehilangan tujuan awal.'
+                    : 'Formula ini berdiri sendiri tanpa brief. Anda tetap bisa edit komposisi, buat PACE revision, dan lanjut validasi langsung dari formula.'}
                 </div>
                 <Button variant="outline" className="rounded-xl" onClick={() => navigate(`/briefs?formulaId=${id}`)}>
-                  Open brief workspace
+                  {linkedBriefs.length ? 'Open brief workspace' : 'Create related brief'}
                 </Button>
               </div>
 
@@ -247,7 +249,7 @@ const FormulaDetailPage = () => {
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                  No linked brief yet. Add one to anchor the formula&apos;s mood, audience, and performance target.
+                  No brief is linked. This formula can stay standalone, or you can create a related brief later for project direction.
                 </div>
               )}
 

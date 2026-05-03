@@ -114,24 +114,24 @@ const CreateFormulaPage = () => {
     const loadData = async () => {
       setLoadingData(true);
       try {
-        const [materialsData, briefs] = await Promise.all([
-          getRawMaterialOptions(),
-          getBriefs(),
-        ]);
-
-        const resolvedBrief = briefId
-          ? briefs.find((brief) => brief.id === briefId) || null
-          : null;
+        const materialsData = await getRawMaterialOptions();
+        let resolvedBrief = null;
         let resolvedProject = null;
         let resolvedProjectStageMap = new Map();
-        try {
-          resolvedProject = projectId
-            ? { ...(await getBriefProjectByBriefId(briefId) || {}), id: projectId }
-            : (briefId ? await getBriefProjectByBriefId(briefId) : null);
-          resolvedProjectStageMap = resolvedProject?.id ? await getBriefProjectStageItems(resolvedProject.id) : new Map();
-        } catch (projectError) {
-          console.error('Formula create project layer unavailable:', projectError);
+
+        if (briefId) {
+          const briefs = await getBriefs();
+          resolvedBrief = briefs.find((brief) => brief.id === briefId) || null;
+          try {
+            resolvedProject = projectId
+              ? { ...(await getBriefProjectByBriefId(briefId) || {}), id: projectId }
+              : await getBriefProjectByBriefId(briefId);
+            resolvedProjectStageMap = resolvedProject?.id ? await getBriefProjectStageItems(resolvedProject.id) : new Map();
+          } catch (projectError) {
+            console.error('Formula create project layer unavailable:', projectError);
+          }
         }
+
         const resolvedProjectStageItems = resolvedProject?.id
           ? ['top', 'middle', 'base']
               .flatMap((stage) => resolvedProjectStageMap.get(stage) || [])
@@ -308,6 +308,22 @@ const CreateFormulaPage = () => {
     setMetadataDialogOpen(false);
   };
 
+  const isStandaloneFormula = !briefId && !projectId && seedMaterialIds.length === 0;
+  const compositionModeTitle = projectStageItems.length
+    ? 'Compose from project stages'
+    : seedMaterialIds.length
+      ? 'Compose from shortlisted materials'
+      : briefContext
+        ? 'Compose from brief intent'
+        : 'Standalone formula';
+  const compositionModeDescription = projectStageItems.length
+    ? 'This formula starts from project stage picks. Use the library below to refine or rebalance the selected structure.'
+    : seedMaterialIds.length
+      ? 'This formula starts from shortlisted materials chosen in the library workspace. Use the composer below to refine the structure.'
+      : briefContext
+        ? 'This formula is linked to a brief. Keep the composition anchored to the story, audience, and performance target below.'
+        : 'No brief is required here. Name the formula, choose materials from the library, set grams, and save it as an independent formula.';
+
   return (
     <AuthenticatedLayout>
       <Helmet>
@@ -322,6 +338,10 @@ const CreateFormulaPage = () => {
         <FormulaMetadataDialog
           open={metadataDialogOpen}
           onOpenChange={handleMetadataDialogChange}
+          title={isStandaloneFormula ? 'Create standalone formula' : 'Create formula'}
+          description={isStandaloneFormula
+            ? 'Isi identitas formula, lalu susun komposisi langsung dari material library tanpa membuat brief.'
+            : 'Isi identitas formula dulu sebelum mulai menyusun komposisinya.'}
           name={name}
           code={code}
           category={category}
@@ -423,22 +443,17 @@ const CreateFormulaPage = () => {
           </div>
         </div>
 
-        {briefContext || projectContext || seedMaterialIds.length ? (
-          <div className={`mb-4 space-y-4 ${composerSectionClass}`}>
+        <div className={`mb-4 space-y-4 ${composerSectionClass}`}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Composition context
                 </div>
                 <h2 className="mt-2 text-lg font-semibold">
-                  {projectStageItems.length ? 'Compose from project stages' : seedMaterialIds.length ? 'Compose from shortlisted materials' : 'Compose from brief intent'}
+                  {compositionModeTitle}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {projectStageItems.length
-                      ? 'This formula starts from project stage picks. Use the library below only to refine or rebalance the selected structure.'
-                      : seedMaterialIds.length
-                        ? 'This formula starts from shortlisted materials chosen in the library workspace. Use the composer below to refine the structure.'
-                        : 'This formula is linked to a brief. Keep the composition anchored to the story, audience, and performance target below.'}
+                  {compositionModeDescription}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -473,7 +488,7 @@ const CreateFormulaPage = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="text-sm font-semibold">Formula source</div>
                   <Badge variant="outline" className="rounded-full">
-                    {projectStageItems.length ? 'Stage preload' : seedMaterialIds.length ? 'Shortlist preload' : 'Direct composition'}
+                    {projectStageItems.length ? 'Stage preload' : seedMaterialIds.length ? 'Shortlist preload' : briefContext ? 'Direct composition' : 'Standalone'}
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -481,7 +496,9 @@ const CreateFormulaPage = () => {
                     ? `${projectStageItems.length} stage-selected materials were loaded into the composer as a starting structure.`
                     : seedMaterialIds.length
                       ? `${seedMaterialIds.length} shortlisted materials were loaded into the composer as a starting structure.`
-                      : 'No preload source was selected. You can still compose directly from the raw material library.'}
+                      : briefContext
+                        ? 'No stage preload was selected. You can still compose directly from the raw material library while keeping this formula linked to the brief.'
+                        : 'No brief or preload is attached. This formula will be saved as a standalone composition.'}
                 </p>
               </div>
 
@@ -514,7 +531,6 @@ const CreateFormulaPage = () => {
               ) : null}
             </div>
           </div>
-        ) : null}
 
         {loadingData ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,0.72fr)] 2xl:grid-cols-[minmax(0,1.85fr)_minmax(380px,0.68fr)]">
