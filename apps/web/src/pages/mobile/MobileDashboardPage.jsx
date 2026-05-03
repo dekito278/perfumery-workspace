@@ -10,62 +10,148 @@ import SummaryMetricCardMobile from '@/components/mobile/SummaryMetricCardMobile
 import ActivityCardMobile from '@/components/mobile/ActivityCardMobile.jsx';
 import FormulaCardMobile from '@/components/mobile/FormulaCardMobile.jsx';
 import BriefCardMobile from '@/components/mobile/BriefCardMobile.jsx';
+import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
+import { getReferenceMatchStatusMap } from '@/services/materialReferenceService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import {
+  buildFormulaReferenceLinksMap,
+  buildMobileFormulaMetrics,
+} from '@/utils/mobileFormulaMetrics.js';
 import { getDisplayName, MOBILE_ACTIVITY_LIMIT, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 
 const MobileDashboardPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary } = useRawMaterials();
-  const { getFormulas } = useFormulas();
+  const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
+  const { getFormulaItems } = useFormulaItems();
   const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
   const [materials, setMaterials] = useState([]);
   const [formulas, setFormulas] = useState([]);
   const [briefs, setBriefs] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [metrics, setMetrics] = useState({});
+  const [pipeline, setPipeline] = useState({});
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState('');
+
+  const loadData = async (isActive = () => true) => {
+    setLoading(true);
+    try {
+      const [materialRows, formulaRows, briefRows, logRows] = await Promise.all([
+        fetchMaterialsSummary(),
+        getFormulas(),
+        getBriefs(),
+        getValidationLogs(),
+      ]);
+      const formulaItemEntries = await Promise.all((formulaRows || []).map(async (formula) => {
+        const items = await getFormulaItems(formula.id);
+        return [formula.id, items || []];
+      }));
+      const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
+      const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
+      const [rawMaterialRows, referenceStatusMap] = await Promise.all([
+        getRawMaterialOptions(),
+        getReferenceMatchStatusMap(materialIds),
+      ]);
+      if (!isActive()) return;
+      const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
+      const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
+        formulaId,
+        buildMobileFormulaMetrics({
+          items: formulaItems,
+          rawMaterialsById,
+          referenceLinksMap: buildFormulaReferenceLinksMap(formulaItems, referenceStatusMap),
+        }),
+      ]);
+      const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
+        if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
+        return map;
+      }, new Map());
+      const logsByFormulaId = (logRows || []).reduce((map, log) => {
+        if (!log.formula_id) return map;
+        const current = map.get(log.formula_id) || { validationCount: 0, actionNeededCount: 0 };
+        current.validationCount += 1;
+        if (log.status === 'action_needed') current.actionNeededCount += 1;
+        map.set(log.formula_id, current);
+        return map;
+      }, new Map());
+      setMaterials(materialRows || []);
+      setFormulas(formulaRows || []);
+      setBriefs(briefRows || []);
+      setLogs(logRows || []);
+      setMetrics(Object.fromEntries(metricEntries));
+      setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
+        briefCount: briefsByFormulaId.get(formula.id) || 0,
+        ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
+      }])));
+    } catch (error) {
+      toast.error('Failed to load mobile dashboard');
+    } finally {
+      if (isActive()) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [materialRows, formulaRows, briefRows, logRows] = await Promise.all([
-          fetchMaterialsSummary(),
-          getFormulas(),
-          getBriefs(),
-          getValidationLogs(),
-        ]);
-        if (!active) return;
-        setMaterials(materialRows || []);
-        setFormulas(formulaRows || []);
-        setBriefs(briefRows || []);
-        setLogs(logRows || []);
-      } catch (error) {
-        toast.error('Failed to load mobile dashboard');
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-    loadData();
+    loadData(() => active);
     return () => { active = false; };
-  }, [fetchMaterialsSummary, getBriefs, getFormulas, getValidationLogs]);
+  }, [fetchMaterialsSummary, getBriefs, getFormulaItems, getFormulas, getValidationLogs]);
 
   const activeBriefs = useMemo(() => briefs.filter((brief) => ['draft', 'active'].includes(brief.status || 'draft')), [briefs]);
   const draftFormulas = useMemo(() => sortByUpdated(formulas.filter((formula) => (formula.status || 'draft') === 'draft')).slice(0, MOBILE_ACTIVITY_LIMIT), [formulas]);
   const recentBriefs = useMemo(() => sortByUpdated(briefs).slice(0, MOBILE_ACTIVITY_LIMIT), [briefs]);
-  const recentActivity = useMemo(() => [
-    ...sortByUpdated(formulas).slice(0, 3).map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula updated', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
-    ...sortByUpdated(briefs).slice(0, 2).map((brief) => ({ id: `brief-${brief.id}`, title: brief.title, meta: 'Brief updated', date: brief.updated || brief.created, path: `/mobile/briefs/${brief.id}` })),
-  ].slice(0, MOBILE_ACTIVITY_LIMIT), [briefs, formulas]);
-
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
+  const actionNeededLogs = useMemo(() => logs.filter((log) => log.status === 'action_needed'), [logs]);
+  const recentActivity = useMemo(() => sortByUpdated([
+    ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula updated', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
+    ...briefs.map((brief) => ({ id: `brief-${brief.id}`, title: brief.title, meta: 'Brief updated', date: brief.updated || brief.created, path: `/mobile/briefs/${brief.id}` })),
+    ...logs.map((log) => ({
+      id: `validation-${log.id}`,
+      title: formulasById.get(log.formula_id)?.name || 'Validation log',
+      meta: `Validation ${(log.status || 'logged').replace(/_/g, ' ')}`,
+      date: log.tested_at || log.updated || log.created,
+      path: log.formula_id ? `/mobile/formulas/${log.formula_id}` : '/mobile/validation',
+    })),
+  ]).slice(0, MOBILE_ACTIVITY_LIMIT), [briefs, formulas, formulasById, logs]);
+
+  const handleDuplicate = async (formula) => {
+    setDuplicatingId(formula.id);
+    try {
+      await duplicateFormula(formula.id);
+      toast.success('Formula duplicated');
+      await loadData();
+    } catch (error) {
+      toast.error('Failed to duplicate formula');
+    } finally {
+      setDuplicatingId('');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteFormula(deleteTarget.id);
+      toast.success('Formula deleted');
+      setDeleteTarget(null);
+      await loadData();
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete formula');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <MobileAuthenticatedLayout>
@@ -74,8 +160,8 @@ const MobileDashboardPage = () => {
         <MobileTopBar title="Home" subtitle={`Halo, ${getDisplayName(currentUser)}`} eyebrow="Perfumer Studio" action={<Sparkles className="h-6 w-6 text-amber-600" />} />
         <section className="mobile-soft-card p-5">
           <div className="text-xs font-bold uppercase text-amber-700">Workspace status</div>
-          <h2 className="mt-2 text-2xl font-bold text-[#1f2937]">R&D flow is ready.</h2>
-          <p className="mt-2 text-sm text-[#6b7280]">Brief, formula, material, and validation work are grouped for quick mobile decisions.</p>
+          <h2 className="mt-2 text-2xl font-bold text-[#1f2937]">{actionNeededLogs.length ? `${actionNeededLogs.length} validation action${actionNeededLogs.length > 1 ? 's' : ''} need review.` : 'R&D flow is ready.'}</h2>
+          <p className="mt-2 text-sm text-[#6b7280]">{activeBriefs.length} active briefs, {formulas.length} formulas, {materials.length} materials, and {logs.length} validation logs are synced for mobile decisions.</p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button className="rounded-2xl" onClick={() => navigate('/mobile/formulas/new')}>New Formula</Button>
             <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/briefs/new')}>New Brief</Button>
@@ -94,13 +180,13 @@ const MobileDashboardPage = () => {
             <section className="mobile-card p-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">Pipeline progress</h2>
-                <span className="text-xs font-bold text-amber-700">{logs.filter((log) => log.status === 'action_needed').length} action</span>
+                <span className="text-xs font-bold text-amber-700">{actionNeededLogs.length} action</span>
               </div>
               <div className="mt-4 grid gap-3">
                 {[
-                  ['Briefs', activeBriefs.length, Math.max(briefs.length, 1)],
+                  ['Active briefs', activeBriefs.length, Math.max(briefs.length, 1)],
                   ['Draft formulas', draftFormulas.length, Math.max(formulas.length, 1)],
-                  ['Validation logs', logs.length, Math.max(logs.length + 2, 1)],
+                  ['Action-needed validation', actionNeededLogs.length, Math.max(logs.length, 1)],
                 ].map(([label, value, total]) => (
                   <div key={label}>
                     <div className="flex justify-between text-xs font-bold text-[#6b7280]"><span>{label}</span><span>{value}</span></div>
@@ -113,7 +199,17 @@ const MobileDashboardPage = () => {
             <section className="space-y-3">
               <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Draft formulas</h2><Button variant="ghost" onClick={() => navigate('/mobile/formulas')}>View all</Button></div>
               {draftFormulas.slice(0, 2).map((formula) => (
-                <FormulaCardMobile key={formula.id} formula={formula} pipeline={{}} onView={() => navigate(`/mobile/formulas/${formula.id}`)} onDuplicate={() => {}} onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`)} onDelete={() => {}} />
+                <FormulaCardMobile
+                  key={formula.id}
+                  formula={formula}
+                  metrics={metrics[formula.id]}
+                  pipeline={pipeline[formula.id]}
+                  duplicating={duplicatingId === formula.id}
+                  onView={() => navigate(`/mobile/formulas/${formula.id}`)}
+                  onDuplicate={() => handleDuplicate(formula)}
+                  onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`)}
+                  onDelete={() => setDeleteTarget(formula)}
+                />
               ))}
             </section>
 
@@ -133,6 +229,7 @@ const MobileDashboardPage = () => {
           </>
         )}
       </main>
+      <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
     </MobileAuthenticatedLayout>
   );
 };
