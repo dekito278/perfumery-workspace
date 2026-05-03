@@ -118,6 +118,41 @@
   z-index: 55;
 }
 
+.mobile-session-actions {
+  position: fixed;
+  right: max(14px, calc((100vw - 430px) / 2 + 14px));
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-session-button {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  border-radius: 14px;
+  border-color: rgba(229, 231, 235, 0.94);
+  background: rgba(255, 255, 255, 0.96);
+  color: #6b7280;
+  box-shadow: 0 14px 32px -24px rgba(31, 41, 55, 0.42);
+  backdrop-filter: blur(14px);
+}
+
+.mobile-session-panel {
+  display: flex;
+  width: min(76vw, 304px);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(229, 231, 235, 0.94);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  padding: 9px;
+  box-shadow: 0 18px 46px -26px rgba(31, 41, 55, 0.44);
+  backdrop-filter: blur(18px);
+}
+
 .mobile-filter-chip-wrap {
   align-items: center;
 }

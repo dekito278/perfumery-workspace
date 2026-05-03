@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
@@ -54,7 +54,23 @@ const RootRedirect = () => {
 
 const MobileBrowserRedirect = () => {
   const { pathname, search, hash } = useLocation();
+  const [mobileRouteTick, setMobileRouteTick] = useState(0);
   const mobilePath = isMobileBrowser() ? toMobilePath(pathname) : null;
+
+  useEffect(() => {
+    const refreshMobileRoute = () => setMobileRouteTick((current) => current + 1);
+    window.addEventListener('resize', refreshMobileRoute);
+    window.addEventListener('orientationchange', refreshMobileRoute);
+    window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change', refreshMobileRoute);
+
+    return () => {
+      window.removeEventListener('resize', refreshMobileRoute);
+      window.removeEventListener('orientationchange', refreshMobileRoute);
+      window.matchMedia?.('(display-mode: standalone)').removeEventListener?.('change', refreshMobileRoute);
+    };
+  }, []);
+
+  void mobileRouteTick;
 
   if (!mobilePath) {
     return null;
