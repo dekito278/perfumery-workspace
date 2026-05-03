@@ -35,15 +35,15 @@ const formatDisplayQuantity = (value, decimals = null) => {
   return formatQuantity(number, decimals);
 };
 
-const MetricCard = ({ label, value }) => (
-  <div className="rounded-2xl border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(250,246,236,0.98)_100%)] p-4 shadow-sm">
-    <div className="text-[11px] uppercase tracking-[0.16em] text-[#7e7153]">{label}</div>
-    <div className="mt-2 text-xl font-semibold text-[#3c3222]">{value}</div>
+const MetricCard = ({ label, value, compact = false }) => (
+  <div className={`rounded-2xl border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(250,246,236,0.98)_100%)] shadow-sm ${compact ? 'p-3' : 'p-4'}`}>
+    <div className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-semibold uppercase tracking-[0.12em] text-[#7e7153]`}>{label}</div>
+    <div className={`${compact ? 'mt-1 text-lg' : 'mt-2 text-xl'} font-semibold text-[#3c3222]`}>{value}</div>
   </div>
 );
 
-const SourcePill = ({ label, value, className }) => (
-  <div className={`rounded-full border px-3 py-1 text-[11px] font-medium ${className}`}>
+const SourcePill = ({ label, value, className, compact = false }) => (
+  <div className={`rounded-full border ${compact ? 'px-2 py-1 text-[10px]' : 'px-3 py-1 text-[11px]'} font-medium ${className}`}>
     {label}: {value}
   </div>
 );
@@ -63,13 +63,13 @@ const BalanceRow = ({ label, value, toneClass }) => (
   </div>
 );
 
-const DisplayToggle = ({ active, icon: Icon, label, onClick }) => (
+const DisplayToggle = ({ active, icon: Icon, label, onClick, compact = false }) => (
   <Button
     type="button"
     variant={active ? 'default' : 'outline'}
     size="sm"
     onClick={onClick}
-    className={`h-8 rounded-full px-3 ${active ? 'shadow-sm' : 'bg-white/70'}`}
+    className={`${compact ? 'h-8 flex-1 px-2 text-[11px]' : 'h-8 px-3'} rounded-full ${active ? 'shadow-sm' : 'bg-white/70'}`}
   >
     <Icon className="h-3.5 w-3.5" />
     {label}
@@ -118,13 +118,14 @@ const WorkbookPieChart = ({
   simpleLifeHours,
   hasImpactData,
   hasLifeData,
+  compact = false,
 }) => {
   const width = 420;
-  const height = 360;
+  const height = compact ? 330 : 360;
   const centerX = 208;
-  const centerY = 176;
-  const radius = 112;
-  const labelRadius = 144;
+  const centerY = compact ? 166 : 176;
+  const radius = compact ? 106 : 112;
+  const labelRadius = compact ? 136 : 144;
   const slices = buildWorkbookPieSlices(data);
   const dominantSlice = slices[0] || null;
   const arcStart = dominantSlice ? dominantSlice.midAngle - 58 : -140;
@@ -196,11 +197,11 @@ const WorkbookPieChart = ({
           />
         </g>
 
-        <g transform={`translate(20 ${height - 24})`}>
+        {!compact ? <g transform={`translate(20 ${height - 24})`}>
           <text fontSize="10.5" fill="#5a5140">Impact: {hasImpactData ? formatQuantity(impactEstimate || 0, 0) : '-'}</text>
           <text x="126" fontSize="10.5" fill="#5a5140">Life: {hasLifeData ? `${formatQuantity(simpleLifeHours || 0, 0)} hours` : '-'}</text>
           <text x="282" fontSize="10.5" fill="#5a5140">AutoElapse: {formatQuantity(elapsedHour, 2)}</text>
-        </g>
+        </g> : null}
       </svg>
     </div>
   );
@@ -212,6 +213,7 @@ const FormulaOdourDisplayPanel = ({
   referenceLinksMap,
   className = '',
   isVisible = true,
+  variant = 'default',
 }) => {
   const [displayMode, setDisplayMode] = useState('pie');
   const [legendExpanded, setLegendExpanded] = useState(false);
@@ -318,40 +320,55 @@ const FormulaOdourDisplayPanel = ({
         || missingClassRows.length > 0,
     };
   }, [charts.simulation.rows]);
+  const isMobile = variant === 'mobile';
+  const metricCards = [
+    {
+      key: 'life',
+      label: 'Life',
+      value: charts.simulation.hasLifeData ? formatHours(charts.simulation.simpleLifeHours) : '-',
+    },
+    {
+      key: 'impact',
+      label: 'Impact',
+      value: charts.simulation.hasImpactData ? formatQuantity(charts.simulation.impactEstimate, 1) : '-',
+    },
+  ];
 
   return (
-    <aside className={`space-y-4 ${className}`.trim()}>
-        <div className="overflow-hidden rounded-[28px] border border-white/80 bg-white/90 shadow-sm">
-        <div className="border-b border-[#d7cfbf] bg-[linear-gradient(135deg,#f7f1e1_0%,#efe5ca_52%,#f7f4ec_100%)] px-5 py-4">
+    <aside className={`${isMobile ? 'space-y-3' : 'space-y-4'} ${className}`.trim()}>
+        <div className={`overflow-hidden border border-white/80 bg-white/90 shadow-sm ${isMobile ? 'rounded-[20px]' : 'rounded-[28px]'}`}>
+        <div className={`border-b border-[#d7cfbf] bg-[linear-gradient(135deg,#f7f1e1_0%,#efe5ca_52%,#f7f4ec_100%)] ${isMobile ? 'px-3 py-3' : 'px-5 py-4'}`}>
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7e6c42]">
+            <div className="min-w-0">
+              <div className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} font-semibold uppercase tracking-[0.16em] text-[#7e6c42]`}>
                 Workbook
               </div>
-              <h2 className="mt-1 text-xl font-semibold text-[#3d3422]">Graphic odour display</h2>
+              <h2 className={`${isMobile ? 'mt-0.5 text-lg leading-tight' : 'mt-1 text-xl'} font-semibold text-[#3d3422]`}>Graphic odour display</h2>
             </div>
-            <Badge variant="outline" className="border-[#c9bb94] bg-white/80 text-[10px] text-[#6c5d36]">
+            <Badge variant="outline" className={`shrink-0 whitespace-normal border-[#c9bb94] bg-white/80 text-[#6c5d36] ${isMobile ? 'max-w-[116px] px-2 py-1 text-[9px] leading-tight' : 'text-[10px]'}`}>
               {charts.simulation.guidanceBackedCount}/{charts.simulation.eligibleItemCount} guidance-backed materials
             </Badge>
           </div>
         </div>
 
-        <div className="p-5">
+        <div className={isMobile ? 'p-3' : 'p-5'}>
           <div>
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className={isMobile ? 'grid grid-cols-2 gap-2' : 'flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center'}>
               <DisplayToggle
                 active={displayMode === 'pie'}
                 icon={PieChartIcon}
                 label="Pie"
                 onClick={() => setDisplayMode('pie')}
+                compact={isMobile}
               />
               <DisplayToggle
                 active={displayMode === 'bar'}
                 icon={BarChart3}
                 label="Bar"
                 onClick={() => setDisplayMode('bar')}
+                compact={isMobile}
               />
-              <div className="rounded-full border border-dashed border-[#d6c8a2] bg-[#faf6ea] px-3 py-1 text-[11px] font-medium text-[#7a6a3b] sm:ml-auto">
+              <div className={`rounded-full border border-dashed border-[#d6c8a2] bg-[#faf6ea] px-3 py-1 font-medium text-[#7a6a3b] ${isMobile ? 'col-span-2 text-center text-[10px]' : 'text-[11px] sm:ml-auto'}`}>
                 {leadFacetLabel} {dominantElapsedClass?.familyName || charts.dominantClass?.familyName || '-'}
               </div>
             </div>
@@ -360,21 +377,24 @@ const FormulaOdourDisplayPanel = ({
                 label="Workbook link"
                 value={charts.simulation.linkedProfileCount}
                 className="border-emerald-200 bg-emerald-50 text-emerald-900"
+                compact={isMobile}
               />
               <SourcePill
                 label="Manual guidance"
                 value={charts.simulation.fallbackGuidanceCount}
                 className="border-amber-200 bg-amber-50 text-amber-950"
+                compact={isMobile}
               />
               <SourcePill
                 label="Missing"
                 value={charts.simulation.missingGuidanceCount}
                 className="border-slate-200 bg-slate-50 text-slate-700"
+                compact={isMobile}
               />
             </div>
 
             {workbookWarningSummary.hasWarnings ? (
-              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs text-amber-950">
+              <div className={`mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-amber-950 ${isMobile ? 'text-[11px]' : 'text-xs'}`}>
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
                   <span>
@@ -386,28 +406,28 @@ const FormulaOdourDisplayPanel = ({
           </div>
 
           {hasGuidanceChartData ? (
-            <div className="mt-5 rounded-[24px] border border-[#dbd2bc] bg-[radial-gradient(circle_at_top,#fffdf7_0%,#fbf7ec_48%,#f2ebda_100%)] p-4">
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 p-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className={`${isMobile ? 'mt-3 rounded-[18px] p-3' : 'mt-5 rounded-[24px] p-4'} border border-[#dbd2bc] bg-[radial-gradient(circle_at_top,#fffdf7_0%,#fbf7ec_48%,#f2ebda_100%)]`}>
+              <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
+                <div className={`rounded-2xl border border-[#ddd3bf] bg-white/78 ${isMobile ? 'p-2.5' : 'p-3'}`}>
+                  <div className={isMobile ? 'grid grid-cols-3 gap-2' : 'flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center'}>
                     <div
                       data-testid="autoelapse-chip"
                       data-elapsed-hour={roundedElapsedHour}
-                      className="rounded-full border border-[#ded3be] bg-[#f8f3e7] px-3 py-1 text-[11px] font-medium text-[#6d6043]"
+                      className={`rounded-full border border-[#ded3be] bg-[#f8f3e7] px-2 py-1 text-center font-medium text-[#6d6043] ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}
                     >
                       AutoElapse {formatDisplayQuantity(roundedElapsedHour, 0)} h
                     </div>
-                    <div className="rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-3 py-1 text-[11px] font-medium text-[#496033]">
+                    <div className={`rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-2 py-1 text-center font-medium text-[#496033] ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
                       Stage {elapsedStageLabel}
                     </div>
-                    <div className="rounded-full border border-[#d6ddee] bg-[#f4f7fd] px-3 py-1 text-[11px] font-medium text-[#49587b]">
+                    <div className={`rounded-full border border-[#d6ddee] bg-[#f4f7fd] px-2 py-1 text-center font-medium text-[#49587b] ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
                       Load {formatQuantity(elapsedTotalLoad, 2)}
                     </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="h-8 rounded-full px-3 sm:ml-auto"
+                      className={`${isMobile ? 'col-span-3 h-9 w-full text-xs' : 'h-8 px-3 sm:ml-auto'} rounded-full`}
                       onClick={() => {
                         if (roundedElapsedHour >= (charts.maxElapsedHour || 0)) {
                           setElapsedHour(0);
@@ -438,7 +458,7 @@ const FormulaOdourDisplayPanel = ({
                     <span>{formatDisplayQuantity(charts.maxElapsedHour || 0, 0)}h</span>
                     </div>
                   </div>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <div className={`mt-3 grid gap-2 ${isMobile ? 'grid-cols-3' : 'sm:grid-cols-3'}`}>
                     <div className="rounded-xl bg-sky-500/10 px-3 py-2 text-[11px] text-sky-950">
                       Top {formatPercentage(elapsedStageShares.top, 1)}
                     </div>
@@ -459,12 +479,13 @@ const FormulaOdourDisplayPanel = ({
                     simpleLifeHours={charts.simulation.simpleLifeHours}
                     hasImpactData={charts.simulation.hasImpactData}
                     hasLifeData={charts.simulation.hasLifeData}
+                    compact={isMobile}
                   />
                 ) : (
                   <ChartContainer
                     key={`odour-display-chart-${displayMode}-${chartRenderVersion}`}
                     config={CHART_CONFIG}
-                    className="aspect-auto h-[240px] min-h-[240px] w-full sm:h-[360px] sm:min-h-[360px]"
+                    className={`aspect-auto w-full ${isMobile ? 'h-[220px] min-h-[220px]' : 'h-[240px] min-h-[240px] sm:h-[360px] sm:min-h-[360px]'}`}
                     data-testid="odour-display-chart"
                   >
                     <BarChart data={[...odourData].reverse()} layout="vertical" margin={{ left: 8, right: 16, top: 6, bottom: 6 }}>
@@ -500,20 +521,20 @@ const FormulaOdourDisplayPanel = ({
                   </ChartContainer>
                 )}
 
-                <div className="rounded-2xl border border-[#ddd3bf] bg-white/78 p-3">
+                <div className={`rounded-2xl border border-[#ddd3bf] bg-white/78 ${isMobile ? 'p-2.5' : 'p-3'}`}>
                   <button
                     type="button"
                     onClick={() => setLegendExpanded((current) => !current)}
                     className="flex w-full items-center justify-between gap-3 text-left"
                   >
-                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6a4a]">
+                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-semibold uppercase tracking-[0.12em] text-[#7a6a4a]`}>
                       Workbook class distribution
                     </div>
                     <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${legendExpanded ? 'rotate-180' : ''}`} />
                   </button>
 
                   {legendExpanded ? (
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className={`mt-3 grid gap-2 ${isMobile ? '' : 'sm:grid-cols-2'}`}>
                       {odourData.map((entry) => (
                         <div key={entry.classIndex} className="rounded-xl border border-[#e7decb] bg-white/80 p-3 text-sm">
                           <div className="flex items-start justify-between gap-3">
@@ -556,7 +577,7 @@ const FormulaOdourDisplayPanel = ({
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 rounded-2xl border border-[#ddd3bf] bg-white/72 p-3 sm:grid-cols-2">
+              <div className={`mt-3 grid rounded-2xl border border-[#ddd3bf] bg-white/72 ${isMobile ? 'grid-cols-2 gap-2 p-2.5' : 'gap-3 p-3 sm:grid-cols-2'}`}>
                   <div className="rounded-xl bg-[#faf3dd] px-3 py-2" data-testid="dominant-class-card">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#88734a]">
                     Dominant class
@@ -590,22 +611,19 @@ const FormulaOdourDisplayPanel = ({
         </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div data-testid="impact-card">
+        <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'sm:grid-cols-2'}`}>
+          {metricCards.map((metric) => (
+          <div key={metric.key} data-testid={`${metric.key}-card`}>
             <MetricCard
-              label="Impact"
-              value={charts.simulation.hasImpactData ? formatQuantity(charts.simulation.impactEstimate, 1) : '-'}
+              label={metric.label}
+              value={metric.value}
+              compact={isMobile}
             />
           </div>
-          <div data-testid="life-card">
-            <MetricCard
-              label="Life"
-              value={charts.simulation.hasLifeData ? formatHours(charts.simulation.simpleLifeHours) : '-'}
-            />
-          </div>
+          ))}
         </div>
 
-        <div className="mt-4 rounded-[24px] border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-5 shadow-sm">
+        <div className={`${isMobile ? 'mt-3 rounded-[18px] p-3' : 'mt-4 rounded-[24px] p-5'} border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] shadow-sm`}>
           <button
             type="button"
             onClick={() => setBalanceExpanded((current) => !current)}

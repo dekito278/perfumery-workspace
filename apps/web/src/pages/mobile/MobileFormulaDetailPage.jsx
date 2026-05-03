@@ -204,6 +204,7 @@ const MobileFormulaDetailPage = () => {
               rawMaterialsById={rawMaterialsById}
               referenceLinksMap={itemReferenceLinksMap}
               className="mobile-odour-display"
+              variant="mobile"
             />
             <PaceAnalysisCard score={formulaMetrics.paceScore} warnings={paceWarnings} recommendations={paceRecommendations} />
             <section className="mobile-card p-4">
