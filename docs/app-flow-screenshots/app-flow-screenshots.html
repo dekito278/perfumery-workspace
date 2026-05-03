@@ -1,0 +1,305 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Perfumer Studio App Flow Screenshots</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Inter, Arial, sans-serif; margin: 0; color: #1f2933; background: #f7f3ea; }
+    .cover { min-height: 180mm; display: flex; flex-direction: column; justify-content: center; padding: 20mm; background: linear-gradient(135deg, #fffaf0, #edf5ef); border: 1px solid #ded4bf; border-radius: 18px; }
+    h1 { font-size: 34px; margin: 0 0 10px; letter-spacing: 0; }
+    h2 { font-size: 20px; margin: 0 0 8px; }
+    p { font-size: 12px; line-height: 1.45; color: #5b6470; }
+    .meta { margin-top: 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #7a6a4a; }
+    .flow { display: grid; gap: 8px; margin-top: 20px; }
+    .flow div { border: 1px solid #dfd5c2; border-radius: 12px; padding: 10px 12px; background: rgba(255,255,255,.72); font-size: 13px; }
+    .page { break-before: page; padding: 0; }
+    .header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 8px; }
+    .badge { display: inline-block; border: 1px solid #d8cfbe; border-radius: 999px; padding: 4px 8px; font-size: 10px; color: #5f523c; background: #fffaf0; }
+    .route { font-family: Consolas, monospace; font-size: 10px; color: #687280; margin-top: 4px; word-break: break-all; }
+    .shot { width: 100%; max-height: 164mm; object-fit: contain; object-position: top left; border: 1px solid #d9d1c4; border-radius: 10px; background: white; }
+    .caption { margin-top: 5px; font-size: 10px; color: #66717e; }
+    .toc { break-before: page; padding: 12mm; background: white; border-radius: 18px; border: 1px solid #e2d8c7; }
+    .toc ol { columns: 2; column-gap: 24px; font-size: 11px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="meta">Generated Minggu, 03 Mei 2026 pukul 23.15</div>
+    <h1>Perfumer Studio</h1>
+    <h2>Screenshot Web App dan Flow Lengkap</h2>
+    <p>PDF ini menggabungkan halaman utama, flow formula mandiri, flow brief, material library, audit, validation, modal penting, serta viewport mobile.</p>
+    <div class="flow">
+      <div>Login -&gt; Dashboard</div><div>Dashboard -&gt; Briefs -&gt; Brief project -&gt; Formula from brief</div><div>Dashboard/Formulas -&gt; New formula -&gt; Standalone composer -&gt; Formula detail</div><div>Raw Materials -&gt; Guidance/Audit -&gt; Shortlist -&gt; Formula</div><div>Formula detail -&gt; Edit/PACE revision -&gt; Validation workspace</div>
+    </div>
+  </section>
+  <section class="toc">
+    <h2>Daftar Screenshot</h2>
+    <ol>
+      <li>Dashboard <span class="route">/dashboard</span></li><li>Briefs workspace <span class="route">/briefs</span></li><li>New brief form <span class="route">/briefs/new</span></li><li>Raw materials library <span class="route">/raw-materials</span></li><li>Raw material audit <span class="route">/raw-material-audit</span></li><li>Categories <span class="route">/categories</span></li><li>Formulas list <span class="route">/formulas</span></li><li>Standalone formula composer <span class="route">/formulas/new</span></li><li>Validation workspace <span class="route">/validation</span></li><li>Add material modal <span class="route">/raw-materials</span></li><li>Import formula PDF modal <span class="route">/formulas</span></li><li>Formula metadata modal <span class="route">/formulas/new</span></li><li>Formula detail <span class="route">/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa</span></li><li>Formula edit composer <span class="route">/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa/edit</span></li><li>Brief project detail <span class="route">/briefs/ffdc568a-6e05-4697-a401-ae1e3cd20c3f</span></li><li>Mobile dashboard <span class="route">/dashboard</span></li><li>Mobile formulas list <span class="route">/formulas</span></li><li>Mobile standalone composer <span class="route">/formulas/new</span></li><li>Mobile raw materials <span class="route">/raw-materials</span></li><li>Mobile briefs <span class="route">/briefs</span></li>
+    </ol>
+  </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">1. desktop</div>
+          <h2>Dashboard</h2>
+          <p>Ringkasan pipeline, CTA utama, dan aktivitas terbaru.</p>
+          <div class="route">/dashboard -> http://127.0.0.1:3002/dashboard</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/01-desktop-dashboard.png" />
+      <div class="caption">01-desktop-dashboard.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">2. desktop</div>
+          <h2>Briefs workspace</h2>
+          <p>List brief, filter, dan entry point project/brief baru.</p>
+          <div class="route">/briefs -> http://127.0.0.1:3002/briefs</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/02-desktop-briefs-workspace.png" />
+      <div class="caption">02-desktop-briefs-workspace.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">3. desktop</div>
+          <h2>New brief form</h2>
+          <p>Form untuk membuat brief sebelum project direction.</p>
+          <div class="route">/briefs/new -> http://127.0.0.1:3002/briefs/new</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/03-desktop-new-brief-form.png" />
+      <div class="caption">03-desktop-new-brief-form.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">4. desktop</div>
+          <h2>Raw materials library</h2>
+          <p>Master library material, filter, coverage, dan shortlist mode.</p>
+          <div class="route">/raw-materials -> http://127.0.0.1:3002/raw-materials</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/04-desktop-raw-materials-library.png" />
+      <div class="caption">04-desktop-raw-materials-library.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">5. desktop</div>
+          <h2>Raw material audit</h2>
+          <p>Audit duplicate/collision/CAS group.</p>
+          <div class="route">/raw-material-audit -> http://127.0.0.1:3002/raw-material-audit</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/05-desktop-raw-material-audit.png" />
+      <div class="caption">05-desktop-raw-material-audit.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">6. desktop</div>
+          <h2>Categories</h2>
+          <p>Referensi klasifikasi material.</p>
+          <div class="route">/categories -> http://127.0.0.1:3002/categories</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/06-desktop-categories.png" />
+      <div class="caption">06-desktop-categories.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">7. desktop</div>
+          <h2>Formulas list</h2>
+          <p>List formula, standalone badge, import, view, duplicate, edit, delete.</p>
+          <div class="route">/formulas -> http://127.0.0.1:3002/formulas</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/07-desktop-formulas-list.png" />
+      <div class="caption">07-desktop-formulas-list.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">8. desktop</div>
+          <h2>Standalone formula composer</h2>
+          <p>Composer formula mandiri tanpa brief.</p>
+          <div class="route">/formulas/new -> http://127.0.0.1:3002/formulas/new</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/08-desktop-standalone-formula-composer.png" />
+      <div class="caption">08-desktop-standalone-formula-composer.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">9. desktop</div>
+          <h2>Validation workspace</h2>
+          <p>Workspace validation notes dan follow-up formula.</p>
+          <div class="route">/validation -> http://127.0.0.1:3002/validation</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/09-desktop-validation-workspace.png" />
+      <div class="caption">09-desktop-validation-workspace.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">10. desktop</div>
+          <h2>Add material modal</h2>
+          <p>Modal input material baru dari master library.</p>
+          <div class="route">/raw-materials -> http://127.0.0.1:3002/raw-materials</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/10-desktop-add-material-modal.png" />
+      <div class="caption">10-desktop-add-material-modal.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">11. desktop</div>
+          <h2>Import formula PDF modal</h2>
+          <p>Flow import formula dari PDF workbook.</p>
+          <div class="route">/formulas -> http://127.0.0.1:3002/formulas</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/11-desktop-import-formula-pdf-modal.png" />
+      <div class="caption">11-desktop-import-formula-pdf-modal.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">12. desktop</div>
+          <h2>Formula metadata modal</h2>
+          <p>Langkah awal memberi nama, kode, kategori, dan notes formula standalone.</p>
+          <div class="route">/formulas/new -> http://127.0.0.1:3002/formulas/new</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/12-desktop-formula-metadata-modal.png" />
+      <div class="caption">12-desktop-formula-metadata-modal.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">13. desktop</div>
+          <h2>Formula detail</h2>
+          <p>Detail formula, overview, workbook, composition, standalone/brief context, dan validation workflow.</p>
+          <div class="route">/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa -> http://127.0.0.1:3002/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/13-desktop-formula-detail.png" />
+      <div class="caption">13-desktop-formula-detail.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">14. desktop</div>
+          <h2>Formula edit composer</h2>
+          <p>Composer edit formula dengan material library, PACE panel, dan workbook preview.</p>
+          <div class="route">/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa/edit -> http://127.0.0.1:3002/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa/edit</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/14-desktop-formula-edit-composer.png" />
+      <div class="caption">14-desktop-formula-edit-composer.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">15. desktop</div>
+          <h2>Brief project detail</h2>
+          <p>Board brief, shortlist, project stage, dan entry ke formula.</p>
+          <div class="route">/briefs/ffdc568a-6e05-4697-a401-ae1e3cd20c3f -> http://127.0.0.1:3002/briefs/ffdc568a-6e05-4697-a401-ae1e3cd20c3f</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/15-desktop-brief-project-detail.png" />
+      <div class="caption">15-desktop-brief-project-detail.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">16. mobile</div>
+          <h2>Mobile dashboard</h2>
+          <p>Dashboard dalam viewport mobile.</p>
+          <div class="route">/dashboard -> http://127.0.0.1:3002/dashboard</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/16-mobile-mobile-dashboard.png" />
+      <div class="caption">16-mobile-mobile-dashboard.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">17. mobile</div>
+          <h2>Mobile formulas list</h2>
+          <p>Formula card mobile dengan action View, Duplicate, Edit, Delete.</p>
+          <div class="route">/formulas -> http://127.0.0.1:3002/formulas</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/17-mobile-mobile-formulas-list.png" />
+      <div class="caption">17-mobile-mobile-formulas-list.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">18. mobile</div>
+          <h2>Mobile standalone composer</h2>
+          <p>Composer formula mandiri dalam layout mobile/tab.</p>
+          <div class="route">/formulas/new -> http://127.0.0.1:3002/formulas/new</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/18-mobile-mobile-standalone-composer.png" />
+      <div class="caption">18-mobile-mobile-standalone-composer.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">19. mobile</div>
+          <h2>Mobile raw materials</h2>
+          <p>Library material mobile card.</p>
+          <div class="route">/raw-materials -> http://127.0.0.1:3002/raw-materials</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/19-mobile-mobile-raw-materials.png" />
+      <div class="caption">19-mobile-mobile-raw-materials.png</div>
+    </section>
+  
+    <section class="page">
+      <div class="header">
+        <div>
+          <div class="badge">20. mobile</div>
+          <h2>Mobile briefs</h2>
+          <p>Brief workspace mobile card.</p>
+          <div class="route">/briefs -> http://127.0.0.1:3002/briefs</div>
+        </div>
+      </div>
+      <img class="shot" src="C:/webapp/dekito-workspace-perfumery/docs/app-flow-screenshots/screenshots/20-mobile-mobile-briefs.png" />
+      <div class="caption">20-mobile-mobile-briefs.png</div>
+    </section>
+  
+</body>
+</html>

@@ -1,0 +1,66 @@
+import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { useNavigate } from 'react-router-dom';
+import { Tag } from 'lucide-react';
+import { toast } from 'sonner';
+import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
+import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
+
+const MobileCategoriesPage = () => {
+  const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const loadCategories = async () => {
+      setLoading(true);
+      try {
+        const rows = await getRawMaterialCategories();
+        if (active) setCategories(rows || []);
+      } catch (error) {
+        toast.error('Failed to load categories');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    loadCategories();
+    return () => { active = false; };
+  }, []);
+
+  return (
+    <MobileAuthenticatedLayout>
+      <Helmet><title>Mobile Categories - Perfumer Studio</title></Helmet>
+      <main className="mobile-page space-y-4">
+        <MobileTopBar title="Categories" subtitle="A-Z material classification" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
+        {loading ? <div className="mobile-card p-6 text-sm text-[#6b7280]">Loading categories...</div> : categories.length === 0 ? (
+          <MobileEmptyState icon={Tag} title="No categories yet" />
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {categories.map((category) => {
+              const definition = findPerfumersWorldCategoryByValue(category.name);
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => navigate(`/mobile/raw-materials?category=${encodeURIComponent(category.name)}`)}
+                  className="mobile-card min-h-[152px] p-4 text-left"
+                >
+                  <span className="block h-9 w-9 rounded-2xl border border-[#e5e7eb]" style={{ backgroundColor: category.color }} />
+                  <span className="mt-3 block text-xs font-bold uppercase text-amber-700">{definition?.reference || category.name.slice(0, 1)}</span>
+                  <span className="mt-1 block text-sm font-bold text-[#1f2937]">{category.name}</span>
+                  <span className="mobile-line-clamp-2 mt-2 block text-xs text-[#6b7280]">{definition?.description || 'Legacy category'}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </MobileAuthenticatedLayout>
+  );
+};
+
+export default MobileCategoriesPage;

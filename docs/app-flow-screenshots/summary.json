@@ -1,0 +1,187 @@
+{
+  "generated_at": "2026-05-03T16:15:25.159Z",
+  "base_url": "http://127.0.0.1:3002",
+  "pdf_path": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\app-flow-screenshots.pdf",
+  "entries": [
+    {
+      "title": "Dashboard",
+      "route": "/dashboard",
+      "description": "Ringkasan pipeline, CTA utama, dan aktivitas terbaru.",
+      "viewportName": "desktop",
+      "fileName": "01-desktop-dashboard.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\01-desktop-dashboard.png",
+      "finalUrl": "http://127.0.0.1:3002/dashboard"
+    },
+    {
+      "title": "Briefs workspace",
+      "route": "/briefs",
+      "description": "List brief, filter, dan entry point project/brief baru.",
+      "viewportName": "desktop",
+      "fileName": "02-desktop-briefs-workspace.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\02-desktop-briefs-workspace.png",
+      "finalUrl": "http://127.0.0.1:3002/briefs"
+    },
+    {
+      "title": "New brief form",
+      "route": "/briefs/new",
+      "description": "Form untuk membuat brief sebelum project direction.",
+      "viewportName": "desktop",
+      "fileName": "03-desktop-new-brief-form.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\03-desktop-new-brief-form.png",
+      "finalUrl": "http://127.0.0.1:3002/briefs/new"
+    },
+    {
+      "title": "Raw materials library",
+      "route": "/raw-materials",
+      "description": "Master library material, filter, coverage, dan shortlist mode.",
+      "viewportName": "desktop",
+      "fileName": "04-desktop-raw-materials-library.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\04-desktop-raw-materials-library.png",
+      "finalUrl": "http://127.0.0.1:3002/raw-materials"
+    },
+    {
+      "title": "Raw material audit",
+      "route": "/raw-material-audit",
+      "description": "Audit duplicate/collision/CAS group.",
+      "viewportName": "desktop",
+      "fileName": "05-desktop-raw-material-audit.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\05-desktop-raw-material-audit.png",
+      "finalUrl": "http://127.0.0.1:3002/raw-material-audit"
+    },
+    {
+      "title": "Categories",
+      "route": "/categories",
+      "description": "Referensi klasifikasi material.",
+      "viewportName": "desktop",
+      "fileName": "06-desktop-categories.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\06-desktop-categories.png",
+      "finalUrl": "http://127.0.0.1:3002/categories"
+    },
+    {
+      "title": "Formulas list",
+      "route": "/formulas",
+      "description": "List formula, standalone badge, import, view, duplicate, edit, delete.",
+      "viewportName": "desktop",
+      "fileName": "07-desktop-formulas-list.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\07-desktop-formulas-list.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas"
+    },
+    {
+      "title": "Standalone formula composer",
+      "route": "/formulas/new",
+      "description": "Composer formula mandiri tanpa brief.",
+      "viewportName": "desktop",
+      "fileName": "08-desktop-standalone-formula-composer.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\08-desktop-standalone-formula-composer.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas/new"
+    },
+    {
+      "title": "Validation workspace",
+      "route": "/validation",
+      "description": "Workspace validation notes dan follow-up formula.",
+      "viewportName": "desktop",
+      "fileName": "09-desktop-validation-workspace.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\09-desktop-validation-workspace.png",
+      "finalUrl": "http://127.0.0.1:3002/validation"
+    },
+    {
+      "title": "Add material modal",
+      "route": "/raw-materials",
+      "description": "Modal input material baru dari master library.",
+      "viewportName": "desktop",
+      "fileName": "10-desktop-add-material-modal.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\10-desktop-add-material-modal.png",
+      "finalUrl": "http://127.0.0.1:3002/raw-materials"
+    },
+    {
+      "title": "Import formula PDF modal",
+      "route": "/formulas",
+      "description": "Flow import formula dari PDF workbook.",
+      "viewportName": "desktop",
+      "fileName": "11-desktop-import-formula-pdf-modal.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\11-desktop-import-formula-pdf-modal.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas"
+    },
+    {
+      "title": "Formula metadata modal",
+      "route": "/formulas/new",
+      "description": "Langkah awal memberi nama, kode, kategori, dan notes formula standalone.",
+      "viewportName": "desktop",
+      "fileName": "12-desktop-formula-metadata-modal.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\12-desktop-formula-metadata-modal.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas/new"
+    },
+    {
+      "title": "Formula detail",
+      "route": "/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa",
+      "description": "Detail formula, overview, workbook, composition, standalone/brief context, dan validation workflow.",
+      "viewportName": "desktop",
+      "fileName": "13-desktop-formula-detail.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\13-desktop-formula-detail.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa"
+    },
+    {
+      "title": "Formula edit composer",
+      "route": "/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa/edit",
+      "description": "Composer edit formula dengan material library, PACE panel, dan workbook preview.",
+      "viewportName": "desktop",
+      "fileName": "14-desktop-formula-edit-composer.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\14-desktop-formula-edit-composer.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas/68594ff8-ccb9-4d75-a306-cea74c6b08fa/edit"
+    },
+    {
+      "title": "Brief project detail",
+      "route": "/briefs/ffdc568a-6e05-4697-a401-ae1e3cd20c3f",
+      "description": "Board brief, shortlist, project stage, dan entry ke formula.",
+      "viewportName": "desktop",
+      "fileName": "15-desktop-brief-project-detail.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\15-desktop-brief-project-detail.png",
+      "finalUrl": "http://127.0.0.1:3002/briefs/ffdc568a-6e05-4697-a401-ae1e3cd20c3f"
+    },
+    {
+      "title": "Mobile dashboard",
+      "route": "/dashboard",
+      "description": "Dashboard dalam viewport mobile.",
+      "viewportName": "mobile",
+      "fileName": "16-mobile-mobile-dashboard.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\16-mobile-mobile-dashboard.png",
+      "finalUrl": "http://127.0.0.1:3002/dashboard"
+    },
+    {
+      "title": "Mobile formulas list",
+      "route": "/formulas",
+      "description": "Formula card mobile dengan action View, Duplicate, Edit, Delete.",
+      "viewportName": "mobile",
+      "fileName": "17-mobile-mobile-formulas-list.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\17-mobile-mobile-formulas-list.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas"
+    },
+    {
+      "title": "Mobile standalone composer",
+      "route": "/formulas/new",
+      "description": "Composer formula mandiri dalam layout mobile/tab.",
+      "viewportName": "mobile",
+      "fileName": "18-mobile-mobile-standalone-composer.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\18-mobile-mobile-standalone-composer.png",
+      "finalUrl": "http://127.0.0.1:3002/formulas/new"
+    },
+    {
+      "title": "Mobile raw materials",
+      "route": "/raw-materials",
+      "description": "Library material mobile card.",
+      "viewportName": "mobile",
+      "fileName": "19-mobile-mobile-raw-materials.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\19-mobile-mobile-raw-materials.png",
+      "finalUrl": "http://127.0.0.1:3002/raw-materials"
+    },
+    {
+      "title": "Mobile briefs",
+      "route": "/briefs",
+      "description": "Brief workspace mobile card.",
+      "viewportName": "mobile",
+      "fileName": "20-mobile-mobile-briefs.png",
+      "filePath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\app-flow-screenshots\\screenshots\\20-mobile-mobile-briefs.png",
+      "finalUrl": "http://127.0.0.1:3002/briefs"
+    }
+  ]
+}
