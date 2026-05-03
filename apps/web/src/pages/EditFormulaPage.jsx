@@ -42,7 +42,17 @@ import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { selectRelatedBriefFormulaIds } from '@/utils/briefFormulaHistory.js';
-import { buildStageTargetProfile, formatImpactBandLabel, formatLifeRangeLabel, getStageLabel, getWizardQuestionsForStage } from '@/utils/briefProjectWizard.js';
+import { formatImpactBandLabel, formatLifeRangeLabel, getStageLabel } from '@/utils/briefProjectWizard.js';
+import {
+  buildAdaptiveStageTargetProfile,
+  buildBriefAiIntentRequestPayload,
+  collectBriefText,
+  createFallbackBriefAiIntent,
+  getAdaptiveWizardQuestionsForStage,
+  normalizeBriefAiIntent,
+  shouldUseAiIntent,
+  summarizeWizardFeedback,
+} from '@/utils/briefAiIntent.js';
 import { buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
 import {
   buildComposerCorrectionFeedbackContext,
@@ -57,6 +67,8 @@ import {
 } from '@/utils/materialCompositionProfile.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 import { readPersistedRecommendationLearning, writePersistedRecommendationLearning } from '@/utils/recommendationLearningStorage.js';
+import { createBriefAiInterpretation, getLatestBriefAiInterpretation } from '@/services/briefAiInterpretationsService.js';
+import { requestBriefAiIntent } from '@/services/briefAiIntentService.js';
 
 const STAGES = ['top', 'middle', 'base'];
 const WIZARD_CANDIDATE_LIMIT = 30;
@@ -151,6 +163,8 @@ const EditFormulaPage = () => {
   const [wizardStageItemsMap, setWizardStageItemsMap] = useState(new Map(STAGES.map((stage) => [stage, []])));
   const [historicalFormulaFeedbackEntries, setHistoricalFormulaFeedbackEntries] = useState([]);
   const [persistedRecommendationFeedbackContext, setPersistedRecommendationFeedbackContext] = useState(() => createEmptyRecommendationFeedbackContext());
+  const [briefAiIntent, setBriefAiIntent] = useState(null);
+  const [briefAiIntentLoading, setBriefAiIntentLoading] = useState(false);
   const [draftAnswers, setDraftAnswers] = useState({ top: {}, middle: {}, base: {} });
   const [activeStage, setActiveStage] = useState('top');
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -193,6 +207,94 @@ const EditFormulaPage = () => {
     activeItemInsight,
     activeReferenceProfileDetails,
   } = composer;
+
+  useEffect(() => {
+    if (loadingData || !linkedBrief?.id) {
+      setBriefAiIntent(null);
+      return;
+    }
+
+    let active = true;
+    const inputText = collectBriefText(linkedBrief);
+
+    const resolveBriefIntent = async () => {
+      setBriefAiIntentLoading(true);
+      try {
+        let latestInterpretation = null;
+        try {
+          latestInterpretation = await getLatestBriefAiInterpretation(linkedBrief.id);
+        } catch (storageError) {
+          console.error('Brief AI interpretation storage unavailable:', storageError);
+        }
+
+        if (!active) {
+          return;
+        }
+
+        if (latestInterpretation?.intent_payload && latestInterpretation.input_text === inputText) {
+          setBriefAiIntent(normalizeBriefAiIntent({
+            ...latestInterpretation.intent_payload,
+            source: latestInterpretation.source,
+            model: latestInterpretation.model,
+            confidence: latestInterpretation.confidence ?? latestInterpretation.intent_payload.confidence,
+            fallback_reason: latestInterpretation.fallback_reason || latestInterpretation.intent_payload.fallback_reason,
+          }, latestInterpretation.source || 'ai'));
+          return;
+        }
+
+        const feedbackSummary = summarizeWizardFeedback({
+          wizardStageItemsMap,
+          rawMaterialsById,
+          activeStage,
+        });
+        const payload = buildBriefAiIntentRequestPayload({
+          brief: linkedBrief,
+          existingAnswers: draftAnswers,
+          feedbackSummary,
+        });
+        const nextIntent = await requestBriefAiIntent({
+          brief: linkedBrief,
+          payload,
+        });
+
+        if (!active) {
+          return;
+        }
+
+        setBriefAiIntent(nextIntent);
+        try {
+          await createBriefAiInterpretation({
+            briefId: linkedBrief.id,
+            inputText,
+            intentPayload: nextIntent,
+            model: nextIntent.model,
+            confidence: nextIntent.confidence,
+            source: nextIntent.source === 'ai' ? 'ai' : 'fallback',
+            fallbackReason: nextIntent.fallback_reason,
+          });
+        } catch (storageError) {
+          console.error('Failed to persist brief AI interpretation:', storageError);
+        }
+      } catch (error) {
+        console.error('Failed to resolve brief AI intent:', error);
+        if (active) {
+          setBriefAiIntent(createFallbackBriefAiIntent({ freeText: inputText, brief: linkedBrief }));
+        }
+      } finally {
+        if (active) {
+          setBriefAiIntentLoading(false);
+        }
+      }
+    };
+
+    resolveBriefIntent();
+
+    return () => {
+      active = false;
+    };
+  // Resolve once per linked brief; live feedback is consumed by the local recommender every generation.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedBrief?.id, loadingData]);
 
   useEffect(() => {
     let active = true;
@@ -327,9 +429,12 @@ const EditFormulaPage = () => {
     setSearchParams(nextSearchParams, { replace: true, preventScrollReset: true });
     setPendingBriefWizardOpen(false);
     setActiveStage('top');
-    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(getWizardQuestionsForStage('top', draftAnswers.top || {}), draftAnswers.top || {}));
+    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(
+      getAdaptiveWizardQuestionsForStage('top', draftAnswers.top || {}, briefAiIntent),
+      draftAnswers.top || {},
+    ));
     setWizardOpen(true);
-  }, [draftAnswers.top, linkedBrief, loadingData, pendingBriefWizardOpen, searchParams, setSearchParams]);
+  }, [briefAiIntent, draftAnswers.top, linkedBrief, loadingData, pendingBriefWizardOpen, searchParams, setSearchParams]);
 
   const handleMobileLibraryPick = (itemId) => {
     handleLibraryDoubleClick(itemId);
@@ -402,7 +507,10 @@ const EditFormulaPage = () => {
   const handleWizardNextStage = () => {
     const nextStage = STAGES[Math.min(STAGES.indexOf(activeStage) + 1, STAGES.length - 1)];
     setActiveStage(nextStage);
-    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(getWizardQuestionsForStage(nextStage, draftAnswers[nextStage] || {}), draftAnswers[nextStage] || {}));
+    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(
+      getAdaptiveWizardQuestionsForStage(nextStage, draftAnswers[nextStage] || {}, briefAiIntent),
+      draftAnswers[nextStage] || {},
+    ));
   };
 
   const handleWizardStageJump = (stage) => {
@@ -412,7 +520,10 @@ const EditFormulaPage = () => {
 
     setActiveStage(stage);
     setExpandedWizardCandidateId('');
-    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(getWizardQuestionsForStage(stage, draftAnswers[stage] || {}), draftAnswers[stage] || {}));
+    setWizardQuestionIndex(getFirstIncompleteQuestionIndex(
+      getAdaptiveWizardQuestionsForStage(stage, draftAnswers[stage] || {}, briefAiIntent),
+      draftAnswers[stage] || {},
+    ));
   };
 
   const handleFinishWizard = () => {
@@ -533,15 +644,19 @@ const EditFormulaPage = () => {
     }
 
     const stageAnswers = draftAnswers[activeStage] || {};
-    if (!stageAnswers.family) {
-      toast.error('Choose the aroma direction first');
+    if (!stageAnswers.family && !shouldUseAiIntent(briefAiIntent)) {
+      toast.error('Pilih arah aroma dulu, atau tunggu AI membaca brief selesai.');
       return;
     }
 
     setBusyStage(activeStage);
     setExpandedWizardCandidateId('');
     try {
-      const targetProfile = buildStageTargetProfile(activeStage, stageAnswers, linkedBrief);
+      const targetProfile = buildAdaptiveStageTargetProfile(activeStage, stageAnswers, linkedBrief, briefAiIntent);
+      const lockedMaterialIds = new Set((wizardStageItemsMap.get(activeStage) || [])
+        .filter((item) => item.selection_state !== 'recommended')
+        .map((item) => item.raw_material_id)
+        .filter(Boolean));
       const ranked = rankMaterialRecommendations({
         materials: rawMaterials.filter((item) => item.type !== 'solvent'),
         referenceLinksMap,
@@ -549,15 +664,19 @@ const EditFormulaPage = () => {
         answers: stageAnswers,
         briefText: wizardBriefText,
         targetProfile,
-        limit: WIZARD_CANDIDATE_LIMIT,
+        limit: WIZARD_CANDIDATE_LIMIT * 2,
         feedbackContext: combinedRecommendationFeedbackContext,
-      });
+      })
+        .filter((row) => !lockedMaterialIds.has(row.raw_material_id))
+        .slice(0, WIZARD_CANDIDATE_LIMIT);
 
       let nextProjectStageItems = [];
       if (projectUnavailable) {
+        const preservedStageRows = (wizardStageItemsMap.get(activeStage) || [])
+          .filter((item) => item.selection_state !== 'recommended');
         const localStageRows = buildLocalWizardStageItems(ranked, activeStage);
         const nextStageMap = new Map(wizardStageItemsMap);
-        nextStageMap.set(activeStage, localStageRows);
+        nextStageMap.set(activeStage, [...preservedStageRows, ...localStageRows]);
         setWizardStageItemsMap(nextStageMap);
       } else {
         let project = linkedProject;
@@ -584,7 +703,7 @@ const EditFormulaPage = () => {
           target_profile: targetProfile,
           recommendation_note: targetProfile.summary,
         });
-        await deleteBriefProjectStageItemsByStage(project.id, activeStage, ['recommended', 'rejected', 'selected']);
+        await deleteBriefProjectStageItemsByStage(project.id, activeStage, ['recommended']);
         await upsertBriefProjectStageItems(project.id, ranked.map((row) => ({
           stage: activeStage,
           raw_material_id: row.raw_material_id,
@@ -622,12 +741,17 @@ const EditFormulaPage = () => {
   };
 
   const activeTargetProfile = useMemo(
-    () => buildStageTargetProfile(activeStage, draftAnswers[activeStage] || {}, linkedBrief),
-    [activeStage, draftAnswers, linkedBrief]
+    () => buildAdaptiveStageTargetProfile(activeStage, draftAnswers[activeStage] || {}, linkedBrief, briefAiIntent),
+    [activeStage, briefAiIntent, draftAnswers, linkedBrief]
   );
   const wizardBriefText = useMemo(
-    () => [linkedBrief?.mood_story, linkedBrief?.audience_usage, linkedBrief?.performance_target, linkedBrief?.budget_direction].filter(Boolean).join(' '),
-    [linkedBrief]
+    () => [
+      collectBriefText(linkedBrief),
+      briefAiIntent?.scent_story,
+      ...(briefAiIntent?.stage_blueprints?.[activeStage]?.aroma_keywords || []),
+      ...(briefAiIntent?.avoidances || []),
+    ].filter(Boolean).join(' '),
+    [activeStage, briefAiIntent, linkedBrief]
   );
   const recommendationFeedbackContext = useMemo(() => buildRecommendationFeedbackContext({
     composerItems: itemsWithPercentages,
@@ -734,8 +858,8 @@ const EditFormulaPage = () => {
     explanationMap: wizardStageExplainMap,
   }), [wizardCompareCandidates, wizardStageExplainMap]);
   const currentQuestions = useMemo(
-    () => getWizardQuestionsForStage(activeStage, draftAnswers[activeStage] || {}),
-    [activeStage, draftAnswers]
+    () => getAdaptiveWizardQuestionsForStage(activeStage, draftAnswers[activeStage] || {}, briefAiIntent),
+    [activeStage, briefAiIntent, draftAnswers]
   );
   const currentQuestion = currentQuestions[wizardQuestionIndex] || currentQuestions[currentQuestions.length - 1] || null;
   const hasCurrentWizardCandidates = currentWizardStageRows.length > 0;
@@ -789,8 +913,8 @@ const EditFormulaPage = () => {
 
       <div className="page-container">
         <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
-          <DialogContent className="flex h-[min(94vh,900px)] w-[min(96vw,1280px)] max-w-6xl flex-col overflow-hidden rounded-[28px] border bg-background p-0">
-            <DialogHeader className="shrink-0 border-b px-6 py-5">
+          <DialogContent className="flex h-[min(96vh,980px)] w-[min(98vw,1560px)] max-w-none flex-col overflow-hidden rounded-[28px] border bg-background p-0">
+            <DialogHeader className="shrink-0 border-b px-5 py-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="capitalize">
@@ -815,11 +939,11 @@ const EditFormulaPage = () => {
                   </Badge>
                 </div>
               </div>
-              <DialogTitle className="mt-3 text-xl">Arah brief untuk formula baru ini</DialogTitle>
-              <DialogDescription>
-                Jawab ekspektasi impact, lifetime, lalu arah aroma stage ini. Setelah itu baru pilih kandidat yang memang ingin dimasukkan ke composer.
+              <DialogTitle className="mt-2 text-xl">Arah brief untuk formula baru ini</DialogTitle>
+              <DialogDescription className="max-w-4xl">
+                AI membaca brief menjadi arah aroma per stage, lalu engine lokal meranking material dari data library dan feedback pilihan Anda.
               </DialogDescription>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {STAGES.map((stage) => {
                   const isActive = activeStage === stage;
                   const selectedCount = getSelectedStageItems(wizardStageItemsMap, stage).length;
@@ -839,16 +963,39 @@ const EditFormulaPage = () => {
               </div>
             </DialogHeader>
 
-            <div className="min-h-0 flex-1 overflow-hidden px-6 py-5">
+            <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
               {currentQuestion ? (
-                <div className="grid h-full min-h-0 gap-5 lg:grid-cols-[360px_minmax(0,1.45fr)]">
-                  <div className="flex min-h-0 flex-col gap-4 pr-1">
-                    <div className="flex min-h-[22rem] flex-col rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(249,246,239,0.98)_100%)] p-4">
+                <div className="grid h-full min-h-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,1fr)]">
+                  <div className="min-h-0 overflow-y-auto pr-1">
+                    <div className="rounded-2xl border bg-[linear-gradient(135deg,rgba(255,248,235,0.98)_0%,rgba(242,247,239,0.98)_100%)] p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">AI brief direction</div>
+                        <Badge variant={shouldUseAiIntent(briefAiIntent) ? 'secondary' : 'outline'} className="rounded-full text-[10px]">
+                          {briefAiIntentLoading ? 'reading' : shouldUseAiIntent(briefAiIntent) ? `${Math.round(Number(briefAiIntent.confidence || 0) * 100)}% fit` : 'fallback'}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 line-clamp-4 text-xs leading-relaxed text-[#4f4639]">
+                        {briefAiIntentLoading
+                          ? 'Sedang membaca brief dan menyusun arah aroma yang lebih contextual...'
+                          : briefAiIntent?.scent_story || 'Wizard memakai fallback lokal sampai brief AI tersedia.'}
+                      </div>
+                      {activeTargetProfile.tags?.length ? (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {activeTargetProfile.tags.slice(0, 8).map((tag) => (
+                            <Badge key={`intent-tag-${tag}`} variant="outline" className="rounded-full bg-white/70 text-[10px] capitalize">
+                              {formatEffectTag(tag)}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-3 flex min-h-[15rem] flex-col rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(249,246,239,0.98)_100%)] p-3">
                       <div className="text-sm font-semibold">{currentQuestion.title}</div>
-                      <div className="mt-1 text-sm text-muted-foreground">
+                      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
                         {currentQuestion.description || `Pilihan ini membantu menentukan material awal untuk stage ${getStageLabel(activeStage).toLowerCase()}.`}
                       </div>
-                      <div className="mt-4 min-h-[14rem] flex-1 overflow-y-auto pr-1">
+                      <div className="mt-3 min-h-[11rem] flex-1 overflow-y-auto pr-1">
                         <div className="grid gap-2">
                         {currentQuestion.options.map((option) => {
                           const selected = draftAnswers[activeStage]?.[currentQuestion.id] === option.value;
@@ -857,13 +1004,13 @@ const EditFormulaPage = () => {
                               key={option.value}
                               type="button"
                               onClick={() => handleWizardOptionSelect(currentQuestion.id, option.value)}
-                              className={`rounded-2xl border px-4 py-3 text-left transition ${
+                              className={`rounded-xl border px-3 py-2.5 text-left transition ${
                                 selected
                                   ? 'border-primary bg-primary/10 text-foreground shadow-sm'
                                   : 'bg-card hover:border-primary/40'
                               }`}
                             >
-                              <div className="font-medium">{option.label}</div>
+                              <div className="text-sm font-medium">{option.label}</div>
                               {option.hint ? (
                                 <div className="mt-1 text-xs text-muted-foreground">
                                   {option.hint}
@@ -882,15 +1029,15 @@ const EditFormulaPage = () => {
                     </div>
 
                     {projectUnavailable ? (
-                      <div className="shrink-0 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
                         Sinkronisasi project belum aktif, jadi kandidat stage tetap bisa dipilih di wizard ini, tetapi belum disimpan ke `brief_projects`.
                       </div>
                     ) : null}
 
-                    <div className="shrink-0 rounded-2xl border bg-background/70 p-4">
+                    <div className="mt-3 rounded-2xl border bg-background/70 p-3">
                       <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current target</div>
                       <div className="mt-2 text-sm font-semibold">{activeTargetProfile.summary}</div>
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         <Badge variant="secondary" className="rounded-full">
                           {activeTargetProfile.impact_summary}
                         </Badge>
@@ -898,10 +1045,10 @@ const EditFormulaPage = () => {
                           {activeTargetProfile.life_summary}
                         </Badge>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground">{activeTargetProfile.stage_goal}</div>
+                      <div className="mt-2 line-clamp-3 text-xs text-muted-foreground">{activeTargetProfile.stage_goal}</div>
                     </div>
 
-                    <div className="shrink-0 rounded-2xl border bg-background/70 p-4">
+                    <div className="mt-3 rounded-2xl border bg-background/70 p-3">
                       <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Selected direction</div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {activeTargetProfile.selected_labels?.length ? activeTargetProfile.selected_labels.map((label) => (
@@ -915,7 +1062,7 @@ const EditFormulaPage = () => {
                     </div>
 
                     {wizardDecisionAssist.suggestions.length ? (
-                      <div className="shrink-0 rounded-2xl border bg-background/70 p-4">
+                      <div className="mt-3 rounded-2xl border bg-background/70 p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Decision assist</div>
                         <div className="mt-3 space-y-2">
                           {wizardDecisionAssist.suggestions.slice(0, 3).map((suggestion, index) => (
@@ -930,22 +1077,25 @@ const EditFormulaPage = () => {
                   </div>
 
                   {wizardCompareCandidates.length ? (
-                    <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-background/70 p-4">
+                    <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-background/70 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Candidate shortlist</div>
-                            <div className="mt-1 text-sm text-muted-foreground">
+                            <div className="mt-1 text-xs text-muted-foreground">
                               Kandidat yang di-Add atau di-Skip langsung keluar dari daftar aktif. Sistem akan menaikkan kandidat berikutnya dari pool rekomendasi.
                             </div>
                           </div>
+                          <Badge variant="outline" className="shrink-0 rounded-full">
+                            {wizardCompareCandidates.length} visible
+                          </Badge>
                         </div>
 
-                        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-                          <div className="shrink-0 rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,242,232,0.98)_100%)] p-4 shadow-sm">
+                        <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+                          <div className="shrink-0 rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,242,232,0.98)_100%)] p-3 shadow-sm">
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Selected for composer</div>
-                                <div className="mt-1 text-sm text-muted-foreground">
+                                <div className="mt-1 text-xs text-muted-foreground">
                                   Kandidat yang Anda pilih akan langsung sinkron ke formula composer.
                                 </div>
                               </div>
@@ -955,8 +1105,8 @@ const EditFormulaPage = () => {
                             </div>
 
                             {selectedWizardCandidates.length ? (
-                              <div className="mt-3 max-h-32 overflow-y-auto pr-1">
-                                <div className="space-y-2">
+                              <div className="mt-2 overflow-x-auto pb-1">
+                                <div className="flex min-w-max gap-2">
                                 {selectedWizardCandidates.map((item) => {
                                   const explanation = wizardStageExplainMap.get(item.raw_material_id);
                                   const usageLabel = item.recommended_usage_label || explanation?.recommended_usage_label || null;
@@ -965,7 +1115,7 @@ const EditFormulaPage = () => {
                                   return (
                                     <div
                                       key={`selected-${item.raw_material_id}`}
-                                      className="flex items-center justify-between gap-3 rounded-xl border bg-background px-3 py-2 text-xs"
+                                      className="flex w-[18rem] items-center justify-between gap-3 rounded-xl border bg-background px-3 py-2 text-xs"
                                     >
                                       <div className="min-w-0">
                                         <div className="truncate font-medium">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
@@ -1002,8 +1152,8 @@ const EditFormulaPage = () => {
                             )}
                           </div>
 
-                          <div className="min-h-0 flex-1 overflow-y-auto pr-1 pb-24">
-                            <div className="space-y-2">
+                          <div className="min-h-0 flex-1 overflow-y-auto pr-1 pb-10">
+                            <div className="grid gap-2 xl:grid-cols-2">
                           {wizardCompareCandidates.map((item) => {
                             const explanation = wizardStageExplainMap.get(item.raw_material_id);
                             const breakdown = explanation?.score_breakdown || null;
@@ -1033,7 +1183,7 @@ const EditFormulaPage = () => {
                                   onClick={() => setExpandedWizardCandidateId(isExpanded ? '' : item.raw_material_id)}
                                 >
                                   <div className="min-w-0">
-                                    <div className="text-sm font-semibold">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
+                                    <div className="line-clamp-1 text-sm font-semibold">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
                                     <div className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                                       {item.recommendation_reason || 'Generated from stage fit'}
                                     </div>
@@ -1142,7 +1292,7 @@ const EditFormulaPage = () => {
               )}
             </div>
 
-            <DialogFooter className="shrink-0 border-t px-6 py-5">
+            <DialogFooter className="shrink-0 border-t px-5 py-4">
               <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" className="rounded-xl" onClick={handleWizardBack} disabled={wizardQuestionIndex === 0}>

@@ -249,6 +249,12 @@ const THEME_EFFECT_PRIORITIES = {
   skin: ['animalic', 'mineral', 'creamy_body'],
   amber: ['smoke', 'spicy_ping', 'dirty_wood'],
   mineral: ['mineral', 'sparkle', 'cool'],
+  ozonic: ['mineral', 'sparkle', 'cool'],
+  metallic: ['mineral', 'sparkle', 'cool'],
+  aldehydic: ['sparkle', 'cool'],
+  solventy: ['mineral', 'cool'],
+  gas: ['mineral', 'sparkle', 'cool'],
+  fuel: ['mineral', 'sparkle', 'cool'],
   woody: ['dirty_wood', 'smoke', 'leathery'],
 };
 
@@ -286,6 +292,12 @@ const THEME_RECIPE_LIBRARY = {
   mineral: {
     keywords: ['mineral', 'metallic', 'stone', 'concrete', 'cold air', 'ozonic'],
     preferred_roles: ['body', 'support', 'effect', 'effect', 'contrast'],
+    required_effects: ['mineral', 'sparkle', 'cool'],
+    loud_direct_limit: 1,
+  },
+  gas_vapor: {
+    keywords: ['gas', 'fuel', 'gasoline', 'bensin', 'petrol', 'vapor', 'uap', 'ozonic', 'metallic', 'aldehydic', 'solventy', 'cold air'],
+    preferred_roles: ['lift', 'effect', 'bridge', 'contrast', 'support'],
     required_effects: ['mineral', 'sparkle', 'cool'],
     loud_direct_limit: 1,
   },
