@@ -11,6 +11,7 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaceAnalysisCard from '@/components/mobile/PaceAnalysisCard.jsx';
+import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
@@ -198,27 +199,13 @@ const MobileFormulaDetailPage = () => {
         ) : null}
         {tab === 'workbook' ? (
           <section className="space-y-3">
+            <FormulaOdourDisplayPanel
+              items={items}
+              rawMaterialsById={rawMaterialsById}
+              referenceLinksMap={itemReferenceLinksMap}
+              className="mobile-odour-display"
+            />
             <PaceAnalysisCard score={formulaMetrics.paceScore} warnings={paceWarnings} recommendations={paceRecommendations} />
-            <section className="mobile-card p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-bold text-[#1f2937]">Order Display</h2>
-                  <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Top, middle, base odour load</p>
-                </div>
-                <div
-                  className="h-24 w-24 shrink-0 rounded-full border border-[#ece8df]"
-                  style={{
-                    background: `conic-gradient(#fbbf24 0 ${workbookSimulation.topPercent || 0}%, #f59e0b ${workbookSimulation.topPercent || 0}% ${(workbookSimulation.topPercent || 0) + (workbookSimulation.middlePercent || 0)}%, #44403c ${(workbookSimulation.topPercent || 0) + (workbookSimulation.middlePercent || 0)}% 100%)`,
-                  }}
-                  aria-label="Order display chart"
-                />
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <MetricTile label="Top" value={formatPercent(workbookSimulation.topPercent, 0)} />
-                <MetricTile label="Middle" value={formatPercent(workbookSimulation.middlePercent, 0)} />
-                <MetricTile label="Base" value={formatPercent(workbookSimulation.basePercent, 0)} />
-              </div>
-            </section>
             <section className="mobile-card p-4">
               <h2 className="text-sm font-bold text-[#1f2937]">Composition Board</h2>
               <div className="mt-3 grid grid-cols-2 gap-2">

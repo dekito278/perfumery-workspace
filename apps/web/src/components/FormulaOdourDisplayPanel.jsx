@@ -22,6 +22,19 @@ const formatHours = (value) => {
   return `${formatQuantity(value, 1)} h`;
 };
 
+const formatDisplayQuantity = (value, decimals = null) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return '0';
+  }
+
+  if (number === 0) {
+    return '0';
+  }
+
+  return formatQuantity(number, decimals);
+};
+
 const MetricCard = ({ label, value }) => (
   <div className="rounded-2xl border border-[#ddd3bf] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(250,246,236,0.98)_100%)] p-4 shadow-sm">
     <div className="text-[11px] uppercase tracking-[0.16em] text-[#7e7153]">{label}</div>
@@ -382,7 +395,7 @@ const FormulaOdourDisplayPanel = ({
                       data-elapsed-hour={roundedElapsedHour}
                       className="rounded-full border border-[#ded3be] bg-[#f8f3e7] px-3 py-1 text-[11px] font-medium text-[#6d6043]"
                     >
-                      AutoElapse {formatQuantity(roundedElapsedHour, 0)} h
+                      AutoElapse {formatDisplayQuantity(roundedElapsedHour, 0)} h
                     </div>
                     <div className="rounded-full border border-[#d7e1cd] bg-[#f3f8ee] px-3 py-1 text-[11px] font-medium text-[#496033]">
                       Stage {elapsedStageLabel}
@@ -422,7 +435,7 @@ const FormulaOdourDisplayPanel = ({
                     />
                     <div className="mt-2 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] text-[#7f7257]">
                       <span>0h</span>
-                      <span>{formatQuantity(charts.maxElapsedHour || 0, 0)}h</span>
+                    <span>{formatDisplayQuantity(charts.maxElapsedHour || 0, 0)}h</span>
                     </div>
                   </div>
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -563,7 +576,7 @@ const FormulaOdourDisplayPanel = ({
                     {formatQuantity(elapsedTotalLoad, 2)}
                     </div>
                     <div className="mt-1 text-[11px] text-[#607350]" data-testid="elapsed-load-hint">
-                    AutoElapse {formatQuantity(roundedElapsedHour, 0)} h of {formatQuantity(charts.maxElapsedHour || 0, 0)} h
+                    AutoElapse {formatDisplayQuantity(roundedElapsedHour, 0)} h of {formatDisplayQuantity(charts.maxElapsedHour || 0, 0)} h
                     </div>
                   </div>
               </div>
