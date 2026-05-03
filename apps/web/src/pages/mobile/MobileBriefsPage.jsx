@@ -68,7 +68,7 @@ const MobileBriefsPage = () => {
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Briefs - Perfumer Studio</title></Helmet>
-      <main className="mobile-page space-y-4">
+      <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Briefs"
           subtitle="Project direction and R&D handoff"
@@ -84,7 +84,7 @@ const MobileBriefsPage = () => {
           <MobileEmptyState title="No matching briefs" description="Try a different search or status filter." />
         ) : (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {visible.map((brief) => (
                 <BriefCardMobile
                   key={brief.id}

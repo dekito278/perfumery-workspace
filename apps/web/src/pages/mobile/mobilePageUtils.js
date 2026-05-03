@@ -1,4 +1,4 @@
-export const MOBILE_PAGE_SIZE = 7;
+export const MOBILE_PAGE_SIZE = 5;
 export const MOBILE_ACTIVITY_LIMIT = 5;
 
 export const filterByText = (items, query, fields) => {

@@ -18,7 +18,12 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
-import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
+import { getReferenceMatchStatusMap } from '@/services/materialReferenceService.js';
+import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import {
+  buildFormulaReferenceLinksMap,
+  buildMobileFormulaMetrics,
+} from '@/utils/mobileFormulaMetrics.js';
 import { filterByText, getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 
 const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfModal.jsx'));
@@ -27,9 +32,9 @@ const statusOptions = [
   { value: 'all', label: 'All' },
   { value: 'draft', label: 'Draft' },
   { value: 'active', label: 'Active' },
-  { value: 'validated', label: 'Validated' },
-  { value: 'standalone', label: 'Standalone' },
-  { value: 'linked', label: 'Linked Brief' },
+  { value: 'validated', label: 'Valid' },
+  { value: 'standalone', label: 'Solo' },
+  { value: 'linked', label: 'Brief' },
 ];
 
 const MobileFormulasPage = () => {
@@ -56,13 +61,26 @@ const MobileFormulasPage = () => {
     try {
       const formulaRows = await getFormulas();
       setFormulas(formulaRows || []);
-      const [briefRows, logRows, metricEntries] = await Promise.all([
+      const [briefRows, logRows, formulaItemEntries, rawMaterialRows] = await Promise.all([
         getBriefs(),
         getValidationLogs(),
         Promise.all((formulaRows || []).map(async (formula) => {
           const items = await getFormulaItems(formula.id);
-          return [formula.id, { itemCount: items.length, totalGrams: calculateTotalAmount(items) }];
+          return [formula.id, items || []];
         })),
+        getRawMaterialOptions(),
+      ]);
+      const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
+      const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
+      const referenceStatusMap = await getReferenceMatchStatusMap(materialIds);
+      const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
+      const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
+        formulaId,
+        buildMobileFormulaMetrics({
+          items: formulaItems,
+          rawMaterialsById,
+          referenceLinksMap: buildFormulaReferenceLinksMap(formulaItems, referenceStatusMap),
+        }),
       ]);
       setMetrics(Object.fromEntries(metricEntries));
       const briefsByFormulaId = briefRows.reduce((map, brief) => {
@@ -133,7 +151,7 @@ const MobileFormulasPage = () => {
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Formulas - Perfumer Studio</title></Helmet>
-      <main className="mobile-page space-y-4">
+      <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Formulas"
           subtitle="Formula library and imports"
@@ -153,7 +171,7 @@ const MobileFormulasPage = () => {
           <MobileEmptyState title="No matching formulas" description="Try another search or filter." />
         ) : (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {visible.map((formula) => (
                 <FormulaCardMobile
                   key={formula.id}

@@ -7,6 +7,11 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
+const toPositiveGuidanceLimit = (value) => {
+  const numericValue = toFiniteNumber(value);
+  return numericValue > 0 ? numericValue : null;
+};
+
 export const getDilutionFactor = (value) => {
   const dilutionPercent = toFiniteNumber(value);
   if (dilutionPercent === null || dilutionPercent <= 0) {
@@ -30,9 +35,9 @@ export const buildGuidanceLimitAdvisories = ({
   }
 
   const advisories = [];
-  const typicalLimit = toFiniteNumber(referenceProfile.use_level_typical_percent);
-  const maxLimit = toFiniteNumber(referenceProfile.use_level_max_percent);
-  const ifraLimit = toFiniteNumber(referenceProfile.ifra_limit_percent);
+  const typicalLimit = toPositiveGuidanceLimit(referenceProfile.use_level_typical_percent);
+  const maxLimit = toPositiveGuidanceLimit(referenceProfile.use_level_max_percent);
+  const ifraLimit = toPositiveGuidanceLimit(referenceProfile.ifra_limit_percent);
 
   if (typicalLimit !== null && normalizedEffectivePercentage > typicalLimit) {
     advisories.push({

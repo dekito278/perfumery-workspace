@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Route, Routes, BrowserRouter as Router, Navigate } from 'react-router-dom';
+import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
@@ -35,6 +35,7 @@ import MobileCreateFormulaPage from '@/pages/mobile/MobileCreateFormulaPage.jsx'
 import MobileEditFormulaPage from '@/pages/mobile/MobileEditFormulaPage.jsx';
 import MobileFormulaDetailPage from '@/pages/mobile/MobileFormulaDetailPage.jsx';
 import MobileValidationPage from '@/pages/mobile/MobileValidationPage.jsx';
+import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 
 const RootRedirect = () => {
   const { isAuthenticated, initialLoading } = useAuth();
@@ -43,13 +44,29 @@ const RootRedirect = () => {
     return null;
   }
 
+  if (isMobileBrowser()) {
+    return <Navigate to={isAuthenticated ? '/mobile/dashboard' : '/mobile/login'} replace />;
+  }
+
   return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
+};
+
+const MobileBrowserRedirect = () => {
+  const { pathname, search, hash } = useLocation();
+  const mobilePath = isMobileBrowser() ? toMobilePath(pathname) : null;
+
+  if (!mobilePath) {
+    return null;
+  }
+
+  return <Navigate to={`${mobilePath}${search}${hash}`} replace />;
 };
 
 function AppRoutes() {
   return (
     <Router>
       <ScrollToTop />
+      <MobileBrowserRedirect />
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/home" element={<HomePage />} />

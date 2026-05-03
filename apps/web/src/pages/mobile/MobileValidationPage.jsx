@@ -109,12 +109,12 @@ const MobileValidationPage = () => {
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Validation - Perfumer Studio</title></Helmet>
-      <main className="mobile-page space-y-4">
+      <main className="mobile-page space-y-3">
         <MobileTopBar title="Validation" subtitle="Checklist and follow-up" action={<Button type="button" size="icon" onClick={() => setFormOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
         {loading ? <MobileLoadingSkeleton count={4} /> : visible.length ? (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {visible.map((log) => (
                 <ValidationCardMobile key={log.id} log={log} formula={formulasById.get(log.formula_id)} onOpen={() => log.formula_id && navigate(`/mobile/formulas/${log.formula_id}`)} />
               ))}

@@ -513,7 +513,7 @@ export const getRawMaterialsPage = async ({
         `scent_family.ilike.%${escapedQuery}%`,
       ];
 
-      if (referenceScope.hasFilteredIds) {
+      if (referenceScope.hasFilteredIds && referenceScope.filteredIds.length <= 80) {
         searchConditions.push(`id.in.${referenceScope.formatPostgrestInList(referenceScope.filteredIds)}`);
       }
 
