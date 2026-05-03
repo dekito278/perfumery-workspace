@@ -36,6 +36,7 @@ import MobileEditFormulaPage from '@/pages/mobile/MobileEditFormulaPage.jsx';
 import MobileFormulaDetailPage from '@/pages/mobile/MobileFormulaDetailPage.jsx';
 import MobileValidationPage from '@/pages/mobile/MobileValidationPage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
+import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 
 const RootRedirect = () => {
   const { isAuthenticated, initialLoading } = useAuth();
@@ -243,6 +244,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
       </Routes>
+      <PwaInstallPrompt />
       <Toaster />
     </Router>
   );

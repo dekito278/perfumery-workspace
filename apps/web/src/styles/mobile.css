@@ -1,5 +1,6 @@
 .mobile-app {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #f8f7f4;
   color: #1f2937;
   font-size: 13px;
@@ -21,7 +22,27 @@
 
 .mobile-app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 86px);
+}
+
+.pwa-standalone,
+.pwa-standalone body {
+  min-height: 100dvh;
+  background: #f8f7f4;
+}
+
+.pwa-standalone .mobile-app {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.pwa-standalone .mobile-app-shell {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
 }
 
 .mobile-page {
@@ -162,6 +183,56 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 2px;
+}
+
+.mobile-pwa-install {
+  position: fixed;
+  left: max(12px, calc((100vw - 430px) / 2 + 12px));
+  right: max(12px, calc((100vw - 430px) / 2 + 12px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+  z-index: 70;
+  display: flex;
+  gap: 12px;
+  max-width: 406px;
+  margin: 0 auto;
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 12px;
+  box-shadow: 0 24px 54px -28px rgba(31, 41, 55, 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.mobile-pwa-install-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  background: #b7791f;
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.mobile-pwa-install-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  min-height: 32px;
+  width: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.pwa-standalone .mobile-pwa-install {
+  display: none;
 }
 
 @media (min-width: 768px) {

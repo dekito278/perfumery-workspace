@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from '@/App';
 import '@/index.css';
 import '@/styles/mobile.css';
+import { applyStandaloneClass, registerServiceWorker } from '@/utils/pwa.js';
 
 const RESIZE_OBSERVER_MESSAGES = [
   'ResizeObserver loop completed with undelivered notifications.',
@@ -47,3 +48,7 @@ window.addEventListener('unhandledrejection', (event) => {
 ReactDOM.createRoot(document.getElementById('root')).render(
 	<App />
 );
+
+applyStandaloneClass();
+window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change', applyStandaloneClass);
+registerServiceWorker();
