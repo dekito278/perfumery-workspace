@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { MOBILE_PAGE_SIZE, filterByText, getVisibleItems } from '@/pages/mobile/mobilePageUtils.js';
+import { buildWorkbookSimulation, getFormulaItemDilutionFactor } from '@/utils/formulaWorkbookSimulation.js';
 import {
   buildFormulaInsight,
   createGuidanceSource,
@@ -69,6 +70,11 @@ const dilutionPresets = [
 const formatPercent = (value, digits = 1) => `${Number(value || 0).toFixed(digits)}%`;
 const formatGram = (value, digits = 2) => `${Number(value || 0).toFixed(digits)}g`;
 const compactValue = (value) => Number(value || 0).toFixed(Number(value || 0) >= 10 ? 1 : 2);
+const formatMetricNumber = (value, digits = 1) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '-';
+  return Number(number.toFixed(digits)).toString();
+};
 
 const MetricPill = ({ label, value, tone = 'slate', helper }) => (
   <div className={`rounded-xl border p-2 ${tone === 'amber' ? 'border-amber-200 bg-amber-50' : tone === 'emerald' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
@@ -100,6 +106,30 @@ const MiniWorkbookRows = ({ rows = [], empty = 'No chart data yet' }) => {
       })}
     </div>
   );
+};
+
+const buildWorkbookClassRows = (rows = []) => {
+  const totals = new Map();
+  rows.forEach((row) => {
+    const rowWeight = Number(row.odourWeight || 0);
+    if (!rowWeight) return;
+    (row.classDistribution || []).forEach((entry) => {
+      const key = entry.letter || entry.familyName || entry.classIndex;
+      if (!key) return;
+      const current = totals.get(key) || {
+        key,
+        label: entry.letter ? `${entry.letter} ${entry.familyName || ''}`.trim() : entry.familyName || `Class ${entry.classIndex}`,
+        value: 0,
+      };
+      current.value += (rowWeight * Number(entry.share || 0)) / 100;
+      totals.set(key, current);
+    });
+  });
+
+  const total = [...totals.values()].reduce((sum, entry) => sum + entry.value, 0);
+  return [...totals.values()]
+    .map((entry) => ({ ...entry, value: total > 0 ? (entry.value / total) * 100 : 0 }))
+    .sort((left, right) => right.value - left.value);
 };
 
 const SectionTitle = ({ title, subtitle, action }) => (
@@ -213,6 +243,7 @@ const MobileFormulaComposerWorkspace = ({
   saveLabel,
   saveDisabled,
   saving,
+  showActionBar = true,
 }) => {
   const [tab, setTab] = useState('composition');
   const [expandedRow, setExpandedRow] = useState('');
@@ -234,6 +265,18 @@ const MobileFormulaComposerWorkspace = ({
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + Number(item.gram_amount || item.grams || 0), 0), [items]);
   const composition = useMemo(() => enrichCompositionItems(items, totalGrams, materialsById), [items, materialsById, totalGrams]);
   const insight = useMemo(() => buildFormulaInsight(composition, guidanceSources), [composition, guidanceSources]);
+  const workbookItems = useMemo(() => composition.map((item) => ({
+    ...item,
+    percentage: item.formulaPercent,
+    grams: item.gram,
+    gram_amount: item.gram,
+    dilution_percent: getFormulaItemDilutionFactor(item) >= 0.9999 ? null : item.concentrationPercent,
+  })), [composition]);
+  const workbookSimulation = useMemo(() => buildWorkbookSimulation({
+    items: workbookItems,
+    rawMaterialsById: materialsById,
+    referenceLinksMap: new Map(),
+  }), [materialsById, workbookItems]);
   const compositionIds = useMemo(() => new Set(items.map((item) => item.item_id)), [items]);
 
   const filteredMaterials = useMemo(() => {
@@ -344,12 +387,35 @@ const MobileFormulaComposerWorkspace = ({
   const dilutionPreviewGram = Number(dilutionItem?.gram || dilutionItem?.gram_amount || 0);
   const dilutionPreviewActive = (dilutionPreviewGram * dilutionPreviewConcentration) / 100;
   const visibleComposition = getVisibleItems(composition, compositionVisible);
-  const visibleWarnings = insight.warnings.slice(0, 3);
+  const visibleWarnings = [
+    ...workbookSimulation.performanceWarnings.map((warning) => warning.message || warning.title).filter(Boolean),
+    ...insight.warnings,
+  ].slice(0, 3);
   const graphEntries = insight.odorProfileGraph.slice(0, 8);
-  const impactDisplay = insight.hasImpactData ? Math.round(insight.impactScore) : '-';
-  const lifetimeDisplay = insight.hasLifetimeData ? Math.round(insight.lifetimeScore) : '-';
-  const lifetimeHelper = insight.hasLifetimeData ? insight.lifetimeLabel : 'No data';
-  const impactTone = insight.hasImpactData && insight.impactScore >= 75 ? 'amber' : 'slate';
+  const workbookClassRows = useMemo(() => buildWorkbookClassRows(workbookSimulation.rows), [workbookSimulation.rows]);
+  const impactDisplay = workbookSimulation.hasImpactData ? formatMetricNumber(workbookSimulation.impactEstimate, 1) : '-';
+  const lifetimeHours = workbookSimulation.odourWeightedLifeHours ?? workbookSimulation.simpleLifeHours;
+  const lifetimeDisplay = workbookSimulation.hasLifeData ? formatMetricNumber(lifetimeHours, 1) : '-';
+  const lifetimeHelper = workbookSimulation.hasLifeData ? `${lifetimeDisplay} h` : 'No data';
+  const impactTone = workbookSimulation.hasImpactData && Number(workbookSimulation.impactEstimate || 0) >= 75 ? 'amber' : 'slate';
+  const topMiddleBaseDistribution = {
+    top: workbookSimulation.topPercent || 0,
+    middle: workbookSimulation.middlePercent || 0,
+    base: workbookSimulation.basePercent || 0,
+  };
+  const dominantPhase = Object.entries(topMiddleBaseDistribution).sort((left, right) => right[1] - left[1])[0] || ['base', 0];
+  const workbookBalanceStatus = !composition.length
+    ? 'Needs adjustment'
+    : dominantPhase[1] > 55
+      ? `${dominantPhase[0][0].toUpperCase()}${dominantPhase[0].slice(1)}-heavy`
+      : 'Balanced';
+  const workbookRecommendation = workbookBalanceStatus === 'Balanced'
+    ? 'Distribution is ready for validation.'
+    : workbookBalanceStatus.includes('Base')
+      ? 'Reduce heavy base materials or increase fresh top notes.'
+      : workbookBalanceStatus.includes('Top')
+        ? 'Add middle or base support for better persistence.'
+        : 'Add more heart materials to support the transition.';
 
   return (
     <>
@@ -366,7 +432,7 @@ const MobileFormulaComposerWorkspace = ({
           <MetricPill label="Total" value={formatPercent(insight.totalPercent)} tone={Math.abs(insight.totalPercent - 100) > 0.25 ? 'amber' : 'emerald'} />
           <MetricPill label="Actual" value={formatGram(insight.totalActualActiveGrams)} helper={formatPercent(insight.totalActualActive)} />
           <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} />
-          <MetricPill label="Life" value={lifetimeHelper} helper={lifetimeDisplay} />
+          <MetricPill label="Life" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Workbook hours' : 'No data'} />
         </div>
       </section>
 
@@ -405,6 +471,7 @@ const MobileFormulaComposerWorkspace = ({
               {visibleComposition.length ? visibleComposition.map((item) => {
                 const open = expandedRow === item.row_key;
                 const dilutionTone = item.dilutionLabel === 'Set dilution' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#374151]';
+                const hasSyncIssue = !item.hasGuidanceData || item.dilutionLabel === 'Set dilution';
                 return (
                   <article key={item.row_key} className="rounded-2xl border border-[#e5e7eb] bg-white">
                     <div className="p-2.5">
@@ -414,7 +481,7 @@ const MobileFormulaComposerWorkspace = ({
                           <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">{item.category}</p>
                         </button>
                         <div className="flex items-center gap-1">
-                          {item.warnings.length ? <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-label={`${item.warnings.length} warnings`} /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+                          {hasSyncIssue ? <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-label="Workbook guidance needs sync" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                           <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="rounded-lg p-1 text-[#6b7280]"><MoreHorizontal className="h-4 w-4" /></button>
                         </div>
                       </div>
@@ -450,28 +517,13 @@ const MobileFormulaComposerWorkspace = ({
             <PaginationOrLoadMore visibleCount={Math.min(compositionVisible, composition.length)} totalCount={composition.length} onLoadMore={() => setCompositionVisible((current) => current + COMPOSER_PAGE_SIZE)} />
           </section>
 
-          <section className="mobile-soft-card mobile-compact-card p-3">
-            <SectionTitle title="Live Mini Analysis" subtitle="Updates from actual active composition" />
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
-              <MetricPill label="Lifetime" value={lifetimeHelper} helper={insight.hasLifetimeData ? `${lifetimeDisplay} score` : 'No data'} />
-              <MetricPill label="Balance" value={insight.balanceStatus} tone={insight.balanceStatus === 'Balanced' ? 'emerald' : 'amber'} />
-              <MetricPill label="Dominant" value={insight.dominantNotes.map((entry) => entry.label).join(' / ') || 'None'} />
-            </div>
-            {visibleWarnings.length ? (
-              <div className="mt-2 space-y-1">
-                {visibleWarnings.map((warning) => <div key={warning} className="rounded-xl bg-amber-50 p-2 text-[11px] font-semibold text-amber-800">{warning}</div>)}
-              </div>
-            ) : null}
-          </section>
-
-          <StickyBottomActionBar>
+          {showActionBar ? <StickyBottomActionBar>
             <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-2">
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Formula<br /><span className="text-xs text-[#1f2937]">{formatPercent(insight.totalPercent)}</span></div>
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Actual<br /><span className="text-xs text-[#1f2937]">{formatGram(insight.totalActualActiveGrams)}</span></div>
               <Button type="button" onClick={onSave} disabled={saveDisabled || saving} className="h-10 rounded-xl text-xs">{saving ? 'Saving...' : saveLabel}</Button>
             </div>
-          </StickyBottomActionBar>
+          </StickyBottomActionBar> : null}
         </section>
       ) : null}
 
@@ -504,21 +556,21 @@ const MobileFormulaComposerWorkspace = ({
 
           <div className="grid grid-cols-2 gap-2">
             <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
-            <MetricPill label="Lifetime" value={lifetimeHelper} helper={insight.hasLifetimeData ? `${lifetimeDisplay} confidence` : 'No data'} tone="emerald" />
+            <MetricPill label="Lifetime" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Workbook hours' : 'No data'} tone="emerald" />
           </div>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Balance Preview" subtitle={`${formatPercent(insight.topMiddleBaseDistribution.top, 0)} top - ${formatPercent(insight.topMiddleBaseDistribution.middle, 0)} middle - ${formatPercent(insight.topMiddleBaseDistribution.base, 0)} base`} />
+            <SectionTitle title="Balance Preview" subtitle={`${formatPercent(topMiddleBaseDistribution.top, 0)} top - ${formatPercent(topMiddleBaseDistribution.middle, 0)} middle - ${formatPercent(topMiddleBaseDistribution.base, 0)} base`} />
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#ece8df]">
-              <div className="inline-block h-full bg-amber-300" style={{ width: `${insight.topMiddleBaseDistribution.top}%` }} />
-              <div className="inline-block h-full bg-amber-500" style={{ width: `${insight.topMiddleBaseDistribution.middle}%` }} />
-              <div className="inline-block h-full bg-stone-700" style={{ width: `${insight.topMiddleBaseDistribution.base}%` }} />
+              <div className="inline-block h-full bg-amber-300" style={{ width: `${topMiddleBaseDistribution.top}%` }} />
+              <div className="inline-block h-full bg-amber-500" style={{ width: `${topMiddleBaseDistribution.middle}%` }} />
+              <div className="inline-block h-full bg-stone-700" style={{ width: `${topMiddleBaseDistribution.base}%` }} />
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              {Object.entries(insight.topMiddleBaseDistribution).map(([key, value]) => <MetricPill key={key} label={key} value={formatPercent(value, 0)} />)}
+              {Object.entries(topMiddleBaseDistribution).map(([key, value]) => <MetricPill key={key} label={key} value={formatPercent(value, 0)} />)}
             </div>
-            <div className={`mt-2 rounded-xl p-2 text-xs font-semibold ${insight.balanceStatus === 'Balanced' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-              {insight.balanceStatus}: {insight.recommendation}
+            <div className={`mt-2 rounded-xl p-2 text-xs font-semibold ${workbookBalanceStatus === 'Balanced' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+              {workbookBalanceStatus}: {workbookRecommendation}
             </div>
           </section>
 
@@ -527,30 +579,30 @@ const MobileFormulaComposerWorkspace = ({
             <div className="mt-3 grid grid-cols-[1fr_90px] gap-3">
               <div className="grid grid-cols-2 gap-2">
                 <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
-                <MetricPill label="Lifetime" value={lifetimeHelper} helper={insight.hasLifetimeData ? `${lifetimeDisplay} score` : 'No data'} tone="emerald" />
+                <MetricPill label="Lifetime" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Workbook hours' : 'No data'} tone="emerald" />
                 <MetricPill label="Actual" value={formatGram(insight.totalActualActiveGrams)} helper={formatPercent(insight.totalActualActive)} />
-                <MetricPill label="Guidance" value={`${composition.filter((item) => item.impactValue || item.lifetimeValue).length}/${composition.length}`} helper="ready rows" />
+                <MetricPill label="Guidance" value={`${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount}`} helper="ready rows" />
               </div>
               <div
                 className="h-[90px] w-[90px] rounded-full border border-[#ece8df]"
                 style={{
-                  background: `conic-gradient(#fbbf24 0 ${insight.topMiddleBaseDistribution.top}%, #f59e0b ${insight.topMiddleBaseDistribution.top}% ${insight.topMiddleBaseDistribution.top + insight.topMiddleBaseDistribution.middle}%, #44403c ${insight.topMiddleBaseDistribution.top + insight.topMiddleBaseDistribution.middle}% 100%)`,
+                  background: `conic-gradient(#fbbf24 0 ${topMiddleBaseDistribution.top}%, #f59e0b ${topMiddleBaseDistribution.top}% ${topMiddleBaseDistribution.top + topMiddleBaseDistribution.middle}%, #44403c ${topMiddleBaseDistribution.top + topMiddleBaseDistribution.middle}% 100%)`,
                 }}
                 aria-label="Order display preview"
               />
             </div>
             <div className="mt-3">
-              <MiniWorkbookRows rows={insight.odorProfileGraph} />
+              <MiniWorkbookRows rows={workbookClassRows} />
             </div>
           </section>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Recommendations" subtitle={`${insight.warnings.length} active insight`} />
+            <SectionTitle title="Recommendations" subtitle={`${workbookSimulation.warningCount + insight.warnings.length} active insight`} />
             <div className="mt-2 space-y-1">
               {visibleWarnings.length ? visibleWarnings.map((warning) => (
                 <div key={warning} className="rounded-xl bg-amber-50 p-2 text-xs font-semibold text-amber-800">{warning}</div>
               )) : <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">No active warnings.</div>}
-              {insight.warnings.length > 3 ? <div className="text-[11px] font-bold text-[#6b7280]">View all {insight.warnings.length} warnings in workbook.</div> : null}
+              {workbookSimulation.warningCount + insight.warnings.length > 3 ? <div className="text-[11px] font-bold text-[#6b7280]">View all {workbookSimulation.warningCount + insight.warnings.length} warnings in workbook.</div> : null}
             </div>
           </section>
         </section>
@@ -575,7 +627,7 @@ const MobileFormulaComposerWorkspace = ({
           <MobileAccordion title="Odor Profile" meta={insight.dominantNotes.map((entry) => entry.label).join(' / ') || 'No profile'} defaultOpen>
             {graphEntries.filter((entry) => entry.value > 0).length ? graphEntries.filter((entry) => entry.value > 0).map((entry) => <div key={entry.key} className="mb-1 rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">{entry.label}: {Math.round(entry.value)}</div>) : <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">No odor profile yet</div>}
           </MobileAccordion>
-          <MobileAccordion title="Impact & Lifetime" meta={`${impactDisplay} / ${lifetimeDisplay}`} defaultOpen>
+          <MobileAccordion title="Impact & Lifetime" meta={`${impactDisplay} / ${lifetimeHelper}`} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
               <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} />
               <MetricPill label="Lifetime" value={lifetimeDisplay} helper={lifetimeHelper} />

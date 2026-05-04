@@ -83,12 +83,17 @@ export const enrichCompositionItems = (items = [], totalGrams = 0, materialsById
     const actualActivePercent = (formulaPercent * concentrationPercent) / 100;
     const impactValue = numberOrNull(getResolvedGuidanceNumber(material, 'reference_impact') ?? item.impactValue ?? material.impact_value);
     const lifetimeValue = numberOrNull(getResolvedGuidanceNumber(material, 'reference_life_hours') ?? item.lifetimeValue ?? material.lifetime_value);
+    const hasGuidanceData = Boolean(
+      resolved.workbook_code
+      || resolved.reference_abc_primary_family
+      || impactValue !== null
+      || lifetimeValue !== null
+    );
     const warnings = [
       concentrationPercent <= 0 ? 'Missing concentration' : null,
       (item.dilution_type || 'neat') !== 'neat' && !numberOrZero(item.concentration_percent || item.dilution_percent) ? 'Dilution needs %' : null,
-      Number(impactValue || 0) >= 75 ? 'High impact' : null,
       actualActivePercent > 25 ? 'Over active' : null,
-      !resolved.reference_abc_primary_family && !material.category ? 'Missing odor metadata' : null,
+      !hasGuidanceData ? 'Missing workbook guidance' : null,
     ].filter(Boolean);
 
     return {
@@ -106,6 +111,7 @@ export const enrichCompositionItems = (items = [], totalGrams = 0, materialsById
       actualActivePercent,
       impactValue,
       lifetimeValue,
+      hasGuidanceData,
       odorProfile: material.odorProfile || inferOdorProfile(material),
       warnings,
       notes: item.notes || '',

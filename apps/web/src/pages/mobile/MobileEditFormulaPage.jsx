@@ -153,11 +153,12 @@ const MobileEditFormulaPage = () => {
           saveLabel="Save"
           saving={loading}
           saveDisabled={!unsaved}
+          showActionBar={false}
         />
         <StickyBottomActionBar>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" className="h-10 rounded-xl bg-white text-xs" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Cancel</Button>
-            <Button className="h-10 rounded-xl text-xs" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Saving...' : 'Save Revision'}</Button>
+          <div className="grid grid-cols-2 items-stretch gap-2">
+            <Button variant="outline" className="h-12 rounded-2xl bg-white text-sm font-bold" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Cancel</Button>
+            <Button className="h-12 rounded-2xl text-sm font-bold" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Saving...' : 'Save Revision'}</Button>
           </div>
         </StickyBottomActionBar>
       </main>
