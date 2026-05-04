@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Copy, Pencil, Trash2 } from 'lucide-react';
+import { Calculator, Copy, Download, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -75,6 +75,7 @@ const MobileFormulaDetailPage = () => {
   const detail = useFormulaDetailPage(id);
   const {
     formula,
+    handleExportPdf,
     items,
     linkedBriefs,
     loading,
@@ -165,6 +166,10 @@ const MobileFormulaDetailPage = () => {
               ['Last updated', formatDate(formula.updated || formula.created)],
               ['Notes', formula.notes || '-'],
             ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
+              <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => navigate(`/mobile/batches?formulaId=${id}`)}><Calculator className="mr-1 h-4 w-4" />Batch</Button>
+            </div>
           </section>
         ) : null}
         {tab === 'composition' ? (
@@ -260,8 +265,9 @@ const MobileFormulaDetailPage = () => {
           )) : <MobileEmptyState title="No activity yet" />
         ) : null}
         <StickyBottomActionBar>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/formulas/${id}/edit`)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
+            <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/batches?formulaId=${id}`)}><Calculator className="mr-1 h-4 w-4" />Batch</Button>
             <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={handleDuplicate}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>
             <Button variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
           </div>

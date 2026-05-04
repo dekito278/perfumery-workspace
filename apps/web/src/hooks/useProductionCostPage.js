@@ -384,7 +384,7 @@ export const useProductionCostPage = () => {
 
     return buildProductionCostExportConfig({
       bulkComputed,
-      formulaProfile,
+    formulaProfile,
       retailComputed,
       selectedFormula,
       selectedSolvent,
@@ -457,6 +457,7 @@ export const useProductionCostPage = () => {
     bulkComputed,
     bulkInputs,
     bulkScenarios,
+    formulaProfile,
     formulas,
     handleExportPdf,
     handleExportQuotationPdf,

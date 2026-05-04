@@ -205,6 +205,12 @@ export const useFormulaDetailPage = (id) => {
     printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
   };
 
+  const handleExportPdf = async () => {
+    const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+    const filename = `${formula?.code || 'formula'}_${String(formula?.name || 'formula').replace(/\s+/g, '_')}.pdf`;
+    exportWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }), filename);
+  };
+
   const handleCreatePacedRevision = async (recommendations = [], priorityMode = 'balance') => {
     if (!formula || !items.length || !recommendations.length) {
       toast.error('PACE revision needs at least one actionable recommendation');
@@ -269,6 +275,7 @@ export const useFormulaDetailPage = (id) => {
     formulaReferenceAdvisories,
     handleBack,
     handleCreatePacedRevision,
+    handleExportPdf,
     handlePacePriorityModeChange,
     handlePrint,
     hasFormulaItems,

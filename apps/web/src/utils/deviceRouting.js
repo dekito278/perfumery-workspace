@@ -25,9 +25,9 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/accords\/new$/, '/mobile/formulas/new'],
   [/^\/accords\/([^/]+)$/, '/mobile/formulas'],
   [/^\/accord\/([^/]+)$/, '/mobile/formulas'],
-  [/^\/batches$/, '/mobile/formulas'],
-  [/^\/batches\/([^/]+)$/, '/mobile/formulas'],
-  [/^\/production-costing$/, '/mobile/formulas'],
+  [/^\/batches$/, '/mobile/batches'],
+  [/^\/batches\/([^/]+)$/, '/mobile/batches?formulaId=$1'],
+  [/^\/production-costing$/, '/mobile/batches'],
 ];
 
 export const isMobileBrowser = () => {

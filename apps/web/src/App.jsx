@@ -20,6 +20,7 @@ import FormulasPage from '@/pages/FormulasPage.jsx';
 import CreateFormulaPage from '@/pages/CreateFormulaPage.jsx';
 import EditFormulaPage from '@/pages/EditFormulaPage.jsx';
 import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
+import ProductionCostPage from '@/pages/ProductionCostPage.jsx';
 import ValidationLogPage from '@/pages/ValidationLogPage.jsx';
 import MobileLoginPage from '@/pages/mobile/MobileLoginPage.jsx';
 import MobileDashboardPage from '@/pages/mobile/MobileDashboardPage.jsx';
@@ -34,6 +35,7 @@ import MobileFormulasPage from '@/pages/mobile/MobileFormulasPage.jsx';
 import MobileCreateFormulaPage from '@/pages/mobile/MobileCreateFormulaPage.jsx';
 import MobileEditFormulaPage from '@/pages/mobile/MobileEditFormulaPage.jsx';
 import MobileFormulaDetailPage from '@/pages/mobile/MobileFormulaDetailPage.jsx';
+import MobileBatchesPage from '@/pages/mobile/MobileBatchesPage.jsx';
 import MobileValidationPage from '@/pages/mobile/MobileValidationPage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
@@ -164,6 +166,11 @@ function AppRoutes() {
             <MobileFormulaDetailPage />
           </ProtectedRoute>
         } />
+        <Route path="/mobile/batches" element={
+          <ProtectedRoute>
+            <MobileBatchesPage />
+          </ProtectedRoute>
+        } />
         <Route path="/mobile/validation" element={
           <ProtectedRoute>
             <MobileValidationPage />
@@ -250,10 +257,22 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         
-        <Route path="/batches" element={<Navigate to="/formulas" replace />} />
-        <Route path="/batches/:id" element={<Navigate to="/formulas" replace />} />
+        <Route path="/batches" element={
+          <ProtectedRoute>
+            <ProductionCostPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/batches/:id" element={
+          <ProtectedRoute>
+            <ProductionCostPage />
+          </ProtectedRoute>
+        } />
 
-        <Route path="/production-costing" element={<Navigate to="/formulas" replace />} />
+        <Route path="/production-costing" element={
+          <ProtectedRoute>
+            <ProductionCostPage />
+          </ProtectedRoute>
+        } />
         <Route path="/validation" element={
           <ProtectedRoute>
             <ValidationLogPage />

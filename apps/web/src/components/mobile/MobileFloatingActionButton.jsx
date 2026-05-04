@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileUp, FlaskConical, Plus, Upload, WandSparkles } from 'lucide-react';
+import { Calculator, FileUp, FlaskConical, Plus, Upload, WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 
 const actions = [
   { label: 'New Brief', path: '/mobile/briefs/new', icon: WandSparkles },
   { label: 'New Formula', path: '/mobile/formulas/new', icon: FlaskConical },
+  { label: 'Batch Calculator', path: '/mobile/batches', icon: Calculator },
   { label: 'Add Material', path: '/mobile/raw-materials?action=add', icon: Plus },
   { label: 'Import Formula PDF', path: '/mobile/formulas?action=import', icon: FileUp },
 ];
