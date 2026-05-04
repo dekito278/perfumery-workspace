@@ -84,7 +84,7 @@ const MetricPill = ({ label, value, tone = 'slate', helper }) => (
   </div>
 );
 
-const MiniWorkbookRows = ({ rows = [], empty = 'No chart data yet' }) => {
+const MiniWorkbookRows = ({ rows = [], empty = 'No chart data' }) => {
   const visibleRows = rows.filter((entry) => Number(entry.value || entry.percent || 0) > 0).slice(0, 6);
   if (!visibleRows.length) {
     return <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">{empty}</div>;
@@ -443,7 +443,7 @@ const MobileFormulaComposerWorkspace = ({
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle
               title="Raw Material Finder"
-              subtitle={finderQuery ? 'Showing 3 search matches' : 'Start typing or add from the first 3 materials'}
+              subtitle={finderQuery ? `${finderMaterials.length} matches` : undefined}
             />
             <div className="mt-2">
               <MobileSearchBar value={finderQuery} onChange={setFinderQuery} placeholder="Find raw material..." />
@@ -464,7 +464,7 @@ const MobileFormulaComposerWorkspace = ({
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle
               title="Composition Board"
-              subtitle={`${composition.length} materials - ${formatGram(insight.totalGrams)} total`}
+              subtitle={`${composition.length} materials - ${formatGram(insight.totalGrams)}`}
               action={<Button type="button" variant="outline" onClick={normalizeTo100} className="h-8 rounded-xl bg-white px-3 text-[11px]">Normalize</Button>}
             />
             <div className="mt-2 space-y-2">
@@ -510,7 +510,6 @@ const MobileFormulaComposerWorkspace = ({
               }) : (
                 <div className="rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-4 text-center">
                   <p className="text-sm font-bold text-[#1f2937]">No materials yet</p>
-                  <p className="mt-1 text-xs text-[#6b7280]">Search above and tap Add to start the composition.</p>
                 </div>
               )}
             </div>
@@ -530,7 +529,7 @@ const MobileFormulaComposerWorkspace = ({
       {tab === 'analysis' ? (
         <section className="space-y-2 pb-4">
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Odor Profile" subtitle="Calculated from actual active composition" action={<BarChart3 className="h-4 w-4 text-amber-700" />} />
+            <SectionTitle title="Odor Profile" action={<BarChart3 className="h-4 w-4 text-amber-700" />} />
             {graphEntries.some((entry) => entry.value > 0) ? (
               <>
                 <div className="mt-3 grid gap-1.5">
@@ -549,7 +548,6 @@ const MobileFormulaComposerWorkspace = ({
             ) : (
               <div className="mt-3 rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-3 text-xs text-[#6b7280]">
                 <p className="font-bold text-[#1f2937]">No odor profile yet</p>
-                <p className="mt-1">Add materials or import guidance to generate profile.</p>
               </div>
             )}
           </section>
@@ -575,7 +573,7 @@ const MobileFormulaComposerWorkspace = ({
           </section>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Live Workbook Preview" subtitle="Order, facets, impact, lifetime, and billing update from the current rows" />
+            <SectionTitle title="Live Workbook Preview" />
             <div className="mt-3 grid grid-cols-[1fr_90px] gap-3">
               <div className="grid grid-cols-2 gap-2">
                 <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
@@ -597,7 +595,7 @@ const MobileFormulaComposerWorkspace = ({
           </section>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Recommendations" subtitle={`${workbookSimulation.warningCount + insight.warnings.length} active insight`} />
+            <SectionTitle title="Recommendations" subtitle={`${workbookSimulation.warningCount + insight.warnings.length} active`} />
             <div className="mt-2 space-y-1">
               {visibleWarnings.length ? visibleWarnings.map((warning) => (
                 <div key={warning} className="rounded-xl bg-amber-50 p-2 text-xs font-semibold text-amber-800">{warning}</div>
@@ -635,7 +633,7 @@ const MobileFormulaComposerWorkspace = ({
           </MobileAccordion>
           <MobileAccordion title="Validation" meta={insight.balanceStatus}>
             <div className="space-y-1">
-              {(insight.warnings.length ? insight.warnings : [metadata.notes || 'No validation note yet.']).slice(0, COMPOSER_PAGE_SIZE).map((entry) => <div key={entry} className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">{entry}</div>)}
+              {(insight.warnings.length ? insight.warnings : [metadata.notes || 'No note.']).slice(0, COMPOSER_PAGE_SIZE).map((entry) => <div key={entry} className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold text-[#6b7280]">{entry}</div>)}
             </div>
           </MobileAccordion>
         </section>
@@ -646,7 +644,6 @@ const MobileFormulaComposerWorkspace = ({
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle
               title="Materials"
-              subtitle="Browse deeper, manage guidance, then add to composition"
               action={<Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-8 rounded-xl bg-white px-3 text-[11px]"><Link2 className="mr-1 h-3.5 w-3.5" />Import</Button>}
             />
             <div className="mt-2 grid grid-cols-2 gap-2">
@@ -665,7 +662,7 @@ const MobileFormulaComposerWorkspace = ({
             </div>
           </section>
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Material Results" subtitle="Browse deeper, then add to composition" />
+            <SectionTitle title="Material Results" subtitle={`${filteredMaterials.length} materials`} />
             <div className="mt-2 grid gap-2">
               {getVisibleItems(filteredMaterials, materialsVisible).map((material) => (
                 <MaterialSuggestion key={material.id} material={material} onAdd={handleAddMaterial} />
@@ -726,7 +723,6 @@ const MobileFormulaComposerWorkspace = ({
         open={guidanceOpen}
         onOpenChange={setGuidanceOpen}
         title="Import Guidance URL"
-        description="Use the same sources as the web app: ScenTree, Perfumer's World, or TGSC."
         footer={<Button type="button" onClick={importGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Importing guidance...' : 'Import Guidance'}</Button>}
       >
         <div className="grid gap-3 pb-2">

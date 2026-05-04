@@ -36,7 +36,7 @@ const MobileCategoriesPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Categories - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Categories" subtitle="A-Z material classification" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
+        <MobileTopBar title="Categories" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
         {loading ? <MobileLoadingState eyebrow="Materials" title="Loading categories..." subtitle="Preparing classification data." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
           <MobileEmptyState icon={Tag} title="No categories yet" />
         ) : (
@@ -48,12 +48,12 @@ const MobileCategoriesPage = () => {
                   key={category.id}
                   type="button"
                   onClick={() => navigate(`/mobile/raw-materials?category=${encodeURIComponent(category.name)}`)}
-                  className="mobile-card min-h-[152px] p-4 text-left"
+                  className="mobile-card min-h-[128px] p-3 text-left"
                 >
-                  <span className="block h-9 w-9 rounded-2xl border border-[#e5e7eb]" style={{ backgroundColor: category.color }} />
-                  <span className="mt-3 block text-xs font-bold uppercase text-amber-700">{definition?.reference || category.name.slice(0, 1)}</span>
+                  <span className="block h-8 w-8 rounded-xl border border-[#e5e7eb]" style={{ backgroundColor: category.color }} />
+                  <span className="mt-2 block text-[10px] font-bold uppercase text-amber-700">{definition?.reference || category.name.slice(0, 1)}</span>
                   <span className="mt-1 block text-sm font-bold text-[#1f2937]">{category.name}</span>
-                  <span className="mobile-line-clamp-2 mt-2 block text-xs text-[#6b7280]">{definition?.description || 'Legacy category'}</span>
+                  {definition?.description ? <span className="mobile-line-clamp-2 mt-1.5 block text-xs text-[#6b7280]">{definition.description}</span> : null}
                 </button>
               );
             })}

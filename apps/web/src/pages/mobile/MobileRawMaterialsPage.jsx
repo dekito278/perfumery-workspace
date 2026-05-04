@@ -219,7 +219,7 @@ const MobileRawMaterialsPage = () => {
         <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Materials"
-          subtitle={briefId ? 'Brief material guidance' : 'Raw material guidance'}
+          subtitle={briefId ? 'Brief linked' : undefined}
           action={<Button type="button" size="icon" onClick={() => setAddOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
@@ -231,7 +231,7 @@ const MobileRawMaterialsPage = () => {
           </div>
         </div>
         {loading && !materials.length ? <MobileLoadingSkeleton count={4} /> : materials.length === 0 ? (
-          <MobileEmptyState icon={Package} title="No materials found" description="Try another search or add a new material." action="Add Material" onAction={() => setAddOpen(true)} />
+          <MobileEmptyState icon={Package} title="No materials found" action="Add Material" onAction={() => setAddOpen(true)} />
         ) : (
           <>
             <div className="space-y-2">
@@ -253,7 +253,6 @@ const MobileRawMaterialsPage = () => {
         open={addOpen}
         onOpenChange={setAddOpen}
         title="Add Material"
-        description="Compact mobile material entry."
         footer={<Button type="button" onClick={handleCreateMaterial} disabled={creating} className="h-12 w-full rounded-2xl">{creating ? 'Saving...' : 'Save Material'}</Button>}
       >
         <div className="grid gap-4 pb-2">
@@ -274,7 +273,7 @@ const MobileRawMaterialsPage = () => {
         open={Boolean(guidanceTarget)}
         onOpenChange={(open) => !open && setGuidanceTarget(null)}
         title="Import Guidance URL"
-        description={guidanceTarget ? `Update ${guidanceTarget.name} from ScenTree, Perfumer's World, or TGSC.` : ''}
+        description={guidanceTarget?.name}
         footer={<Button type="button" onClick={handleImportGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Importing guidance...' : 'Import Guidance'}</Button>}
       >
         <div className="grid gap-3 pb-2">

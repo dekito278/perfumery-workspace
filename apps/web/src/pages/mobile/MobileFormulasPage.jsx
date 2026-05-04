@@ -154,7 +154,6 @@ const MobileFormulasPage = () => {
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Formulas"
-          subtitle="Formula library and imports"
           action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
@@ -166,9 +165,9 @@ const MobileFormulasPage = () => {
           </Button>
         </div>
         {loading ? <MobileLoadingSkeleton count={4} /> : formulas.length === 0 ? (
-          <MobileEmptyState icon={Beaker} title="No formulas yet" description="Create a standalone formula or import a workbook PDF." action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
+          <MobileEmptyState icon={Beaker} title="No formulas yet" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
         ) : filtered.length === 0 ? (
-          <MobileEmptyState title="No matching formulas" description="Try another search or filter." />
+          <MobileEmptyState title="No matching formulas" />
         ) : (
           <>
             <div className="space-y-2">
@@ -191,7 +190,7 @@ const MobileFormulasPage = () => {
         )}
       </main>
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
-      <MobileBottomSheet open={importOpen} onOpenChange={setImportOpen} title="Import Formula PDF" description="Upload and parse a workbook PDF.">
+      <MobileBottomSheet open={importOpen} onOpenChange={setImportOpen} title="Import Formula PDF">
         <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Loading importer...</div>}>
           <ImportFormulaPdfModal
             open={importOpen}

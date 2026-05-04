@@ -130,7 +130,7 @@ const MobileCreateFormulaPage = () => {
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>New Mobile Formula - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={name || 'New Formula'} subtitle={code || 'Standalone composer'} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />
+        <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />
         {loadingData ? <MobileLoadingState eyebrow="Formula composer" title="Loading composer..." subtitle="Preparing material guidance." className="min-h-[calc(100dvh-260px)]" /> : (
           <MobileFormulaComposerWorkspace
             mode="create"
@@ -148,7 +148,7 @@ const MobileCreateFormulaPage = () => {
           />
         )}
       </main>
-      <MobileBottomSheet open={metadataOpen} onOpenChange={setMetadataOpen} title="Formula Metadata" description="Identity fields for this formula." footer={<Button className="h-10 w-full rounded-xl text-xs" onClick={() => setMetadataOpen(false)}>Save Metadata</Button>}>
+      <MobileBottomSheet open={metadataOpen} onOpenChange={setMetadataOpen} title="Formula Metadata" footer={<Button className="h-10 w-full rounded-xl text-xs" onClick={() => setMetadataOpen(false)}>Save Metadata</Button>}>
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">Formula name</Label><Input value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>
           <div className="space-y-1"><Label className="text-xs">Formula code</Label><Input value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>

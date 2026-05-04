@@ -40,7 +40,7 @@ const MetricTile = ({ label, value, helper }) => (
   </div>
 );
 
-const MiniBarRows = ({ rows = [], labelKey = 'label', valueKey = 'value', empty = 'No chart data yet' }) => {
+const MiniBarRows = ({ rows = [], labelKey = 'label', valueKey = 'value', empty = 'No chart data' }) => {
   const visibleRows = rows.filter((row) => Number(row?.[valueKey] || row?.percent || 0) > 0).slice(0, 6);
   if (!visibleRows.length) {
     return <div className="rounded-xl bg-[#f8f7f4] p-3 text-xs font-semibold text-[#6b7280]">{empty}</div>;
@@ -160,10 +160,10 @@ const MobileFormulaDetailPage = () => {
               </div>
             </div>
             {[
-              ['Version', formula.version || 'Not set'],
+              ['Version', formula.version || '-'],
               ['Linked brief', linkedBriefs?.[0]?.title || 'Standalone formula'],
               ['Last updated', formatDate(formula.updated || formula.created)],
-              ['Notes', formula.notes || 'No notes yet'],
+              ['Notes', formula.notes || '-'],
             ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
           </section>
         ) : null}
@@ -196,7 +196,7 @@ const MobileFormulaDetailPage = () => {
               })}
               </div>
             </section>
-          ) : <MobileEmptyState title="No composition rows" description="Edit formula to add materials." />
+          ) : <MobileEmptyState title="No composition rows" />
         ) : null}
         {tab === 'workbook' ? (
           <section className="space-y-3">

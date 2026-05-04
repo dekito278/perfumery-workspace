@@ -63,7 +63,7 @@ const MobileRawMaterialAuditPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Material Audit - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Material Audit" subtitle="Compact issue review" onBack={() => navigate('/mobile/raw-materials')} action={<AlertTriangle className="h-6 w-6 text-amber-600" />} />
+        <MobileTopBar title="Material Audit" onBack={() => navigate('/mobile/raw-materials')} action={<AlertTriangle className="h-6 w-6 text-amber-600" />} />
         {loading ? <MobileLoadingState eyebrow="Material audit" title="Scanning materials..." subtitle="Checking duplicates and missing data." className="min-h-[calc(100dvh-260px)]" /> : (
           <>
             <section className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
@@ -96,7 +96,7 @@ const MobileRawMaterialAuditPage = () => {
                 })}
                 <PaginationOrLoadMore visibleCount={visible.length} totalCount={activeRows.length} onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)} />
               </div>
-            ) : <MobileEmptyState icon={ShieldCheck} title="No issues in this group" description="This audit bucket is currently clean." />}
+            ) : <MobileEmptyState icon={ShieldCheck} title="No issues in this group" />}
           </>
         )}
       </main>

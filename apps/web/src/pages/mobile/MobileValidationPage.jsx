@@ -110,7 +110,7 @@ const MobileValidationPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Validation - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title="Validation" subtitle="Checklist and follow-up" action={<Button type="button" size="icon" onClick={() => setFormOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
+        <MobileTopBar title="Validation" action={<Button type="button" size="icon" onClick={() => setFormOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
         {loading ? <MobileLoadingSkeleton count={4} /> : visible.length ? (
           <>
@@ -121,7 +121,7 @@ const MobileValidationPage = () => {
             </div>
             <PaginationOrLoadMore visibleCount={visible.length} totalCount={activeLogs.length} onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)} />
           </>
-        ) : <MobileEmptyState icon={NotebookPen} title="No validation items" description="Create a validation note from a formula or start one here." action="New Validation" onAction={() => setFormOpen(true)} />}
+        ) : <MobileEmptyState icon={NotebookPen} title="No validation items" action="New Validation" onAction={() => setFormOpen(true)} />}
       </main>
       <MobileFullScreenModal
         open={formOpen}

@@ -150,7 +150,7 @@ const MobileBriefEditorPage = () => {
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>{isEditMode ? 'Edit Mobile Brief' : 'New Mobile Brief'} - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title={isEditMode ? 'Edit Brief' : 'New Brief'} subtitle="Stepper form" onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />
+        <MobileTopBar title={isEditMode ? 'Edit Brief' : 'New Brief'} onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />
         <MobileSegmentedControl options={steps} value={step} onChange={setStep} />
         {loading ? <MobileLoadingState eyebrow="Brief editor" title="Loading editor..." subtitle="Preparing formulas and brief details." className="min-h-[calc(100dvh-260px)]" /> : (
           <section className="mobile-card p-4">
@@ -179,7 +179,7 @@ const MobileBriefEditorPage = () => {
                 <div className="space-y-2">
                   <Label>Linked formula</Label>
                   <button type="button" onClick={() => setFormulaSelectorOpen(true)} className="mobile-card w-full p-4 text-left text-sm font-bold">
-                    {linkedFormula?.name || 'No linked formula yet (auto-create new)'}
+                    {linkedFormula?.name || 'Auto-create new'}
                   </button>
                 </div>
               </div>
@@ -190,9 +190,9 @@ const MobileBriefEditorPage = () => {
                   ['Title', formState.title || 'Untitled'],
                   ['Status', formState.status],
                   ['Formula', linkedFormula?.name || 'Auto-create new'],
-                  ['Mood', formState.mood_story || 'Not set'],
-                  ['Audience', formState.audience_usage || 'Not set'],
-                  ['Performance', formState.performance_target || 'Not set'],
+                  ['Mood', formState.mood_story || '-'],
+                  ['Audience', formState.audience_usage || '-'],
+                  ['Performance', formState.performance_target || '-'],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl bg-[#f8f7f4] p-3">
                     <div className="text-[11px] font-bold uppercase text-[#9ca3af]">{label}</div>
@@ -218,7 +218,6 @@ const MobileBriefEditorPage = () => {
         open={formulaSelectorOpen}
         onOpenChange={setFormulaSelectorOpen}
         title="Linked formula"
-        description="Search formula by name or code."
         options={[{ id: 'none', name: 'No linked formula yet', code: 'Auto-create new' }, ...formulas]}
         onSelect={(formula) => setField('formula_id', formula.id)}
         getLabel={(formula) => formula.name}

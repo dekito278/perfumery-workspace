@@ -94,7 +94,7 @@ const MobileBriefDetailPage = () => {
             <>
               <div className="mobile-card p-4">
                 <h2 className="text-base font-bold">Brief summary</h2>
-                <p className="mt-2 text-sm text-[#6b7280]">{brief.mood_story || 'No mood story yet.'}</p>
+                <p className="mt-2 text-sm text-[#6b7280]">{brief.mood_story || 'No summary.'}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">Formula</div><div className="mt-1 text-sm font-bold">{formula?.name || 'Not linked'}</div></div>
@@ -106,7 +106,7 @@ const MobileBriefDetailPage = () => {
             ['mood_story', 'audience_usage', 'performance_target', 'budget_direction'].map((field) => (
               <div key={field} className="mobile-card p-4">
                 <div className="text-xs font-bold uppercase text-[#9ca3af]">{formatStatus(field)}</div>
-                <p className="mt-2 text-sm text-[#374151]">{brief[field] || 'Not set'}</p>
+                <p className="mt-2 text-sm text-[#374151]">{brief[field] || '-'}</p>
               </div>
             ))
           ) : null}
@@ -116,12 +116,12 @@ const MobileBriefDetailPage = () => {
                 <div className="text-sm font-bold">{item.raw_material_name || item.material_name || item.name || 'Selected material'}</div>
                 <div className="mt-1 text-xs text-[#6b7280]">Stage {item.stage || 'project'} · {item.selection_state || 'selected'}</div>
               </div>
-            )) : <MobileEmptyState title="No shortlisted materials" description="Add materials from the material library to shape this brief." />
+            )) : <MobileEmptyState title="No shortlisted materials" />
           ) : null}
           {tab === 'formula' ? (
             <div className="mobile-card p-4">
               <div className="text-base font-bold">{formula?.name || 'No formula linked'}</div>
-              <p className="mt-2 text-sm text-[#6b7280]">{formula ? `Code ${formula.code}` : 'Create a formula from this brief when stage decisions are ready.'}</p>
+              <p className="mt-2 text-sm text-[#6b7280]">{formula ? `Code ${formula.code}` : 'No formula linked.'}</p>
               <Button className="mt-4 w-full rounded-2xl" onClick={() => navigate(formula ? `/mobile/formulas/${formula.id}` : `/mobile/formulas/new?briefId=${brief.id}`)}>
                 {formula ? 'Open Formula' : 'Create Formula'}
               </Button>
@@ -134,7 +134,7 @@ const MobileBriefDetailPage = () => {
                 <div className="mt-2 text-sm font-medium">{log.note}</div>
                 <div className="mt-2 text-xs text-[#6b7280]">{formatDate(log.tested_at || log.created)}</div>
               </div>
-            )) : <MobileEmptyState title="No activity yet" description="Validation and project activity will appear here." />
+            )) : <MobileEmptyState title="No activity yet" />
           ) : null}
         </section>
         <StickyBottomActionBar>

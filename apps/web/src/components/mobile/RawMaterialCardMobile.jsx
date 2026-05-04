@@ -34,7 +34,7 @@ const RawMaterialCardMobile = ({ material, onOpen, onAddToFormula, onOpenGuidanc
         {tags.map((tag) => (
           <span key={tag} className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold capitalize text-[#6b7280]">{tag}</span>
         ))}
-        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">CAS {resolved.cas_number || 'not set'}</span>
+        {resolved.cas_number ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">CAS {resolved.cas_number}</span> : null}
       </div>
       <div className="mt-2 grid grid-cols-[1fr_1fr_36px] gap-2">
         <Button type="button" variant="outline" onClick={onOpenGuidance} className="h-9 rounded-xl bg-white text-[11px]">

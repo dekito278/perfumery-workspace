@@ -103,18 +103,28 @@ const MobileRawMaterialDetailPage = () => {
       toast.error(error.message || 'Unable to import guidance');
     }
   };
+  const handleRefreshGuidance = async () => {
+    try {
+      const row = await getRawMaterialById(id);
+      const [enrichedRow] = await enrichMaterialsWithGuidance(row ? [row] : []);
+      setMaterial(enrichedRow || row);
+      toast.success('Material data refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh material');
+    }
+  };
   const sections = [
     ['Basic information', [['Type', formatStatus(material.type)], ['Category', formatStatus(material.category)], ['Unit', material.unit || '-']]],
     ['CAS and supplier', [['CAS', formatNullable(resolved.cas_number)], ['Supplier', formatNullable(material.vendor)], ['Workbook', formatNullable(resolved.workbook_code)]]],
-    ['Usage recommendation', [['Typical use', resolved.reference_use_level_typical_percent != null ? formatPercentage(resolved.reference_use_level_typical_percent, 2) : 'N/A'], ['Max use', resolved.reference_use_level_max_percent != null ? formatPercentage(resolved.reference_use_level_max_percent, 2) : 'N/A']]],
-    ['Safety / audit status', [['IFRA', resolved.ifra_limit != null ? formatPercentage(resolved.ifra_limit, 2) : 'N/A'], ['Impact', impact ?? 'N/A'], ['Life hours', life ?? 'N/A']]],
+    ['Usage recommendation', [['Typical use', resolved.reference_use_level_typical_percent != null ? formatPercentage(resolved.reference_use_level_typical_percent, 2) : '-'], ['Max use', resolved.reference_use_level_max_percent != null ? formatPercentage(resolved.reference_use_level_max_percent, 2) : '-']]],
+    ['Safety / audit status', [['IFRA', resolved.ifra_limit != null ? formatPercentage(resolved.ifra_limit, 2) : '-'], ['Impact', impact ?? '-'], ['Life hours', life ?? '-']]],
   ];
 
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>{material.name} - Mobile Material</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={material.name} subtitle={`CAS ${resolved.cas_number || 'Not set'}`} onBack={() => navigate('/mobile/raw-materials')} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
+        <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={() => navigate('/mobile/raw-materials')} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
         {sections.map(([title, rows]) => (
           <section key={title} className="mobile-card mobile-compact-card p-3">
             <h2 className="text-sm font-bold">{title}</h2>
@@ -137,12 +147,12 @@ const MobileRawMaterialDetailPage = () => {
             <MobileStatusBadge tone={ready ? 'active' : 'warning'} className="h-5 px-2 text-[10px]">{ready ? 'Updated' : 'Needs review'}</MobileStatusBadge>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Impact {impact ?? 'N/A'}</div>
-            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Lifetime {life ?? 'N/A'}</div>
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Impact {impact ?? '-'}</div>
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-xs font-semibold">Lifetime {life ?? '-'}</div>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" onClick={() => setGuidanceOpen(true)} className="h-9 rounded-xl bg-white text-xs"><Link2 className="mr-1 h-3.5 w-3.5" />Import URL</Button>
-            <Button type="button" variant="outline" onClick={() => toast.success('Impact data refreshed')} className="h-9 rounded-xl bg-white text-xs"><RefreshCw className="mr-1 h-3.5 w-3.5" />Refresh</Button>
+            <Button type="button" variant="outline" onClick={handleRefreshGuidance} className="h-9 rounded-xl bg-white text-xs"><RefreshCw className="mr-1 h-3.5 w-3.5" />Refresh</Button>
           </div>
         </section>
         {material.notes ? <section className="mobile-card mobile-compact-card p-3"><h2 className="text-sm font-bold">Notes</h2><p className="mt-2 whitespace-pre-wrap text-xs text-[#6b7280]">{material.notes}</p></section> : null}
@@ -158,7 +168,6 @@ const MobileRawMaterialDetailPage = () => {
         open={guidanceOpen}
         onOpenChange={setGuidanceOpen}
         title="Import Guidance URL"
-        description="Use ScenTree, Perfumer's World, or TGSC to update impact, lifetime, and odor metadata."
         footer={<Button type="button" onClick={handleImportGuidance} disabled={guidanceState === 'loading'} className="h-10 w-full rounded-xl text-xs">{guidanceState === 'loading' ? 'Importing guidance...' : 'Import Guidance'}</Button>}
       >
         <div className="grid gap-3 pb-2">

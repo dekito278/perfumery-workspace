@@ -90,7 +90,6 @@ const MobileBriefsPage = () => {
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Briefs"
-          subtitle="Project direction and R&D handoff"
           action={<Button type="button" size="icon" onClick={() => navigate(queryFormulaId ? `/mobile/briefs/new?formulaId=${queryFormulaId}` : '/mobile/briefs/new')} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
@@ -98,9 +97,9 @@ const MobileBriefsPage = () => {
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
         </div>
         {loading ? <MobileLoadingSkeleton count={4} /> : briefs.length === 0 ? (
-          <MobileEmptyState icon={ClipboardList} title="No briefs yet" description="Create a brief to capture mood, audience, performance, and formula direction." action="New Brief" onAction={() => navigate('/mobile/briefs/new')} />
+          <MobileEmptyState icon={ClipboardList} title="No briefs yet" action="New Brief" onAction={() => navigate('/mobile/briefs/new')} />
         ) : filtered.length === 0 ? (
-          <MobileEmptyState title="No matching briefs" description="Try a different search or status filter." />
+          <MobileEmptyState title="No matching briefs" />
         ) : (
           <>
             <div className="space-y-2">
