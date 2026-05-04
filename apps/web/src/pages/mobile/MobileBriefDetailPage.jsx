@@ -10,6 +10,7 @@ import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useBriefDetailPage } from '@/hooks/useBriefDetailPage.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
@@ -60,7 +61,7 @@ const MobileBriefDetailPage = () => {
   if (loading || !brief) {
     return (
       <MobileAuthenticatedLayout>
-        <main className="mobile-page"><div className="mobile-card p-6 text-sm text-[#6b7280]">Loading brief project...</div></main>
+        <MobileLoadingState eyebrow="Brief" title="Loading project..." subtitle="Preparing direction, materials, and activity." />
       </MobileAuthenticatedLayout>
     );
   }

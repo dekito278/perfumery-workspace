@@ -10,6 +10,7 @@ import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import PaceAnalysisCard from '@/components/mobile/PaceAnalysisCard.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -139,7 +140,7 @@ const MobileFormulaDetailPage = () => {
   };
 
   if (loading || !formula) {
-    return <MobileAuthenticatedLayout><main className="mobile-page"><div className="mobile-card p-6 text-sm text-[#6b7280]">Loading formula...</div></main></MobileAuthenticatedLayout>;
+    return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Formula" title="Loading formula..." subtitle="Preparing workbook and composition data." /></MobileAuthenticatedLayout>;
   }
 
   return (

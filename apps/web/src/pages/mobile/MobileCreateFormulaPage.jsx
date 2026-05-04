@@ -7,6 +7,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileFormulaComposerWorkspace from '@/components/mobile/MobileFormulaComposerWorkspace.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -130,7 +131,7 @@ const MobileCreateFormulaPage = () => {
       <Helmet><title>New Mobile Formula - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={name || 'New Formula'} subtitle={code || 'Standalone composer'} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />
-        {loadingData ? <div className="mobile-card p-4 text-sm text-[#6b7280]">Loading composer...</div> : (
+        {loadingData ? <MobileLoadingState eyebrow="Formula composer" title="Loading composer..." subtitle="Preparing material guidance." className="min-h-[calc(100dvh-260px)]" /> : (
           <MobileFormulaComposerWorkspace
             mode="create"
             metadata={{ name, code, category, version, status, notes }}

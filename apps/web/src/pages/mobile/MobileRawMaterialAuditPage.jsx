@@ -8,6 +8,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileAccordion from '@/components/mobile-ui/MobileAccordion.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import SummaryMetricCardMobile from '@/components/mobile/SummaryMetricCardMobile.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
@@ -63,7 +64,7 @@ const MobileRawMaterialAuditPage = () => {
       <Helmet><title>Mobile Material Audit - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Material Audit" subtitle="Compact issue review" onBack={() => navigate('/mobile/raw-materials')} action={<AlertTriangle className="h-6 w-6 text-amber-600" />} />
-        {loading ? <div className="mobile-card p-6 text-sm text-[#6b7280]">Scanning materials...</div> : (
+        {loading ? <MobileLoadingState eyebrow="Material audit" title="Scanning materials..." subtitle="Checking duplicates and missing data." className="min-h-[calc(100dvh-260px)]" /> : (
           <>
             <section className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
               <SummaryMetricCardMobile icon={Database} label="Total" value={materials.length} />

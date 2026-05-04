@@ -8,6 +8,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileSearchableSelector from '@/components/mobile-ui/MobileSearchableSelector.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
@@ -151,7 +152,7 @@ const MobileBriefEditorPage = () => {
       <main className="mobile-page space-y-4">
         <MobileTopBar title={isEditMode ? 'Edit Brief' : 'New Brief'} subtitle="Stepper form" onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />
         <MobileSegmentedControl options={steps} value={step} onChange={setStep} />
-        {loading ? <div className="mobile-card p-6 text-sm text-[#6b7280]">Loading editor...</div> : (
+        {loading ? <MobileLoadingState eyebrow="Brief editor" title="Loading editor..." subtitle="Preparing formulas and brief details." className="min-h-[calc(100dvh-260px)]" /> : (
           <section className="mobile-card p-4">
             {step === 'idea' ? (
               <div className="space-y-4">

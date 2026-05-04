@@ -10,6 +10,7 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
@@ -70,7 +71,7 @@ const MobileRawMaterialDetailPage = () => {
   };
 
   if (loading || !material) {
-    return <MobileAuthenticatedLayout><main className="mobile-page"><div className="mobile-card p-6 text-sm text-[#6b7280]">Loading material...</div></main></MobileAuthenticatedLayout>;
+    return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Material" title="Loading material..." subtitle="Preparing guidance and reference data." /></MobileAuthenticatedLayout>;
   }
 
   const resolved = getResolvedGuidanceValues(material);

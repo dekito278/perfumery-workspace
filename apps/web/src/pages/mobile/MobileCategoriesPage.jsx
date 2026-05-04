@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
 
@@ -36,7 +37,7 @@ const MobileCategoriesPage = () => {
       <Helmet><title>Mobile Categories - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Categories" subtitle="A-Z material classification" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
-        {loading ? <div className="mobile-card p-6 text-sm text-[#6b7280]">Loading categories...</div> : categories.length === 0 ? (
+        {loading ? <MobileLoadingState eyebrow="Materials" title="Loading categories..." subtitle="Preparing classification data." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
           <MobileEmptyState icon={Tag} title="No categories yet" />
         ) : (
           <div className="grid grid-cols-2 gap-3">
