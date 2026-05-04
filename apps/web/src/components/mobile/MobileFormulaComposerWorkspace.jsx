@@ -5,6 +5,9 @@ import {
   Droplets,
   Link2,
   MoreHorizontal,
+  Pause,
+  PieChartIcon,
+  Play,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,12 +19,12 @@ import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedContro
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
-import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { MOBILE_PAGE_SIZE, filterByText, getVisibleItems } from '@/pages/mobile/mobilePageUtils.js';
 import { buildWorkbookSimulation, getFormulaItemDilutionFactor } from '@/utils/formulaWorkbookSimulation.js';
+import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import {
   buildFormulaInsight,
   createGuidanceSource,
@@ -142,6 +145,135 @@ const SectionTitle = ({ title, subtitle, action }) => (
     {action}
   </div>
 );
+
+const buildConicGradient = (rows = []) => {
+  let cursor = 0;
+  const segments = rows.map((row) => {
+    const value = Math.max(Number(row.percent || 0), 0);
+    const start = cursor;
+    const end = Math.min(cursor + value, 100);
+    cursor = end;
+    return `${row.color || '#d8d5cf'} ${start}% ${end}%`;
+  });
+
+  return segments.length ? `conic-gradient(${segments.join(', ')}, #ece8df ${cursor}% 100%)` : '#ece8df';
+};
+
+const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinksMap }) => {
+  const [mode, setMode] = useState('pie');
+  const [elapsedHour, setElapsedHour] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const charts = useMemo(() => buildFormulaSensoryCharts({
+    items,
+    rawMaterialsById,
+    referenceLinksMap,
+  }), [items, rawMaterialsById, referenceLinksMap]);
+  const maxHour = Math.max(Math.round(Number(charts.maxElapsedHour || 0)), 0);
+  const roundedHour = Math.min(Math.max(Math.round(Number(elapsedHour) || 0), 0), maxHour);
+  const rows = (charts.classDistributionTimeline?.[roundedHour]?.classes || charts.classDistributionData || [])
+    .filter((entry) => Number(entry.percent || 0) > 0)
+    .slice(0, 7);
+  const dominant = rows[0] || charts.dominantClass || null;
+
+  useEffect(() => {
+    setElapsedHour((current) => Math.min(current, maxHour));
+  }, [maxHour]);
+
+  useEffect(() => {
+    if (!playing || !maxHour) return undefined;
+    const interval = window.setInterval(() => {
+      setElapsedHour((current) => {
+        if (current >= maxHour) {
+          setPlaying(false);
+          return 0;
+        }
+        return current + 1;
+      });
+    }, 320);
+    return () => window.clearInterval(interval);
+  }, [maxHour, playing]);
+
+  return (
+    <div className="rounded-2xl border border-[#ded6c8] bg-[#fffdf8] p-3" data-testid="compact-live-workbook-preview">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase text-[#8a744d]">Graphic odour</div>
+          <div className="truncate text-xs font-bold text-[#1f2937]">{dominant?.familyName || 'No class data'}</div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setMode('pie')}
+            className={`grid h-8 w-8 place-items-center rounded-xl border ${mode === 'pie' ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#6b7280]'}`}
+            aria-label="Pie chart"
+          >
+            <PieChartIcon className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('bar')}
+            className={`grid h-8 w-8 place-items-center rounded-xl border ${mode === 'bar' ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#6b7280]'}`}
+            aria-label="Bar chart"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setPlaying((current) => !current)}
+            disabled={!maxHour || !rows.length}
+            className="grid h-8 min-h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white disabled:bg-[#d8d5cf]"
+            aria-label={playing ? 'Pause' : 'Play'}
+          >
+            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-[112px_1fr] gap-3">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-[#eee7d8] bg-[#fbf7ec] p-2">
+          {mode === 'pie' ? (
+            <div
+              className="h-[88px] w-[88px] rounded-full border border-[#b8af9e]"
+              style={{ background: buildConicGradient(rows) }}
+              data-testid="compact-odour-pie"
+            />
+          ) : (
+            <div className="flex h-[88px] w-full items-end gap-1.5 px-1" data-testid="compact-odour-bar">
+              {rows.slice(0, 6).map((entry) => (
+                <span
+                  key={entry.classIndex || entry.letter || entry.familyName}
+                  className="min-h-[8px] flex-1 rounded-t-md"
+                  style={{
+                    height: `${Math.max(Math.min(Number(entry.percent || 0), 100), 8)}%`,
+                    backgroundColor: entry.color || '#d8d5cf',
+                  }}
+                  title={entry.familyName}
+                />
+              ))}
+            </div>
+          )}
+          <div className="mt-2 text-[10px] font-bold text-[#6b7280]">
+            {roundedHour}h / {maxHour || 0}h
+          </div>
+        </div>
+
+        <div className="min-w-0 space-y-1.5">
+          {rows.length ? rows.slice(0, 5).map((entry) => (
+            <div key={entry.classIndex || entry.letter || entry.familyName} className="grid grid-cols-[18px_1fr_30px] items-center gap-1.5 text-[10px] font-bold">
+              <span className="grid h-4 w-4 place-items-center rounded border border-[#d8d5cf] bg-white text-[8px] text-[#403522]">{entry.letter || '?'}</span>
+              <span className="h-1.5 overflow-hidden rounded-full bg-[#ece8df]">
+                <span className="block h-full rounded-full" style={{ width: `${Math.min(Number(entry.percent || 0), 100)}%`, backgroundColor: entry.color || '#d8d5cf' }} />
+              </span>
+              <span className="text-right text-[#6b7280]">{Math.round(Number(entry.percent || 0))}</span>
+            </div>
+          )) : (
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">No workbook data</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const matchesMaterialFilter = (material, filter) => {
   const resolved = getResolvedGuidanceValues(material);
@@ -582,12 +714,10 @@ const MobileFormulaComposerWorkspace = ({
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle title="Live Workbook Preview" />
             <div className="mt-3">
-              <FormulaOdourDisplayPanel
+              <CompactWorkbookPreview
                 items={workbookItems}
                 rawMaterialsById={materialsById}
                 referenceLinksMap={workbookReferenceLinksMap}
-                className="mobile-live-workbook-preview"
-                variant="mobile"
               />
             </div>
           </section>

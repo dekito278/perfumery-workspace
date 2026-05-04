@@ -262,27 +262,6 @@
   background: #fffefa;
 }
 
-.mobile-live-workbook-preview > div:first-child {
-  border-color: #ddd3bf;
-  background: #f4ecd7;
-}
-
-.mobile-live-workbook-preview > div:first-child > div:first-child {
-  padding: 9px 10px;
-}
-
-.mobile-live-workbook-preview > div:first-child h2 {
-  font-size: 1rem;
-}
-
-.mobile-live-workbook-preview > div:first-child > div:nth-child(2) {
-  padding: 10px;
-}
-
-.mobile-live-workbook-preview [data-testid="odour-display-chart"] {
-  border-radius: 18px;
-}
-
 .mobile-compact-tabs button {
   height: 2.1rem;
   padding-left: 0.72rem;
