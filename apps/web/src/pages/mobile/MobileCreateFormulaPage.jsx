@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -46,7 +46,8 @@ const buildItemsForSubmit = (itemsWithInsights) => itemsWithInsights.map((item) 
 const MobileCreateFormulaPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const seedMaterialIds = useMemo(() => String(searchParams.get('materialIds') || '').split(',').map((value) => value.trim()).filter(Boolean), [searchParams]);
+  const seedMaterialIdsParam = searchParams.get('materialIds') || '';
+  const seedMaterialIds = useMemo(() => String(seedMaterialIdsParam).split(',').map((value) => value.trim()).filter(Boolean), [seedMaterialIdsParam]);
   const { createFormula, loading } = useFormulas();
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -59,6 +60,11 @@ const MobileCreateFormulaPage = () => {
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([]);
+  const itemsRef = useRef(items);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     let active = true;
@@ -66,11 +72,17 @@ const MobileCreateFormulaPage = () => {
       setLoadingData(true);
       try {
         const rows = await getRawMaterialOptions();
-        const enrichedRows = await enrichMaterialsWithGuidance(rows || []);
+        const baseRows = rows || [];
         if (!active) return;
-        setRawMaterials(enrichedRows);
+        setRawMaterials(baseRows);
         if (seedMaterialIds.length) {
-          setItems(enrichedRows.filter((material) => seedMaterialIds.includes(material.id)).slice(0, 5).map((material) => createItem(material)));
+          setItems(baseRows.filter((material) => seedMaterialIds.includes(material.id)).slice(0, 5).map((material) => createItem(material)));
+        }
+        setLoadingData(false);
+
+        const enrichedRows = await enrichMaterialsWithGuidance(baseRows);
+        if (active) {
+          setRawMaterials(enrichedRows);
         }
       } catch (error) {
         toast.error('Failed to load materials');
@@ -89,11 +101,14 @@ const MobileCreateFormulaPage = () => {
   const updateItem = (rowKey, field, value) => setItems((current) => current.map((item) => item.row_key === rowKey ? { ...item, [field]: value } : item));
   const removeItem = (rowKey) => setItems((current) => current.filter((item) => item.row_key !== rowKey));
   const addMaterial = (material) => {
-    if (items.some((item) => item.item_id === material.id)) {
+    if (itemsRef.current.some((item) => item.item_id === material.id)) {
       toast.info('Material already in composition');
       return;
     }
-    setItems((current) => [...current, createItem(material)]);
+
+    const nextItems = [...itemsRef.current, createItem(material)];
+    itemsRef.current = nextItems;
+    setItems(nextItems);
     toast.success('Material added to composition');
   };
 

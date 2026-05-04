@@ -442,40 +442,46 @@ export const getReferenceLinksByRawMaterialIds = async (rawMaterialIds) => {
     return new Map();
   }
 
-  const { data, error } = await supabase
-    .from('raw_material_reference_links')
-    .select(`
-      *,
-      material_reference_profiles (
-        id,
-        reference_code,
-        name,
-        brief_description,
-        classification,
-        impact,
-        life_hours,
-        abc_primary_letter,
-        abc_primary_family,
-        abc_secondary_letter,
-        abc_secondary_family,
-        odour_profile,
-        use_level_min_percent,
-        use_level_typical_percent,
-        use_level_max_percent,
-        ifra_limit_percent,
-        raw_payload,
-        material_reference_odour_facets (*)
-      )
-    `)
-    .in('raw_material_id', uniqueIds)
-    .eq('is_primary', true);
+  const links = [];
 
-  if (error) {
-    console.error('Error fetching material reference links:', error);
-    throw new Error(error.message || 'Failed to fetch material reference links');
+  for (const idChunk of chunkValues(uniqueIds)) {
+    const { data, error } = await supabase
+      .from('raw_material_reference_links')
+      .select(`
+        *,
+        material_reference_profiles (
+          id,
+          reference_code,
+          name,
+          brief_description,
+          classification,
+          impact,
+          life_hours,
+          abc_primary_letter,
+          abc_primary_family,
+          abc_secondary_letter,
+          abc_secondary_family,
+          odour_profile,
+          use_level_min_percent,
+          use_level_typical_percent,
+          use_level_max_percent,
+          ifra_limit_percent,
+          raw_payload,
+          material_reference_odour_facets (*)
+        )
+      `)
+      .in('raw_material_id', idChunk)
+      .eq('is_primary', true);
+
+    if (error) {
+      console.error('Error fetching material reference links:', error);
+      throw new Error(error.message || 'Failed to fetch material reference links');
+    }
+
+    links.push(...(data || []));
   }
 
-  return new Map((data || []).map((row) => [row.raw_material_id, mapReferenceLink(row)]));
+  return new Map(links.map((row) => [row.raw_material_id, mapReferenceLink(row)]));
 };
 
 export const ensureReferenceLinksForRawMaterials = async (rawMaterials) => {

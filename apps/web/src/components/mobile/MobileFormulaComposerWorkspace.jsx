@@ -307,6 +307,11 @@ const useHorizontalDragScroll = () => {
 
   const handlers = {
     onPointerDown: (event) => {
+      if (event.target?.closest?.('button, input, textarea, select, a')) {
+        drag.current = { active: false, x: 0, left: 0, moved: false };
+        return;
+      }
+
       if (!ref.current) return;
       drag.current = {
         active: true,
@@ -332,6 +337,11 @@ const useHorizontalDragScroll = () => {
       drag.current.active = false;
     },
     onClickCapture: (event) => {
+      if (event.target?.closest?.('button, input, textarea, select, a')) {
+        drag.current.moved = false;
+        return;
+      }
+
       if (drag.current.moved) {
         event.preventDefault();
         event.stopPropagation();
@@ -343,7 +353,14 @@ const useHorizontalDragScroll = () => {
   return [ref, handlers];
 };
 
-const MaterialSuggestion = ({ material, onAdd }) => (
+const MaterialSuggestion = ({ material, onAdd }) => {
+  const handleAdd = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onAdd(material);
+  };
+
+  return (
   <article className="min-h-[78px] rounded-2xl border border-[#e5e7eb] bg-white p-2.5 shadow-sm">
     <div className="flex min-h-[34px] items-start justify-between gap-2">
       <div className="min-w-0">
@@ -352,7 +369,7 @@ const MaterialSuggestion = ({ material, onAdd }) => (
           {material.cas_number ? `CAS ${material.cas_number}` : material.category || 'No CAS'}
         </p>
       </div>
-      <Button type="button" onClick={() => onAdd(material)} className="h-7 rounded-lg px-2 text-[10px]">
+      <Button type="button" onClick={handleAdd} className="h-7 rounded-lg px-2 text-[10px]">
         Add
       </Button>
     </div>
@@ -361,7 +378,8 @@ const MaterialSuggestion = ({ material, onAdd }) => (
       {getMaterialImpactLabel(material) ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">{getMaterialImpactLabel(material)}</span> : null}
     </div>
   </article>
-);
+  );
+};
 
 const MobileFormulaComposerWorkspace = ({
   mode = 'create',
@@ -394,6 +412,7 @@ const MobileFormulaComposerWorkspace = ({
   const [guidanceForm, setGuidanceForm] = useState({ url: '', sourceType: 'perfumersworld' });
   const [guidanceSummary, setGuidanceSummary] = useState([]);
   const [finderScrollRef, finderScrollHandlers] = useHorizontalDragScroll();
+  const compositionBoardRef = useRef(null);
 
   useEffect(() => {
     onOverlayOpenChange?.(Boolean(dilutionItem) || guidanceOpen);
@@ -443,6 +462,9 @@ const MobileFormulaComposerWorkspace = ({
     onAddMaterial(material);
     setFinderQuery('');
     setTab('composition');
+    window.setTimeout(() => {
+      compositionBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   };
 
   const setFormulaPercent = (item, value) => {
@@ -600,7 +622,7 @@ const MobileFormulaComposerWorkspace = ({
             </div>
           </section>
 
-          <section className="mobile-card mobile-compact-card p-3">
+          <section ref={compositionBoardRef} className="mobile-card mobile-compact-card p-3">
             <SectionTitle
               title="Composition Board"
               subtitle={`${composition.length} materials - ${formatGram(insight.totalGrams)}`}
