@@ -135,6 +135,27 @@
   backdrop-filter: blur(16px);
 }
 
+.mobile-material-search-panel {
+  margin-left: -2px;
+  margin-right: -2px;
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 8px 8px 10px;
+  box-shadow: 0 14px 32px -30px rgba(31, 41, 55, 0.38);
+}
+
+.mobile-material-search-panel .mobile-filter-chip-wrap {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.mobile-material-search-panel .mobile-filter-chip-wrap::-webkit-scrollbar {
+  display: none;
+}
+
 .mobile-bottom-nav {
   position: fixed;
   left: 12px;
@@ -208,7 +229,7 @@
   left: 14px;
   right: 14px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
-  z-index: 60;
+  z-index: 35;
   max-width: 430px;
   margin: 0 auto;
 }
@@ -239,6 +260,27 @@
   border-top-left-radius: 22px;
   border-top-right-radius: 22px;
   background: #fffefa;
+}
+
+.mobile-live-workbook-preview > div:first-child {
+  border-color: #ddd3bf;
+  background: #f4ecd7;
+}
+
+.mobile-live-workbook-preview > div:first-child > div:first-child {
+  padding: 9px 10px;
+}
+
+.mobile-live-workbook-preview > div:first-child h2 {
+  font-size: 1rem;
+}
+
+.mobile-live-workbook-preview > div:first-child > div:nth-child(2) {
+  padding: 10px;
+}
+
+.mobile-live-workbook-preview [data-testid="odour-display-chart"] {
+  border-radius: 18px;
 }
 
 .mobile-compact-tabs button {

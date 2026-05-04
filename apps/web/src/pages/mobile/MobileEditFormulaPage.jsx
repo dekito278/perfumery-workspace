@@ -63,6 +63,7 @@ const MobileEditFormulaPage = () => {
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([]);
+  const [composerOverlayOpen, setComposerOverlayOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -160,13 +161,14 @@ const MobileEditFormulaPage = () => {
           saving={loading}
           saveDisabled={!unsaved}
           showActionBar={false}
+          onOverlayOpenChange={setComposerOverlayOpen}
         />
-        <StickyBottomActionBar fixed>
+        {!metadataOpen && !composerOverlayOpen ? <StickyBottomActionBar fixed>
           <div className="grid grid-cols-2 items-stretch gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white text-sm font-bold" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Cancel</Button>
             <Button className="h-12 rounded-2xl text-sm font-bold" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Saving...' : 'Save Revision'}</Button>
           </div>
-        </StickyBottomActionBar>
+        </StickyBottomActionBar> : null}
       </main>
       <MobileBottomSheet open={metadataOpen} onOpenChange={setMetadataOpen} title="Formula Metadata" footer={<Button className="h-10 w-full rounded-xl text-xs" onClick={() => setMetadataOpen(false)}>Save Metadata</Button>}>
         <div className="grid gap-3 pb-2">

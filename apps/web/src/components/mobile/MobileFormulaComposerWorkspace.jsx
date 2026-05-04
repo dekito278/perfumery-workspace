@@ -16,6 +16,7 @@ import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedContro
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
+import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
@@ -244,6 +245,7 @@ const MobileFormulaComposerWorkspace = ({
   saveDisabled,
   saving,
   showActionBar = true,
+  onOverlayOpenChange,
 }) => {
   const [tab, setTab] = useState('composition');
   const [expandedRow, setExpandedRow] = useState('');
@@ -261,6 +263,10 @@ const MobileFormulaComposerWorkspace = ({
   const [guidanceSummary, setGuidanceSummary] = useState([]);
   const [finderScrollRef, finderScrollHandlers] = useHorizontalDragScroll();
 
+  useEffect(() => {
+    onOverlayOpenChange?.(Boolean(dilutionItem) || guidanceOpen);
+  }, [dilutionItem, guidanceOpen, onOverlayOpenChange]);
+
   const materialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + Number(item.gram_amount || item.grams || 0), 0), [items]);
   const composition = useMemo(() => enrichCompositionItems(items, totalGrams, materialsById), [items, materialsById, totalGrams]);
@@ -272,11 +278,12 @@ const MobileFormulaComposerWorkspace = ({
     gram_amount: item.gram,
     dilution_percent: getFormulaItemDilutionFactor(item) >= 0.9999 ? null : item.concentrationPercent,
   })), [composition]);
+  const workbookReferenceLinksMap = useMemo(() => new Map(), []);
   const workbookSimulation = useMemo(() => buildWorkbookSimulation({
     items: workbookItems,
     rawMaterialsById: materialsById,
-    referenceLinksMap: new Map(),
-  }), [materialsById, workbookItems]);
+    referenceLinksMap: workbookReferenceLinksMap,
+  }), [materialsById, workbookItems, workbookReferenceLinksMap]);
   const compositionIds = useMemo(() => new Set(items.map((item) => item.item_id)), [items]);
 
   const filteredMaterials = useMemo(() => {
@@ -516,7 +523,7 @@ const MobileFormulaComposerWorkspace = ({
             <PaginationOrLoadMore visibleCount={Math.min(compositionVisible, composition.length)} totalCount={composition.length} onLoadMore={() => setCompositionVisible((current) => current + COMPOSER_PAGE_SIZE)} />
           </section>
 
-          {showActionBar ? <StickyBottomActionBar>
+          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar>
             <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-2">
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Formula<br /><span className="text-xs text-[#1f2937]">{formatPercent(insight.totalPercent)}</span></div>
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Actual<br /><span className="text-xs text-[#1f2937]">{formatGram(insight.totalActualActiveGrams)}</span></div>
@@ -574,23 +581,14 @@ const MobileFormulaComposerWorkspace = ({
 
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle title="Live Workbook Preview" />
-            <div className="mt-3 grid grid-cols-[1fr_90px] gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
-                <MetricPill label="Lifetime" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Workbook hours' : 'No data'} tone="emerald" />
-                <MetricPill label="Actual" value={formatGram(insight.totalActualActiveGrams)} helper={formatPercent(insight.totalActualActive)} />
-                <MetricPill label="Guidance" value={`${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount}`} helper="ready rows" />
-              </div>
-              <div
-                className="h-[90px] w-[90px] rounded-full border border-[#ece8df]"
-                style={{
-                  background: `conic-gradient(#fbbf24 0 ${topMiddleBaseDistribution.top}%, #f59e0b ${topMiddleBaseDistribution.top}% ${topMiddleBaseDistribution.top + topMiddleBaseDistribution.middle}%, #44403c ${topMiddleBaseDistribution.top + topMiddleBaseDistribution.middle}% 100%)`,
-                }}
-                aria-label="Order display preview"
-              />
-            </div>
             <div className="mt-3">
-              <MiniWorkbookRows rows={workbookClassRows} />
+              <FormulaOdourDisplayPanel
+                items={workbookItems}
+                rawMaterialsById={materialsById}
+                referenceLinksMap={workbookReferenceLinksMap}
+                className="mobile-live-workbook-preview"
+                variant="mobile"
+              />
             </div>
           </section>
 

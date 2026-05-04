@@ -222,7 +222,7 @@ const MobileRawMaterialsPage = () => {
           subtitle={briefId ? 'Brief linked' : undefined}
           action={<Button type="button" size="icon" onClick={() => setAddOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
-        <div className="mobile-sticky-search">
+        <div className="mobile-material-search-panel">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Search material, CAS, supplier..." disabled={loading} />
           <MobileFilterChips options={referenceOptions} value={referenceFilter} onChange={setReferenceFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           <div className="mt-2 grid grid-cols-2 gap-2">
