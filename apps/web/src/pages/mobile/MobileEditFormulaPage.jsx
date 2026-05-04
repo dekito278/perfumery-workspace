@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { LoaderCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -132,7 +132,28 @@ const MobileEditFormulaPage = () => {
   };
 
   if (loadingData) {
-    return <MobileAuthenticatedLayout showFab={false}><main className="mobile-page"><div className="mobile-card p-4 text-sm text-[#6b7280]">Loading editor...</div></main></MobileAuthenticatedLayout>;
+    return (
+      <MobileAuthenticatedLayout showFab={false}>
+        <Helmet><title>Loading Formula Editor - Perfumer Studio</title></Helmet>
+        <main className="mobile-page mobile-centered-state">
+          <section className="mobile-editor-loader mobile-soft-card">
+            <div className="mobile-editor-loader-orbit" aria-hidden="true">
+              <LoaderCircle className="h-9 w-9 animate-spin text-amber-600" />
+            </div>
+            <div className="mt-4 text-center">
+              <p className="text-[10px] font-bold uppercase text-amber-700">Formula editor</p>
+              <h1 className="mt-1 text-lg font-bold text-[#1f2937]">Loading workbook...</h1>
+              <p className="mt-1 text-xs font-medium text-[#6b7280]">Syncing composition, material guidance, and preview data.</p>
+            </div>
+            <div className="mobile-editor-loader-dots" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </section>
+        </main>
+      </MobileAuthenticatedLayout>
+    );
   }
 
   return (
