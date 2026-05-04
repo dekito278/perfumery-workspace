@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Beaker, BookmarkPlus, Pencil } from 'lucide-react';
+import { Beaker, BookmarkPlus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -9,8 +9,10 @@ import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedContro
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useBriefDetailPage } from '@/hooks/useBriefDetailPage.js';
+import { useBriefs } from '@/hooks/useBriefs.js';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
 
 const tabs = [
@@ -25,6 +27,9 @@ const MobileBriefDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { deleteBrief } = useBriefs();
   const detail = useBriefDetailPage(id);
   const {
     actionNeededLogs,
@@ -38,6 +43,20 @@ const MobileBriefDetailPage = () => {
 
   const selectedItems = useMemo(() => ['top', 'middle', 'base'].flatMap((stage) => selectedItemsByStage?.[stage] || []), [selectedItemsByStage]);
 
+  const handleDelete = async () => {
+    if (!brief) return;
+    setDeleting(true);
+    try {
+      await deleteBrief(brief.id);
+      toast.success('Brief deleted');
+      navigate('/mobile/briefs');
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete brief');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading || !brief) {
     return (
       <MobileAuthenticatedLayout>
@@ -50,7 +69,12 @@ const MobileBriefDetailPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>{brief.title} - Mobile Brief</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title={brief.title} subtitle={`Updated ${formatDate(brief.updated || brief.created)}`} onBack={() => navigate('/mobile/briefs')} action={<MobileStatusBadge status={brief.status || 'draft'} />} />
+        <MobileTopBar
+          title={brief.title}
+          subtitle={`Updated ${formatDate(brief.updated || brief.created)}`}
+          onBack={() => navigate('/mobile/briefs')}
+          action={<MobileStatusBadge status={brief.status || 'draft'} />}
+        />
         <section className="mobile-soft-card p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -113,13 +137,15 @@ const MobileBriefDetailPage = () => {
           ) : null}
         </section>
         <StickyBottomActionBar>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/briefs/${brief.id}/edit`)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
             <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/raw-materials?briefId=${brief.id}`)}><BookmarkPlus className="mr-1 h-4 w-4" />Shortlist</Button>
             <Button className="rounded-2xl text-xs" onClick={() => navigate(formula ? `/mobile/formulas/${formula.id}/edit?briefId=${brief.id}` : `/mobile/formulas/new?briefId=${brief.id}`)}><Beaker className="mr-1 h-4 w-4" />Formula</Button>
+            <Button variant="outline" className="rounded-2xl border-rose-100 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
           </div>
         </StickyBottomActionBar>
       </main>
+      <DeleteConfirmationDialog open={deleteOpen} onOpenChange={setDeleteOpen} itemName={brief.title} onConfirm={handleDelete} loading={deleting} />
     </MobileAuthenticatedLayout>
   );
 };

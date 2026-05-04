@@ -9,6 +9,7 @@ import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import BriefCardMobile from '@/components/mobile/BriefCardMobile.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -28,7 +29,7 @@ const MobileBriefsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryFormulaId = searchParams.get('formulaId') || '';
-  const { getBriefs } = useBriefs();
+  const { getBriefs, deleteBrief } = useBriefs();
   const { getFormulas } = useFormulas();
   const [briefs, setBriefs] = useState([]);
   const [formulas, setFormulas] = useState([]);
@@ -36,23 +37,26 @@ const MobileBriefsPage = () => {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const loadData = async (isActive = () => true) => {
+    setLoading(true);
+    try {
+      const [briefRows, formulaRows] = await Promise.all([getBriefs(), getFormulas()]);
+      if (!isActive()) return;
+      setBriefs(briefRows || []);
+      setFormulas(formulaRows || []);
+    } catch (error) {
+      toast.error('Failed to load briefs');
+    } finally {
+      if (isActive()) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [briefRows, formulaRows] = await Promise.all([getBriefs(), getFormulas()]);
-        if (!active) return;
-        setBriefs(briefRows || []);
-        setFormulas(formulaRows || []);
-      } catch (error) {
-        toast.error('Failed to load briefs');
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-    loadData();
+    loadData(() => active);
     return () => { active = false; };
   }, [getBriefs, getFormulas]);
 
@@ -64,6 +68,21 @@ const MobileBriefsPage = () => {
   const visible = getVisibleItems(filtered, visibleCount);
 
   useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [query, status]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteBrief(deleteTarget.id);
+      toast.success('Brief deleted');
+      setDeleteTarget(null);
+      await loadData();
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete brief');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <MobileAuthenticatedLayout>
@@ -91,6 +110,7 @@ const MobileBriefsPage = () => {
                   brief={brief}
                   linkedFormula={formulasById.get(brief.formula_id)}
                   onOpen={() => navigate(`/mobile/briefs/${brief.id}`)}
+                  onDelete={() => setDeleteTarget(brief)}
                 />
               ))}
             </div>
@@ -98,6 +118,7 @@ const MobileBriefsPage = () => {
           </>
         )}
       </main>
+      <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.title} onConfirm={handleDelete} loading={deleting} />
     </MobileAuthenticatedLayout>
   );
 };

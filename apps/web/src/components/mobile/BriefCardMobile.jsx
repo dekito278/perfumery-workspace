@@ -1,10 +1,10 @@
 import React from 'react';
-import { ArrowRight, Link2 } from 'lucide-react';
+import { ArrowRight, Link2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import { formatDate } from '@/utils/formatting.js';
 
-const BriefCardMobile = ({ brief, linkedFormula, onOpen }) => (
+const BriefCardMobile = ({ brief, linkedFormula, onOpen, onDelete }) => (
   <article className="mobile-card mobile-compact-card p-3">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
@@ -19,9 +19,16 @@ const BriefCardMobile = ({ brief, linkedFormula, onOpen }) => (
           ) : null}
         </div>
       </div>
-      <Button type="button" size="icon" variant="outline" onClick={onOpen} className="h-9 w-9 shrink-0 rounded-xl bg-white">
-        <ArrowRight className="h-4 w-4" />
-      </Button>
+      <div className="flex shrink-0 items-center gap-1">
+        {onDelete ? (
+          <Button type="button" size="icon" variant="outline" onClick={onDelete} className="h-9 w-9 rounded-xl border-rose-100 bg-rose-50 text-rose-700" aria-label="Delete brief">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : null}
+        <Button type="button" size="icon" variant="outline" onClick={onOpen} className="h-9 w-9 rounded-xl bg-white" aria-label="Open brief">
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
     <div className="mt-2 rounded-xl bg-[#f8f7f4] p-2">
       <div className="text-[10px] font-semibold uppercase text-[#9ca3af]">Progress</div>

@@ -164,6 +164,16 @@
   margin-top: 10px;
 }
 
+.mobile-fixed-action {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+  z-index: 60;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
 .mobile-segment-scroll {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
