@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 
 const actions = [
-  { label: 'New Brief', description: 'Capture project direction', path: '/mobile/briefs/new', icon: WandSparkles },
-  { label: 'New Formula', description: 'Compose standalone formula', path: '/mobile/formulas/new', icon: FlaskConical },
-  { label: 'Add Material', description: 'Open material library action', path: '/mobile/raw-materials?action=add', icon: Plus },
-  { label: 'Import Formula PDF', description: 'Upload workbook PDF', path: '/mobile/formulas?action=import', icon: FileUp },
+  { label: 'New Brief', path: '/mobile/briefs/new', icon: WandSparkles },
+  { label: 'New Formula', path: '/mobile/formulas/new', icon: FlaskConical },
+  { label: 'Add Material', path: '/mobile/raw-materials?action=add', icon: Plus },
+  { label: 'Import Formula PDF', path: '/mobile/formulas?action=import', icon: FileUp },
 ];
 
 const MobileFloatingActionButton = () => {
@@ -30,9 +30,8 @@ const MobileFloatingActionButton = () => {
         open={open}
         onOpenChange={setOpen}
         title="Quick actions"
-        description="Start the next R&D move from one place."
       >
-        <div className="grid gap-3 pb-2">
+        <div className="grid gap-2 pb-2">
           {actions.map((action) => {
             const Icon = action.icon;
             return (
@@ -43,14 +42,13 @@ const MobileFloatingActionButton = () => {
                   setOpen(false);
                   navigate(action.path);
                 }}
-                className="mobile-card flex items-center gap-3 p-4 text-left"
+                className="mobile-card flex items-center gap-3 p-3 text-left"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-[#1f2937]">{action.label}</span>
-                  <span className="mt-1 block text-xs text-[#6b7280]">{action.description}</span>
                 </span>
                 <Upload className="h-4 w-4 text-[#9ca3af]" />
               </button>

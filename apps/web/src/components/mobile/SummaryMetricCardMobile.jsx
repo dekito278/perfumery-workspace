@@ -9,12 +9,12 @@ const SummaryMetricCardMobile = ({ icon: Icon, label, value, tone = 'amber' }) =
   };
 
   return (
-    <div className="mobile-card min-w-[138px] p-4">
-      <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${tones[tone] || tones.amber}`}>
-        {Icon ? <Icon className="h-5 w-5" /> : null}
+    <div className="mobile-card min-w-[126px] p-3">
+      <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${tones[tone] || tones.amber}`}>
+        {Icon ? <Icon className="h-4 w-4" /> : null}
       </div>
-      <div className="mt-4 text-2xl font-bold leading-none text-[#1f2937]">{value}</div>
-      <div className="mt-1 text-xs font-bold uppercase text-[#9ca3af]">{label}</div>
+      <div className="mt-3 text-xl font-bold leading-none text-[#1f2937]">{value}</div>
+      <div className="mt-1 text-[10px] font-bold uppercase text-[#9ca3af]">{label}</div>
     </div>
   );
 };

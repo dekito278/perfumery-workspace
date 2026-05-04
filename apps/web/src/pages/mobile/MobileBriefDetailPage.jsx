@@ -80,7 +80,7 @@ const MobileBriefDetailPage = () => {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs font-bold uppercase text-amber-700">Progress</div>
-              <div className="mt-1 text-2xl font-bold text-[#1f2937]">{readyStageCount || 0}/3 stages</div>
+              <div className="mt-1 text-xl font-bold text-[#1f2937]">{readyStageCount || 0}/3 stages</div>
             </div>
             <div className="text-right text-xs font-bold text-[#6b7280]">{actionNeededLogs?.length || 0} action logs</div>
           </div>
@@ -93,7 +93,7 @@ const MobileBriefDetailPage = () => {
           {tab === 'overview' ? (
             <>
               <div className="mobile-card p-4">
-                <h2 className="text-lg font-bold">Brief summary</h2>
+                <h2 className="text-base font-bold">Brief summary</h2>
                 <p className="mt-2 text-sm text-[#6b7280]">{brief.mood_story || 'No mood story yet.'}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -120,7 +120,7 @@ const MobileBriefDetailPage = () => {
           ) : null}
           {tab === 'formula' ? (
             <div className="mobile-card p-4">
-              <div className="text-lg font-bold">{formula?.name || 'No formula linked'}</div>
+              <div className="text-base font-bold">{formula?.name || 'No formula linked'}</div>
               <p className="mt-2 text-sm text-[#6b7280]">{formula ? `Code ${formula.code}` : 'Create a formula from this brief when stage decisions are ready.'}</p>
               <Button className="mt-4 w-full rounded-2xl" onClick={() => navigate(formula ? `/mobile/formulas/${formula.id}` : `/mobile/formulas/new?briefId=${brief.id}`)}>
                 {formula ? 'Open Formula' : 'Create Formula'}

@@ -156,13 +156,20 @@ const MobileDashboardPage = () => {
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Dashboard - Perfumer Studio</title></Helmet>
-      <main className="mobile-page space-y-5">
-        <MobileTopBar title="Home" subtitle={`Halo, ${getDisplayName(currentUser)}`} eyebrow="Perfumer Studio" action={<Sparkles className="h-6 w-6 text-amber-600" />} />
-        <section className="mobile-soft-card p-5">
-          <div className="text-xs font-bold uppercase text-amber-700">Workspace status</div>
-          <h2 className="mt-2 text-2xl font-bold text-[#1f2937]">{actionNeededLogs.length ? `${actionNeededLogs.length} validation action${actionNeededLogs.length > 1 ? 's' : ''} need review.` : 'R&D flow is ready.'}</h2>
-          <p className="mt-2 text-sm text-[#6b7280]">{activeBriefs.length} active briefs, {formulas.length} formulas, {materials.length} materials, and {logs.length} validation logs are synced for mobile decisions.</p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+      <main className="mobile-page space-y-4">
+        <MobileTopBar title="Home" subtitle={getDisplayName(currentUser)} eyebrow="Perfumer Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
+        <section className="mobile-soft-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Workspace</div>
+              <h2 className="mt-1 truncate text-lg font-bold text-[#1f2937]">{actionNeededLogs.length ? `${actionNeededLogs.length} validation action` : 'Ready'}</h2>
+            </div>
+            <div className="shrink-0 rounded-2xl bg-white px-3 py-2 text-right text-[11px] font-bold text-[#6b7280]">
+              {formulas.length} formulas<br />
+              {materials.length} materials
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <Button className="rounded-2xl" onClick={() => navigate('/mobile/formulas/new')}>New Formula</Button>
             <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/briefs/new')}>New Brief</Button>
           </div>
@@ -170,7 +177,7 @@ const MobileDashboardPage = () => {
 
         {loading ? <MobileLoadingSkeleton count={4} /> : (
           <>
-            <section className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+            <section className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 mobile-segment-scroll">
               <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={activeBriefs.length} />
               <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={formulas.length} tone="blue" />
               <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={materials.length} tone="green" />
@@ -179,7 +186,7 @@ const MobileDashboardPage = () => {
 
             <section className="mobile-card p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Pipeline progress</h2>
+                <h2 className="text-base font-bold">Pipeline</h2>
                 <span className="text-xs font-bold text-amber-700">{actionNeededLogs.length} action</span>
               </div>
               <div className="mt-4 grid gap-3">
@@ -197,7 +204,7 @@ const MobileDashboardPage = () => {
             </section>
 
             <section className="space-y-3">
-              <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Draft formulas</h2><Button variant="ghost" onClick={() => navigate('/mobile/formulas')}>View all</Button></div>
+              <div className="flex items-center justify-between"><h2 className="text-base font-bold">Draft formulas</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/formulas')}>View all</Button></div>
               {draftFormulas.slice(0, 2).map((formula) => (
                 <FormulaCardMobile
                   key={formula.id}
@@ -214,14 +221,14 @@ const MobileDashboardPage = () => {
             </section>
 
             <section className="space-y-3">
-              <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Brief updates</h2><Button variant="ghost" onClick={() => navigate('/mobile/briefs')}>View all</Button></div>
+              <div className="flex items-center justify-between"><h2 className="text-base font-bold">Brief updates</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/briefs')}>View all</Button></div>
               {recentBriefs.slice(0, 2).map((brief) => (
                 <BriefCardMobile key={brief.id} brief={brief} linkedFormula={formulasById.get(brief.formula_id)} onOpen={() => navigate(`/mobile/briefs/${brief.id}`)} />
               ))}
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-lg font-bold">Recent activity</h2>
+              <h2 className="text-base font-bold">Recent activity</h2>
               {recentActivity.map((item) => (
                 <ActivityCardMobile key={item.id} title={item.title} meta={item.meta} date={item.date} onClick={() => navigate(item.path)} />
               ))}

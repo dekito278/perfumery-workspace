@@ -14,7 +14,7 @@ const MobileLoadingState = ({
       </div>
       <div className="mt-4 text-center">
         <p className="text-[10px] font-bold uppercase text-amber-700">{eyebrow}</p>
-        <h1 className="mt-1 text-lg font-bold text-[#1f2937]">{title}</h1>
+        <h1 className="mt-1 text-base font-bold text-[#1f2937]">{title}</h1>
         {subtitle ? <p className="mt-1 text-xs font-medium text-[#6b7280]">{subtitle}</p> : null}
       </div>
     </section>

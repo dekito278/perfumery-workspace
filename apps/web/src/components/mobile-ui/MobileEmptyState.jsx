@@ -7,8 +7,8 @@ const MobileEmptyState = ({ icon: Icon = SearchX, title, description, action, on
     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
       <Icon className="h-6 w-6" />
     </div>
-    <div className="mt-4 text-lg font-bold text-[#1f2937]">{title}</div>
-    {description ? <p className="mt-2 text-sm text-[#6b7280]">{description}</p> : null}
+    <div className="mt-4 text-base font-bold text-[#1f2937]">{title}</div>
+    {description ? <p className="mt-1.5 max-w-[260px] text-xs font-medium text-[#6b7280]">{description}</p> : null}
     {action && onAction ? (
       <Button type="button" onClick={onAction} className="mt-5 rounded-2xl">
         {action}

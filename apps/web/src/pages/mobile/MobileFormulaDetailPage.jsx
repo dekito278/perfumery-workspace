@@ -153,10 +153,10 @@ const MobileFormulaDetailPage = () => {
           <section className="space-y-3">
             <div className="mobile-soft-card p-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><div className="text-xs font-bold uppercase text-amber-700">Formula size</div><div className="mt-1 text-xl font-bold">{formatGramAmount(totalGrams)}</div></div>
-                <div><div className="text-xs font-bold uppercase text-amber-700">Material cost</div><div className="mt-1 text-xl font-bold">{formatPrice(totalCost)}</div></div>
-                <div><div className="text-xs font-bold uppercase text-amber-700">Impact</div><div className="mt-1 text-xl font-bold">{formulaMetrics.impactDisplay}</div></div>
-                <div><div className="text-xs font-bold uppercase text-amber-700">Lifetime</div><div className="mt-1 text-xl font-bold">{formulaMetrics.lifetimeDisplay}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Size</div><div className="mt-1 text-lg font-bold">{formatGramAmount(totalGrams)}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Cost</div><div className="mt-1 text-lg font-bold">{formatPrice(totalCost)}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Impact</div><div className="mt-1 text-lg font-bold">{formulaMetrics.impactDisplay}</div></div>
+                <div><div className="text-[10px] font-bold uppercase text-amber-700">Lifetime</div><div className="mt-1 text-lg font-bold">{formulaMetrics.lifetimeDisplay}</div></div>
               </div>
             </div>
             {[
@@ -172,7 +172,7 @@ const MobileFormulaDetailPage = () => {
             <section className="space-y-3">
               <div className="mobile-soft-card p-4">
                 <div className="text-xs font-bold uppercase text-amber-700">Total percentage</div>
-                <div className="mt-1 text-2xl font-bold">{totalGrams > 0 ? '100.0%' : formatPercent(totalPercentage)}</div>
+                <div className="mt-1 text-xl font-bold">{totalGrams > 0 ? '100.0%' : formatPercent(totalPercentage)}</div>
                 <div className="mt-1 text-xs font-semibold text-[#6b7280]">{compositionRows.length} material rows in full composition</div>
               </div>
               <div className="mobile-card overflow-hidden">
