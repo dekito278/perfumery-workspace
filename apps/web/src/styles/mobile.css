@@ -90,6 +90,8 @@
 }
 
 .mobile-card {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgba(229, 231, 235, 0.92);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
@@ -97,10 +99,33 @@
 }
 
 .mobile-soft-card {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgba(245, 158, 11, 0.18);
   border-radius: 18px;
   background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
   box-shadow: 0 18px 42px -36px rgba(97, 64, 14, 0.5);
+}
+
+.mobile-card > *,
+.mobile-soft-card > *,
+.mobile-app .grid > *,
+.mobile-app [role="combobox"],
+.mobile-app input,
+.mobile-app textarea {
+  min-width: 0;
+}
+
+.mobile-app [role="combobox"] {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.mobile-app [role="combobox"] > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-compact-card {

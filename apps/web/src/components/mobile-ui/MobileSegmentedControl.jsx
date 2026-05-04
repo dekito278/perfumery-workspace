@@ -11,7 +11,7 @@ const MobileSegmentedControl = ({ options = [], value, onChange, className }) =>
           type="button"
           onClick={() => onChange(option.value)}
           className={cn(
-            'h-10 shrink-0 rounded-xl px-4 text-sm font-bold transition',
+            'h-10 shrink-0 whitespace-nowrap rounded-xl px-3 text-xs font-bold transition',
             active ? 'bg-white text-[#1f2937] shadow-sm' : 'text-[#6b7280]'
           )}
         >

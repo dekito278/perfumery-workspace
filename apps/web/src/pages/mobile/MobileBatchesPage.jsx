@@ -267,12 +267,12 @@ const MobileBatchesPage = () => {
           <MobileEmptyState icon={FlaskConical} title="No formula available" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
         ) : (
           <>
-            <section className="mobile-card space-y-3 p-4">
+            <section className="mobile-card space-y-3 overflow-hidden p-4">
               <div className="grid gap-3">
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label className="text-xs font-bold text-[#6b7280]">Formula</Label>
                   <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId}>
-                    <SelectTrigger className="h-11 rounded-2xl bg-white text-xs">
+                    <SelectTrigger className="h-11 min-w-0 overflow-hidden rounded-2xl bg-white text-left text-xs [&>span]:min-w-0 [&>span]:truncate">
                       <SelectValue placeholder="Select formula" />
                     </SelectTrigger>
                     <SelectContent>
@@ -285,21 +285,21 @@ const MobileBatchesPage = () => {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+                  <div className="min-w-0 space-y-2">
                     <Label className="text-xs font-bold text-[#6b7280]">Target gram</Label>
-                    <Input value={targetGrams} onChange={(event) => setTargetGrams(event.target.value)} inputMode="decimal" type="number" min="0" step="0.01" className="h-11 rounded-2xl bg-white text-xs font-bold" />
+                    <Input value={targetGrams} onChange={(event) => setTargetGrams(event.target.value)} inputMode="decimal" type="number" min="0" step="0.01" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
                   </div>
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label className="text-xs font-bold text-[#6b7280]">Dilution %</Label>
-                    <Input value={retailInputs.formulaPercentage} onChange={(event) => updateRetailInput('formulaPercentage', event.target.value)} inputMode="decimal" type="number" min="0" max="100" step="0.01" className="h-11 rounded-2xl bg-white text-xs font-bold" />
+                    <Input value={retailInputs.formulaPercentage} onChange={(event) => updateRetailInput('formulaPercentage', event.target.value)} inputMode="decimal" type="number" min="0" max="100" step="0.01" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label className="text-xs font-bold text-[#6b7280]">Solvent</Label>
                   <Select value={selectedSolventId} onValueChange={setSelectedSolventId}>
-                    <SelectTrigger className="h-11 rounded-2xl bg-white text-xs">
+                    <SelectTrigger className="h-11 min-w-0 overflow-hidden rounded-2xl bg-white text-left text-xs [&>span]:min-w-0 [&>span]:truncate">
                       <SelectValue placeholder="Select solvent" />
                     </SelectTrigger>
                     <SelectContent>
@@ -311,7 +311,7 @@ const MobileBatchesPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label className="text-xs font-bold text-[#6b7280]">Solvent price / 10 ml</Label>
                   <SolventPriceEditor
                     material={selectedSolvent}
