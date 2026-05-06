@@ -4,7 +4,16 @@ import { Button } from '@/components/ui/button.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import { getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 
-const RawMaterialCardMobile = ({ material, onOpen, onAddToFormula, onOpenGuidance }) => {
+const RawMaterialCardMobile = ({
+  addActionActive = false,
+  addActionDisabled = false,
+  addActionIcon: AddActionIcon = Plus,
+  addActionLabel = 'Formula',
+  material,
+  onAddToFormula,
+  onOpen,
+  onOpenGuidance,
+}) => {
   const resolved = getResolvedGuidanceValues(material);
   const impact = getResolvedGuidanceNumber(material, 'reference_impact');
   const life = getResolvedGuidanceNumber(material, 'reference_life_hours');
@@ -41,9 +50,15 @@ const RawMaterialCardMobile = ({ material, onOpen, onAddToFormula, onOpenGuidanc
           <Link2 className="mr-1 h-4 w-4" />
           Guidance
         </Button>
-        <Button type="button" variant="outline" onClick={onAddToFormula} className="h-9 rounded-xl bg-white text-[11px]">
-          <Plus className="mr-1 h-4 w-4" />
-          Formula
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onAddToFormula}
+          disabled={addActionDisabled}
+          className={`h-9 rounded-xl text-[11px] ${addActionActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'bg-white'}`}
+        >
+          <AddActionIcon className="mr-1 h-4 w-4" />
+          {addActionLabel}
         </Button>
         <Button type="button" variant="outline" size="icon" onClick={onOpen} className="h-9 w-10 rounded-xl bg-white" aria-label="Open material">
           <ChevronRight className="h-4 w-4" />
