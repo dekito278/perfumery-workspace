@@ -7,9 +7,9 @@ const navItems = [
   { path: '/mobile/dashboard', label: 'Home', icon: Home },
   { path: '/mobile/briefs', label: 'Briefs', icon: ClipboardList },
   { path: '/mobile/formulas', label: 'Formulas', icon: Beaker },
-  { path: '/mobile/batches', label: 'Batch', icon: Calculator },
+  { path: '/mobile/batches', label: 'Batch', icon: Calculator, aliases: ['/mobile/production-costing'] },
   { path: '/mobile/raw-materials', label: 'Materials', icon: LibraryBig },
-  { path: '/mobile/validation', label: 'Valid', icon: ClipboardCheck },
+  { path: '/mobile/validation', label: 'Validate', icon: ClipboardCheck },
 ];
 
 const MobileBottomNavigation = () => {
@@ -19,7 +19,8 @@ const MobileBottomNavigation = () => {
     <nav className="mobile-bottom-nav grid grid-cols-6 gap-1 p-1.5" aria-label="Mobile app navigation">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const active = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+        const activePaths = [item.path, ...(item.aliases || [])];
+        const active = activePaths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
         return (
           <Link
             key={item.path}

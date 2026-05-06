@@ -605,7 +605,7 @@ const MobileFormulaComposerWorkspace = ({
           <section className="mobile-card mobile-compact-card p-3">
             <SectionTitle
               title="Raw Material Finder"
-              subtitle={finderQuery ? `${finderMaterials.length} matches` : undefined}
+              subtitle={finderQuery ? `${finderMaterials.length} matches` : 'Swipe cards or search to add'}
             />
             <div className="mt-2">
               <MobileSearchBar value={finderQuery} onChange={setFinderQuery} placeholder="Find raw material..." />
@@ -671,6 +671,10 @@ const MobileFormulaComposerWorkspace = ({
               }) : (
                 <div className="rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-4 text-center">
                   <p className="text-sm font-bold text-[#1f2937]">No materials yet</p>
+                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">Use the finder above or open Materials to start the composition.</p>
+                  <Button type="button" variant="outline" onClick={() => setTab('materials')} className="mt-3 h-9 rounded-xl bg-white px-3 text-xs">
+                    Open Materials
+                  </Button>
                 </div>
               )}
             </div>

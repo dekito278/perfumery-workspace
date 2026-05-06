@@ -132,6 +132,7 @@ const MobileCreateFormulaPage = () => {
   const rawMaterialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount), 0), [items]);
   const itemsWithInsights = useMemo(() => enrichCompositionItems(items, totalGrams, rawMaterialsById), [items, rawMaterialsById, totalGrams]);
+  const canCreate = Boolean(name.trim() && code.trim() && items.length && totalGrams > 0);
 
   const updateItem = (rowKey, field, value) => setItems((current) => current.map((item) => item.row_key === rowKey ? { ...item, [field]: value } : item));
   const removeItem = (rowKey) => setItems((current) => current.filter((item) => item.row_key !== rowKey));
@@ -217,6 +218,16 @@ const MobileCreateFormulaPage = () => {
                 </p>
               </section>
             ) : null}
+            {!canCreate ? (
+              <section className="mobile-card p-3">
+                <div className="text-[10px] font-bold uppercase text-amber-700">Setup checklist</div>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-center text-[10px] font-bold">
+                  <span className={`rounded-xl border px-2 py-2 ${name.trim() && code.trim() ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Metadata</span>
+                  <span className={`rounded-xl border px-2 py-2 ${items.length ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Materials</span>
+                  <span className={`rounded-xl border px-2 py-2 ${totalGrams > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>Grams</span>
+                </div>
+              </section>
+            ) : null}
             <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" onClick={() => setMetadataOpen(true)} className="h-10 rounded-2xl bg-white text-xs font-bold">
                 <WandSparkles className="mr-1 h-4 w-4" />
@@ -239,7 +250,7 @@ const MobileCreateFormulaPage = () => {
               onSave={handleSubmit}
               saveLabel="Create"
               saving={loading}
-              saveDisabled={false}
+              saveDisabled={!canCreate}
             />
           </>
         )}
