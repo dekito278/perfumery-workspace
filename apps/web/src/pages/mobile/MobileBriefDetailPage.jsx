@@ -73,9 +73,10 @@ const MobileBriefDetailPage = () => {
 
   const selectedItems = useMemo(() => STAGES.flatMap((stage) => selectedItemsByStage?.get(stage) || []), [selectedItemsByStage]);
   const selectedCountByStage = useMemo(() => Object.fromEntries(STAGES.map((stage) => [stage, (selectedItemsByStage?.get(stage) || []).length])), [selectedItemsByStage]);
+  const selectedMaterialQuery = selectedMaterialIds?.length ? `&materialIds=${selectedMaterialIds.join(',')}` : '';
   const formulaTarget = formula
-    ? `/mobile/formulas/${formula.id}`
-    : `/mobile/formulas/new?briefId=${brief?.id || id}${project?.id ? `&projectId=${project.id}` : selectedMaterialIds?.length ? `&materialIds=${selectedMaterialIds.join(',')}` : ''}`;
+    ? `/mobile/formulas/${formula.id}/edit?briefId=${brief?.id || id}${selectedMaterialQuery}`
+    : `/mobile/formulas/new?briefId=${brief?.id || id}${project?.id ? `&projectId=${project.id}` : selectedMaterialQuery}`;
 
   const handleDelete = async () => {
     if (!brief) return;
@@ -281,7 +282,7 @@ const MobileBriefDetailPage = () => {
           <div className="grid grid-cols-4 gap-1.5">
             <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={() => navigate(`/mobile/briefs/${brief.id}/edit`)}><Pencil className="h-4 w-4" />Edit</Button>
             <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={() => navigate(`/mobile/raw-materials?briefId=${brief.id}`)}><BookmarkPlus className="h-4 w-4" />Pick</Button>
-            <Button className="h-12 flex-col gap-0.5 rounded-2xl px-1 text-[10px]" onClick={() => navigate(formula ? `/mobile/formulas/${formula.id}/edit?briefId=${brief.id}` : formulaTarget)}><Beaker className="h-4 w-4" />Formula</Button>
+            <Button className="h-12 flex-col gap-0.5 rounded-2xl px-1 text-[10px]" onClick={() => navigate(formulaTarget)}><Beaker className="h-4 w-4" />Formula</Button>
             <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl border-rose-100 bg-rose-50 px-1 text-[10px] text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</Button>
           </div>
         </section>

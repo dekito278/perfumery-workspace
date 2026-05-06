@@ -66,7 +66,7 @@ const MobileCreateFormulaPage = () => {
   const { getBriefs, updateBrief } = useBriefs();
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [metadataOpen, setMetadataOpen] = useState(true);
+  const [metadataOpen, setMetadataOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [briefContext, setBriefContext] = useState(null);
   const [name, setName] = useState('');
@@ -76,6 +76,7 @@ const MobileCreateFormulaPage = () => {
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([]);
+  const [seededCount, setSeededCount] = useState(0);
   const itemsRef = useRef(items);
 
   useEffect(() => {
@@ -102,7 +103,15 @@ const MobileCreateFormulaPage = () => {
           setNotes((current) => current || linkedBrief.mood_story || linkedBrief.description || '');
         }
         if (seedMaterialIds.length) {
-          setItems(baseRows.filter((material) => seedMaterialIds.includes(material.id)).slice(0, 5).map((material) => createItem(material)));
+          const seededItems = baseRows
+            .filter((material) => seedMaterialIds.includes(material.id))
+            .slice(0, 9)
+            .map((material) => createItem(material));
+          setItems(seededItems);
+          setSeededCount(seededItems.length);
+          if (seededItems.length) {
+            toast.success(`${seededItems.length} wizard materials loaded`);
+          }
         }
         setLoadingData(false);
 
@@ -192,6 +201,20 @@ const MobileCreateFormulaPage = () => {
                     <p className="mt-1 mobile-line-clamp-2 text-[11px] font-semibold text-[#6b7280]">{briefContext.mood_story || briefContext.description || 'Formula will be attached to this brief after create.'}</p>
                   </div>
                 </div>
+              </section>
+            ) : null}
+            {seededCount ? (
+              <section className="mobile-card p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase text-emerald-700">Wizard handoff</div>
+                    <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} materials ready</div>
+                  </div>
+                  <MobileStatusBadge status="loaded" />
+                </div>
+                <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
+                  Material pilihan brief sudah masuk composition board. Atur gram, dilution, lalu simpan formula.
+                </p>
               </section>
             ) : null}
             <div className="grid grid-cols-2 gap-2">

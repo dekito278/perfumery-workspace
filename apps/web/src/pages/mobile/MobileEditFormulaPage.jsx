@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -50,6 +50,9 @@ const buildItemsForSubmit = (itemsWithInsights) => itemsWithInsights.map((item) 
 const MobileEditFormulaPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const seedMaterialIdsParam = searchParams.get('materialIds') || '';
+  const seedMaterialIds = useMemo(() => String(seedMaterialIdsParam).split(',').map((value) => value.trim()).filter(Boolean), [seedMaterialIdsParam]);
   const { getFormulaById, updateFormula, loading } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
   const [rawMaterials, setRawMaterials] = useState([]);
@@ -64,6 +67,7 @@ const MobileEditFormulaPage = () => {
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([]);
+  const [seededCount, setSeededCount] = useState(0);
   const [composerOverlayOpen, setComposerOverlayOpen] = useState(false);
 
   useEffect(() => {
@@ -86,8 +90,20 @@ const MobileEditFormulaPage = () => {
           const material = enrichedMaterialRows.find((entry) => entry.id === item.item_id);
           return createItem(material || { id: item.item_id, type: item.item_type }, item.grams ?? item.percentage ?? 1, item);
         });
+        const existingMaterialIds = new Set(formatted.map((item) => item.item_id));
+        const wizardSeedItems = seedMaterialIds.length
+          ? enrichedMaterialRows
+            .filter((material) => seedMaterialIds.includes(material.id) && !existingMaterialIds.has(material.id))
+            .slice(0, 9)
+            .map((material) => createItem(material))
+          : [];
+        const seededItems = wizardSeedItems.length ? [...formatted, ...wizardSeedItems] : formatted;
         setOriginalItems(formatted);
-        setItems(formatted);
+        setItems(seededItems);
+        setSeededCount(wizardSeedItems.length);
+        if (wizardSeedItems.length) {
+          toast.success(`${wizardSeedItems.length} wizard materials loaded`);
+        }
       } catch (error) {
         toast.error('Failed to load formula');
         navigate('/mobile/formulas');
@@ -97,7 +113,7 @@ const MobileEditFormulaPage = () => {
     };
     loadData();
     return () => { active = false; };
-  }, [getFormulaById, getFormulaItems, id, navigate]);
+  }, [getFormulaById, getFormulaItems, id, navigate, seedMaterialIds]);
 
   const rawMaterialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount), 0), [items]);
@@ -148,6 +164,20 @@ const MobileEditFormulaPage = () => {
       <Helmet><title>Edit {name} - Mobile Formula</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={name || 'Edit Formula'} subtitle={unsaved ? 'Unsaved revision' : 'Workbook ready'} onBack={() => navigate(`/mobile/formulas/${id}`)} action={<MobileStatusBadge status={status} />} />
+        {seededCount ? (
+          <section className="mobile-card p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-bold uppercase text-emerald-700">Wizard handoff</div>
+                <div className="mt-0.5 text-sm font-bold text-[#1f2937]">{seededCount} new materials added</div>
+              </div>
+              <MobileStatusBadge status="unsaved" />
+            </div>
+            <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
+              Review gram dan dilution material baru, lalu Save Revision untuk menyimpan ke formula linked.
+            </p>
+          </section>
+        ) : null}
         <MobileFormulaComposerWorkspace
           mode="edit"
           metadata={{ name, code, category, version, status, notes }}
