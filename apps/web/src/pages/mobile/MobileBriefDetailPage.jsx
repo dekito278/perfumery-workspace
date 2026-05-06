@@ -53,6 +53,7 @@ const MobileBriefDetailPage = () => {
     handleRemoveStageItem,
     handleStageItemState,
     handleWizardBack,
+    handleFinishWizard,
     handleWizardNext,
     handleWizardNextStage,
     handleWizardOptionSelect,
@@ -298,6 +299,7 @@ const MobileBriefDetailPage = () => {
         handleGenerateRecommendations={handleGenerateRecommendations}
         handleStageItemState={handleStageItemState}
         handleWizardBack={handleWizardBack}
+        handleFinishWizard={handleFinishWizard}
         handleWizardNext={handleWizardNext}
         handleWizardNextStage={handleWizardNextStage}
         handleWizardOptionSelect={handleWizardOptionSelect}
