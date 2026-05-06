@@ -197,7 +197,7 @@ const DashboardPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Dashboard - Perfumer Studio</title>
+        <title>Studio - Perfumer Studio</title>
         <meta
           name="description"
           content="Track formulation progress, guidance coverage, brief activity, and validation follow-up from one perfumery workspace."
@@ -211,7 +211,7 @@ const DashboardPage = () => {
               Halo, {displayName}
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
-              Workspace formulasi siap dipakai.
+              Perfumer Studio siap dipakai.
             </h1>
             <p className="max-w-3xl text-base text-muted-foreground">
               {formulas.length > 0

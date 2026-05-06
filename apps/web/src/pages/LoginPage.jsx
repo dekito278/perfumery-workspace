@@ -25,7 +25,7 @@ const LoginPage = () => {
     try {
       await login(email, password);
       toast.success('Login successful');
-      navigate('/dashboard');
+      navigate('/studio');
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
       toast.error(err.message || 'Login failed');

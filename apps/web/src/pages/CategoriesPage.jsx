@@ -47,7 +47,7 @@ const CategoriesPage = () => {
         <div className="mb-4">
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/studio')}
             className="gap-2 h-9"
           >
             <Home className="w-4 h-4" />

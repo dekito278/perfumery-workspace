@@ -183,7 +183,7 @@ const BriefsPage = () => {
 
       <div className="page-container">
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4 gap-2 h-9">
+          <Button variant="ghost" onClick={() => navigate('/studio')} className="mb-4 gap-2 h-9">
             <Home className="w-4 h-4" />
             Back to dashboard
           </Button>

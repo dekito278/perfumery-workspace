@@ -333,7 +333,7 @@ const FormulasPage = () => {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/studio')}
             className="gap-2 mb-4 h-9"
           >
             <Home className="w-4 h-4" />

@@ -7,8 +7,14 @@ import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import HomePage from '@/pages/HomePage.jsx';
+import CatalogPage from '@/pages/CatalogPage.jsx';
+import ProductDetailPage from '@/pages/ProductDetailPage.jsx';
+import BespokePage from '@/pages/BespokePage.jsx';
+import CartPage from '@/pages/CartPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
+import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
+import OrdersPage from '@/pages/OrdersPage.jsx';
 import BriefsPage from '@/pages/BriefsPage.jsx';
 import BriefEditorPage from '@/pages/BriefEditorPage.jsx';
 import BriefDetailPage from '@/pages/BriefDetailPage.jsx';
@@ -23,6 +29,13 @@ import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
 import ProductionCostPage from '@/pages/ProductionCostPage.jsx';
 import ValidationLogPage from '@/pages/ValidationLogPage.jsx';
 import MobileLoginPage from '@/pages/mobile/MobileLoginPage.jsx';
+import MobileStorefrontPage from '@/pages/mobile/MobileStorefrontPage.jsx';
+import MobileCatalogPage from '@/pages/mobile/MobileCatalogPage.jsx';
+import MobileProductDetailPage from '@/pages/mobile/MobileProductDetailPage.jsx';
+import MobileBespokePage from '@/pages/mobile/MobileBespokePage.jsx';
+import MobileCartPage from '@/pages/mobile/MobileCartPage.jsx';
+import MobileProductManagementPage from '@/pages/mobile/MobileProductManagementPage.jsx';
+import MobileOrdersPage from '@/pages/mobile/MobileOrdersPage.jsx';
 import MobileDashboardPage from '@/pages/mobile/MobileDashboardPage.jsx';
 import MobileBriefsPage from '@/pages/mobile/MobileBriefsPage.jsx';
 import MobileBriefEditorPage from '@/pages/mobile/MobileBriefEditorPage.jsx';
@@ -52,7 +65,7 @@ const RootRedirect = () => {
     return <Navigate to={isAuthenticated ? '/mobile/dashboard' : '/mobile/login'} replace />;
   }
 
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
+  return <Navigate to="/home" replace />;
 };
 
 const MobileBrowserRedirect = () => {
@@ -90,6 +103,10 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/products/:slug" element={<ProductDetailPage />} />
+        <Route path="/bespoke" element={<BespokePage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/mobile/login" element={<MobileLoginPage />} />
 
@@ -101,7 +118,49 @@ function AppRoutes() {
 
         <Route path="/mobile/dashboard" element={
           <ProtectedRoute>
+            <MobileStorefrontPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/catalog" element={
+          <ProtectedRoute>
+            <MobileCatalogPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/products/:slug" element={
+          <ProtectedRoute>
+            <MobileProductDetailPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/bespoke" element={
+          <ProtectedRoute>
+            <MobileBespokePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/cart" element={
+          <ProtectedRoute>
+            <MobileCartPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio" element={
+          <ProtectedRoute>
             <MobileDashboardPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/products" element={
+          <ProtectedRoute>
+            <MobileProductManagementPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/orders" element={
+          <ProtectedRoute>
+            <MobileOrdersPage />
           </ProtectedRoute>
         } />
 
@@ -188,9 +247,27 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         
-        <Route path="/dashboard" element={
+        <Route path="/studio" element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products" element={
+          <ProtectedRoute>
+            <ProductManagementPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/orders" element={
+          <ProtectedRoute>
+            <OrdersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Navigate to="/studio" replace />
           </ProtectedRoute>
         } />
 

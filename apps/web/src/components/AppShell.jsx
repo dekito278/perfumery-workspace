@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Beaker, LogOut, ChevronsLeft, ChevronsRight, ClipboardList, NotebookPen, LibraryBig } from 'lucide-react';
+import { Menu, Home, Beaker, LogOut, ChevronsLeft, ChevronsRight, ClipboardList, NotebookPen, LibraryBig, ShoppingBag, PackagePlus, PackageCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const DESKTOP_SIDEBAR_STORAGE_KEY = 'perfumer-studio.sidebar-collapsed';
@@ -39,14 +39,20 @@ const AppShell = ({ children }) => {
   };
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: Home },
+    { path: '/home', label: 'Storefront', icon: ShoppingBag },
+    { path: '/studio', label: 'Studio', icon: Home, aliases: ['/dashboard'] },
+    { path: '/studio/products', label: 'Products', icon: PackagePlus },
+    { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
     { path: '/briefs', label: 'Briefs', icon: ClipboardList },
     { path: '/raw-materials', label: 'Raw Materials', icon: LibraryBig },
     { path: '/formulas', label: 'Formulas', icon: Beaker },
     { path: '/validation', label: 'Validation', icon: NotebookPen },
   ];
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (item) => {
+    const paths = [item.path, ...(item.aliases || [])];
+    return paths.some((path) => location.pathname === path || location.pathname.startsWith(path + '/'));
+  };
 
   const NavLinks = ({ mobile = false, collapsed = false }) => (
     <nav
@@ -55,7 +61,7 @@ const AppShell = ({ children }) => {
     >
       {navItems.map((item) => {
         const Icon = item.icon;
-        const active = isActive(item.path);
+        const active = isActive(item);
         return (
           <Link
             key={item.path}
@@ -90,7 +96,7 @@ const AppShell = ({ children }) => {
         <aside className={`app-sidebar no-print hidden lg:flex ${desktopSidebarCollapsed ? 'app-sidebar-collapsed' : ''}`}>
           <div className="app-sidebar-panel">
             <div className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>
-              <Link to="/dashboard" className="app-brand">
+              <Link to="/studio" className="app-brand">
               <span className="app-brand-icon">
                 <Beaker className="w-5 h-5" />
               </span>
@@ -149,7 +155,7 @@ const AppShell = ({ children }) => {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[86vw] max-w-sm border-r-0 bg-[#f8efe1] p-0">
                   <div className="flex h-full flex-col p-5">
-                    <Link to="/dashboard" className="app-brand" onClick={() => setMobileMenuOpen(false)}>
+                    <Link to="/studio" className="app-brand" onClick={() => setMobileMenuOpen(false)}>
                       <span className="app-brand-icon">
                         <Beaker className="w-5 h-5" />
                       </span>
@@ -176,7 +182,7 @@ const AppShell = ({ children }) => {
                 </SheetContent>
               </Sheet>
 
-              <Link to="/dashboard" className="min-w-0 flex items-center gap-2 lg:hidden">
+              <Link to="/studio" className="min-w-0 flex items-center gap-2 lg:hidden">
                 <span className="app-brand-icon h-10 w-10">
                   <Beaker className="w-5 h-5" />
                 </span>

@@ -170,7 +170,7 @@ const ValidationLogPage = () => {
 
       <div className="page-container space-y-6">
         <div>
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4 gap-2 h-9">
+          <Button variant="ghost" onClick={() => navigate('/studio')} className="mb-4 gap-2 h-9">
             <Home className="w-4 h-4" />
             Back to dashboard
           </Button>

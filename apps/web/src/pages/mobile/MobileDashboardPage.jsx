@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, Sparkles } from 'lucide-react';
+import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, PackageCheck, PackagePlus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -35,6 +35,13 @@ const hasGuidanceCoverage = (material) => (
     || material?.ifra_limit !== null && material?.ifra_limit !== undefined
   )
 );
+
+const runWithTimeout = (loader, label, timeoutMs = 6000) => Promise.race([
+  loader(),
+  new Promise((_, reject) => {
+    window.setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+  }),
+]);
 
 const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
   const tones = {
@@ -79,22 +86,33 @@ const MobileDashboardPage = () => {
   const loadData = async (isActive = () => true) => {
     setLoading(true);
     try {
-      const [materialRows, formulaRows, briefRows, logRows] = await Promise.all([
-        fetchMaterialsSummary(),
-        getFormulas(),
-        getBriefs(),
-        getValidationLogs(),
+      const [materialsResult, formulasResult, briefsResult, logsResult] = await Promise.allSettled([
+        runWithTimeout(fetchMaterialsSummary, 'Materials summary'),
+        runWithTimeout(getFormulas, 'Formulas'),
+        runWithTimeout(getBriefs, 'Briefs'),
+        runWithTimeout(getValidationLogs, 'Validation logs'),
       ]);
-      const formulaItemEntries = await Promise.all((formulaRows || []).map(async (formula) => {
-        const items = await getFormulaItems(formula.id);
+
+      const materialRows = materialsResult.status === 'fulfilled' ? materialsResult.value : [];
+      const formulaRows = formulasResult.status === 'fulfilled' ? formulasResult.value : [];
+      const briefRows = briefsResult.status === 'fulfilled' ? briefsResult.value : [];
+      const logRows = logsResult.status === 'fulfilled' ? logsResult.value : [];
+
+      const formulaItemResults = await Promise.allSettled((formulaRows || []).map(async (formula) => {
+        const items = await runWithTimeout(() => getFormulaItems(formula.id), `Formula ${formula.id} items`, 5000);
         return [formula.id, items || []];
       }));
+      const formulaItemEntries = formulaItemResults
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value);
       const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
       const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
-      const [rawMaterialRows, referenceStatusMap] = await Promise.all([
-        getRawMaterialOptions(),
-        getReferenceMatchStatusMap(materialIds),
+      const [rawMaterialRowsResult, referenceStatusMapResult] = await Promise.allSettled([
+        formulaItemEntries.length ? runWithTimeout(getRawMaterialOptions, 'Raw material options', 5000) : Promise.resolve([]),
+        materialIds.length ? runWithTimeout(() => getReferenceMatchStatusMap(materialIds), 'Reference match status', 5000) : Promise.resolve(new Map()),
       ]);
+      const rawMaterialRows = rawMaterialRowsResult.status === 'fulfilled' ? rawMaterialRowsResult.value : [];
+      const referenceStatusMap = referenceStatusMapResult.status === 'fulfilled' ? referenceStatusMapResult.value : new Map();
       if (!isActive()) return;
       const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
       const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
@@ -126,6 +144,20 @@ const MobileDashboardPage = () => {
         briefCount: briefsByFormulaId.get(formula.id) || 0,
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
+
+      const failedResults = [
+        materialsResult,
+        formulasResult,
+        briefsResult,
+        logsResult,
+        rawMaterialRowsResult,
+        referenceStatusMapResult,
+        ...formulaItemResults,
+      ].filter((result) => result.status === 'rejected');
+
+      if (failedResults.length) {
+        toast.error('Some studio data could not be loaded');
+      }
     } catch (error) {
       toast.error('Failed to load mobile dashboard');
     } finally {
@@ -188,18 +220,18 @@ const MobileDashboardPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Dashboard - Perfumer Studio</title></Helmet>
+      <Helmet><title>Studio - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Home" subtitle={getDisplayName(currentUser)} eyebrow="Perfumer Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
+        <MobileTopBar title="Studio" subtitle={getDisplayName(currentUser)} eyebrow="Perfumer Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
         <section className="mobile-soft-card p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-[10px] font-bold uppercase text-amber-700">Workspace</div>
-              <h2 className="mt-1 truncate text-lg font-bold text-[#1f2937]">{actionNeededLogs.length ? `${actionNeededLogs.length} validation action` : 'Ready'}</h2>
+              <h2 className="mt-1 truncate text-lg font-bold text-[#1f2937]">{loading ? 'Syncing data' : actionNeededLogs.length ? `${actionNeededLogs.length} validation action` : 'Ready'}</h2>
             </div>
             <div className="shrink-0 rounded-2xl bg-white px-3 py-2 text-right text-[11px] font-bold text-[#6b7280]">
-              {formulas.length} formulas<br />
-              {materials.length} materials
+              {loading ? 'Loading' : `${formulas.length} formulas`}<br />
+              {loading ? 'workspace' : `${materials.length} materials`}
             </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -227,9 +259,11 @@ const MobileDashboardPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowTile icon={Beaker} label="Formula" helper="Create or revise" tone="blue" to="/mobile/formulas" />
-                <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
+                <WorkflowTile icon={PackagePlus} label="Products" helper="Catalog admin" tone="emerald" to="/mobile/studio/products" />
+                <WorkflowTile icon={PackageCheck} label="Orders" helper="Queue & status" tone="amber" to="/mobile/studio/orders" />
                 <WorkflowTile icon={Calculator} label="Batch" helper="Scale grams" to="/mobile/batches" />
                 <WorkflowTile icon={Factory} label="Costing" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
+                <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
               </div>
             </section>
 

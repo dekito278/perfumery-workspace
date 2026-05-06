@@ -65,7 +65,7 @@ const ProductionCostPage = () => {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/studio')}
             className="mb-4 h-9 gap-2"
           >
             <Home className="h-4 w-4" />

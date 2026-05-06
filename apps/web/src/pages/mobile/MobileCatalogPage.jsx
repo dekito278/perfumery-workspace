@@ -1,0 +1,200 @@
+import React, { useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowUpDown, Search, ShoppingBag, SlidersHorizontal } from 'lucide-react';
+import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import { Button } from '@/components/ui/button.jsx';
+import { catalogSortOptions, storefrontCategories } from '@/data/storefront.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { cn } from '@/lib/utils.js';
+
+const ProductVisual = ({ product }) => (
+  <div className={`relative h-32 overflow-hidden rounded-2xl bg-gradient-to-br ${product.visual}`}>
+    <div className="absolute left-5 top-5 h-20 w-10 rounded-[1rem] border border-white/70 bg-white/45 shadow-xl backdrop-blur-sm">
+      <div className="mx-auto mt-2 h-3 w-5 rounded-full bg-white/70" />
+      <div className="mx-auto mt-4 h-9 w-6 rounded-xl border border-white/60 bg-white/30" />
+    </div>
+    <div className="absolute bottom-3 right-3 rounded-2xl bg-white/84 px-3 py-2 text-right text-[10px] font-bold shadow-sm backdrop-blur">
+      <div className="uppercase text-[#6b7280]">{product.category}</div>
+      <div className="text-[#1f2937]">{product.size}</div>
+    </div>
+  </div>
+);
+
+const sortProducts = (products, sort) => {
+  const nextProducts = [...products];
+
+  if (sort === 'price-low') return nextProducts.sort((a, b) => a.priceNumber - b.priceNumber);
+  if (sort === 'price-high') return nextProducts.sort((a, b) => b.priceNumber - a.priceNumber);
+  if (sort === 'name') return nextProducts.sort((a, b) => a.name.localeCompare(b.name));
+
+  return nextProducts.sort((a, b) => Number(b.featured) - Number(a.featured) || b.popularity - a.popularity);
+};
+
+const MobileCatalogPage = () => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [category, setCategory] = useState(searchParams.get('category') || 'All');
+  const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
+  const products = useCatalogProducts();
+
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const matchingProducts = products.filter((product) => {
+      const matchesCategory = category === 'All' || product.category === category;
+      const searchableText = [
+        product.name,
+        product.category,
+        product.notes,
+        product.mood,
+        product.description,
+        ...product.tags,
+      ].join(' ').toLowerCase();
+      return matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
+    });
+
+    return sortProducts(matchingProducts, sort);
+  }, [category, products, query, sort]);
+
+  const updateFilters = (next) => {
+    const updated = {
+      q: next.query ?? query,
+      category: next.category ?? category,
+      sort: next.sort ?? sort,
+    };
+    setQuery(updated.q);
+    setCategory(updated.category);
+    setSort(updated.sort);
+
+    const params = new URLSearchParams();
+    if (updated.q.trim()) params.set('q', updated.q.trim());
+    if (updated.category !== 'All') params.set('category', updated.category);
+    if (updated.sort !== 'featured') params.set('sort', updated.sort);
+    setSearchParams(params, { replace: true });
+  };
+
+  return (
+    <MobileAuthenticatedLayout showFab={false}>
+      <Helmet>
+        <title>Catalog - Dekito Perfumery</title>
+        <meta name="description" content="Browse Dekito Perfumery products by category, price, and scent profile." />
+      </Helmet>
+      <main className="mobile-page space-y-4">
+        <MobileTopBar
+          title="Catalog"
+          subtitle={`${filteredProducts.length} products`}
+          eyebrow="Shop"
+          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-amber-700" /></button>}
+        />
+
+        <section className="mobile-card p-2">
+          <label className="flex h-12 items-center gap-2 rounded-2xl bg-[#f8f7f4] px-3">
+            <Search className="h-4 w-4 text-[#8b949e]" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => updateFilters({ query: event.target.value })}
+              placeholder="Search by notes, mood, product"
+              className="min-h-0 flex-1 bg-transparent text-sm font-semibold text-[#1f2937] outline-none placeholder:text-[#9ca3af]"
+            />
+          </label>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold">Scent family</h2>
+            <SlidersHorizontal className="h-4 w-4 text-[#8b949e]" />
+          </div>
+          <div className="mobile-segment-scroll flex gap-2 overflow-x-auto pb-1">
+            {['All', ...storefrontCategories.map((item) => item.name)].map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => updateFilters({ category: item })}
+                className={cn(
+                  'h-10 shrink-0 rounded-2xl border px-4 text-xs font-bold',
+                  category === item
+                    ? 'border-amber-300 bg-amber-50 text-amber-800'
+                    : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                )}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="mobile-card p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-[#6b7280]">
+            <ArrowUpDown className="h-4 w-4" />
+            Sort
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {catalogSortOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => updateFilters({ sort: option.value })}
+                className={cn(
+                  'h-10 rounded-2xl border text-xs font-bold',
+                  sort === option.value
+                    ? 'border-[#1f2937] bg-[#1f2937] text-white'
+                    : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          {filteredProducts.map((product) => (
+            <article key={product.id} className="mobile-card overflow-hidden p-3">
+              <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
+                <ProductVisual product={product} />
+                <div className="mt-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-bold text-[#1f2937]">{product.name}</h3>
+                      <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-sm font-bold text-[#1f2937]">{product.price}</div>
+                      <div className="text-[10px] font-bold text-[#8b949e]">{product.stock} left</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {product.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </button>
+            </article>
+          ))}
+          {!filteredProducts.length ? (
+            <div className="mobile-card p-5 text-center">
+              <h3 className="text-base font-bold text-[#1f2937]">No products found</h3>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Try another category or note keyword.</p>
+              <Button className="mt-4 rounded-2xl" onClick={() => updateFilters({ query: '', category: 'All', sort: 'featured' })}>
+                Reset filters
+              </Button>
+            </div>
+          ) : null}
+        </section>
+
+        <Link to="/mobile/dashboard" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#1f2937]">
+          Back to storefront
+          <ShoppingBag className="h-4 w-4 text-amber-700" />
+        </Link>
+      </main>
+    </MobileAuthenticatedLayout>
+  );
+};
+
+export default MobileCatalogPage;

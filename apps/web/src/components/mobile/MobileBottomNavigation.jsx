@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Beaker, Calculator, ClipboardCheck, ClipboardList, Home, LibraryBig } from 'lucide-react';
+import { Beaker, ClipboardCheck, Home, LayoutDashboard, LibraryBig, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 
 const navItems = [
   { path: '/mobile/dashboard', label: 'Home', icon: Home },
-  { path: '/mobile/briefs', label: 'Briefs', icon: ClipboardList },
+  { path: '/mobile/catalog', label: 'Shop', icon: ShoppingBag, aliases: ['/mobile/products'] },
   { path: '/mobile/formulas', label: 'Formulas', icon: Beaker },
-  { path: '/mobile/batches', label: 'Batch', icon: Calculator, aliases: ['/mobile/production-costing'] },
+  { path: '/mobile/studio', label: 'Studio', icon: LayoutDashboard, aliases: ['/mobile/batches', '/mobile/production-costing', '/mobile/studio/products', '/mobile/studio/orders'] },
   { path: '/mobile/raw-materials', label: 'Materials', icon: LibraryBig },
   { path: '/mobile/validation', label: 'Validate', icon: ClipboardCheck },
 ];
