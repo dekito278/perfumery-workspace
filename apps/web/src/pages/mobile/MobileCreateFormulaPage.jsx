@@ -142,7 +142,7 @@ const MobileCreateFormulaPage = () => {
       return;
     }
 
-    const nextItems = [...itemsRef.current, createItem(material)];
+    const nextItems = [createItem(material), ...itemsRef.current];
     itemsRef.current = nextItems;
     setItems(nextItems);
     toast.success('Material added to composition');

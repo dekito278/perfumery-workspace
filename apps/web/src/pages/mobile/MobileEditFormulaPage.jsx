@@ -97,7 +97,7 @@ const MobileEditFormulaPage = () => {
             .slice(0, 9)
             .map((material) => createItem(material))
           : [];
-        const seededItems = wizardSeedItems.length ? [...formatted, ...wizardSeedItems] : formatted;
+        const seededItems = wizardSeedItems.length ? [...wizardSeedItems, ...formatted] : formatted;
         setOriginalItems(formatted);
         setItems(seededItems);
         setSeededCount(wizardSeedItems.length);
@@ -127,7 +127,7 @@ const MobileEditFormulaPage = () => {
       toast.info('Material already in composition');
       return;
     }
-    setItems((current) => [...current, createItem(material)]);
+    setItems((current) => [createItem(material), ...current]);
     toast.success('Material added to composition');
   };
 
