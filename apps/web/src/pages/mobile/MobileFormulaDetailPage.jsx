@@ -12,7 +12,7 @@ import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import PaceAnalysisCard from '@/components/mobile/PaceAnalysisCard.jsx';
-import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
+import { CompactWorkbookPreview } from '@/components/mobile/MobileFormulaComposerWorkspace.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
@@ -192,7 +192,6 @@ const MobileFormulaDetailPage = () => {
                   <div key={item.id || item.item_id} className="grid grid-cols-[1.6fr_62px_62px] gap-2 border-b border-[#f0ede7] px-3 py-2 last:border-b-0">
                     <div className="min-w-0">
                       <div className="truncate text-xs font-bold text-[#1f2937]">{material?.name || item.item_name || item.name || 'Material'}</div>
-                      <div className="truncate text-[10px] font-semibold text-[#6b7280]">{material?.category || item.item_type || 'raw material'}</div>
                     </div>
                     <div className="text-right text-xs font-bold">{formatGramAmount(item.grams ?? item.gram_amount)}</div>
                     <div className="text-right text-xs font-bold">{formatPercent(item.displayPercentage)}</div>
@@ -205,12 +204,10 @@ const MobileFormulaDetailPage = () => {
         ) : null}
         {tab === 'workbook' ? (
           <section className="space-y-3">
-            <FormulaOdourDisplayPanel
+            <CompactWorkbookPreview
               items={items}
               rawMaterialsById={rawMaterialsById}
               referenceLinksMap={itemReferenceLinksMap}
-              className="mobile-odour-display"
-              variant="mobile"
             />
             <PaceAnalysisCard score={formulaMetrics.paceScore} warnings={paceWarnings} recommendations={paceRecommendations} />
             <section className="mobile-card p-4">

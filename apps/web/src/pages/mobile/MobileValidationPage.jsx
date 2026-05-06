@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { NotebookPen, Plus } from 'lucide-react';
+import { ClipboardCheck, NotebookPen, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -10,6 +10,7 @@ import MobileSearchableSelector from '@/components/mobile-ui/MobileSearchableSel
 import MobileFullScreenModal from '@/components/mobile-ui/MobileFullScreenModal.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import ValidationCardMobile from '@/components/mobile/ValidationCardMobile.jsx';
@@ -19,12 +20,26 @@ import { Textarea } from '@/components/ui/textarea.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
-import { getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
+import { getVisibleItems, MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
 const tabs = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'pending', label: 'Action' },
+  { value: 'in_progress', label: 'Logged' },
+  { value: 'completed', label: 'Approved' },
+];
+
+const testTypeOptions = [
+  { value: 'blotter', label: 'Blotter' },
+  { value: 'skin', label: 'Skin' },
+  { value: 'stability', label: 'Stability' },
+  { value: 'revision', label: 'Revision' },
+  { value: 'other', label: 'Other' },
+];
+
+const statusOptions = [
+  { value: 'logged', label: 'Logged' },
+  { value: 'action_needed', label: 'Action' },
+  { value: 'approved', label: 'Approved' },
 ];
 
 const createEmptyLog = (formulaId = 'none') => ({
@@ -38,12 +53,27 @@ const createEmptyLog = (formulaId = 'none') => ({
   tested_at: new Date().toISOString().slice(0, 10),
 });
 
+const StatTile = ({ label, value, tone = 'neutral' }) => {
+  const toneClass = tone === 'amber'
+    ? 'border-amber-200 bg-amber-50 text-amber-800'
+    : tone === 'emerald'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : 'border-[#ece8df] bg-[#f8f7f4] text-[#1f2937]';
+
+  return (
+    <div className={`rounded-xl border p-3 ${toneClass}`}>
+      <div className="text-[10px] font-bold uppercase opacity-70">{label}</div>
+      <div className="mt-1 text-lg font-bold leading-none">{value}</div>
+    </div>
+  );
+};
+
 const MobileValidationPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryFormulaId = searchParams.get('formulaId') || 'none';
   const { getFormulas } = useFormulas();
-  const { getValidationLogs, createValidationLog } = useValidationLogs();
+  const { createValidationLog, deleteValidationLog, getValidationLogs, updateValidationLog } = useValidationLogs();
   const [formulas, setFormulas] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +83,9 @@ const MobileValidationPage = () => {
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [editingLogId, setEditingLogId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [formState, setFormState] = useState(createEmptyLog(queryFormulaId));
 
   const loadWorkspace = async () => {
@@ -70,15 +103,60 @@ const MobileValidationPage = () => {
 
   useEffect(() => { loadWorkspace(); }, []);
   useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [tab]);
+  useEffect(() => {
+    setFormState((current) => (
+      current.formula_id === 'none' || !current.formula_id
+        ? { ...current, formula_id: queryFormulaId }
+        : current
+    ));
+  }, [queryFormulaId]);
 
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
-  const activeLogs = useMemo(() => sortByUpdated(logs).filter((log) => {
+  const sortedLogs = useMemo(
+    () => [...logs].sort((left, right) => {
+      const rightDate = new Date(right.tested_at || right.created || 0).getTime();
+      const leftDate = new Date(left.tested_at || left.created || 0).getTime();
+      return rightDate - leftDate;
+    }),
+    [logs]
+  );
+  const activeLogs = useMemo(() => sortedLogs.filter((log) => {
     if (tab === 'pending') return log.status === 'action_needed';
     if (tab === 'completed') return log.status === 'approved';
     return log.status !== 'action_needed' && log.status !== 'approved';
-  }), [logs, tab]);
+  }), [sortedLogs, tab]);
   const visible = getVisibleItems(activeLogs, visibleCount);
   const selectedFormula = formulasById.get(formState.formula_id);
+  const actionCount = logs.filter((log) => log.status === 'action_needed').length;
+  const approvedCount = logs.filter((log) => log.status === 'approved').length;
+  const loggedCount = Math.max(logs.length - actionCount - approvedCount, 0);
+
+  const resetEditor = () => {
+    setEditingLogId(null);
+    setStep(0);
+    setFormState(createEmptyLog(queryFormulaId));
+  };
+
+  const openNewLog = () => {
+    resetEditor();
+    setFormOpen(true);
+  };
+
+  const handleEditLog = (log) => {
+    setEditingLogId(log.id);
+    setFormState({
+      formula_id: log.formula_id || 'none',
+      revision_label: log.revision_label || '',
+      test_type: log.test_type || 'revision',
+      status: log.status || 'logged',
+      note: log.note || '',
+      next_action: log.next_action || '',
+      evaluator_name: log.evaluator_name || '',
+      tested_at: log.tested_at || new Date().toISOString().slice(0, 10),
+    });
+    setStep(0);
+    setFormOpen(true);
+  };
 
   const handleSave = async () => {
     if (!formState.formula_id || formState.formula_id === 'none') {
@@ -93,11 +171,15 @@ const MobileValidationPage = () => {
     }
     setSaving(true);
     try {
-      await createValidationLog(formState);
-      toast.success(formState.status === 'approved' ? 'Validation completed' : 'Validation saved');
+      if (editingLogId) {
+        await updateValidationLog(editingLogId, formState);
+        toast.success('Validation log updated');
+      } else {
+        await createValidationLog(formState);
+        toast.success(formState.status === 'approved' ? 'Validation completed' : 'Validation saved');
+      }
       setFormOpen(false);
-      setStep(0);
-      setFormState(createEmptyLog(queryFormulaId));
+      resetEditor();
       await loadWorkspace();
     } catch (error) {
       toast.error(error.message || 'Failed to save validation');
@@ -106,46 +188,128 @@ const MobileValidationPage = () => {
     }
   };
 
+  const handleDeleteLog = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteValidationLog(deleteTarget.id);
+      toast.success('Validation log deleted');
+      if (editingLogId === deleteTarget.id) {
+        resetEditor();
+        setFormOpen(false);
+      }
+      setDeleteTarget(null);
+      await loadWorkspace();
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete validation log');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const saveLabel = editingLogId ? 'Update' : 'Save';
+
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Validation - Perfumer Studio</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title="Validation" action={<Button type="button" size="icon" onClick={() => setFormOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
+        <MobileTopBar title="Validation" subtitle="Tests and revision notes" action={<Button type="button" size="icon" onClick={openNewLog} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
+        <section className="mobile-soft-card p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+              <ClipboardCheck className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Validation queue</div>
+              <h2 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{actionCount ? `${actionCount} needs action` : 'No urgent action'}</h2>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <StatTile label="Action" value={actionCount} tone="amber" />
+                <StatTile label="Logged" value={loggedCount} />
+                <StatTile label="Approved" value={approvedCount} tone="emerald" />
+              </div>
+            </div>
+          </div>
+        </section>
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
         {loading ? <MobileLoadingSkeleton count={4} /> : visible.length ? (
           <>
             <div className="space-y-2">
               {visible.map((log) => (
-                <ValidationCardMobile key={log.id} log={log} formula={formulasById.get(log.formula_id)} onOpen={() => log.formula_id && navigate(`/mobile/formulas/${log.formula_id}`)} />
+                <ValidationCardMobile
+                  key={log.id}
+                  log={log}
+                  formula={formulasById.get(log.formula_id)}
+                  onDelete={() => setDeleteTarget(log)}
+                  onEdit={() => handleEditLog(log)}
+                  onOpen={() => log.formula_id && navigate(`/mobile/formulas/${log.formula_id}`)}
+                />
               ))}
             </div>
             <PaginationOrLoadMore visibleCount={visible.length} totalCount={activeLogs.length} onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)} />
           </>
-        ) : <MobileEmptyState icon={NotebookPen} title="No validation items" action="New Validation" onAction={() => setFormOpen(true)} />}
+        ) : <MobileEmptyState icon={NotebookPen} title="No validation items" action="New Validation" onAction={openNewLog} />}
       </main>
       <MobileFullScreenModal
         open={formOpen}
-        title="Validation form"
+        title={editingLogId ? 'Edit validation' : 'Validation form'}
         onClose={() => setFormOpen(false)}
-        footer={<StickyBottomActionBar className="static mt-0"><div className="grid grid-cols-2 gap-2"><Button variant="outline" className="rounded-2xl bg-white" onClick={() => step === 0 ? setFormOpen(false) : setStep((current) => current - 1)}>{step === 0 ? 'Cancel' : 'Back'}</Button><Button className="rounded-2xl" disabled={saving} onClick={() => step === 3 ? handleSave() : setStep((current) => current + 1)}>{step === 3 ? saving ? 'Saving...' : 'Save' : 'Continue'}</Button></div></StickyBottomActionBar>}
+        footer={(
+          <StickyBottomActionBar className="static mt-0">
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="rounded-2xl bg-white" onClick={() => (step === 0 ? setFormOpen(false) : setStep((current) => current - 1))}>{step === 0 ? 'Cancel' : 'Back'}</Button>
+              <Button className="rounded-2xl" disabled={saving} onClick={() => (step === 3 ? handleSave() : setStep((current) => current + 1))}>
+                {step === 3 ? (saving ? 'Saving...' : saveLabel) : 'Continue'}
+              </Button>
+            </div>
+          </StickyBottomActionBar>
+        )}
       >
-        <MobileSegmentedControl options={[{ value: 0, label: 'Formula' }, { value: 1, label: 'Notes' }, { value: 2, label: 'Result' }, { value: 3, label: 'Follow-up' }]} value={step} onChange={setStep} />
+        <MobileSegmentedControl options={[{ value: 0, label: 'Formula' }, { value: 1, label: 'Notes' }, { value: 2, label: 'Test' }, { value: 3, label: 'Result' }]} value={step} onChange={setStep} />
         <div className="mt-4 mobile-card p-4">
           {step === 0 ? (
             <div className="space-y-2">
               <Label>Formula</Label>
               <button type="button" onClick={() => setSelectorOpen(true)} className="mobile-card w-full p-4 text-left text-sm font-bold">{selectedFormula?.name || 'Choose formula'}</button>
+              <div className="space-y-2">
+                <Label>Revision label</Label>
+                <Input value={formState.revision_label} onChange={(event) => setFormState((current) => ({ ...current, revision_label: event.target.value }))} placeholder="v1 blotter, mod 3, final candidate..." className="rounded-2xl" />
+              </div>
             </div>
           ) : null}
-          {step === 1 ? <div className="space-y-2"><Label>Validation notes</Label><Textarea value={formState.note} onChange={(event) => setFormState((current) => ({ ...current, note: event.target.value }))} className="min-h-[180px] rounded-2xl" /></div> : null}
+          {step === 1 ? (
+            <div className="space-y-2">
+              <Label>Validation notes</Label>
+              <Textarea value={formState.note} onChange={(event) => setFormState((current) => ({ ...current, note: event.target.value }))} placeholder="Opening, heart, drydown, projection, stability notes..." className="min-h-[180px] rounded-2xl" />
+            </div>
+          ) : null}
           {step === 2 ? (
             <div className="grid gap-4">
-              <div className="space-y-2"><Label>Revision label</Label><Input value={formState.revision_label} onChange={(event) => setFormState((current) => ({ ...current, revision_label: event.target.value }))} className="rounded-2xl" /></div>
-              <div className="space-y-2"><Label>Test date</Label><Input type="date" value={formState.tested_at} onChange={(event) => setFormState((current) => ({ ...current, tested_at: event.target.value }))} className="rounded-2xl" /></div>
-              <MobileSegmentedControl options={[{ value: 'logged', label: 'Logged' }, { value: 'action_needed', label: 'Action' }, { value: 'approved', label: 'Approved' }]} value={formState.status} onChange={(value) => setFormState((current) => ({ ...current, status: value }))} />
+              <div className="space-y-2">
+                <Label>Test type</Label>
+                <MobileSegmentedControl options={testTypeOptions} value={formState.test_type} onChange={(value) => setFormState((current) => ({ ...current, test_type: value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Test date</Label>
+                <Input type="date" value={formState.tested_at} onChange={(event) => setFormState((current) => ({ ...current, tested_at: event.target.value }))} className="rounded-2xl" />
+              </div>
+              <div className="space-y-2">
+                <Label>Evaluator</Label>
+                <Input value={formState.evaluator_name} onChange={(event) => setFormState((current) => ({ ...current, evaluator_name: event.target.value }))} placeholder="Optional evaluator name" className="rounded-2xl" />
+              </div>
             </div>
           ) : null}
-          {step === 3 ? <div className="space-y-2"><Label>Follow-up action</Label><Textarea value={formState.next_action} onChange={(event) => setFormState((current) => ({ ...current, next_action: event.target.value }))} className="min-h-[180px] rounded-2xl" /></div> : null}
+          {step === 3 ? (
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <MobileSegmentedControl options={statusOptions} value={formState.status} onChange={(value) => setFormState((current) => ({ ...current, status: value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Follow-up action</Label>
+                <Textarea value={formState.next_action} onChange={(event) => setFormState((current) => ({ ...current, next_action: event.target.value }))} placeholder="Reduce top sparkle, add bridge material, re-test skin..." className="min-h-[160px] rounded-2xl" />
+              </div>
+            </div>
+          ) : null}
         </div>
       </MobileFullScreenModal>
       <MobileSearchableSelector
@@ -153,9 +317,19 @@ const MobileValidationPage = () => {
         onOpenChange={setSelectorOpen}
         title="Select formula"
         options={formulas}
-        onSelect={(formula) => setFormState((current) => ({ ...current, formula_id: formula.id }))}
+        onSelect={(formula) => {
+          setFormState((current) => ({ ...current, formula_id: formula.id }));
+          setSelectorOpen(false);
+        }}
         getLabel={(formula) => formula.name}
         getMeta={(formula) => formula.code}
+      />
+      <DeleteConfirmationDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        itemName={deleteTarget ? formulasById.get(deleteTarget.formula_id)?.name || 'Validation log' : ''}
+        onConfirm={handleDeleteLog}
+        loading={deleting}
       />
     </MobileAuthenticatedLayout>
   );

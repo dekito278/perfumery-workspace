@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Calculator, Download, Droplets, FlaskConical, PackageCheck, Save } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, PackageCheck, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
@@ -19,6 +20,8 @@ import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.
 import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
 
 const DEFAULT_TARGET_GRAMS = '100';
+const BATCH_ROW_PAGE_SIZE = 8;
+const targetPresets = ['10', '30', '100', '500'];
 
 const MetricTile = ({ label, value, helper, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
@@ -124,13 +127,15 @@ const buildScaledRows = (items = [], targetGrams = 0, totalFormulaGrams = 0, pri
 
 const MobileBatchesPage = () => {
   const navigate = useNavigate();
+  const { id: requestedBatchFormulaId = '' } = useParams();
   const [searchParams] = useSearchParams();
-  const requestedFormulaId = searchParams.get('formulaId') || '';
+  const requestedFormulaId = requestedBatchFormulaId || searchParams.get('formulaId') || '';
   const [targetGrams, setTargetGrams] = useState(DEFAULT_TARGET_GRAMS);
   const [selectedOnce, setSelectedOnce] = useState(false);
   const [ethanolOnce, setEthanolOnce] = useState(false);
   const [priceDrafts, setPriceDrafts] = useState({});
   const [priceOverrides, setPriceOverrides] = useState(new Map());
+  const [visibleRows, setVisibleRows] = useState(BATCH_ROW_PAGE_SIZE);
   const [savingPriceId, setSavingPriceId] = useState('');
   const {
     bulkComputed,
@@ -138,6 +143,7 @@ const MobileBatchesPage = () => {
     formulaProfile,
     formulas,
     loading,
+    profileLoading,
     retailInputs,
     selectedFormula,
     selectedFormulaId,
@@ -164,6 +170,10 @@ const MobileBatchesPage = () => {
     }
   }, [ethanolOnce, selectedSolventId, setSelectedSolventId, solventOptions]);
 
+  useEffect(() => {
+    setVisibleRows(BATCH_ROW_PAGE_SIZE);
+  }, [selectedFormulaId, targetGrams]);
+
   const selectedSolvent = solventOptions.find((material) => material.id === selectedSolventId) || null;
   const targetValue = Math.max(parseNumberInput(targetGrams), 0);
   const concentration = clampPercentage(parseNumberInput(retailInputs.formulaPercentage));
@@ -176,6 +186,8 @@ const MobileBatchesPage = () => {
   );
 
   const concentrateCost = concentrateRows.reduce((sum, item) => sum + item.cost, 0);
+  const pricedRows = concentrateRows.filter((item) => Number(item.unitPrice || 0) > 0).length;
+  const visibleConcentrateRows = concentrateRows.slice(0, visibleRows);
   const concentrateCostPerGram = targetValue > 0 ? concentrateCost / targetValue : 0;
   const dilutionFormulaGrams = targetValue * formulaRatio;
   const dilutionSolventGrams = Math.max(targetValue - dilutionFormulaGrams, 0);
@@ -244,7 +256,7 @@ const MobileBatchesPage = () => {
     toast.success('Formula PDF exported');
   };
 
-  if (loading) {
+  if (loading || profileLoading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
         <MobileLoadingState eyebrow="Batch" title="Loading batch calculator..." subtitle="Preparing formulas, solvent, and material pricing." />
@@ -333,7 +345,40 @@ const MobileBatchesPage = () => {
                 <FlaskConical className="mr-1 h-4 w-4" />
                 Formula
               </Button>
+              <Button type="button" variant="outline" onClick={() => navigate('/mobile/production-costing')} className="h-11 rounded-2xl bg-white text-xs font-bold">
+                <Factory className="mr-1 h-4 w-4" />
+                Costing
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate(`/mobile/validation?formulaId=${selectedFormulaId}`)} className="h-11 rounded-2xl bg-white text-xs font-bold">
+                <ClipboardCheck className="mr-1 h-4 w-4" />
+                Validate
+              </Button>
             </div>
+
+            <section className="mobile-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-bold text-[#1f2937]">Batch presets</h2>
+                  <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">Tap a common trial or production size.</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">{pricedRows}/{concentrateRows.length} priced</span>
+              </div>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {targetPresets.map((preset) => {
+                  const active = String(targetValue) === preset;
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setTargetGrams(preset)}
+                      className={`h-10 rounded-xl border text-xs font-bold ${active ? 'border-amber-300 bg-amber-100 text-amber-800' : 'border-[#ece8df] bg-white text-[#1f2937]'}`}
+                    >
+                      {preset}g
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
             <section className="mobile-soft-card p-4">
               <div className="flex items-start gap-3">
@@ -375,7 +420,7 @@ const MobileBatchesPage = () => {
                 <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Scaled to {formatGramAmount(targetValue)} full concentrate.</p>
               </div>
               <div className="px-4 py-1">
-                {concentrateRows.length ? concentrateRows.map((item) => (
+                {concentrateRows.length ? visibleConcentrateRows.map((item) => (
                   <CostRow
                     key={item.rowKey}
                     item={item}
@@ -389,6 +434,11 @@ const MobileBatchesPage = () => {
                 )) : (
                   <div className="py-4 text-xs font-semibold text-[#6b7280]">Formula has no costable material rows yet.</div>
                 )}
+                <PaginationOrLoadMore
+                  visibleCount={visibleConcentrateRows.length}
+                  totalCount={concentrateRows.length}
+                  onLoadMore={() => setVisibleRows((current) => current + BATCH_ROW_PAGE_SIZE)}
+                />
               </div>
             </section>
           </>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
-import { Beaker, ClipboardCheck, ClipboardList, LibraryBig, Sparkles } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -25,6 +25,37 @@ import {
   buildMobileFormulaMetrics,
 } from '@/utils/mobileFormulaMetrics.js';
 import { getDisplayName, MOBILE_ACTIVITY_LIMIT, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
+
+const hasGuidanceCoverage = (material) => (
+  Boolean(
+    material?.workbook_code
+    || material?.reference_abc_primary_family
+    || material?.reference_impact !== null && material?.reference_impact !== undefined
+    || material?.reference_life_hours !== null && material?.reference_life_hours !== undefined
+    || material?.ifra_limit !== null && material?.ifra_limit !== undefined
+  )
+);
+
+const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
+  const tones = {
+    amber: 'bg-amber-50 text-amber-700',
+    blue: 'bg-blue-50 text-blue-700',
+    emerald: 'bg-emerald-50 text-emerald-700',
+    rose: 'bg-rose-50 text-rose-700',
+  };
+
+  return (
+    <Link to={to} className="mobile-card flex min-w-0 items-center gap-3.5 p-3.5 text-left">
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${tones[tone] || tones.amber}`}>
+        {Icon ? <Icon className="h-5 w-5" /> : null}
+      </span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate text-sm font-bold text-[#1f2937]">{label}</span>
+        {helper ? <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{helper}</span> : null}
+      </span>
+    </Link>
+  );
+};
 
 const MobileDashboardPage = () => {
   const navigate = useNavigate();
@@ -113,6 +144,8 @@ const MobileDashboardPage = () => {
   const recentBriefs = useMemo(() => sortByUpdated(briefs).slice(0, MOBILE_ACTIVITY_LIMIT), [briefs]);
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
   const actionNeededLogs = useMemo(() => logs.filter((log) => log.status === 'action_needed'), [logs]);
+  const missingGuidanceMaterials = useMemo(() => materials.filter((material) => !hasGuidanceCoverage(material)), [materials]);
+  const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
     ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula updated', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
     ...briefs.map((brief) => ({ id: `brief-${brief.id}`, title: brief.title, meta: 'Brief updated', date: brief.updated || brief.created, path: `/mobile/briefs/${brief.id}` })),
@@ -177,11 +210,27 @@ const MobileDashboardPage = () => {
 
         {loading ? <MobileLoadingSkeleton count={4} /> : (
           <>
-            <section className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 mobile-segment-scroll">
-              <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={activeBriefs.length} />
-              <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={formulas.length} tone="blue" />
-              <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={materials.length} tone="green" />
-              <SummaryMetricCardMobile icon={ClipboardCheck} label="Validations" value={logs.length} tone="rose" />
+            <section className="grid grid-cols-2 gap-3">
+              <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={activeBriefs.length} to="/mobile/briefs" />
+              <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={formulas.length} tone="blue" to="/mobile/formulas" />
+              <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={materials.length} tone="green" to="/mobile/raw-materials" />
+              <SummaryMetricCardMobile icon={ClipboardCheck} label="Validations" value={logs.length} tone="rose" to="/mobile/validation" />
+              <div className="col-span-2">
+                <SummaryMetricCardMobile icon={AlertTriangle} label="Guidance Gaps" value={missingGuidanceMaterials.length} tone="rose" to="/mobile/raw-materials" />
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold">Workflow</h2>
+                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/production-costing')}>Costing</Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <WorkflowTile icon={Beaker} label="Formula" helper="Create or revise" tone="blue" to="/mobile/formulas" />
+                <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
+                <WorkflowTile icon={Calculator} label="Batch" helper="Scale grams" to="/mobile/batches" />
+                <WorkflowTile icon={Factory} label="Costing" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
+              </div>
             </section>
 
             <section className="mobile-card p-4">
@@ -202,6 +251,33 @@ const MobileDashboardPage = () => {
                 ))}
               </div>
             </section>
+
+            {actionNeededLogs.length || guidanceGapPreview.length ? (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold">Needs attention</h2>
+                  <span className="text-xs font-bold text-amber-700">{actionNeededLogs.length + guidanceGapPreview.length} items</span>
+                </div>
+                {actionNeededLogs.slice(0, 2).map((log) => (
+                  <ActivityCardMobile
+                    key={`attention-validation-${log.id}`}
+                    title={formulasById.get(log.formula_id)?.name || 'Validation follow-up'}
+                    meta={`Validation action · ${log.test_type || 'revision'}`}
+                    date={log.tested_at || log.updated || log.created}
+                    onClick={() => navigate('/mobile/validation')}
+                  />
+                ))}
+                {guidanceGapPreview.map((material) => (
+                  <ActivityCardMobile
+                    key={`attention-material-${material.id}`}
+                    title={material.name}
+                    meta="Missing raw material guidance"
+                    date={material.updated || material.created}
+                    onClick={() => navigate(`/mobile/raw-material/${material.id}`)}
+                  />
+                ))}
+              </section>
+            ) : null}
 
             <section className="space-y-3">
               <div className="flex items-center justify-between"><h2 className="text-base font-bold">Draft formulas</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/formulas')}>View all</Button></div>

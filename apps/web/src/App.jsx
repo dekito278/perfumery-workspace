@@ -36,6 +36,7 @@ import MobileCreateFormulaPage from '@/pages/mobile/MobileCreateFormulaPage.jsx'
 import MobileEditFormulaPage from '@/pages/mobile/MobileEditFormulaPage.jsx';
 import MobileFormulaDetailPage from '@/pages/mobile/MobileFormulaDetailPage.jsx';
 import MobileBatchesPage from '@/pages/mobile/MobileBatchesPage.jsx';
+import MobileProductionCostingPage from '@/pages/mobile/MobileProductionCostingPage.jsx';
 import MobileValidationPage from '@/pages/mobile/MobileValidationPage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
@@ -169,6 +170,16 @@ function AppRoutes() {
         <Route path="/mobile/batches" element={
           <ProtectedRoute>
             <MobileBatchesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/batches/:id" element={
+          <ProtectedRoute>
+            <MobileBatchesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/production-costing" element={
+          <ProtectedRoute>
+            <MobileProductionCostingPage />
           </ProtectedRoute>
         } />
         <Route path="/mobile/validation" element={

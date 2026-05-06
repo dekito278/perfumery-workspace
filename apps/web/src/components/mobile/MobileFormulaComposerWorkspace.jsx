@@ -159,7 +159,7 @@ const buildConicGradient = (rows = []) => {
   return segments.length ? `conic-gradient(${segments.join(', ')}, #ece8df ${cursor}% 100%)` : '#ece8df';
 };
 
-const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinksMap }) => {
+export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinksMap }) => {
   const [mode, setMode] = useState('pie');
   const [elapsedHour, setElapsedHour] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -639,7 +639,6 @@ const MobileFormulaComposerWorkspace = ({
                       <div className="flex items-start justify-between gap-2">
                         <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="min-w-0 flex-1 text-left">
                           <h3 className="truncate text-sm font-bold text-[#1f2937]">{item.materialName}</h3>
-                          <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">{item.category}</p>
                         </button>
                         <div className="flex items-center gap-1">
                           {hasSyncIssue ? <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-label="Workbook guidance needs sync" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}

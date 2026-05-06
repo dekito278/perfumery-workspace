@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Link2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Link2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
-import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
+import { Textarea } from '@/components/ui/textarea.jsx';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 import { formatNullable, formatPercentage, formatStatus } from '@/utils/formatting.js';
@@ -33,11 +33,29 @@ const MobileRawMaterialDetailPage = () => {
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
   const [guidanceOpen, setGuidanceOpen] = useState(false);
   const [guidanceState, setGuidanceState] = useState('empty');
   const [guidanceForm, setGuidanceForm] = useState({ url: '', sourceType: 'perfumersworld' });
   const [guidanceSummary, setGuidanceSummary] = useState([]);
   const [deleting, setDeleting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    type: 'material',
+    category: '',
+    unit: 'g',
+    vendor: '',
+    cas_number: '',
+    workbook_code: '',
+    cost_per_unit: '',
+    ifra_limit: '',
+    reference_impact: '',
+    reference_life_hours: '',
+    reference_use_level_typical_percent: '',
+    reference_use_level_max_percent: '',
+    notes: '',
+  });
 
   useEffect(() => {
     let active = true;
@@ -67,6 +85,70 @@ const MobileRawMaterialDetailPage = () => {
     } catch (error) {
       toast.error(error.message || 'Failed to delete material');
       setDeleting(false);
+    }
+  };
+
+  const openEditSheet = () => {
+    if (!material) return;
+    const resolvedValues = getResolvedGuidanceValues(material);
+    setEditForm({
+      name: material.name || '',
+      type: material.type || 'material',
+      category: material.category || '',
+      unit: material.unit || 'g',
+      vendor: material.vendor || '',
+      cas_number: resolvedValues.cas_number || material.cas_number || '',
+      workbook_code: resolvedValues.workbook_code || material.workbook_code || '',
+      cost_per_unit: material.cost_per_unit ?? '',
+      ifra_limit: resolvedValues.ifra_limit ?? material.ifra_limit ?? '',
+      reference_impact: resolvedValues.reference_impact ?? material.reference_impact ?? '',
+      reference_life_hours: resolvedValues.reference_life_hours ?? material.reference_life_hours ?? '',
+      reference_use_level_typical_percent: resolvedValues.reference_use_level_typical_percent ?? material.reference_use_level_typical_percent ?? '',
+      reference_use_level_max_percent: resolvedValues.reference_use_level_max_percent ?? material.reference_use_level_max_percent ?? '',
+      notes: material.notes || '',
+    });
+    setEditOpen(true);
+  };
+
+  const toNullableNumber = (value) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editForm.name.trim()) {
+      toast.error('Material name is required');
+      return;
+    }
+
+    setEditSaving(true);
+    try {
+      const updated = await updateMaterial(material.id, {
+        ...material,
+        name: editForm.name.trim(),
+        type: editForm.type || 'material',
+        category: editForm.category.trim() || null,
+        unit: editForm.unit.trim() || 'g',
+        vendor: editForm.vendor.trim() || null,
+        cas_number: editForm.cas_number.trim() || null,
+        workbook_code: editForm.workbook_code.trim() || null,
+        cost_per_unit: toNullableNumber(editForm.cost_per_unit) || 0,
+        ifra_limit: toNullableNumber(editForm.ifra_limit),
+        reference_impact: toNullableNumber(editForm.reference_impact),
+        reference_life_hours: toNullableNumber(editForm.reference_life_hours),
+        reference_use_level_typical_percent: toNullableNumber(editForm.reference_use_level_typical_percent),
+        reference_use_level_max_percent: toNullableNumber(editForm.reference_use_level_max_percent),
+        notes: editForm.notes.trim() || null,
+      });
+      const [enrichedUpdated] = await enrichMaterialsWithGuidance([updated]);
+      setMaterial(enrichedUpdated || updated);
+      setEditOpen(false);
+      toast.success('Material updated');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update material');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -125,6 +207,14 @@ const MobileRawMaterialDetailPage = () => {
       <Helmet><title>{material.name} - Mobile Material</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={() => navigate('/mobile/raw-materials')} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
+        <section className="mobile-card p-2.5">
+          <div className="grid grid-cols-4 gap-1.5">
+            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={openEditSheet}><Pencil className="h-4 w-4" />Edit</Button>
+            <Button className="h-12 flex-col gap-0.5 rounded-2xl px-1 text-[10px]" onClick={() => navigate(`/mobile/formulas/new?materialIds=${material.id}`)}><Plus className="h-4 w-4" />Formula</Button>
+            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={() => setGuidanceOpen(true)}><Link2 className="h-4 w-4" />Import</Button>
+            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl border-rose-200 bg-rose-50 px-1 text-[10px] text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</Button>
+          </div>
+        </section>
         {sections.map(([title, rows]) => (
           <section key={title} className="mobile-card mobile-compact-card p-3">
             <h2 className="text-sm font-bold">{title}</h2>
@@ -156,14 +246,60 @@ const MobileRawMaterialDetailPage = () => {
           </div>
         </section>
         {material.notes ? <section className="mobile-card mobile-compact-card p-3"><h2 className="text-sm font-bold">Notes</h2><p className="mt-2 whitespace-pre-wrap text-xs text-[#6b7280]">{material.notes}</p></section> : null}
-        <StickyBottomActionBar>
-          <div className="grid grid-cols-2 gap-2">
-            <Button className="rounded-2xl text-xs" onClick={() => navigate(`/mobile/formulas/new?materialIds=${material.id}`)}><Plus className="mr-1 h-4 w-4" />Formula</Button>
-            <Button variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
-          </div>
-        </StickyBottomActionBar>
       </main>
       <DeleteConfirmationDialog open={deleteOpen} onOpenChange={setDeleteOpen} itemName={material.name} onConfirm={handleDelete} loading={deleting} />
+      <MobileBottomSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title="Edit Material"
+        description={material.name}
+        footer={<Button type="button" onClick={handleSaveEdit} disabled={editSaving} className="h-11 w-full rounded-2xl text-xs">{editSaving ? 'Saving material...' : 'Save Changes'}</Button>}
+      >
+        <div className="grid gap-3 pb-2">
+          {[
+            ['name', 'Material name'],
+            ['category', 'Category'],
+            ['vendor', 'Supplier'],
+            ['cas_number', 'CAS number'],
+            ['workbook_code', 'Workbook code'],
+            ['unit', 'Unit'],
+            ['cost_per_unit', 'Unit price'],
+            ['ifra_limit', 'IFRA limit %'],
+            ['reference_impact', 'Impact'],
+            ['reference_life_hours', 'Life hours'],
+            ['reference_use_level_typical_percent', 'Typical use %'],
+            ['reference_use_level_max_percent', 'Max use %'],
+          ].map(([field, label]) => (
+            <div key={field} className="space-y-1">
+              <Label className="text-xs">{label}</Label>
+              <Input
+                value={editForm[field]}
+                onChange={(event) => setEditForm((current) => ({ ...current, [field]: event.target.value }))}
+                className="h-10 rounded-xl bg-white text-xs"
+              />
+            </div>
+          ))}
+          <div className="space-y-1">
+            <Label className="text-xs">Type</Label>
+            <MobileSegmentedControl
+              options={[
+                { value: 'material', label: 'Material' },
+                { value: 'solvent', label: 'Solvent' },
+              ]}
+              value={editForm.type}
+              onChange={(type) => setEditForm((current) => ({ ...current, type }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Notes</Label>
+            <Textarea
+              value={editForm.notes}
+              onChange={(event) => setEditForm((current) => ({ ...current, notes: event.target.value }))}
+              className="min-h-[90px] rounded-xl bg-white text-xs"
+            />
+          </div>
+        </div>
+      </MobileBottomSheet>
       <MobileBottomSheet
         open={guidanceOpen}
         onOpenChange={setGuidanceOpen}

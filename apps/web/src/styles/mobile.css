@@ -1,13 +1,13 @@
 .mobile-app {
-  --mobile-nav-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 18px));
-  --mobile-nav-height: 74px;
-  --mobile-action-gap: 8px;
+  --mobile-nav-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 16px));
+  --mobile-nav-height: 70px;
+  --mobile-action-gap: 10px;
   min-height: 100vh;
   min-height: 100dvh;
   background: #f8f7f4;
   color: #1f2937;
-  font-size: 13px;
-  line-height: 1.32;
+  font-size: 13.5px;
+  line-height: 1.42;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -50,7 +50,7 @@
 .mobile-app-shell {
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 86px);
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px calc(env(safe-area-inset-bottom, 0px) + 92px);
 }
 
 .pwa-standalone,
@@ -69,11 +69,11 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
 }
 
 .mobile-page {
-  max-width: 430px;
+  max-width: 448px;
   margin: 0 auto;
 }
 
@@ -85,7 +85,7 @@
 }
 
 .mobile-page-wide {
-  max-width: 520px;
+  max-width: 540px;
   margin: 0 auto;
 }
 
@@ -93,18 +93,18 @@
   min-width: 0;
   max-width: 100%;
   border: 1px solid rgba(229, 231, 235, 0.92);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 42px -34px rgba(97, 64, 14, 0.45);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 14px 32px -30px rgba(97, 64, 14, 0.34);
 }
 
 .mobile-soft-card {
   min-width: 0;
   max-width: 100%;
   border: 1px solid rgba(245, 158, 11, 0.18);
-  border-radius: 18px;
+  border-radius: 16px;
   background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
-  box-shadow: 0 18px 42px -36px rgba(97, 64, 14, 0.5);
+  box-shadow: 0 14px 32px -30px rgba(97, 64, 14, 0.34);
 }
 
 .mobile-card > *,
@@ -166,13 +166,13 @@
 
 .mobile-app .space-y-4 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-top: calc(0.95rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
 }
 
 .mobile-app .space-y-3 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(0.55rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-top: calc(0.7rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(0.55rem * var(--tw-space-y-reverse));
 }
 
@@ -180,9 +180,9 @@
   position: sticky;
   top: calc(env(safe-area-inset-top, 0px) + 8px);
   z-index: 20;
-  margin-left: -2px;
-  margin-right: -2px;
-  padding: 6px 2px 8px;
+  margin-left: -4px;
+  margin-right: -4px;
+  padding: 8px 4px 10px;
   background: linear-gradient(180deg, rgba(248, 247, 244, 0.98), rgba(248, 247, 244, 0.88));
   backdrop-filter: blur(16px);
 }
@@ -217,9 +217,9 @@
   max-width: 430px;
   margin: 0 auto;
   border: 1px solid rgba(229, 231, 235, 0.92);
-  border-radius: 22px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 20px 50px -24px rgba(31, 41, 55, 0.38);
+  box-shadow: 0 18px 44px -26px rgba(31, 41, 55, 0.34);
   backdrop-filter: blur(18px);
 }
 
@@ -269,11 +269,11 @@
   align-items: center;
 }
 
+.mobile-inline-action,
 .mobile-sticky-action {
-  position: sticky;
-  bottom: calc(var(--mobile-nav-bottom) + var(--mobile-nav-height) + var(--mobile-action-gap));
-  z-index: 40;
-  margin-top: 10px;
+  position: relative;
+  z-index: 10;
+  margin-top: 12px;
 }
 
 .mobile-fixed-action {
@@ -281,7 +281,7 @@
   left: 14px;
   right: 14px;
   bottom: calc(var(--mobile-nav-bottom) + var(--mobile-nav-height) + var(--mobile-action-gap));
-  z-index: 35;
+  z-index: 34;
   max-width: 430px;
   margin: 0 auto;
 }
@@ -308,9 +308,9 @@
 }
 
 .mobile-bottom-sheet-content {
-  max-height: min(84vh, 720px);
-  border-top-left-radius: 22px;
-  border-top-right-radius: 22px;
+  max-height: min(86vh, 720px);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
   background: #fffefa;
 }
 

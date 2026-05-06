@@ -17,7 +17,7 @@ const RawMaterialCardMobile = ({ material, onOpen, onAddToFormula, onOpenGuidanc
   const ready = Boolean(resolved.workbook_code || impact || life || resolved.ifra_limit);
 
   return (
-    <article className="mobile-card mobile-compact-card p-3">
+    <article className="mobile-card mobile-compact-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-bold text-[#1f2937]">{material.name}</h3>
@@ -30,13 +30,13 @@ const RawMaterialCardMobile = ({ material, onOpen, onAddToFormula, onOpenGuidanc
           {ready ? 'Ready' : 'Audit'}
         </MobileStatusBadge>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {tags.map((tag) => (
           <span key={tag} className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold capitalize text-[#6b7280]">{tag}</span>
         ))}
         {resolved.cas_number ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">CAS {resolved.cas_number}</span> : null}
       </div>
-      <div className="mt-2 grid grid-cols-[1fr_1fr_36px] gap-2">
+      <div className="mt-3 grid grid-cols-[1fr_1fr_40px] gap-2">
         <Button type="button" variant="outline" onClick={onOpenGuidance} className="h-9 rounded-xl bg-white text-[11px]">
           <Link2 className="mr-1 h-4 w-4" />
           Guidance
@@ -45,7 +45,7 @@ const RawMaterialCardMobile = ({ material, onOpen, onAddToFormula, onOpenGuidanc
           <Plus className="mr-1 h-4 w-4" />
           Formula
         </Button>
-        <Button type="button" variant="outline" size="icon" onClick={onOpen} className="h-9 w-9 rounded-xl bg-white" aria-label="Open material">
+        <Button type="button" variant="outline" size="icon" onClick={onOpen} className="h-9 w-10 rounded-xl bg-white" aria-label="Open material">
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>

@@ -16,7 +16,7 @@ const MobileBottomNavigation = () => {
   const location = useLocation();
 
   return (
-    <nav className="mobile-bottom-nav grid grid-cols-6 gap-1 p-2" aria-label="Mobile app navigation">
+    <nav className="mobile-bottom-nav grid grid-cols-6 gap-1 p-1.5" aria-label="Mobile app navigation">
       {navItems.map((item) => {
         const Icon = item.icon;
         const active = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
@@ -26,7 +26,7 @@ const MobileBottomNavigation = () => {
             to={item.path}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-[9px] font-bold transition',
+              'flex h-[56px] flex-col items-center justify-center gap-1 rounded-2xl text-[9px] font-bold transition',
               active ? 'bg-amber-50 text-amber-700' : 'text-[#8b949e]'
             )}
           >

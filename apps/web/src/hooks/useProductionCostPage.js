@@ -35,6 +35,7 @@ export const useProductionCostPage = () => {
   const [selectedFormulaId, setSelectedFormulaId] = useState('');
   const [selectedSolventId, setSelectedSolventId] = useState('');
   const [formulaProfile, setFormulaProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [retailInputs, setRetailInputs] = useState(DEFAULT_RETAIL_INPUTS);
   const [bulkInputs, setBulkInputs] = useState(DEFAULT_BULK_INPUTS);
   const [retailScenarios, setRetailScenarios] = useState(createDefaultRetailScenarios);
@@ -158,9 +159,11 @@ export const useProductionCostPage = () => {
     const loadFormulaProfile = async () => {
       if (!selectedFormulaId) {
         setFormulaProfile(null);
+        setProfileLoading(false);
         return;
       }
 
+      setProfileLoading(true);
       try {
         const items = await getFormulaItems(selectedFormulaId);
         const referenceMaps = await buildFormulaItemReferenceMaps(items, rawMaterials);
@@ -191,6 +194,8 @@ export const useProductionCostPage = () => {
       } catch {
         toast.error('Failed to load formula profile');
         setFormulaProfile(null);
+      } finally {
+        setProfileLoading(false);
       }
     };
 
@@ -464,6 +469,7 @@ export const useProductionCostPage = () => {
     handlePrint,
     handlePrintQuotation,
     loading,
+    profileLoading,
     quotationInputs,
     quotationOpen,
     retailChampion,
