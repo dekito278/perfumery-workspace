@@ -5,9 +5,9 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<link rel="apple-touch-icon" href="/icons/icon-192.png" />
-		<meta name="generator" content="Hostinger Horizons" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 		<meta name="theme-color" content="#b7791f" />
+		<meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-title" content="Perfumer" />
@@ -15,21 +15,6 @@
 		<meta name="application-name" content="Perfumer Studio" />
 		<meta name="description" content="Lite mobile workspace for briefs, raw materials, formulas, and validation." />
 		<title>Perfumer Studio</title>
-		<script>
-			window.addEventListener('error', function (event) {
-				var pre = document.createElement('pre');
-				pre.textContent = 'Runtime error: ' + (event.error?.stack || event.message);
-				pre.style.cssText = 'position:fixed;inset:16px;z-index:99999;background:#fff1f2;color:#9f1239;padding:16px;border:1px solid #fecdd3;border-radius:12px;overflow:auto;white-space:pre-wrap;font:12px/1.5 monospace;';
-				document.body.appendChild(pre);
-			});
-
-			window.addEventListener('unhandledrejection', function (event) {
-				var pre = document.createElement('pre');
-				pre.textContent = 'Unhandled promise rejection: ' + (event.reason?.stack || event.reason || 'Unknown error');
-				pre.style.cssText = 'position:fixed;inset:16px;z-index:99999;background:#fff1f2;color:#9f1239;padding:16px;border:1px solid #fecdd3;border-radius:12px;overflow:auto;white-space:pre-wrap;font:12px/1.5 monospace;';
-				document.body.appendChild(pre);
-			});
-		</script>
 	</head>
 	<body>
 		<div id="root"></div>

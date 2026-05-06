@@ -237,7 +237,7 @@ if (window.navigation && window.self !== window.top) {
 const addTransformIndexHtml = {
 	name: 'add-transform-index-html',
 	transformIndexHtml(html) {
-		const tags = [
+		const tags = isDev ? [
 			{
 				tag: 'script',
 				attrs: { type: 'module' },
@@ -268,7 +268,7 @@ const addTransformIndexHtml = {
 				children: configNavigationHandler,
 				injectTo: 'head',
 			},
-		];
+		] : [];
 
 		if (!isDev && process.env.TEMPLATE_BANNER_SCRIPT_URL && process.env.TEMPLATE_REDIRECT_URL) {
 			tags.push(
@@ -315,7 +315,9 @@ export default defineConfig({
 	],
 	server: {
 		port: 3000,
-		cors: true,
+		cors: {
+			origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+		},
 		headers: {
 			'Cross-Origin-Embedder-Policy': 'credentialless',
 		},
@@ -329,6 +331,17 @@ export default defineConfig({
 	},
 	build: {
 		outDir: 'dist',
+		sourcemap: false,
+		minify: 'terser',
+		terserOptions: {
+			compress: {
+				drop_console: true,
+				drop_debugger: true,
+			},
+			format: {
+				comments: false,
+			},
+		},
 		rollupOptions: {
 			external: [
 				'@babel/parser',
