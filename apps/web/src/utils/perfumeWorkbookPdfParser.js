@@ -110,13 +110,13 @@ const parseHeader = (lines) => {
 
 const parseItems = (lines) =>
   lines
-    .map((line) => line.match(/^(\d+)\s+([A-Za-z0-9]{1,4}):\s*(.+?)\s*:\s*([0-9]+(?:\.[0-9]+)?)$/))
+    .map((line) => line.match(/^(\d+)\s+([A-Za-z0-9_-]{1,16}):\s*(.+?)\s*:\s*([0-9]+(?:[.,][0-9]+)?)$/))
     .filter(Boolean)
     .map((match) => ({
       lineNumber: Number.parseInt(match[1], 10),
       workbookCode: match[2],
       materialName: match[3].trim(),
-      grams: Number.parseFloat(match[4]),
+      grams: Number.parseFloat(match[4].replace(',', '.')),
     }));
 
 export const parsePerfumeWorkbookPdf = async (file) => {

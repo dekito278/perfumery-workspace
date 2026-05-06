@@ -19,7 +19,7 @@ const ExportFormulaButton = ({ formula, items }) => {
 
       toast.success('Formula exported successfully');
     } catch (error) {
-      toast.error('Failed to export formula');
+      toast.error(error.message || 'Failed to export formula');
     }
   };
 

@@ -21,6 +21,22 @@ const asText = (value) => {
   return String(value);
 };
 
+const sanitizePdfFilename = (filename) => {
+  const fallback = 'workbook-export.pdf';
+  const safeName = String(filename || fallback)
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '-')
+    .replace(/^[-_.]+|[-_.]+$/g, '');
+
+  if (!safeName) {
+    return fallback;
+  }
+
+  return /\.pdf$/i.test(safeName) ? safeName : `${safeName}.pdf`;
+};
+
 const createDocument = () => new jsPDF({ unit: 'mm', format: 'a4' });
 
 const ensureSpace = (doc, cursorY, requiredHeight = 12) => {
@@ -308,5 +324,5 @@ export const printWorkbookPdf = (config) => {
 
 export const exportWorkbookPdf = (config, filename) => {
   const doc = buildWorkbookPdf(config);
-  doc.save(filename);
+  doc.save(sanitizePdfFilename(filename));
 };

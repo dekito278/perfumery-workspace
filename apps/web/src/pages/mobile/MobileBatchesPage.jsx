@@ -234,27 +234,31 @@ const MobileBatchesPage = () => {
       return;
     }
 
-    const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
-    exportWorkbookPdf(
-      buildFormulaWorkbookExportConfig({
-        formula: {
-          ...selectedFormula,
-          name: `${selectedFormula.name} - ${formatGramAmount(targetValue)} batch`,
-        },
-        items: concentrateRows.map((item) => ({
-          ...item,
-          gram_amount: item.batchGram,
-          grams: item.batchGram,
-          ingredient_cost: item.cost,
-          percentage: item.percentage,
-          unit_price: item.unitPrice,
-        })),
-        totalGrams: targetValue,
-        totalCost: concentrateCost,
-      }),
-      `${selectedFormula.code || 'formula'}_${formatQuantity(targetValue, 0)}g_batch.pdf`
-    );
-    toast.success('Formula PDF exported');
+    try {
+      const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+      exportWorkbookPdf(
+        buildFormulaWorkbookExportConfig({
+          formula: {
+            ...selectedFormula,
+            name: `${selectedFormula.name} - ${formatGramAmount(targetValue)} batch`,
+          },
+          items: concentrateRows.map((item) => ({
+            ...item,
+            gram_amount: item.batchGram,
+            grams: item.batchGram,
+            ingredient_cost: item.cost,
+            percentage: item.percentage,
+            unit_price: item.unitPrice,
+          })),
+          totalGrams: targetValue,
+          totalCost: concentrateCost,
+        }),
+        `${selectedFormula.code || 'formula'}_${formatQuantity(targetValue, 0)}g_batch.pdf`
+      );
+      toast.success('Formula PDF exported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to export formula PDF');
+    }
   };
 
   if (loading || profileLoading || (selectedFormulaId && !formulaProfile)) {

@@ -201,14 +201,23 @@ export const useFormulaDetailPage = (id) => {
   }), [items.length, totalCost, totalReferenceAlertCount, workbookSimulation]);
 
   const handlePrint = async () => {
-    const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
-    printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
+    try {
+      const { printWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+      printWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }));
+    } catch (error) {
+      toast.error(error.message || 'Failed to open formula PDF');
+    }
   };
 
   const handleExportPdf = async () => {
-    const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
-    const filename = `${formula?.code || 'formula'}_${String(formula?.name || 'formula').replace(/\s+/g, '_')}.pdf`;
-    exportWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }), filename);
+    try {
+      const { exportWorkbookPdf } = await import('@/utils/workbookPdfExport.js');
+      const filename = `${formula?.code || 'formula'}_${String(formula?.name || 'formula').replace(/\s+/g, '_')}.pdf`;
+      exportWorkbookPdf(buildFormulaWorkbookExportConfig({ formula, items, totalGrams, totalCost }), filename);
+      toast.success('Formula PDF exported');
+    } catch (error) {
+      toast.error(error.message || 'Failed to export formula PDF');
+    }
   };
 
   const handleCreatePacedRevision = async (recommendations = [], priorityMode = 'balance') => {

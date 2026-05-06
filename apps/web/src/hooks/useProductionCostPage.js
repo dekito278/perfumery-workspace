@@ -419,8 +419,12 @@ export const useProductionCostPage = () => {
       return;
     }
 
-    const { exportWorkbookPdf, printWorkbookPdf } = await importWorkbookActions();
-    await action({ exportWorkbookPdf, printWorkbookPdf, exportConfig });
+    try {
+      const { exportWorkbookPdf, printWorkbookPdf } = await importWorkbookActions();
+      await action({ exportWorkbookPdf, printWorkbookPdf, exportConfig });
+    } catch (error) {
+      toast.error(error.message || 'Failed to prepare PDF');
+    }
   };
 
   const handleExportPdf = async () => withWorkbookExport(
@@ -428,6 +432,7 @@ export const useProductionCostPage = () => {
     'Choose a formula first',
     async ({ exportWorkbookPdf, exportConfig }) => {
       exportWorkbookPdf(exportConfig, `${selectedFormula.code || 'production_cost'}_costing.pdf`);
+      toast.success('Production costing PDF exported');
     }
   );
 
@@ -444,6 +449,7 @@ export const useProductionCostPage = () => {
     'Choose a formula and quote first',
     async ({ exportWorkbookPdf, exportConfig }) => {
       exportWorkbookPdf(exportConfig, `${selectedFormula.code || 'quotation'}_brand_quotation.pdf`);
+      toast.success('Quotation PDF exported');
     }
   );
 
