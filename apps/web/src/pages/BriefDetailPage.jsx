@@ -50,6 +50,7 @@ const BriefDetailPage = () => {
     handleRemoveStageItem,
     handleStageItemState,
     handleWizardBack,
+    handleFinishWizard,
     handleWizardNext,
     handleWizardNextStage,
     handleWizardOptionSelect,
@@ -274,11 +275,15 @@ const BriefDetailPage = () => {
         activeStage={activeStage}
         activeTargetProfile={activeTargetProfile}
         busyStage={busyStage}
+        compareCandidates={compareCandidates}
         currentQuestion={currentQuestion}
         currentQuestions={currentQuestions}
+        currentGeneratedRows={currentGeneratedRows}
         draftAnswers={draftAnswers}
         handleGenerateRecommendations={handleGenerateRecommendations}
+        handleStageItemState={handleStageItemState}
         handleWizardBack={handleWizardBack}
+        handleFinishWizard={handleFinishWizard}
         handleWizardNext={handleWizardNext}
         handleWizardNextStage={handleWizardNextStage}
         handleWizardOptionSelect={handleWizardOptionSelect}

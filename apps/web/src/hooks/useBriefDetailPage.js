@@ -350,6 +350,29 @@ export const useBriefDetailPage = (id) => {
     await openStageWizard(nextStage);
   };
 
+  const handleFinishWizard = async () => {
+    setWizardOpen(false);
+
+    if (project?.id && !projectUnavailable && allStagesReady && !formula) {
+      try {
+        const nextProject = await updateBriefProject(project.id, {
+          status: 'ready_for_formula',
+          current_stage: 'review',
+        });
+        setProject(nextProject);
+      } catch (error) {
+        toast.error(error.message || 'Failed to finish wizard');
+        return;
+      }
+    }
+
+    toast.success(
+      allStagesReady
+        ? 'Wizard selesai. Top, middle, dan base siap diteruskan ke formula.'
+        : `${getStageLabel(activeStage)} stage tersimpan. Pilih material untuk tiap stage supaya bisa lanjut formula.`
+    );
+  };
+
   const refreshProjectState = async (projectId, fallbackProject = null) => {
     const [nextProject, nextStageMap, nextStageItemsMap] = await Promise.all([
       getBriefProjectByBriefId(id),
@@ -680,6 +703,7 @@ export const useBriefDetailPage = (id) => {
     handleRemoveStageItem,
     handleStageItemState,
     handleWizardBack,
+    handleFinishWizard,
     handleWizardNext,
     handleWizardNextStage,
     handleWizardOptionSelect,

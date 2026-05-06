@@ -24,6 +24,7 @@ const BriefWizardDialog = ({
   draftAnswers,
   handleGenerateRecommendations,
   handleStageItemState,
+  handleFinishWizard,
   handleWizardBack,
   handleWizardNext,
   handleWizardNextStage,
@@ -31,7 +32,11 @@ const BriefWizardDialog = ({
   setWizardOpen,
   wizardOpen,
   wizardQuestionIndex,
-}) => (
+}) => {
+  const canFinishWizard = activeStage === 'base' && currentGeneratedRows.length > 0;
+  const finishWizard = handleFinishWizard || (() => setWizardOpen(false));
+
+  return (
   <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
     <DialogContent className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border bg-background p-0 sm:max-h-[90vh] sm:rounded-[28px]">
       <DialogHeader className="shrink-0 border-b px-4 py-4 sm:px-6 sm:py-5">
@@ -218,15 +223,24 @@ const BriefWizardDialog = ({
             >
               Next stage
             </Button>
-            <Button className="rounded-xl gap-2" onClick={handleGenerateRecommendations} disabled={busyStage === activeStage}>
+            <Button
+              className="rounded-xl gap-2"
+              onClick={canFinishWizard ? finishWizard : handleGenerateRecommendations}
+              disabled={busyStage === activeStage}
+            >
               <Sparkles className="h-4 w-4" />
-              {busyStage === activeStage ? 'Generating...' : 'Generate materials'}
+              {busyStage === activeStage
+                ? 'Generating...'
+                : canFinishWizard
+                  ? 'Finish wizard'
+                  : 'Generate materials'}
             </Button>
           </div>
         </div>
       </DialogFooter>
     </DialogContent>
   </Dialog>
-);
+  );
+};
 
 export default BriefWizardDialog;
