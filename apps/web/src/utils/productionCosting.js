@@ -1,3 +1,5 @@
+import { parseLocalizedNumber } from '@/utils/numberInputs.js';
+
 export const DEFAULT_RETAIL_INPUTS = {
   totalBatchVolume: '1000',
   formulaPercentage: '20',
@@ -63,8 +65,7 @@ export const PACKAGING_FIELDS = [
 const LOCAL_STORAGE_PREFIX = 'production-costing-v4';
 
 export const parseNumberInput = (value) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return parseLocalizedNumber(value);
 };
 
 export const clampPercentage = (value, max = 100) => Math.min(Math.max(value, 0), max);

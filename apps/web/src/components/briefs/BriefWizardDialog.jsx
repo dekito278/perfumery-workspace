@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Check, Sparkles, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,10 +17,13 @@ const BriefWizardDialog = ({
   activeStage,
   activeTargetProfile,
   busyStage,
+  compareCandidates = [],
   currentQuestion,
   currentQuestions,
+  currentGeneratedRows = [],
   draftAnswers,
   handleGenerateRecommendations,
+  handleStageItemState,
   handleWizardBack,
   handleWizardNext,
   handleWizardNextStage,
@@ -30,8 +33,8 @@ const BriefWizardDialog = ({
   wizardQuestionIndex,
 }) => (
   <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
-    <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col overflow-hidden rounded-[28px] border bg-background p-0">
-      <DialogHeader className="border-b px-6 py-5">
+    <DialogContent className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border bg-background p-0 sm:max-h-[90vh] sm:rounded-[28px]">
+      <DialogHeader className="shrink-0 border-b px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className={`capitalize ${stageColorMap[activeStage]}`}>
@@ -56,16 +59,16 @@ const BriefWizardDialog = ({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="flex-1 overflow-hidden px-6 py-5">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
         {currentQuestion ? (
-          <div className="grid h-full min-h-0 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="grid min-h-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-5">
             <div className="flex min-h-0 flex-col gap-4">
-              <div className="flex min-h-0 flex-col rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(249,246,239,0.98)_100%)] p-4">
+              <div className="flex min-h-0 flex-col rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(249,246,239,0.98)_100%)] p-3 sm:p-4">
                 <div className="text-sm font-semibold">{currentQuestion.title}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
                   {currentQuestion.description || `Pilihan ini akan menentukan rekomendasi material untuk stage ${getStageLabel(activeStage).toLowerCase()}.`}
                 </div>
-                <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+                <div className="mt-4 min-h-0 pr-1 lg:max-h-[48vh] lg:overflow-y-auto">
                   <div className="grid gap-2">
                     {currentQuestion.options.map((option) => {
                       const selected = draftAnswers[activeStage]?.[currentQuestion.id] === option.value;
@@ -97,7 +100,7 @@ const BriefWizardDialog = ({
               </div>
             </div>
 
-            <div className="min-h-0 overflow-y-auto pr-1">
+            <div className="min-h-0 pr-1 lg:max-h-[58vh] lg:overflow-y-auto">
               <div className="space-y-4">
                 <div className="rounded-2xl border bg-background/70 p-4">
                   <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current target</div>
@@ -125,6 +128,62 @@ const BriefWizardDialog = ({
                     )}
                   </div>
                 </div>
+
+                <div className="rounded-2xl border bg-background/70 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Generated materials</div>
+                      <div className="mt-1 text-sm font-semibold">
+                        {compareCandidates.length
+                          ? `${compareCandidates.length} candidates ready`
+                          : currentGeneratedRows.length
+                            ? `${currentGeneratedRows.length} selected`
+                            : 'Belum ada material yang di-generate.'}
+                      </div>
+                    </div>
+                    {busyStage === activeStage ? (
+                      <Badge variant="secondary" className="rounded-full">Generating</Badge>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 grid gap-2">
+                    {compareCandidates.length ? compareCandidates.slice(0, 6).map((item) => (
+                      <article key={item.id || item.raw_material_id} className="rounded-2xl border bg-card p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold">
+                              {item.expand?.raw_material_id?.name || item.raw_material_name || 'Raw material'}
+                            </div>
+                            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                              {item.recommendation_reason || 'Cocok dengan arah stage ini.'}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="shrink-0 rounded-full">
+                            {Number(item.fit_score || 0).toFixed(2)}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <Button type="button" size="sm" className="h-9 rounded-xl text-xs" onClick={() => handleStageItemState?.(item, 'selected')}>
+                            <Check className="mr-1 h-4 w-4" />
+                            Add
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl bg-white text-xs" onClick={() => handleStageItemState?.(item, 'rejected')}>
+                            <X className="mr-1 h-4 w-4" />
+                            Skip
+                          </Button>
+                        </div>
+                      </article>
+                    )) : currentGeneratedRows.length ? currentGeneratedRows.slice(0, 6).map((item) => (
+                      <div key={item.id || item.raw_material_id} className="rounded-2xl border bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+                        {item.expand?.raw_material_id?.name || item.raw_material_name || 'Selected material'}
+                      </div>
+                    )) : (
+                      <div className="rounded-2xl border border-dashed bg-muted/20 p-3 text-sm text-muted-foreground">
+                        Pilih tone stage, lalu tekan Generate materials. Hasilnya akan muncul di sini tanpa menutup wizard.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -135,7 +194,7 @@ const BriefWizardDialog = ({
         )}
       </div>
 
-      <DialogFooter className="border-t px-6 py-5">
+      <DialogFooter className="shrink-0 border-t px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" className="rounded-xl" onClick={handleWizardBack} disabled={wizardQuestionIndex === 0}>

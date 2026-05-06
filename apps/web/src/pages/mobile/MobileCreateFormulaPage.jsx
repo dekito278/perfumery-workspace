@@ -20,6 +20,7 @@ import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
+import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 
 const createItem = (material, gramAmount = '1') => ({
   row_key: `${material.id}-${Date.now()}`,
@@ -39,10 +40,10 @@ const buildItemsForSubmit = (itemsWithInsights) => itemsWithInsights.map((item) 
   item_type: item.item_type,
   item_id: item.item_id,
   percentage: item.formulaPercent,
-  grams: Number(item.gram_amount || item.gram || 0),
-  dilution_percent: item.dilution_type === 'neat' ? null : Number(item.concentration_percent || item.dilution_percent || 0),
+  grams: parseLocalizedNumber(item.gram_amount ?? item.gram),
+  dilution_percent: item.dilution_type === 'neat' ? null : parseLocalizedNumber(item.concentration_percent || item.dilution_percent),
   dilution_solvent_id: item.dilution_solvent_id || null,
-  concentrate_amount: item.dilution_type === 'neat' ? null : Number(((Number(item.gram_amount || 0) * Number(item.concentration_percent || item.dilution_percent || 0)) / 100).toFixed(3)),
+  concentrate_amount: item.dilution_type === 'neat' ? null : Number(((parseLocalizedNumber(item.gram_amount) * parseLocalizedNumber(item.concentration_percent || item.dilution_percent)) / 100).toFixed(3)),
 }));
 
 const buildFormulaCode = (source = '') => {
@@ -120,7 +121,7 @@ const MobileCreateFormulaPage = () => {
   }, [briefId, getBriefs, seedMaterialIds]);
 
   const rawMaterialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
-  const totalGrams = useMemo(() => items.reduce((sum, item) => sum + Number(item.gram_amount || 0), 0), [items]);
+  const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount), 0), [items]);
   const itemsWithInsights = useMemo(() => enrichCompositionItems(items, totalGrams, rawMaterialsById), [items, rawMaterialsById, totalGrams]);
 
   const updateItem = (rowKey, field, value) => setItems((current) => current.map((item) => item.row_key === rowKey ? { ...item, [field]: value } : item));

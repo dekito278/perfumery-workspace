@@ -290,10 +290,13 @@ const MobileBriefDetailPage = () => {
         activeStage={activeStage}
         activeTargetProfile={activeTargetProfile}
         busyStage={busyStage}
+        compareCandidates={compareCandidates}
         currentQuestion={currentQuestion}
         currentQuestions={currentQuestions}
+        currentGeneratedRows={currentGeneratedRows}
         draftAnswers={draftAnswers}
         handleGenerateRecommendations={handleGenerateRecommendations}
+        handleStageItemState={handleStageItemState}
         handleWizardBack={handleWizardBack}
         handleWizardNext={handleWizardNext}
         handleWizardNextStage={handleWizardNextStage}

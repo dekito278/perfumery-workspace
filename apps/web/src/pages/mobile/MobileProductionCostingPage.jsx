@@ -15,6 +15,7 @@ import { useProductionCostPage } from '@/hooks/useProductionCostPage.js';
 import { PACKAGING_FIELDS } from '@/utils/productionCosting.js';
 import { formatCurrency, formatQuantity } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
+import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 
 const modeOptions = [
   { value: 'retail', label: 'Bottle' },
@@ -55,11 +56,9 @@ const FieldInput = ({ label, onChange, suffix, value }) => (
     <div className="relative">
       <Input
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))}
         inputMode="decimal"
-        type="number"
-        min="0"
-        step="0.01"
+        type="text"
         className="h-10 min-w-0 rounded-xl bg-white pr-10 text-xs font-bold"
       />
       {suffix ? <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#9ca3af]">{suffix}</span> : null}

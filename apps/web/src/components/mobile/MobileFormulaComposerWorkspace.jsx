@@ -37,6 +37,7 @@ import {
   summarizeImportedGuidance,
 } from '@/utils/mobileGuidanceImport.js';
 import { getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
+import { normalizeLocalizedDecimalInput, parseLocalizedNumber } from '@/utils/numberInputs.js';
 
 const COMPOSER_PAGE_SIZE = 5;
 const FINDER_RESULT_SIZE = 3;
@@ -419,7 +420,7 @@ const MobileFormulaComposerWorkspace = ({
   }, [dilutionItem, guidanceOpen, onOverlayOpenChange]);
 
   const materialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
-  const totalGrams = useMemo(() => items.reduce((sum, item) => sum + Number(item.gram_amount || item.grams || 0), 0), [items]);
+  const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount ?? item.grams), 0), [items]);
   const composition = useMemo(() => enrichCompositionItems(items, totalGrams, materialsById), [items, materialsById, totalGrams]);
   const insight = useMemo(() => buildFormulaInsight(composition, guidanceSources), [composition, guidanceSources]);
   const workbookItems = useMemo(() => composition.map((item) => ({
@@ -468,14 +469,14 @@ const MobileFormulaComposerWorkspace = ({
   };
 
   const setFormulaPercent = (item, value) => {
-    const target = Number(value || 0);
-    const otherTotal = Math.max(totalGrams - Number(item.gram_amount || 0), 0);
+    const target = parseLocalizedNumber(value);
+    const otherTotal = Math.max(totalGrams - parseLocalizedNumber(item.gram_amount), 0);
     const nextGram = target >= 100 ? otherTotal : (otherTotal * target) / Math.max(100 - target, 1);
     onUpdateItem(item.row_key, 'gram_amount', Number.isFinite(nextGram) ? nextGram.toFixed(3) : '0');
   };
 
   const openDilutionSheet = (item) => {
-    const concentration = Number(item.concentration_percent || item.dilution_percent || item.concentrationPercent || 100);
+    const concentration = parseLocalizedNumber(item.concentration_percent || item.dilution_percent || item.concentrationPercent, 100);
     const preset = concentration >= 99.99
       ? 'neat'
       : concentration === 10 && (item.dilutionMedium || item.dilution_medium || 'DPG') === 'Alcohol'
@@ -505,8 +506,8 @@ const MobileFormulaComposerWorkspace = ({
 
   const applyDilution = () => {
     if (!dilutionItem) return;
-    const concentration = dilutionDraft.preset === 'neat' ? '100' : dilutionDraft.concentration;
-    const isNeat = Number(concentration || 0) >= 99.99;
+    const concentration = dilutionDraft.preset === 'neat' ? '100' : normalizeLocalizedDecimalInput(dilutionDraft.concentration, { autoDecimalAfterLeadingZero: true });
+    const isNeat = parseLocalizedNumber(concentration) >= 99.99;
     onUpdateItem(dilutionItem.row_key, 'dilution_type', isNeat ? 'neat' : dilutionDraft.preset === 'custom' ? 'custom' : 'solution');
     onUpdateItem(dilutionItem.row_key, 'dilution_medium', dilutionDraft.medium);
     onUpdateItem(dilutionItem.row_key, 'concentration_percent', isNeat ? '100' : concentration);
@@ -544,8 +545,8 @@ const MobileFormulaComposerWorkspace = ({
     }
   };
 
-  const dilutionPreviewConcentration = Number(dilutionDraft.preset === 'neat' ? 100 : dilutionDraft.concentration || 0);
-  const dilutionPreviewGram = Number(dilutionItem?.gram || dilutionItem?.gram_amount || 0);
+  const dilutionPreviewConcentration = parseLocalizedNumber(dilutionDraft.preset === 'neat' ? 100 : dilutionDraft.concentration);
+  const dilutionPreviewGram = parseLocalizedNumber(dilutionItem?.gram ?? dilutionItem?.gram_amount);
   const dilutionPreviewActive = (dilutionPreviewGram * dilutionPreviewConcentration) / 100;
   const visibleComposition = getVisibleItems(composition, compositionVisible);
   const visibleWarnings = [
@@ -646,8 +647,8 @@ const MobileFormulaComposerWorkspace = ({
                         </div>
                       </div>
                       <div className="mt-2 grid grid-cols-[1fr_1fr_1fr_auto] gap-1.5">
-                        <Input value={item.gram_amount} inputMode="decimal" onChange={(event) => onUpdateItem(item.row_key, 'gram_amount', event.target.value)} className="h-8 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold" aria-label={`${item.materialName} gram`} />
-                        <Input value={compactValue(item.formulaPercent)} inputMode="decimal" onChange={(event) => setFormulaPercent(item, event.target.value)} className="h-8 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold" aria-label={`${item.materialName} formula percent`} />
+                        <Input value={item.gram_amount} inputMode="decimal" onChange={(event) => onUpdateItem(item.row_key, 'gram_amount', normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} className="h-8 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold" aria-label={`${item.materialName} gram`} />
+                        <Input value={compactValue(item.formulaPercent)} inputMode="decimal" onChange={(event) => setFormulaPercent(item, normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} className="h-8 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold" aria-label={`${item.materialName} formula percent`} />
                         <div className="rounded-xl bg-[#f8f7f4] px-2 py-1 text-[10px] font-bold text-[#6b7280]">
                           Actual<br /><span className="text-[11px] text-[#1f2937]">{formatPercent(item.actualActivePercent)}</span>
                         </div>
@@ -855,7 +856,7 @@ const MobileFormulaComposerWorkspace = ({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Concentration %</Label>
-                <Input value={dilutionDraft.concentration} inputMode="decimal" onChange={(event) => setDilutionDraft((current) => ({ ...current, concentration: event.target.value }))} className="h-10 rounded-xl bg-white text-xs" />
+                <Input value={dilutionDraft.concentration} inputMode="decimal" onChange={(event) => setDilutionDraft((current) => ({ ...current, concentration: normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }) }))} className="h-10 rounded-xl bg-white text-xs" />
               </div>
             </>
           ) : null}

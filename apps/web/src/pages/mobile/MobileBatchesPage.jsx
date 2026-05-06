@@ -18,6 +18,7 @@ import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } fr
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.js';
 import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
+import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
@@ -51,9 +52,9 @@ const CostRow = ({ helper, item, label, onDraftChange, onSave, saving, value }) 
     <div className="mt-2 grid grid-cols-[1fr_44px] gap-2">
       <Input
         value={item.priceDraft}
-        onChange={(event) => onDraftChange(item.item_id, event.target.value)}
+        onChange={(event) => onDraftChange(item.item_id, normalizeLocalizedDecimalInput(event.target.value))}
         inputMode="decimal"
-        type="number"
+        type="text"
         min="0"
         step="0.01"
         className="h-9 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold"
@@ -77,10 +78,10 @@ const CostRow = ({ helper, item, label, onDraftChange, onSave, saving, value }) 
 const SolventPriceEditor = ({ material, priceDraft, onDraftChange, onSave, saving }) => (
   <div className="grid grid-cols-[1fr_44px] gap-2">
     <Input
-      value={priceDraft}
-      onChange={(event) => onDraftChange(material?.id || '', event.target.value)}
+    value={priceDraft}
+      onChange={(event) => onDraftChange(material?.id || '', normalizeLocalizedDecimalInput(event.target.value))}
       inputMode="decimal"
-      type="number"
+      type="text"
       min="0"
       step="0.01"
       className="h-10 rounded-xl bg-white text-xs font-bold"
@@ -300,11 +301,11 @@ const MobileBatchesPage = () => {
                 <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
                   <div className="min-w-0 space-y-2">
                     <Label className="text-xs font-bold text-[#6b7280]">Target gram</Label>
-                    <Input value={targetGrams} onChange={(event) => setTargetGrams(event.target.value)} inputMode="decimal" type="number" min="0" step="0.01" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
+                    <Input value={targetGrams} onChange={(event) => setTargetGrams(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
                   </div>
                   <div className="min-w-0 space-y-2">
                     <Label className="text-xs font-bold text-[#6b7280]">Dilution %</Label>
-                    <Input value={retailInputs.formulaPercentage} onChange={(event) => updateRetailInput('formulaPercentage', event.target.value)} inputMode="decimal" type="number" min="0" max="100" step="0.01" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
+                    <Input value={retailInputs.formulaPercentage} onChange={(event) => updateRetailInput('formulaPercentage', normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 min-w-0 rounded-2xl bg-white text-xs font-bold" />
                   </div>
                 </div>
 
