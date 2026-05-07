@@ -51,6 +51,7 @@ const writeOrders = (orders) => {
 };
 
 const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}`;
+const isUuid = (value = '') => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
 
 const normalizeOrder = (order) => {
   const items = Array.isArray(order.items) ? order.items : [];
@@ -229,7 +230,7 @@ export const createOrder = async (orderData) => {
   const payload = buildOrderPayload({
     ...orderData,
     customerCode: customer?.customerCode || orderData.customerCode || '',
-    customerId: customer?.id || '',
+    customerId: isUuid(customer?.id) ? customer.id : '',
   });
 
   try {

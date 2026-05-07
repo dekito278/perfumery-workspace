@@ -82,10 +82,12 @@ export const buildOrderNotes = ({
   deliveryAddress = '',
   deliveryArea = '',
   paymentMethod = 'Manual confirmation',
+  shippingSummary = '',
   notes = '',
 }) => [
   deliveryAddress ? `Address: ${deliveryAddress}` : '',
   deliveryArea ? `Area: ${deliveryArea}` : '',
+  shippingSummary ? `Shipping: ${shippingSummary}` : '',
   paymentMethod ? `Payment: ${paymentMethod}` : '',
   notes ? `Notes: ${notes}` : '',
 ].filter(Boolean).join('\n');
@@ -97,10 +99,13 @@ export const buildCheckoutDraft = ({
   deliveryAddress = '',
   deliveryArea = '',
   paymentMethod = 'Manual confirmation',
+  shippingSummary = '',
+  shippingFee = 0,
   notes,
   items,
 }) => {
   const { quantity, subtotal } = getCartSummary(items);
+  const total = subtotal + Number(shippingFee || 0);
   const lines = items.map((item) => `- ${item.name} (${item.size}) x${item.quantity}: ${item.price}`);
   return [
     'Solivagant order draft',
@@ -110,6 +115,7 @@ export const buildCheckoutDraft = ({
     `Contact: ${contact || '-'}`,
     `Address: ${deliveryAddress || '-'}`,
     `Area: ${deliveryArea || '-'}`,
+    `Shipping: ${shippingSummary || '-'}`,
     `Payment: ${paymentMethod || 'Manual confirmation'}`,
     '',
     'Items:',
@@ -117,6 +123,8 @@ export const buildCheckoutDraft = ({
     '',
     `Total items: ${quantity}`,
     `Subtotal: Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}`,
+    shippingFee ? `Shipping fee: Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee))}` : '',
+    `Total: Rp ${new Intl.NumberFormat('id-ID').format(total)}`,
     notes ? `Notes: ${notes}` : 'Notes: -',
   ].filter((line) => line !== '').join('\n');
 };
