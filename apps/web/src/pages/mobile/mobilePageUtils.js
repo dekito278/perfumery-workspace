@@ -22,4 +22,5 @@ export const getVisibleItems = (items, visibleCount) => items.slice(0, visibleCo
 export const getDisplayName = (currentUser) =>
   currentUser?.user_metadata?.name?.trim()
   || currentUser?.email?.split('@')[0]
-  || 'Dekito';
+  || 'Solivagant';
+

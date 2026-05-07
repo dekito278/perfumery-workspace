@@ -11,11 +11,11 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 
 const NoteColumn = ({ title, notes }) => (
-  <div className="rounded-2xl bg-[#f8f7f4] p-3">
+  <div className="rounded-2xl bg-[#f7f8f2] p-3">
     <div className="text-[10px] font-bold uppercase text-[#8b949e]">{title}</div>
     <div className="mt-2 space-y-1">
       {notes.map((note) => (
-        <div key={note} className="text-xs font-bold text-[#1f2937]">{note}</div>
+        <div key={note} className="text-xs font-bold text-[#0b130c]">{note}</div>
       ))}
     </div>
   </div>
@@ -45,7 +45,7 @@ const MobileProductDetailPage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>{product.name} - Dekito Perfumery</title>
+        <title>{product.name} - Solivagant</title>
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
       </Helmet>
       <main className="mobile-page space-y-4">
@@ -54,7 +54,7 @@ const MobileProductDetailPage = () => {
           subtitle={product.category}
           eyebrow="Product"
           onBack={() => navigate('/mobile/catalog')}
-          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-amber-700" /></button>}
+          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-[#263d27]" /></button>}
         />
 
         <ProductVisual product={product} className="aspect-square rounded-[24px]" bottleClassName="left-10 top-10 h-44 w-24 rounded-[2rem]" />
@@ -62,18 +62,18 @@ const MobileProductDetailPage = () => {
         <section className="mobile-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-2xl font-bold leading-tight text-[#1f2937]">{product.name}</h2>
+              <h2 className="text-2xl font-bold leading-tight text-[#0b130c]">{product.name}</h2>
               <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">{product.description}</p>
             </div>
             <div className="shrink-0 text-right">
-              <div className="text-base font-bold text-[#1f2937]">{product.price}</div>
+              <div className="text-base font-bold text-[#0b130c]">{product.price}</div>
               <div className="text-[10px] font-bold uppercase text-[#8b949e]">{product.size}</div>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <div className="rounded-2xl bg-amber-50 p-3 text-center">
-              <div className="text-sm font-bold text-amber-800">{product.stock}</div>
-              <div className="text-[10px] font-bold uppercase text-amber-700">Stock</div>
+            <div className="rounded-2xl bg-[#eef2e8] p-3 text-center">
+              <div className="text-sm font-bold text-[#263d27]">{product.stock}</div>
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">Stock</div>
             </div>
             <div className="rounded-2xl bg-blue-50 p-3 text-center">
               <div className="text-sm font-bold text-blue-800">{product.intensity}</div>
@@ -88,8 +88,8 @@ const MobileProductDetailPage = () => {
 
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-amber-700" />
-            <h2 className="text-base font-bold text-[#1f2937]">Scent notes</h2>
+            <Sparkles className="h-4 w-4 text-[#263d27]" />
+            <h2 className="text-base font-bold text-[#0b130c]">Scent notes</h2>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <NoteColumn title="Top" notes={product.topNotes} />
@@ -99,10 +99,10 @@ const MobileProductDetailPage = () => {
         </section>
 
         <section className="mobile-card p-4">
-          <h2 className="text-base font-bold text-[#1f2937]">Available sizes</h2>
+          <h2 className="text-base font-bold text-[#0b130c]">Available sizes</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {product.variants.map((variant) => (
-              <button key={variant} type="button" className="h-11 rounded-2xl border border-[#e5e7eb] bg-white text-xs font-bold text-[#1f2937]">
+              <button key={variant} type="button" className="h-11 rounded-2xl border border-[#e5e7eb] bg-white text-xs font-bold text-[#0b130c]">
                 {variant}
               </button>
             ))}
@@ -134,9 +134,9 @@ const MobileProductDetailPage = () => {
           </Button>
         </div>
 
-        <Link to="/mobile/catalog" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#1f2937]">
+        <Link to="/mobile/catalog" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#0b130c]">
           Back to catalog
-          <ShoppingBag className="h-4 w-4 text-amber-700" />
+          <ShoppingBag className="h-4 w-4 text-[#263d27]" />
         </Link>
       </main>
     </MobileCommerceLayout>

@@ -75,26 +75,26 @@ const MobileCatalogPage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>Catalog - Dekito Perfumery</title>
-        <meta name="description" content="Browse Dekito Perfumery products by category, price, and scent profile." />
+        <title>Catalog - Solivagant</title>
+        <meta name="description" content="Browse Solivagant products by category, price, and scent profile." />
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Catalog"
           subtitle={`${filteredProducts.length} products`}
           eyebrow="Shop"
-          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-amber-700" /></button>}
+          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-[#263d27]" /></button>}
         />
 
         <section className="mobile-card p-2">
-          <label className="flex h-12 items-center gap-2 rounded-2xl bg-[#f8f7f4] px-3">
+          <label className="flex h-12 items-center gap-2 rounded-2xl bg-[#f7f8f2] px-3">
             <Search className="h-4 w-4 text-[#8b949e]" />
             <input
               type="search"
               value={query}
               onChange={(event) => updateFilters({ query: event.target.value })}
               placeholder="Search by notes, mood, product"
-              className="min-h-0 flex-1 bg-transparent text-sm font-semibold text-[#1f2937] outline-none placeholder:text-[#9ca3af]"
+              className="min-h-0 flex-1 bg-transparent text-sm font-semibold text-[#0b130c] outline-none placeholder:text-[#9ca3af]"
             />
           </label>
         </section>
@@ -102,7 +102,7 @@ const MobileCatalogPage = () => {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Shop type</h2>
-            <span className="text-xs font-bold text-amber-700">Regular / limited</span>
+            <span className="text-xs font-bold text-[#263d27]">Regular / limited</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
@@ -113,7 +113,7 @@ const MobileCatalogPage = () => {
                 className={cn(
                   'min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-bold',
                   segment === item.filter
-                    ? 'border-amber-300 bg-amber-50 text-amber-800'
+                    ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
                 )}
               >
@@ -137,7 +137,7 @@ const MobileCatalogPage = () => {
                 className={cn(
                   'h-10 shrink-0 rounded-2xl border px-4 text-xs font-bold',
                   category === item
-                    ? 'border-amber-300 bg-amber-50 text-amber-800'
+                    ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
                 )}
               >
@@ -161,7 +161,7 @@ const MobileCatalogPage = () => {
                 className={cn(
                   'h-10 rounded-2xl border text-xs font-bold',
                   sort === option.value
-                    ? 'border-[#1f2937] bg-[#1f2937] text-white'
+                    ? 'border-[#263d27] bg-[#263d27] text-white'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
                 )}
               >
@@ -178,11 +178,11 @@ const MobileCatalogPage = () => {
                 <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} />
                 <div className="mt-2">
                   <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
+                    <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>
                     <p className="mt-1 text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="text-xs font-bold text-[#1f2937]">{product.price}</div>
+                    <div className="text-xs font-bold text-[#0b130c]">{product.price}</div>
                     <div className="text-[10px] font-bold text-[#8b949e]">{product.stock} left</div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -198,7 +198,7 @@ const MobileCatalogPage = () => {
           ))}
           {!filteredProducts.length ? (
             <div className="mobile-card col-span-2 p-5 text-center">
-              <h3 className="text-base font-bold text-[#1f2937]">No products found</h3>
+              <h3 className="text-base font-bold text-[#0b130c]">No products found</h3>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">Try another category or note keyword.</p>
               <Button className="mt-4 rounded-2xl" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })}>
                 Reset filters
@@ -207,9 +207,9 @@ const MobileCatalogPage = () => {
           ) : null}
         </section>
 
-        <Link to="/mobile/dashboard" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#1f2937]">
+        <Link to="/mobile/dashboard" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#0b130c]">
           Back to storefront
-          <ShoppingBag className="h-4 w-4 text-amber-700" />
+          <ShoppingBag className="h-4 w-4 text-[#263d27]" />
         </Link>
       </main>
     </MobileCommerceLayout>

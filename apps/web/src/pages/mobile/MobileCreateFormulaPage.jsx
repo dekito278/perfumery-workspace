@@ -185,7 +185,7 @@ const MobileCreateFormulaPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>New Mobile Formula - Perfumer Studio</title></Helmet>
+      <Helmet><title>New Mobile Formula - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />
         {loadingData ? <MobileLoadingState eyebrow="Formula composer" title="Loading composer..." subtitle="Preparing material guidance." className="min-h-[calc(100dvh-260px)]" /> : (
@@ -285,3 +285,4 @@ const MobileCreateFormulaPage = () => {
 };
 
 export default MobileCreateFormulaPage;
+

@@ -40,7 +40,7 @@ const CategoriesPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Categories - Perfumer Studio</title>
+        <title>Categories - Solivagant Studio</title>
         <meta name="description" content="Reference the Perfumer's Workbook A-Z material classification system." />
       </Helmet>
       <div className="page-container">
@@ -111,3 +111,4 @@ const CategoriesPage = () => {
 };
 
 export default CategoriesPage;
+

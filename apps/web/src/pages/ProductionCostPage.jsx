@@ -54,7 +54,7 @@ const ProductionCostPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Production Costing - Perfumer Studio</title>
+        <title>Production Costing - Solivagant Studio</title>
         <meta
           name="description"
           content="Calculate retail bottle COGS and bulk brand pricing from formula concentrate, solvent, packaging, overhead, and manual markup."
@@ -160,3 +160,4 @@ const ProductionCostPage = () => {
 };
 
 export default ProductionCostPage;
+

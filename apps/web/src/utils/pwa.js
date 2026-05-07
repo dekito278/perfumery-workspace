@@ -23,7 +23,8 @@ export const registerServiceWorker = () => {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
-      console.warn('Perfumer Studio service worker registration failed:', error);
+      console.warn('Solivagant Studio service worker registration failed:', error);
     });
   });
 };
+

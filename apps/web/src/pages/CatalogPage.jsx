@@ -40,23 +40,25 @@ const CatalogPage = () => {
   return (
     <>
       <Helmet>
-        <title>Catalog - Dekito Perfumery</title>
-        <meta name="description" content="Browse Dekito Perfumery catalog by scent family, price, and profile." />
+        <title>Catalog - Solivagant</title>
+        <meta name="description" content="Browse Solivagant catalog by scent family, price, and profile." />
       </Helmet>
-      <main className="min-h-screen bg-[#fbfaf7] text-[#1f2937]">
-        <section className="border-b border-stone-200 bg-white/80">
+      <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
+        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="text-sm font-bold uppercase text-amber-700">Dekito Perfumery</Link>
+            <Link to="/home" className="inline-flex items-center">
+              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-11 w-32 rounded-xl object-contain" />
+            </Link>
             <div className="flex items-center gap-2">
-              <Link to="/cart" className="grid h-10 w-10 place-items-center rounded-2xl border bg-white" aria-label="Open cart"><ShoppingBag className="h-4 w-4" /></Link>
-              <Link to="/home" className="rounded-2xl border bg-white px-4 py-2 text-sm font-bold">Home</Link>
+              <Link to="/cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/8" aria-label="Open cart"><ShoppingBag className="h-4 w-4" /></Link>
+              <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Home</Link>
             </div>
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="text-xs font-bold uppercase text-amber-700">Shop</div>
+              <div className="text-xs font-bold uppercase text-[#263d27]">Shop</div>
               <h1 className="mt-1 text-4xl font-bold">Perfume catalog</h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-muted-foreground">
                 Browse by scent family, notes, price, or mood.
@@ -69,21 +71,21 @@ const CatalogPage = () => {
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
-              <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', segment === item.filter ? 'border-[#1f2937] bg-[#1f2937] text-white' : 'bg-white text-muted-foreground')}>
+              <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
                 {item.name}
               </button>
             ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             {['All', ...categories.map((item) => item.name)].map((item) => (
-              <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', category === item ? 'border-amber-300 bg-amber-50 text-amber-800' : 'bg-white text-muted-foreground')}>
+              <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', category === item ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]' : 'bg-white text-muted-foreground')}>
                 {item}
               </button>
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {catalogSortOptions.map((option) => (
-              <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-9 rounded-2xl border px-3 text-xs font-bold', sort === option.value ? 'border-[#1f2937] bg-[#1f2937] text-white' : 'bg-white text-muted-foreground')}>
+              <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-9 rounded-2xl border px-3 text-xs font-bold', sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
                 {option.label}
               </button>
             ))}
@@ -103,7 +105,7 @@ const CatalogPage = () => {
                       <div className="text-xs font-bold text-muted-foreground">{product.stock} left</div>
                     </div>
                   </div>
-                  <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1f2937] px-4 text-sm font-bold text-white">
+                    <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-white">
                     View product
                     <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -113,7 +115,7 @@ const CatalogPage = () => {
           </div>
           {!products.length ? (
             <div className="mt-8 rounded-2xl border bg-white p-8 text-center">
-              <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />
+              <ShoppingBag className="mx-auto h-8 w-8 text-[#263d27]" />
               <h2 className="mt-3 text-xl font-bold">No products found</h2>
               <p className="mt-1 text-sm font-medium text-muted-foreground">Try another category or search keyword.</p>
             </div>

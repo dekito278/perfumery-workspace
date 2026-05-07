@@ -39,13 +39,14 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Login - Perfumer Studio</title>
-        <meta name="description" content="Sign in to your Perfumer Studio account to manage briefs, materials, formulas, and validation work." />
+        <title>Login - Solivagant Studio</title>
+        <meta name="description" content="Sign in to your Solivagant Studio account to manage briefs, materials, formulas, and validation work." />
       </Helmet>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
-        <Card className="w-full max-w-md shadow-lg">
+      <div className="flex min-h-screen items-center justify-center bg-[#050705] p-4">
+        <Card className="w-full max-w-md border-white/10 bg-[#f7f8f2] shadow-2xl shadow-black/40">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Welcome back, Dekito</CardTitle>
+            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mb-5 h-16 w-auto rounded-2xl object-contain" />
+            <CardTitle className="text-2xl font-bold">Welcome back, Solivagant</CardTitle>
             <CardDescription>Masuk dan lanjut racik hari ini.</CardDescription>
           </CardHeader>
           <CardContent>

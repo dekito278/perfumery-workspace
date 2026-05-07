@@ -38,14 +38,14 @@ const MobileLoginPage = () => {
   return (
     <div className="mobile-app min-h-screen px-4 py-6">
       <Helmet>
-        <title>Mobile Login - Perfumer Studio</title>
+        <title>Mobile Login - Solivagant Studio</title>
       </Helmet>
       <div className="mobile-page flex min-h-[calc(100vh-48px)] flex-col justify-center">
         <div className="mobile-soft-card p-5">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <Beaker className="h-6 w-6" />
           </div>
-          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Perfumer Studio</h1>
+          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Solivagant Studio</h1>
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
             <div className="space-y-2">
@@ -67,3 +67,4 @@ const MobileLoginPage = () => {
 };
 
 export default MobileLoginPage;
+

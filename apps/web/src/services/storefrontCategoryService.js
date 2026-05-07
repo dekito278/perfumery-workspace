@@ -4,12 +4,10 @@ export const STOREFRONT_CATEGORY_STORAGE_KEY = 'dekito.storefront.categories.v1'
 export const STOREFRONT_CATEGORY_UPDATED_EVENT = 'dekito:storefront-categories-updated';
 
 const ACCENT_CLASSES = [
-  'bg-sky-50 text-sky-700 border-sky-100',
-  'bg-rose-50 text-rose-700 border-rose-100',
-  'bg-stone-100 text-stone-700 border-stone-200',
-  'bg-amber-50 text-amber-800 border-amber-100',
-  'bg-emerald-50 text-emerald-700 border-emerald-100',
-  'bg-violet-50 text-violet-700 border-violet-100',
+  'bg-[#eef2e8] text-[#263d27] border-[#263d27]/15',
+  'bg-[#f4f2ec] text-[#263d27] border-[#263d27]/15',
+  'bg-[#e7ebe1] text-[#263d27] border-[#263d27]/15',
+  'bg-[#f7f8f2] text-[#263d27] border-[#263d27]/15',
 ];
 
 const makeLocalId = () => `local-category-${Date.now()}`;

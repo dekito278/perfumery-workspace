@@ -152,8 +152,7 @@ const writeStoredProducts = (products) => {
 };
 
 export const getCatalogProducts = () => {
-  const baseProducts = featuredProducts.map((product) => ({ ...product, source: 'seed' }));
-  return [...baseProducts, ...readStoredProducts()];
+  return readStoredProducts();
 };
 
 export const getLocalCatalogProducts = () => getCatalogProducts();
@@ -177,9 +176,8 @@ export const getEditableProducts = async () => {
 };
 
 export const getCatalogProductsAsync = async () => {
-  const baseProducts = featuredProducts.map((product) => ({ ...product, source: 'seed' }));
   const editableProducts = await getEditableProducts();
-  return [...baseProducts, ...editableProducts];
+  return editableProducts;
 };
 
 const saveLocalCustomProduct = (input) => {

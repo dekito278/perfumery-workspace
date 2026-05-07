@@ -26,8 +26,8 @@ const OrdersPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Orders - Dekito Studio</title>
-        <meta name="description" content="Manage storefront orders for Dekito Perfumery." />
+        <title>Orders - Solivagant Studio</title>
+        <meta name="description" content="Manage storefront orders for Solivagant." />
       </Helmet>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="dashboard-hero">
@@ -110,3 +110,4 @@ const OrdersPage = () => {
 };
 
 export default OrdersPage;
+

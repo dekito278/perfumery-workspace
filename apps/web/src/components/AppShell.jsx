@@ -50,7 +50,7 @@ const AppShell = ({ children }) => {
   const displayName =
     currentUser?.user_metadata?.name?.trim()
     || currentUser?.email?.split('@')[0]
-    || 'Dekito';
+    || 'Solivagant';
 
   const handleLogout = () => {
     logout();
@@ -171,11 +171,11 @@ const AppShell = ({ children }) => {
             <div className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>
               <Link to="/studio" className="app-brand">
               <span className="app-brand-icon">
-                <Beaker className="w-5 h-5" />
+                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
               </span>
               {!desktopSidebarCollapsed && (
                 <span>
-                  <span className="app-brand-title">Perfumer Studio</span>
+                  <span className="app-brand-title">Solivagant Studio</span>
                   <span className="app-brand-subtitle">Formulation workspace</span>
                 </span>
               )}
@@ -226,14 +226,14 @@ const AppShell = ({ children }) => {
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[86vw] max-w-sm border-r-0 bg-[#f8efe1] p-0">
+                <SheetContent side="left" className="w-[86vw] max-w-sm border-r-0 bg-[#eef2e8] p-0">
                   <div className="flex h-full flex-col p-5">
                     <Link to="/studio" className="app-brand" onClick={() => setMobileMenuOpen(false)}>
                       <span className="app-brand-icon">
-                        <Beaker className="w-5 h-5" />
+                        <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
                       </span>
                       <span>
-                        <span className="app-brand-title">Perfumer Studio</span>
+                        <span className="app-brand-title">Solivagant Studio</span>
                         <span className="app-brand-subtitle">Formulation workspace</span>
                       </span>
                     </Link>
@@ -257,10 +257,10 @@ const AppShell = ({ children }) => {
 
               <Link to="/studio" className="min-w-0 flex items-center gap-2 lg:hidden">
                 <span className="app-brand-icon h-10 w-10">
-                  <Beaker className="w-5 h-5" />
+                  <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold leading-none">Perfumer Studio</span>
+                  <span className="block truncate text-sm font-semibold leading-none">Solivagant Studio</span>
                   <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Halo, {displayName}</span>
                 </span>
               </Link>

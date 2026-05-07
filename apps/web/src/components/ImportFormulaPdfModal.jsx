@@ -468,7 +468,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
                       label="By"
                       value={formulaAuthor}
                       onChange={(event) => setFormulaAuthor(event.target.value)}
-                      placeholder="e.g. Dekito"
+                    placeholder="e.g. Solivagant"
                     />
                   </div>
 

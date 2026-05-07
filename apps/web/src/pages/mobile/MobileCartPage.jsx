@@ -82,7 +82,7 @@ const MobileCartPage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>Cart - Dekito Perfumery</title>
+        <title>Cart - Solivagant</title>
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
@@ -191,3 +191,4 @@ const MobileCartPage = () => {
 };
 
 export default MobileCartPage;
+

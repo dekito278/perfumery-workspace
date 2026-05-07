@@ -32,7 +32,7 @@ const OptionButton = ({ active, children, onClick }) => (
     className={cn(
       'min-h-[48px] rounded-2xl border px-3 py-2 text-left text-xs font-bold leading-snug transition',
       active
-        ? 'border-amber-300 bg-amber-50 text-amber-800'
+        ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
         : 'border-[#e5e7eb] bg-white text-[#6b7280]'
     )}
   >
@@ -72,7 +72,7 @@ const MobileBespokePage = () => {
           onChange={(event) => updateField('scentDescription', event.target.value)}
           placeholder="Contoh: woody clean, sedikit vanilla, tidak terlalu manis..."
           rows={5}
-          className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+          className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-[#263d27]"
         />
       ),
       isComplete: () => form.scentDescription.trim().length > 3,
@@ -145,20 +145,20 @@ const MobileBespokePage = () => {
     {
       key: 'contact',
       title: 'Kontak customer',
-      description: 'Supaya tim Dekito bisa follow-up request.',
+      description: 'Supaya tim Solivagant bisa follow-up request.',
       render: () => (
         <div className="grid gap-2">
           <input
             value={form.customerName}
             onChange={(event) => updateField('customerName', event.target.value)}
             placeholder="Customer name"
-            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
           />
           <input
             value={form.contact}
             onChange={(event) => updateField('contact', event.target.value)}
             placeholder="WhatsApp or email"
-            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
           />
         </div>
       ),
@@ -214,7 +214,7 @@ const MobileBespokePage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>Bespoke Perfume - Dekito Perfumery</title>
+        <title>Bespoke Perfume - Solivagant</title>
         <meta name="description" content="Create a custom perfume request with aroma, bottle size, cap design, exotic materials, and payment preference." />
       </Helmet>
       <main className="mobile-page space-y-4">
@@ -223,25 +223,25 @@ const MobileBespokePage = () => {
           subtitle={`${completion}% complete`}
           eyebrow="Bespoke"
           onBack={() => navigate('/mobile/dashboard')}
-          action={<WandSparkles className="h-5 w-5 text-amber-700" />}
+          action={<WandSparkles className="h-5 w-5 text-[#263d27]" />}
         />
 
         <section className="mobile-soft-card p-4">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-amber-700">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
             <Sparkles className="h-3.5 w-3.5" />
             Custom brief
           </div>
-          <h1 className="mt-3 text-2xl font-bold leading-tight text-[#1f2937]">Buat custom perfume dari cerita dan preferensi aroma.</h1>
+          <h1 className="mt-3 text-2xl font-bold leading-tight text-[#0b130c]">Buat custom perfume dari cerita dan preferensi aroma.</h1>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
-            Isi aroma, ukuran, budget, dan kontak agar tim Dekito bisa menyiapkan rekomendasi yang pas.
+            Isi aroma, ukuran, budget, dan kontak agar tim Solivagant bisa menyiapkan rekomendasi yang pas.
           </p>
           {referenceProduct ? (
-            <div className="mt-3 rounded-2xl bg-white p-3 text-xs font-bold text-[#1f2937]">
-              Reference scent: <span className="text-amber-700">{referenceProduct.name}</span>
+            <div className="mt-3 rounded-2xl bg-white p-3 text-xs font-bold text-[#0b130c]">
+              Reference scent: <span className="text-[#263d27]">{referenceProduct.name}</span>
             </div>
           ) : null}
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
-            <div className="h-full rounded-full bg-amber-500" style={{ width: `${completion}%` }} />
+            <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${completion}%` }} />
           </div>
           <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setWizardOpen(true)}>
             Start custom wizard
@@ -250,12 +250,12 @@ const MobileBespokePage = () => {
         </section>
 
         <section className="mobile-card p-4">
-          <h2 className="text-base font-bold text-[#1f2937]">Current brief</h2>
+          <h2 className="text-base font-bold text-[#0b130c]">Current brief</h2>
           <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
-            <p><strong className="text-[#1f2937]">Aroma:</strong> {form.scentDescription || '-'}</p>
-            <p><strong className="text-[#1f2937]">Bottle:</strong> {form.size} / {form.capDesign}</p>
-            <p><strong className="text-[#1f2937]">Material:</strong> {form.exoticMaterial}</p>
-            <p><strong className="text-[#1f2937]">Payment rail:</strong> {selectedPayment?.label}</p>
+            <p><strong className="text-[#0b130c]">Aroma:</strong> {form.scentDescription || '-'}</p>
+            <p><strong className="text-[#0b130c]">Bottle:</strong> {form.size} / {form.capDesign}</p>
+            <p><strong className="text-[#0b130c]">Material:</strong> {form.exoticMaterial}</p>
+            <p><strong className="text-[#0b130c]">Payment rail:</strong> {selectedPayment?.label}</p>
           </div>
         </section>
 
@@ -265,7 +265,7 @@ const MobileBespokePage = () => {
               <MessageSquareHeart className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-[#1f2937]">After-sample feedback</h2>
+              <h2 className="text-base font-bold text-[#0b130c]">After-sample feedback</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                 Setelah sample dicoba, feedback bisa dipakai untuk revisi aroma atau final bottle.
               </p>
@@ -273,8 +273,8 @@ const MobileBespokePage = () => {
           </div>
           <div className="mt-3 grid gap-2">
             {feedbackFlowSteps.map((item, index) => (
-              <div key={item.title} className="rounded-2xl bg-[#fbfaf7] p-3 text-xs font-semibold text-[#6b7280]">
-                <span className="font-bold text-[#1f2937]">{index + 1}. {item.title}</span>
+              <div key={item.title} className="rounded-2xl bg-[#f7f8f2] p-3 text-xs font-semibold text-[#6b7280]">
+                <span className="font-bold text-[#0b130c]">{index + 1}. {item.title}</span>
                 <span className="mt-1 block">{item.description}</span>
               </div>
             ))}
@@ -288,14 +288,14 @@ const MobileBespokePage = () => {
                 <CheckCircle2 className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-base font-bold text-[#1f2937]">Request summary</h2>
+                <h2 className="text-base font-bold text-[#0b130c]">Request summary</h2>
                 <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
-                  <p><strong className="text-[#1f2937]">Customer:</strong> {submittedRequest.customerName}</p>
-                  <p><strong className="text-[#1f2937]">Contact:</strong> {submittedRequest.contact}</p>
-                  <p><strong className="text-[#1f2937]">Aroma:</strong> {submittedRequest.scentDescription}</p>
-                  <p><strong className="text-[#1f2937]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.capDesign}</p>
-                  <p><strong className="text-[#1f2937]">Material:</strong> {submittedRequest.exoticMaterial}</p>
-                  <p><strong className="text-[#1f2937]">Payment:</strong> {selectedPayment?.label}</p>
+                  <p><strong className="text-[#0b130c]">Customer:</strong> {submittedRequest.customerName}</p>
+                  <p><strong className="text-[#0b130c]">Contact:</strong> {submittedRequest.contact}</p>
+                  <p><strong className="text-[#0b130c]">Aroma:</strong> {submittedRequest.scentDescription}</p>
+                  <p><strong className="text-[#0b130c]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.capDesign}</p>
+                  <p><strong className="text-[#0b130c]">Material:</strong> {submittedRequest.exoticMaterial}</p>
+                  <p><strong className="text-[#0b130c]">Payment:</strong> {selectedPayment?.label}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>
@@ -320,14 +320,14 @@ const MobileBespokePage = () => {
         ) : null}
 
         <Sheet open={wizardOpen} onOpenChange={setWizardOpen}>
-          <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#fbfaf7] p-4">
+          <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#f7f8f2] p-4">
             <SheetHeader className="pr-8 text-left">
               <SheetTitle>{activeStep.title}</SheetTitle>
               <SheetDescription>Step {step + 1} of {steps.length}. {activeStep.description}</SheetDescription>
             </SheetHeader>
             <div className="mt-4">
               <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
-                <div className="h-full rounded-full bg-amber-500" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+                <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
               </div>
               {activeStep.render()}
               <div className="mt-5 grid grid-cols-2 gap-2">

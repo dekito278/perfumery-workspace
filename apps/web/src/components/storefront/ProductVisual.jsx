@@ -1,5 +1,4 @@
 import React from 'react';
-import { ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
 
 const ProductVisual = ({
@@ -9,9 +8,11 @@ const ProductVisual = ({
   label = true,
 }) => {
   const hasImage = Boolean(product?.imageUrl);
+  const fallbackClass = 'bg-[radial-gradient(circle_at_72%_14%,rgba(238,242,232,0.18),transparent_32%),linear-gradient(135deg,#050705_0%,#132016_52%,#263d27_100%)]';
+  void bottleClassName;
 
   return (
-    <div className={cn(`relative overflow-hidden rounded-2xl bg-gradient-to-br ${product?.visual || 'from-amber-100 via-white to-stone-200'}`, className)}>
+    <div className={cn('relative overflow-hidden rounded-2xl', hasImage ? 'bg-[#050705]' : fallbackClass, className)}>
       {hasImage ? (
         <img
           src={product.imageUrl}
@@ -21,22 +22,25 @@ const ProductVisual = ({
         />
       ) : (
         <>
-          <div className={cn('absolute left-6 top-6 h-32 w-16 rounded-[1.5rem] border border-white/70 bg-white/45 shadow-2xl backdrop-blur-sm', bottleClassName)}>
-            <div className="mx-auto mt-3 h-4 w-8 rounded-full bg-white/70" />
-            <div className="mx-auto mt-7 h-14 w-10 rounded-2xl border border-white/60 bg-white/30" />
+          <div className="absolute inset-0 flex items-center justify-center p-8">
+            <img
+              src="/brand/solivagant-logo.png"
+              alt={product?.name ? `${product.name} by Solivagant` : 'Solivagant'}
+              className="max-h-28 w-full max-w-[72%] object-contain opacity-95"
+              loading="lazy"
+            />
           </div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.65),transparent_30%)]" />
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-2xl bg-white/75 px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280] shadow-sm backdrop-blur">
-            <ImageIcon className="h-3.5 w-3.5" />
-            Visual mockup
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(238,242,232,0.12),transparent_38%)]" />
+          <div className="absolute bottom-4 left-4 rounded-2xl bg-white/10 px-3 py-2 text-[10px] font-bold uppercase text-[#eef2e8] shadow-sm backdrop-blur">
+            Solivagant
           </div>
         </>
       )}
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/30 to-transparent" />
-      {label ? (
-        <div className="absolute bottom-3 right-3 rounded-2xl bg-white/86 px-3 py-2 text-right shadow-sm backdrop-blur">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">{product?.category}</div>
-          <div className="text-xs font-bold text-[#1f2937]">{product?.size}</div>
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
+      {label && product ? (
+        <div className="absolute bottom-3 right-3 rounded-2xl bg-white/12 px-3 py-2 text-right text-[#eef2e8] shadow-sm backdrop-blur">
+          <div className="text-[10px] font-bold uppercase text-[#b7c6b1]">{product?.category}</div>
+          <div className="text-xs font-bold">{product?.size}</div>
         </div>
       ) : null}
     </div>

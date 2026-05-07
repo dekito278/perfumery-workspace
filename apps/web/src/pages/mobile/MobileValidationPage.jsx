@@ -211,7 +211,7 @@ const MobileValidationPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Validation - Perfumer Studio</title></Helmet>
+      <Helmet><title>Mobile Validation - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title="Validation" subtitle="Tests and revision notes" action={<Button type="button" size="icon" onClick={openNewLog} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
         <section className="mobile-soft-card p-4">
@@ -336,3 +336,4 @@ const MobileValidationPage = () => {
 };
 
 export default MobileValidationPage;
+

@@ -284,7 +284,7 @@ const MobileRawMaterialsPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Materials - Perfumer Studio</title></Helmet>
+      <Helmet><title>Mobile Materials - Solivagant Studio</title></Helmet>
         <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Materials"
@@ -382,3 +382,4 @@ const MobileRawMaterialsPage = () => {
 };
 
 export default MobileRawMaterialsPage;
+

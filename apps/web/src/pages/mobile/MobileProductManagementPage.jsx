@@ -131,7 +131,7 @@ const MobileProductManagementPage = () => {
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet>
-        <title>Products - Dekito Studio</title>
+        <title>Products - Solivagant Studio</title>
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Products" subtitle={`${products.length} catalog items`} eyebrow="Studio admin" action={<PackagePlus className="h-5 w-5 text-amber-700" />} />
@@ -243,3 +243,4 @@ const MobileProductManagementPage = () => {
 };
 
 export default MobileProductManagementPage;
+

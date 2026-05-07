@@ -15,7 +15,7 @@ const ProductDetailPage = () => {
 
   if (!product && products.loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#fbfaf7] text-sm font-bold text-muted-foreground">
+      <main className="grid min-h-screen place-items-center bg-[#f7f8f2] text-sm font-bold text-muted-foreground">
         Loading product...
       </main>
     );
@@ -28,23 +28,23 @@ const ProductDetailPage = () => {
   return (
     <>
       <Helmet>
-        <title>{product.name} - Dekito Perfumery</title>
+        <title>{product.name} - Solivagant</title>
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
       </Helmet>
-      <main className="min-h-screen bg-[#fbfaf7] text-[#1f2937]">
-        <section className="border-b border-stone-200 bg-white/80">
+      <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
+        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground">
+            <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
               <ArrowLeft className="h-4 w-4" />
               Catalog
             </Link>
-            <Link to="/cart" className="rounded-2xl border bg-white px-4 py-2 text-sm font-bold">Cart</Link>
+            <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Cart</Link>
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
           <ProductVisual product={product} className="min-h-[520px] rounded-[28px]" bottleClassName="left-14 top-14 h-64 w-36 rounded-[2.5rem]" />
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white px-3 py-1 text-xs font-bold uppercase text-amber-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
               <Sparkles className="h-4 w-4" />
               {product.category}
             </div>
@@ -70,7 +70,7 @@ const ProductDetailPage = () => {
               ))}
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button type="button" onClick={() => { addItem(product, 1); toast.success('Added to cart'); }} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-[#1f2937]">
+              <button type="button" onClick={() => { addItem(product, 1); toast.success('Added to cart'); }} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
                 Add to cart
                 <ShoppingBag className="h-4 w-4" />
               </button>

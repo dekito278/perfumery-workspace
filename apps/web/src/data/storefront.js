@@ -2,22 +2,22 @@ export const storefrontCategories = [
   {
     name: 'Fresh',
     description: 'Citrus, aquatic, and clean daily wear.',
-    accent: 'bg-sky-50 text-sky-700 border-sky-100',
+    accent: 'bg-[#eef2e8] text-[#263d27] border-[#263d27]/15',
   },
   {
     name: 'Floral',
     description: 'Soft petals, jasmine, rose, and powdery musk.',
-    accent: 'bg-rose-50 text-rose-700 border-rose-100',
+    accent: 'bg-[#f4f2ec] text-[#263d27] border-[#263d27]/15',
   },
   {
     name: 'Woody',
     description: 'Sandalwood, cedar, vetiver, and warm drydown.',
-    accent: 'bg-stone-100 text-stone-700 border-stone-200',
+    accent: 'bg-[#e7ebe1] text-[#263d27] border-[#263d27]/15',
   },
   {
     name: 'Gourmand',
     description: 'Vanilla, tonka, coffee, and edible warmth.',
-    accent: 'bg-amber-50 text-amber-800 border-amber-100',
+    accent: 'bg-[#f7f8f2] text-[#263d27] border-[#263d27]/15',
   },
 ];
 
@@ -40,11 +40,11 @@ export const storefrontSegments = [
 ];
 
 export const perfumerProfile = {
-  name: 'Dekito Perfumer',
+  name: 'Solivagant Perfumer',
   title: 'Independent perfumer for solid perfume, personal scent, and small-batch fragrance.',
-  intro: 'Hello, I am the perfumer behind Dekito. I build wearable scents from small rituals, texture, memory, and the way a person wants to be remembered.',
+  intro: 'Hello, I am the perfumer behind Solivagant. I build wearable scents from small rituals, texture, memory, and the way a person wants to be remembered.',
   specialties: ['Solid perfume', 'Small-batch EDP', 'Bespoke scent brief'],
-  note: 'Personal profile for the perfumer behind Dekito.',
+  note: 'Personal profile for the perfumer behind Solivagant.',
 };
 
 export const feedbackFlowSteps = [

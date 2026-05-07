@@ -78,7 +78,7 @@ export const buildCheckoutDraft = ({
   const { quantity, subtotal } = getCartSummary(items);
   const lines = items.map((item) => `- ${item.name} (${item.size}) x${item.quantity}: ${item.price}`);
   return [
-    'Dekito Perfumery order draft',
+    'Solivagant order draft',
     '',
     `Customer: ${customerName || '-'}`,
     `Contact: ${contact || '-'}`,
@@ -94,3 +94,4 @@ export const buildCheckoutDraft = ({
     notes ? `Notes: ${notes}` : 'Notes: -',
   ].join('\n');
 };
+

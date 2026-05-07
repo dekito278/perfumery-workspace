@@ -40,7 +40,7 @@ const RawMaterialsPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Materials - Perfumer Studio</title>
+        <title>Materials - Solivagant Studio</title>
         <meta name="description" content="Browse your material library, guidance coverage, and dilution readiness from one formulation workspace." />
       </Helmet>
       <div className="page-container">
@@ -230,3 +230,4 @@ const RawMaterialsPage = () => {
 };
 
 export default RawMaterialsPage;
+

@@ -220,9 +220,9 @@ const MobileDashboardPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Studio - Perfumer Studio</title></Helmet>
+      <Helmet><title>Studio - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Studio" subtitle={getDisplayName(currentUser)} eyebrow="Perfumer Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
+        <MobileTopBar title="Studio" subtitle={getDisplayName(currentUser)} eyebrow="Solivagant Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
         <section className="mobile-soft-card p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -362,3 +362,4 @@ const MobileDashboardPage = () => {
 };
 
 export default MobileDashboardPage;
+

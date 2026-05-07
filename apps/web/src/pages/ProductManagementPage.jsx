@@ -146,8 +146,8 @@ const ProductManagementPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Product Management - Dekito Studio</title>
-        <meta name="description" content="Manage custom storefront products for Dekito Perfumery." />
+        <title>Product Management - Solivagant Studio</title>
+        <meta name="description" content="Manage custom storefront products for Solivagant." />
       </Helmet>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="dashboard-hero">
@@ -319,3 +319,4 @@ const ProductManagementPage = () => {
 };
 
 export default ProductManagementPage;
+

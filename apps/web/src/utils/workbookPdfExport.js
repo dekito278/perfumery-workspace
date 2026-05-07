@@ -58,7 +58,7 @@ const drawFooter = (doc) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...BRAND.muted);
-    doc.text('Perfumer Studio Workbook Export', MARGIN, PAGE_HEIGHT - 5.7);
+    doc.text('Solivagant Studio Workbook Export', MARGIN, PAGE_HEIGHT - 5.7);
     doc.text(`Page ${page} / ${totalPages}`, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 5.7, { align: 'right' });
   }
 };
@@ -326,3 +326,4 @@ export const exportWorkbookPdf = (config, filename) => {
   const doc = buildWorkbookPdf(config);
   doc.save(sanitizePdfFilename(filename));
 };
+

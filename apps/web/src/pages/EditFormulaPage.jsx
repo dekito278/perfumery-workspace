@@ -904,7 +904,7 @@ const EditFormulaPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>{`${formula?.name || 'Edit Formula'} - Perfumer Studio`}</title>
+        <title>{`${formula?.name || 'Edit Formula'} - Solivagant Studio`}</title>
         <meta
           name="description"
           content="Edit a formula with the same composition workspace used for creating formulas."
@@ -1864,3 +1864,4 @@ const EditFormulaPage = () => {
 };
 
 export default EditFormulaPage;
+

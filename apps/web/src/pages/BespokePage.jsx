@@ -23,7 +23,7 @@ const OptionGrid = ({ options, value, onChange }) => (
         onClick={() => onChange(option)}
         className={cn(
           'min-h-[44px] rounded-2xl border px-4 py-2 text-left text-sm font-bold',
-          value === option ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-stone-200 bg-white text-muted-foreground'
+          value === option ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]' : 'border-stone-200 bg-white text-muted-foreground'
         )}
       >
         {option}
@@ -68,23 +68,23 @@ const BespokePage = () => {
   return (
     <>
       <Helmet>
-        <title>Bespoke Perfume - Dekito Perfumery</title>
-        <meta name="description" content="Create a bespoke perfume request for Dekito Perfumery." />
+        <title>Bespoke Perfume - Solivagant</title>
+        <meta name="description" content="Create a bespoke perfume request for Solivagant." />
       </Helmet>
-      <main className="min-h-screen bg-[#fbfaf7] text-[#1f2937]">
-        <section className="border-b border-stone-200 bg-white/80">
+      <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
+        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground">
+            <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
               <ArrowLeft className="h-4 w-4" />
               Home
             </Link>
-            <Link to="/catalog" className="rounded-2xl border bg-white px-4 py-2 text-sm font-bold">Catalog</Link>
+            <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Catalog</Link>
           </div>
         </section>
 
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white px-3 py-1 text-xs font-bold uppercase text-amber-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
               <WandSparkles className="h-4 w-4" />
               Bespoke perfume
             </div>
@@ -94,7 +94,7 @@ const BespokePage = () => {
             </p>
             {referenceProduct ? (
               <div className="mt-5 rounded-2xl border bg-white p-4 text-sm font-bold">
-                Reference scent: <span className="text-amber-700">{referenceProduct.name}</span>
+                Reference scent: <span className="text-[#263d27]">{referenceProduct.name}</span>
               </div>
             ) : null}
             <div className="mt-6 rounded-2xl border bg-white p-4">
@@ -103,18 +103,18 @@ const BespokePage = () => {
                 <span>{completion}%</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-100">
-                <div className="h-full rounded-full bg-amber-500" style={{ width: `${completion}%` }} />
+                <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${completion}%` }} />
               </div>
             </div>
             <div className="mt-5 rounded-2xl border bg-white p-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-[#1f2937]">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#0b130c]">
                 <MessageSquareHeart className="h-4 w-4 text-rose-600" />
                 Feedback after sample
               </div>
               <div className="mt-3 grid gap-2">
                 {feedbackFlowSteps.map((step, index) => (
-                  <div key={step.title} className="rounded-2xl bg-[#fbfaf7] p-3 text-xs font-semibold text-muted-foreground">
-                    <span className="font-bold text-[#1f2937]">{index + 1}. {step.title}</span>
+                  <div key={step.title} className="rounded-2xl bg-[#f7f8f2] p-3 text-xs font-semibold text-muted-foreground">
+                    <span className="font-bold text-[#0b130c]">{index + 1}. {step.title}</span>
                     <span className="mt-1 block">{step.description}</span>
                   </div>
                 ))}
@@ -126,11 +126,11 @@ const BespokePage = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Name</span>
-                <input value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Customer name" />
+                <input value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" placeholder="Customer name" />
               </label>
               <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Contact</span>
-                <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="WhatsApp or email" />
+                <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" placeholder="WhatsApp or email" />
               </label>
             </div>
             <div className="mt-5">
@@ -159,7 +159,7 @@ const BespokePage = () => {
               ].map(([key, label, placeholder]) => (
                 <label key={key}>
                   <span className="text-xs font-bold uppercase text-muted-foreground">{label}</span>
-                  <textarea value={form[key]} onChange={(event) => updateField(key, event.target.value)} rows={key === 'avoidedNotes' ? 2 : 3} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" placeholder={placeholder} />
+                  <textarea value={form[key]} onChange={(event) => updateField(key, event.target.value)} rows={key === 'avoidedNotes' ? 2 : 3} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" placeholder={placeholder} />
                 </label>
               ))}
             </div>

@@ -1,15 +1,15 @@
 {
-  "name": "Perfumer Studio",
-  "short_name": "Perfumer",
-  "description": "Lite mobile workspace for briefs, raw materials, formulas, and validation.",
+  "name": "Solivagant Studio",
+  "short_name": "Solivagant",
+  "description": "Solivagant workspace for storefront, briefs, raw materials, formulas, and validation.",
   "id": "/?source=pwa",
   "start_url": "/mobile/dashboard?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#f8f7f4",
-  "theme_color": "#b7791f",
+  "background_color": "#050705",
+  "theme_color": "#263d27",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {

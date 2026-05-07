@@ -27,7 +27,7 @@ const MobileOrdersPage = () => {
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet>
-        <title>Orders - Dekito Studio</title>
+        <title>Orders - Solivagant Studio</title>
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
@@ -100,3 +100,4 @@ const MobileOrdersPage = () => {
 };
 
 export default MobileOrdersPage;
+

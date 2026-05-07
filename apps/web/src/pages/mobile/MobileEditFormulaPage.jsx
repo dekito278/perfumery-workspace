@@ -153,7 +153,7 @@ const MobileEditFormulaPage = () => {
   if (loadingData) {
     return (
       <MobileAuthenticatedLayout showFab={false}>
-        <Helmet><title>Loading Formula Editor - Perfumer Studio</title></Helmet>
+        <Helmet><title>Loading Formula Editor - Solivagant Studio</title></Helmet>
         <MobileLoadingState eyebrow="Formula editor" title="Loading workbook..." subtitle="Syncing composition and material guidance." />
       </MobileAuthenticatedLayout>
     );
@@ -215,3 +215,4 @@ const MobileEditFormulaPage = () => {
 };
 
 export default MobileEditFormulaPage;
+

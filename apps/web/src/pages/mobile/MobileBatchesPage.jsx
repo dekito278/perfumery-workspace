@@ -271,7 +271,7 @@ const MobileBatchesPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Batch Calculator - Perfumer Studio</title></Helmet>
+      <Helmet><title>Mobile Batch Calculator - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Batch"
@@ -454,3 +454,4 @@ const MobileBatchesPage = () => {
 };
 
 export default MobileBatchesPage;
+

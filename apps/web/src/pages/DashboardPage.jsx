@@ -162,7 +162,7 @@ const DashboardPage = () => {
   const displayName =
     currentUser?.user_metadata?.name?.trim()
     || currentUser?.email?.split('@')[0]
-    || 'Dekito';
+    || 'Solivagant';
 
   const summaryCards = [
     {
@@ -205,7 +205,7 @@ const DashboardPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Studio - Perfumer Studio</title>
+        <title>Studio - Solivagant Studio</title>
         <meta
           name="description"
           content="Track formulation progress, guidance coverage, brief activity, and validation follow-up from one perfumery workspace."
@@ -219,7 +219,7 @@ const DashboardPage = () => {
               Halo, {displayName}
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
-              Perfumer Studio siap dipakai.
+              Solivagant Studio siap dipakai.
             </h1>
             <p className="max-w-3xl text-base text-muted-foreground">
               {formulas.length > 0
@@ -454,3 +454,4 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+

@@ -86,7 +86,7 @@ const MobileBriefsPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Briefs - Perfumer Studio</title></Helmet>
+      <Helmet><title>Mobile Briefs - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Briefs"
@@ -123,3 +123,4 @@ const MobileBriefsPage = () => {
 };
 
 export default MobileBriefsPage;
+

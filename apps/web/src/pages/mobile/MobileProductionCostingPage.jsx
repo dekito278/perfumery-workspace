@@ -111,7 +111,7 @@ const MobileProductionCostingPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Production Costing - Perfumer Studio</title></Helmet>
+      <Helmet><title>Mobile Production Costing - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Production"
@@ -341,3 +341,4 @@ const MobileProductionCostingPage = () => {
 };
 
 export default MobileProductionCostingPage;
+
