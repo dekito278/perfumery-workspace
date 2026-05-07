@@ -2,6 +2,7 @@ export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
 
 export const checkoutPaymentOptions = [
   'Manual confirmation',
+  'DOKU Checkout',
   'WhatsApp confirmation',
   'QRIS payment request',
   'Bank transfer request',

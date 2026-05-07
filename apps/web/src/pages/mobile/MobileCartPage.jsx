@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clipboard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Clipboard, CreditCard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -20,6 +20,7 @@ import {
   buildWhatsAppCheckoutUrl,
   checkoutPaymentOptions,
 } from '@/services/cartService.js';
+import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -51,7 +52,7 @@ const MobileCartPage = () => {
     toast.success('Checkout draft copied');
   };
 
-  const submitOrder = async ({ openWhatsApp = false } = {}) => {
+  const submitOrder = async ({ openWhatsApp = false, openDoku = false } = {}) => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
       toast.error('Name, contact, and address are required');
@@ -60,6 +61,7 @@ const MobileCartPage = () => {
 
     setSaving(true);
     const whatsappWindow = openWhatsApp ? window.open('about:blank', '_blank') : null;
+    const dokuWindow = openDoku ? window.open('about:blank', '_blank') : null;
     try {
       const order = await createOrder({
         customerName,
@@ -69,8 +71,27 @@ const MobileCartPage = () => {
         subtotal: summary.subtotal,
         quantity: summary.quantity,
         checkoutDraft,
-        paymentProvider: openWhatsApp ? 'whatsapp' : 'manual',
+        paymentProvider: openDoku ? 'doku' : openWhatsApp ? 'whatsapp' : 'manual',
       });
+      if (openDoku) {
+        const checkout = await createDokuCheckout({
+          order,
+          amount: summary.subtotal,
+          customerName,
+          contact,
+        });
+        clear();
+        setCheckoutOpen(false);
+        toast.success(`Order ${order.orderNumber} saved. Opening DOKU Checkout`);
+        if (dokuWindow) {
+          dokuWindow.location.href = checkout.paymentUrl;
+        } else {
+          window.location.href = checkout.paymentUrl;
+          return;
+        }
+        navigate('/mobile/dashboard');
+        return;
+      }
       clear();
       setCheckoutOpen(false);
       toast.success(`Order ${order.orderNumber} saved to Studio`);
@@ -87,6 +108,9 @@ const MobileCartPage = () => {
     } catch (error) {
       if (whatsappWindow) {
         whatsappWindow.close();
+      }
+      if (dokuWindow) {
+        dokuWindow.close();
       }
       toast.error(error.message || 'Failed to save order');
     } finally {
@@ -191,6 +215,10 @@ const MobileCartPage = () => {
               </section>
 
               <div className="grid gap-2">
+                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ openDoku: true })} disabled={saving}>
+                  <CreditCard className="h-4 w-4" />
+                  {saving ? 'Saving order...' : 'Pay with DOKU'}
+                </Button>
                 <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ openWhatsApp: true })} disabled={saving}>
                   <MessageCircle className="h-4 w-4" />
                   {saving ? 'Saving order...' : 'Save & WhatsApp'}
