@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
+  BriefcaseBusiness,
   Gem,
   Leaf,
   MessageCircle,
@@ -122,7 +123,7 @@ const HomePage = () => {
             >
               <motion.div variants={fadeUp} className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/18 bg-white/70 px-3 py-1 text-xs font-bold uppercase text-[#263d27] shadow-sm shadow-[#263d27]/5 backdrop-blur">
                 <UserRound className="h-4 w-4" />
-                Solivagant Studio
+                {perfumerProfile.name} / Perfumer
               </motion.div>
               <motion.h1 variants={fadeUp} className="mt-6 max-w-3xl text-4xl font-bold leading-none text-[#081009] sm:text-5xl lg:text-6xl">
                 Signature perfume, made personal.
@@ -255,6 +256,56 @@ const HomePage = () => {
                 </figcaption>
               </motion.figure>
             ))}
+          </div>
+        </motion.section>
+
+        <motion.section
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+        >
+          <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-stretch">
+            <motion.figure variants={fadeUp} className="relative min-h-[420px] overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] shadow-sm shadow-[#263d27]/8">
+              <img src={homeAssets.perfumerAtWork} alt="Dekito developing a perfume formula" className="absolute inset-0 h-full w-full object-cover object-[58%_50%]" />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.02),rgba(5,7,5,0.72))]" />
+              <figcaption className="absolute inset-x-0 bottom-0 p-5 text-[#eef2e8]">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#c6d5bf]">Meet the perfumer</p>
+                <h2 className="mt-2 text-3xl font-bold leading-tight">{perfumerProfile.name}</h2>
+                <p className="mt-2 text-sm font-semibold text-white/78">{perfumerProfile.title}</p>
+              </figcaption>
+            </motion.figure>
+
+            <motion.div variants={fadeUp} className="rounded-[28px] border border-[#263d27]/12 bg-white/86 p-5 shadow-sm shadow-[#263d27]/5 sm:p-6">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
+                <BriefcaseBusiness className="h-4 w-4" />
+                Professional background
+              </div>
+              <h2 className="mt-5 max-w-2xl text-3xl font-bold leading-tight text-[#0b130c]">
+                More than four years in fine fragrance and aroma chemical development.
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm font-semibold leading-relaxed text-[#667264] sm:text-base">
+                {perfumerProfile.experienceSummary}
+              </p>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {perfumerProfile.experience.map((item) => (
+                  <article key={item.company} className="rounded-2xl border border-[#263d27]/12 bg-[#fbfaf7] p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">{item.company}</p>
+                    <h3 className="mt-2 text-lg font-bold text-[#0b130c]">{item.role}</h3>
+                    <ul className="mt-4 space-y-2">
+                      {item.highlights.slice(0, 3).map((highlight) => (
+                        <li key={highlight} className="flex gap-2 text-sm font-semibold leading-relaxed text-[#667264]">
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#263d27]" />
+                          <span>{highlight}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </motion.section>
 

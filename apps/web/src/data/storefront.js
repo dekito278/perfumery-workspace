@@ -40,11 +40,35 @@ export const storefrontSegments = [
 ];
 
 export const perfumerProfile = {
-  name: 'Solivagant Perfumer',
-  title: 'Independent perfumer for solid perfume, personal scent, and small-batch fragrance.',
-  intro: 'Hello, I am the perfumer behind Solivagant. I build wearable scents from small rituals, texture, memory, and the way a person wants to be remembered.',
-  specialties: ['Solid perfume', 'Small-batch EDP', 'Bespoke scent brief'],
+  name: 'Dekito',
+  title: 'Perfumer and fragrance developer with 4+ years of experience.',
+  intro: 'Dekito is the perfumer behind Solivagant, focused on aroma chemicals, fine fragrance formulation, and ready-to-wear perfume built with stability, character, and commercial wearability in mind.',
+  specialties: ['Fine fragrance', 'Aroma chemicals', 'Ready-to-wear perfume', 'Signature scent'],
   note: 'Personal profile for the perfumer behind Solivagant.',
+  experienceSummary: 'More than 4 years of experience developing fragrance formulas, perfume sprays, and market-ready scent profiles.',
+  experience: [
+    {
+      company: 'Soli Parfum',
+      role: 'Perfumer',
+      highlights: [
+        'Developed fine fragrance formulas for commercial use.',
+        'Created perfume spray and ready-to-sell perfume with stability and aroma quality standards.',
+        'Adjusted scent character based on market trends and customer preferences.',
+        'Blended raw materials to create signature scent profiles.',
+      ],
+    },
+    {
+      company: 'Eco Fragranica',
+      role: 'Perfumer / Fragrance Developer',
+      highlights: [
+        'Worked intensively with aroma chemicals to build consistent and scalable fragrance compositions.',
+        'Used synthetic and compound raw materials across fragrance development.',
+        'Handled olfactory evaluation and formula refinement.',
+        'Contributed to production from formulation stage to finished perfume.',
+        'Experimented with and developed new scent variants.',
+      ],
+    },
+  ],
 };
 
 export const feedbackFlowSteps = [

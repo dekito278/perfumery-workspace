@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
+  BriefcaseBusiness,
   Gem,
   Leaf,
   PackagePlus,
@@ -85,7 +86,7 @@ const MobileStorefrontPage = () => {
           <div className="p-4">
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/12 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase text-[#263d27] shadow-sm">
               <UserRound className="h-3.5 w-3.5" />
-              Solivagant Studio
+              {perfumerProfile.name} / Perfumer
             </motion.div>
             <motion.h2 variants={fadeUp} className="mt-3 text-[28px] font-bold leading-none text-[#0b130c]">
               Signature perfume, made personal.
@@ -151,6 +152,24 @@ const MobileStorefrontPage = () => {
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c6d5bf]">Perfumer led</p>
               <p className="mt-2 text-sm font-semibold leading-relaxed text-white/80">A personal scent process shaped by hand, notes, and memory.</p>
             </div>
+          </div>
+        </motion.section>
+
+        <motion.section variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} className="mobile-card p-4">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#eef2e8] px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+            <BriefcaseBusiness className="h-3.5 w-3.5" />
+            Professional background
+          </div>
+          <h2 className="mt-3 text-xl font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
+          <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-[#8d7a4f]">{perfumerProfile.title}</p>
+          <p className="mt-3 text-sm font-semibold leading-relaxed text-[#667264]">{perfumerProfile.experienceSummary}</p>
+          <div className="mt-4 grid gap-2">
+            {perfumerProfile.experience.map((item) => (
+              <div key={item.company} className="rounded-2xl border bg-[#fbfaf7] p-3">
+                <p className="text-xs font-bold text-[#0b130c]">{item.company}</p>
+                <p className="mt-1 text-[11px] font-semibold text-[#667264]">{item.role}</p>
+              </div>
+            ))}
           </div>
         </motion.section>
 
