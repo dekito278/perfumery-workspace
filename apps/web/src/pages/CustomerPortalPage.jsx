@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, PackageCheck, Search, ShoppingBag, UserRound } from 'lucide-react';
+import { ArrowLeft, KeyRound, Loader2, PackageCheck, Search, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
-import { getCustomerPortalByCode } from '@/services/customerService.js';
+import {
+  getCustomerPortalByCode,
+  setCustomerPortalSecurity,
+  verifyCustomerPortalSecurity,
+} from '@/services/customerService.js';
 import { getOrderStatusLabels } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -29,6 +33,12 @@ const CustomerPortalPage = () => {
   const [portal, setPortal] = useState(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [securityLoading, setSecurityLoading] = useState(false);
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [newSecurityAnswer, setNewSecurityAnswer] = useState('');
+  const [currentSecurityAnswer, setCurrentSecurityAnswer] = useState('');
+  const [savingSecurity, setSavingSecurity] = useState(false);
 
   const latestOrder = portal?.orders?.[0];
   const activeOrders = useMemo(() => (
@@ -53,6 +63,8 @@ const CustomerPortalPage = () => {
     }
 
     setPortal(result);
+    setSecurityAnswer('');
+    setSecurityQuestion(result.customer.securityQuestion || '');
     setCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
     toast.success(`${result.customer.customerCode} loaded`);
@@ -74,6 +86,58 @@ const CustomerPortalPage = () => {
     if (!portal?.customer?.customerCode) return;
     await navigator.clipboard.writeText(portal.customer.customerCode);
     toast.success(`${portal.customer.customerCode} copied`);
+  };
+
+  const unlockPortal = async (event) => {
+    event.preventDefault();
+    if (!securityAnswer.trim()) {
+      toast.error('Security answer is required');
+      return;
+    }
+
+    setSecurityLoading(true);
+    const result = await verifyCustomerPortalSecurity(customerCode, securityAnswer);
+    setSecurityLoading(false);
+
+    if (!result) {
+      toast.error('Security answer is incorrect');
+      return;
+    }
+
+    setPortal(result);
+    setSecurityQuestion(result.customer.securityQuestion || '');
+    setSecurityAnswer('');
+    toast.success('Customer dashboard unlocked');
+  };
+
+  const saveSecurity = async (event) => {
+    event.preventDefault();
+    if (!portal?.customer?.customerCode) return;
+
+    setSavingSecurity(true);
+    try {
+      await setCustomerPortalSecurity({
+        customerCode: portal.customer.customerCode,
+        securityQuestion,
+        securityAnswer: newSecurityAnswer,
+        currentAnswer: currentSecurityAnswer,
+      });
+      setPortal((current) => ({
+        ...current,
+        customer: {
+          ...current.customer,
+          securityQuestion,
+          securityEnabledAt: new Date().toISOString(),
+        },
+      }));
+      setNewSecurityAnswer('');
+      setCurrentSecurityAnswer('');
+      toast.success('Security question saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save security question');
+    } finally {
+      setSavingSecurity(false);
+    }
   };
 
   return (
@@ -124,7 +188,38 @@ const CustomerPortalPage = () => {
           </div>
 
           <div className="space-y-4">
-            {portal ? (
+            {portal?.requiresSecurity ? (
+              <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                    <KeyRound className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Security check</div>
+                    <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
+                      Customer ini sudah mengaktifkan pertanyaan keamanan. Jawab dulu untuk membuka dashboard.
+                    </p>
+                  </div>
+                </div>
+                <form onSubmit={unlockPortal} className="mt-5 grid gap-3">
+                  <div className="rounded-2xl bg-[#f7f8f2] p-4">
+                    <div className="text-xs font-bold uppercase text-muted-foreground">Question</div>
+                    <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
+                  </div>
+                  <input
+                    value={securityAnswer}
+                    onChange={(event) => setSecurityAnswer(event.target.value)}
+                    placeholder="Your answer"
+                    className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                  />
+                  <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+                    {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                    Unlock dashboard
+                  </Button>
+                </form>
+              </section>
+            ) : portal ? (
               <>
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -151,6 +246,46 @@ const CustomerPortalPage = () => {
                       <div className="mt-1 text-sm font-bold">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
                     </div>
                   </div>
+                </section>
+
+                <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                      <ShieldCheck className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h2 className="text-xl font-bold">Security settings</h2>
+                      <p className="mt-1 text-sm font-semibold leading-relaxed text-muted-foreground">
+                        Tambah pertanyaan keamanan agar kode customer saja tidak cukup untuk membuka dashboard.
+                      </p>
+                    </div>
+                  </div>
+                  <form onSubmit={saveSecurity} className="mt-4 grid gap-3">
+                    {portal.customer.securityEnabledAt ? (
+                      <input
+                        value={currentSecurityAnswer}
+                        onChange={(event) => setCurrentSecurityAnswer(event.target.value)}
+                        placeholder="Current answer"
+                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                      />
+                    ) : null}
+                    <input
+                      value={securityQuestion}
+                      onChange={(event) => setSecurityQuestion(event.target.value)}
+                      placeholder="Contoh: siapa nama hewan peliharaan saya?"
+                      className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                    />
+                    <input
+                      value={newSecurityAnswer}
+                      onChange={(event) => setNewSecurityAnswer(event.target.value)}
+                      placeholder="Answer"
+                      className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                    />
+                    <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingSecurity}>
+                      {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                      Save security question
+                    </Button>
+                  </form>
                 </section>
 
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">

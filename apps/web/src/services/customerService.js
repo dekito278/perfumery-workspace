@@ -17,6 +17,9 @@ const normalizeCustomer = (customer = {}) => ({
   notes: customer.notes || '',
   orderCount: Number(customer.order_count || customer.orderCount || 0),
   lastOrderAt: customer.last_order_at || customer.lastOrderAt || '',
+  securityQuestion: customer.security_question || customer.securityQuestion || '',
+  requiresSecurity: Boolean(customer.requires_security || customer.requiresSecurity),
+  securityEnabledAt: customer.security_enabled_at || customer.securityEnabledAt || '',
   persistence: customer.persistence || 'database',
   createdAt: customer.created_at || customer.createdAt || new Date().toISOString(),
   updatedAt: customer.updated_at || customer.updatedAt || customer.created_at || customer.createdAt || new Date().toISOString(),
@@ -146,6 +149,7 @@ export const getCustomerPortalByCode = async (customerCode) => {
     return {
       customer: normalizeCustomer(result.customer),
       orders: Array.isArray(result.orders) ? result.orders.map(normalizePortalOrder) : [],
+      requiresSecurity: Boolean(result.customer.requires_security),
       persistence: 'database',
     };
   } catch (error) {
@@ -165,8 +169,59 @@ export const getCustomerPortalByCode = async (customerCode) => {
       }
     })();
 
-    return { customer, orders, persistence: 'local' };
+    return { customer, orders, requiresSecurity: false, persistence: 'local' };
   }
+};
+
+export const verifyCustomerPortalSecurity = async (customerCode, securityAnswer) => {
+  const normalizedCode = normalizeCustomerCode(customerCode);
+  if (!normalizedCode || !securityAnswer?.trim()) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_customer_portal_verify', {
+      p_customer_code: normalizedCode,
+      p_security_answer: securityAnswer.trim(),
+    });
+
+    if (error) throw error;
+    const result = data?.[0];
+    if (!result?.customer?.customer_code) return null;
+
+    return {
+      customer: normalizeCustomer(result.customer),
+      orders: Array.isArray(result.orders) ? result.orders.map(normalizePortalOrder) : [],
+      requiresSecurity: false,
+      persistence: 'database',
+    };
+  } catch (error) {
+    console.warn('Customer portal security verification failed:', error.message || error);
+    return null;
+  }
+};
+
+export const setCustomerPortalSecurity = async ({
+  customerCode,
+  securityQuestion,
+  securityAnswer,
+  currentAnswer = '',
+}) => {
+  const normalizedCode = normalizeCustomerCode(customerCode);
+  if (!normalizedCode || !securityQuestion?.trim() || !securityAnswer?.trim()) {
+    throw new Error('Security question and answer are required');
+  }
+
+  const { data, error } = await supabase.rpc('storefront_customer_set_security', {
+    p_customer_code: normalizedCode,
+    p_security_question: securityQuestion.trim(),
+    p_security_answer: securityAnswer.trim(),
+    p_current_answer: currentAnswer?.trim() || null,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.[0] || null;
 };
 
 export const saveCustomer = async ({
