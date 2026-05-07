@@ -38,7 +38,7 @@ const ProductDetailPage = () => {
               <ArrowLeft className="h-4 w-4" />
               Catalog
             </Link>
-            <Link to="/login" className="rounded-2xl border bg-white px-4 py-2 text-sm font-bold">Admin login</Link>
+            <Link to="/cart" className="rounded-2xl border bg-white px-4 py-2 text-sm font-bold">Cart</Link>
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">

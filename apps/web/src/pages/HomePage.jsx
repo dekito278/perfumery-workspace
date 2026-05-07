@@ -3,19 +3,14 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  CheckCircle2,
   MessageCircle,
-  MessageSquareHeart,
-  Search,
   ShoppingBag,
-  Star,
   UserRound,
   WandSparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import {
-  feedbackFlowSteps,
   perfumerProfile,
   storefrontSegments,
 } from '@/data/storefront.js';
@@ -50,14 +45,10 @@ const HomePage = () => {
                 <span className="block text-xs font-semibold text-muted-foreground">Perfumery</span>
               </span>
             </Link>
-            <div className="hidden items-center gap-2 rounded-full border bg-white px-3 py-2 text-sm font-semibold text-muted-foreground sm:flex">
-              <Search className="h-4 w-4" />
-              Search catalog
-            </div>
             <div className="flex items-center gap-2">
               <Link to="/cart" className="grid h-10 w-10 place-items-center rounded-2xl border bg-white" aria-label="Open cart"><ShoppingBag className="h-4 w-4" /></Link>
-              <Link to="/login" className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#1f2937]">
-                Admin login
+              <Link to="/catalog" className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#1f2937]">
+                Catalog
               </Link>
             </div>
           </div>
@@ -67,10 +58,10 @@ const HomePage = () => {
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white px-3 py-1 text-xs font-bold uppercase text-amber-700">
               <UserRound className="h-4 w-4" />
-              Perfumer profile
+              Dekito Perfumery
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-none sm:text-5xl lg:text-6xl">
-              Hello, I am the perfumer.
+              Signature perfume, made personal.
             </h1>
             <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-[#667085] sm:text-lg">
               {perfumerProfile.intro}
@@ -111,26 +102,12 @@ const HomePage = () => {
           </motion.div>
         </section>
 
-        <section className="border-y border-stone-200 bg-white">
-          <div className="mx-auto grid max-w-7xl gap-3 px-4 py-5 sm:grid-cols-3 sm:px-6 lg:px-8">
-            {['Perfumer introduction', 'Regular and limited shop', 'Bespoke and feedback flow'].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-sm font-bold text-[#344054]">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                {item}
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-xs font-bold uppercase text-amber-700">Shop structure</div>
-              <h2 className="mt-1 text-3xl font-bold">Choose a path</h2>
+              <div className="text-xs font-bold uppercase text-amber-700">Shop</div>
+              <h2 className="mt-1 text-3xl font-bold">Choose your scent path</h2>
             </div>
-            <p className="max-w-xl text-sm font-medium text-muted-foreground">
-              Produk regular, produk limited, dan layanan bespoke dipisahkan supaya customer bisa memilih jalur yang paling sesuai.
-            </p>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {storefrontSegments.map((segment) => (
@@ -155,9 +132,6 @@ const HomePage = () => {
               <div className="text-xs font-bold uppercase text-amber-700">Categories</div>
               <h2 className="mt-1 text-3xl font-bold">Browse by scent family</h2>
             </div>
-            <p className="max-w-xl text-sm font-medium text-muted-foreground">
-              Kategori dibaca dari daftar yang dibuat di Studio, lalu terhubung ke produk yang memakai kategori tersebut.
-            </p>
           </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {categories.slice(0, 8).map((category) => (
@@ -173,12 +147,8 @@ const HomePage = () => {
           <div className="flex items-end justify-between gap-4">
             <div>
               <div className="text-xs font-bold uppercase text-amber-700">Featured</div>
-              <h2 className="mt-1 text-3xl font-bold">Products to sell</h2>
+              <h2 className="mt-1 text-3xl font-bold">Featured perfumes</h2>
             </div>
-            <Link to="/login" className="hidden h-10 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold sm:inline-flex">
-              Admin area
-              <ArrowRight className="h-4 w-4" />
-            </Link>
           </div>
           <div className="mt-6 grid gap-5 md:grid-cols-3">
             {homeProducts.map((product) => (
@@ -207,34 +177,6 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section id="feedback" className="mx-auto max-w-7xl scroll-mt-6 px-4 py-10 sm:px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold uppercase text-rose-700">
-                <MessageSquareHeart className="h-4 w-4" />
-                Feedback
-              </div>
-              <h2 className="mt-4 text-3xl font-bold">Customer feedback flow</h2>
-              <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
-                Review produk, bespoke revision, dan repeat order dikumpulkan dalam alur yang jelas setelah customer mencoba scent.
-              </p>
-              <button type="button" className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-[#1f2937]">
-                Give feedback
-                <Star className="h-4 w-4 text-amber-600" />
-              </button>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              {feedbackFlowSteps.map((step, index) => (
-                <div key={step.title} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-50 text-sm font-bold text-amber-700">{index + 1}</div>
-                  <h3 className="mt-4 text-base font-bold">{step.title}</h3>
-                  <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section id="bespoke" className="bg-[#1f2937] text-white">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
             <div>
@@ -246,7 +188,7 @@ const HomePage = () => {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 p-5">
               <p className="text-sm font-medium leading-relaxed text-white/78">
-                Tahap berikutnya bisa menambahkan form untuk notes favorit, karakter aroma, budget, ukuran botol, dan kontak customer. Untuk sekarang, section ini sudah menyiapkan posisi fitur bespoke di halaman depan.
+                Share your favorite notes, mood, budget, and occasion. We will shape them into a personal scent brief.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link to="/bespoke" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-amber-400 px-5 text-sm font-bold text-[#1f2937]">

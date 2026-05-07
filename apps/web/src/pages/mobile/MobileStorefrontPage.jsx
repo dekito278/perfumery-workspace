@@ -3,11 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
-  Filter,
-  MessageSquareHeart,
-  Search,
   ShoppingBag,
-  Star,
   UserRound,
   WandSparkles,
 } from 'lucide-react';
@@ -16,7 +12,6 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import {
-  feedbackFlowSteps,
   perfumerProfile,
   storefrontSegments,
 } from '@/data/storefront.js';
@@ -53,10 +48,10 @@ const MobileStorefrontPage = () => {
           <div className="p-4">
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-amber-700">
               <UserRound className="h-3.5 w-3.5" />
-              Perfumer profile
+              Dekito Perfumery
             </div>
             <h2 className="mt-3 text-[28px] font-bold leading-none text-[#1f2937]">
-              Hello, I am the perfumer.
+              Signature perfume, made personal.
             </h2>
             <p className="mt-3 text-sm font-medium leading-relaxed text-[#6b7280]">
               {perfumerProfile.intro}
@@ -99,48 +94,8 @@ const MobileStorefrontPage = () => {
               className="mobile-card min-h-[104px] p-3 text-left"
             >
               <span className="block text-[11px] font-bold leading-tight text-[#1f2937]">{segment.name}</span>
-              <span className="mt-2 block text-[10px] font-semibold leading-snug text-[#8b949e]">{segment.description}</span>
             </button>
           ))}
-        </section>
-
-        <section className="mobile-card flex items-center gap-2 p-2">
-          <div className="flex h-11 flex-1 items-center gap-2 rounded-2xl bg-[#f8f7f4] px-3 text-sm font-semibold text-[#8b949e]">
-            <Search className="h-4 w-4" />
-            Search perfume
-          </div>
-          <Button type="button" size="icon" variant="outline" className="h-11 w-11 rounded-2xl bg-white" aria-label="Filter catalog">
-            <Filter className="h-4 w-4" />
-          </Button>
-        </section>
-
-        <section className="mobile-card p-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-700">
-              <MessageSquareHeart className="h-5 w-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-[#1f2937]">Feedback flow</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Review aroma, ketahanan, dan masukan untuk batch atau bespoke berikutnya.
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 grid gap-2">
-            {feedbackFlowSteps.map((step, index) => (
-              <div key={step.title} className="flex gap-2 rounded-2xl bg-[#fbfaf7] p-3">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-[11px] font-bold text-amber-700">{index + 1}</span>
-                <span>
-                  <span className="block text-xs font-bold text-[#1f2937]">{step.title}</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-[#6b7280]">{step.description}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-          <Button variant="outline" className="mt-3 h-10 w-full rounded-2xl bg-white gap-2">
-            <Star className="h-4 w-4" />
-            Give feedback
-          </Button>
         </section>
 
         <section className="space-y-3">
@@ -192,7 +147,7 @@ const MobileStorefrontPage = () => {
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold text-[#1f2937]">Bespoke perfume</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Customer bisa request mood, notes, budget, dan occasion. Di tahap berikutnya ini bisa jadi form order custom.
+                Request a scent by mood, notes, budget, and occasion.
               </p>
               <Button className="mt-3 h-10 rounded-2xl gap-2" onClick={() => navigate('/mobile/bespoke')}>
                 Start custom request

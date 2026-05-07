@@ -208,7 +208,7 @@ const MobileBespokePage = () => {
       createdAt: new Date().toISOString(),
     });
     setWizardOpen(false);
-    toast.success('Custom perfume request drafted');
+    toast.success('Custom perfume request saved');
   };
 
   return (
@@ -229,11 +229,11 @@ const MobileBespokePage = () => {
         <section className="mobile-soft-card p-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-amber-700">
             <Sparkles className="h-3.5 w-3.5" />
-            Guided custom brief
+            Custom brief
           </div>
-          <h1 className="mt-3 text-2xl font-bold leading-tight text-[#1f2937]">Buat custom perfume dengan pertanyaan satu per satu.</h1>
+          <h1 className="mt-3 text-2xl font-bold leading-tight text-[#1f2937]">Buat custom perfume dari cerita dan preferensi aroma.</h1>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
-            Flow ini dibuat ringkas seperti konsultasi agar detail aroma, ukuran, budget, dan kontak customer terkumpul rapi.
+            Isi aroma, ukuran, budget, dan kontak agar tim Dekito bisa menyiapkan rekomendasi yang pas.
           </p>
           {referenceProduct ? (
             <div className="mt-3 rounded-2xl bg-white p-3 text-xs font-bold text-[#1f2937]">
@@ -267,7 +267,7 @@ const MobileBespokePage = () => {
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold text-[#1f2937]">After-sample feedback</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Setelah sample dicoba, customer diarahkan memberi feedback untuk revisi aroma atau final bottle.
+                Setelah sample dicoba, feedback bisa dipakai untuk revisi aroma atau final bottle.
               </p>
             </div>
           </div>

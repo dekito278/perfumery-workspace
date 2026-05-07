@@ -59,7 +59,7 @@ const CatalogPage = () => {
               <div className="text-xs font-bold uppercase text-amber-700">Shop</div>
               <h1 className="mt-1 text-4xl font-bold">Perfume catalog</h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-muted-foreground">
-                Browse ready-to-sell products. This is the front catalog foundation for later product management, stock, and cart.
+                Browse by scent family, notes, price, or mood.
               </p>
             </div>
             <label className="flex h-12 w-full max-w-md items-center gap-2 rounded-2xl border bg-white px-4">

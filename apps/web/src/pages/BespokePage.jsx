@@ -62,7 +62,7 @@ const BespokePage = () => {
       return;
     }
     setSubmitted(true);
-    toast.success('Custom perfume request drafted');
+    toast.success('Custom perfume request sent');
   };
 
   return (
@@ -90,7 +90,7 @@ const BespokePage = () => {
             </div>
             <h1 className="mt-5 text-5xl font-bold leading-none">Custom scent request</h1>
             <p className="mt-5 text-base font-medium leading-relaxed text-muted-foreground">
-              Capture customer preferences for mood, notes, budget, and size. This phase keeps it as an in-app draft before order/admin integration.
+              Tell us the mood, notes, budget, and size you want. We will turn it into a personal perfume brief.
             </p>
             {referenceProduct ? (
               <div className="mt-5 rounded-2xl border bg-white p-4 text-sm font-bold">
@@ -164,13 +164,13 @@ const BespokePage = () => {
               ))}
             </div>
             <Button type="submit" className="mt-5 h-12 rounded-2xl gap-2">
-              Draft request
+              Send request
               <Send className="h-4 w-4" />
             </Button>
             {submitted ? (
               <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
                 <CheckCircle2 className="mb-2 h-5 w-5" />
-                Request draft is ready: {form.mood}, {form.occasion}, {form.budget}, {form.size}.
+                Request received: {form.mood}, {form.occasion}, {form.budget}, {form.size}.
               </div>
             ) : null}
           </form>
