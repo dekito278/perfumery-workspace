@@ -1,15 +1,13 @@
 import { Buffer } from 'node:buffer';
 import process from 'node:process';
 
-const DEFAULT_COURIERS = ['jne', 'jnt', 'sicepat', 'anteraja', 'ninja', 'tiki', 'pos'];
+const DEFAULT_COURIERS = ['jnt', 'jne', 'pos', 'anteraja', 'ide'];
 
 const courierNames = {
   jne: 'JNE',
   jnt: 'J&T',
-  sicepat: 'SiCepat',
-  anteraja: 'Anteraja',
-  ninja: 'Ninja',
-  tiki: 'TIKI',
+  anteraja: 'AnterAja',
+  ide: 'IDExpress',
   pos: 'POS Indonesia',
 };
 
