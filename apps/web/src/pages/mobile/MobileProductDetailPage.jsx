@@ -57,7 +57,7 @@ const MobileProductDetailPage = () => {
           action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-amber-700" /></button>}
         />
 
-        <ProductVisual product={product} className="min-h-[320px] rounded-[24px]" bottleClassName="left-10 top-10 h-44 w-24 rounded-[2rem]" />
+        <ProductVisual product={product} className="aspect-square rounded-[24px]" bottleClassName="left-10 top-10 h-44 w-24 rounded-[2rem]" />
 
         <section className="mobile-card p-4">
           <div className="flex items-start justify-between gap-3">

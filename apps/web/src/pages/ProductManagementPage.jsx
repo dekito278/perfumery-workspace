@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Edit3, ImagePlus, PackagePlus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Edit3, ImagePlus, PackagePlus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { featuredProducts, storefrontCategories } from '@/data/storefront.js';
+import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import {
   deleteCustomProduct,
   formatRupiah,
@@ -14,10 +15,11 @@ import {
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
 import { uploadProductImage } from '@/services/productImageStorageService.js';
+import { deleteStorefrontCategory, saveStorefrontCategory } from '@/services/storefrontCategoryService.js';
 
 const emptyProduct = {
   name: '',
-  category: 'Fresh',
+  category: '',
   priceNumber: 289000,
   stock: 10,
   size: '30 ml',
@@ -43,10 +45,18 @@ const toEditableProduct = (product) => ({
 
 const ProductManagementPage = () => {
   const products = useCatalogProducts();
+  const categories = useStorefrontCategories(products);
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
+  const categoryUsage = useMemo(() => products.reduce((usage, product) => {
+    if (!product.category) return usage;
+    usage.set(product.category.toLowerCase(), (usage.get(product.category.toLowerCase()) || 0) + 1);
+    return usage;
+  }, new Map()), [products]);
   const [form, setForm] = useState(emptyProduct);
+  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -73,8 +83,8 @@ const ProductManagementPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.notes.trim()) {
-      toast.error('Product name and notes are required');
+    if (!form.name.trim() || !form.category.trim() || !form.notes.trim()) {
+      toast.error('Product name, category, and notes are required');
       return;
     }
 
@@ -103,6 +113,34 @@ const ProductManagementPage = () => {
     await resetCustomProducts();
     resetForm();
     toast.success('Custom products reset');
+  };
+
+  const handleCategorySubmit = async (event) => {
+    event.preventDefault();
+    if (!categoryForm.name.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    setSavingCategory(true);
+    try {
+      const category = await saveStorefrontCategory(categoryForm);
+      setCategoryForm({ name: '', description: '' });
+      if (!form.category) {
+        updateField('category', category.name);
+      }
+      toast.success('Category saved');
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleCategoryDelete = async (category) => {
+    await deleteStorefrontCategory(category.id);
+    if (form.category === category.name) {
+      updateField('category', '');
+    }
+    toast.success('Category removed');
   };
 
   return (
@@ -144,7 +182,9 @@ const ProductManagementPage = () => {
               <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Category</span>
                 <select value={form.category} onChange={(event) => updateField('category', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300">
-                  {storefrontCategories.map((category) => <option key={category.name}>{category.name}</option>)}
+                  <option value="">Select category</option>
+                  {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
+                  {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
                 </select>
               </label>
               <label>
@@ -206,6 +246,39 @@ const ProductManagementPage = () => {
             </div>
           </form>
 
+          <div className="grid gap-6">
+            <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold">Product categories</h2>
+                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Buat kategori sendiri, lalu pilih di form produk.</p>
+                </div>
+                <Tags className="h-5 w-5 text-amber-700" />
+              </div>
+              <form onSubmit={handleCategorySubmit} className="mt-5 grid gap-3 sm:grid-cols-[0.8fr_1fr_auto]">
+                <input value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} className="h-11 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Limited, Regular, Gift set..." />
+                <input value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} className="h-11 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Optional short description" />
+                <Button type="submit" className="h-11 rounded-2xl" disabled={savingCategory}>{savingCategory ? 'Saving...' : 'Add'}</Button>
+              </form>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {categories.map((category) => {
+                  const usageCount = categoryUsage.get(category.name.toLowerCase()) || 0;
+                  const canDelete = category.source !== 'product' && usageCount === 0;
+                  return (
+                    <span key={category.name} className="inline-flex items-center gap-2 rounded-2xl border bg-[#fbfaf7] px-3 py-2 text-xs font-bold text-[#344054]">
+                      {category.name}
+                      <span className="text-[10px] uppercase text-muted-foreground">{usageCount} product</span>
+                      {canDelete ? (
+                        <button type="button" onClick={() => handleCategoryDelete(category)} className="text-rose-600" aria-label={`Delete ${category.name}`}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </span>
+                  );
+                })}
+              </div>
+            </section>
+
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold">Custom products</h2>
@@ -238,6 +311,7 @@ const ProductManagementPage = () => {
               ) : null}
             </div>
           </section>
+          </div>
         </div>
       </div>
     </AuthenticatedLayout>

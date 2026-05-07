@@ -17,13 +17,14 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import {
   feedbackFlowSteps,
   perfumerProfile,
-  storefrontCategories,
   storefrontSegments,
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 
 const HomePage = () => {
   const products = useCatalogProducts();
+  const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
   const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 3);
   const storefrontStats = [
@@ -155,15 +156,15 @@ const HomePage = () => {
               <h2 className="mt-1 text-3xl font-bold">Browse by scent family</h2>
             </div>
             <p className="max-w-xl text-sm font-medium text-muted-foreground">
-              Kategori masih terbatas untuk menjaga katalog tetap mudah dipilih. Nanti bagian ini bisa disambungkan ke admin category management.
+              Kategori dibaca dari daftar yang dibuat di Studio, lalu terhubung ke produk yang memakai kategori tersebut.
             </p>
           </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {storefrontCategories.map((category) => (
-              <button key={category.name} type="button" className={`min-h-[150px] rounded-2xl border p-5 text-left transition hover:-translate-y-0.5 ${category.accent}`}>
+            {categories.slice(0, 8).map((category) => (
+              <Link key={category.name} to={`/catalog?category=${encodeURIComponent(category.name)}`} className={`min-h-[150px] rounded-2xl border p-5 text-left transition hover:-translate-y-0.5 ${category.accent}`}>
                 <span className="block text-lg font-bold">{category.name}</span>
                 <span className="mt-3 block text-sm font-semibold leading-relaxed opacity-80">{category.description}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </section>

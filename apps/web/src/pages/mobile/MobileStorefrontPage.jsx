@@ -18,14 +18,15 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import {
   feedbackFlowSteps,
   perfumerProfile,
-  storefrontCategories,
   storefrontSegments,
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
   const products = useCatalogProducts();
+  const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
   const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 2);
   const storefrontStats = [
@@ -148,8 +149,8 @@ const MobileStorefrontPage = () => {
             <span className="text-xs font-bold text-amber-700">Shop families</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {storefrontCategories.map((category) => (
-              <button key={category.name} type="button" className={`min-h-[112px] rounded-2xl border p-3 text-left ${category.accent}`}>
+            {categories.slice(0, 6).map((category) => (
+              <button key={category.name} type="button" onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)} className={`min-h-[112px] rounded-2xl border p-3 text-left ${category.accent}`}>
                 <span className="block text-sm font-bold">{category.name}</span>
                 <span className="mt-2 block text-[11px] font-semibold leading-snug opacity-80">{category.description}</span>
               </button>
@@ -166,7 +167,7 @@ const MobileStorefrontPage = () => {
           {homeProducts.map((product) => (
             <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="h-28 rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} />
+                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} />
                 <div className="mt-2">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>

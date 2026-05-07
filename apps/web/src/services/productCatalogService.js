@@ -61,7 +61,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
     id,
     slug,
     name: String(input.name || 'Untitled perfume').trim(),
-    category: input.category || 'Fresh',
+    category: input.category || 'Uncategorized',
     price: input.price || formatRupiah(priceNumber),
     priceNumber,
     size: input.size || '30 ml',

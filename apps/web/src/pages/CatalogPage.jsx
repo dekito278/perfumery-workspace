@@ -3,8 +3,9 @@ import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Search, ShoppingBag } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { catalogSortOptions, storefrontCategories, storefrontSegments } from '@/data/storefront.js';
+import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
 
 const sortProducts = (products, sort) => {
@@ -19,9 +20,10 @@ const CatalogPage = () => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
-  const [category, setCategory] = useState('All');
+  const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState('featured');
   const catalogProducts = useCatalogProducts();
+  const categories = useStorefrontCategories(catalogProducts);
 
   const products = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -73,7 +75,7 @@ const CatalogPage = () => {
             ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            {['All', ...storefrontCategories.map((item) => item.name)].map((item) => (
+            {['All', ...categories.map((item) => item.name)].map((item) => (
               <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', category === item ? 'border-amber-300 bg-amber-50 text-amber-800' : 'bg-white text-muted-foreground')}>
                 {item}
               </button>
