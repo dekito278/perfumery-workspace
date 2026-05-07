@@ -12,7 +12,7 @@ import {
   checkoutPaymentOptions,
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
-import { lookupCustomerByCode } from '@/services/customerService.js';
+import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -28,6 +28,9 @@ const CartPage = () => {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
+  const [securityChallenge, setSecurityChallenge] = useState(null);
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
     customerCode,
     customerName,
@@ -47,24 +50,61 @@ const CartPage = () => {
     updateQuantity(item.slug, item.quantity - 1);
   };
 
-  const lookupCustomer = async () => {
-    if (!customerCode.trim()) {
-      toast.error('Customer code is required');
-      return;
-    }
-
-    const customer = await lookupCustomerByCode(customerCode);
-    if (!customer) {
-      toast.error('Customer code not found');
-      return;
-    }
-
+  const applyCheckoutCustomer = (customer) => {
+    setSecurityChallenge(null);
+    setSecurityAnswer('');
     setCustomerCode(customer.customerCode);
     setCustomerName(customer.customerName);
     setContact(customer.contact);
     setDeliveryAddress(customer.deliveryAddress || '');
     setDeliveryArea(customer.deliveryArea || '');
     toast.success(`${customer.customerCode} loaded`);
+  };
+
+  const lookupCustomer = async () => {
+    if (!customerCode.trim()) {
+      toast.error('Customer code is required');
+      return;
+    }
+
+    setLookupLoading(true);
+    const customer = await lookupCheckoutCustomerByCode(customerCode);
+    setLookupLoading(false);
+    if (!customer) {
+      toast.error('Customer code not found');
+      return;
+    }
+
+    if (customer.requiresSecurity) {
+      setCustomerName('');
+      setContact('');
+      setDeliveryAddress('');
+      setDeliveryArea('');
+      setSecurityChallenge(customer);
+      setSecurityAnswer('');
+      setCustomerCode(customer.customerCode);
+      toast.info('Security question is required');
+      return;
+    }
+
+    applyCheckoutCustomer(customer);
+  };
+
+  const verifyCustomerSecurity = async () => {
+    if (!securityChallenge?.customerCode || !securityAnswer.trim()) {
+      toast.error('Security answer is required');
+      return;
+    }
+
+    setLookupLoading(true);
+    const customer = await lookupCheckoutCustomerByCode(securityChallenge.customerCode, securityAnswer);
+    setLookupLoading(false);
+    if (!customer || customer.requiresSecurity) {
+      toast.error('Security answer is incorrect');
+      return;
+    }
+
+    applyCheckoutCustomer(customer);
   };
 
   const copyDraft = async () => {
@@ -228,12 +268,22 @@ const CartPage = () => {
               <h2 className="text-xl font-bold">Checkout</h2>
               <div className="mt-4 grid gap-3">
                 <div className="grid grid-cols-[1fr_auto] gap-2">
-                  <input value={customerCode} onChange={(event) => setCustomerCode(event.target.value.toUpperCase())} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer}>Load</Button>
+                  <input value={customerCode} onChange={(event) => { setCustomerCode(event.target.value.toUpperCase()); setSecurityChallenge(null); setSecurityAnswer(''); }} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Load'}</Button>
                 </div>
                 <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
                   Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
                 </p>
+                {securityChallenge ? (
+                  <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Security question</div>
+                    <p className="mt-1 text-sm font-bold">{securityChallenge.securityQuestion}</p>
+                    <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                      <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Answer" className="h-12 rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                      <Button type="button" className="h-12 rounded-2xl px-4 text-sm font-bold" onClick={verifyCustomerSecurity} disabled={lookupLoading}>{lookupLoading ? '...' : 'Verify'}</Button>
+                    </div>
+                  </div>
+                ) : null}
                 <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />

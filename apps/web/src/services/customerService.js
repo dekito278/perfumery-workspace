@@ -133,6 +133,27 @@ export const lookupCustomerByCode = async (customerCode) => {
   }
 };
 
+export const lookupCheckoutCustomerByCode = async (customerCode, securityAnswer = '') => {
+  const normalizedCode = normalizeCustomerCode(customerCode);
+  if (!normalizedCode) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_customer_checkout_lookup', {
+      p_customer_code: normalizedCode,
+      p_security_answer: securityAnswer?.trim() || null,
+    });
+
+    if (error) throw error;
+    const customer = data?.[0]?.customer;
+    if (!customer?.customer_code) return null;
+
+    return normalizeCustomer(customer);
+  } catch (error) {
+    console.warn('Using local checkout customer lookup fallback:', error.message || error);
+    return getLocalCustomers().find((customer) => customer.customerCode === normalizedCode) || null;
+  }
+};
+
 export const getCustomerPortalByCode = async (customerCode) => {
   const normalizedCode = normalizeCustomerCode(customerCode);
   if (!normalizedCode) return null;
