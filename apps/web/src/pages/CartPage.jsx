@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clipboard, CreditCard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, Clipboard, CreditCard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import { useCart } from '@/hooks/useCart.js';
@@ -18,7 +18,6 @@ import { createOrder } from '@/services/orderService.js';
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 
 const CartPage = () => {
-  const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const [customerCode, setCustomerCode] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -28,6 +27,7 @@ const CartPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('Manual confirmation');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState(null);
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
     customerCode,
     customerName,
@@ -72,6 +72,12 @@ const CartPage = () => {
     toast.success('Checkout draft copied');
   };
 
+  const copyCustomerCode = async () => {
+    if (!submittedOrder?.customerCode) return;
+    await navigator.clipboard.writeText(submittedOrder.customerCode);
+    toast.success(`${submittedOrder.customerCode} copied`);
+  };
+
   const submitOrder = async ({ openWhatsApp = false, openDoku = false } = {}) => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
@@ -104,6 +110,7 @@ const CartPage = () => {
           contact,
         });
         clear();
+        setSubmittedOrder(order);
         toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
         if (dokuWindow) {
           dokuWindow.location.href = checkout.paymentUrl;
@@ -111,10 +118,10 @@ const CartPage = () => {
           window.location.href = checkout.paymentUrl;
           return;
         }
-        navigate('/home');
         return;
       }
       clear();
+      setSubmittedOrder(order);
       toast.success(`Order ${order.orderNumber} saved to Studio${order.customerCode ? ` / ${order.customerCode}` : ''}`);
       if (openWhatsApp) {
         const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\nCustomer code: ${order.customerCode || customerCode || '-'}\n\nStudio order: ${order.orderNumber}`);
@@ -125,7 +132,6 @@ const CartPage = () => {
           return;
         }
       }
-      navigate('/home');
     } catch (error) {
       if (whatsappWindow) {
         whatsappWindow.close();
@@ -153,6 +159,32 @@ const CartPage = () => {
         </section>
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.8fr] lg:px-8">
           <div>
+            {submittedOrder ? (
+              <section className="mb-6 rounded-2xl border border-[#263d27]/15 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold uppercase text-[#263d27]">Order received</div>
+                      <h2 className="mt-1 text-2xl font-bold">{submittedOrder.orderNumber}</h2>
+                      <p className="mt-2 max-w-xl text-sm font-semibold leading-relaxed text-muted-foreground">
+                        Data customer sudah masuk ke Studio. Simpan kode ini untuk order berikutnya tanpa isi ulang data.
+                      </p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={copyCustomerCode} className="rounded-2xl bg-[#263d27] px-5 py-4 text-center text-xl font-bold tracking-[0.16em] text-[#eef2e8]">
+                    {submittedOrder.customerCode || '-'}
+                  </button>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link to="/catalog" className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold">Shop again</Link>
+                  <Link to="/home" className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">Home</Link>
+                </div>
+              </section>
+            ) : null}
+
             <div className="flex items-end justify-between gap-4">
               <div>
                 <div className="text-xs font-bold uppercase text-[#263d27]">Checkout</div>

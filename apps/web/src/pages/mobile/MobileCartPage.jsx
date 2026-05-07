@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clipboard, CreditCard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { CheckCircle2, Clipboard, CreditCard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -45,6 +45,7 @@ const MobileCartPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('Manual confirmation');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState(null);
 
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
     customerCode,
@@ -90,6 +91,12 @@ const MobileCartPage = () => {
     toast.success('Checkout draft copied');
   };
 
+  const copyCustomerCode = async () => {
+    if (!submittedOrder?.customerCode) return;
+    await navigator.clipboard.writeText(submittedOrder.customerCode);
+    toast.success(`${submittedOrder.customerCode} copied`);
+  };
+
   const submitOrder = async ({ openWhatsApp = false, openDoku = false } = {}) => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
@@ -123,6 +130,7 @@ const MobileCartPage = () => {
         });
         clear();
         setCheckoutOpen(false);
+        setSubmittedOrder(order);
         toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
         if (dokuWindow) {
           dokuWindow.location.href = checkout.paymentUrl;
@@ -130,11 +138,11 @@ const MobileCartPage = () => {
           window.location.href = checkout.paymentUrl;
           return;
         }
-        navigate('/mobile/dashboard');
         return;
       }
       clear();
       setCheckoutOpen(false);
+      setSubmittedOrder(order);
       toast.success(`Order ${order.orderNumber} saved to Studio${order.customerCode ? ` / ${order.customerCode}` : ''}`);
       if (openWhatsApp) {
         const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\nCustomer code: ${order.customerCode || customerCode || '-'}\n\nStudio order: ${order.orderNumber}`);
@@ -145,7 +153,6 @@ const MobileCartPage = () => {
           return;
         }
       }
-      navigate('/mobile/dashboard');
     } catch (error) {
       if (whatsappWindow) {
         whatsappWindow.close();
@@ -172,6 +179,30 @@ const MobileCartPage = () => {
           onBack={() => navigate('/mobile/catalog')}
           action={<ShoppingBag className="h-5 w-5 text-amber-700" />}
         />
+
+        {submittedOrder ? (
+          <section className="mobile-soft-card border border-[#263d27]/15 p-4">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <CheckCircle2 className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-bold uppercase text-amber-700">Order received</div>
+                <h2 className="mt-1 text-lg font-bold text-[#1f2937]">{submittedOrder.orderNumber}</h2>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                  Data customer sudah masuk ke Studio. Simpan kode ini untuk order berikutnya tanpa isi ulang data.
+                </p>
+                <button type="button" onClick={copyCustomerCode} className="mt-3 w-full rounded-2xl bg-[#263d27] px-4 py-3 text-center text-lg font-bold tracking-[0.16em] text-[#eef2e8]">
+                  {submittedOrder.customerCode || '-'}
+                </button>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/catalog')}>Shop again</Button>
+                  <Button type="button" className="rounded-2xl" onClick={() => navigate('/mobile/dashboard')}>Home</Button>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <section className="mobile-soft-card p-4">
           <div className="text-[10px] font-bold uppercase text-amber-700">Subtotal</div>
