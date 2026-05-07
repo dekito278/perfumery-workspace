@@ -3,88 +3,218 @@ import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet.jsx';
+import {
   bespokeBudgetOptions,
-  bespokeMoodOptions,
+  bespokeCapOptions,
+  bespokeExoticMaterialOptions,
   bespokeOccasionOptions,
   bespokeSizeOptions,
+  paymentProviderOptions,
 } from '@/data/storefront.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 
-const FieldLabel = ({ children }) => (
-  <div className="mb-2 text-[10px] font-bold uppercase text-[#8b949e]">{children}</div>
-);
-
-const OptionGrid = ({ options, value, onChange }) => (
-  <div className="grid grid-cols-2 gap-2">
-    {options.map((option) => (
-      <button
-        key={option}
-        type="button"
-        onClick={() => onChange(option)}
-        className={cn(
-          'min-h-[44px] rounded-2xl border px-3 py-2 text-left text-xs font-bold leading-snug',
-          value === option
-            ? 'border-amber-300 bg-amber-50 text-amber-800'
-            : 'border-[#e5e7eb] bg-white text-[#6b7280]'
-        )}
-      >
-        {option}
-      </button>
-    ))}
-  </div>
+const OptionButton = ({ active, children, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      'min-h-[48px] rounded-2xl border px-3 py-2 text-left text-xs font-bold leading-snug transition',
+      active
+        ? 'border-amber-300 bg-amber-50 text-amber-800'
+        : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+    )}
+  >
+    {children}
+  </button>
 );
 
 const MobileBespokePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
-  const [form, setForm] = useState({
-    name: '',
-    contact: '',
-    mood: referenceProduct?.mood || bespokeMoodOptions[0],
-    occasion: bespokeOccasionOptions[0],
-    budget: bespokeBudgetOptions[1],
-    size: bespokeSizeOptions[1],
-    preferredNotes: referenceProduct?.notes || '',
-    avoidedNotes: '',
-    story: '',
-  });
+  const [wizardOpen, setWizardOpen] = useState(true);
+  const [step, setStep] = useState(0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
+  const [form, setForm] = useState({
+    scentDescription: referenceProduct?.notes || '',
+    occasion: bespokeOccasionOptions[0],
+    size: bespokeSizeOptions[1],
+    capDesign: bespokeCapOptions[0],
+    exoticMaterial: bespokeExoticMaterialOptions[0],
+    budget: bespokeBudgetOptions[1],
+    customerName: '',
+    contact: '',
+    paymentProvider: 'manual',
+  });
 
-  const completion = useMemo(() => {
-    const required = ['name', 'contact', 'mood', 'occasion', 'budget', 'size', 'preferredNotes'];
-    const complete = required.filter((key) => String(form[key] || '').trim()).length;
-    return Math.round((complete / required.length) * 100);
-  }, [form]);
+  const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  const updateField = (key, value) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
+  const steps = useMemo(() => [
+    {
+      key: 'scentDescription',
+      title: 'Deskripsi aroma',
+      description: 'Ceritakan aroma yang kamu bayangkan.',
+      render: () => (
+        <textarea
+          value={form.scentDescription}
+          onChange={(event) => updateField('scentDescription', event.target.value)}
+          placeholder="Contoh: woody clean, sedikit vanilla, tidak terlalu manis..."
+          rows={5}
+          className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+        />
+      ),
+      isComplete: () => form.scentDescription.trim().length > 3,
+    },
+    {
+      key: 'occasion',
+      title: 'Untuk momen apa?',
+      description: 'Ini membantu menentukan karakter dan intensitas.',
+      render: () => (
+        <div className="grid grid-cols-2 gap-2">
+          {bespokeOccasionOptions.map((option) => (
+            <OptionButton key={option} active={form.occasion === option} onClick={() => updateField('occasion', option)}>{option}</OptionButton>
+          ))}
+        </div>
+      ),
+      isComplete: () => Boolean(form.occasion),
+    },
+    {
+      key: 'size',
+      title: 'Pilih ukuran botol',
+      description: 'Mulai dari trial sampai full bottle.',
+      render: () => (
+        <div className="grid gap-2">
+          {bespokeSizeOptions.map((option) => (
+            <OptionButton key={option} active={form.size === option} onClick={() => updateField('size', option)}>{option}</OptionButton>
+          ))}
+        </div>
+      ),
+      isComplete: () => Boolean(form.size),
+    },
+    {
+      key: 'capDesign',
+      title: 'Pilih desain cap',
+      description: 'Untuk arah packaging awal.',
+      render: () => (
+        <div className="grid grid-cols-2 gap-2">
+          {bespokeCapOptions.map((option) => (
+            <OptionButton key={option} active={form.capDesign === option} onClick={() => updateField('capDesign', option)}>{option}</OptionButton>
+          ))}
+        </div>
+      ),
+      isComplete: () => Boolean(form.capDesign),
+    },
+    {
+      key: 'exoticMaterial',
+      title: 'Material eksotis',
+      description: 'Pilih aksen khusus bila dibutuhkan.',
+      render: () => (
+        <div className="grid gap-2">
+          {bespokeExoticMaterialOptions.map((option) => (
+            <OptionButton key={option} active={form.exoticMaterial === option} onClick={() => updateField('exoticMaterial', option)}>{option}</OptionButton>
+          ))}
+        </div>
+      ),
+      isComplete: () => Boolean(form.exoticMaterial),
+    },
+    {
+      key: 'budget',
+      title: 'Budget',
+      description: 'Budget membantu menentukan material dan ukuran.',
+      render: () => (
+        <div className="grid gap-2">
+          {bespokeBudgetOptions.map((option) => (
+            <OptionButton key={option} active={form.budget === option} onClick={() => updateField('budget', option)}>{option}</OptionButton>
+          ))}
+        </div>
+      ),
+      isComplete: () => Boolean(form.budget),
+    },
+    {
+      key: 'contact',
+      title: 'Kontak customer',
+      description: 'Supaya tim Dekito bisa follow-up request.',
+      render: () => (
+        <div className="grid gap-2">
+          <input
+            value={form.customerName}
+            onChange={(event) => updateField('customerName', event.target.value)}
+            placeholder="Customer name"
+            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+          />
+          <input
+            value={form.contact}
+            onChange={(event) => updateField('contact', event.target.value)}
+            placeholder="WhatsApp or email"
+            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+          />
+        </div>
+      ),
+      isComplete: () => form.customerName.trim() && form.contact.trim(),
+    },
+    {
+      key: 'paymentProvider',
+      title: 'Metode pembayaran',
+      description: 'Belum charge pembayaran. Ini baru pilihan rail yang nanti disambungkan ke API.',
+      render: () => (
+        <div className="grid gap-2">
+          {paymentProviderOptions.map((option) => (
+            <OptionButton key={option.value} active={form.paymentProvider === option.value} onClick={() => updateField('paymentProvider', option.value)}>
+              <span className="block text-sm">{option.label}</span>
+              <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
+            </OptionButton>
+          ))}
+        </div>
+      ),
+      isComplete: () => Boolean(form.paymentProvider),
+    },
+  ], [form]);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (!form.name.trim() || !form.contact.trim() || !form.preferredNotes.trim()) {
-      toast.error('Please fill name, contact, and preferred notes');
+  const activeStep = steps[step];
+  const completion = Math.round(((step + Number(activeStep.isComplete())) / steps.length) * 100);
+  const selectedPayment = paymentProviderOptions.find((option) => option.value === form.paymentProvider);
+
+  const nextStep = () => {
+    if (!activeStep.isComplete()) {
+      toast.error('Please complete this step first');
       return;
     }
+    setStep((current) => Math.min(current + 1, steps.length - 1));
+  };
+
+  const submitRequest = () => {
+    const incompleteStep = steps.find((item) => !item.isComplete());
+    if (incompleteStep) {
+      toast.error(`Please complete: ${incompleteStep.title}`);
+      setStep(steps.indexOf(incompleteStep));
+      return;
+    }
+
     setSubmittedRequest({
       ...form,
       reference: referenceProduct?.name || '',
       createdAt: new Date().toISOString(),
     });
+    setWizardOpen(false);
     toast.success('Custom perfume request drafted');
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileCommerceLayout>
       <Helmet>
         <title>Bespoke Perfume - Dekito Perfumery</title>
-        <meta name="description" content="Create a custom perfume request with mood, notes, budget, size, and occasion." />
+        <meta name="description" content="Create a custom perfume request with aroma, bottle size, cap design, exotic materials, and payment preference." />
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
@@ -98,11 +228,11 @@ const MobileBespokePage = () => {
         <section className="mobile-soft-card p-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-amber-700">
             <Sparkles className="h-3.5 w-3.5" />
-            1:1 scent brief
+            Guided custom brief
           </div>
-          <h1 className="mt-3 text-2xl font-bold leading-tight text-[#1f2937]">Build a custom perfume request.</h1>
+          <h1 className="mt-3 text-2xl font-bold leading-tight text-[#1f2937]">Buat custom perfume dengan pertanyaan satu per satu.</h1>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
-            Isi preferensi aroma, budget, dan cerita singkat. Untuk tahap ini request dibuat sebagai draft ringkasan di aplikasi.
+            Flow ini dibuat ringkas seperti konsultasi. Payment rail disiapkan untuk Midtrans/Xendit, tapi belum memproses pembayaran.
           </p>
           {referenceProduct ? (
             <div className="mt-3 rounded-2xl bg-white p-3 text-xs font-bold text-[#1f2937]">
@@ -112,98 +242,21 @@ const MobileBespokePage = () => {
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
             <div className="h-full rounded-full bg-amber-500" style={{ width: `${completion}%` }} />
           </div>
-        </section>
-
-        <form className="space-y-3" onSubmit={handleSubmit}>
-          <section className="mobile-card p-4">
-            <h2 className="text-base font-bold text-[#1f2937]">Customer</h2>
-            <div className="mt-3 grid gap-3">
-              <label>
-                <FieldLabel>Name</FieldLabel>
-                <input
-                  value={form.name}
-                  onChange={(event) => updateField('name', event.target.value)}
-                  placeholder="Customer name"
-                  className="h-12 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
-                />
-              </label>
-              <label>
-                <FieldLabel>Contact</FieldLabel>
-                <input
-                  value={form.contact}
-                  onChange={(event) => updateField('contact', event.target.value)}
-                  placeholder="WhatsApp or email"
-                  className="h-12 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
-                />
-              </label>
-            </div>
-          </section>
-
-          <section className="mobile-card p-4">
-            <h2 className="text-base font-bold text-[#1f2937]">Scent direction</h2>
-            <div className="mt-3">
-              <FieldLabel>Mood</FieldLabel>
-              <OptionGrid options={bespokeMoodOptions} value={form.mood} onChange={(value) => updateField('mood', value)} />
-            </div>
-            <div className="mt-4">
-              <FieldLabel>Occasion</FieldLabel>
-              <OptionGrid options={bespokeOccasionOptions} value={form.occasion} onChange={(value) => updateField('occasion', value)} />
-            </div>
-          </section>
-
-          <section className="mobile-card p-4">
-            <h2 className="text-base font-bold text-[#1f2937]">Budget and size</h2>
-            <div className="mt-3">
-              <FieldLabel>Budget</FieldLabel>
-              <OptionGrid options={bespokeBudgetOptions} value={form.budget} onChange={(value) => updateField('budget', value)} />
-            </div>
-            <div className="mt-4">
-              <FieldLabel>Size</FieldLabel>
-              <OptionGrid options={bespokeSizeOptions} value={form.size} onChange={(value) => updateField('size', value)} />
-            </div>
-          </section>
-
-          <section className="mobile-card p-4">
-            <h2 className="text-base font-bold text-[#1f2937]">Notes</h2>
-            <div className="mt-3 grid gap-3">
-              <label>
-                <FieldLabel>Preferred notes</FieldLabel>
-                <textarea
-                  value={form.preferredNotes}
-                  onChange={(event) => updateField('preferredNotes', event.target.value)}
-                  placeholder="Vanilla, clean musk, rose, sandalwood..."
-                  rows={3}
-                  className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
-                />
-              </label>
-              <label>
-                <FieldLabel>Avoided notes</FieldLabel>
-                <textarea
-                  value={form.avoidedNotes}
-                  onChange={(event) => updateField('avoidedNotes', event.target.value)}
-                  placeholder="Too sweet, smoky, sharp citrus..."
-                  rows={2}
-                  className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
-                />
-              </label>
-              <label>
-                <FieldLabel>Story</FieldLabel>
-                <textarea
-                  value={form.story}
-                  onChange={(event) => updateField('story', event.target.value)}
-                  placeholder="Tell us the feeling, person, or moment this scent should represent."
-                  rows={3}
-                  className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
-                />
-              </label>
-            </div>
-          </section>
-
-          <Button type="submit" className="h-12 w-full rounded-2xl gap-2">
-            Draft request
+          <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setWizardOpen(true)}>
+            Start custom wizard
             <Send className="h-4 w-4" />
           </Button>
-        </form>
+        </section>
+
+        <section className="mobile-card p-4">
+          <h2 className="text-base font-bold text-[#1f2937]">Current brief</h2>
+          <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
+            <p><strong className="text-[#1f2937]">Aroma:</strong> {form.scentDescription || '-'}</p>
+            <p><strong className="text-[#1f2937]">Bottle:</strong> {form.size} / {form.capDesign}</p>
+            <p><strong className="text-[#1f2937]">Material:</strong> {form.exoticMaterial}</p>
+            <p><strong className="text-[#1f2937]">Payment rail:</strong> {selectedPayment?.label}</p>
+          </div>
+        </section>
 
         {submittedRequest ? (
           <section className="mobile-card p-4">
@@ -214,16 +267,17 @@ const MobileBespokePage = () => {
               <div className="min-w-0 flex-1">
                 <h2 className="text-base font-bold text-[#1f2937]">Request summary</h2>
                 <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
-                  <p><strong className="text-[#1f2937]">Customer:</strong> {submittedRequest.name}</p>
+                  <p><strong className="text-[#1f2937]">Customer:</strong> {submittedRequest.customerName}</p>
                   <p><strong className="text-[#1f2937]">Contact:</strong> {submittedRequest.contact}</p>
-                  <p><strong className="text-[#1f2937]">Direction:</strong> {submittedRequest.mood} for {submittedRequest.occasion}</p>
-                  <p><strong className="text-[#1f2937]">Budget:</strong> {submittedRequest.budget}, {submittedRequest.size}</p>
-                  <p><strong className="text-[#1f2937]">Notes:</strong> {submittedRequest.preferredNotes}</p>
+                  <p><strong className="text-[#1f2937]">Aroma:</strong> {submittedRequest.scentDescription}</p>
+                  <p><strong className="text-[#1f2937]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.capDesign}</p>
+                  <p><strong className="text-[#1f2937]">Material:</strong> {submittedRequest.exoticMaterial}</p>
+                  <p><strong className="text-[#1f2937]">Payment:</strong> {selectedPayment?.label}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/studio')}>
+                  <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>
                     <ClipboardList className="h-4 w-4" />
-                    Studio
+                    Catalog
                   </Button>
                   <Button type="button" className="rounded-2xl gap-2">
                     WhatsApp later
@@ -234,8 +288,36 @@ const MobileBespokePage = () => {
             </div>
           </section>
         ) : null}
+
+        <Sheet open={wizardOpen} onOpenChange={setWizardOpen}>
+          <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#fbfaf7] p-4">
+            <SheetHeader className="pr-8 text-left">
+              <SheetTitle>{activeStep.title}</SheetTitle>
+              <SheetDescription>Step {step + 1} of {steps.length}. {activeStep.description}</SheetDescription>
+            </SheetHeader>
+            <div className="mt-4">
+              <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
+                <div className="h-full rounded-full bg-amber-500" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+              </div>
+              {activeStep.render()}
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
+                  Back
+                </Button>
+                {step === steps.length - 1 ? (
+                  <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest}>
+                    Save brief
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </main>
-    </MobileAuthenticatedLayout>
+    </MobileCommerceLayout>
   );
 };
 

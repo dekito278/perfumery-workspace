@@ -203,3 +203,37 @@ export const bespokeBudgetOptions = [
 ];
 
 export const bespokeSizeOptions = ['10 ml trial', '30 ml bottle', '50 ml bottle'];
+
+export const bespokeCapOptions = [
+  'Classic black cap',
+  'Matte silver cap',
+  'Gold collar cap',
+  'Wooden cap',
+];
+
+export const bespokeExoticMaterialOptions = [
+  'No exotic material',
+  'Oud accent',
+  'Saffron nuance',
+  'Ambergris-style accord',
+  'Rare floral absolute',
+  'Smoky resin touch',
+];
+
+export const paymentProviderOptions = [
+  {
+    value: 'midtrans',
+    label: 'Midtrans',
+    description: 'Payment gateway candidate for VA, QRIS, cards, and e-wallet checkout.',
+  },
+  {
+    value: 'xendit',
+    label: 'Xendit',
+    description: 'Payment gateway candidate for invoice-style checkout and multiple local rails.',
+  },
+  {
+    value: 'manual',
+    label: 'Manual confirm',
+    description: 'Temporary flow while comparing API scope and transaction fees.',
+  },
+];

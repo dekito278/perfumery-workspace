@@ -55,14 +55,14 @@ import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 
 const RootRedirect = () => {
-  const { isAuthenticated, initialLoading } = useAuth();
+  const { initialLoading } = useAuth();
 
   if (initialLoading) {
     return null;
   }
 
   if (isMobileBrowser()) {
-    return <Navigate to={isAuthenticated ? '/mobile/dashboard' : '/mobile/login'} replace />;
+    return <Navigate to="/mobile/dashboard" replace />;
   }
 
   return <Navigate to="/home" replace />;
@@ -111,40 +111,18 @@ function AppRoutes() {
         <Route path="/mobile/login" element={<MobileLoginPage />} />
 
         <Route path="/mobile" element={
-          <ProtectedRoute>
-            <Navigate to="/mobile/dashboard" replace />
-          </ProtectedRoute>
+          <Navigate to="/mobile/dashboard" replace />
         } />
 
-        <Route path="/mobile/dashboard" element={
-          <ProtectedRoute>
-            <MobileStorefrontPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/mobile/dashboard" element={<MobileStorefrontPage />} />
 
-        <Route path="/mobile/catalog" element={
-          <ProtectedRoute>
-            <MobileCatalogPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/mobile/catalog" element={<MobileCatalogPage />} />
 
-        <Route path="/mobile/products/:slug" element={
-          <ProtectedRoute>
-            <MobileProductDetailPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/mobile/products/:slug" element={<MobileProductDetailPage />} />
 
-        <Route path="/mobile/bespoke" element={
-          <ProtectedRoute>
-            <MobileBespokePage />
-          </ProtectedRoute>
-        } />
+        <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
-        <Route path="/mobile/cart" element={
-          <ProtectedRoute>
-            <MobileCartPage />
-          </ProtectedRoute>
-        } />
+        <Route path="/mobile/cart" element={<MobileCartPage />} />
 
         <Route path="/mobile/studio" element={
           <ProtectedRoute>

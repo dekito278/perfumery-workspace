@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Edit3, PackagePlus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Edit3, ImagePlus, PackagePlus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { featuredProducts, storefrontCategories } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import {
@@ -24,6 +25,7 @@ const emptyProduct = {
   heartNotes: '',
   baseNotes: '',
   description: '',
+  imageUrl: '',
   tags: '',
   mood: '',
   featured: true,
@@ -46,6 +48,23 @@ const ProductManagementPage = () => {
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
   const resetForm = () => setForm(emptyProduct);
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    if (file.size > 750 * 1024) {
+      toast.error('Use an image below 750 KB for local preview storage');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => updateField('imageUrl', reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -128,6 +147,23 @@ const ProductManagementPage = () => {
                 <span className="text-xs font-bold uppercase text-muted-foreground">Notes summary</span>
                 <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
               </label>
+              <div className="sm:col-span-2 grid gap-4 rounded-2xl border bg-[#fbfaf7] p-4 sm:grid-cols-[0.9fr_1.1fr]">
+                <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="min-h-[220px]" />
+                <div className="grid content-start gap-3">
+                  <label>
+                    <span className="text-xs font-bold uppercase text-muted-foreground">Product image URL</span>
+                    <input value={form.imageUrl || ''} onChange={(event) => updateField('imageUrl', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="https://.../product.jpg" />
+                  </label>
+                  <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold">
+                    <ImagePlus className="h-4 w-4" />
+                    Upload image
+                    <input type="file" accept="image/*" className="sr-only" onChange={handleImageUpload} />
+                  </label>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Upload disimpan sebagai preview lokal browser. Untuk produksi nanti bisa diarahkan ke storage backend.
+                  </p>
+                </div>
+              </div>
               {[
                 ['topNotes', 'Top notes'],
                 ['heartNotes', 'Heart notes'],
@@ -163,10 +199,13 @@ const ProductManagementPage = () => {
               {customProducts.map((product) => (
                 <article key={product.id} className="rounded-2xl border bg-[#fbfaf7] p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-base font-bold">{product.name}</h3>
-                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{product.notes}</p>
-                      <p className="mt-1 text-xs font-bold uppercase text-amber-700">{product.category} · {product.price} · {product.stock} left</p>
+                    <div className="grid min-w-0 flex-1 grid-cols-[84px_1fr] gap-3">
+                      <ProductVisual product={product} className="h-24 rounded-2xl" label={false} />
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-bold">{product.name}</h3>
+                        <p className="mt-1 text-sm font-semibold text-muted-foreground">{product.notes}</p>
+                        <p className="mt-1 text-xs font-bold uppercase text-amber-700">{product.category} · {product.price} · {product.stock} left</p>
+                      </div>
                     </div>
                     <div className="flex shrink-0 gap-2">
                       <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => handleEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>

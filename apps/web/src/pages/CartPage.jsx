@@ -41,7 +41,7 @@ const CartPage = () => {
     });
     clear();
     toast.success(`Order ${order.id} saved`);
-    navigate('/studio/orders');
+    navigate('/home');
   };
 
   return (

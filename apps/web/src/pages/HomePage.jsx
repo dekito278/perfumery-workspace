@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Beaker,
   CheckCircle2,
   MessageCircle,
   Search,
@@ -12,21 +11,9 @@ import {
   WandSparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-
-const ProductVisual = ({ product, className = '' }) => (
-  <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${product.visual} ${className}`}>
-    <div className="absolute left-8 top-8 h-40 w-20 rounded-[1.8rem] border border-white/70 bg-white/45 shadow-2xl backdrop-blur-sm">
-      <div className="mx-auto mt-4 h-5 w-9 rounded-full bg-white/70" />
-      <div className="mx-auto mt-8 h-16 w-12 rounded-2xl border border-white/60 bg-white/30" />
-    </div>
-    <div className="absolute bottom-6 right-6 rounded-2xl bg-white/82 px-4 py-3 text-right shadow-sm backdrop-blur">
-      <div className="text-xs font-bold uppercase text-muted-foreground">{product.category}</div>
-      <div className="text-sm font-bold text-foreground">{product.size}</div>
-    </div>
-  </div>
-);
 
 const HomePage = () => {
   const products = useCatalogProducts();
@@ -60,9 +47,8 @@ const HomePage = () => {
             </div>
             <div className="flex items-center gap-2">
               <Link to="/cart" className="grid h-10 w-10 place-items-center rounded-2xl border bg-white" aria-label="Open cart"><ShoppingBag className="h-4 w-4" /></Link>
-              <Link to="/studio" className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1f2937] px-4 text-sm font-bold text-white">
-                Studio
-                <Beaker className="h-4 w-4" />
+              <Link to="/login" className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#1f2937]">
+                Admin login
               </Link>
             </div>
           </div>
@@ -146,8 +132,8 @@ const HomePage = () => {
               <div className="text-xs font-bold uppercase text-amber-700">Featured</div>
               <h2 className="mt-1 text-3xl font-bold">Products to sell</h2>
             </div>
-            <Link to="/studio" className="hidden h-10 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold sm:inline-flex">
-              Manage products later
+            <Link to="/login" className="hidden h-10 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold sm:inline-flex">
+              Admin area
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -196,9 +182,9 @@ const HomePage = () => {
                   Create custom brief
                   <MessageCircle className="h-4 w-4" />
                 </Link>
-                <Link to="/studio" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 px-5 text-sm font-bold text-white">
-                  Open Perfumer Studio
-                  <Beaker className="h-4 w-4" />
+                <Link to="/catalog" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 px-5 text-sm font-bold text-white">
+                  Explore catalog
+                  <ShoppingBag className="h-4 w-4" />
                 </Link>
               </div>
             </div>

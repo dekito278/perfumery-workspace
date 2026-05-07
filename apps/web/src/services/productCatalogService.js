@@ -78,6 +78,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
     featured: Boolean(input.featured),
     popularity: Number(input.popularity || 70),
     visual: input.visual || FALLBACK_VISUALS[visualIndex],
+    imageUrl: input.imageUrl || '',
     source: input.source || 'custom',
     updatedAt: new Date().toISOString(),
   };

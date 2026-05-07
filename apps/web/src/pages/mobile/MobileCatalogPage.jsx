@@ -2,25 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpDown, Search, ShoppingBag, SlidersHorizontal } from 'lucide-react';
-import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { catalogSortOptions, storefrontCategories } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-
-const ProductVisual = ({ product }) => (
-  <div className={`relative h-32 overflow-hidden rounded-2xl bg-gradient-to-br ${product.visual}`}>
-    <div className="absolute left-5 top-5 h-20 w-10 rounded-[1rem] border border-white/70 bg-white/45 shadow-xl backdrop-blur-sm">
-      <div className="mx-auto mt-2 h-3 w-5 rounded-full bg-white/70" />
-      <div className="mx-auto mt-4 h-9 w-6 rounded-xl border border-white/60 bg-white/30" />
-    </div>
-    <div className="absolute bottom-3 right-3 rounded-2xl bg-white/84 px-3 py-2 text-right text-[10px] font-bold shadow-sm backdrop-blur">
-      <div className="uppercase text-[#6b7280]">{product.category}</div>
-      <div className="text-[#1f2937]">{product.size}</div>
-    </div>
-  </div>
-);
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];
@@ -76,7 +64,7 @@ const MobileCatalogPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileCommerceLayout>
       <Helmet>
         <title>Catalog - Dekito Perfumery</title>
         <meta name="description" content="Browse Dekito Perfumery products by category, price, and scent profile." />
@@ -154,7 +142,7 @@ const MobileCatalogPage = () => {
           {filteredProducts.map((product) => (
             <article key={product.id} className="mobile-card overflow-hidden p-3">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} />
+                <ProductVisual product={product} className="h-40" bottleClassName="left-5 top-5 h-20 w-10 rounded-[1rem]" />
                 <div className="mt-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -193,7 +181,7 @@ const MobileCatalogPage = () => {
           <ShoppingBag className="h-4 w-4 text-amber-700" />
         </Link>
       </main>
-    </MobileAuthenticatedLayout>
+    </MobileCommerceLayout>
   );
 };
 

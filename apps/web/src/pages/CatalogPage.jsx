@@ -2,22 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Search, ShoppingBag } from 'lucide-react';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { catalogSortOptions, storefrontCategories } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-
-const ProductVisual = ({ product }) => (
-  <div className={`relative min-h-[230px] overflow-hidden rounded-2xl bg-gradient-to-br ${product.visual}`}>
-    <div className="absolute left-8 top-8 h-36 w-20 rounded-[1.8rem] border border-white/70 bg-white/45 shadow-2xl backdrop-blur-sm">
-      <div className="mx-auto mt-4 h-5 w-9 rounded-full bg-white/70" />
-      <div className="mx-auto mt-8 h-14 w-12 rounded-2xl border border-white/60 bg-white/30" />
-    </div>
-    <div className="absolute bottom-5 right-5 rounded-2xl bg-white/84 px-4 py-3 text-right shadow-sm backdrop-blur">
-      <div className="text-xs font-bold uppercase text-muted-foreground">{product.category}</div>
-      <div className="text-sm font-bold text-foreground">{product.size}</div>
-    </div>
-  </div>
-);
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];

@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Edit3, PackagePlus, Save, Trash2 } from 'lucide-react';
+import { Edit3, ImagePlus, PackagePlus, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { deleteCustomProduct, formatRupiah, saveCustomProduct } from '@/services/productCatalogService.js';
@@ -21,6 +22,7 @@ const emptyProduct = {
   baseNotes: '',
   tags: '',
   description: '',
+  imageUrl: '',
   featured: true,
 };
 
@@ -31,6 +33,23 @@ const MobileProductManagementPage = () => {
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const resetForm = () => setForm(emptyProduct);
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    if (file.size > 750 * 1024) {
+      toast.error('Use an image below 750 KB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => updateField('imageUrl', reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -87,6 +106,15 @@ const MobileProductManagementPage = () => {
               <input value={form.size} onChange={(event) => updateField('size', event.target.value)} placeholder="30 ml" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             </div>
             <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Notes summary" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
+              <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="h-40" />
+              <input value={form.imageUrl || ''} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="Product image URL" className="mt-3 h-12 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              <label className="mt-2 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-xs font-bold">
+                <ImagePlus className="h-4 w-4" />
+                Upload image
+                <input type="file" accept="image/*" className="sr-only" onChange={handleImageUpload} />
+              </label>
+            </div>
             <input value={form.topNotes || ''} onChange={(event) => updateField('topNotes', event.target.value)} placeholder="Top notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.heartNotes || ''} onChange={(event) => updateField('heartNotes', event.target.value)} placeholder="Heart notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.baseNotes || ''} onChange={(event) => updateField('baseNotes', event.target.value)} placeholder="Base notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
@@ -107,10 +135,13 @@ const MobileProductManagementPage = () => {
           {customProducts.map((product) => (
             <article key={product.id} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
-                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} · {product.price}</p>
+                <div className="grid min-w-0 flex-1 grid-cols-[72px_1fr] gap-3">
+                  <ProductVisual product={product} className="h-20 rounded-2xl" label={false} />
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
+                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} · {product.price}</p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 gap-1">
                   <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => handleEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>

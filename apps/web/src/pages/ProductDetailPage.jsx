@@ -1,8 +1,9 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Beaker, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowLeft, MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 
@@ -28,16 +29,11 @@ const ProductDetailPage = () => {
               <ArrowLeft className="h-4 w-4" />
               Catalog
             </Link>
-            <Link to="/studio" className="rounded-2xl bg-[#1f2937] px-4 py-2 text-sm font-bold text-white">Studio</Link>
+            <Link to="/login" className="rounded-2xl border bg-white px-4 py-2 text-sm font-bold">Admin login</Link>
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
-          <div className={`relative min-h-[520px] overflow-hidden rounded-[28px] bg-gradient-to-br ${product.visual}`}>
-            <div className="absolute left-14 top-14 h-64 w-36 rounded-[2.5rem] border border-white/70 bg-white/45 shadow-2xl backdrop-blur-sm">
-              <div className="mx-auto mt-7 h-8 w-16 rounded-full bg-white/70" />
-              <div className="mx-auto mt-16 h-28 w-20 rounded-3xl border border-white/60 bg-white/30" />
-            </div>
-          </div>
+          <ProductVisual product={product} className="min-h-[520px] rounded-[28px]" bottleClassName="left-14 top-14 h-64 w-36 rounded-[2.5rem]" />
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white px-3 py-1 text-xs font-bold uppercase text-amber-700">
               <Sparkles className="h-4 w-4" />
@@ -71,7 +67,7 @@ const ProductDetailPage = () => {
               </button>
               <Link to={`/bespoke?reference=${product.slug}`} className="inline-flex h-12 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold">
                 Use as custom brief reference
-                <Beaker className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" />
               </Link>
             </div>
           </div>

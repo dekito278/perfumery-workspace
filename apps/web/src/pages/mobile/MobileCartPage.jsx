@@ -3,9 +3,16 @@ import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clipboard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { buildCheckoutDraft } from '@/services/cartService.js';
 import { createOrder } from '@/services/orderService.js';
@@ -15,6 +22,7 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
+  const [checkoutOpen, setCheckoutOpen] = useState(Boolean(items.length));
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
   const [notes, setNotes] = useState('');
@@ -43,12 +51,13 @@ const MobileCartPage = () => {
       checkoutDraft,
     });
     clear();
+    setCheckoutOpen(false);
     toast.success(`Order ${order.id} saved`);
-    navigate('/mobile/studio/orders');
+    navigate('/mobile/dashboard');
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileCommerceLayout>
       <Helmet>
         <title>Cart - Dekito Perfumery</title>
       </Helmet>
@@ -64,7 +73,13 @@ const MobileCartPage = () => {
         <section className="mobile-soft-card p-4">
           <div className="text-[10px] font-bold uppercase text-amber-700">Subtotal</div>
           <div className="mt-1 text-3xl font-bold text-[#1f2937]">{formatTotal(summary.subtotal)}</div>
-          <p className="mt-2 text-xs font-semibold text-[#6b7280]">Checkout akan tersimpan ke order queue Studio untuk ditindaklanjuti.</p>
+          <p className="mt-2 text-xs font-semibold text-[#6b7280]">Checkout tersimpan sebagai order untuk ditindaklanjuti oleh tim Dekito.</p>
+          {items.length ? (
+            <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setCheckoutOpen(true)}>
+              <PackageCheck className="h-4 w-4" />
+              Review checkout
+            </Button>
+          ) : null}
         </section>
 
         <section className="space-y-3">
@@ -101,35 +116,46 @@ const MobileCartPage = () => {
           ) : null}
         </section>
 
-        {items.length ? (
-          <>
-            <section className="mobile-card p-4">
-              <h2 className="text-base font-bold text-[#1f2937]">Customer details</h2>
-              <div className="mt-3 grid gap-3">
-                <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
-              </div>
-            </section>
-
-            <section className="mobile-card p-4">
-              <h2 className="text-base font-bold text-[#1f2937]">Checkout draft</h2>
-              <Button type="button" className="mt-3 w-full rounded-2xl gap-2" onClick={submitOrder}><PackageCheck className="h-4 w-4" />Save order</Button>
-              <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-2xl bg-[#f8f7f4] p-3 text-xs font-semibold leading-relaxed text-[#1f2937]">{checkoutDraft}</pre>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={copyDraft}><Clipboard className="h-4 w-4" />Copy</Button>
-                <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Clear cart</Button>
-              </div>
-            </section>
-          </>
-        ) : null}
-
         <Link to="/mobile/catalog" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#1f2937]">
           Continue shopping
           <ShoppingBag className="h-4 w-4 text-amber-700" />
         </Link>
+
+        <Sheet open={checkoutOpen && Boolean(items.length)} onOpenChange={setCheckoutOpen}>
+          <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#fbfaf7] p-4">
+            <SheetHeader className="pr-8 text-left">
+              <SheetTitle>Checkout</SheetTitle>
+              <SheetDescription>{summary.quantity} items / {formatTotal(summary.subtotal)}</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-4 space-y-3">
+              <section className="mobile-card p-3">
+                <h2 className="text-sm font-bold text-[#1f2937]">Customer</h2>
+                <div className="mt-3 grid gap-2">
+                  <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                </div>
+              </section>
+
+              <section className="mobile-card p-3">
+                <h2 className="text-sm font-bold text-[#1f2937]">Draft</h2>
+                <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-2xl bg-[#f8f7f4] p-3 text-xs font-semibold leading-relaxed text-[#1f2937]">{checkoutDraft}</pre>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={copyDraft}><Clipboard className="h-4 w-4" />Copy</Button>
+                  <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => { clear(); setCheckoutOpen(false); }}>Clear</Button>
+                </div>
+              </section>
+
+              <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={submitOrder}>
+                <PackageCheck className="h-4 w-4" />
+                Save order
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </main>
-    </MobileAuthenticatedLayout>
+    </MobileCommerceLayout>
   );
 };
 

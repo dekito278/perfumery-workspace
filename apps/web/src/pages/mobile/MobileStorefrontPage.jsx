@@ -1,34 +1,20 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
-  Beaker,
   Filter,
-  MessageCircle,
   Search,
   ShoppingBag,
   Sparkles,
   WandSparkles,
 } from 'lucide-react';
-import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-
-const ProductVisual = ({ product }) => (
-  <div className={`relative h-36 overflow-hidden rounded-2xl bg-gradient-to-br ${product.visual}`}>
-    <div className="absolute left-5 top-5 h-24 w-12 rounded-[1.2rem] border border-white/70 bg-white/45 shadow-xl backdrop-blur-sm">
-      <div className="mx-auto mt-2 h-3 w-5 rounded-full bg-white/70" />
-      <div className="mx-auto mt-4 h-10 w-7 rounded-xl border border-white/60 bg-white/30" />
-    </div>
-    <div className="absolute bottom-4 right-4 rounded-2xl bg-white/80 px-3 py-2 text-right shadow-sm backdrop-blur">
-      <div className="text-[10px] font-bold uppercase text-[#6b7280]">{product.category}</div>
-      <div className="text-xs font-bold text-[#1f2937]">{product.size}</div>
-    </div>
-  </div>
-);
 
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
@@ -41,7 +27,7 @@ const MobileStorefrontPage = () => {
   ];
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileCommerceLayout>
       <Helmet>
         <title>Dekito Perfumery - Home</title>
         <meta name="description" content="Dekito Perfumery storefront with featured perfumes, scent categories, and bespoke perfume consultation." />
@@ -118,7 +104,7 @@ const MobileStorefrontPage = () => {
           {homeProducts.map((product) => (
             <article key={product.id} className="mobile-card overflow-hidden p-3">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} />
+                <ProductVisual product={product} className="h-40" bottleClassName="left-5 top-5 h-24 w-12 rounded-[1.2rem]" />
                 <div className="mt-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-base font-bold text-[#1f2937]">{product.name}</h3>
@@ -152,19 +138,8 @@ const MobileStorefrontPage = () => {
             </div>
           </div>
         </section>
-
-        <Link to="/mobile/studio" className="mobile-card flex items-center gap-3 p-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-            <Beaker className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-[#1f2937]">Perfumer Studio</span>
-            <span className="block text-xs font-semibold text-[#6b7280]">Briefs, formulas, materials, validation</span>
-          </span>
-          <MessageCircle className="h-4 w-4 text-[#9ca3af]" />
-        </Link>
       </main>
-    </MobileAuthenticatedLayout>
+    </MobileCommerceLayout>
   );
 };
 

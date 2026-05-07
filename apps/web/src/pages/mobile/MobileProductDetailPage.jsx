@@ -3,24 +3,12 @@ import { Helmet } from 'react-helmet';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
-
-const ProductBottle = ({ product }) => (
-  <div className={`relative min-h-[280px] overflow-hidden rounded-[24px] bg-gradient-to-br ${product.visual}`}>
-    <div className="absolute left-10 top-10 h-44 w-24 rounded-[2rem] border border-white/70 bg-white/45 shadow-2xl backdrop-blur-sm">
-      <div className="mx-auto mt-5 h-6 w-12 rounded-full bg-white/70" />
-      <div className="mx-auto mt-10 h-20 w-14 rounded-2xl border border-white/60 bg-white/30" />
-    </div>
-    <div className="absolute bottom-5 right-5 rounded-2xl bg-white/84 px-4 py-3 text-right shadow-sm backdrop-blur">
-      <div className="text-[10px] font-bold uppercase text-[#6b7280]">{product.category}</div>
-      <div className="text-sm font-bold text-[#1f2937]">{product.concentration}</div>
-    </div>
-  </div>
-);
 
 const NoteColumn = ({ title, notes }) => (
   <div className="rounded-2xl bg-[#f8f7f4] p-3">
@@ -44,7 +32,7 @@ const MobileProductDetailPage = () => {
   }
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileCommerceLayout>
       <Helmet>
         <title>{product.name} - Dekito Perfumery</title>
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
@@ -58,7 +46,7 @@ const MobileProductDetailPage = () => {
           action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-amber-700" /></button>}
         />
 
-        <ProductBottle product={product} />
+        <ProductVisual product={product} className="min-h-[320px] rounded-[24px]" bottleClassName="left-10 top-10 h-44 w-24 rounded-[2rem]" />
 
         <section className="mobile-card p-4">
           <div className="flex items-start justify-between gap-3">
@@ -118,7 +106,7 @@ const MobileProductDetailPage = () => {
           </div>
         </section>
 
-        <div className="mobile-card grid grid-cols-[1fr_auto] gap-2 p-2">
+        <div className="mobile-card sticky bottom-20 z-20 grid grid-cols-[1fr_auto] gap-2 p-2 shadow-lg">
           <Button className="h-12 rounded-2xl gap-2" onClick={() => { addItem(product, 1); toast.success('Added to cart'); }}>
             Add to cart
             <ArrowRight className="h-4 w-4" />
@@ -140,7 +128,7 @@ const MobileProductDetailPage = () => {
           <ShoppingBag className="h-4 w-4 text-amber-700" />
         </Link>
       </main>
-    </MobileAuthenticatedLayout>
+    </MobileCommerceLayout>
   );
 };
 
