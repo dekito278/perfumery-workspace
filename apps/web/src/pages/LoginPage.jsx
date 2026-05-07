@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Helmet } from 'react-helmet';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +26,8 @@ const LoginPage = () => {
     try {
       await login(email, password);
       toast.success('Login successful');
-      navigate('/studio');
+      const redirectTo = location.state?.from?.pathname || '/studio';
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
       toast.error(err.message || 'Login failed');

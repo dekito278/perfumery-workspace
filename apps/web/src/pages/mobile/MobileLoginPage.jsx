@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Beaker } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const MobileLoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +24,8 @@ const MobileLoginPage = () => {
     try {
       await login(email, password);
       toast.success('Login successful');
-      navigate('/mobile/dashboard');
+      const redirectTo = location.state?.from?.pathname || '/mobile/studio';
+      navigate(redirectTo, { replace: true });
     } catch (loginError) {
       const message = loginError.message || 'Login failed';
       setError(message);

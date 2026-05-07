@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     const loginPath = location.pathname.startsWith('/mobile') ? '/mobile/login' : '/login';
-    return <Navigate to={loginPath} replace />;
+    return <Navigate to={loginPath} replace state={{ from: location }} />;
   }
 
   return children;
