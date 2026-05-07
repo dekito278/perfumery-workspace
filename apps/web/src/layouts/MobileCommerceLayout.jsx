@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Search, ShoppingBag } from 'lucide-react';
+import { Beaker, Home, MessageCircle, Search, ShoppingBag } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { cn } from '@/lib/utils.js';
 
 const commerceNavItems = [
@@ -12,12 +13,23 @@ const commerceNavItems = [
 
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="mobile-app">
       <div className="mobile-app-shell">
         {children}
       </div>
+      {isAuthenticated ? (
+        <Link
+          to="/mobile/studio"
+          className="fixed bottom-[86px] right-4 z-40 inline-flex h-11 items-center gap-2 rounded-2xl border border-amber-200 bg-white px-4 text-xs font-bold text-amber-700 shadow-lg"
+          aria-label="Back to Studio dashboard"
+        >
+          <Beaker className="h-4 w-4" />
+          Studio
+        </Link>
+      ) : null}
       <nav className="mobile-bottom-nav grid grid-cols-4 gap-1 p-1.5" aria-label="Mobile shop navigation">
         {commerceNavItems.map((item) => {
           const Icon = item.icon;

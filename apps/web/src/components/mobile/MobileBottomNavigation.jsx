@@ -32,10 +32,10 @@ const navGroups = [
     items: [
       { path: '/mobile/studio/products', label: 'Products', helper: 'Manage catalog products', icon: PackagePlus },
       { path: '/mobile/studio/orders', label: 'Orders', helper: 'Order queue from checkout', icon: PackageCheck },
-      { path: '/mobile/dashboard', label: 'Storefront', helper: 'Public home preview', icon: Store },
-      { path: '/mobile/catalog', label: 'Shop', helper: 'Regular and limited products', icon: ShoppingBag },
-      { path: '/mobile/cart', label: 'Checkout cart', helper: 'Customer cart flow', icon: CreditCard },
-      { path: '/mobile/bespoke', label: 'Bespoke', helper: 'Custom perfume request', icon: WandSparkles },
+      { path: '/mobile/dashboard', label: 'Preview home', helper: 'Public storefront view', icon: Store },
+      { path: '/mobile/catalog', label: 'Preview shop', helper: 'Regular and limited products', icon: ShoppingBag },
+      { path: '/mobile/cart', label: 'Preview cart', helper: 'Customer checkout flow', icon: CreditCard },
+      { path: '/mobile/bespoke', label: 'Preview bespoke', helper: 'Custom perfume request', icon: WandSparkles },
     ],
   },
   {
