@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
     timeoutId = window.setTimeout(() => {
       const cachedSession = getCachedSession();
       if (!cachedSession) {
-        console.warn('Auth initialization timed out, continuing without restored session.');
+        console.info('Auth initialization timed out, continuing without restored session.');
       }
       finishLoading(cachedSession);
     }, AUTH_INIT_TIMEOUT_MS);

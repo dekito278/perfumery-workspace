@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3 } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3, PackageCheck, PackagePlus, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
@@ -9,6 +9,8 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useOrders } from '@/hooks/useOrders.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import DashboardSummaryCard from '@/components/DashboardSummaryCard.jsx';
@@ -61,6 +63,8 @@ const DashboardPage = () => {
   const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
   const { getBriefMaterialShortlistsByBriefIds } = useBriefMaterialShortlists();
+  const catalogProducts = useCatalogProducts();
+  const { summary: orderSummary } = useOrders();
 
   const [materials, setMaterials] = useState([]);
   const [formulas, setFormulas] = useState([]);
@@ -132,6 +136,10 @@ const DashboardPage = () => {
   const actionNeededLogs = useMemo(
     () => validationLogs.filter((log) => log.status === 'action_needed'),
     [validationLogs]
+  );
+  const customProducts = useMemo(
+    () => catalogProducts.filter((product) => product.source === 'custom'),
+    [catalogProducts]
   );
   const recentFormulas = useMemo(
     () => [...formulas].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5),
@@ -251,6 +259,85 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
+
+        <DashboardSection title="Channel kerja">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <section className="rounded-3xl border border-white/70 bg-white/86 p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase text-amber-700">
+                    <ShoppingBag className="h-4 w-4" />
+                    E-commerce
+                  </div>
+                  <h2 className="mt-4 text-xl font-bold">Produk, katalog, dan order</h2>
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
+                    Semua pekerjaan toko dipusatkan di sini supaya tidak tercampur dengan workflow formula.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-right">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Active orders</div>
+                  <div className="text-2xl font-bold">{orderSummary.active}</div>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/products')}>
+                  <PackagePlus className="h-4 w-4" />
+                  Products
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/orders')}>
+                  <PackageCheck className="h-4 w-4" />
+                  Orders
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/home')}>
+                  <ShoppingBag className="h-4 w-4" />
+                  Storefront
+                </Button>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Catalog</span><strong>{catalogProducts.length}</strong></div>
+                <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Custom</span><strong>{customProducts.length}</strong></div>
+                <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Orders</span><strong>{orderSummary.total}</strong></div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/70 bg-white/86 p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-blue-700">
+                    <Beaker className="h-4 w-4" />
+                    Studio ops
+                  </div>
+                  <h2 className="mt-4 text-xl font-bold">Formula, material, dan validasi</h2>
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
+                    Area kerja inti perfumery untuk brief, library material, composer, costing, dan validation follow-up.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-right">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Action logs</div>
+                  <div className="text-2xl font-bold">{actionNeededLogs.length}</div>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/formulas')}>
+                  <Beaker className="h-4 w-4" />
+                  Formulas
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/raw-materials')}>
+                  <Package className="h-4 w-4" />
+                  Materials
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/briefs')}>
+                  <ClipboardList className="h-4 w-4" />
+                  Briefs
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/validation')}>
+                  <NotebookPen className="h-4 w-4" />
+                  Validation
+                </Button>
+              </div>
+            </section>
+          </div>
+        </DashboardSection>
 
         <DashboardSection title="Ringkasan pipeline">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">

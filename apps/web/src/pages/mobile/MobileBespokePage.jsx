@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, ClipboardList, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
+import { CheckCircle2, ClipboardList, MessageCircle, MessageSquareHeart, Send, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -20,6 +20,7 @@ import {
   bespokeOccasionOptions,
   bespokeSizeOptions,
   paymentProviderOptions,
+  feedbackFlowSteps,
 } from '@/data/storefront.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
@@ -166,7 +167,7 @@ const MobileBespokePage = () => {
     {
       key: 'paymentProvider',
       title: 'Metode pembayaran',
-      description: 'Belum charge pembayaran. Ini baru pilihan rail yang nanti disambungkan ke API.',
+      description: 'Pilih cara follow-up pembayaran untuk request ini.',
       render: () => (
         <div className="grid gap-2">
           {paymentProviderOptions.map((option) => (
@@ -232,7 +233,7 @@ const MobileBespokePage = () => {
           </div>
           <h1 className="mt-3 text-2xl font-bold leading-tight text-[#1f2937]">Buat custom perfume dengan pertanyaan satu per satu.</h1>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
-            Flow ini dibuat ringkas seperti konsultasi. Payment rail disiapkan untuk Midtrans/Xendit, tapi belum memproses pembayaran.
+            Flow ini dibuat ringkas seperti konsultasi agar detail aroma, ukuran, budget, dan kontak customer terkumpul rapi.
           </p>
           {referenceProduct ? (
             <div className="mt-3 rounded-2xl bg-white p-3 text-xs font-bold text-[#1f2937]">
@@ -258,6 +259,28 @@ const MobileBespokePage = () => {
           </div>
         </section>
 
+        <section className="mobile-card p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-700">
+              <MessageSquareHeart className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold text-[#1f2937]">After-sample feedback</h2>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                Setelah sample dicoba, customer diarahkan memberi feedback untuk revisi aroma atau final bottle.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {feedbackFlowSteps.map((item, index) => (
+              <div key={item.title} className="rounded-2xl bg-[#fbfaf7] p-3 text-xs font-semibold text-[#6b7280]">
+                <span className="font-bold text-[#1f2937]">{index + 1}. {item.title}</span>
+                <span className="mt-1 block">{item.description}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {submittedRequest ? (
           <section className="mobile-card p-4">
             <div className="flex items-start gap-3">
@@ -279,8 +302,15 @@ const MobileBespokePage = () => {
                     <ClipboardList className="h-4 w-4" />
                     Catalog
                   </Button>
-                  <Button type="button" className="rounded-2xl gap-2">
-                    WhatsApp later
+                  <Button
+                    type="button"
+                    className="rounded-2xl gap-2"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(`${submittedRequest.customerName} / ${submittedRequest.contact}\n${submittedRequest.scentDescription}`);
+                      toast.success('Request contact copied');
+                    }}
+                  >
+                    Copy contact
                     <MessageCircle className="h-4 w-4" />
                   </Button>
                 </div>

@@ -108,7 +108,7 @@ const MobileProductDetailPage = () => {
             ))}
           </div>
           <div className="mt-4 space-y-2">
-            {['Ready for catalog checkout in next phase', 'Can be connected to cart and stock management', 'Bespoke request can reuse this scent profile'].map((item) => (
+            {['Ready for cart checkout', 'Stock is tracked in product management', 'Bespoke requests can reuse this scent profile'].map((item) => (
               <div key={item} className="flex items-start gap-2 text-xs font-semibold text-[#6b7280]">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                 {item}

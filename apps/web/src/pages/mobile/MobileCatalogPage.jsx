@@ -6,7 +6,7 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { catalogSortOptions, storefrontCategories } from '@/data/storefront.js';
+import { catalogSortOptions, storefrontCategories, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 
@@ -24,6 +24,7 @@ const MobileCatalogPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
   const products = useCatalogProducts();
@@ -31,6 +32,9 @@ const MobileCatalogPage = () => {
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const matchingProducts = products.filter((product) => {
+      const matchesSegment = segment === 'all'
+        || (segment === 'limited' && (product.featured || product.stock <= 8))
+        || (segment === 'regular' && !product.featured && product.stock > 0);
       const matchesCategory = category === 'All' || product.category === category;
       const searchableText = [
         product.name,
@@ -40,24 +44,27 @@ const MobileCatalogPage = () => {
         product.description,
         ...product.tags,
       ].join(' ').toLowerCase();
-      return matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
+      return matchesSegment && matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
     });
 
     return sortProducts(matchingProducts, sort);
-  }, [category, products, query, sort]);
+  }, [category, products, query, segment, sort]);
 
   const updateFilters = (next) => {
     const updated = {
       q: next.query ?? query,
+      segment: next.segment ?? segment,
       category: next.category ?? category,
       sort: next.sort ?? sort,
     };
     setQuery(updated.q);
+    setSegment(updated.segment);
     setCategory(updated.category);
     setSort(updated.sort);
 
     const params = new URLSearchParams();
     if (updated.q.trim()) params.set('q', updated.q.trim());
+    if (updated.segment !== 'all') params.set('segment', updated.segment);
     if (updated.category !== 'All') params.set('category', updated.category);
     if (updated.sort !== 'featured') params.set('sort', updated.sort);
     setSearchParams(params, { replace: true });
@@ -88,6 +95,30 @@ const MobileCatalogPage = () => {
               className="min-h-0 flex-1 bg-transparent text-sm font-semibold text-[#1f2937] outline-none placeholder:text-[#9ca3af]"
             />
           </label>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold">Shop type</h2>
+            <span className="text-xs font-bold text-amber-700">Regular / limited</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
+              <button
+                key={item.filter}
+                type="button"
+                onClick={() => updateFilters({ segment: item.filter })}
+                className={cn(
+                  'min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-bold',
+                  segment === item.filter
+                    ? 'border-amber-300 bg-amber-50 text-amber-800'
+                    : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                )}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
         </section>
 
         <section className="space-y-3">
@@ -138,24 +169,22 @@ const MobileCatalogPage = () => {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section className="grid grid-cols-2 gap-3">
           {filteredProducts.map((product) => (
-            <article key={product.id} className="mobile-card overflow-hidden p-3">
+            <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="h-40" bottleClassName="left-5 top-5 h-20 w-10 rounded-[1rem]" />
-                <div className="mt-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-base font-bold text-[#1f2937]">{product.name}</h3>
-                      <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-sm font-bold text-[#1f2937]">{product.price}</div>
-                      <div className="text-[10px] font-bold text-[#8b949e]">{product.stock} left</div>
-                    </div>
+                <ProductVisual product={product} className="h-28 rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} />
+                <div className="mt-2">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
+                    <p className="mt-1 text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {product.tags.slice(0, 3).map((tag) => (
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-[#1f2937]">{product.price}</div>
+                    <div className="text-[10px] font-bold text-[#8b949e]">{product.stock} left</div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {product.tags.slice(0, 2).map((tag) => (
                       <span key={tag} className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[10px] font-bold uppercase text-[#6b7280]">
                         {tag}
                       </span>
@@ -166,10 +195,10 @@ const MobileCatalogPage = () => {
             </article>
           ))}
           {!filteredProducts.length ? (
-            <div className="mobile-card p-5 text-center">
+            <div className="mobile-card col-span-2 p-5 text-center">
               <h3 className="text-base font-bold text-[#1f2937]">No products found</h3>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">Try another category or note keyword.</p>
-              <Button className="mt-4 rounded-2xl" onClick={() => updateFilters({ query: '', category: 'All', sort: 'featured' })}>
+              <Button className="mt-4 rounded-2xl" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })}>
                 Reset filters
               </Button>
             </div>

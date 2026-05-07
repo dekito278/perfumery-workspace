@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Search, ShoppingBag } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { catalogSortOptions, storefrontCategories } from '@/data/storefront.js';
+import { catalogSortOptions, storefrontCategories, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 
@@ -16,7 +16,9 @@ const sortProducts = (products, sort) => {
 };
 
 const CatalogPage = () => {
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
+  const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState('All');
   const [sort, setSort] = useState('featured');
   const catalogProducts = useCatalogProducts();
@@ -24,11 +26,14 @@ const CatalogPage = () => {
   const products = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return sortProducts(catalogProducts.filter((product) => {
+      const matchesSegment = segment === 'all'
+        || (segment === 'limited' && (product.featured || product.stock <= 8))
+        || (segment === 'regular' && !product.featured && product.stock > 0);
       const matchesCategory = category === 'All' || product.category === category;
       const searchable = [product.name, product.category, product.notes, product.mood, product.description, ...product.tags].join(' ').toLowerCase();
-      return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
+      return matchesSegment && matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
     }), sort);
-  }, [catalogProducts, category, query, sort]);
+  }, [catalogProducts, category, query, segment, sort]);
 
   return (
     <>
@@ -59,6 +64,13 @@ const CatalogPage = () => {
               <Search className="h-4 w-4 text-muted-foreground" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search notes or product" className="min-h-0 flex-1 bg-transparent text-sm font-semibold outline-none" />
             </label>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
+              <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', segment === item.filter ? 'border-[#1f2937] bg-[#1f2937] text-white' : 'bg-white text-muted-foreground')}>
+                {item.name}
+              </button>
+            ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             {['All', ...storefrontCategories.map((item) => item.name)].map((item) => (

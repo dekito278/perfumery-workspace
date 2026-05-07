@@ -25,10 +25,21 @@ const MobileCartPage = () => {
   const [checkoutOpen, setCheckoutOpen] = useState(Boolean(items.length));
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryArea, setDeliveryArea] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Manual confirmation');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const checkoutDraft = useMemo(() => buildCheckoutDraft({ customerName, contact, notes, items }), [contact, customerName, items, notes]);
+  const checkoutDraft = useMemo(() => buildCheckoutDraft({
+    customerName,
+    contact,
+    deliveryAddress,
+    deliveryArea,
+    paymentMethod,
+    notes,
+    items,
+  }), [contact, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod]);
 
   const copyDraft = async () => {
     await navigator.clipboard.writeText(checkoutDraft);
@@ -37,8 +48,8 @@ const MobileCartPage = () => {
 
   const submitOrder = async () => {
     if (!items.length) return;
-    if (!customerName.trim() || !contact.trim()) {
-      toast.error('Customer name and contact are required');
+    if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
+      toast.error('Name, contact, and address are required');
       return;
     }
 
@@ -47,11 +58,17 @@ const MobileCartPage = () => {
       const order = await createOrder({
         customerName,
         contact,
-        notes,
+        notes: [
+          deliveryAddress ? `Address: ${deliveryAddress}` : '',
+          deliveryArea ? `Area: ${deliveryArea}` : '',
+          paymentMethod ? `Payment: ${paymentMethod}` : '',
+          notes ? `Notes: ${notes}` : '',
+        ].filter(Boolean).join('\n'),
         items,
         subtotal: summary.subtotal,
         quantity: summary.quantity,
         checkoutDraft,
+        paymentProvider: 'manual',
       });
       clear();
       setCheckoutOpen(false);
@@ -79,7 +96,7 @@ const MobileCartPage = () => {
         <section className="mobile-soft-card p-4">
           <div className="text-[10px] font-bold uppercase text-amber-700">Subtotal</div>
           <div className="mt-1 text-3xl font-bold text-[#1f2937]">{formatTotal(summary.subtotal)}</div>
-          <p className="mt-2 text-xs font-semibold text-[#6b7280]">Checkout tersimpan sebagai order untuk ditindaklanjuti oleh tim Dekito.</p>
+          <p className="mt-2 text-xs font-semibold text-[#6b7280]">Checkout tersimpan ke order queue studio. Pembayaran diproses sebagai manual confirmation sampai payment link aktif.</p>
           {items.length ? (
             <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setCheckoutOpen(true)}>
               <PackageCheck className="h-4 w-4" />
@@ -140,6 +157,14 @@ const MobileCartPage = () => {
                 <div className="mt-3 grid gap-2">
                   <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <input value={deliveryArea} onChange={(event) => setDeliveryArea(event.target.value)} placeholder="City / area" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300">
+                    <option>Manual confirmation</option>
+                    <option>QRIS payment request</option>
+                    <option>Bank transfer request</option>
+                    <option>Payment link request</option>
+                  </select>
                   <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>
               </section>

@@ -66,7 +66,15 @@ export const getCartSummary = (items) => {
   return { quantity, subtotal };
 };
 
-export const buildCheckoutDraft = ({ customerName, contact, notes, items }) => {
+export const buildCheckoutDraft = ({
+  customerName,
+  contact,
+  deliveryAddress = '',
+  deliveryArea = '',
+  paymentMethod = 'Manual confirmation',
+  notes,
+  items,
+}) => {
   const { quantity, subtotal } = getCartSummary(items);
   const lines = items.map((item) => `- ${item.name} (${item.size}) x${item.quantity}: ${item.price}`);
   return [
@@ -74,6 +82,9 @@ export const buildCheckoutDraft = ({ customerName, contact, notes, items }) => {
     '',
     `Customer: ${customerName || '-'}`,
     `Contact: ${contact || '-'}`,
+    `Address: ${deliveryAddress || '-'}`,
+    `Area: ${deliveryArea || '-'}`,
+    `Payment: ${paymentMethod || 'Manual confirmation'}`,
     '',
     'Items:',
     ...lines,

@@ -5,23 +5,31 @@ import {
   ArrowRight,
   CheckCircle2,
   MessageCircle,
+  MessageSquareHeart,
   Search,
   ShoppingBag,
-  Sparkles,
+  Star,
+  UserRound,
   WandSparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { storefrontCategories } from '@/data/storefront.js';
+import {
+  feedbackFlowSteps,
+  perfumerProfile,
+  storefrontCategories,
+  storefrontSegments,
+} from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 
 const HomePage = () => {
   const products = useCatalogProducts();
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
+  const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 3);
   const storefrontStats = [
     { value: String(products.length), label: 'Scents' },
-    { value: String(storefrontCategories.length), label: 'Core families' },
-    { value: '1:1', label: 'Bespoke consult' },
+    { value: String(limitedProducts.length), label: 'Limited picks' },
+    { value: '1:1', label: 'Bespoke' },
   ];
 
   return (
@@ -57,15 +65,22 @@ const HomePage = () => {
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:items-center lg:px-8">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white px-3 py-1 text-xs font-bold uppercase text-amber-700">
-              <Sparkles className="h-4 w-4" />
-              Small-batch perfume
+              <UserRound className="h-4 w-4" />
+              Perfumer profile
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-none sm:text-5xl lg:text-6xl">
-              Dekito Perfumery
+              Hello, I am the perfumer.
             </h1>
             <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-[#667085] sm:text-lg">
-              Signature scents, limited aroma families, and bespoke perfume requests in one storefront. Built to become a mini e-commerce catalog with product and category management next.
+              {perfumerProfile.intro}
             </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {perfumerProfile.specialties.map((specialty) => (
+                <span key={specialty} className="rounded-full border bg-white px-3 py-1 text-xs font-bold uppercase text-muted-foreground">
+                  {specialty}
+                </span>
+              ))}
+            </div>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/catalog" className="inline-flex h-12 items-center gap-2 rounded-2xl bg-amber-500 px-5 text-sm font-bold text-[#1f2937] shadow-lg shadow-amber-200/70">
                 Shop products
@@ -97,11 +112,38 @@ const HomePage = () => {
 
         <section className="border-y border-stone-200 bg-white">
           <div className="mx-auto grid max-w-7xl gap-3 px-4 py-5 sm:grid-cols-3 sm:px-6 lg:px-8">
-            {['Ready product catalog', 'Limited scent families', 'Custom perfume intake'].map((item) => (
+            {['Perfumer introduction', 'Regular and limited shop', 'Bespoke and feedback flow'].map((item) => (
               <div key={item} className="flex items-center gap-2 text-sm font-bold text-[#344054]">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 {item}
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase text-amber-700">Shop structure</div>
+              <h2 className="mt-1 text-3xl font-bold">Choose a path</h2>
+            </div>
+            <p className="max-w-xl text-sm font-medium text-muted-foreground">
+              Produk regular, produk limited, dan layanan bespoke dipisahkan supaya customer bisa memilih jalur yang paling sesuai.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {storefrontSegments.map((segment) => (
+              <Link
+                key={segment.name}
+                to={segment.filter === 'bespoke' ? '/bespoke' : `/catalog?segment=${segment.filter}`}
+                className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5"
+              >
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-50 text-amber-700">
+                  {segment.filter === 'bespoke' ? <WandSparkles className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}
+                </div>
+                <h3 className="mt-4 text-lg font-bold">{segment.name}</h3>
+                <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">{segment.description}</p>
+              </Link>
             ))}
           </div>
         </section>
@@ -161,6 +203,34 @@ const HomePage = () => {
                 </div>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id="feedback" className="mx-auto max-w-7xl scroll-mt-6 px-4 py-10 sm:px-6 lg:px-8">
+          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-white px-3 py-1 text-xs font-bold uppercase text-rose-700">
+                <MessageSquareHeart className="h-4 w-4" />
+                Feedback
+              </div>
+              <h2 className="mt-4 text-3xl font-bold">Customer feedback flow</h2>
+              <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
+                Review produk, bespoke revision, dan repeat order dikumpulkan dalam alur yang jelas setelah customer mencoba scent.
+              </p>
+              <button type="button" className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-[#1f2937]">
+                Give feedback
+                <Star className="h-4 w-4 text-amber-600" />
+              </button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {feedbackFlowSteps.map((step, index) => (
+                <div key={step.title} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-50 text-sm font-bold text-amber-700">{index + 1}</div>
+                  <h3 className="mt-4 text-base font-bold">{step.title}</h3>
+                  <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">{step.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

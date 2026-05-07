@@ -3,7 +3,22 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, Beaker, LogOut, ChevronsLeft, ChevronsRight, ClipboardList, NotebookPen, LibraryBig, ShoppingBag, PackagePlus, PackageCheck } from 'lucide-react';
+import {
+  Menu,
+  Home,
+  Beaker,
+  LogOut,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronDown,
+  ClipboardList,
+  NotebookPen,
+  LibraryBig,
+  ShoppingBag,
+  PackagePlus,
+  PackageCheck,
+  Calculator,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const DESKTOP_SIDEBAR_STORAGE_KEY = 'perfumer-studio.sidebar-collapsed';
@@ -14,6 +29,10 @@ const AppShell = ({ children }) => {
   const { logout, currentUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(true);
+  const [openSections, setOpenSections] = useState({
+    commerce: true,
+    studio: true,
+  });
 
   useEffect(() => {
     const savedValue = window.localStorage.getItem(DESKTOP_SIDEBAR_STORAGE_KEY);
@@ -38,15 +57,30 @@ const AppShell = ({ children }) => {
     navigate('/login');
   };
 
-  const navItems = [
-    { path: '/home', label: 'Storefront', icon: ShoppingBag },
-    { path: '/studio', label: 'Studio', icon: Home, aliases: ['/dashboard'] },
-    { path: '/studio/products', label: 'Products', icon: PackagePlus },
-    { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
-    { path: '/briefs', label: 'Briefs', icon: ClipboardList },
-    { path: '/raw-materials', label: 'Raw Materials', icon: LibraryBig },
-    { path: '/formulas', label: 'Formulas', icon: Beaker },
-    { path: '/validation', label: 'Validation', icon: NotebookPen },
+  const navSections = [
+    {
+      id: 'commerce',
+      label: 'E-commerce',
+      icon: ShoppingBag,
+      items: [
+        { path: '/home', label: 'Storefront', icon: ShoppingBag },
+        { path: '/studio/products', label: 'Products', icon: PackagePlus },
+        { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
+      ],
+    },
+    {
+      id: 'studio',
+      label: 'Studio ops',
+      icon: Beaker,
+      items: [
+        { path: '/studio', label: 'Dashboard', icon: Home, aliases: ['/dashboard'] },
+        { path: '/briefs', label: 'Briefs', icon: ClipboardList },
+        { path: '/raw-materials', label: 'Materials', icon: LibraryBig },
+        { path: '/formulas', label: 'Formulas', icon: Beaker },
+        { path: '/validation', label: 'Validation', icon: NotebookPen },
+        { path: '/production-costing', label: 'Costing', icon: Calculator, aliases: ['/batches'] },
+      ],
+    },
   ];
 
   const isActive = (item) => {
@@ -54,32 +88,71 @@ const AppShell = ({ children }) => {
     return paths.some((path) => location.pathname === path || location.pathname.startsWith(path + '/'));
   };
 
+  const toggleSection = (sectionId) => {
+    setOpenSections((current) => ({
+      ...current,
+      [sectionId]: !current[sectionId],
+    }));
+  };
+
+  const NavItem = ({ item, mobile = false, collapsed = false }) => {
+    const Icon = item.icon;
+    const active = isActive(item);
+    return (
+      <Link
+        key={item.path}
+        to={item.path}
+        onClick={() => mobile && setMobileMenuOpen(false)}
+        aria-current={active ? 'page' : undefined}
+        title={!mobile && collapsed ? item.label : undefined}
+        className={`flex items-center ${collapsed ? 'justify-center px-2.5' : 'gap-3 px-3'} rounded-2xl py-3 text-sm font-medium transition-all ${
+          active
+            ? 'bg-primary text-primary-foreground shadow-[0_12px_30px_-18px_hsl(var(--primary)/0.8)]'
+            : 'text-muted-foreground hover:bg-white/70 hover:text-foreground'
+        }`}
+      >
+        <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-primary-foreground/14' : 'bg-muted/70'}`}>
+          <Icon className="w-4 h-4" />
+        </span>
+        {!collapsed && <span className="flex-1">{item.label}</span>}
+      </Link>
+    );
+  };
+
   const NavLinks = ({ mobile = false, collapsed = false }) => (
     <nav
       aria-label={mobile ? 'Mobile navigation' : 'Primary navigation'}
-      className={`flex ${mobile ? 'flex-col' : 'flex-col'} gap-1`}
+      className="flex flex-col gap-3"
     >
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item);
+      {navSections.map((section) => {
+        const SectionIcon = section.icon;
+        const sectionActive = section.items.some(isActive);
+        const sectionOpen = collapsed || mobile || openSections[section.id] || sectionActive;
         return (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={() => mobile && setMobileMenuOpen(false)}
-            aria-current={active ? 'page' : undefined}
-            title={!mobile && collapsed ? item.label : undefined}
-            className={`flex items-center ${collapsed ? 'justify-center px-2.5' : 'gap-3 px-3'} rounded-2xl py-3 text-sm font-medium transition-all ${
-              active
-                ? 'bg-primary text-primary-foreground shadow-[0_12px_30px_-18px_hsl(var(--primary)/0.8)]'
-                : 'text-muted-foreground hover:bg-white/70 hover:text-foreground'
-            }`}
-          >
-            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-primary-foreground/14' : 'bg-muted/70'}`}>
-              <Icon className="w-4 h-4" />
-            </span>
-            {!collapsed && <span className="flex-1">{item.label}</span>}
-          </Link>
+          <div key={section.id} className="space-y-1">
+            {!collapsed ? (
+              <button
+                type="button"
+                onClick={() => !mobile && toggleSection(section.id)}
+                className={`flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] transition ${
+                  sectionActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                } ${mobile ? 'cursor-default' : 'hover:bg-white/60'}`}
+              >
+                <SectionIcon className="h-4 w-4" />
+                <span className="flex-1 text-left">{section.label}</span>
+                {!mobile ? (
+                  <ChevronDown className={`h-4 w-4 transition-transform ${sectionOpen ? 'rotate-180' : ''}`} />
+                ) : null}
+              </button>
+            ) : null}
+            {sectionOpen ? (
+              <div className={`flex flex-col gap-1 ${!collapsed ? 'pl-0' : ''}`}>
+                {section.items.map((item) => (
+                  <NavItem key={item.path} item={item} mobile={mobile} collapsed={collapsed} />
+                ))}
+              </div>
+            ) : null}
+          </div>
         );
       })}
     </nav>

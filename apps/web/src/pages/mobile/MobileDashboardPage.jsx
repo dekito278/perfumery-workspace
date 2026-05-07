@@ -254,13 +254,23 @@ const MobileDashboardPage = () => {
 
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold">Workflow</h2>
+                <h2 className="text-base font-bold">E-commerce</h2>
+                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <WorkflowTile icon={PackagePlus} label="Products" helper="Catalog admin" tone="emerald" to="/mobile/studio/products" />
+                <WorkflowTile icon={PackageCheck} label="Orders" helper="Queue & status" tone="amber" to="/mobile/studio/orders" />
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold">Studio ops</h2>
                 <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/production-costing')}>Costing</Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowTile icon={Beaker} label="Formula" helper="Create or revise" tone="blue" to="/mobile/formulas" />
-                <WorkflowTile icon={PackagePlus} label="Products" helper="Catalog admin" tone="emerald" to="/mobile/studio/products" />
-                <WorkflowTile icon={PackageCheck} label="Orders" helper="Queue & status" tone="amber" to="/mobile/studio/orders" />
+                <WorkflowTile icon={ClipboardList} label="Briefs" helper="Project direction" tone="amber" to="/mobile/briefs" />
                 <WorkflowTile icon={Calculator} label="Batch" helper="Scale grams" to="/mobile/batches" />
                 <WorkflowTile icon={Factory} label="Costing" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
                 <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />

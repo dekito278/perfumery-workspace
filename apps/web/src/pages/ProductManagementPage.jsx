@@ -120,7 +120,7 @@ const ProductManagementPage = () => {
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Product management</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Tambah produk custom untuk katalog e-commerce. Produk bawaan tetap ada sebagai seed, sementara produk custom tersimpan di browser storage.
+              Tambah produk custom untuk katalog e-commerce. Produk bawaan tetap ada sebagai seed, sementara produk custom tersimpan di Supabase.
             </p>
           </div>
           <div className="dashboard-hero-panel">

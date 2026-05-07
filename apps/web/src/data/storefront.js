@@ -21,6 +21,47 @@ export const storefrontCategories = [
   },
 ];
 
+export const storefrontSegments = [
+  {
+    name: 'Regular perfume',
+    description: 'Produk ready stock yang bisa dibeli kapan saja selama stok tersedia.',
+    filter: 'regular',
+  },
+  {
+    name: 'Limited perfume',
+    description: 'Drop kecil, seasonal, atau batch khusus dengan jumlah terbatas.',
+    filter: 'limited',
+  },
+  {
+    name: 'Bespoke service',
+    description: 'Custom perfume berbasis cerita, preferensi aroma, dan konsultasi personal.',
+    filter: 'bespoke',
+  },
+];
+
+export const perfumerProfile = {
+  name: 'Dekito Perfumer',
+  title: 'Independent perfumer for solid perfume, personal scent, and small-batch fragrance.',
+  intro: 'Hello, I am the perfumer behind Dekito. I build wearable scents from small rituals, texture, memory, and the way a person wants to be remembered.',
+  specialties: ['Solid perfume', 'Small-batch EDP', 'Bespoke scent brief'],
+  note: 'Personal profile for the perfumer behind Dekito.',
+};
+
+export const feedbackFlowSteps = [
+  {
+    title: 'Try',
+    description: 'Customer mencoba produk, sample, atau hasil bespoke.',
+  },
+  {
+    title: 'Share feedback',
+    description: 'Feedback dikumpulkan dari scent impression, longevity, mood, dan reorder intent.',
+  },
+  {
+    title: 'Refine',
+    description: 'Masukan dipakai untuk batch berikutnya atau revisi custom perfume.',
+  },
+];
+
 export const featuredProducts = [
   {
     id: 'dk-01',
@@ -224,16 +265,16 @@ export const paymentProviderOptions = [
   {
     value: 'midtrans',
     label: 'Midtrans',
-    description: 'Payment gateway candidate for VA, QRIS, cards, and e-wallet checkout.',
+    description: 'VA, QRIS, cards, and e-wallet checkout.',
   },
   {
     value: 'xendit',
     label: 'Xendit',
-    description: 'Payment gateway candidate for invoice-style checkout and multiple local rails.',
+    description: 'Invoice-style checkout and multiple local payment rails.',
   },
   {
     value: 'manual',
     label: 'Manual confirm',
-    description: 'Temporary flow while comparing API scope and transaction fees.',
+    description: 'Confirm the order manually before payment.',
   },
 ];

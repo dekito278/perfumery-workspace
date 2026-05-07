@@ -130,18 +130,22 @@ export const createOrder = async (orderData) => {
   const payload = buildOrderPayload(orderData);
 
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('storefront_orders')
-      .insert(payload)
-      .select('*')
-      .single();
+      .insert(payload);
 
     if (error) {
       throw error;
     }
 
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    return normalizeOrder(data);
+    return normalizeOrder({
+      id: payload.order_number,
+      ...payload,
+      persistence: 'database',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
   } catch (error) {
     console.warn('Saving storefront order locally because database save failed:', error.message || error);
     return createLocalOrder(payload);

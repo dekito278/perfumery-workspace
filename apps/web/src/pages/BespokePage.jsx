@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Send, WandSparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, MessageSquareHeart, Send, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   bespokeBudgetOptions,
   bespokeMoodOptions,
   bespokeOccasionOptions,
   bespokeSizeOptions,
+  feedbackFlowSteps,
 } from '@/data/storefront.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
@@ -103,6 +104,20 @@ const BespokePage = () => {
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-100">
                 <div className="h-full rounded-full bg-amber-500" style={{ width: `${completion}%` }} />
+              </div>
+            </div>
+            <div className="mt-5 rounded-2xl border bg-white p-4">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1f2937]">
+                <MessageSquareHeart className="h-4 w-4 text-rose-600" />
+                Feedback after sample
+              </div>
+              <div className="mt-3 grid gap-2">
+                {feedbackFlowSteps.map((step, index) => (
+                  <div key={step.title} className="rounded-2xl bg-[#fbfaf7] p-3 text-xs font-semibold text-muted-foreground">
+                    <span className="font-bold text-[#1f2937]">{index + 1}. {step.title}</span>
+                    <span className="mt-1 block">{step.description}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

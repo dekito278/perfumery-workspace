@@ -140,7 +140,7 @@ const MobileProductManagementPage = () => {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Custom products</h2>
-            <span className="text-xs font-bold text-amber-700">{customProducts.length} items</span>
+            <span className="text-xs font-bold text-amber-700">{customProducts.length} Supabase items</span>
           </div>
           {customProducts.map((product) => (
             <article key={product.id} className="mobile-card p-3">
