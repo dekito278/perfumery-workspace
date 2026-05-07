@@ -70,6 +70,7 @@ const MobileOrdersPage = () => {
                   <h2 className="truncate text-sm font-bold text-[#1f2937]">{order.orderNumber}</h2>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
+                  {order.customerCode ? <p className="mt-1 text-[10px] font-bold uppercase text-[#263d27]">{order.customerCode}</p> : null}
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {bespoke ? <span className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold uppercase text-[#263d27]">Bespoke</span> : null}

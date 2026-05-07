@@ -11,6 +11,7 @@ import {
   PackagePlus,
   ShoppingBag,
   Store,
+  UsersRound,
   WandSparkles,
 } from 'lucide-react';
 import {
@@ -28,10 +29,11 @@ const navGroups = [
     label: 'E-commerce',
     icon: ShoppingBag,
     description: 'Produk, order, checkout, dan layanan bespoke.',
-    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/dashboard', '/mobile/catalog', '/mobile/cart', '/mobile/bespoke', '/mobile/products'],
+    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/studio/customers', '/mobile/dashboard', '/mobile/catalog', '/mobile/cart', '/mobile/bespoke', '/mobile/products'],
     items: [
       { path: '/mobile/studio/products', label: 'Products', helper: 'Manage catalog products', icon: PackagePlus },
       { path: '/mobile/studio/orders', label: 'Orders', helper: 'Order queue from checkout', icon: PackageCheck },
+      { path: '/mobile/studio/customers', label: 'Customers', helper: 'Customer code lookup', icon: UsersRound },
       { path: '/mobile/dashboard', label: 'Preview home', helper: 'Public storefront view', icon: Store },
       { path: '/mobile/catalog', label: 'Preview shop', helper: 'Regular and limited products', icon: ShoppingBag },
       { path: '/mobile/cart', label: 'Preview cart', helper: 'Customer checkout flow', icon: CreditCard },

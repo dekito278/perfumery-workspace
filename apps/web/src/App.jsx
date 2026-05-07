@@ -16,6 +16,7 @@ import DashboardPage from '@/pages/DashboardPage.jsx';
 import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
 import ProductCategoriesPage from '@/pages/ProductCategoriesPage.jsx';
 import OrdersPage from '@/pages/OrdersPage.jsx';
+import CustomersPage from '@/pages/CustomersPage.jsx';
 import ShipmentsPage from '@/pages/ShipmentsPage.jsx';
 import BriefsPage from '@/pages/BriefsPage.jsx';
 import BriefEditorPage from '@/pages/BriefEditorPage.jsx';
@@ -38,6 +39,7 @@ import MobileBespokePage from '@/pages/mobile/MobileBespokePage.jsx';
 import MobileCartPage from '@/pages/mobile/MobileCartPage.jsx';
 import MobileProductManagementPage from '@/pages/mobile/MobileProductManagementPage.jsx';
 import MobileOrdersPage from '@/pages/mobile/MobileOrdersPage.jsx';
+import MobileCustomersPage from '@/pages/mobile/MobileCustomersPage.jsx';
 import MobileDashboardPage from '@/pages/mobile/MobileDashboardPage.jsx';
 import MobileBriefsPage from '@/pages/mobile/MobileBriefsPage.jsx';
 import MobileBriefEditorPage from '@/pages/mobile/MobileBriefEditorPage.jsx';
@@ -141,6 +143,12 @@ function AppRoutes() {
         <Route path="/mobile/studio/orders" element={
           <ProtectedRoute>
             <MobileOrdersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/customers" element={
+          <ProtectedRoute>
+            <MobileCustomersPage />
           </ProtectedRoute>
         } />
 
@@ -248,6 +256,12 @@ function AppRoutes() {
         <Route path="/studio/orders" element={
           <ProtectedRoute>
             <OrdersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/customers" element={
+          <ProtectedRoute>
+            <CustomersPage />
           </ProtectedRoute>
         } />
 

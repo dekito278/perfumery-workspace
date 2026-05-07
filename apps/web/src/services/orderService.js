@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { saveCustomer } from '@/services/customerService.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 
@@ -62,6 +63,8 @@ const normalizeOrder = (order) => {
     source,
     requestType: source === BESPOKE_SOURCE ? BESPOKE_SOURCE : 'storefront',
     customerName: order.customer_name || order.customerName || 'Walk-in customer',
+    customerCode: order.customer_code || order.customerCode || '',
+    customerId: order.customer_id || order.customerId || '',
     contact: order.contact || '-',
     notes: order.notes || '',
     items,
@@ -79,6 +82,8 @@ const normalizeOrder = (order) => {
 
 const buildOrderPayload = ({
   customerName,
+  customerCode = '',
+  customerId = '',
   contact,
   notes,
   items,
@@ -91,6 +96,8 @@ const buildOrderPayload = ({
   order_number: createOrderNumber(),
   status: 'pending_payment',
   customer_name: customerName?.trim() || 'Walk-in customer',
+  customer_code: customerCode || null,
+  customer_id: customerId || null,
   contact: contact?.trim() || '-',
   notes: notes?.trim() || '',
   items: items.map((item) => ({ ...item })),
@@ -208,7 +215,20 @@ export const getOrderSummary = (orders) => ({
 });
 
 export const createOrder = async (orderData) => {
-  const payload = buildOrderPayload(orderData);
+  const customer = await saveCustomer({
+    customerCode: orderData.customerCode,
+    customerName: orderData.customerName,
+    contact: orderData.contact,
+    deliveryAddress: orderData.deliveryAddress,
+    deliveryArea: orderData.deliveryArea,
+    notes: orderData.customerNotes,
+    incrementOrder: true,
+  });
+  const payload = buildOrderPayload({
+    ...orderData,
+    customerCode: customer?.customerCode || orderData.customerCode || '',
+    customerId: customer?.id || '',
+  });
 
   try {
     const { error } = await supabase

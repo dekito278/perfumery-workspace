@@ -21,6 +21,7 @@ import {
   checkoutPaymentOptions,
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
+import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -36,6 +37,7 @@ const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const [checkoutOpen, setCheckoutOpen] = useState(Boolean(items.length));
+  const [customerCode, setCustomerCode] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -45,6 +47,7 @@ const MobileCartPage = () => {
   const [saving, setSaving] = useState(false);
 
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
+    customerCode,
     customerName,
     contact,
     deliveryAddress,
@@ -52,7 +55,35 @@ const MobileCartPage = () => {
     paymentMethod,
     notes,
     items,
-  }), [contact, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod]);
+  }), [contact, customerCode, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod]);
+
+  const decreaseQuantity = (item) => {
+    if (item.quantity <= 1) {
+      removeItem(item.slug);
+      return;
+    }
+    updateQuantity(item.slug, item.quantity - 1);
+  };
+
+  const lookupCustomer = async () => {
+    if (!customerCode.trim()) {
+      toast.error('Customer code is required');
+      return;
+    }
+
+    const customer = await lookupCustomerByCode(customerCode);
+    if (!customer) {
+      toast.error('Customer code not found');
+      return;
+    }
+
+    setCustomerCode(customer.customerCode);
+    setCustomerName(customer.customerName);
+    setContact(customer.contact);
+    setDeliveryAddress(customer.deliveryAddress || '');
+    setDeliveryArea(customer.deliveryArea || '');
+    toast.success(`${customer.customerCode} loaded`);
+  };
 
   const copyDraft = async () => {
     await navigator.clipboard.writeText(checkoutDraft);
@@ -72,7 +103,10 @@ const MobileCartPage = () => {
     try {
       const order = await createOrder({
         customerName,
+        customerCode,
         contact,
+        deliveryAddress,
+        deliveryArea,
         notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, notes }),
         items,
         subtotal: summary.subtotal,
@@ -89,7 +123,7 @@ const MobileCartPage = () => {
         });
         clear();
         setCheckoutOpen(false);
-        toast.success(`Order ${order.orderNumber} saved. Opening DOKU Checkout`);
+        toast.success(`Order ${order.orderNumber} saved for ${order.customerCode || customerCode}`);
         if (dokuWindow) {
           dokuWindow.location.href = checkout.paymentUrl;
         } else {
@@ -101,7 +135,7 @@ const MobileCartPage = () => {
       }
       clear();
       setCheckoutOpen(false);
-      toast.success(`Order ${order.orderNumber} saved to Studio`);
+      toast.success(`Order ${order.orderNumber} saved to Studio${order.customerCode ? ` / ${order.customerCode}` : ''}`);
       if (openWhatsApp) {
         const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\n\nStudio order: ${order.orderNumber}`);
         if (whatsappWindow) {
@@ -178,7 +212,7 @@ const MobileCartPage = () => {
                 </Button>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity - 1)} aria-label={`Decrease ${item.name}`}>
+                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => decreaseQuantity(item)} aria-label={`Decrease ${item.name}`}>
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="grid h-10 min-w-12 place-items-center rounded-2xl bg-[#f8f7f4] text-sm font-bold text-[#1f2937]">{item.quantity}</span>
@@ -226,9 +260,22 @@ const MobileCartPage = () => {
                           <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <span className="inline-flex rounded-full bg-white px-2 py-1 text-xs font-bold text-[#263d27]">x{item.quantity}</span>
                           <p className="mt-2 text-xs font-bold text-[#1f2937]">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
                         </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="inline-flex items-center rounded-2xl border border-[#263d27]/10 bg-white p-1">
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => decreaseQuantity(item)} aria-label={`Decrease ${item.name}`}>
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="grid h-8 min-w-10 place-items-center text-sm font-bold text-[#1f2937]">{item.quantity}</span>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => updateQuantity(item.slug, item.quantity + 1)} aria-label={`Increase ${item.name}`}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Button type="button" size="sm" variant="ghost" className="h-9 rounded-2xl px-3 text-xs font-bold text-rose-700" onClick={() => removeItem(item.slug)}>
+                          Remove
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -238,6 +285,10 @@ const MobileCartPage = () => {
               <section className="mobile-card p-3">
                 <h2 className="text-sm font-bold text-[#1f2937]">Customer</h2>
                 <div className="mt-3 grid gap-2">
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <input value={customerCode} onChange={(event) => setCustomerCode(event.target.value.toUpperCase())} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold uppercase outline-none focus:border-amber-300" />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>Load</Button>
+                  </div>
                   <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />

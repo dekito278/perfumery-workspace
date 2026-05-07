@@ -81,7 +81,7 @@ const OrdersPage = () => {
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
                       {order.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-600">Local draft</span> : null}
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}</p>
+                    <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}{order.customerCode ? ` / ${order.customerCode}` : ''}</p>
                     <div className="mt-3 grid gap-2">
                       {order.items.map((item) => (
                         <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">

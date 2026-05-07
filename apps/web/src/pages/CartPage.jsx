@@ -12,6 +12,7 @@ import {
   checkoutPaymentOptions,
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
+import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -19,6 +20,7 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value
 const CartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
+  const [customerCode, setCustomerCode] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
@@ -27,6 +29,7 @@ const CartPage = () => {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
+    customerCode,
     customerName,
     contact,
     deliveryAddress,
@@ -34,7 +37,35 @@ const CartPage = () => {
     paymentMethod,
     notes,
     items,
-  }), [contact, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod]);
+  }), [contact, customerCode, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod]);
+
+  const decreaseQuantity = (item) => {
+    if (item.quantity <= 1) {
+      removeItem(item.slug);
+      return;
+    }
+    updateQuantity(item.slug, item.quantity - 1);
+  };
+
+  const lookupCustomer = async () => {
+    if (!customerCode.trim()) {
+      toast.error('Customer code is required');
+      return;
+    }
+
+    const customer = await lookupCustomerByCode(customerCode);
+    if (!customer) {
+      toast.error('Customer code not found');
+      return;
+    }
+
+    setCustomerCode(customer.customerCode);
+    setCustomerName(customer.customerName);
+    setContact(customer.contact);
+    setDeliveryAddress(customer.deliveryAddress || '');
+    setDeliveryArea(customer.deliveryArea || '');
+    toast.success(`${customer.customerCode} loaded`);
+  };
 
   const copyDraft = async () => {
     await navigator.clipboard.writeText(checkoutDraft);
@@ -54,7 +85,10 @@ const CartPage = () => {
     try {
       const order = await createOrder({
         customerName,
+        customerCode,
         contact,
+        deliveryAddress,
+        deliveryArea,
         notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, notes }),
         items,
         subtotal: summary.subtotal,
@@ -70,7 +104,7 @@ const CartPage = () => {
           contact,
         });
         clear();
-        toast.success(`Order ${order.orderNumber} saved. Opening DOKU Checkout`);
+        toast.success(`Order ${order.orderNumber} saved for ${order.customerCode || customerCode}`);
         if (dokuWindow) {
           dokuWindow.location.href = checkout.paymentUrl;
         } else {
@@ -81,7 +115,7 @@ const CartPage = () => {
         return;
       }
       clear();
-      toast.success(`Order ${order.orderNumber} saved to Studio`);
+      toast.success(`Order ${order.orderNumber} saved to Studio${order.customerCode ? ` / ${order.customerCode}` : ''}`);
       if (openWhatsApp) {
         const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\n\nStudio order: ${order.orderNumber}`);
         if (whatsappWindow) {
@@ -141,7 +175,7 @@ const CartPage = () => {
                     <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Remove ${item.name}`}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
-                    <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity - 1)}><Minus className="h-4 w-4" /></Button>
+                    <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                     <span className="grid h-10 min-w-12 place-items-center rounded-2xl bg-[#f7f8f2] text-sm font-bold">{item.quantity}</span>
                     <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                   </div>
@@ -161,6 +195,10 @@ const CartPage = () => {
             <aside className="rounded-2xl border bg-white p-5 shadow-sm">
               <h2 className="text-xl font-bold">Checkout</h2>
               <div className="mt-4 grid gap-3">
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <input value={customerCode} onChange={(event) => setCustomerCode(event.target.value.toUpperCase())} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer}>Load</Button>
+                </div>
                 <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />

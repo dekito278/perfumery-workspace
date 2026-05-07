@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, PackageCheck, PackagePlus, Sparkles } from 'lucide-react';
+import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, PackageCheck, PackagePlus, Sparkles, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -260,6 +260,7 @@ const MobileDashboardPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowTile icon={PackagePlus} label="Products" helper="Catalog admin" tone="emerald" to="/mobile/studio/products" />
                 <WorkflowTile icon={PackageCheck} label="Orders" helper="Queue & status" tone="amber" to="/mobile/studio/orders" />
+                <WorkflowTile icon={UsersRound} label="Customers" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
               </div>
             </section>
 

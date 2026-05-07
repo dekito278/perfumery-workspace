@@ -92,6 +92,7 @@ export const buildOrderNotes = ({
 
 export const buildCheckoutDraft = ({
   customerName,
+  customerCode = '',
   contact,
   deliveryAddress = '',
   deliveryArea = '',
@@ -105,6 +106,7 @@ export const buildCheckoutDraft = ({
     'Solivagant order draft',
     '',
     `Customer: ${customerName || '-'}`,
+    customerCode ? `Customer code: ${customerCode}` : '',
     `Contact: ${contact || '-'}`,
     `Address: ${deliveryAddress || '-'}`,
     `Area: ${deliveryArea || '-'}`,
@@ -116,7 +118,7 @@ export const buildCheckoutDraft = ({
     `Total items: ${quantity}`,
     `Subtotal: Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}`,
     notes ? `Notes: ${notes}` : 'Notes: -',
-  ].join('\n');
+  ].filter((line) => line !== '').join('\n');
 };
 
 export const buildWhatsAppCheckoutUrl = (message, phoneNumber = getStorefrontWhatsAppNumber()) => {

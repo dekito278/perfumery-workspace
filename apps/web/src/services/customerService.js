@@ -1,0 +1,167 @@
+import supabase from '@/lib/supabaseClient.js';
+
+export const CUSTOMERS_STORAGE_KEY = 'dekito.storefront.customers.v1';
+
+const normalizeCustomerCode = (value = '') => value.trim().toUpperCase();
+const isCustomerCode = (value = '') => /^SOLI[0-9]{5}$/.test(normalizeCustomerCode(value));
+
+const createLocalCustomerCode = () => `SOLI${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`;
+
+const normalizeCustomer = (customer = {}) => ({
+  id: customer.id || customer.customerCode || customer.customer_code,
+  customerCode: customer.customer_code || customer.customerCode || '',
+  customerName: customer.customer_name || customer.customerName || 'Customer',
+  contact: customer.contact || '-',
+  deliveryAddress: customer.delivery_address || customer.deliveryAddress || '',
+  deliveryArea: customer.delivery_area || customer.deliveryArea || '',
+  notes: customer.notes || '',
+  orderCount: Number(customer.order_count || customer.orderCount || 0),
+  lastOrderAt: customer.last_order_at || customer.lastOrderAt || '',
+  persistence: customer.persistence || 'database',
+  createdAt: customer.created_at || customer.createdAt || new Date().toISOString(),
+  updatedAt: customer.updated_at || customer.updatedAt || customer.created_at || customer.createdAt || new Date().toISOString(),
+});
+
+const readCustomers = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const value = window.localStorage.getItem(CUSTOMERS_STORAGE_KEY);
+    return value ? JSON.parse(value) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const writeCustomers = (customers) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(CUSTOMERS_STORAGE_KEY, JSON.stringify(customers));
+  window.dispatchEvent(new CustomEvent('dekito:customers-updated'));
+};
+
+const saveLocalCustomer = ({
+  customerCode = '',
+  customerName,
+  contact,
+  deliveryAddress = '',
+  deliveryArea = '',
+  notes = '',
+  incrementOrder = false,
+}) => {
+  const now = new Date().toISOString();
+  const normalizedCode = normalizeCustomerCode(customerCode);
+  const validCode = isCustomerCode(normalizedCode) ? normalizedCode : '';
+  const customers = readCustomers().map(normalizeCustomer);
+  const current = customers.find((customer) => (
+    (validCode && customer.customerCode === validCode)
+    || customer.contact.toLowerCase() === contact.trim().toLowerCase()
+  ));
+  const nextCode = current?.customerCode || validCode || createLocalCustomerCode();
+
+  const customer = normalizeCustomer({
+    ...current,
+    id: current?.id || nextCode,
+    customerCode: nextCode,
+    customerName: customerName?.trim() || current?.customerName || 'Customer',
+    contact: contact?.trim() || current?.contact || '-',
+    deliveryAddress: deliveryAddress?.trim() || current?.deliveryAddress || '',
+    deliveryArea: deliveryArea?.trim() || current?.deliveryArea || '',
+    notes: notes?.trim() || current?.notes || '',
+    orderCount: Number(current?.orderCount || 0) + (incrementOrder ? 1 : 0),
+    lastOrderAt: incrementOrder ? now : current?.lastOrderAt,
+    persistence: 'local',
+    createdAt: current?.createdAt || now,
+    updatedAt: now,
+  });
+
+  const nextCustomers = [
+    customer,
+    ...customers.filter((item) => item.customerCode !== customer.customerCode && item.id !== customer.id),
+  ];
+  writeCustomers(nextCustomers);
+  return customer;
+};
+
+export const getLocalCustomers = () => readCustomers().map(normalizeCustomer);
+
+export const getCustomers = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('storefront_customers')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(normalizeCustomer);
+  } catch (error) {
+    console.warn('Using local storefront customers fallback:', error.message || error);
+    return getLocalCustomers();
+  }
+};
+
+export const lookupCustomerByCode = async (customerCode) => {
+  const normalizedCode = normalizeCustomerCode(customerCode);
+  if (!normalizedCode) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_lookup_customer', {
+      p_customer_code: normalizedCode,
+    });
+
+    if (error) throw error;
+    return data?.[0] ? normalizeCustomer(data[0]) : null;
+  } catch (error) {
+    console.warn('Using local customer lookup fallback:', error.message || error);
+    return getLocalCustomers().find((customer) => customer.customerCode === normalizedCode) || null;
+  }
+};
+
+export const saveCustomer = async ({
+  customerCode = '',
+  customerName,
+  contact,
+  deliveryAddress = '',
+  deliveryArea = '',
+  notes = '',
+  incrementOrder = false,
+}) => {
+  if (!customerName?.trim() || !contact?.trim()) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_upsert_customer', {
+      p_customer_code: isCustomerCode(customerCode) ? normalizeCustomerCode(customerCode) : null,
+      p_customer_name: customerName.trim(),
+      p_contact: contact.trim(),
+      p_delivery_address: deliveryAddress?.trim() || null,
+      p_delivery_area: deliveryArea?.trim() || null,
+      p_notes: notes?.trim() || null,
+      p_increment_order: incrementOrder,
+    });
+
+    if (error) throw error;
+    const customer = data?.[0] ? normalizeCustomer(data[0]) : null;
+    if (customer) {
+      saveLocalCustomer({ ...customer, incrementOrder: false });
+    }
+    return customer;
+  } catch (error) {
+    console.warn('Saving storefront customer locally because database save failed:', error.message || error);
+    return saveLocalCustomer({
+      customerCode,
+      customerName,
+      contact,
+      deliveryAddress,
+      deliveryArea,
+      notes,
+      incrementOrder,
+    });
+  }
+};
+
+export const getCustomerSummary = (customers) => ({
+  total: customers.length,
+  repeat: customers.filter((customer) => Number(customer.orderCount || 0) > 1).length,
+  orders: customers.reduce((sum, customer) => sum + Number(customer.orderCount || 0), 0),
+});

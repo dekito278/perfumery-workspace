@@ -20,6 +20,7 @@ import {
   Calculator,
   Tags,
   Truck,
+  UsersRound,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
@@ -81,6 +82,7 @@ const AppShell = ({ children }) => {
         { path: '/studio/products', label: 'Product management', icon: PackagePlus },
         { path: '/studio/product-categories', label: 'Product categories', icon: Tags },
         { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
+        { path: '/studio/customers', label: 'Customers', icon: UsersRound },
         { path: '/studio/shipments', label: 'Shipments', icon: Truck },
         { path: '/home', label: 'Storefront preview', icon: ShoppingBag },
       ],
