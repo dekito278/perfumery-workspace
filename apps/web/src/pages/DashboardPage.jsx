@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3, PackageCheck, PackagePlus, ShoppingBag } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
@@ -260,7 +260,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <DashboardSection title="Channel kerja">
+        <DashboardSection title="Workspace areas" subtitle="Dashboard dibagi dua area besar: Studio untuk proses perfumery, E-commerce untuk toko dan order.">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <section className="rounded-3xl border border-white/70 bg-white/86 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -269,9 +269,9 @@ const DashboardPage = () => {
                     <ShoppingBag className="h-4 w-4" />
                     E-commerce
                   </div>
-                  <h2 className="mt-4 text-xl font-bold">Produk, katalog, dan order</h2>
+                  <h2 className="mt-4 text-xl font-bold">Storefront, product, order, shipment</h2>
                   <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
-                    Semua pekerjaan toko dipusatkan di sini supaya tidak tercampur dengan workflow formula.
+                    Area toko dipisahkan dari studio: product management, product categories, orders, dan shipment.
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-right">
@@ -279,14 +279,22 @@ const DashboardPage = () => {
                   <div className="text-2xl font-bold">{orderSummary.active}</div>
                 </div>
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/products')}>
                   <PackagePlus className="h-4 w-4" />
-                  Products
+                  Product management
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/product-categories')}>
+                  <Tags className="h-4 w-4" />
+                  Product categories
                 </Button>
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/orders')}>
                   <PackageCheck className="h-4 w-4" />
                   Orders
+                </Button>
+                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/studio/shipments')}>
+                  <Truck className="h-4 w-4" />
+                  Shipments
                 </Button>
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/home')}>
                   <ShoppingBag className="h-4 w-4" />
@@ -305,7 +313,7 @@ const DashboardPage = () => {
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-blue-700">
                     <Beaker className="h-4 w-4" />
-                    Studio ops
+                    Studio
                   </div>
                   <h2 className="mt-4 text-xl font-bold">Formula, material, dan validasi</h2>
                   <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">

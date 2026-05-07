@@ -14,7 +14,9 @@ import CartPage from '@/pages/CartPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
+import ProductCategoriesPage from '@/pages/ProductCategoriesPage.jsx';
 import OrdersPage from '@/pages/OrdersPage.jsx';
+import ShipmentsPage from '@/pages/ShipmentsPage.jsx';
 import BriefsPage from '@/pages/BriefsPage.jsx';
 import BriefEditorPage from '@/pages/BriefEditorPage.jsx';
 import BriefDetailPage from '@/pages/BriefDetailPage.jsx';
@@ -237,9 +239,21 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
+        <Route path="/studio/product-categories" element={
+          <ProtectedRoute>
+            <ProductCategoriesPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/studio/orders" element={
           <ProtectedRoute>
             <OrdersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/shipments" element={
+          <ProtectedRoute>
+            <ShipmentsPage />
           </ProtectedRoute>
         } />
 

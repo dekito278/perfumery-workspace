@@ -18,6 +18,8 @@ import {
   PackagePlus,
   PackageCheck,
   Calculator,
+  Tags,
+  Truck,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
@@ -59,18 +61,8 @@ const AppShell = ({ children }) => {
 
   const navSections = [
     {
-      id: 'commerce',
-      label: 'E-commerce',
-      icon: ShoppingBag,
-      items: [
-        { path: '/home', label: 'Storefront', icon: ShoppingBag },
-        { path: '/studio/products', label: 'Products', icon: PackagePlus },
-        { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
-      ],
-    },
-    {
       id: 'studio',
-      label: 'Studio ops',
+      label: 'Studio',
       icon: Beaker,
       items: [
         { path: '/studio', label: 'Dashboard', icon: Home, aliases: ['/dashboard'] },
@@ -79,6 +71,18 @@ const AppShell = ({ children }) => {
         { path: '/formulas', label: 'Formulas', icon: Beaker },
         { path: '/validation', label: 'Validation', icon: NotebookPen },
         { path: '/production-costing', label: 'Costing', icon: Calculator, aliases: ['/batches'] },
+      ],
+    },
+    {
+      id: 'commerce',
+      label: 'E-commerce',
+      icon: ShoppingBag,
+      items: [
+        { path: '/studio/products', label: 'Product management', icon: PackagePlus },
+        { path: '/studio/product-categories', label: 'Product categories', icon: Tags },
+        { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
+        { path: '/studio/shipments', label: 'Shipments', icon: Truck },
+        { path: '/home', label: 'Storefront preview', icon: ShoppingBag },
       ],
     },
   ];

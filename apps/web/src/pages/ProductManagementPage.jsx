@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { useNavigate } from 'react-router-dom';
 import { Edit3, ImagePlus, ImageOff, PackagePlus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -15,7 +16,6 @@ import {
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
 import { uploadProductImage } from '@/services/productImageStorageService.js';
-import { deleteStorefrontCategory, saveStorefrontCategory } from '@/services/storefrontCategoryService.js';
 
 const emptyProduct = {
   name: '',
@@ -44,6 +44,7 @@ const toEditableProduct = (product) => ({
 });
 
 const ProductManagementPage = () => {
+  const navigate = useNavigate();
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
@@ -53,10 +54,8 @@ const ProductManagementPage = () => {
     return usage;
   }, new Map()), [products]);
   const [form, setForm] = useState(emptyProduct);
-  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
-  const [savingCategory, setSavingCategory] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -115,34 +114,6 @@ const ProductManagementPage = () => {
     toast.success('Custom products reset');
   };
 
-  const handleCategorySubmit = async (event) => {
-    event.preventDefault();
-    if (!categoryForm.name.trim()) {
-      toast.error('Category name is required');
-      return;
-    }
-
-    setSavingCategory(true);
-    try {
-      const category = await saveStorefrontCategory(categoryForm);
-      setCategoryForm({ name: '', description: '' });
-      if (!form.category) {
-        updateField('category', category.name);
-      }
-      toast.success('Category saved');
-    } finally {
-      setSavingCategory(false);
-    }
-  };
-
-  const handleCategoryDelete = async (category) => {
-    await deleteStorefrontCategory(category.id);
-    if (form.category === category.name) {
-      updateField('category', '');
-    }
-    toast.success('Category removed');
-  };
-
   return (
     <AuthenticatedLayout>
       <Helmet>
@@ -154,12 +125,18 @@ const ProductManagementPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <PackagePlus className="h-4 w-4 text-primary" />
-              Storefront admin
+              E-commerce
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Product management</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Tambah produk custom untuk katalog e-commerce. Produk bawaan tetap ada sebagai seed, sementara produk custom tersimpan di Supabase.
+              Tambah dan edit produk custom untuk katalog e-commerce. Product categories dikelola di halaman terpisah supaya struktur toko tetap rapi.
             </p>
+            <div className="mt-5">
+              <Button variant="outline" className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5" onClick={() => navigate('/studio/product-categories')}>
+                <Tags className="h-4 w-4" />
+                Manage product categories
+              </Button>
+            </div>
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">All catalog products</span><strong>{products.length}</strong></div>
@@ -257,32 +234,25 @@ const ProductManagementPage = () => {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold">Product categories</h2>
-                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Buat kategori sendiri, lalu pilih di form produk.</p>
+                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Kategori tampil di sini sebagai reference. Kelola detailnya di halaman kategori.</p>
                 </div>
                 <Tags className="h-5 w-5 text-amber-700" />
               </div>
-              <form onSubmit={handleCategorySubmit} className="mt-5 grid gap-3 sm:grid-cols-[0.8fr_1fr_auto]">
-                <input value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} className="h-11 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Limited, Regular, Gift set..." />
-                <input value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} className="h-11 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Optional short description" />
-                <Button type="submit" className="h-11 rounded-2xl" disabled={savingCategory}>{savingCategory ? 'Saving...' : 'Add'}</Button>
-              </form>
               <div className="mt-4 flex flex-wrap gap-2">
                 {categories.map((category) => {
                   const usageCount = categoryUsage.get(category.name.toLowerCase()) || 0;
-                  const canDelete = category.source !== 'product' && usageCount === 0;
                   return (
                     <span key={category.name} className="inline-flex items-center gap-2 rounded-2xl border bg-[#fbfaf7] px-3 py-2 text-xs font-bold text-[#344054]">
                       {category.name}
                       <span className="text-[10px] uppercase text-muted-foreground">{usageCount} product</span>
-                      {canDelete ? (
-                        <button type="button" onClick={() => handleCategoryDelete(category)} className="text-rose-600" aria-label={`Delete ${category.name}`}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      ) : null}
                     </span>
                   );
                 })}
               </div>
+              <Button type="button" variant="outline" className="mt-5 h-11 rounded-2xl gap-2 bg-white" onClick={() => navigate('/studio/product-categories')}>
+                <Tags className="h-4 w-4" />
+                Open product categories
+              </Button>
             </section>
 
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
