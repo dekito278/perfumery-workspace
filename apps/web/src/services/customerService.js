@@ -22,6 +22,20 @@ const normalizeCustomer = (customer = {}) => ({
   updatedAt: customer.updated_at || customer.updatedAt || customer.created_at || customer.createdAt || new Date().toISOString(),
 });
 
+const normalizePortalOrder = (order = {}) => ({
+  orderNumber: order.order_number || order.orderNumber || '',
+  status: order.status || 'pending_payment',
+  items: Array.isArray(order.items) ? order.items : [],
+  quantity: Number(order.quantity || 0),
+  subtotal: Number(order.subtotal || 0),
+  paymentProvider: order.payment_provider || order.paymentProvider || 'manual',
+  paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
+  paymentReference: order.payment_reference || order.paymentReference || '',
+  source: order.source || 'storefront',
+  createdAt: order.created_at || order.createdAt || new Date().toISOString(),
+  updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
+});
+
 const readCustomers = () => {
   if (typeof window === 'undefined') return [];
 
@@ -113,6 +127,45 @@ export const lookupCustomerByCode = async (customerCode) => {
   } catch (error) {
     console.warn('Using local customer lookup fallback:', error.message || error);
     return getLocalCustomers().find((customer) => customer.customerCode === normalizedCode) || null;
+  }
+};
+
+export const getCustomerPortalByCode = async (customerCode) => {
+  const normalizedCode = normalizeCustomerCode(customerCode);
+  if (!normalizedCode) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_customer_portal', {
+      p_customer_code: normalizedCode,
+    });
+
+    if (error) throw error;
+    const result = data?.[0];
+    if (!result?.customer?.customer_code) return null;
+
+    return {
+      customer: normalizeCustomer(result.customer),
+      orders: Array.isArray(result.orders) ? result.orders.map(normalizePortalOrder) : [],
+      persistence: 'database',
+    };
+  } catch (error) {
+    console.warn('Using local customer portal fallback:', error.message || error);
+    const customer = getLocalCustomers().find((item) => item.customerCode === normalizedCode);
+    if (!customer) return null;
+
+    const orders = (() => {
+      try {
+        const value = window.localStorage.getItem('dekito.storefront.orders.v1');
+        const localOrders = value ? JSON.parse(value) : [];
+        return localOrders
+          .filter((order) => (order.customer_code || order.customerCode) === normalizedCode)
+          .map(normalizePortalOrder);
+      } catch (readError) {
+        return [];
+      }
+    })();
+
+    return { customer, orders, persistence: 'local' };
   }
 };
 

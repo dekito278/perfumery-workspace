@@ -197,7 +197,7 @@ const MobileCartPage = () => {
                 </button>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/catalog')}>Shop again</Button>
-                  <Button type="button" className="rounded-2xl" onClick={() => navigate('/mobile/dashboard')}>Home</Button>
+                  <Button type="button" className="rounded-2xl" onClick={() => navigate(`/mobile/customer?code=${submittedOrder.customerCode}`)}>Track order</Button>
                 </div>
               </div>
             </div>

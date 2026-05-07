@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Beaker, Home, MessageCircle, Search, ShoppingBag } from 'lucide-react';
+import { Beaker, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { cn } from '@/lib/utils.js';
 
@@ -9,6 +9,7 @@ const commerceNavItems = [
   { path: '/mobile/catalog', label: 'Shop', icon: Search, aliases: ['/mobile/products'] },
   { path: '/mobile/bespoke', label: 'Bespoke', icon: MessageCircle },
   { path: '/mobile/cart', label: 'Cart', icon: ShoppingBag },
+  { path: '/mobile/customer', label: 'Orders', icon: UserRound },
 ];
 
 const MobileCommerceLayout = ({ children }) => {
@@ -30,7 +31,7 @@ const MobileCommerceLayout = ({ children }) => {
           Studio
         </Link>
       ) : null}
-      <nav className="mobile-bottom-nav grid grid-cols-4 gap-1 p-1.5" aria-label="Mobile shop navigation">
+      <nav className="mobile-bottom-nav grid grid-cols-5 gap-1 p-1.5" aria-label="Mobile shop navigation">
         {commerceNavItems.map((item) => {
           const Icon = item.icon;
           const activePaths = [item.path, ...(item.aliases || [])];

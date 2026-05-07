@@ -180,7 +180,7 @@ const CartPage = () => {
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link to="/catalog" className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold">Shop again</Link>
-                  <Link to="/home" className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">Home</Link>
+                  <Link to={`/customer?code=${submittedOrder.customerCode}`} className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">Track order</Link>
                 </div>
               </section>
             ) : null}
