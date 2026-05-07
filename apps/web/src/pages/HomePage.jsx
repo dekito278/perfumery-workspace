@@ -43,6 +43,32 @@ const featureNotes = [
   { icon: Gem, label: 'Personal Fit', value: 'Daily wear to bespoke brief' },
 ];
 
+const homeAssets = {
+  rawMaterialLibrary: '/brand/home/raw-material-library.jpg',
+  rawMaterialShelf: '/brand/home/raw-material-shelf.jpg',
+  perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
+  perfumerCylinder: '/brand/home/perfumer-cylinder.jpg',
+  perfumerAtWork: '/brand/home/perfumer-at-work.jpg',
+};
+
+const atelierFrames = [
+  {
+    image: homeAssets.rawMaterialShelf,
+    label: 'Material library',
+    title: 'A palette of fine raw materials',
+  },
+  {
+    image: homeAssets.perfumerPipettes,
+    label: 'Precision',
+    title: 'Measured by hand, built by memory',
+  },
+  {
+    image: homeAssets.perfumerCylinder,
+    label: 'Studio',
+    title: 'Personal scent work from the source',
+  },
+];
+
 const HomePage = () => {
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
@@ -150,80 +176,87 @@ const HomePage = () => {
               </motion.div>
             </motion.div>
 
-            {hasProducts ? (
-              <motion.div
-                initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                className="relative"
-              >
-                <div className="absolute -left-4 top-10 hidden h-[78%] w-px bg-gradient-to-b from-transparent via-[#263d27]/35 to-transparent lg:block" />
-                <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-[#263d27]/12 bg-[#050705] px-4 py-3 text-[#eef2e8] shadow-2xl shadow-[#263d27]/15">
-                  <span className="text-xs font-bold uppercase tracking-[0.28em]">Atelier selection</span>
-                  <span className="h-px flex-1 bg-white/14" />
-                  <span className="text-xs font-bold uppercase text-[#b7c6b1]">Solivagant</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-[1.08fr_0.92fr]">
-                  <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
-                    <ProductVisual product={heroProducts[0]} className="min-h-[390px] shadow-2xl shadow-[#263d27]/16" />
-                  </motion.div>
-                  <div className="grid gap-4">
-                    {heroProducts.slice(1, 3).map((product) => (
-                      <motion.div key={product.id} whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
-                        <ProductVisual product={product} className="min-h-[186px] shadow-xl shadow-[#263d27]/10" />
-                      </motion.div>
-                    ))}
-                    {heroProducts.length < 3 ? (
-                      <div className="grid min-h-[186px] place-items-center rounded-2xl border border-[#263d27]/12 bg-white/70 p-5 text-center">
-                        <div>
-                          <WandSparkles className="mx-auto h-6 w-6 text-[#263d27]" />
-                          <p className="mt-3 text-sm font-bold text-[#263d27]">Bespoke atelier is open</p>
-                        </div>
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="relative"
+            >
+              <div className="absolute -left-4 top-10 hidden h-[78%] w-px bg-gradient-to-b from-transparent via-[#263d27]/35 to-transparent lg:block" />
+              <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-[#263d27]/12 bg-[#050705] px-4 py-3 text-[#eef2e8] shadow-2xl shadow-[#263d27]/15">
+                <span className="text-xs font-bold uppercase tracking-[0.28em]">Inside the atelier</span>
+                <span className="h-px flex-1 bg-white/14" />
+                <span className="text-xs font-bold uppercase text-[#b7c6b1]">Solivagant</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-[1.05fr_0.95fr]">
+                <motion.figure whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }} className="relative min-h-[430px] overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] shadow-2xl shadow-[#263d27]/16">
+                  <img src={homeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.08),rgba(5,7,5,0.78))]" />
+                  <figcaption className="absolute inset-x-0 bottom-0 p-5 text-[#eef2e8]">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c6d5bf]">Raw material archive</p>
+                    <h2 className="mt-2 max-w-sm text-2xl font-bold leading-tight">Built from real materials, not generic moodboards.</h2>
+                  </figcaption>
+                </motion.figure>
+
+                <div className="grid gap-4">
+                  <motion.figure whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }} className="relative min-h-[236px] overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] shadow-xl shadow-[#263d27]/10">
+                    <img src={homeAssets.perfumerPipettes} alt="Solivagant perfumer holding pipettes" className="absolute inset-0 h-full w-full object-cover object-[58%_42%]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,5,0.72),rgba(5,7,5,0.08))]" />
+                    <figcaption className="absolute bottom-0 left-0 max-w-[72%] p-5 text-[#eef2e8]">
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c6d5bf]">Perfumer led</p>
+                      <h3 className="mt-2 text-xl font-bold leading-tight">Measured by hand.</h3>
+                    </figcaption>
+                  </motion.figure>
+
+                  {hasProducts && heroProducts[0] ? (
+                    <motion.div whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
+                      <ProductVisual product={heroProducts[0]} className="min-h-[178px] shadow-xl shadow-[#263d27]/10" />
+                    </motion.div>
+                  ) : (
+                    <div className="grid min-h-[178px] content-between rounded-[28px] border border-[#263d27]/12 bg-white/78 p-5 shadow-sm shadow-[#263d27]/5">
+                      <WandSparkles className="h-6 w-6 text-[#263d27]" />
+                      <div>
+                        <h3 className="text-lg font-bold text-[#0b130c]">
+                          {productsLoading ? 'Memuat koleksi parfum.' : 'Bespoke atelier is open'}
+                        </h3>
+                        <p className="mt-2 text-sm font-semibold leading-relaxed text-[#667264]">
+                          {productsLoading ? 'Sebentar, koleksi sedang dimuat.' : 'Mulai dari brief personal sambil katalog produk disiapkan.'}
+                        </p>
                       </div>
-                    ) : null}
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] text-[#eef2e8] shadow-2xl shadow-[#263d27]/20"
-              >
-                <div className="grid min-h-[430px] content-between gap-8 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),transparent_44%),linear-gradient(180deg,#050705,#111a11)] p-6 sm:p-8">
-                  <div className="flex items-center justify-between gap-4">
-                    <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-16 w-44 rounded-2xl object-contain" />
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold uppercase text-[#b7c6b1]">Atelier</span>
-                  </div>
-                  <div>
-                    <div className="mb-5 h-px w-24 bg-[#8d7a4f]" />
-                    <h2 className="max-w-xl text-3xl font-bold leading-tight sm:text-4xl">
-                      {productsLoading ? 'Memuat koleksi parfum.' : 'Private scent atelier is being prepared.'}
-                    </h2>
-                    <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-[#cbd6c5]">
-                      {productsLoading
-                        ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
-                        : 'Produk akan tampil otomatis setelah ditambahkan dari Studio. Sementara itu, customer tetap bisa mulai dari request bespoke.'}
-                    </p>
-                  </div>
-                  {!productsLoading ? (
-                    <div className="flex flex-wrap gap-3">
-                      <Link to="/bespoke" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#eef2e8] px-5 text-sm font-bold text-[#0b130c] transition hover:-translate-y-0.5">
-                        Request bespoke
-                        <WandSparkles className="h-4 w-4" />
-                      </Link>
-                      <Link to="/login" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 px-5 text-sm font-bold text-[#eef2e8] transition hover:-translate-y-0.5 hover:bg-white/10">
-                        Add products
-                        <PackagePlus className="h-4 w-4" />
-                      </Link>
                     </div>
-                  ) : null}
+                  )}
                 </div>
-              </motion.div>
-            )}
+              </div>
+            </motion.div>
           </div>
         </section>
+
+        <motion.section
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
+        >
+          <motion.div variants={fadeUp} className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Atelier</div>
+              <h2 className="mt-2 text-3xl font-bold text-[#0b130c]">A studio you can see and feel</h2>
+            </div>
+          </motion.div>
+          <div className="mt-7 grid gap-4 md:grid-cols-3">
+            {atelierFrames.map((frame) => (
+              <motion.figure key={frame.title} variants={fadeUp} className="group relative min-h-[320px] overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] shadow-sm shadow-[#263d27]/5">
+                <img src={frame.image} alt={frame.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.02),rgba(5,7,5,0.72))]" />
+                <figcaption className="absolute inset-x-0 bottom-0 p-5 text-[#eef2e8]">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#c6d5bf]">{frame.label}</p>
+                  <h3 className="mt-2 text-xl font-bold leading-tight">{frame.title}</h3>
+                </figcaption>
+              </motion.figure>
+            ))}
+          </div>
+        </motion.section>
 
         {categories.length ? (
           <motion.section

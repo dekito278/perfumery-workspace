@@ -43,6 +43,11 @@ const mobileNotes = [
   { icon: Gem, label: 'Personal' },
 ];
 
+const mobileHomeAssets = {
+  rawMaterialLibrary: '/brand/home/raw-material-library.jpg',
+  perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
+};
+
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
   const products = useCatalogProducts();
@@ -123,6 +128,29 @@ const MobileStorefrontPage = () => {
                 <div className="text-[10px] font-bold uppercase leading-tight text-[#8b949e]">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </motion.section>
+
+        <motion.section
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="mobile-card overflow-hidden bg-[#050705] text-[#eef2e8] shadow-xl shadow-[#263d27]/14"
+        >
+          <div className="relative min-h-[220px]">
+            <img src={mobileHomeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.08),rgba(5,7,5,0.82))]" />
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#c6d5bf]">Inside the atelier</p>
+              <h2 className="mt-2 text-xl font-bold leading-tight">Real raw materials, real studio work.</h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-[0.86fr_1.14fr] gap-3 p-3">
+            <img src={mobileHomeAssets.perfumerPipettes} alt="Solivagant perfumer holding pipettes" className="h-32 w-full rounded-2xl object-cover object-[58%_42%]" />
+            <div className="grid content-center rounded-2xl border border-white/10 bg-white/8 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c6d5bf]">Perfumer led</p>
+              <p className="mt-2 text-sm font-semibold leading-relaxed text-white/80">A personal scent process shaped by hand, notes, and memory.</p>
+            </div>
           </div>
         </motion.section>
 
