@@ -1,6 +1,8 @@
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { createLogger, defineConfig } from 'vite';
+import { existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import inlineEditPlugin from './plugins/visual-editor/vite-plugin-react-inline-editor.js';
 import editModeDevPlugin from './plugins/visual-editor/vite-plugin-edit-mode.js';
 import selectionModePlugin from './plugins/selection-mode/vite-plugin-selection-mode.js';
@@ -290,6 +292,38 @@ const addTransformIndexHtml = {
 	},
 };
 
+const localApiDevPlugin = () => ({
+	name: 'local-api-dev',
+	configureServer(server) {
+		server.middlewares.use('/api', async (request, response, next) => {
+			try {
+				const requestUrl = new URL(request.url || '/', 'http://localhost');
+				const apiPath = requestUrl.pathname.replace(/^\/+/, '');
+				const apiFile = path.resolve(__dirname, 'api', `${apiPath}.js`);
+
+				if (!apiPath || !existsSync(apiFile)) {
+					next();
+					return;
+				}
+
+				const moduleUrl = `${pathToFileURL(apiFile).href}?t=${Date.now()}`;
+				const module = await import(moduleUrl);
+				if (typeof module.default !== 'function') {
+					next();
+					return;
+				}
+
+				request.url = requestUrl.toString();
+				await module.default(request, response);
+			} catch (error) {
+				response.statusCode = 500;
+				response.setHeader('Content-Type', 'application/json');
+				response.end(JSON.stringify({ message: error.message || 'Local API error' }));
+			}
+		});
+	},
+});
+
 console.warn = () => { };
 
 const logger = createLogger()
@@ -309,7 +343,7 @@ export default defineConfig({
 	},
 	customLogger: logger,
 	plugins: [
-		...(isDev ? [inlineEditPlugin(), editModeDevPlugin(), selectionModePlugin(), iframeRouteRestorationPlugin(), pocketbaseAuthPlugin(), scentreeImportDevPlugin()] : []),
+		...(isDev ? [localApiDevPlugin(), inlineEditPlugin(), editModeDevPlugin(), selectionModePlugin(), iframeRouteRestorationPlugin(), pocketbaseAuthPlugin(), scentreeImportDevPlugin()] : []),
 		react(),
 		addTransformIndexHtml
 	],
