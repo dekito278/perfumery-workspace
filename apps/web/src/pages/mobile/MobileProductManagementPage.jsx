@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Edit3, ImagePlus, PackagePlus, Save, Tags, Trash2 } from 'lucide-react';
+import { Edit3, ImageOff, ImagePlus, PackagePlus, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -160,8 +160,14 @@ const MobileProductManagementPage = () => {
               <label className="mt-2 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-xs font-bold">
                 <ImagePlus className="h-4 w-4" />
                 {uploadingImage ? 'Uploading...' : 'Upload image'}
-                <input type="file" accept="image/*" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
               </label>
+              {form.imageUrl ? (
+                <Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-2xl gap-2 bg-white" onClick={() => updateField('imageUrl', '')}>
+                  <ImageOff className="h-4 w-4" />
+                  Remove image
+                </Button>
+              ) : null}
             </div>
             <input value={form.topNotes || ''} onChange={(event) => updateField('topNotes', event.target.value)} placeholder="Top notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.heartNotes || ''} onChange={(event) => updateField('heartNotes', event.target.value)} placeholder="Heart notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />

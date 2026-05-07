@@ -1,11 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clipboard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clipboard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import { useCart } from '@/hooks/useCart.js';
-import { buildCheckoutDraft } from '@/services/cartService.js';
+import {
+  buildCheckoutDraft,
+  buildOrderNotes,
+  buildWhatsAppCheckoutUrl,
+  checkoutPaymentOptions,
+} from '@/services/cartService.js';
 import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -15,36 +20,63 @@ const CartPage = () => {
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryArea, setDeliveryArea] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Manual confirmation');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
-  const checkoutDraft = useMemo(() => buildCheckoutDraft({ customerName, contact, notes, items }), [contact, customerName, items, notes]);
+  const checkoutDraft = useMemo(() => buildCheckoutDraft({
+    customerName,
+    contact,
+    deliveryAddress,
+    deliveryArea,
+    paymentMethod,
+    notes,
+    items,
+  }), [contact, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod]);
 
   const copyDraft = async () => {
     await navigator.clipboard.writeText(checkoutDraft);
     toast.success('Checkout draft copied');
   };
 
-  const submitOrder = async () => {
+  const submitOrder = async ({ openWhatsApp = false } = {}) => {
     if (!items.length) return;
-    if (!customerName.trim() || !contact.trim()) {
-      toast.error('Customer name and contact are required');
+    if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
+      toast.error('Customer name, contact, and address are required');
       return;
     }
 
     setSaving(true);
+    const whatsappWindow = openWhatsApp ? window.open('about:blank', '_blank') : null;
     try {
       const order = await createOrder({
         customerName,
         contact,
-        notes,
+        notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, notes }),
         items,
         subtotal: summary.subtotal,
         quantity: summary.quantity,
         checkoutDraft,
+        paymentProvider: openWhatsApp ? 'whatsapp' : 'manual',
       });
       clear();
-      toast.success(`Order ${order.orderNumber} saved`);
+      toast.success(`Order ${order.orderNumber} saved to Studio`);
+      if (openWhatsApp) {
+        const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\n\nStudio order: ${order.orderNumber}`);
+        if (whatsappWindow) {
+          whatsappWindow.location.href = whatsappUrl;
+        } else {
+          window.location.href = whatsappUrl;
+          return;
+        }
+      }
       navigate('/home');
+    } catch (error) {
+      if (whatsappWindow) {
+        whatsappWindow.close();
+      }
+      toast.error(error.message || 'Failed to save order');
     } finally {
       setSaving(false);
     }
@@ -108,11 +140,17 @@ const CartPage = () => {
               <div className="mt-4 grid gap-3">
                 <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <input value={deliveryArea} onChange={(event) => setDeliveryArea(event.target.value)} placeholder="City / area" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-12 rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-[#263d27]">
+                  {checkoutPaymentOptions.map((option) => <option key={option}>{option}</option>)}
+                </select>
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
               </div>
               <pre className="mt-4 max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl bg-[#f7f8f2] p-4 text-xs font-semibold leading-relaxed">{checkoutDraft}</pre>
-              <div className="mt-4 flex gap-3">
-                <Button type="button" className="rounded-2xl gap-2" onClick={submitOrder} disabled={saving}><PackageCheck className="h-4 w-4" />{saving ? 'Saving...' : 'Save order'}</Button>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button type="button" className="rounded-2xl gap-2" onClick={() => submitOrder({ openWhatsApp: true })} disabled={saving}><MessageCircle className="h-4 w-4" />{saving ? 'Saving...' : 'Save & WhatsApp'}</Button>
+                <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => submitOrder()} disabled={saving}><PackageCheck className="h-4 w-4" />Save manual</Button>
                 <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={copyDraft}><Clipboard className="h-4 w-4" />Copy draft</Button>
                 <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Clear</Button>
               </div>

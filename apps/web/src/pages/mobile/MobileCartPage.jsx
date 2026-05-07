@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clipboard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Clipboard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -14,7 +14,12 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet.jsx';
 import { useCart } from '@/hooks/useCart.js';
-import { buildCheckoutDraft } from '@/services/cartService.js';
+import {
+  buildCheckoutDraft,
+  buildOrderNotes,
+  buildWhatsAppCheckoutUrl,
+  checkoutPaymentOptions,
+} from '@/services/cartService.js';
 import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -46,7 +51,7 @@ const MobileCartPage = () => {
     toast.success('Checkout draft copied');
   };
 
-  const submitOrder = async () => {
+  const submitOrder = async ({ openWhatsApp = false } = {}) => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
       toast.error('Name, contact, and address are required');
@@ -54,26 +59,36 @@ const MobileCartPage = () => {
     }
 
     setSaving(true);
+    const whatsappWindow = openWhatsApp ? window.open('about:blank', '_blank') : null;
     try {
       const order = await createOrder({
         customerName,
         contact,
-        notes: [
-          deliveryAddress ? `Address: ${deliveryAddress}` : '',
-          deliveryArea ? `Area: ${deliveryArea}` : '',
-          paymentMethod ? `Payment: ${paymentMethod}` : '',
-          notes ? `Notes: ${notes}` : '',
-        ].filter(Boolean).join('\n'),
+        notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, notes }),
         items,
         subtotal: summary.subtotal,
         quantity: summary.quantity,
         checkoutDraft,
-        paymentProvider: 'manual',
+        paymentProvider: openWhatsApp ? 'whatsapp' : 'manual',
       });
       clear();
       setCheckoutOpen(false);
-      toast.success(`Order ${order.orderNumber} saved`);
+      toast.success(`Order ${order.orderNumber} saved to Studio`);
+      if (openWhatsApp) {
+        const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\n\nStudio order: ${order.orderNumber}`);
+        if (whatsappWindow) {
+          whatsappWindow.location.href = whatsappUrl;
+        } else {
+          window.location.href = whatsappUrl;
+          return;
+        }
+      }
       navigate('/mobile/dashboard');
+    } catch (error) {
+      if (whatsappWindow) {
+        whatsappWindow.close();
+      }
+      toast.error(error.message || 'Failed to save order');
     } finally {
       setSaving(false);
     }
@@ -160,10 +175,7 @@ const MobileCartPage = () => {
                   <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <input value={deliveryArea} onChange={(event) => setDeliveryArea(event.target.value)} placeholder="City / area" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300">
-                    <option>Manual confirmation</option>
-                    <option>QRIS payment request</option>
-                    <option>Bank transfer request</option>
-                    <option>Payment link request</option>
+                    {checkoutPaymentOptions.map((option) => <option key={option}>{option}</option>)}
                   </select>
                   <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>
@@ -178,10 +190,16 @@ const MobileCartPage = () => {
                 </div>
               </section>
 
-              <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={submitOrder} disabled={saving}>
-                <PackageCheck className="h-4 w-4" />
-                {saving ? 'Saving order...' : 'Save order'}
-              </Button>
+              <div className="grid gap-2">
+                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ openWhatsApp: true })} disabled={saving}>
+                  <MessageCircle className="h-4 w-4" />
+                  {saving ? 'Saving order...' : 'Save & WhatsApp'}
+                </Button>
+                <Button type="button" variant="outline" className="h-12 w-full rounded-2xl gap-2 bg-white" onClick={() => submitOrder()} disabled={saving}>
+                  <PackageCheck className="h-4 w-4" />
+                  Save manual order
+                </Button>
+              </div>
             </div>
           </SheetContent>
         </Sheet>

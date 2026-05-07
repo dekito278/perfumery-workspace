@@ -1,5 +1,16 @@
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
 
+export const checkoutPaymentOptions = [
+  'Manual confirmation',
+  'WhatsApp confirmation',
+  'QRIS payment request',
+  'Bank transfer request',
+  'Payment link request',
+];
+
+export const getStorefrontWhatsAppNumber = () => String(import.meta.env.VITE_STOREFRONT_WHATSAPP_NUMBER || '')
+  .replace(/[^0-9]/g, '');
+
 const readCart = () => {
   if (typeof window === 'undefined') return [];
 
@@ -66,6 +77,18 @@ export const getCartSummary = (items) => {
   return { quantity, subtotal };
 };
 
+export const buildOrderNotes = ({
+  deliveryAddress = '',
+  deliveryArea = '',
+  paymentMethod = 'Manual confirmation',
+  notes = '',
+}) => [
+  deliveryAddress ? `Address: ${deliveryAddress}` : '',
+  deliveryArea ? `Area: ${deliveryArea}` : '',
+  paymentMethod ? `Payment: ${paymentMethod}` : '',
+  notes ? `Notes: ${notes}` : '',
+].filter(Boolean).join('\n');
+
 export const buildCheckoutDraft = ({
   customerName,
   contact,
@@ -93,5 +116,10 @@ export const buildCheckoutDraft = ({
     `Subtotal: Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}`,
     notes ? `Notes: ${notes}` : 'Notes: -',
   ].join('\n');
+};
+
+export const buildWhatsAppCheckoutUrl = (message, phoneNumber = getStorefrontWhatsAppNumber()) => {
+  const text = encodeURIComponent(message);
+  return phoneNumber ? `https://wa.me/${phoneNumber}?text=${text}` : `https://wa.me/?text=${text}`;
 };
 

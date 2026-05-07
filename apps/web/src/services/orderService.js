@@ -98,7 +98,7 @@ const buildOrderPayload = ({
   subtotal,
   checkout_draft: checkoutDraft,
   payment_provider: paymentProvider,
-  payment_status: paymentProvider === 'manual' ? 'pending' : 'unpaid',
+  payment_status: ['manual', 'whatsapp'].includes(paymentProvider) ? 'pending' : 'unpaid',
   source,
 });
 

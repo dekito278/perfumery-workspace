@@ -2,6 +2,7 @@ import supabase from '@/lib/supabaseClient.js';
 
 export const PRODUCT_IMAGES_BUCKET = 'storefront-product-images';
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 const extensionFromFile = (file) => {
   const extension = file.name?.split('.').pop()?.toLowerCase();
@@ -24,8 +25,8 @@ export const validateProductImageFile = (file) => {
     throw new Error('Please choose an image file');
   }
 
-  if (!file.type.startsWith('image/')) {
-    throw new Error('Please upload an image file');
+  if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Use JPG, PNG, WebP, or GIF image files');
   }
 
   if (file.size > MAX_IMAGE_SIZE_BYTES) {

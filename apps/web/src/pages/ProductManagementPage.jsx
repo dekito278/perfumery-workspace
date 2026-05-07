@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Edit3, ImagePlus, PackagePlus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
+import { Edit3, ImagePlus, ImageOff, PackagePlus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -213,10 +213,16 @@ const ProductManagementPage = () => {
                   <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold">
                     <ImagePlus className="h-4 w-4" />
                     {uploadingImage ? 'Uploading...' : 'Upload image'}
-                    <input type="file" accept="image/*" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
                   </label>
+                  {form.imageUrl ? (
+                    <Button type="button" variant="outline" className="h-11 rounded-2xl gap-2 bg-white" onClick={() => updateField('imageUrl', '')}>
+                      <ImageOff className="h-4 w-4" />
+                      Remove image
+                    </Button>
+                  ) : null}
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Upload disimpan ke Supabase Storage dan URL publiknya dipakai di katalog.
+                    JPG, PNG, WebP, atau GIF sampai 5 MB. Upload disimpan ke Supabase Storage dan URL publiknya dipakai di katalog.
                   </p>
                 </div>
               </div>
