@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
+  PackagePlus,
   ShoppingBag,
   UserRound,
   WandSparkles,
@@ -24,6 +25,8 @@ const MobileStorefrontPage = () => {
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
   const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 2);
+  const productsLoading = Boolean(products.loading);
+  const hasProducts = products.length > 0;
   const storefrontStats = [
     { value: String(products.length), label: 'Scents' },
     { value: String(limitedProducts.length), label: 'Limited picks' },
@@ -82,6 +85,32 @@ const MobileStorefrontPage = () => {
           </div>
         </section>
 
+        {!hasProducts ? (
+          <section className="mobile-card overflow-hidden">
+            <div className="bg-[#050705] p-4 text-[#eef2e8]">
+              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-14 w-40 rounded-2xl object-contain" />
+              <h2 className="mt-5 text-xl font-bold leading-tight">{productsLoading ? 'Memuat koleksi parfum.' : 'Koleksi parfum sedang disiapkan.'}</h2>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
+                {productsLoading
+                  ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
+                  : 'Produk akan tampil setelah ditambahkan dari Studio. Untuk sekarang, customer bisa mulai dari request bespoke.'}
+              </p>
+            </div>
+            {!productsLoading ? (
+            <div className="grid grid-cols-2 gap-2 p-3">
+              <Button className="rounded-2xl gap-2" onClick={() => navigate('/mobile/bespoke')}>
+                Bespoke
+                <WandSparkles className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/login')}>
+                Add product
+                <PackagePlus className="h-4 w-4" />
+              </Button>
+            </div>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className="grid grid-cols-3 gap-2">
           {storefrontSegments.map((segment) => (
             <button
@@ -98,6 +127,7 @@ const MobileStorefrontPage = () => {
           ))}
         </section>
 
+        {categories.length ? (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Categories</h2>
@@ -112,6 +142,7 @@ const MobileStorefrontPage = () => {
             ))}
           </div>
         </section>
+        ) : null}
 
         {homeProducts.length ? (
         <section id="mobile-products" className="space-y-3 scroll-mt-4">

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, Search, ShoppingBag, SlidersHorizontal } from 'lucide-react';
+import { ArrowUpDown, PackagePlus, Search, ShoppingBag, SlidersHorizontal, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -30,6 +30,8 @@ const MobileCatalogPage = () => {
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
+  const catalogLoading = Boolean(products.loading);
+  const hasCatalogProducts = products.length > 0;
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -99,6 +101,7 @@ const MobileCatalogPage = () => {
           </label>
         </section>
 
+        {hasCatalogProducts ? (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Shop type</h2>
@@ -122,7 +125,9 @@ const MobileCatalogPage = () => {
             ))}
           </div>
         </section>
+        ) : null}
 
+        {hasCatalogProducts && categories.length ? (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Scent family</h2>
@@ -146,7 +151,9 @@ const MobileCatalogPage = () => {
             ))}
           </div>
         </section>
+        ) : null}
 
+        {hasCatalogProducts ? (
         <section className="mobile-card p-3">
           <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-[#6b7280]">
             <ArrowUpDown className="h-4 w-4" />
@@ -170,6 +177,7 @@ const MobileCatalogPage = () => {
             ))}
           </div>
         </section>
+        ) : null}
 
         <section className="grid grid-cols-2 gap-3">
           {filteredProducts.map((product) => (
@@ -197,12 +205,38 @@ const MobileCatalogPage = () => {
             </article>
           ))}
           {!filteredProducts.length ? (
-            <div className="mobile-card col-span-2 p-5 text-center">
-              <h3 className="text-base font-bold text-[#0b130c]">No products found</h3>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Try another category or note keyword.</p>
-              <Button className="mt-4 rounded-2xl" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })}>
-                Reset filters
-              </Button>
+            <div className="mobile-card col-span-2 overflow-hidden text-center">
+              <div className="bg-[#050705] p-5 text-[#eef2e8]">
+                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mx-auto h-14 w-40 rounded-2xl object-contain" />
+                <h3 className="mt-5 text-lg font-bold">
+                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'No products found' : 'Belum ada parfum tersedia'}
+                </h3>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
+                  {catalogLoading
+                    ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
+                    : hasCatalogProducts
+                    ? 'Coba kategori atau keyword aroma lain.'
+                    : 'Produk public akan tampil setelah ditambahkan dari Studio. Customer tetap bisa mulai dari bespoke request.'}
+                </p>
+              </div>
+              {!catalogLoading ? (
+              <div className="grid grid-cols-2 gap-2 p-3">
+                {hasCatalogProducts ? (
+                  <Button className="rounded-2xl" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })}>
+                    Reset filters
+                  </Button>
+                ) : (
+                  <Button className="rounded-2xl gap-2" onClick={() => navigate('/mobile/login')}>
+                    Add product
+                    <PackagePlus className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/bespoke')}>
+                  Bespoke
+                  <WandSparkles className="h-4 w-4" />
+                </Button>
+              </div>
+              ) : null}
             </div>
           ) : null}
         </section>

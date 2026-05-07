@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Search, ShoppingBag } from 'lucide-react';
+import { ArrowRight, PackagePlus, Search, ShoppingBag, WandSparkles } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -24,6 +24,8 @@ const CatalogPage = () => {
   const [sort, setSort] = useState('featured');
   const catalogProducts = useCatalogProducts();
   const categories = useStorefrontCategories(catalogProducts);
+  const catalogLoading = Boolean(catalogProducts.loading);
+  const hasCatalogProducts = catalogProducts.length > 0;
 
   const products = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -69,27 +71,31 @@ const CatalogPage = () => {
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search notes or product" className="min-h-0 flex-1 bg-transparent text-sm font-semibold outline-none" />
             </label>
           </div>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
-              <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
-                {item.name}
-              </button>
-            ))}
-          </div>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {['All', ...categories.map((item) => item.name)].map((item) => (
-              <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', category === item ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]' : 'bg-white text-muted-foreground')}>
-                {item}
-              </button>
-            ))}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {catalogSortOptions.map((option) => (
-              <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-9 rounded-2xl border px-3 text-xs font-bold', sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {hasCatalogProducts ? (
+            <>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
+                  <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {['All', ...categories.map((item) => item.name)].map((item) => (
+                  <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', category === item ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]' : 'bg-white text-muted-foreground')}>
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {catalogSortOptions.map((option) => (
+                  <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-9 rounded-2xl border px-3 text-xs font-bold', sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {products.map((product) => (
               <article key={product.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
@@ -114,10 +120,48 @@ const CatalogPage = () => {
             ))}
           </div>
           {!products.length ? (
-            <div className="mt-8 rounded-2xl border bg-white p-8 text-center">
-              <ShoppingBag className="mx-auto h-8 w-8 text-[#263d27]" />
-              <h2 className="mt-3 text-xl font-bold">No products found</h2>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">Try another category or search keyword.</p>
+            <div className="mt-8 overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-white text-center shadow-sm">
+              <div className="bg-[#050705] px-6 py-10 text-[#eef2e8]">
+                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mx-auto h-16 w-48 rounded-2xl object-contain" />
+                <h2 className="mt-6 text-2xl font-bold">
+                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'No products found' : 'Belum ada parfum tersedia'}
+                </h2>
+                <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-relaxed text-[#cbd6c5]">
+                  {catalogLoading
+                    ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
+                    : hasCatalogProducts
+                    ? 'Coba kategori, tipe shop, atau keyword aroma lain.'
+                    : 'Koleksi public akan tampil di sini setelah produk ditambahkan dari Studio. Customer masih bisa mulai dari request bespoke.'}
+                </p>
+              </div>
+              {!catalogLoading ? (
+              <div className="flex flex-wrap justify-center gap-3 px-6 py-6">
+                {hasCatalogProducts ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery('');
+                      setSegment('all');
+                      setCategory('All');
+                      setSort('featured');
+                    }}
+                    className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]"
+                  >
+                    Reset filters
+                    <Search className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <Link to="/login" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
+                    Add products
+                    <PackagePlus className="h-4 w-4" />
+                  </Link>
+                )}
+                <Link to="/bespoke" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-5 text-sm font-bold text-[#0b130c]">
+                  Request bespoke
+                  <WandSparkles className="h-4 w-4" />
+                </Link>
+              </div>
+              ) : null}
             </div>
           ) : null}
         </section>

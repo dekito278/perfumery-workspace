@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   MessageCircle,
+  PackagePlus,
   ShoppingBag,
   UserRound,
   WandSparkles,
@@ -22,6 +23,8 @@ const HomePage = () => {
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
   const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 3);
+  const productsLoading = Boolean(products.loading);
+  const hasProducts = products.length > 0;
   const storefrontStats = [
     { value: String(products.length), label: 'Scents' },
     { value: String(limitedProducts.length), label: 'Limited picks' },
@@ -92,15 +95,54 @@ const HomePage = () => {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.08 }} className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
-            <ProductVisual product={homeProducts[0]} className="min-h-[360px]" />
-            <div className="grid gap-4">
-              <ProductVisual product={homeProducts[1]} className="min-h-[172px]" />
-              <ProductVisual product={homeProducts[2]} className="min-h-[172px]" />
-            </div>
-          </motion.div>
+          {hasProducts ? (
+            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.08 }} className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
+              <ProductVisual product={homeProducts[0] || products[0]} className="min-h-[360px]" />
+              <div className="grid gap-4">
+                <ProductVisual product={homeProducts[1] || products[1]} className="min-h-[172px]" />
+                <ProductVisual product={homeProducts[2] || products[2]} className="min-h-[172px]" />
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.08 }}
+              className="overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] text-[#eef2e8] shadow-2xl shadow-[#263d27]/20"
+            >
+              <div className="grid min-h-[420px] content-between p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-4">
+                  <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-16 w-44 rounded-2xl object-contain" />
+                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold uppercase text-[#b7c6b1]">Coming soon</span>
+                </div>
+                <div>
+                  <h2 className="max-w-xl text-3xl font-bold leading-tight sm:text-4xl">
+                    {productsLoading ? 'Memuat koleksi parfum.' : 'Koleksi parfum sedang disiapkan.'}
+                  </h2>
+                  <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-[#cbd6c5]">
+                    {productsLoading
+                      ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
+                      : 'Produk public akan tampil otomatis setelah ditambahkan dari Studio. Sementara itu, customer tetap bisa mulai dari request bespoke.'}
+                  </p>
+                </div>
+                {!productsLoading ? (
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/bespoke" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#eef2e8] px-5 text-sm font-bold text-[#0b130c]">
+                    Request bespoke
+                    <WandSparkles className="h-4 w-4" />
+                  </Link>
+                  <Link to="/login" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 px-5 text-sm font-bold text-[#eef2e8]">
+                    Add products
+                    <PackagePlus className="h-4 w-4" />
+                  </Link>
+                </div>
+                ) : null}
+              </div>
+            </motion.div>
+          )}
         </section>
 
+        {categories.length ? (
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -124,6 +166,7 @@ const HomePage = () => {
             ))}
           </div>
         </section>
+        ) : null}
 
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
