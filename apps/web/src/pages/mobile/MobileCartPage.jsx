@@ -26,6 +26,7 @@ const MobileCartPage = () => {
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const checkoutDraft = useMemo(() => buildCheckoutDraft({ customerName, contact, notes, items }), [contact, customerName, items, notes]);
 
@@ -34,26 +35,31 @@ const MobileCartPage = () => {
     toast.success('Checkout draft copied');
   };
 
-  const submitOrder = () => {
+  const submitOrder = async () => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim()) {
       toast.error('Customer name and contact are required');
       return;
     }
 
-    const order = createOrder({
-      customerName,
-      contact,
-      notes,
-      items,
-      subtotal: summary.subtotal,
-      quantity: summary.quantity,
-      checkoutDraft,
-    });
-    clear();
-    setCheckoutOpen(false);
-    toast.success(`Order ${order.id} saved`);
-    navigate('/mobile/dashboard');
+    setSaving(true);
+    try {
+      const order = await createOrder({
+        customerName,
+        contact,
+        notes,
+        items,
+        subtotal: summary.subtotal,
+        quantity: summary.quantity,
+        checkoutDraft,
+      });
+      clear();
+      setCheckoutOpen(false);
+      toast.success(`Order ${order.orderNumber} saved`);
+      navigate('/mobile/dashboard');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -147,9 +153,9 @@ const MobileCartPage = () => {
                 </div>
               </section>
 
-              <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={submitOrder}>
+              <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={submitOrder} disabled={saving}>
                 <PackageCheck className="h-4 w-4" />
-                Save order
+                {saving ? 'Saving order...' : 'Save order'}
               </Button>
             </div>
           </SheetContent>

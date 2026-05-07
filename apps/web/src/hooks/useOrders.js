@@ -3,20 +3,32 @@ import {
   clearOrders,
   deleteOrder,
   getOrderSummary,
+  getLocalOrders,
   getOrders,
   updateOrderStatus,
 } from '@/services/orderService.js';
 
 export const useOrders = () => {
-  const [orders, setOrders] = useState(getOrders);
+  const [orders, setOrders] = useState(getLocalOrders);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const syncOrders = () => setOrders(getOrders());
+    let isMounted = true;
+    const syncOrders = async () => {
+      setLoading(true);
+      const nextOrders = await getOrders();
+      if (isMounted) {
+        setOrders(nextOrders);
+        setLoading(false);
+      }
+    };
+
     window.addEventListener('storage', syncOrders);
     window.addEventListener('dekito:orders-updated', syncOrders);
     syncOrders();
 
     return () => {
+      isMounted = false;
       window.removeEventListener('storage', syncOrders);
       window.removeEventListener('dekito:orders-updated', syncOrders);
     };
@@ -27,8 +39,9 @@ export const useOrders = () => {
   return {
     orders,
     summary,
-    updateStatus: (orderId, status) => setOrders(updateOrderStatus(orderId, status)),
-    deleteOne: (orderId) => setOrders(deleteOrder(orderId)),
+    loading,
+    updateStatus: async (orderId, status) => setOrders(await updateOrderStatus(orderId, status)),
+    deleteOne: async (orderId) => setOrders(await deleteOrder(orderId)),
     clearAll: () => {
       clearOrders();
       setOrders([]);

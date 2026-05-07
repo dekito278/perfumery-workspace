@@ -16,6 +16,7 @@ const CartPage = () => {
   const [customerName, setCustomerName] = useState('');
   const [contact, setContact] = useState('');
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
   const checkoutDraft = useMemo(() => buildCheckoutDraft({ customerName, contact, notes, items }), [contact, customerName, items, notes]);
 
   const copyDraft = async () => {
@@ -23,25 +24,30 @@ const CartPage = () => {
     toast.success('Checkout draft copied');
   };
 
-  const submitOrder = () => {
+  const submitOrder = async () => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim()) {
       toast.error('Customer name and contact are required');
       return;
     }
 
-    const order = createOrder({
-      customerName,
-      contact,
-      notes,
-      items,
-      subtotal: summary.subtotal,
-      quantity: summary.quantity,
-      checkoutDraft,
-    });
-    clear();
-    toast.success(`Order ${order.id} saved`);
-    navigate('/home');
+    setSaving(true);
+    try {
+      const order = await createOrder({
+        customerName,
+        contact,
+        notes,
+        items,
+        subtotal: summary.subtotal,
+        quantity: summary.quantity,
+        checkoutDraft,
+      });
+      clear();
+      toast.success(`Order ${order.orderNumber} saved`);
+      navigate('/home');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -106,7 +112,7 @@ const CartPage = () => {
               </div>
               <pre className="mt-4 max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl bg-[#f8f7f4] p-4 text-xs font-semibold leading-relaxed">{checkoutDraft}</pre>
               <div className="mt-4 flex gap-3">
-                <Button type="button" className="rounded-2xl gap-2" onClick={submitOrder}><PackageCheck className="h-4 w-4" />Save order</Button>
+                <Button type="button" className="rounded-2xl gap-2" onClick={submitOrder} disabled={saving}><PackageCheck className="h-4 w-4" />{saving ? 'Saving...' : 'Save order'}</Button>
                 <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={copyDraft}><Clipboard className="h-4 w-4" />Copy draft</Button>
                 <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Clear</Button>
               </div>

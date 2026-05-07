@@ -16,11 +16,11 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 const statusLabels = getOrderStatusLabels();
 
 const OrdersPage = () => {
-  const { orders, summary, updateStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, updateStatus, deleteOne } = useOrders();
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
-    toast.success(`${order.id} copied`);
+    toast.success(`${order.orderNumber} copied`);
   };
 
   return (
@@ -59,8 +59,9 @@ const OrdersPage = () => {
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-lg font-bold">{order.id}</h3>
-                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">{statusLabels[order.status]}</span>
+                      <h3 className="text-lg font-bold">{order.orderNumber}</h3>
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
+                      {order.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-600">Local draft</span> : null}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}</p>
                     <div className="mt-3 grid gap-2">
@@ -89,11 +90,16 @@ const OrdersPage = () => {
                 </div>
               </article>
             ))}
-            {!orders.length ? (
+            {!orders.length && !loading ? (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
                 <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
                 <h3 className="mt-3 font-bold">No orders yet</h3>
                 <p className="mt-1 text-sm font-medium text-muted-foreground">Pesanan yang disimpan dari cart akan muncul di sini.</p>
+              </div>
+            ) : null}
+            {loading && !orders.length ? (
+              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center text-sm font-bold text-muted-foreground">
+                Loading orders...
               </div>
             ) : null}
           </div>

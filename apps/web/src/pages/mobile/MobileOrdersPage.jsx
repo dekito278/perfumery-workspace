@@ -17,11 +17,11 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 const statusLabels = getOrderStatusLabels();
 
 const MobileOrdersPage = () => {
-  const { orders, summary, updateStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, updateStatus, deleteOne } = useOrders();
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
-    toast.success(`${order.id} copied`);
+    toast.success(`${order.orderNumber} copied`);
   };
 
   return (
@@ -53,12 +53,13 @@ const MobileOrdersPage = () => {
             <article key={order.id} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-bold text-[#1f2937]">{order.id}</h2>
+                  <h2 className="truncate text-sm font-bold text-[#1f2937]">{order.orderNumber}</h2>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
                 </div>
-                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status]}</span>
+                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
               </div>
+              {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Local draft</div> : null}
               <div className="mt-3 space-y-2">
                 {order.items.map((item) => (
                   <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f8f7f4] px-3 py-2 text-xs font-semibold text-[#1f2937]">
@@ -82,12 +83,15 @@ const MobileOrdersPage = () => {
               </div>
             </article>
           ))}
-          {!orders.length ? (
+          {!orders.length && !loading ? (
             <div className="mobile-card p-5 text-center">
               <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
               <h2 className="mt-3 text-base font-bold text-[#1f2937]">No orders yet</h2>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">Save checkout dari cart untuk membuat order pertama.</p>
             </div>
+          ) : null}
+          {loading && !orders.length ? (
+            <div className="mobile-card p-5 text-center text-xs font-bold text-[#6b7280]">Loading orders...</div>
           ) : null}
         </section>
       </main>
