@@ -94,7 +94,7 @@ const MobileStorefrontPage = () => {
               {perfumerProfile.intro}
             </motion.p>
             <motion.div variants={fadeUp} className="mt-4 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-white/74">
-              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-40 w-full object-cover object-[58%_42%]" />
+              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" />
               <div className="p-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Meet the perfumer</p>
                 <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
@@ -145,13 +145,6 @@ const MobileStorefrontPage = () => {
             <div className="absolute inset-x-0 bottom-0 p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#c6d5bf]">Inside the atelier</p>
               <h2 className="mt-2 text-xl font-bold leading-tight">Real raw materials, real studio work.</h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-[0.86fr_1.14fr] gap-3 p-3">
-            <img src={mobileHomeAssets.perfumerPipettes} alt="Solivagant perfumer holding pipettes" className="h-32 w-full rounded-2xl object-cover object-[58%_42%]" />
-            <div className="grid content-center rounded-2xl border border-white/10 bg-white/8 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c6d5bf]">Perfumer led</p>
-              <p className="mt-2 text-sm font-semibold leading-relaxed text-white/80">A personal scent process shaped by hand, notes, and memory.</p>
             </div>
           </div>
         </motion.section>

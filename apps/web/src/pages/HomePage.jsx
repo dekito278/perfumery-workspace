@@ -131,8 +131,8 @@ const HomePage = () => {
                 {perfumerProfile.intro}
               </motion.p>
 
-              <motion.div variants={fadeUp} className="mt-6 grid gap-4 rounded-[28px] border border-[#263d27]/12 bg-white/78 p-3 shadow-sm shadow-[#263d27]/5 backdrop-blur sm:grid-cols-[112px_1fr] sm:items-center">
-                <img src={homeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-32 w-full rounded-2xl object-cover object-[58%_42%] sm:h-32" />
+              <motion.div variants={fadeUp} className="mt-6 grid gap-4 rounded-[28px] border border-[#263d27]/12 bg-white/78 p-3 shadow-sm shadow-[#263d27]/5 backdrop-blur sm:grid-cols-[150px_1fr] sm:items-center">
+                <img src={homeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-64 w-full rounded-2xl object-cover object-[58%_34%] sm:h-44" />
                 <div className="p-1">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8d7a4f]">Meet the perfumer</p>
                   <h2 className="mt-2 text-2xl font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
@@ -202,11 +202,11 @@ const HomePage = () => {
 
                 <div className="grid gap-4">
                   <motion.figure whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }} className="relative min-h-[236px] overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-[#050705] shadow-xl shadow-[#263d27]/10">
-                    <img src={homeAssets.perfumerPipettes} alt="Solivagant perfumer holding pipettes" className="absolute inset-0 h-full w-full object-cover object-[58%_42%]" />
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,5,0.72),rgba(5,7,5,0.08))]" />
+                    <img src={homeAssets.rawMaterialShelf} alt="Solivagant raw material shelf" className="absolute inset-0 h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,5,0.72),rgba(5,7,5,0.1))]" />
                     <figcaption className="absolute bottom-0 left-0 max-w-[72%] p-5 text-[#eef2e8]">
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c6d5bf]">Perfumer led</p>
-                      <h3 className="mt-2 text-xl font-bold leading-tight">Measured by hand.</h3>
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c6d5bf]">Material library</p>
+                      <h3 className="mt-2 text-xl font-bold leading-tight">Fine materials, clearly selected.</h3>
                     </figcaption>
                   </motion.figure>
 
