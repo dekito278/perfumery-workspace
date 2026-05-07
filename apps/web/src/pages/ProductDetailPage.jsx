@@ -4,13 +4,22 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
-  const product = useCatalogProduct(slug);
+  const products = useCatalogProducts();
+  const product = products.find((item) => item.slug === slug);
   const { addItem } = useCart();
+
+  if (!product && products.loading) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#fbfaf7] text-sm font-bold text-muted-foreground">
+        Loading product...
+      </main>
+    );
+  }
 
   if (!product) {
     return <Navigate to="/catalog" replace />;

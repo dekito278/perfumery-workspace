@@ -1,22 +1,41 @@
 import { useEffect, useState } from 'react';
-import { getCatalogProducts, getEditableProducts } from '@/services/productCatalogService.js';
+import {
+  getCatalogProductsAsync,
+  getEditableProducts,
+  getLocalCatalogProducts,
+} from '@/services/productCatalogService.js';
 
 export const useCatalogProducts = ({ editableOnly = false } = {}) => {
-  const readProducts = () => (editableOnly ? getEditableProducts() : getCatalogProducts());
-  const [products, setProducts] = useState(readProducts);
+  const [products, setProducts] = useState(() => (editableOnly ? [] : getLocalCatalogProducts()));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const syncProducts = () => setProducts(readProducts());
+    let isMounted = true;
+    const syncProducts = async () => {
+      setLoading(true);
+      const nextProducts = editableOnly ? await getEditableProducts() : await getCatalogProductsAsync();
+      if (isMounted) {
+        setProducts(nextProducts);
+        setLoading(false);
+      }
+    };
+
     window.addEventListener('storage', syncProducts);
     window.addEventListener('dekito:products-updated', syncProducts);
     syncProducts();
 
     return () => {
+      isMounted = false;
       window.removeEventListener('storage', syncProducts);
       window.removeEventListener('dekito:products-updated', syncProducts);
     };
   }, [editableOnly]);
 
+  Object.defineProperty(products, 'loading', {
+    configurable: true,
+    enumerable: false,
+    value: loading,
+  });
   return products;
 };
 

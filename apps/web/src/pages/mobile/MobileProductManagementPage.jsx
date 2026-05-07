@@ -32,6 +32,7 @@ const MobileProductManagementPage = () => {
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
   const [form, setForm] = useState(emptyProduct);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const resetForm = () => setForm(emptyProduct);
@@ -55,21 +56,26 @@ const MobileProductManagementPage = () => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.notes.trim()) {
       toast.error('Name and notes are required');
       return;
     }
-    const product = saveCustomProduct({ ...form, price: formatRupiah(form.priceNumber) });
-    setForm({
-      ...product,
-      topNotes: product.topNotes.join(', '),
-      heartNotes: product.heartNotes.join(', '),
-      baseNotes: product.baseNotes.join(', '),
-      tags: product.tags.join(', '),
-    });
-    toast.success('Product saved');
+    setSavingProduct(true);
+    try {
+      const product = await saveCustomProduct({ ...form, price: formatRupiah(form.priceNumber) });
+      setForm({
+        ...product,
+        topNotes: product.topNotes.join(', '),
+        heartNotes: product.heartNotes.join(', '),
+        baseNotes: product.baseNotes.join(', '),
+        tags: product.tags.join(', '),
+      });
+      toast.success('Product saved');
+    } finally {
+      setSavingProduct(false);
+    }
   };
 
   const handleEdit = (product) => setForm({
@@ -80,8 +86,8 @@ const MobileProductManagementPage = () => {
     tags: product.tags.join(', '),
   });
 
-  const handleDelete = (product) => {
-    deleteCustomProduct(product.id);
+  const handleDelete = async (product) => {
+    await deleteCustomProduct(product.id);
     if (form.id === product.id) resetForm();
     toast.success('Product removed');
   };
@@ -127,7 +133,7 @@ const MobileProductManagementPage = () => {
               <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
               Featured on home
             </label>
-            <Button type="submit" className="h-12 rounded-2xl gap-2"><Save className="h-4 w-4" />Save product</Button>
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Saving...' : 'Save product'}</Button>
           </div>
         </form>
 

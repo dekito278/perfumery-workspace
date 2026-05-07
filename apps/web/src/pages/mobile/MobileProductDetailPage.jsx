@@ -7,7 +7,7 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 
 const NoteColumn = ({ title, notes }) => (
@@ -24,8 +24,19 @@ const NoteColumn = ({ title, notes }) => (
 const MobileProductDetailPage = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
-  const product = useCatalogProduct(slug);
+  const products = useCatalogProducts();
+  const product = products.find((item) => item.slug === slug);
   const { addItem } = useCart();
+
+  if (!product && products.loading) {
+    return (
+      <MobileCommerceLayout>
+        <main className="mobile-page grid min-h-[70vh] place-items-center text-xs font-bold text-[#6b7280]">
+          Loading product...
+        </main>
+      </MobileCommerceLayout>
+    );
+  }
 
   if (!product) {
     return <Navigate to="/mobile/catalog" replace />;

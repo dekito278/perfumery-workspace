@@ -1,4 +1,5 @@
 import { featuredProducts } from '@/data/storefront.js';
+import supabase from '@/lib/supabaseClient.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 
@@ -84,6 +85,55 @@ export const normalizeProduct = (input, existingProducts = []) => {
   };
 };
 
+const toDatabasePayload = (product) => ({
+  slug: product.slug,
+  name: product.name,
+  category: product.category,
+  price_number: product.priceNumber,
+  size: product.size,
+  notes: product.notes,
+  top_notes: product.topNotes,
+  heart_notes: product.heartNotes,
+  base_notes: product.baseNotes,
+  mood: product.mood,
+  description: product.description,
+  concentration: product.concentration,
+  stock: product.stock,
+  variants: product.variants,
+  tags: product.tags,
+  intensity: product.intensity,
+  featured: product.featured,
+  popularity: product.popularity,
+  visual: product.visual,
+  image_url: product.imageUrl,
+  source: 'custom',
+});
+
+const fromDatabaseRow = (row) => normalizeProduct({
+  id: row.id,
+  slug: row.slug,
+  name: row.name,
+  category: row.category,
+  priceNumber: row.price_number,
+  size: row.size,
+  notes: row.notes,
+  topNotes: row.top_notes,
+  heartNotes: row.heart_notes,
+  baseNotes: row.base_notes,
+  mood: row.mood,
+  description: row.description,
+  concentration: row.concentration,
+  stock: row.stock,
+  variants: row.variants,
+  tags: row.tags,
+  intensity: row.intensity,
+  featured: row.featured,
+  popularity: row.popularity,
+  visual: row.visual,
+  imageUrl: row.image_url,
+  source: row.source || 'custom',
+}, featuredProducts);
+
 const readStoredProducts = () => {
   if (typeof window === 'undefined') return [];
 
@@ -106,9 +156,33 @@ export const getCatalogProducts = () => {
   return [...baseProducts, ...readStoredProducts()];
 };
 
-export const getEditableProducts = () => readStoredProducts();
+export const getLocalCatalogProducts = () => getCatalogProducts();
 
-export const saveCustomProduct = (input) => {
+export const getEditableProducts = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('storefront_products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data || []).map(fromDatabaseRow);
+  } catch (error) {
+    console.warn('Using local storefront products fallback:', error.message || error);
+    return readStoredProducts();
+  }
+};
+
+export const getCatalogProductsAsync = async () => {
+  const baseProducts = featuredProducts.map((product) => ({ ...product, source: 'seed' }));
+  const editableProducts = await getEditableProducts();
+  return [...baseProducts, ...editableProducts];
+};
+
+const saveLocalCustomProduct = (input) => {
   const storedProducts = readStoredProducts();
   const existingProducts = [...featuredProducts, ...storedProducts];
   const product = normalizeProduct(input, existingProducts);
@@ -119,11 +193,63 @@ export const saveCustomProduct = (input) => {
   return product;
 };
 
-export const deleteCustomProduct = (id) => {
-  const nextProducts = readStoredProducts().filter((product) => product.id !== id);
-  writeStoredProducts(nextProducts);
+export const saveCustomProduct = async (input) => {
+  const editableProducts = await getEditableProducts();
+  const product = normalizeProduct(input, [...featuredProducts, ...editableProducts]);
+  const payload = toDatabasePayload(product);
+
+  try {
+    const query = product.id && !String(product.id).startsWith('custom-')
+      ? supabase.from('storefront_products').update(payload).eq('id', product.id)
+      : supabase.from('storefront_products').insert(payload);
+
+    const { data, error } = await query.select('*').single();
+
+    if (error) {
+      throw error;
+    }
+
+    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    return fromDatabaseRow(data);
+  } catch (error) {
+    console.warn('Saving storefront product locally because database save failed:', error.message || error);
+    return saveLocalCustomProduct(input);
+  }
 };
 
-export const resetCustomProducts = () => {
-  writeStoredProducts([]);
+export const deleteCustomProduct = async (id) => {
+  try {
+    const { error } = await supabase
+      .from('storefront_products')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+  } catch (error) {
+    console.warn('Deleting local storefront product fallback:', error.message || error);
+    const nextProducts = readStoredProducts().filter((product) => product.id !== id);
+    writeStoredProducts(nextProducts);
+  }
+};
+
+export const resetCustomProducts = async () => {
+  try {
+    const { error } = await supabase
+      .from('storefront_products')
+      .delete()
+      .eq('source', 'custom');
+
+    if (error) {
+      throw error;
+    }
+
+    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+  } catch (error) {
+    console.warn('Resetting local storefront products fallback:', error.message || error);
+    writeStoredProducts([]);
+  }
 };

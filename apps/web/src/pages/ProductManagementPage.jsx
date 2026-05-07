@@ -46,6 +46,7 @@ const ProductManagementPage = () => {
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
   const [form, setForm] = useState(emptyProduct);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -70,27 +71,38 @@ const ProductManagementPage = () => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.notes.trim()) {
       toast.error('Product name and notes are required');
       return;
     }
 
-    const product = saveCustomProduct({
-      ...form,
-      price: formatRupiah(form.priceNumber),
-    });
-    setForm(toEditableProduct(product));
-    toast.success('Product saved to catalog');
+    setSavingProduct(true);
+    try {
+      const product = await saveCustomProduct({
+        ...form,
+        price: formatRupiah(form.priceNumber),
+      });
+      setForm(toEditableProduct(product));
+      toast.success('Product saved to catalog');
+    } finally {
+      setSavingProduct(false);
+    }
   };
 
   const handleEdit = (product) => setForm(toEditableProduct(product));
 
-  const handleDelete = (product) => {
-    deleteCustomProduct(product.id);
+  const handleDelete = async (product) => {
+    await deleteCustomProduct(product.id);
     if (form.id === product.id) resetForm();
     toast.success('Product removed from custom catalog');
+  };
+
+  const handleResetAll = async () => {
+    await resetCustomProducts();
+    resetForm();
+    toast.success('Custom products reset');
   };
 
   return (
@@ -189,7 +201,7 @@ const ProductManagementPage = () => {
               </label>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button type="submit" className="rounded-2xl gap-2"><Save className="h-4 w-4" />Save product</Button>
+              <Button type="submit" className="rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Saving...' : 'Save product'}</Button>
               <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={resetForm}><RotateCcw className="h-4 w-4" />Clear</Button>
             </div>
           </form>
@@ -197,7 +209,7 @@ const ProductManagementPage = () => {
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold">Custom products</h2>
-              {customProducts.length ? <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => { resetCustomProducts(); resetForm(); toast.success('Custom products reset'); }}>Reset all</Button> : null}
+              {customProducts.length ? <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleResetAll}>Reset all</Button> : null}
             </div>
             <div className="mt-5 grid gap-3">
               {customProducts.map((product) => (
