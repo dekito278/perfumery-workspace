@@ -40,6 +40,7 @@ import MobileProductDetailPage from '@/pages/mobile/MobileProductDetailPage.jsx'
 import MobileBespokePage from '@/pages/mobile/MobileBespokePage.jsx';
 import MobileCartPage from '@/pages/mobile/MobileCartPage.jsx';
 import MobileProductManagementPage from '@/pages/mobile/MobileProductManagementPage.jsx';
+import MobileBespokeSettingsPage from '@/pages/mobile/MobileBespokeSettingsPage.jsx';
 import MobileOrdersPage from '@/pages/mobile/MobileOrdersPage.jsx';
 import MobileCustomersPage from '@/pages/mobile/MobileCustomersPage.jsx';
 import MobileDashboardPage from '@/pages/mobile/MobileDashboardPage.jsx';
@@ -145,6 +146,12 @@ function AppRoutes() {
         <Route path="/mobile/studio/products" element={
           <ProtectedRoute>
             <MobileProductManagementPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/bespoke" element={
+          <ProtectedRoute>
+            <MobileBespokeSettingsPage />
           </ProtectedRoute>
         } />
 

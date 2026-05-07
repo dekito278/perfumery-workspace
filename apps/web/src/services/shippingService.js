@@ -54,7 +54,7 @@ export const describeShippingRate = (rate) => {
   if (!rate) return '';
 
   return [
-    `${rate.courierName || rate.courierCode || 'Courier'} ${rate.service || ''}`.trim(),
+    `${rate.courierName || rate.courierCode || 'Courier'} ${rate.serviceLabel || rate.service || ''}`.trim(),
     rate.etd ? `ETA ${rate.etd}` : '',
     `Rp ${new Intl.NumberFormat('id-ID').format(Number(rate.cost || 0))}`,
   ].filter(Boolean).join(' / ');

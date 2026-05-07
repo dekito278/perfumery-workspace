@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils.js';
 
 const ProductVisual = ({
@@ -7,18 +7,26 @@ const ProductVisual = ({
   bottleClassName = '',
   label = true,
 }) => {
-  const hasImage = Boolean(product?.imageUrl);
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = String(product?.imageUrl || '').trim();
+  const hasImage = Boolean(imageUrl) && !imageFailed;
   const fallbackClass = 'bg-[radial-gradient(circle_at_72%_14%,rgba(238,242,232,0.18),transparent_32%),linear-gradient(135deg,#050705_0%,#132016_52%,#263d27_100%)]';
   void bottleClassName;
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
 
   return (
     <div className={cn('relative overflow-hidden rounded-2xl', hasImage ? 'bg-[#050705]' : fallbackClass, className)}>
       {hasImage ? (
         <img
-          src={product.imageUrl}
+          src={imageUrl}
           alt={product.name}
           className="absolute inset-0 h-full w-full object-cover"
           loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setImageFailed(true)}
         />
       ) : (
         <>

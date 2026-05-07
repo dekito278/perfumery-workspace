@@ -7,6 +7,7 @@ import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
+import { formatRupiah, getProductLowStock } from '@/services/productCatalogService.js';
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];
@@ -107,9 +108,16 @@ const CatalogPage = () => {
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">{product.notes}</p>
                     </div>
                     <div className="shrink-0 text-right">
+                      {product.compareAtPriceNumber > product.priceNumber ? <div className="text-xs font-bold text-muted-foreground line-through">{formatRupiah(product.compareAtPriceNumber)}</div> : null}
                       <div className="text-sm font-bold">{product.price}</div>
-                      <div className="text-xs font-bold text-muted-foreground">{product.stock} left</div>
+                      <div className={cn('mt-1 text-xs font-bold', getProductLowStock(product) ? 'text-rose-700' : 'text-muted-foreground')}>{product.stock > 0 ? `${product.stock} left` : 'Sold out'}</div>
                     </div>
+                  </div>
+                    <div className="mt-3 flex flex-wrap gap-1">
+                    {product.variants.slice(0, 4).map((variant) => (
+                      <span key={variant.id || variant.size} className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{variant.size}</span>
+                    ))}
+                    {getProductLowStock(product) ? <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">Mau habis</span> : null}
                   </div>
                     <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-white">
                     View product

@@ -295,6 +295,7 @@ const addTransformIndexHtml = {
 const localApiDevPlugin = () => ({
 	name: 'local-api-dev',
 	configureServer(server) {
+		loadLocalApiEnv();
 		server.middlewares.use('/api', async (request, response, next) => {
 			try {
 				const requestUrl = new URL(request.url || '/', 'http://localhost');
@@ -336,6 +337,32 @@ logger.error = (msg, options) => {
 
 	loggerError(msg, options);
 }
+
+const loadLocalApiEnv = () => {
+	for (const envFileName of ['.env.local', '.env']) {
+		const envFile = path.resolve(__dirname, envFileName);
+		if (!existsSync(envFile)) continue;
+
+		const lines = readFileSync(envFile, 'utf-8').split(/\r?\n/);
+		for (const line of lines) {
+			const trimmedLine = line.trim();
+			if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+
+			const separatorIndex = trimmedLine.indexOf('=');
+			if (separatorIndex === -1) continue;
+
+			const key = trimmedLine.slice(0, separatorIndex).trim();
+			let value = trimmedLine.slice(separatorIndex + 1).trim();
+			if (!key || process.env[key] !== undefined) continue;
+
+			if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+				value = value.slice(1, -1);
+			}
+
+			process.env[key] = value;
+		}
+	}
+};
 
 export default defineConfig({
 	optimizeDeps: {

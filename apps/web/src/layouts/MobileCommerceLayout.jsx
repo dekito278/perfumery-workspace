@@ -9,7 +9,7 @@ const commerceNavItems = [
   { path: '/mobile/catalog', label: 'Shop', icon: Search, aliases: ['/mobile/products'] },
   { path: '/mobile/bespoke', label: 'Bespoke', icon: MessageCircle },
   { path: '/mobile/cart', label: 'Cart', icon: ShoppingBag },
-  { path: '/mobile/customer', label: 'Orders', icon: UserRound },
+  { path: '/mobile/customer', label: 'Cek Order', icon: UserRound },
 ];
 
 const MobileCommerceLayout = ({ children }) => {

@@ -30,7 +30,7 @@ export default async function handler(request, response) {
     return jsonResponse(response, 405, { message: 'Method not allowed' });
   }
 
-  const apiKey = process.env.RAJAONGKIR_API_KEY;
+  const apiKey = String(process.env.RAJAONGKIR_API_KEY || '').trim();
   if (!apiKey) {
     return jsonResponse(response, 500, {
       message: 'Shipping API is not configured. Set RAJAONGKIR_API_KEY.',

@@ -33,16 +33,19 @@ export const getCartItems = () => readCart();
 
 export const addCartItem = (product, quantity = 1) => {
   const items = readCart();
-  const current = items.find((item) => item.productId === product.id && item.slug === product.slug);
+  const cartSlug = product.cartSlug || product.slug;
+  const current = items.find((item) => item.productId === product.id && item.slug === cartSlug);
   const nextItems = current
     ? items.map((item) => (
-      item.productId === product.id && item.slug === product.slug
+      item.productId === product.id && item.slug === cartSlug
         ? { ...item, quantity: item.quantity + quantity }
         : item
     ))
     : [{
       productId: product.id,
-      slug: product.slug,
+      slug: cartSlug,
+      productSlug: product.slug,
+      variantId: product.variantId || '',
       name: product.name,
       price: product.price,
       priceNumber: product.priceNumber,

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, ImagePlus, ImageOff, PackagePlus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
+import { Edit3, ImagePlus, ImageOff, PackagePlus, Plus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -21,8 +21,13 @@ const emptyProduct = {
   name: '',
   category: '',
   priceNumber: 289000,
+  compareAtPriceNumber: 0,
   stock: 10,
   size: '30 ml',
+  variants: [
+    { id: '10-ml', size: '10 ml', priceNumber: 129000, compareAtPriceNumber: 0, stock: 5 },
+    { id: '30-ml', size: '30 ml', priceNumber: 289000, compareAtPriceNumber: 0, stock: 10 },
+  ],
   notes: '',
   topNotes: '',
   heartNotes: '',
@@ -39,7 +44,7 @@ const toEditableProduct = (product) => ({
   topNotes: product.topNotes.join(', '),
   heartNotes: product.heartNotes.join(', '),
   baseNotes: product.baseNotes.join(', '),
-  variants: product.variants.join(', '),
+  variants: product.variants,
   tags: product.tags.join(', '),
 });
 
@@ -58,6 +63,20 @@ const ProductManagementPage = () => {
   const [savingProduct, setSavingProduct] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const updateVariant = (index, key, value) => setForm((current) => ({
+    ...current,
+    variants: current.variants.map((variant, variantIndex) => (
+      variantIndex === index ? { ...variant, [key]: ['priceNumber', 'compareAtPriceNumber', 'stock'].includes(key) ? Number(value) : value } : variant
+    )),
+  }));
+  const addVariant = () => setForm((current) => ({
+    ...current,
+    variants: [...current.variants, { id: `variant-${Date.now()}`, size: '50 ml', priceNumber: current.priceNumber, compareAtPriceNumber: current.compareAtPriceNumber || 0, stock: 0 }],
+  }));
+  const removeVariant = (index) => setForm((current) => ({
+    ...current,
+    variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
+  }));
 
   const resetForm = () => setForm(emptyProduct);
 
@@ -91,6 +110,10 @@ const ProductManagementPage = () => {
     try {
       const product = await saveCustomProduct({
         ...form,
+        priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
+        compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+        stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+        size: form.variants?.[0]?.size || form.size,
         price: formatRupiah(form.priceNumber),
       });
       setForm(toEditableProduct(product));
@@ -169,6 +192,10 @@ const ProductManagementPage = () => {
                 <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
               </label>
               <label>
+                <span className="text-xs font-bold uppercase text-muted-foreground">Harga coret</span>
+                <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+              </label>
+              <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Stock</span>
                 <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
               </label>
@@ -176,6 +203,26 @@ const ProductManagementPage = () => {
                 <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
                 <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
               </label>
+              <div className="sm:col-span-2 rounded-2xl border bg-[#fbfaf7] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">Varian ukuran, harga, stok</div>
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground">Buat 10 ml, 30 ml, 50 ml, 100 ml dalam satu produk.</p>
+                  </div>
+                  <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2" onClick={addVariant}><Plus className="h-4 w-4" />Varian</Button>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {(form.variants || []).map((variant, index) => (
+                    <div key={variant.id || index} className="grid gap-2 rounded-2xl border bg-white p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+                      <input value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)} placeholder="30 ml" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                      <input type="number" value={variant.priceNumber} onChange={(event) => updateVariant(index, 'priceNumber', event.target.value)} placeholder="Harga" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                      <input type="number" value={variant.compareAtPriceNumber || 0} onChange={(event) => updateVariant(index, 'compareAtPriceNumber', event.target.value)} placeholder="Harga coret" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                      <input type="number" value={variant.stock} onChange={(event) => updateVariant(index, 'stock', event.target.value)} placeholder="Stok" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                      <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeVariant(index)} disabled={(form.variants || []).length <= 1}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <label className="sm:col-span-2">
                 <span className="text-xs font-bold uppercase text-muted-foreground">Notes summary</span>
                 <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
@@ -257,7 +304,7 @@ const ProductManagementPage = () => {
 
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-bold">Custom products</h2>
+              <h2 className="text-xl font-bold">Daftar produk</h2>
               {customProducts.length ? <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleResetAll}>Reset all</Button> : null}
             </div>
             <div className="mt-5 grid gap-3">
@@ -269,7 +316,14 @@ const ProductManagementPage = () => {
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-bold">{product.name}</h3>
                         <p className="mt-1 text-sm font-semibold text-muted-foreground">{product.notes}</p>
-                        <p className="mt-1 text-xs font-bold uppercase text-amber-700">{product.category} · {product.price} · {product.stock} left</p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {product.variants.slice(0, 4).map((variant) => (
+                            <span key={variant.id || variant.size} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
+                              {variant.size}: {variant.stock}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-xs font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock} left</p>
                       </div>
                     </div>
                     <div className="flex shrink-0 gap-2">

@@ -5,10 +5,30 @@ const DEFAULT_COURIERS = ['jnt', 'jne', 'pos', 'anteraja', 'ide'];
 
 const courierNames = {
   jne: 'JNE',
-  jnt: 'J&T',
-  anteraja: 'AnterAja',
-  ide: 'IDExpress',
-  pos: 'POS Indonesia',
+  jnt: 'JnT',
+  anteraja: 'ANTERAJA',
+  ide: 'IDEXPRES',
+  pos: 'POS',
+};
+
+const blockedLightParcelServices = [
+  /\bjtr\b/i,
+  /truck/i,
+  /dangerous/i,
+  /valuable/i,
+  /\bpdg\b/i,
+  /\bpvg\b/i,
+];
+
+const serviceNames = {
+  ctc: 'Reguler',
+  ctcyes: 'YES',
+  ctcsps: 'Super Speed',
+  ez: 'Reguler',
+  nd: 'Next Day',
+  reg: 'Reguler',
+  sd: 'Same Day',
+  std: 'Reguler',
 };
 
 const jsonResponse = (response, status, body) => {
@@ -32,16 +52,51 @@ const getAllowedCouriers = () => String(process.env.RAJAONGKIR_COURIERS || DEFAU
   .map((courier) => courier.trim().toLowerCase())
   .filter(Boolean);
 
+const getServiceLabel = ({ service, description }) => {
+  const rawService = String(service || '').trim();
+  const normalizedService = rawService.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (serviceNames[normalizedService]) {
+    return serviceNames[normalizedService];
+  }
+
+  const rawDescription = String(description || '').trim();
+  if (rawDescription && !/^\d+$/.test(rawDescription) && rawDescription.toLowerCase() !== normalizedService) {
+    return rawDescription
+      .replace(/\b(reg|std|ez)\b/gi, 'Reguler')
+      .replace(/\b(nd)\b/gi, 'Next Day')
+      .replace(/\b(sd)\b/gi, 'Same Day');
+  }
+
+  if (/^[A-Z0-9-]{2,8}$/.test(rawService)) {
+    return 'Reguler';
+  }
+
+  return rawService || 'Reguler';
+};
+
 const normalizeRate = (item) => {
   const courierCode = String(item.code || item.courier || item.shipping_code || '').toLowerCase();
+  const service = item.service || item.service_name || '';
+  const description = item.description || item.service_description || '';
   return {
     courierCode,
-    courierName: item.name || item.courier_name || courierNames[courierCode] || courierCode.toUpperCase(),
-    service: item.service || item.service_name || '',
-    description: item.description || item.service_description || '',
+    courierName: courierNames[courierCode] || item.name || item.courier_name || courierCode.toUpperCase(),
+    service,
+    serviceLabel: getServiceLabel({ service, description }),
+    description,
     etd: item.etd || item.duration || '',
     cost: Number(item.cost || item.price || item.value || 0),
   };
+};
+
+const isLightParcelRate = (rate) => {
+  const searchableText = [
+    rate.service,
+    rate.description,
+    rate.courierName,
+  ].filter(Boolean).join(' ');
+
+  return !blockedLightParcelServices.some((pattern) => pattern.test(searchableText));
 };
 
 export default async function handler(request, response) {
@@ -50,11 +105,15 @@ export default async function handler(request, response) {
     return jsonResponse(response, 405, { message: 'Method not allowed' });
   }
 
-  const apiKey = process.env.RAJAONGKIR_API_KEY;
-  const origin = process.env.RAJAONGKIR_ORIGIN_ID || process.env.RAJAONGKIR_ORIGIN_DISTRICT_ID;
+  const apiKey = String(process.env.RAJAONGKIR_API_KEY || '').trim();
+  const origin = String(process.env.RAJAONGKIR_ORIGIN_ID || process.env.RAJAONGKIR_ORIGIN_DISTRICT_ID || '').trim();
   if (!apiKey || !origin) {
+    const missing = [
+      !apiKey ? 'RAJAONGKIR_API_KEY' : '',
+      !origin ? 'RAJAONGKIR_ORIGIN_ID' : '',
+    ].filter(Boolean).join(' and ');
     return jsonResponse(response, 500, {
-      message: 'Shipping API is not configured. Set RAJAONGKIR_API_KEY and RAJAONGKIR_ORIGIN_ID.',
+      message: `Shipping API is not configured. Set ${missing}.`,
     });
   }
 
@@ -100,6 +159,7 @@ export default async function handler(request, response) {
     const rates = (Array.isArray(data.data) ? data.data : [])
       .map(normalizeRate)
       .filter((rate) => rate.courierCode && rate.service && rate.cost > 0)
+      .filter(isLightParcelRate)
       .sort((first, second) => first.cost - second.cost);
 
     return jsonResponse(response, 200, { rates });

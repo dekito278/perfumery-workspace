@@ -14,18 +14,18 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet.jsx';
 import {
-  bespokeBudgetOptions,
-  bespokeCapOptions,
-  bespokeExoticMaterialOptions,
   bespokeOccasionOptions,
-  bespokeSizeOptions,
-  paymentProviderOptions,
   feedbackFlowSteps,
 } from '@/data/storefront.js';
+import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest } from '@/services/orderService.js';
+import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
+import { formatRupiah } from '@/services/productCatalogService.js';
+
+const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 const OptionButton = ({ active, children, onClick }) => (
   <button
@@ -42,10 +42,35 @@ const OptionButton = ({ active, children, onClick }) => (
   </button>
 );
 
+const CapMockup = ({ cap, bottle, label }) => {
+  const isStone = cap?.value === 'Cap batu';
+  const isAcrylic = cap?.value === 'Cap custom akrilik';
+  const isSquare = /square|kotak/i.test(`${bottle?.label || ''} ${bottle?.value || ''}`);
+
+  return (
+    <div className="relative h-32 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
+      <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#d8c8a4]/50 to-transparent" />
+      <div className={`absolute left-1/2 top-5 h-20 w-11 -translate-x-1/2 border border-[#263d27]/20 bg-white shadow-sm ${isSquare ? 'rounded-xl' : 'rounded-b-[24px] rounded-t-xl'}`} />
+      <div className="absolute left-1/2 top-2 h-7 w-14 -translate-x-1/2 rounded-xl border border-[#263d27]/20 bg-[#1f2937] shadow-sm" />
+      {isStone ? <div className="absolute left-1/2 top-1 h-8 w-16 -translate-x-1/2 rounded-[18px] bg-[radial-gradient(circle_at_30%_25%,#f9fafb,#8b8a7c_45%,#2f352f)] shadow-md" /> : null}
+      {isAcrylic ? <div className="absolute left-1/2 top-1 h-8 w-16 -translate-x-1/2 rounded-xl bg-[linear-gradient(135deg,rgba(245,158,11,.85),rgba(236,72,153,.75),rgba(59,130,246,.8))] shadow-md" /> : null}
+      <div className="absolute left-1/2 top-14 min-w-10 -translate-x-1/2 rounded-lg border border-[#263d27]/10 bg-[#eef2e8] px-2 py-1 text-center text-[9px] font-bold text-[#263d27]">{label?.label || 'Label'}</div>
+      <div className="absolute bottom-3 left-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-[#263d27]">{bottle?.label || 'Bottle'}</div>
+      <div className="absolute bottom-3 right-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-[#263d27]">{cap?.label}</div>
+    </div>
+  );
+};
+
 const MobileBespokePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
+  const bespokeSettings = useBespokeSettings();
+  const bottleSizeOptions = bespokeSettings.bottleSizes.filter((option) => option.enabled);
+  const bottleTypeOptions = bespokeSettings.bottleTypes.filter((option) => option.enabled);
+  const capDesignOptions = bespokeSettings.capDesigns.filter((option) => option.enabled);
+  const labelDesignOptions = bespokeSettings.labelDesigns.filter((option) => option.enabled);
+  const exoticMaterialOptions = bespokeSettings.exoticMaterials.filter((option) => option.enabled);
   const [wizardOpen, setWizardOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
@@ -54,16 +79,30 @@ const MobileBespokePage = () => {
     customerCode: '',
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0],
-    size: bespokeSizeOptions[1],
-    capDesign: bespokeCapOptions[0],
-    exoticMaterial: bespokeExoticMaterialOptions[0],
-    budget: bespokeBudgetOptions[1],
+    size: bottleSizeOptions[0]?.value || '',
+    bottleType: bottleTypeOptions[0]?.value || '',
+    capDesign: capDesignOptions[0]?.value || '',
+    labelDesign: labelDesignOptions[0]?.value || '',
+    exoticMaterial: '',
     customerName: '',
     contact: '',
-    paymentProvider: 'manual',
+    deliveryAddress: '',
   });
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const selectedSize = bottleSizeOptions.find((option) => option.value === form.size) || bottleSizeOptions[0];
+  const selectedBottleType = bottleTypeOptions.find((option) => option.value === form.bottleType) || bottleTypeOptions[0];
+  const selectedCap = capDesignOptions.find((option) => option.value === form.capDesign) || capDesignOptions[0];
+  const selectedLabel = labelDesignOptions.find((option) => option.value === form.labelDesign) || labelDesignOptions[0];
+  const selectedExoticMaterial = exoticMaterialOptions.find((option) => option.value === form.exoticMaterial);
+  const estimatedTotal = Number(selectedSize?.price || 0) + Number(selectedBottleType?.price || 0) + Number(selectedCap?.price || 0) + Number(selectedLabel?.price || 0) + Number(selectedExoticMaterial?.price || 0);
+  const budgetSummary = [
+    selectedSize ? `${selectedSize.label} bottle` : '',
+    selectedBottleType ? `${selectedBottleType.label}${selectedBottleType.price ? ` +${formatRupiah(selectedBottleType.price)}` : ''}` : '',
+    selectedCap ? `${selectedCap.label}${selectedCap.price ? ` +${formatRupiah(selectedCap.price)}` : ''}` : '',
+    selectedLabel ? `${selectedLabel.label}${selectedLabel.price ? ` +${formatRupiah(selectedLabel.price)}` : ''}` : '',
+    selectedExoticMaterial ? `${selectedExoticMaterial.label} +${formatRupiah(selectedExoticMaterial.price)}` : '',
+  ].filter(Boolean).join(' / ');
 
   const lookupCustomer = async () => {
     if (!form.customerCode.trim()) {
@@ -82,6 +121,7 @@ const MobileBespokePage = () => {
       customerCode: customer.customerCode,
       customerName: customer.customerName,
       contact: customer.contact,
+      deliveryAddress: customer.deliveryAddress || '',
     }));
     toast.success(`${customer.customerCode} loaded`);
   };
@@ -89,13 +129,13 @@ const MobileBespokePage = () => {
   const steps = useMemo(() => [
     {
       key: 'scentDescription',
-      title: 'Deskripsi aroma',
-      description: 'Ceritakan aroma yang kamu bayangkan.',
+      title: 'Silakan bercerita',
+      description: 'Ceritakan suasana, karakter, orang, tempat, atau memori yang ingin dijadikan aroma.',
       render: () => (
         <textarea
           value={form.scentDescription}
           onChange={(event) => updateField('scentDescription', event.target.value)}
-          placeholder="Contoh: woody clean, sedikit vanilla, tidak terlalu manis..."
+          placeholder="Contoh: aku mau parfum yang terasa clean, dewasa, agak woody, sedikit vanilla, tapi tidak terlalu manis. Cocok untuk kerja dan malam..."
           rows={5}
           className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-[#263d27]"
         />
@@ -118,59 +158,109 @@ const MobileBespokePage = () => {
     {
       key: 'size',
       title: 'Pilih ukuran botol',
-      description: 'Mulai dari trial sampai full bottle.',
+      description: 'Untuk bespoke saat ini tersedia 30 ml dan 50 ml.',
       render: () => (
-        <div className="grid gap-2">
-          {bespokeSizeOptions.map((option) => (
-            <OptionButton key={option} active={form.size === option} onClick={() => updateField('size', option)}>{option}</OptionButton>
+        <div className="grid grid-cols-2 gap-2">
+          {bottleSizeOptions.map((option) => (
+            <OptionButton key={option.value} active={form.size === option.value} onClick={() => updateField('size', option.value)}>{option.label}</OptionButton>
           ))}
         </div>
       ),
       isComplete: () => Boolean(form.size),
     },
     {
+      key: 'bottleType',
+      title: 'Pilih jenis botol',
+      description: 'Jenis botol bisa kamu atur dari Studio Bespoke.',
+      render: () => (
+        <div className="grid gap-3">
+          <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
+          <div className="grid gap-2">
+            {bottleTypeOptions.map((option) => (
+              <OptionButton key={option.value} active={form.bottleType === option.value} onClick={() => updateField('bottleType', option.value)}>
+                <span className="block text-sm">{option.label}</span>
+                <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
+                {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
+              </OptionButton>
+            ))}
+          </div>
+        </div>
+      ),
+      isComplete: () => Boolean(form.bottleType),
+    },
+    {
       key: 'capDesign',
       title: 'Pilih desain cap',
-      description: 'Untuk arah packaging awal.',
+      description: 'Mockup sementara. Gambar final bisa diganti nanti.',
       render: () => (
-        <div className="grid grid-cols-2 gap-2">
-          {bespokeCapOptions.map((option) => (
-            <OptionButton key={option} active={form.capDesign === option} onClick={() => updateField('capDesign', option)}>{option}</OptionButton>
+        <div className="grid gap-3">
+          <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
+          <div className="grid gap-2">
+          {capDesignOptions.map((option) => (
+            <OptionButton key={option.value} active={form.capDesign === option.value} onClick={() => updateField('capDesign', option.value)}>
+              <span className="block text-sm">{option.label}</span>
+              <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
+              {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
+            </OptionButton>
           ))}
+          </div>
         </div>
       ),
       isComplete: () => Boolean(form.capDesign),
     },
     {
+      key: 'labelDesign',
+      title: 'Pilih desain label',
+      description: 'Label bisa dibuat minimal atau personal sesuai opsi Studio.',
+      render: () => (
+        <div className="grid gap-3">
+          <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
+          <div className="grid gap-2">
+            {labelDesignOptions.map((option) => (
+              <OptionButton key={option.value} active={form.labelDesign === option.value} onClick={() => updateField('labelDesign', option.value)}>
+                <span className="block text-sm">{option.label}</span>
+                <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
+                {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
+              </OptionButton>
+            ))}
+          </div>
+        </div>
+      ),
+      isComplete: () => Boolean(form.labelDesign),
+    },
+    ...(exoticMaterialOptions.length ? [{
       key: 'exoticMaterial',
       title: 'Material eksotis',
-      description: 'Pilih aksen khusus bila dibutuhkan.',
+      description: 'Material ini mengikuti daftar yang aktif dari Studio.',
       render: () => (
         <div className="grid gap-2">
-          {bespokeExoticMaterialOptions.map((option) => (
-            <OptionButton key={option} active={form.exoticMaterial === option} onClick={() => updateField('exoticMaterial', option)}>{option}</OptionButton>
+          <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>Tanpa material eksotis</OptionButton>
+          {exoticMaterialOptions.map((option) => (
+            <OptionButton key={option.value} active={form.exoticMaterial === option.value} onClick={() => updateField('exoticMaterial', option.value)}>
+              {option.label} {option.price ? `+${formatRupiah(option.price)}` : ''}
+            </OptionButton>
           ))}
         </div>
       ),
-      isComplete: () => Boolean(form.exoticMaterial),
-    },
+      isComplete: () => true,
+    }] : []),
     {
       key: 'budget',
-      title: 'Budget',
-      description: 'Budget membantu menentukan material dan ukuran.',
+      title: 'Budget estimate',
+      description: 'Total mengikuti ukuran, cap, dan material tambahan.',
       render: () => (
-        <div className="grid gap-2">
-          {bespokeBudgetOptions.map((option) => (
-            <OptionButton key={option} active={form.budget === option} onClick={() => updateField('budget', option)}>{option}</OptionButton>
-          ))}
+        <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Estimasi custom perfume</div>
+          <div className="mt-2 text-3xl font-bold text-[#0b130c]">{formatRupiah(estimatedTotal)}</div>
+          <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{budgetSummary}</p>
         </div>
       ),
-      isComplete: () => Boolean(form.budget),
+      isComplete: () => estimatedTotal > 0,
     },
     {
       key: 'contact',
-      title: 'Kontak customer',
-      description: 'Supaya tim Solivagant bisa follow-up request.',
+      title: 'Data pengiriman',
+      description: 'Isi seperti checkout biasa. Customer lama bisa load pakai kode.',
       render: () => (
         <div className="grid gap-2">
           <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -197,31 +287,21 @@ const MobileBespokePage = () => {
             placeholder="WhatsApp or email"
             className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
           />
+          <textarea
+            value={form.deliveryAddress}
+            onChange={(event) => updateField('deliveryAddress', event.target.value)}
+            placeholder="Alamat lengkap pengiriman"
+            rows={3}
+            className="rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-[#263d27]"
+          />
         </div>
       ),
-      isComplete: () => form.customerName.trim() && form.contact.trim(),
+      isComplete: () => form.customerName.trim() && form.contact.trim() && form.deliveryAddress.trim(),
     },
-    {
-      key: 'paymentProvider',
-      title: 'Metode pembayaran',
-      description: 'Pilih cara follow-up pembayaran untuk request ini.',
-      render: () => (
-        <div className="grid gap-2">
-          {paymentProviderOptions.map((option) => (
-            <OptionButton key={option.value} active={form.paymentProvider === option.value} onClick={() => updateField('paymentProvider', option.value)}>
-              <span className="block text-sm">{option.label}</span>
-              <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
-            </OptionButton>
-          ))}
-        </div>
-      ),
-      isComplete: () => Boolean(form.paymentProvider),
-    },
-  ], [form]);
+  ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedLabel]);
 
   const activeStep = steps[step];
   const completion = Math.round(((step + Number(activeStep.isComplete())) / steps.length) * 100);
-  const selectedPayment = paymentProviderOptions.find((option) => option.value === form.paymentProvider);
 
   const nextStep = () => {
     if (!activeStep.isComplete()) {
@@ -244,19 +324,40 @@ const MobileBespokePage = () => {
       const order = await createBespokeRequest({
         ...form,
         preferredNotes: form.scentDescription,
+        budget: formatRupiah(estimatedTotal),
+        totalPrice: estimatedTotal,
+        paymentProvider: 'doku',
         referenceProductName: referenceProduct?.name || '',
         referenceProductSlug: referenceProduct?.slug || '',
       });
+      const checkout = await createDokuCheckout({
+        order,
+        amount: estimatedTotal,
+        customerName: form.customerName,
+        contact: form.contact,
+        callbackPath: '/mobile/payment',
+      });
+      sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+        paymentUrl: checkout.paymentUrl,
+        invoiceNumber: checkout.invoiceNumber || order.orderNumber,
+        orderNumber: order.orderNumber,
+        customerCode: order.customerCode || form.customerCode,
+        amount: estimatedTotal,
+        customerName: form.customerName,
+        createdAt: new Date().toISOString(),
+      }));
 
       setSubmittedRequest({
         ...form,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
+        budget: formatRupiah(estimatedTotal),
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),
       });
       setWizardOpen(false);
       toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+      navigate('/mobile/payment');
     } catch (error) {
       toast.error(error.message || 'Failed to save bespoke request');
     } finally {
@@ -306,9 +407,9 @@ const MobileBespokePage = () => {
           <h2 className="text-base font-bold text-[#0b130c]">Current brief</h2>
           <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
             <p><strong className="text-[#0b130c]">Aroma:</strong> {form.scentDescription || '-'}</p>
-            <p><strong className="text-[#0b130c]">Bottle:</strong> {form.size} / {form.capDesign}</p>
-            <p><strong className="text-[#0b130c]">Material:</strong> {form.exoticMaterial}</p>
-            <p><strong className="text-[#0b130c]">Payment rail:</strong> {selectedPayment?.label}</p>
+            <p><strong className="text-[#0b130c]">Bottle:</strong> {form.size} / {form.bottleType} / {form.capDesign} / {form.labelDesign}</p>
+            {selectedExoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {selectedExoticMaterial.label}</p> : null}
+            <p><strong className="text-[#0b130c]">Budget:</strong> {formatRupiah(estimatedTotal)}</p>
           </div>
         </section>
 
@@ -348,9 +449,9 @@ const MobileBespokePage = () => {
                   <p><strong className="text-[#0b130c]">Studio order:</strong> {submittedRequest.orderNumber}</p>
                   <p><strong className="text-[#0b130c]">Contact:</strong> {submittedRequest.contact}</p>
                   <p><strong className="text-[#0b130c]">Aroma:</strong> {submittedRequest.scentDescription}</p>
-                  <p><strong className="text-[#0b130c]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.capDesign}</p>
-                  <p><strong className="text-[#0b130c]">Material:</strong> {submittedRequest.exoticMaterial}</p>
-                  <p><strong className="text-[#0b130c]">Payment:</strong> {selectedPayment?.label}</p>
+                  <p><strong className="text-[#0b130c]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
+                  {submittedRequest.exoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {submittedRequest.exoticMaterial}</p> : null}
+                  <p><strong className="text-[#0b130c]">Budget:</strong> {submittedRequest.budget}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>

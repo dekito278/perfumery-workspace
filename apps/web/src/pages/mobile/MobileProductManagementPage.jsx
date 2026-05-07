@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Edit3, ImageOff, ImagePlus, PackagePlus, Save, Tags, Trash2 } from 'lucide-react';
+import { Edit3, ImageOff, ImagePlus, PackagePlus, Plus, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -16,8 +16,13 @@ const emptyProduct = {
   name: '',
   category: '',
   priceNumber: 289000,
+  compareAtPriceNumber: 0,
   stock: 10,
   size: '30 ml',
+  variants: [
+    { id: '10-ml', size: '10 ml', priceNumber: 129000, compareAtPriceNumber: 0, stock: 5 },
+    { id: '30-ml', size: '30 ml', priceNumber: 289000, compareAtPriceNumber: 0, stock: 10 },
+  ],
   notes: '',
   topNotes: '',
   heartNotes: '',
@@ -44,6 +49,20 @@ const MobileProductManagementPage = () => {
   const [savingCategory, setSavingCategory] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const updateVariant = (index, key, value) => setForm((current) => ({
+    ...current,
+    variants: current.variants.map((variant, variantIndex) => (
+      variantIndex === index ? { ...variant, [key]: ['priceNumber', 'compareAtPriceNumber', 'stock'].includes(key) ? Number(value) : value } : variant
+    )),
+  }));
+  const addVariant = () => setForm((current) => ({
+    ...current,
+    variants: [...current.variants, { id: `variant-${Date.now()}`, size: '50 ml', priceNumber: current.priceNumber, compareAtPriceNumber: current.compareAtPriceNumber || 0, stock: 0 }],
+  }));
+  const removeVariant = (index) => setForm((current) => ({
+    ...current,
+    variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
+  }));
   const resetForm = () => setForm(emptyProduct);
 
   const handleImageUpload = async (event) => {
@@ -73,12 +92,20 @@ const MobileProductManagementPage = () => {
     }
     setSavingProduct(true);
     try {
-      const product = await saveCustomProduct({ ...form, price: formatRupiah(form.priceNumber) });
+      const product = await saveCustomProduct({
+        ...form,
+        priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
+        compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+        stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+        size: form.variants?.[0]?.size || form.size,
+        price: formatRupiah(form.priceNumber),
+      });
       setForm({
         ...product,
         topNotes: product.topNotes.join(', '),
         heartNotes: product.heartNotes.join(', '),
         baseNotes: product.baseNotes.join(', '),
+        variants: product.variants,
         tags: product.tags.join(', '),
       });
       toast.success('Product saved');
@@ -92,6 +119,7 @@ const MobileProductManagementPage = () => {
     topNotes: product.topNotes.join(', '),
     heartNotes: product.heartNotes.join(', '),
     baseNotes: product.baseNotes.join(', '),
+    variants: product.variants,
     tags: product.tags.join(', '),
   });
 
@@ -150,8 +178,31 @@ const MobileProductManagementPage = () => {
                 {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
               </select>
               <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} placeholder="Harga coret" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
               <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
               <input value={form.size} onChange={(event) => updateField('size', event.target.value)} placeholder="30 ml" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </div>
+            <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-[#1f2937]">Varian ukuran</h3>
+                  <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Ukuran, harga, harga coret, stok.</p>
+                </div>
+                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-1 px-3 text-xs" onClick={addVariant}><Plus className="h-4 w-4" />Add</Button>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {(form.variants || []).map((variant, index) => (
+                  <div key={variant.id || index} className="grid grid-cols-2 gap-2 rounded-2xl border bg-white p-2">
+                    <input value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)} placeholder="30 ml" className="h-10 rounded-xl border px-2 text-xs font-semibold outline-none focus:border-amber-300" />
+                    <input type="number" value={variant.priceNumber} onChange={(event) => updateVariant(index, 'priceNumber', event.target.value)} placeholder="Harga" className="h-10 rounded-xl border px-2 text-xs font-semibold outline-none focus:border-amber-300" />
+                    <input type="number" value={variant.compareAtPriceNumber || 0} onChange={(event) => updateVariant(index, 'compareAtPriceNumber', event.target.value)} placeholder="Harga coret" className="h-10 rounded-xl border px-2 text-xs font-semibold outline-none focus:border-amber-300" />
+                    <div className="grid grid-cols-[1fr_auto] gap-2">
+                      <input type="number" value={variant.stock} onChange={(event) => updateVariant(index, 'stock', event.target.value)} placeholder="Stok" className="h-10 rounded-xl border px-2 text-xs font-semibold outline-none focus:border-amber-300" />
+                      <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeVariant(index)} disabled={(form.variants || []).length <= 1}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Notes summary" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
@@ -215,8 +266,8 @@ const MobileProductManagementPage = () => {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">Custom products</h2>
-            <span className="text-xs font-bold text-amber-700">{customProducts.length} Supabase items</span>
+            <h2 className="text-base font-bold">Daftar produk</h2>
+            <span className="text-xs font-bold text-amber-700">{customProducts.length} produk</span>
           </div>
           {customProducts.map((product) => (
             <article key={product.id} className="mobile-card p-3">
@@ -226,7 +277,14 @@ const MobileProductManagementPage = () => {
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} · {product.price}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {product.variants.slice(0, 3).map((variant) => (
+                        <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
+                          {variant.size}: {variant.stock}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock}</p>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1">

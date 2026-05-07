@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, PackagePlus, Search, ShoppingBag, SlidersHorizontal, WandSparkles } from 'lucide-react';
+import { ArrowUpDown, ClipboardCheck, PackagePlus, Search, ShoppingBag, SlidersHorizontal, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -10,6 +10,7 @@ import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
+import { formatRupiah, getProductLowStock } from '@/services/productCatalogService.js';
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];
@@ -85,7 +86,16 @@ const MobileCatalogPage = () => {
           title="Catalog"
           subtitle={`${filteredProducts.length} products`}
           eyebrow="Shop"
-          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-[#263d27]" /></button>}
+          action={(
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+                <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
+              </button>
+              <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+                <ShoppingBag className="h-5 w-5 text-[#263d27]" />
+              </button>
+            </div>
+          )}
         />
 
         <section className="mobile-card p-2">
@@ -190,9 +200,20 @@ const MobileCatalogPage = () => {
                     <p className="mt-1 text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="text-xs font-bold text-[#0b130c]">{product.price}</div>
-                    <div className="text-[10px] font-bold text-[#8b949e]">{product.stock} left</div>
+                    <div>
+                      {product.compareAtPriceNumber > product.priceNumber ? <div className="text-[10px] font-bold text-[#9ca3af] line-through">{formatRupiah(product.compareAtPriceNumber)}</div> : null}
+                      <div className="text-xs font-bold text-[#0b130c]">{product.price}</div>
+                    </div>
+                    <div className={cn('rounded-full px-2 py-1 text-[10px] font-bold', getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'text-[#8b949e]')}>
+                      {product.stock > 0 ? `${product.stock} left` : 'Sold out'}
+                    </div>
                   </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {product.variants.slice(0, 3).map((variant) => (
+                      <span key={variant.id || variant.size} className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold text-[#263d27]">{variant.size}</span>
+                    ))}
+                  </div>
+                  {getProductLowStock(product) ? <div className="mt-2 text-[10px] font-bold uppercase text-rose-700">Mau habis</div> : null}
                   <div className="mt-2 flex flex-wrap gap-1">
                     {product.tags.slice(0, 2).map((tag) => (
                       <span key={tag} className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[10px] font-bold uppercase text-[#6b7280]">

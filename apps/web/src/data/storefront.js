@@ -260,30 +260,26 @@ export const bespokeOccasionOptions = [
   'Signature scent',
 ];
 
+export const bespokeBottleSizeOptions = [
+  { value: '30 ml', label: '30 ml', price: 350000 },
+  { value: '50 ml', label: '50 ml', price: 500000 },
+];
+
+export const bespokeCapDesignOptions = [
+  { value: 'Cap biasa', label: 'Cap biasa', price: 0, description: 'Simple, clean, ready stock.' },
+  { value: 'Cap batu', label: 'Cap batu', price: 75000, description: 'Statement cap dengan feel natural stone.' },
+  { value: 'Cap custom akrilik', label: 'Cap custom akrilik', price: 125000, description: 'Custom color/form acrylic look.' },
+];
+
+export const bespokeExoticMaterialOptions = [];
+
 export const bespokeBudgetOptions = [
-  'Rp 250.000 - 350.000',
-  'Rp 350.000 - 500.000',
-  'Rp 500.000 - 750.000',
-  'Rp 750.000+',
+  'Budget otomatis mengikuti ukuran, cap, dan material tambahan.',
 ];
 
-export const bespokeSizeOptions = ['10 ml trial', '30 ml bottle', '50 ml bottle'];
+export const bespokeSizeOptions = bespokeBottleSizeOptions.map((option) => option.value);
 
-export const bespokeCapOptions = [
-  'Classic black cap',
-  'Matte silver cap',
-  'Gold collar cap',
-  'Wooden cap',
-];
-
-export const bespokeExoticMaterialOptions = [
-  'No exotic material',
-  'Oud accent',
-  'Saffron nuance',
-  'Ambergris-style accord',
-  'Rare floral absolute',
-  'Smoky resin touch',
-];
+export const bespokeCapOptions = bespokeCapDesignOptions.map((option) => option.value);
 
 export const paymentProviderOptions = [
   {

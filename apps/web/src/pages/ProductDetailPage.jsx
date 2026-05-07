@@ -1,17 +1,23 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
+import { formatRupiah } from '@/services/productCatalogService.js';
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
   const products = useCatalogProducts();
   const product = products.find((item) => item.slug === slug);
   const { addItem } = useCart();
+  const [selectedVariantId, setSelectedVariantId] = useState('');
+  const selectedVariant = useMemo(() => {
+    const variants = Array.isArray(product?.variants) ? product.variants : [];
+    return variants.find((variant) => variant.id === selectedVariantId) || variants[0] || null;
+  }, [product, selectedVariantId]);
 
   if (!product && products.loading) {
     return (
@@ -24,6 +30,26 @@ const ProductDetailPage = () => {
   if (!product) {
     return <Navigate to="/catalog" replace />;
   }
+
+  const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
+  const selectedCompareAt = Number(selectedVariant?.compareAtPriceNumber || 0);
+  const selectedStock = Number(selectedVariant?.stock ?? product.stock ?? 0);
+  const selectedSize = selectedVariant?.size || product.size;
+  const addSelectedVariant = () => {
+    if (selectedStock <= 0) {
+      toast.error('Stok varian ini sedang habis');
+      return;
+    }
+    addItem({
+      ...product,
+      cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
+      variantId: selectedVariant?.id || '',
+      size: selectedSize,
+      price: formatRupiah(selectedPrice),
+      priceNumber: selectedPrice,
+    }, 1);
+    toast.success(`${selectedSize} added to cart`);
+  };
 
   return (
     <>
@@ -52,12 +78,32 @@ const ProductDetailPage = () => {
             <p className="mt-4 text-lg font-semibold text-muted-foreground">{product.notes}</p>
             <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-muted-foreground">{product.description}</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {[['Price', product.price], ['Stock', `${product.stock} left`], ['Intensity', product.intensity]].map(([label, value]) => (
+              {[['Price', formatRupiah(selectedPrice)], ['Stock', `${selectedStock} left`], ['Intensity', product.intensity]].map(([label, value]) => (
                 <div key={label} className="rounded-2xl border bg-white p-4">
                   <div className="text-xs font-bold uppercase text-muted-foreground">{label}</div>
-                  <div className="mt-2 text-lg font-bold">{value}</div>
+                  {label === 'Price' && selectedCompareAt > selectedPrice ? <div className="mt-2 text-sm font-bold text-muted-foreground line-through">{formatRupiah(selectedCompareAt)}</div> : null}
+                  <div className={label === 'Price' && selectedCompareAt > selectedPrice ? 'mt-0 text-lg font-bold' : 'mt-2 text-lg font-bold'}>{value}</div>
                 </div>
               ))}
+            </div>
+            <div className="mt-8 rounded-2xl border bg-white p-4">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Available sizes</div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {product.variants.map((variant) => (
+                  <button
+                    key={variant.id || variant.size}
+                    type="button"
+                    onClick={() => setSelectedVariantId(variant.id)}
+                    className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold ${selectedVariant?.id === variant.id ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'bg-white'}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{variant.size}</span>
+                      <span>{formatRupiah(variant.priceNumber)}</span>
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">{variant.stock > 0 ? `${variant.stock} left` : 'Sold out'}</div>
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {[['Top', product.topNotes], ['Heart', product.heartNotes], ['Base', product.baseNotes]].map(([label, notes]) => (
@@ -70,14 +116,10 @@ const ProductDetailPage = () => {
               ))}
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button type="button" onClick={() => { addItem(product, 1); toast.success('Added to cart'); }} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
+              <button type="button" onClick={addSelectedVariant} disabled={selectedStock <= 0} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8] disabled:opacity-50">
                 Add to cart
                 <ShoppingBag className="h-4 w-4" />
               </button>
-              <Link to={`/bespoke?reference=${product.slug}`} className="inline-flex h-12 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold">
-                Use as custom brief reference
-                <MessageCircle className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         </section>

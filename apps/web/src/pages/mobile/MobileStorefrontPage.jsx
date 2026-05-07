@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowRight,
+  ClipboardCheck,
   Gem,
   Leaf,
   PackagePlus,
@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import {
@@ -69,12 +68,19 @@ const MobileStorefrontPage = () => {
         <meta name="description" content="Solivagant storefront with featured perfumes, scent categories, and bespoke perfume consultation." />
       </Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar
-          title="Solivagant"
-          subtitle="Perfumery shop"
-          eyebrow="Home"
-          action={<button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart"><ShoppingBag className="h-5 w-5 text-[#263d27]" /></button>}
-        />
+        <header className="mb-3 flex items-center justify-between gap-3 pr-12">
+          <button type="button" onClick={() => navigate('/mobile/dashboard')} className="min-w-0" aria-label="Solivagant home">
+            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-12 w-36 rounded-2xl object-contain" />
+          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+              <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
+            </button>
+            <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+              <ShoppingBag className="h-5 w-5 text-[#263d27]" />
+            </button>
+          </div>
+        </header>
 
         <motion.section
           variants={stagger}
@@ -240,24 +246,6 @@ const MobileStorefrontPage = () => {
           </div>
         </motion.section>
         ) : null}
-
-        <motion.section initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} id="mobile-custom" className="mobile-card scroll-mt-4 border-[#263d27]/12 bg-[#050705] p-4 text-white shadow-xl shadow-[#263d27]/14">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
-              <WandSparkles className="h-5 w-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-white">Bespoke perfume</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-white/70">
-                Request a scent by mood, notes, budget, and occasion.
-              </p>
-              <Button className="mt-3 h-10 rounded-2xl gap-2 bg-[#eef2e8] text-[#0b130c] hover:bg-white" onClick={() => navigate('/mobile/bespoke')}>
-                Start custom request
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </motion.section>
       </main>
     </MobileCommerceLayout>
   );

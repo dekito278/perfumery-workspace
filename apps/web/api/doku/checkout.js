@@ -19,10 +19,11 @@ const readBody = async (request) => {
 };
 
 const getDokuBaseUrl = () => {
-  if (process.env.DOKU_BASE_URL) {
-    return process.env.DOKU_BASE_URL.replace(/\/$/, '');
+  const explicitBaseUrl = String(process.env.DOKU_BASE_URL || '').trim();
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/$/, '');
   }
-  return process.env.DOKU_ENVIRONMENT === 'production'
+  return String(process.env.DOKU_ENVIRONMENT || '').trim() === 'production'
     ? 'https://api.doku.com'
     : 'https://api-sandbox.doku.com';
 };
@@ -72,8 +73,8 @@ export default async function handler(request, response) {
     return jsonResponse(response, 405, { message: 'Method not allowed' });
   }
 
-  const clientId = process.env.DOKU_CLIENT_ID;
-  const secretKey = process.env.DOKU_SECRET_KEY;
+  const clientId = String(process.env.DOKU_CLIENT_ID || '').trim();
+  const secretKey = String(process.env.DOKU_SECRET_KEY || process.env.DOKU_API_KEY || '').trim();
 
   if (!clientId || !secretKey) {
     return jsonResponse(response, 500, {
@@ -91,7 +92,7 @@ export default async function handler(request, response) {
       return jsonResponse(response, 400, { message: 'Order number and positive amount are required' });
     }
 
-    const callbackBaseUrl = String(input.callbackBaseUrl || process.env.DOKU_CALLBACK_BASE_URL || '').replace(/\/$/, '');
+    const callbackBaseUrl = String(input.callbackBaseUrl || process.env.DOKU_CALLBACK_BASE_URL || '').trim().replace(/\/$/, '');
     const callbackPath = normalizeCallbackPath(input.callbackPath);
     const checkoutBody = {
       order: {
@@ -106,7 +107,7 @@ export default async function handler(request, response) {
         } : {}),
       },
       payment: {
-        payment_due_date: Number(process.env.DOKU_PAYMENT_DUE_DATE || 60),
+        payment_due_date: Number(String(process.env.DOKU_PAYMENT_DUE_DATE || 60).trim()),
       },
       customer: {
         name: String(input.customerName || 'Solivagant Customer').trim(),
@@ -143,8 +144,13 @@ export default async function handler(request, response) {
     const dokuData = responseText ? JSON.parse(responseText) : {};
 
     if (!dokuResponse.ok) {
+      const dokuMessage = dokuData?.error?.message || dokuData?.message || 'Failed to create DOKU checkout';
+      const isInvalidSignature = String(dokuData?.error?.code || '').toLowerCase() === 'invalid_signature'
+        || /invalid header signature/i.test(dokuMessage);
       return jsonResponse(response, dokuResponse.status, {
-        message: dokuData?.error?.message || dokuData?.message || 'Failed to create DOKU checkout',
+        message: isInvalidSignature
+          ? 'DOKU menolak signature. Pastikan DOKU_CLIENT_ID dan DOKU_SECRET_KEY berasal dari environment yang sama di DOKU Dashboard.'
+          : dokuMessage,
         doku: dokuData,
       });
     }

@@ -38,6 +38,79 @@ const splitList = (value) => {
     .filter(Boolean);
 };
 
+export const createProductVariant = (overrides = {}) => ({
+  id: overrides.id || `variant-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+  size: overrides.size || '30 ml',
+  priceNumber: Number(overrides.priceNumber || overrides.price || 0),
+  compareAtPriceNumber: Number(overrides.compareAtPriceNumber || overrides.compareAtPrice || 0),
+  stock: Number(overrides.stock || 0),
+});
+
+const normalizeVariant = (variant, index, fallback = {}) => {
+  if (typeof variant === 'string') {
+    return createProductVariant({
+      id: toSlug(variant) || `variant-${index + 1}`,
+      size: variant,
+      priceNumber: fallback.priceNumber,
+      compareAtPriceNumber: fallback.compareAtPriceNumber,
+      stock: fallback.stock,
+    });
+  }
+
+  return createProductVariant({
+    id: variant?.id || toSlug(variant?.size) || `variant-${index + 1}`,
+    size: variant?.size || fallback.size || '30 ml',
+    priceNumber: parseRupiah(variant?.priceNumber || variant?.price || fallback.priceNumber),
+    compareAtPriceNumber: parseRupiah(variant?.compareAtPriceNumber || variant?.compareAtPrice || fallback.compareAtPriceNumber),
+    stock: Number(variant?.stock ?? fallback.stock ?? 0),
+  });
+};
+
+export const normalizeProductVariants = (input = {}) => {
+  const fallback = {
+    size: input.size || '30 ml',
+    priceNumber: parseRupiah(input.priceNumber || input.price),
+    compareAtPriceNumber: parseRupiah(input.compareAtPriceNumber || input.compareAtPrice),
+    stock: Number(input.stock || 0),
+  };
+  const rawVariants = Array.isArray(input.variants)
+    ? input.variants
+    : splitList(input.variants);
+  const legacyStringVariants = rawVariants.every((variant) => typeof variant === 'string');
+  const variants = rawVariants.length
+    ? rawVariants.map((variant, index) => {
+      if (legacyStringVariants) {
+        const splitStock = Math.floor(fallback.stock / rawVariants.length);
+        const remainder = index < (fallback.stock % rawVariants.length) ? 1 : 0;
+        return normalizeVariant(variant, index, { ...fallback, stock: splitStock + remainder });
+      }
+      return normalizeVariant(variant, index, fallback);
+    })
+    : [normalizeVariant(fallback, 0, fallback)];
+
+  return variants
+    .filter((variant) => variant.size)
+    .map((variant) => ({
+      ...variant,
+      priceNumber: Math.max(Number(variant.priceNumber || 0), 0),
+      compareAtPriceNumber: Math.max(Number(variant.compareAtPriceNumber || 0), 0),
+      stock: Math.max(Number(variant.stock || 0), 0),
+    }));
+};
+
+export const getProductPriceRange = (variants = []) => {
+  const prices = variants.map((variant) => Number(variant.priceNumber || 0)).filter((price) => price > 0);
+  if (!prices.length) return 0;
+  return Math.min(...prices);
+};
+
+export const getProductStockTotal = (variants = []) => variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+
+export const getProductLowStock = (product) => {
+  const stock = Number(product?.stock || 0);
+  return stock > 0 && stock <= 5;
+};
+
 const ensureUniqueSlug = (slug, products, currentId) => {
   const usedSlugs = new Set(products.filter((product) => product.id !== currentId).map((product) => product.slug));
   if (!usedSlugs.has(slug)) return slug;
@@ -52,7 +125,10 @@ const ensureUniqueSlug = (slug, products, currentId) => {
 };
 
 export const normalizeProduct = (input, existingProducts = []) => {
-  const priceNumber = parseRupiah(input.priceNumber || input.price);
+  const variants = normalizeProductVariants(input);
+  const primaryVariant = variants[0] || createProductVariant();
+  const priceNumber = getProductPriceRange(variants) || parseRupiah(input.priceNumber || input.price);
+  const stock = getProductStockTotal(variants);
   const id = input.id || `custom-${Date.now()}`;
   const slug = ensureUniqueSlug(toSlug(input.slug || input.name), existingProducts, id);
   const visualIndex = Math.abs(String(slug).split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % FALLBACK_VISUALS.length;
@@ -62,9 +138,11 @@ export const normalizeProduct = (input, existingProducts = []) => {
     slug,
     name: String(input.name || 'Untitled perfume').trim(),
     category: input.category || 'Uncategorized',
-    price: input.price || formatRupiah(priceNumber),
+    price: formatRupiah(priceNumber),
     priceNumber,
-    size: input.size || '30 ml',
+    compareAtPriceNumber: Number(primaryVariant.compareAtPriceNumber || input.compareAtPriceNumber || 0),
+    compareAtPrice: primaryVariant.compareAtPriceNumber ? formatRupiah(primaryVariant.compareAtPriceNumber) : '',
+    size: primaryVariant.size || input.size || '30 ml',
     notes: input.notes || 'Custom scent profile',
     topNotes: splitList(input.topNotes).length ? splitList(input.topNotes) : ['Opening note'],
     heartNotes: splitList(input.heartNotes).length ? splitList(input.heartNotes) : ['Heart note'],
@@ -72,8 +150,8 @@ export const normalizeProduct = (input, existingProducts = []) => {
     mood: input.mood || 'Custom perfume profile',
     description: input.description || 'A custom product entry managed from Studio.',
     concentration: input.concentration || 'Eau de Parfum',
-    stock: Number(input.stock || 0),
-    variants: splitList(input.variants).length ? splitList(input.variants) : ['10 ml', '30 ml'],
+    stock,
+    variants,
     tags: splitList(input.tags).length ? splitList(input.tags) : ['Custom'],
     intensity: input.intensity || 'Medium',
     featured: Boolean(input.featured),
