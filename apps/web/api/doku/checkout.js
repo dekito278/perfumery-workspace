@@ -13,7 +13,7 @@ const jsonResponse = (response, status, body) => {
 const readBody = async (request) => {
   const chunks = [];
   for await (const chunk of request) {
-    chunks.push(chunk);
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   return Buffer.concat(chunks).toString('utf8');
 };
@@ -140,7 +140,8 @@ export default async function handler(request, response) {
       });
     }
 
-    const paymentUrl = dokuData?.payment?.url;
+    const checkoutPayload = dokuData?.response || dokuData;
+    const paymentUrl = checkoutPayload?.payment?.url;
     if (!paymentUrl) {
       return jsonResponse(response, 502, {
         message: 'DOKU did not return a payment URL',
@@ -150,7 +151,7 @@ export default async function handler(request, response) {
 
     return jsonResponse(response, 200, {
       paymentUrl,
-      invoiceNumber: dokuData?.order?.invoice_number || orderNumber,
+      invoiceNumber: checkoutPayload?.order?.invoice_number || orderNumber,
       requestId,
     });
   } catch (error) {

@@ -13,7 +13,7 @@ const jsonResponse = (response, status, body) => {
 const readBody = async (request) => {
   const chunks = [];
   for await (const chunk of request) {
-    chunks.push(chunk);
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   return Buffer.concat(chunks).toString('utf8');
 };
