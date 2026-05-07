@@ -3,6 +3,7 @@ export const createDokuCheckout = async ({
   amount,
   customerName,
   contact,
+  callbackPath = '/payment',
 }) => {
   const response = await fetch('/api/doku/checkout', {
     method: 'POST',
@@ -15,6 +16,7 @@ export const createDokuCheckout = async ({
       customerName,
       contact,
       callbackBaseUrl: window.location.origin,
+      callbackPath,
     }),
   });
 

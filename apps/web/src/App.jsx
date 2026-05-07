@@ -11,6 +11,7 @@ import CatalogPage from '@/pages/CatalogPage.jsx';
 import ProductDetailPage from '@/pages/ProductDetailPage.jsx';
 import BespokePage from '@/pages/BespokePage.jsx';
 import CartPage from '@/pages/CartPage.jsx';
+import PaymentPage from '@/pages/PaymentPage.jsx';
 import CustomerPortalPage from '@/pages/CustomerPortalPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
@@ -112,6 +113,7 @@ function AppRoutes() {
         <Route path="/products/:slug" element={<ProductDetailPage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/payment" element={<PaymentPage />} />
         <Route path="/customer" element={<CustomerPortalPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/mobile/login" element={<MobileLoginPage />} />
@@ -129,6 +131,8 @@ function AppRoutes() {
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
         <Route path="/mobile/cart" element={<MobileCartPage />} />
+
+        <Route path="/mobile/payment" element={<PaymentPage />} />
 
         <Route path="/mobile/customer" element={<CustomerPortalPage />} />
 

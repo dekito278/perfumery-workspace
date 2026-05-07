@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, Clipboard, CreditCard, MessageCircle, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { CheckCircle2, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -17,8 +17,6 @@ import { useCart } from '@/hooks/useCart.js';
 import {
   buildCheckoutDraft,
   buildOrderNotes,
-  buildWhatsAppCheckoutUrl,
-  checkoutPaymentOptions,
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
@@ -42,13 +40,13 @@ const MobileCartPage = () => {
   const [contact, setContact] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryArea, setDeliveryArea] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Manual confirmation');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
   const [securityChallenge, setSecurityChallenge] = useState(null);
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
+  const paymentMethod = 'DOKU payment';
 
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
     customerCode,
@@ -126,18 +124,13 @@ const MobileCartPage = () => {
     applyCheckoutCustomer(customer);
   };
 
-  const copyDraft = async () => {
-    await navigator.clipboard.writeText(checkoutDraft);
-    toast.success('Checkout draft copied');
-  };
-
   const copyCustomerCode = async () => {
     if (!submittedOrder?.customerCode) return;
     await navigator.clipboard.writeText(submittedOrder.customerCode);
     toast.success(`${submittedOrder.customerCode} copied`);
   };
 
-  const submitOrder = async ({ openWhatsApp = false, openDoku = false } = {}) => {
+  const submitOrder = async () => {
     if (!items.length) return;
     if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
       toast.error('Name, contact, and address are required');
@@ -145,8 +138,6 @@ const MobileCartPage = () => {
     }
 
     setSaving(true);
-    const whatsappWindow = openWhatsApp ? window.open('about:blank', '_blank') : null;
-    const dokuWindow = openDoku ? window.open('about:blank', '_blank') : null;
     try {
       const order = await createOrder({
         customerName,
@@ -159,47 +150,30 @@ const MobileCartPage = () => {
         subtotal: summary.subtotal,
         quantity: summary.quantity,
         checkoutDraft,
-        paymentProvider: openDoku ? 'doku' : openWhatsApp ? 'whatsapp' : 'manual',
+        paymentProvider: 'doku',
       });
-      if (openDoku) {
-        const checkout = await createDokuCheckout({
-          order,
-          amount: summary.subtotal,
-          customerName,
-          contact,
-        });
-        clear();
-        setCheckoutOpen(false);
-        setSubmittedOrder(order);
-        toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
-        if (dokuWindow) {
-          dokuWindow.location.href = checkout.paymentUrl;
-        } else {
-          window.location.href = checkout.paymentUrl;
-          return;
-        }
-        return;
-      }
+      const checkout = await createDokuCheckout({
+        order,
+        amount: summary.subtotal,
+        customerName,
+        contact,
+        callbackPath: '/mobile/payment',
+      });
+      sessionStorage.setItem('solivagant:doku-payment', JSON.stringify({
+        paymentUrl: checkout.paymentUrl,
+        invoiceNumber: checkout.invoiceNumber || order.orderNumber,
+        orderNumber: order.orderNumber,
+        customerCode: order.customerCode || customerCode,
+        amount: summary.subtotal,
+        customerName,
+        createdAt: new Date().toISOString(),
+      }));
       clear();
       setCheckoutOpen(false);
       setSubmittedOrder(order);
-      toast.success(`Order ${order.orderNumber} saved to Studio${order.customerCode ? ` / ${order.customerCode}` : ''}`);
-      if (openWhatsApp) {
-        const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\nCustomer code: ${order.customerCode || customerCode || '-'}\n\nStudio order: ${order.orderNumber}`);
-        if (whatsappWindow) {
-          whatsappWindow.location.href = whatsappUrl;
-        } else {
-          window.location.href = whatsappUrl;
-          return;
-        }
-      }
+      toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
+      navigate('/mobile/payment');
     } catch (error) {
-      if (whatsappWindow) {
-        whatsappWindow.close();
-      }
-      if (dokuWindow) {
-        dokuWindow.close();
-      }
       toast.error(error.message || 'Failed to save order');
     } finally {
       setSaving(false);
@@ -260,7 +234,7 @@ const MobileCartPage = () => {
               ))}
             </div>
           ) : null}
-          <p className="mt-3 text-xs font-semibold text-[#6b7280]">Checkout tersimpan ke order queue studio. Pembayaran diproses sebagai manual confirmation sampai payment link aktif.</p>
+          <p className="mt-3 text-xs font-semibold text-[#6b7280]">Checkout tersimpan ke Studio, lalu pembayaran dibuka di halaman Solivagant.</p>
           {items.length ? (
             <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setCheckoutOpen(true)}>
               <PackageCheck className="h-4 w-4" />
@@ -377,34 +351,14 @@ const MobileCartPage = () => {
                   <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <input value={deliveryArea} onChange={(event) => setDeliveryArea(event.target.value)} placeholder="City / area" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300">
-                    {checkoutPaymentOptions.map((option) => <option key={option}>{option}</option>)}
-                  </select>
                   <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>
               </section>
 
-              <section className="mobile-card p-3">
-                <h2 className="text-sm font-bold text-[#1f2937]">Draft</h2>
-                <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-2xl bg-[#f8f7f4] p-3 text-xs font-semibold leading-relaxed text-[#1f2937]">{checkoutDraft}</pre>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={copyDraft}><Clipboard className="h-4 w-4" />Copy</Button>
-                  <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => { clear(); setCheckoutOpen(false); }}>Clear</Button>
-                </div>
-              </section>
-
               <div className="grid gap-2">
-                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ openDoku: true })} disabled={saving}>
+                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={submitOrder} disabled={saving}>
                   <CreditCard className="h-4 w-4" />
-                  {saving ? 'Saving order...' : 'Pay with DOKU'}
-                </Button>
-                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ openWhatsApp: true })} disabled={saving}>
-                  <MessageCircle className="h-4 w-4" />
-                  {saving ? 'Saving order...' : 'Save & WhatsApp'}
-                </Button>
-                <Button type="button" variant="outline" className="h-12 w-full rounded-2xl gap-2 bg-white" onClick={() => submitOrder()} disabled={saving}>
-                  <PackageCheck className="h-4 w-4" />
-                  Save manual order
+                  {saving ? 'Memproses...' : 'Bayar sekarang'}
                 </Button>
               </div>
             </div>
@@ -416,4 +370,3 @@ const MobileCartPage = () => {
 };
 
 export default MobileCartPage;
-

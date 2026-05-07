@@ -58,6 +58,14 @@ const contactToCustomer = (contact = '') => {
   return { phone: trimmedContact.replace(/[^0-9+]/g, '') };
 };
 
+const normalizeCallbackPath = (value) => {
+  const path = String(value || '/payment').trim();
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    return '/payment';
+  }
+  return path;
+};
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -84,6 +92,7 @@ export default async function handler(request, response) {
     }
 
     const callbackBaseUrl = String(input.callbackBaseUrl || process.env.DOKU_CALLBACK_BASE_URL || '').replace(/\/$/, '');
+    const callbackPath = normalizeCallbackPath(input.callbackPath);
     const checkoutBody = {
       order: {
         amount,
@@ -92,8 +101,8 @@ export default async function handler(request, response) {
         language: 'ID',
         auto_redirect: false,
         ...(callbackBaseUrl ? {
-          callback_url: `${callbackBaseUrl}/home?order=${encodeURIComponent(orderNumber)}`,
-          callback_url_result: `${callbackBaseUrl}/home?order=${encodeURIComponent(orderNumber)}&payment=doku`,
+          callback_url: `${callbackBaseUrl}${callbackPath}?order=${encodeURIComponent(orderNumber)}`,
+          callback_url_result: `${callbackBaseUrl}${callbackPath}?order=${encodeURIComponent(orderNumber)}&payment=doku`,
         } : {}),
       },
       payment: {
