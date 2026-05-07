@@ -13,6 +13,7 @@ import {
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 import { Button } from '@/components/ui/button.jsx';
+import { createBespokeRequest } from '@/services/orderService.js';
 
 const OptionGrid = ({ options, value, onChange }) => (
   <div className="grid gap-2 sm:grid-cols-2">
@@ -36,6 +37,8 @@ const BespokePage = () => {
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
   const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedOrder, setSavedOrder] = useState(null);
   const [form, setForm] = useState({
     name: '',
     contact: '',
@@ -55,14 +58,29 @@ const BespokePage = () => {
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.contact.trim() || !form.preferredNotes.trim()) {
       toast.error('Please fill name, contact, and preferred notes');
       return;
     }
-    setSubmitted(true);
-    toast.success('Custom perfume request sent');
+
+    setSaving(true);
+    try {
+      const order = await createBespokeRequest({
+        ...form,
+        customerName: form.name,
+        referenceProductName: referenceProduct?.name || '',
+        referenceProductSlug: referenceProduct?.slug || '',
+      });
+      setSubmitted(true);
+      setSavedOrder(order);
+      toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to save bespoke request');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -163,14 +181,14 @@ const BespokePage = () => {
                 </label>
               ))}
             </div>
-            <Button type="submit" className="mt-5 h-12 rounded-2xl gap-2">
-              Send request
+            <Button type="submit" className="mt-5 h-12 rounded-2xl gap-2" disabled={saving}>
+              {saving ? 'Saving request...' : 'Send request'}
               <Send className="h-4 w-4" />
             </Button>
             {submitted ? (
               <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
                 <CheckCircle2 className="mb-2 h-5 w-5" />
-                Request received: {form.mood}, {form.occasion}, {form.budget}, {form.size}.
+                Request saved to Studio: {savedOrder?.orderNumber}. Brief: {form.mood}, {form.occasion}, {form.budget}, {form.size}.
               </div>
             ) : null}
           </form>

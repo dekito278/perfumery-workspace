@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
-import { getOrderStatusLabels } from '@/services/orderService.js';
+import { getBespokeItem, getOrderStatusLabels, isBespokeOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -14,6 +14,19 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 }).format(new Date(value));
 
 const statusLabels = getOrderStatusLabels();
+
+const bespokeDetailRows = (item) => [
+  ['Mood', item?.mood],
+  ['Occasion', item?.occasion],
+  ['Budget', item?.budget],
+  ['Size', item?.size],
+  ['Preferred aroma', item?.preferredNotes || item?.notes],
+  ['Avoided notes', item?.avoidedNotes],
+  ['Story', item?.story],
+  ['Cap design', item?.capDesign],
+  ['Exotic material', item?.exoticMaterial],
+  ['Reference scent', item?.referenceProductName],
+].filter(([, value]) => value);
 
 const OrdersPage = () => {
   const { orders, summary, loading, updateStatus, deleteOne } = useOrders();
@@ -38,7 +51,7 @@ const OrdersPage = () => {
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Order queue</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Pesanan dari cart masuk ke sini agar bisa dicek, dikonfirmasi, disiapkan, lalu ditandai selesai.
+              Pesanan dari cart dan request bespoke masuk ke sini agar bisa dicek, dikonfirmasi, disiapkan, lalu ditandai selesai.
             </p>
           </div>
           <div className="dashboard-hero-panel">
@@ -54,12 +67,17 @@ const OrdersPage = () => {
             <span className="text-sm font-bold text-amber-700">{summary.completed} completed</span>
           </div>
           <div className="mt-5 grid gap-4">
-            {orders.map((order) => (
+            {orders.map((order) => {
+              const bespoke = isBespokeOrder(order);
+              const bespokeItem = getBespokeItem(order);
+
+              return (
               <article key={order.id} className="rounded-2xl border bg-[#fbfaf7] p-4">
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-bold">{order.orderNumber}</h3>
+                      {bespoke ? <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">Bespoke</span> : null}
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
                       {order.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-600">Local draft</span> : null}
                     </div>
@@ -72,6 +90,16 @@ const OrdersPage = () => {
                         </div>
                       ))}
                     </div>
+                    {bespoke ? (
+                      <div className="mt-3 grid gap-2 rounded-2xl border border-[#263d27]/10 bg-white p-3 sm:grid-cols-2">
+                        {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                          <p key={label} className="text-xs font-semibold text-muted-foreground">
+                            <span className="block text-[10px] font-bold uppercase text-[#263d27]">{label}</span>
+                            {value}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
                     {order.notes ? <p className="mt-3 text-sm font-semibold text-muted-foreground">Notes: {order.notes}</p> : null}
                   </div>
                   <div className="flex min-w-56 flex-col gap-3">
@@ -89,12 +117,13 @@ const OrdersPage = () => {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
             {!orders.length && !loading ? (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
                 <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
                 <h3 className="mt-3 font-bold">No orders yet</h3>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">Pesanan yang disimpan dari cart akan muncul di sini.</p>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">Pesanan cart dan request bespoke yang tersimpan akan muncul di sini.</p>
               </div>
             ) : null}
             {loading && !orders.length ? (

@@ -24,6 +24,7 @@ import {
 } from '@/data/storefront.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
+import { createBespokeRequest } from '@/services/orderService.js';
 
 const OptionButton = ({ active, children, onClick }) => (
   <button
@@ -47,6 +48,7 @@ const MobileBespokePage = () => {
   const [wizardOpen, setWizardOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0],
@@ -194,7 +196,7 @@ const MobileBespokePage = () => {
     setStep((current) => Math.min(current + 1, steps.length - 1));
   };
 
-  const submitRequest = () => {
+  const submitRequest = async () => {
     const incompleteStep = steps.find((item) => !item.isComplete());
     if (incompleteStep) {
       toast.error(`Please complete: ${incompleteStep.title}`);
@@ -202,13 +204,28 @@ const MobileBespokePage = () => {
       return;
     }
 
-    setSubmittedRequest({
-      ...form,
-      reference: referenceProduct?.name || '',
-      createdAt: new Date().toISOString(),
-    });
-    setWizardOpen(false);
-    toast.success('Custom perfume request saved');
+    setSaving(true);
+    try {
+      const order = await createBespokeRequest({
+        ...form,
+        preferredNotes: form.scentDescription,
+        referenceProductName: referenceProduct?.name || '',
+        referenceProductSlug: referenceProduct?.slug || '',
+      });
+
+      setSubmittedRequest({
+        ...form,
+        orderNumber: order.orderNumber,
+        reference: referenceProduct?.name || '',
+        createdAt: new Date().toISOString(),
+      });
+      setWizardOpen(false);
+      toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to save bespoke request');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -291,6 +308,7 @@ const MobileBespokePage = () => {
                 <h2 className="text-base font-bold text-[#0b130c]">Request summary</h2>
                 <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
                   <p><strong className="text-[#0b130c]">Customer:</strong> {submittedRequest.customerName}</p>
+                  <p><strong className="text-[#0b130c]">Studio order:</strong> {submittedRequest.orderNumber}</p>
                   <p><strong className="text-[#0b130c]">Contact:</strong> {submittedRequest.contact}</p>
                   <p><strong className="text-[#0b130c]">Aroma:</strong> {submittedRequest.scentDescription}</p>
                   <p><strong className="text-[#0b130c]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.capDesign}</p>
@@ -335,8 +353,8 @@ const MobileBespokePage = () => {
                   Back
                 </Button>
                 {step === steps.length - 1 ? (
-                  <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest}>
-                    Save brief
+                  <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
+                    {saving ? 'Saving...' : 'Save brief'}
                     <CheckCircle2 className="h-4 w-4" />
                   </Button>
                 ) : (

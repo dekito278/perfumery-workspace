@@ -18,6 +18,20 @@ const localOnlyStatuses = {
   preparing: 'processing',
 };
 
+const BESPOKE_SOURCE = 'bespoke_request';
+
+export const isBespokeOrder = (order) => (
+  order?.source === BESPOKE_SOURCE
+  || order?.requestType === BESPOKE_SOURCE
+  || (Array.isArray(order?.items) && order.items.some((item) => item.type === BESPOKE_SOURCE))
+);
+
+export const getBespokeItem = (order) => (
+  Array.isArray(order?.items)
+    ? order.items.find((item) => item.type === BESPOKE_SOURCE)
+    : null
+);
+
 const readOrders = () => {
   if (typeof window === 'undefined') return [];
 
@@ -37,24 +51,31 @@ const writeOrders = (orders) => {
 
 const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}`;
 
-const normalizeOrder = (order) => ({
-  id: order.id,
-  orderNumber: order.order_number || order.orderNumber || order.id,
-  status: localOnlyStatuses[order.status] || order.status || 'pending_payment',
-  customerName: order.customer_name || order.customerName || 'Walk-in customer',
-  contact: order.contact || '-',
-  notes: order.notes || '',
-  items: Array.isArray(order.items) ? order.items : [],
-  quantity: Number(order.quantity || 0),
-  subtotal: Number(order.subtotal || 0),
-  checkoutDraft: order.checkout_draft || order.checkoutDraft || '',
-  paymentProvider: order.payment_provider || order.paymentProvider || 'manual',
-  paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
-  paymentReference: order.payment_reference || order.paymentReference || '',
-  persistence: order.persistence || 'database',
-  createdAt: order.created_at || order.createdAt || new Date().toISOString(),
-  updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
-});
+const normalizeOrder = (order) => {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const source = order.source || (items.some((item) => item.type === BESPOKE_SOURCE) ? BESPOKE_SOURCE : 'storefront');
+
+  return {
+    id: order.id,
+    orderNumber: order.order_number || order.orderNumber || order.id,
+    status: localOnlyStatuses[order.status] || order.status || 'pending_payment',
+    source,
+    requestType: source === BESPOKE_SOURCE ? BESPOKE_SOURCE : 'storefront',
+    customerName: order.customer_name || order.customerName || 'Walk-in customer',
+    contact: order.contact || '-',
+    notes: order.notes || '',
+    items,
+    quantity: Number(order.quantity || 0),
+    subtotal: Number(order.subtotal || 0),
+    checkoutDraft: order.checkout_draft || order.checkoutDraft || '',
+    paymentProvider: order.payment_provider || order.paymentProvider || 'manual',
+    paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
+    paymentReference: order.payment_reference || order.paymentReference || '',
+    persistence: order.persistence || 'database',
+    createdAt: order.created_at || order.createdAt || new Date().toISOString(),
+    updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
+  };
+};
 
 const buildOrderPayload = ({
   customerName,
@@ -65,6 +86,7 @@ const buildOrderPayload = ({
   quantity,
   checkoutDraft,
   paymentProvider = 'manual',
+  source = 'storefront',
 }) => ({
   order_number: createOrderNumber(),
   status: 'pending_payment',
@@ -77,8 +99,67 @@ const buildOrderPayload = ({
   checkout_draft: checkoutDraft,
   payment_provider: paymentProvider,
   payment_status: paymentProvider === 'manual' ? 'pending' : 'unpaid',
-  source: 'storefront',
+  source,
 });
+
+const formatLine = (label, value) => `${label}: ${value || '-'}`;
+
+const buildBespokeCheckoutDraft = ({
+  customerName,
+  contact,
+  referenceProductName,
+  mood,
+  occasion,
+  budget,
+  size,
+  preferredNotes,
+  avoidedNotes,
+  story,
+  scentDescription,
+  capDesign,
+  exoticMaterial,
+  paymentProvider,
+}) => [
+  'Solivagant Bespoke Request',
+  formatLine('Customer', customerName),
+  formatLine('Contact', contact),
+  formatLine('Reference scent', referenceProductName),
+  formatLine('Mood', mood),
+  formatLine('Occasion', occasion),
+  formatLine('Budget', budget),
+  formatLine('Size', size),
+  formatLine('Preferred aroma', preferredNotes || scentDescription),
+  formatLine('Avoided notes', avoidedNotes),
+  formatLine('Story', story),
+  formatLine('Cap design', capDesign),
+  formatLine('Exotic material', exoticMaterial),
+  formatLine('Payment rail', paymentProvider || 'manual'),
+].join('\n');
+
+const buildBespokeNotes = ({
+  mood,
+  occasion,
+  budget,
+  size,
+  preferredNotes,
+  avoidedNotes,
+  story,
+  scentDescription,
+  capDesign,
+  exoticMaterial,
+  referenceProductName,
+}) => [
+  formatLine('Mood', mood),
+  formatLine('Occasion', occasion),
+  formatLine('Budget', budget),
+  formatLine('Size', size),
+  formatLine('Preferred aroma', preferredNotes || scentDescription),
+  formatLine('Avoided notes', avoidedNotes),
+  formatLine('Story', story),
+  formatLine('Cap design', capDesign),
+  formatLine('Exotic material', exoticMaterial),
+  formatLine('Reference scent', referenceProductName),
+].join('\n');
 
 const createLocalOrder = (payload) => {
   const createdAt = new Date().toISOString();
@@ -150,6 +231,45 @@ export const createOrder = async (orderData) => {
     console.warn('Saving storefront order locally because database save failed:', error.message || error);
     return createLocalOrder(payload);
   }
+};
+
+export const createBespokeRequest = async (requestData) => {
+  const normalizedRequest = {
+    ...requestData,
+    customerName: requestData.customerName || requestData.name,
+  };
+  const aromaBrief = normalizedRequest.preferredNotes || normalizedRequest.scentDescription || normalizedRequest.mood || 'Custom aroma brief';
+  const item = {
+    slug: 'bespoke-perfume-request',
+    type: BESPOKE_SOURCE,
+    name: 'Bespoke perfume request',
+    quantity: 1,
+    price: normalizedRequest.budget || 'Custom quote',
+    size: normalizedRequest.size || '-',
+    notes: aromaBrief,
+    mood: normalizedRequest.mood || '',
+    occasion: normalizedRequest.occasion || '',
+    budget: normalizedRequest.budget || '',
+    preferredNotes: normalizedRequest.preferredNotes || normalizedRequest.scentDescription || '',
+    avoidedNotes: normalizedRequest.avoidedNotes || '',
+    story: normalizedRequest.story || '',
+    capDesign: normalizedRequest.capDesign || '',
+    exoticMaterial: normalizedRequest.exoticMaterial || '',
+    referenceProductName: normalizedRequest.referenceProductName || '',
+    referenceProductSlug: normalizedRequest.referenceProductSlug || '',
+  };
+
+  return createOrder({
+    customerName: normalizedRequest.customerName,
+    contact: normalizedRequest.contact,
+    notes: buildBespokeNotes(normalizedRequest),
+    items: [item],
+    quantity: 1,
+    subtotal: 0,
+    checkoutDraft: buildBespokeCheckoutDraft(normalizedRequest),
+    paymentProvider: normalizedRequest.paymentProvider || 'manual',
+    source: BESPOKE_SOURCE,
+  });
 };
 
 export const updateOrderStatus = async (orderId, status) => {

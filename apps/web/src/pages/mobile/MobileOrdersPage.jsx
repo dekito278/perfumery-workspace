@@ -6,7 +6,7 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
-import { getOrderStatusLabels } from '@/services/orderService.js';
+import { getBespokeItem, getOrderStatusLabels, isBespokeOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -15,6 +15,16 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 }).format(new Date(value));
 
 const statusLabels = getOrderStatusLabels();
+
+const bespokeDetailRows = (item) => [
+  ['Mood', item?.mood],
+  ['Occasion', item?.occasion],
+  ['Budget', item?.budget],
+  ['Size', item?.size],
+  ['Aroma', item?.preferredNotes || item?.notes],
+  ['Story', item?.story],
+  ['Reference', item?.referenceProductName],
+].filter(([, value]) => value);
 
 const MobileOrdersPage = () => {
   const { orders, summary, loading, updateStatus, deleteOne } = useOrders();
@@ -49,7 +59,11 @@ const MobileOrdersPage = () => {
         </section>
 
         <section className="space-y-3">
-          {orders.map((order) => (
+          {orders.map((order) => {
+            const bespoke = isBespokeOrder(order);
+            const bespokeItem = getBespokeItem(order);
+
+            return (
             <article key={order.id} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -57,7 +71,10 @@ const MobileOrdersPage = () => {
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
                 </div>
-                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {bespoke ? <span className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold uppercase text-[#263d27]">Bespoke</span> : null}
+                  <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
+                </div>
               </div>
               {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Local draft</div> : null}
               <div className="mt-3 space-y-2">
@@ -68,6 +85,15 @@ const MobileOrdersPage = () => {
                   </div>
                 ))}
               </div>
+              {bespoke ? (
+                <div className="mt-3 space-y-2 rounded-2xl bg-[#f8f7f4] p-3">
+                  {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                    <p key={label} className="text-xs font-semibold text-[#6b7280]">
+                      <strong className="text-[#263d27]">{label}:</strong> {value}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
               <div className="mt-3 flex items-center justify-between gap-3">
                 <div>
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} items</div>
@@ -82,12 +108,13 @@ const MobileOrdersPage = () => {
                 <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id)}><Trash2 className="h-4 w-4" />Delete</Button>
               </div>
             </article>
-          ))}
+            );
+          })}
           {!orders.length && !loading ? (
             <div className="mobile-card p-5 text-center">
               <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
               <h2 className="mt-3 text-base font-bold text-[#1f2937]">No orders yet</h2>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Save checkout dari cart untuk membuat order pertama.</p>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Checkout cart dan request bespoke yang tersimpan akan muncul di sini.</p>
             </div>
           ) : null}
           {loading && !orders.length ? (
