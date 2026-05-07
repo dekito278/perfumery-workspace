@@ -25,6 +25,13 @@ import { createOrder } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 
+const formatCartSubtitle = (items, quantity) => {
+  if (!items.length) return 'Cart is empty';
+  const productNames = items.slice(0, 2).map((item) => item.name).join(', ');
+  const remainingCount = Math.max(items.length - 2, 0);
+  return remainingCount ? `${productNames} +${remainingCount} more` : `${quantity} item${quantity > 1 ? 's' : ''}: ${productNames}`;
+};
+
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
@@ -126,7 +133,7 @@ const MobileCartPage = () => {
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Cart"
-          subtitle={`${summary.quantity} items`}
+          subtitle={formatCartSubtitle(items, summary.quantity)}
           eyebrow="Checkout"
           onBack={() => navigate('/mobile/catalog')}
           action={<ShoppingBag className="h-5 w-5 text-amber-700" />}
@@ -135,7 +142,20 @@ const MobileCartPage = () => {
         <section className="mobile-soft-card p-4">
           <div className="text-[10px] font-bold uppercase text-amber-700">Subtotal</div>
           <div className="mt-1 text-3xl font-bold text-[#1f2937]">{formatTotal(summary.subtotal)}</div>
-          <p className="mt-2 text-xs font-semibold text-[#6b7280]">Checkout tersimpan ke order queue studio. Pembayaran diproses sebagai manual confirmation sampai payment link aktif.</p>
+          {items.length ? (
+            <div className="mt-3 grid gap-2">
+              {items.slice(0, 3).map((item) => (
+                <div key={item.slug} className="flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/10 bg-white/70 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-bold text-[#1f2937]">{item.name}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase text-[#8b949e]">{item.size} / x{item.quantity}</p>
+                  </div>
+                  <span className="shrink-0 text-xs font-bold text-[#263d27]">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <p className="mt-3 text-xs font-semibold text-[#6b7280]">Checkout tersimpan ke order queue studio. Pembayaran diproses sebagai manual confirmation sampai payment link aktif.</p>
           {items.length ? (
             <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setCheckoutOpen(true)}>
               <PackageCheck className="h-4 w-4" />
@@ -187,10 +207,34 @@ const MobileCartPage = () => {
           <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#fbfaf7] p-4">
             <SheetHeader className="pr-8 text-left">
               <SheetTitle>Checkout</SheetTitle>
-              <SheetDescription>{summary.quantity} items / {formatTotal(summary.subtotal)}</SheetDescription>
+              <SheetDescription>{formatCartSubtitle(items, summary.quantity)} / {formatTotal(summary.subtotal)}</SheetDescription>
             </SheetHeader>
 
             <div className="mt-4 space-y-3">
+              <section className="mobile-card p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-bold text-[#1f2937]">Products in cart</h2>
+                  <span className="text-xs font-bold text-amber-700">{summary.quantity} item{summary.quantity > 1 ? 's' : ''}</span>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {items.map((item) => (
+                    <div key={item.slug} className="rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-bold text-[#1f2937]">{item.name}</h3>
+                          <p className="mt-1 text-xs font-semibold leading-snug text-[#6b7280]">{item.notes}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <span className="inline-flex rounded-full bg-white px-2 py-1 text-xs font-bold text-[#263d27]">x{item.quantity}</span>
+                          <p className="mt-2 text-xs font-bold text-[#1f2937]">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               <section className="mobile-card p-3">
                 <h2 className="text-sm font-bold text-[#1f2937]">Customer</h2>
                 <div className="mt-3 grid gap-2">
