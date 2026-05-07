@@ -43,7 +43,7 @@ export const perfumerProfile = {
   name: 'Dekito',
   title: 'Perfumer and fragrance developer with 4+ years of experience.',
   intro: 'Dekito is the perfumer behind Solivagant, focused on aroma chemicals, fine fragrance formulation, and ready-to-wear perfume built with stability, character, and commercial wearability in mind.',
-  specialties: ['Fine fragrance', 'Aroma chemicals', 'Ready-to-wear perfume', 'Signature scent'],
+  specialties: [],
   note: 'Personal profile for the perfumer behind Solivagant.',
   experienceSummary: 'More than 4 years of experience developing fragrance formulas, perfume sprays, and market-ready scent profiles.',
   experience: [

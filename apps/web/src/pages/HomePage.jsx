@@ -148,14 +148,6 @@ const HomePage = () => {
                 })}
               </motion.div>
 
-              <motion.div variants={fadeUp} className="mt-7 flex flex-wrap gap-2">
-                {perfumerProfile.specialties.map((specialty) => (
-                  <span key={specialty} className="rounded-full border border-[#263d27]/12 bg-white/75 px-3 py-1 text-xs font-bold uppercase text-[#596759] shadow-sm shadow-[#263d27]/5">
-                    {specialty}
-                  </span>
-                ))}
-              </motion.div>
-
               <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
                 <Link to="/catalog" className="group inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8] shadow-lg shadow-[#263d27]/20 transition hover:-translate-y-0.5 hover:bg-[#1c301d]">
                   Shop products

@@ -106,13 +106,6 @@ const MobileStorefrontPage = () => {
                 );
               })}
             </motion.div>
-            <motion.div variants={fadeUp} className="mt-3 flex flex-wrap gap-2">
-              {perfumerProfile.specialties.map((specialty) => (
-                <span key={specialty} className="rounded-full border border-[#263d27]/10 bg-white/78 px-3 py-1 text-[10px] font-bold uppercase text-[#667264]">
-                  {specialty}
-                </span>
-              ))}
-            </motion.div>
             <motion.div variants={fadeUp} className="mt-4 grid grid-cols-2 gap-2">
               <Button className="rounded-2xl shadow-lg shadow-[#263d27]/18" onClick={() => navigate('/mobile/catalog')}>
                 Shop
