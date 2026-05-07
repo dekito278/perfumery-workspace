@@ -13,6 +13,7 @@ import {
   resetCustomProducts,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
+import { uploadProductImage } from '@/services/productImageStorageService.js';
 
 const emptyProduct = {
   name: '',
@@ -44,26 +45,29 @@ const ProductManagementPage = () => {
   const products = useCatalogProducts();
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
   const [form, setForm] = useState(emptyProduct);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
   const resetForm = () => setForm(emptyProduct);
 
-  const handleImageUpload = (event) => {
+  const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-    if (file.size > 750 * 1024) {
-      toast.error('Use an image below 750 KB for local preview storage');
+    if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => updateField('imageUrl', reader.result);
-    reader.readAsDataURL(file);
+    setUploadingImage(true);
+    try {
+      const imageUrl = await uploadProductImage(file, form.name);
+      updateField('imageUrl', imageUrl);
+      toast.success('Product image uploaded');
+    } catch (error) {
+      toast.error(error.message || 'Failed to upload product image');
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
+    }
   };
 
   const handleSubmit = (event) => {
@@ -156,11 +160,11 @@ const ProductManagementPage = () => {
                   </label>
                   <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold">
                     <ImagePlus className="h-4 w-4" />
-                    Upload image
-                    <input type="file" accept="image/*" className="sr-only" onChange={handleImageUpload} />
+                    {uploadingImage ? 'Uploading...' : 'Upload image'}
+                    <input type="file" accept="image/*" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
                   </label>
                   <p className="text-xs font-semibold text-muted-foreground">
-                    Upload disimpan sebagai preview lokal browser. Untuk produksi nanti bisa diarahkan ke storage backend.
+                    Upload disimpan ke Supabase Storage dan URL publiknya dipakai di katalog.
                   </p>
                 </div>
               </div>
