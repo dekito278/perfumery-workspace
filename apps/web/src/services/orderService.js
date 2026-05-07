@@ -112,6 +112,7 @@ const buildOrderPayload = ({
 const formatLine = (label, value) => `${label}: ${value || '-'}`;
 
 const buildBespokeCheckoutDraft = ({
+  customerCode,
   customerName,
   contact,
   referenceProductName,
@@ -128,6 +129,7 @@ const buildBespokeCheckoutDraft = ({
   paymentProvider,
 }) => [
   'Solivagant Bespoke Request',
+  customerCode ? formatLine('Customer code', customerCode) : '',
   formatLine('Customer', customerName),
   formatLine('Contact', contact),
   formatLine('Reference scent', referenceProductName),
@@ -141,7 +143,7 @@ const buildBespokeCheckoutDraft = ({
   formatLine('Cap design', capDesign),
   formatLine('Exotic material', exoticMaterial),
   formatLine('Payment rail', paymentProvider || 'manual'),
-].join('\n');
+].filter((line) => line !== '').join('\n');
 
 const buildBespokeNotes = ({
   mood,
@@ -280,6 +282,7 @@ export const createBespokeRequest = async (requestData) => {
   };
 
   return createOrder({
+    customerCode: normalizedRequest.customerCode,
     customerName: normalizedRequest.customerName,
     contact: normalizedRequest.contact,
     notes: buildBespokeNotes(normalizedRequest),

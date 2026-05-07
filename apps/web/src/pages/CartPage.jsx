@@ -104,7 +104,7 @@ const CartPage = () => {
           contact,
         });
         clear();
-        toast.success(`Order ${order.orderNumber} saved for ${order.customerCode || customerCode}`);
+        toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
         if (dokuWindow) {
           dokuWindow.location.href = checkout.paymentUrl;
         } else {
@@ -117,7 +117,7 @@ const CartPage = () => {
       clear();
       toast.success(`Order ${order.orderNumber} saved to Studio${order.customerCode ? ` / ${order.customerCode}` : ''}`);
       if (openWhatsApp) {
-        const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\n\nStudio order: ${order.orderNumber}`);
+        const whatsappUrl = buildWhatsAppCheckoutUrl(`${checkoutDraft}\nCustomer code: ${order.customerCode || customerCode || '-'}\n\nStudio order: ${order.orderNumber}`);
         if (whatsappWindow) {
           whatsappWindow.location.href = whatsappUrl;
         } else {
@@ -199,6 +199,9 @@ const CartPage = () => {
                   <input value={customerCode} onChange={(event) => setCustomerCode(event.target.value.toUpperCase())} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
                   <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer}>Load</Button>
                 </div>
+                <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                  Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
+                </p>
                 <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />

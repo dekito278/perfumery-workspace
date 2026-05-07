@@ -24,6 +24,7 @@ import {
 } from '@/data/storefront.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
+import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest } from '@/services/orderService.js';
 
 const OptionButton = ({ active, children, onClick }) => (
@@ -50,6 +51,7 @@ const MobileBespokePage = () => {
   const [submittedRequest, setSubmittedRequest] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
+    customerCode: '',
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0],
     size: bespokeSizeOptions[1],
@@ -62,6 +64,27 @@ const MobileBespokePage = () => {
   });
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  const lookupCustomer = async () => {
+    if (!form.customerCode.trim()) {
+      toast.error('Customer code is required');
+      return;
+    }
+
+    const customer = await lookupCustomerByCode(form.customerCode);
+    if (!customer) {
+      toast.error('Customer code not found');
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      customerCode: customer.customerCode,
+      customerName: customer.customerName,
+      contact: customer.contact,
+    }));
+    toast.success(`${customer.customerCode} loaded`);
+  };
 
   const steps = useMemo(() => [
     {
@@ -150,6 +173,18 @@ const MobileBespokePage = () => {
       description: 'Supaya tim Solivagant bisa follow-up request.',
       render: () => (
         <div className="grid gap-2">
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <input
+              value={form.customerCode}
+              onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())}
+              placeholder="Customer code, e.g. SOLI09232"
+              className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold uppercase outline-none focus:border-[#263d27]"
+            />
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>Load</Button>
+          </div>
+          <p className="rounded-2xl bg-white px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+            Customer baru bisa kosongkan kode. Kode unik dibuat otomatis setelah request tersimpan.
+          </p>
           <input
             value={form.customerName}
             onChange={(event) => updateField('customerName', event.target.value)}
@@ -216,6 +251,7 @@ const MobileBespokePage = () => {
       setSubmittedRequest({
         ...form,
         orderNumber: order.orderNumber,
+        customerCode: order.customerCode || form.customerCode,
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),
       });
@@ -308,6 +344,7 @@ const MobileBespokePage = () => {
                 <h2 className="text-base font-bold text-[#0b130c]">Request summary</h2>
                 <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
                   <p><strong className="text-[#0b130c]">Customer:</strong> {submittedRequest.customerName}</p>
+                  <p><strong className="text-[#0b130c]">Customer code:</strong> {submittedRequest.customerCode || '-'}</p>
                   <p><strong className="text-[#0b130c]">Studio order:</strong> {submittedRequest.orderNumber}</p>
                   <p><strong className="text-[#0b130c]">Contact:</strong> {submittedRequest.contact}</p>
                   <p><strong className="text-[#0b130c]">Aroma:</strong> {submittedRequest.scentDescription}</p>

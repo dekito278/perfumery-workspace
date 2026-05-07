@@ -13,6 +13,7 @@ import {
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 import { Button } from '@/components/ui/button.jsx';
+import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest } from '@/services/orderService.js';
 
 const OptionGrid = ({ options, value, onChange }) => (
@@ -40,6 +41,7 @@ const BespokePage = () => {
   const [saving, setSaving] = useState(false);
   const [savedOrder, setSavedOrder] = useState(null);
   const [form, setForm] = useState({
+    customerCode: '',
     name: '',
     contact: '',
     mood: referenceProduct?.mood || bespokeMoodOptions[0],
@@ -58,6 +60,27 @@ const BespokePage = () => {
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
+  const lookupCustomer = async () => {
+    if (!form.customerCode.trim()) {
+      toast.error('Customer code is required');
+      return;
+    }
+
+    const customer = await lookupCustomerByCode(form.customerCode);
+    if (!customer) {
+      toast.error('Customer code not found');
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      customerCode: customer.customerCode,
+      name: customer.customerName,
+      contact: customer.contact,
+    }));
+    toast.success(`${customer.customerCode} loaded`);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.contact.trim() || !form.preferredNotes.trim()) {
@@ -70,6 +93,7 @@ const BespokePage = () => {
       const order = await createBespokeRequest({
         ...form,
         customerName: form.name,
+        customerCode: form.customerCode,
         referenceProductName: referenceProduct?.name || '',
         referenceProductSlug: referenceProduct?.slug || '',
       });
@@ -141,6 +165,15 @@ const BespokePage = () => {
           </div>
 
           <form className="rounded-2xl border bg-white p-5 shadow-sm" onSubmit={handleSubmit}>
+            <div className="mb-4 grid gap-2">
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" placeholder="Customer code, e.g. SOLI09232" />
+                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer}>Load</Button>
+              </div>
+              <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                Customer baru bisa kosongkan kode. Setelah request tersimpan, Solivagant akan membuat kode unik untuk order berikutnya.
+              </p>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Name</span>
@@ -188,7 +221,7 @@ const BespokePage = () => {
             {submitted ? (
               <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
                 <CheckCircle2 className="mb-2 h-5 w-5" />
-                Request saved to Studio: {savedOrder?.orderNumber}. Brief: {form.mood}, {form.occasion}, {form.budget}, {form.size}.
+                Request saved to Studio: {savedOrder?.orderNumber}. Customer code: {savedOrder?.customerCode || form.customerCode || '-'}. Brief: {form.mood}, {form.occasion}, {form.budget}, {form.size}.
               </div>
             ) : null}
           </form>
