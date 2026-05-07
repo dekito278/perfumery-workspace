@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
-  BriefcaseBusiness,
   Gem,
   Leaf,
   PackagePlus,
@@ -94,6 +93,15 @@ const MobileStorefrontPage = () => {
             <motion.p variants={fadeUp} className="mt-3 text-sm font-medium leading-relaxed text-[#526351]">
               {perfumerProfile.intro}
             </motion.p>
+            <motion.div variants={fadeUp} className="mt-4 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-white/74">
+              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-40 w-full object-cover object-[58%_42%]" />
+              <div className="p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Meet the perfumer</p>
+                <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#263d27]">{perfumerProfile.title}</p>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#667264]">{perfumerProfile.experienceSummary}</p>
+              </div>
+            </motion.div>
             <motion.div variants={fadeUp} className="mt-3 grid grid-cols-3 gap-2">
               {mobileNotes.map((note) => {
                 const Icon = note.icon;
@@ -145,24 +153,6 @@ const MobileStorefrontPage = () => {
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c6d5bf]">Perfumer led</p>
               <p className="mt-2 text-sm font-semibold leading-relaxed text-white/80">A personal scent process shaped by hand, notes, and memory.</p>
             </div>
-          </div>
-        </motion.section>
-
-        <motion.section variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} className="mobile-card p-4">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#eef2e8] px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
-            <BriefcaseBusiness className="h-3.5 w-3.5" />
-            Professional background
-          </div>
-          <h2 className="mt-3 text-xl font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
-          <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-[#8d7a4f]">{perfumerProfile.title}</p>
-          <p className="mt-3 text-sm font-semibold leading-relaxed text-[#667264]">{perfumerProfile.experienceSummary}</p>
-          <div className="mt-4 grid gap-2">
-            {perfumerProfile.experience.map((item) => (
-              <div key={item.company} className="rounded-2xl border bg-[#fbfaf7] p-3">
-                <p className="text-xs font-bold text-[#0b130c]">{item.company}</p>
-                <p className="mt-1 text-[11px] font-semibold text-[#667264]">{item.role}</p>
-              </div>
-            ))}
           </div>
         </motion.section>
 
