@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, PackageCheck, Save, ShoppingBag } from 'lucide-react';
+import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, History, PackageCheck, Save, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
+import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -17,6 +19,8 @@ import { useProductionCostPage } from '@/hooks/useProductionCostPage.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import {
   getProductBatchKey,
+  PRODUCT_BATCH_CODE_TAG_PREFIX,
+  PRODUCT_BATCH_ID_TAG_PREFIX,
   PRODUCT_BATCH_BOTTLE_TAG_PREFIX,
   PRODUCT_BATCH_COGS_TAG_PREFIX,
   PRODUCT_BATCH_DILUTION_TAG_PREFIX,
@@ -32,16 +36,20 @@ import {
   PRODUCT_FORMULA_TAG_PREFIX,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
+import { getBatches, saveBatch } from '@/services/batchesService.js';
+import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
 import { updateRawMaterial } from '@/services/rawMaterialsService.js';
 import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
 import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.js';
 import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
 import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
+import { BATCH_STATUSES } from '@/utils/constants.js';
 
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
 const targetPresets = ['30', '100', '500', '1000'];
+const workflowStatuses = BATCH_STATUSES.filter((status) => ['planned', 'produced', 'qc', 'ready_for_product', 'converted_to_product'].includes(status.value));
 const buildBatchProductKey = ({ bottleMl, concentration, formulaId, lossPercent = 0, targetMl }) => [
   formulaId || 'formula',
   `${formatQuantity(targetMl, 2)}ml`,
@@ -178,6 +186,10 @@ const MobileBatchesPage = () => {
   const [productPrice, setProductPrice] = useState('');
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [publishingProduct, setPublishingProduct] = useState(false);
+  const [batchStatus, setBatchStatus] = useState('planned');
+  const [savingBatch, setSavingBatch] = useState(false);
+  const [savedBatch, setSavedBatch] = useState(null);
+  const [batchHistory, setBatchHistory] = useState([]);
   const catalogProducts = useCatalogProducts({ editableOnly: true });
   const {
     bulkComputed,
@@ -215,6 +227,27 @@ const MobileBatchesPage = () => {
   useEffect(() => {
     setVisibleRows(BATCH_ROW_PAGE_SIZE);
   }, [selectedFormulaId, targetGrams]);
+
+  useEffect(() => {
+    const loadBatchHistory = async () => {
+      if (!selectedFormulaId) {
+        setBatchHistory([]);
+        setSavedBatch(null);
+        return;
+      }
+
+      const rows = await getBatches({ formulaId: selectedFormulaId });
+      setBatchHistory(rows);
+      setSavedBatch(rows[0] || null);
+      if (rows[0]?.status) {
+        setBatchStatus(rows[0].status);
+      } else {
+        setBatchStatus('planned');
+      }
+    };
+
+    loadBatchHistory();
+  }, [selectedFormulaId]);
 
   const selectedSolvent = solventOptions.find((material) => material.id === selectedSolventId) || null;
   const targetValue = Math.max(parseNumberInput(targetGrams), 0);
@@ -270,6 +303,77 @@ const MobileBatchesPage = () => {
   const publishedProduct = batchProductKey
     ? catalogProducts.find((product) => getProductBatchKey(product) === batchProductKey)
     : null;
+
+  const buildBatchPayload = (status = batchStatus, overrides = {}) => ({
+    ...(savedBatch || {}),
+    ...overrides,
+    formula: selectedFormula,
+    formula_id: selectedFormula?.id,
+    solvent_id: selectedSolventId || null,
+    target_quantity: targetValue,
+    produced_quantity: targetValue,
+    production_date: new Date().toISOString().slice(0, 10),
+    unit: 'ml',
+    formula_percentage: concentration,
+    solvent_percentage: Math.max(100 - concentration, 0),
+    formula_quantity_needed: dilutionFormulaGrams,
+    solvent_quantity_needed: dilutionSolventGrams,
+    bottle_ml: bottleSizeValue,
+    loss_percent: productLossValue,
+    usable_quantity: usableBatchVolume,
+    bottle_count: productBottleCount,
+    cogs_per_bottle: Math.round(productCogsPerBottle),
+    selling_price: productPriceNumber,
+    sku: productSku,
+    status,
+    notes: `Formula ${selectedFormula?.name || ''} converted through owner batch flow.`,
+  });
+
+  const refreshBatchHistory = async () => {
+    if (!selectedFormulaId) return;
+    const rows = await getBatches({ formulaId: selectedFormulaId });
+    setBatchHistory(rows);
+  };
+
+  const saveProductionBatch = async (nextStatus = batchStatus, overrides = {}) => {
+    if (!selectedFormula || targetValue <= 0 || concentration <= 0) {
+      toast.error('Set formula, batch size, and dilution first');
+      return null;
+    }
+
+    if (!selectedSolventId) {
+      toast.error('Choose solvent before saving batch');
+      return null;
+    }
+
+    setSavingBatch(true);
+    try {
+      const batch = await saveBatch(buildBatchPayload(nextStatus, overrides));
+      setSavedBatch(batch);
+      setBatchStatus(batch.status || nextStatus);
+      await refreshBatchHistory();
+
+      if (selectedFormula.status === 'draft' || selectedFormula.status === 'approved') {
+        await updateFormulaStatus(selectedFormula.id, 'ready_for_batch');
+      }
+
+      toast.success('Batch saved');
+      return batch;
+    } catch (error) {
+      toast.error(error.message || 'Failed to save batch');
+      return null;
+    } finally {
+      setSavingBatch(false);
+    }
+  };
+
+  const ensureBatchRecord = async (nextStatus = batchStatus) => {
+    if (savedBatch?.id && savedBatch.status === nextStatus) {
+      return savedBatch;
+    }
+
+    return saveProductionBatch(nextStatus);
+  };
 
   const updatePriceDraft = (materialId, value) => {
     if (!materialId) return;
@@ -336,11 +440,16 @@ const MobileBatchesPage = () => {
     const priceNumber = productPriceNumber;
     setPublishingProduct(true);
     try {
+      const batch = await ensureBatchRecord('ready_for_product');
+      if (!batch) {
+        return;
+      }
+
       const materialNames = concentrateRows
         .map((item) => item.name || item.item_name)
         .filter(Boolean);
       const publishedAt = new Date().toISOString();
-      await saveCustomProduct({
+      const product = await saveCustomProduct({
         name: selectedFormula.name,
         category: selectedFormula.category || 'Studio Batch',
         priceNumber,
@@ -362,6 +471,8 @@ const MobileBatchesPage = () => {
           PRODUCT_DRAFT_TAG,
           'Studio batch',
           `${PRODUCT_BATCH_TAG_PREFIX} ${batchProductKey}`,
+          `${PRODUCT_BATCH_ID_TAG_PREFIX} ${batch.id}`,
+          `${PRODUCT_BATCH_CODE_TAG_PREFIX} ${batch.batch_code}`,
           `${PRODUCT_FORMULA_TAG_PREFIX} ${selectedFormula.id}`,
           `${PRODUCT_BATCH_TARGET_TAG_PREFIX} ${targetValue}`,
           `${PRODUCT_BATCH_BOTTLE_TAG_PREFIX} ${bottleSizeValue}`,
@@ -377,6 +488,12 @@ const MobileBatchesPage = () => {
         ],
         featured: false,
       });
+      await saveBatch(buildBatchPayload('converted_to_product', {
+        id: batch.id,
+        batch_code: batch.batch_code,
+        product_id: product.id,
+      }));
+      await updateFormulaStatus(selectedFormula.id, 'published_product');
       toast.success(`${productBottleCount} bottles drafted in products`);
       setPublishConfirmOpen(false);
       navigate('/mobile/studio/products?view=list');
@@ -506,6 +623,35 @@ const MobileBatchesPage = () => {
               </div>
             </section>
 
+            <section className="mobile-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Owner production flow</div>
+                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Save this as a production batch</h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                    Formula yang sudah oke disimpan sebagai batch dulu, baru batch yang ready dikonversi menjadi draft product stock.
+                  </p>
+                </div>
+                <MobileStatusBadge status={batchStatus} className="shrink-0" />
+              </div>
+              <div className="mt-3">
+                <MobileSegmentedControl options={workflowStatuses} value={batchStatus} onChange={setBatchStatus} className="mobile-compact-tabs" />
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <MetricTile label="Batch code" value={savedBatch?.batch_code || 'Not saved'} helper={savedBatch ? 'production record' : 'created on save'} />
+                <MetricTile label="History" value={`${batchHistory.length} batch`} helper="for this formula" tone={batchHistory.length ? 'emerald' : 'neutral'} />
+              </div>
+              <Button
+                type="button"
+                onClick={() => saveProductionBatch(batchStatus)}
+                disabled={savingBatch}
+                className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold"
+              >
+                <Save className="h-4 w-4" />
+                {savingBatch ? 'Saving batch...' : savedBatch ? 'Update production batch' : 'Save production batch'}
+              </Button>
+            </section>
+
             <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" onClick={exportFormulaPdf} className="h-11 rounded-2xl bg-white text-xs font-bold">
                 <Download className="mr-1 h-4 w-4" />
@@ -627,6 +773,39 @@ const MobileBatchesPage = () => {
                     {publishedProduct ? 'Edit linked product' : publishingProduct ? 'Publishing...' : 'Draft product stock'}
                   </Button>
                 </div>
+              </div>
+            </section>
+
+            <section className="mobile-card overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
+                <div>
+                  <h2 className="text-sm font-bold text-[#1f2937]">Batch history</h2>
+                  <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Saved production records for this formula.</p>
+                </div>
+                <History className="h-5 w-5 text-amber-700" />
+              </div>
+              <div className="divide-y divide-[#f0ede7] px-4">
+                {batchHistory.length ? batchHistory.slice(0, 4).map((batch) => (
+                  <button
+                    key={batch.id}
+                    type="button"
+                    onClick={() => {
+                      setSavedBatch(batch);
+                      setBatchStatus(batch.status || 'planned');
+                    }}
+                    className="grid w-full grid-cols-[1fr_auto] gap-3 py-3 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-bold text-[#1f2937]">{batch.batch_code}</span>
+                      <span className="mt-0.5 block text-[10px] font-semibold text-[#6b7280]">
+                        {formatQuantity(batch.target_quantity, 0)} ml / {formatQuantity(batch.bottle_ml, 0)} ml bottle / {batch.bottle_count} stock
+                      </span>
+                    </span>
+                    <MobileStatusBadge status={batch.status} className="h-5 px-2 text-[10px]" />
+                  </button>
+                )) : (
+                  <div className="py-4 text-xs font-semibold text-[#6b7280]">No saved batch yet.</div>
+                )}
               </div>
             </section>
 

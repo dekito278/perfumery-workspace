@@ -114,6 +114,11 @@ const ProductListCard = ({ onDelete, onEdit, onOpenBatch, product }) => {
                 SKU {batchDetails.sku}
               </div>
             ) : null}
+            {batchDetails.batchCode ? (
+              <div className="mt-1 break-all text-[10px] font-bold uppercase text-[#6b7280]">
+                Batch {batchDetails.batchCode}
+              </div>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 gap-1">
@@ -333,6 +338,12 @@ const MobileProductManagementPage = () => {
                   <div className="mt-3 rounded-xl bg-white px-3 py-2">
                     <div className="text-[10px] font-bold uppercase text-[#8b949e]">SKU</div>
                     <div className="mt-1 break-all text-xs font-bold text-[#1f2937]">{batchDetails.sku}</div>
+                  </div>
+                ) : null}
+                {batchDetails.batchCode ? (
+                  <div className="mt-2 rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">Source batch</div>
+                    <div className="mt-1 break-all text-xs font-bold text-[#1f2937]">{batchDetails.batchCode}</div>
                   </div>
                 ) : null}
                 <div className="mt-3 grid grid-cols-2 gap-2">

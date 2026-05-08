@@ -28,7 +28,7 @@ export const DEFAULT_BULK_INPUTS = {
 };
 
 export const DEFAULT_RETAIL_SCENARIOS = [
-  { id: 'manual-retail', label: '', mode: 'markup', percent: '', feePercent: '0' },
+  { id: 'manual-retail', label: 'Recommended retail', mode: 'margin', percent: '60', feePercent: '0' },
 ];
 
 export const DEFAULT_BULK_SCENARIOS = [
@@ -50,7 +50,7 @@ export const PACKAGING_FIELDS = [
   { key: 'capCost', label: 'Cap', kind: 'unit' },
   { key: 'atomizerCost', label: 'Sprayer / atomizer', kind: 'unit' },
   { key: 'boxCost', label: 'Box', kind: 'unit' },
-  { key: 'labelCost', label: 'Label', kind: 'unit' },
+  { key: 'labelCost', label: 'Label / sticker', kind: 'unit' },
   { key: 'shrinkWrapCost', label: 'Seal / shrink', kind: 'unit' },
   { key: 'printCost', label: 'Print / finishing', kind: 'unit' },
   { key: 'insertCost', label: 'Insert / card', kind: 'unit' },

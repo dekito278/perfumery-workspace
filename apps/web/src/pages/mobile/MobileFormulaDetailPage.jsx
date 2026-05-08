@@ -16,6 +16,7 @@ import { CompactWorkbookPreview } from '@/components/mobile/MobileFormulaCompose
 import { Button } from '@/components/ui/button.jsx';
 import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { buildMobileFormulaMetrics } from '@/utils/mobileFormulaMetrics.js';
@@ -71,6 +72,7 @@ const MobileFormulaDetailPage = () => {
   const [tab, setTab] = useState('summary');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const { deleteFormula, duplicateFormula } = useFormulas();
   const detail = useFormulaDetailPage(id);
   const {
@@ -140,6 +142,19 @@ const MobileFormulaDetailPage = () => {
     }
   };
 
+  const markReadyForBatch = async () => {
+    setUpdatingStatus(true);
+    try {
+      await updateFormulaStatus(id, 'ready_for_batch');
+      toast.success('Formula marked ready for batch');
+      navigate(`/mobile/batches?formulaId=${id}`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to update formula status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   if (loading || !formula) {
     return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Formula" title="Loading formula..." subtitle="Preparing workbook and composition data." /></MobileAuthenticatedLayout>;
   }
@@ -168,7 +183,7 @@ const MobileFormulaDetailPage = () => {
             ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
-              <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => navigate(`/mobile/batches?formulaId=${id}`)}><Calculator className="mr-1 h-4 w-4" />Batch</Button>
+              <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Ready Batch</Button>
             </div>
           </section>
         ) : null}

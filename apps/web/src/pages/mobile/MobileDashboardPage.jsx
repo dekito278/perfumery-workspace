@@ -37,11 +37,14 @@ const runWithTimeout = (loader, label, timeoutMs = 6000) => Promise.race([
   }),
 ]);
 
-const getRejectedLabel = (result, fallbackLabel) => (
-  result.status === 'rejected'
-    ? result.reason?.message || fallbackLabel
-    : ''
-);
+const runWithFallback = async (loader, label, fallbackValue, timeoutMs = 3500) => {
+  try {
+    return await runWithTimeout(loader, label, timeoutMs);
+  } catch (error) {
+    console.warn(`${label} delayed on studio dashboard:`, error.message || error);
+    return fallbackValue;
+  }
+};
 
 const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
   const tones = {
@@ -133,34 +136,58 @@ const MobileDashboardPage = () => {
   const [formulas, setFormulas] = useState([]);
   const [briefs, setBriefs] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [loadedSections, setLoadedSections] = useState({
+    briefs: false,
+    formulas: false,
+    logs: false,
+    materials: false,
+  });
   const [metrics, setMetrics] = useState({});
   const [pipeline, setPipeline] = useState({});
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState('');
   const [productMenuOpen, setProductMenuOpen] = useState(false);
 
   const loadData = async (isActive = () => true) => {
-    setLoading(true);
+    setSyncing(true);
+    if (!formulas.length && !briefs.length) {
+      setLoading(true);
+    }
     try {
-      const [materialsResult, formulasResult, briefsResult, logsResult] = await Promise.allSettled([
-        runWithTimeout(fetchMaterialsSummary, 'Materials summary'),
-        runWithTimeout(getFormulas, 'Formulas'),
-        runWithTimeout(getBriefs, 'Briefs'),
-        runWithTimeout(getValidationLogs, 'Validation logs'),
+      const [formulaRows, briefRows] = await Promise.all([
+        runWithFallback(getFormulas, 'Formulas', formulas, 3000),
+        runWithFallback(getBriefs, 'Briefs', briefs, 3000),
       ]);
-
-      const materialRows = materialsResult.status === 'fulfilled' ? materialsResult.value : [];
-      const formulaRows = formulasResult.status === 'fulfilled' ? formulasResult.value : [];
-      const briefRows = briefsResult.status === 'fulfilled' ? briefsResult.value : [];
-      const logRows = logsResult.status === 'fulfilled' ? logsResult.value : [];
 
       if (!isActive()) return;
       const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
         if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
         return map;
       }, new Map());
+      setFormulas(formulaRows || []);
+      setBriefs(briefRows || []);
+      setLoadedSections((current) => ({
+        ...current,
+        briefs: true,
+        formulas: true,
+      }));
+      setMetrics({});
+      setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
+        briefCount: briefsByFormulaId.get(formula.id) || 0,
+        validationCount: 0,
+        actionNeededCount: 0,
+      }])));
+      setLoading(false);
+
+      const [materialRows, logRows] = await Promise.all([
+        runWithFallback(fetchMaterialsSummary, 'Materials summary', materials, 4500),
+        runWithFallback(getValidationLogs, 'Validation logs', logs, 3500),
+      ]);
+
+      if (!isActive()) return;
       const logsByFormulaId = (logRows || []).reduce((map, log) => {
         if (!log.formula_id) return map;
         const current = map.get(log.formula_id) || { validationCount: 0, actionNeededCount: 0 };
@@ -169,30 +196,23 @@ const MobileDashboardPage = () => {
         map.set(log.formula_id, current);
         return map;
       }, new Map());
+
       setMaterials(materialRows || []);
-      setFormulas(formulaRows || []);
-      setBriefs(briefRows || []);
       setLogs(logRows || []);
-      setMetrics({});
+      setLoadedSections((current) => ({
+        ...current,
+        logs: true,
+        materials: true,
+      }));
       setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
         briefCount: briefsByFormulaId.get(formula.id) || 0,
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
-
-      const failedLabels = [
-        getRejectedLabel(materialsResult, 'Materials summary'),
-        getRejectedLabel(formulasResult, 'Formulas'),
-        getRejectedLabel(briefsResult, 'Briefs'),
-        getRejectedLabel(logsResult, 'Validation logs'),
-      ].filter(Boolean);
-
-      if (failedLabels.length) {
-        toast.error(`Some studio data could not be loaded: ${failedLabels.slice(0, 2).join(', ')}${failedLabels.length > 2 ? ` +${failedLabels.length - 2}` : ''}`);
-      }
     } catch (error) {
       toast.error('Failed to load mobile dashboard');
     } finally {
       if (isActive()) setLoading(false);
+      if (isActive()) setSyncing(false);
     }
   };
 
@@ -261,10 +281,10 @@ const MobileDashboardPage = () => {
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase text-amber-700">Workspace</div>
               <h1 className="mt-1 text-2xl font-bold leading-tight text-[#142116]">
-                {loading ? 'Syncing studio' : attentionCount ? 'Ada yang perlu dicek' : 'Studio ready'}
+                {syncing && !formulas.length && !briefs.length ? 'Syncing studio' : attentionCount ? 'Ada yang perlu dicek' : 'Studio ready'}
               </h1>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#68736a]">
-                {getDisplayName(currentUser)} / {loading ? 'mengambil data terbaru' : `${activeBriefs.length} brief aktif, ${draftFormulas.length} draft formula`}
+                {getDisplayName(currentUser)} / {syncing ? 'data sedang disegarkan' : `${activeBriefs.length} brief aktif, ${draftFormulas.length} draft formula`}
               </p>
             </div>
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-amber-700 shadow-sm">
@@ -272,10 +292,10 @@ const MobileDashboardPage = () => {
             </span>
           </div>
           <div className="mobile-horizontal-scroll mt-4 flex gap-2 overflow-x-auto pb-1">
-            <StudioChip label="Validations" value={loading ? '-' : logs.length} tone="amber" />
-            <StudioChip label="Formulas" value={loading ? '-' : formulas.length} tone="emerald" />
-            <StudioChip label="Materials" value={loading ? '-' : materials.length} tone="blue" />
-            <StudioChip label="Needs action" value={loading ? '-' : attentionCount} tone="rose" />
+            <StudioChip label="Validations" value={loadedSections.logs ? logs.length : '-'} tone="amber" />
+            <StudioChip label="Formulas" value={loadedSections.formulas ? formulas.length : '-'} tone="emerald" />
+            <StudioChip label="Materials" value={loadedSections.materials ? materials.length : '-'} tone="blue" />
+            <StudioChip label="Needs action" value={loadedSections.logs && loadedSections.materials ? attentionCount : '-'} tone="rose" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button className="rounded-2xl" onClick={() => navigate('/mobile/studio/products')}>Products</Button>
@@ -283,9 +303,8 @@ const MobileDashboardPage = () => {
           </div>
         </section>
 
-        {loading ? <MobileLoadingSkeleton count={4} /> : (
-          <>
-            <section className="space-y-3">
+        <>
+          <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">Priority</h2>
                 <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Open queue</Button>
@@ -311,12 +330,12 @@ const MobileDashboardPage = () => {
             </section>
 
             <section className="grid grid-cols-2 gap-3">
-              <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={activeBriefs.length} to="/mobile/briefs" />
-              <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={formulas.length} tone="blue" to="/mobile/formulas" />
-              <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={materials.length} tone="green" to="/mobile/raw-materials" />
-              <SummaryMetricCardMobile icon={ClipboardCheck} label="Validations" value={logs.length} tone="rose" to="/mobile/validation" />
+              <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={loadedSections.briefs ? activeBriefs.length : '-'} to="/mobile/briefs" />
+              <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={loadedSections.formulas ? formulas.length : '-'} tone="blue" to="/mobile/formulas" />
+              <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={loadedSections.materials ? materials.length : '-'} tone="green" to="/mobile/raw-materials" />
+              <SummaryMetricCardMobile icon={ClipboardCheck} label="Validations" value={loadedSections.logs ? logs.length : '-'} tone="rose" to="/mobile/validation" />
               <div className="col-span-2">
-                <SummaryMetricCardMobile icon={AlertTriangle} label="Guidance Gaps" value={missingGuidanceMaterials.length} tone="rose" to="/mobile/raw-materials" />
+                <SummaryMetricCardMobile icon={AlertTriangle} label="Guidance Gaps" value={loadedSections.materials ? missingGuidanceMaterials.length : '-'} tone="rose" to="/mobile/raw-materials" />
               </div>
             </section>
 
@@ -347,6 +366,8 @@ const MobileDashboardPage = () => {
                 <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
               </div>
             </section>
+
+            {loading ? <MobileLoadingSkeleton count={2} /> : null}
 
             <section className="mobile-card p-4">
               <div className="flex items-center justify-between">
@@ -424,8 +445,7 @@ const MobileDashboardPage = () => {
                 <ActivityCardMobile key={item.id} title={item.title} meta={item.meta} date={item.date} onClick={() => navigate(item.path)} />
               ))}
             </section>
-          </>
-        )}
+        </>
       </main>
       <MobileBottomSheet
         open={productMenuOpen}

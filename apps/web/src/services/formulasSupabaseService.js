@@ -205,6 +205,22 @@ export const updateFormula = async (formulaId, formulaData, items) => {
   return toAppRecord(formula);
 };
 
+export const updateFormulaStatus = async (formulaId, status) => {
+  const { data, error } = await supabase
+    .from('formulas')
+    .update({ status })
+    .eq('id', formulaId)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('Error updating formula status:', error);
+    throw new Error(error.message || 'Failed to update formula status');
+  }
+
+  return toAppRecord(data);
+};
+
 export const deleteFormula = async (formulaId) => {
   const { error } = await supabase
     .from('formulas')

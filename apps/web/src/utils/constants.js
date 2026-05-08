@@ -55,11 +55,21 @@ export const UNIT_OPTIONS = [
 
 export const FORMULA_STATUSES = [
   { value: 'draft', label: 'Draft' },
+  { value: 'in_review', label: 'Review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'ready_for_batch', label: 'Ready Batch' },
+  { value: 'batched', label: 'Batched' },
+  { value: 'published_product', label: 'Published' },
   { value: 'active', label: 'Active' },
   { value: 'archived', label: 'Archived' }
 ];
 
 export const BATCH_STATUSES = [
+  { value: 'planned', label: 'Planned' },
+  { value: 'produced', label: 'Produced' },
+  { value: 'qc', label: 'QC' },
+  { value: 'ready_for_product', label: 'Ready Product' },
+  { value: 'converted_to_product', label: 'Converted' },
   { value: 'draft', label: 'Draft' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' }

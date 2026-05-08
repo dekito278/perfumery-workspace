@@ -4,6 +4,8 @@ import supabase from '@/lib/supabaseClient.js';
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_DRAFT_TAG = 'Studio draft';
 export const PRODUCT_BATCH_TAG_PREFIX = 'Batch key:';
+export const PRODUCT_BATCH_ID_TAG_PREFIX = 'Batch ID:';
+export const PRODUCT_BATCH_CODE_TAG_PREFIX = 'Batch code:';
 export const PRODUCT_FORMULA_TAG_PREFIX = 'Formula ID:';
 export const PRODUCT_BATCH_TARGET_TAG_PREFIX = 'Batch target ml:';
 export const PRODUCT_BATCH_BOTTLE_TAG_PREFIX = 'Bottle ml:';
@@ -18,6 +20,8 @@ export const PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX = 'Batch published at:';
 
 const PRODUCT_INTERNAL_TAG_PREFIXES = [
   PRODUCT_BATCH_TAG_PREFIX,
+  PRODUCT_BATCH_ID_TAG_PREFIX,
+  PRODUCT_BATCH_CODE_TAG_PREFIX,
   PRODUCT_FORMULA_TAG_PREFIX,
   PRODUCT_BATCH_TARGET_TAG_PREFIX,
   PRODUCT_BATCH_BOTTLE_TAG_PREFIX,
@@ -94,6 +98,8 @@ export const getVisibleProductTags = (product = {}) => splitList(product.tags).f
 
 export const getProductBatchDetails = (product = {}) => ({
   batchKey: getProductBatchKey(product),
+  batchId: getProductInternalTagValue(product, PRODUCT_BATCH_ID_TAG_PREFIX),
+  batchCode: getProductInternalTagValue(product, PRODUCT_BATCH_CODE_TAG_PREFIX),
   formulaId: getProductFormulaId(product),
   targetMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_TARGET_TAG_PREFIX) || 0),
   bottleMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_BOTTLE_TAG_PREFIX) || 0),

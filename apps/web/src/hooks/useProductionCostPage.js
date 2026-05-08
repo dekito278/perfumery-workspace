@@ -27,6 +27,15 @@ import {
 
 const importWorkbookActions = () => import('@/utils/workbookPdfExport.js');
 
+const normalizeRetailScenario = (scenario = {}, fallback = {}) => ({
+  ...fallback,
+  ...scenario,
+  label: scenario.label || fallback.label || 'Recommended retail',
+  mode: scenario.mode || fallback.mode || 'margin',
+  percent: scenario.percent === '' || scenario.percent == null ? (fallback.percent || '60') : scenario.percent,
+  feePercent: scenario.feePercent === '' || scenario.feePercent == null ? (fallback.feePercent || '0') : scenario.feePercent,
+});
+
 export const useProductionCostPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('retail');
@@ -100,7 +109,9 @@ export const useProductionCostPage = () => {
       });
       setRetailScenarios(
         Array.isArray(persistedScenario.retailScenarios) && persistedScenario.retailScenarios.length
-          ? persistedScenario.retailScenarios
+          ? persistedScenario.retailScenarios.map((scenario, index) => (
+            normalizeRetailScenario(scenario, createDefaultRetailScenarios()[index] || createDefaultRetailScenarios()[0])
+          ))
           : createDefaultRetailScenarios()
       );
       setBulkScenarios(nextBulkScenarios);

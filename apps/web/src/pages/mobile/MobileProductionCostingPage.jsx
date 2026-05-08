@@ -34,6 +34,19 @@ const modeTypeOptions = [
   { value: 'margin', label: 'Margin' },
 ];
 
+const roundUpToNearest = (value, step = 1000) => {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+  return Math.ceil(numeric / step) * step;
+};
+
+const getTargetMarginPrice = (cogs, marginPercent, feePercent = 0) => {
+  const marginRatio = Math.min(Math.max(Number(marginPercent || 0) / 100, 0), 0.95);
+  const feeRatio = Math.min(Math.max(Number(feePercent || 0) / 100, 0), 0.95);
+  const denominator = Math.max((1 - feeRatio) * (1 - marginRatio), 0.0001);
+  return roundUpToNearest(Number(cogs || 0) / denominator, 1000);
+};
+
 const MoneyTile = ({ helper, label, value, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-900'
@@ -49,6 +62,19 @@ const MoneyTile = ({ helper, label, value, tone = 'neutral' }) => {
     </div>
   );
 };
+
+const CostLine = ({ label, quantity, total, unit }) => (
+  <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#f0ede7] py-2 last:border-b-0">
+    <div className="min-w-0">
+      <div className="truncate text-xs font-bold text-[#1f2937]">{label}</div>
+      <div className="mt-0.5 truncate text-[10px] font-semibold text-[#6b7280]">{quantity}</div>
+    </div>
+    <div className="shrink-0 text-right">
+      <div className="text-xs font-bold text-[#1f2937]">{formatPrice(total)}</div>
+      {unit ? <div className="mt-0.5 text-[10px] font-semibold text-[#9ca3af]">{unit}</div> : null}
+    </div>
+  </div>
+);
 
 const FieldInput = ({ label, onChange, suffix, value }) => (
   <div className="min-w-0 space-y-1.5">
@@ -101,6 +127,28 @@ const MobileProductionCostingPage = () => {
     removeBulkScenario,
   } = useProductionCostPage();
 
+  const retailFeePercent = Number(retailScenarios[0]?.feePercent || 0);
+  const retailRecommendations = [
+    {
+      label: 'Healthy direct',
+      helper: '60% margin, no fee',
+      price: getTargetMarginPrice(retailComputed.costPerBottle, 60, 0),
+      margin: 60,
+    },
+    {
+      label: 'Marketplace',
+      helper: `60% margin + ${formatQuantity(retailFeePercent, 1)}% fee`,
+      price: getTargetMarginPrice(retailComputed.costPerBottle, 60, retailFeePercent),
+      margin: 60,
+    },
+    {
+      label: 'Premium',
+      helper: '70% margin, no fee',
+      price: getTargetMarginPrice(retailComputed.costPerBottle, 70, 0),
+      margin: 70,
+    },
+  ];
+
   if (loading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
@@ -134,7 +182,7 @@ const MobileProductionCostingPage = () => {
               <div className="grid grid-cols-2 gap-2">
                 <MoneyTile label="Retail COGS" value={formatPrice(retailComputed.costPerBottle)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
                 <MoneyTile label="Bulk / L" value={formatCurrency(bulkComputed.allInBulkCogsPerLiter)} helper={`${formatQuantity(bulkComputed.concentration, 1)}% strength`} tone="emerald" />
-                <MoneyTile label="Best retail" value={formatPrice(retailChampion?.salePrice || 0)} helper={retailChampion ? `${formatQuantity(retailChampion.profitMargin, 1)}% margin` : 'No scenario'} />
+                <MoneyTile label="Best retail" value={formatPrice(retailRecommendations[0]?.price || retailChampion?.salePrice || 0)} helper="60% direct margin" />
                 <MoneyTile label="Best bulk" value={formatPrice(bulkChampion?.sellPrice || 0)} helper={bulkChampion ? `${formatQuantity(bulkChampion.margin, 1)}% margin` : 'No quote'} />
               </div>
             </section>
@@ -196,16 +244,72 @@ const MobileProductionCostingPage = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <MoneyTile label="Required" value={`${formatQuantity(retailComputed.requiredProductionVolume, 1)} ml`} helper="with production loss" />
+                    <MoneyTile label="Bottle output" value={`${retailComputed.bottleCount} bottles`} helper={`${formatQuantity(retailComputed.remainingVolume, 1)} ml remainder`} tone="emerald" />
                     <MoneyTile label="Concentrate" value={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} helper={formatPrice(retailComputed.formulaMaterialCost)} />
                     <MoneyTile label="Solvent" value={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} helper={formatPrice(retailComputed.solventMaterialCost)} />
                     <MoneyTile label="Packaging" value={formatPrice(retailComputed.totalPackagingCost + retailComputed.totalBatchOverhead)} helper={`${formatPrice(retailComputed.perBottlePackagingCost)} / bottle`} />
+                    <MoneyTile label="Actual COGS" value={formatPrice(retailComputed.costPerBottle)} helper="all-in per bottle" tone="amber" />
+                  </div>
+                </section>
+
+                <section className="mobile-card overflow-hidden">
+                  <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
+                    <h2 className="text-sm font-bold text-[#1f2937]">Actual COGS breakdown</h2>
+                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Material, solvent, bottle, sticker, box, labor, and overhead.</p>
+                  </div>
+                  <div className="px-4 py-1">
+                    <CostLine label="Formula concentrate" quantity={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} total={retailComputed.formulaMaterialCost} />
+                    <CostLine label="Solvent" quantity={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} total={retailComputed.solventMaterialCost} />
+                    {retailComputed.packagingLineItems.unitItems.map((item) => (
+                      <CostLine
+                        key={item.key}
+                        label={item.label}
+                        quantity={`${item.quantity} bottles x ${formatPrice(item.unitCost)}`}
+                        total={item.totalCost}
+                        unit="/ batch"
+                      />
+                    ))}
+                    {retailComputed.packagingLineItems.batchItems.map((item) => (
+                      <CostLine
+                        key={item.key}
+                        label={item.label}
+                        quantity="batch cost"
+                        total={item.totalCost}
+                        unit="/ batch"
+                      />
+                    ))}
+                    {!retailComputed.packagingLineItems.unitItems.length && !retailComputed.packagingLineItems.batchItems.length ? (
+                      <div className="py-3 text-xs font-semibold text-[#6b7280]">Bottle, sticker, box, labor, dan overhead belum diisi.</div>
+                    ) : null}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 border-t border-[#ece8df] bg-[#faf9f6] p-4">
+                    <MoneyTile label="Total batch cost" value={formatPrice(retailComputed.totalProductionCost)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
+                    <MoneyTile label="COGS / bottle" value={formatPrice(retailComputed.costPerBottle)} helper={`${formatCurrency(retailComputed.cogsPerMl)} / ml`} tone="emerald" />
+                  </div>
+                </section>
+
+                <section className="mobile-card overflow-hidden">
+                  <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
+                    <h2 className="text-sm font-bold text-[#1f2937]">Rekomendasi harga jual</h2>
+                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Otomatis dari actual COGS per bottle.</p>
+                  </div>
+                  <div className="grid gap-2 p-4">
+                    {retailRecommendations.map((recommendation) => (
+                      <div key={recommendation.label} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-[#ece8df] bg-[#f8f7f4] px-3 py-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-[#1f2937]">{recommendation.label}</div>
+                          <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{recommendation.helper}</div>
+                        </div>
+                        <div className="text-right text-sm font-bold text-emerald-800">{formatPrice(recommendation.price)}</div>
+                      </div>
+                    ))}
                   </div>
                 </section>
 
                 <section className="mobile-card overflow-hidden">
                   <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
                     <h2 className="text-sm font-bold text-[#1f2937]">Packaging and overhead</h2>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Per bottle and per batch cost inputs from website costing.</p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Isi komponen aktual: botol, cap, sprayer, stiker, box, labor, dan overhead.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 p-4">
                     {PACKAGING_FIELDS.map((field) => (

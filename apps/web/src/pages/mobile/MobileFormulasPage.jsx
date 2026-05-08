@@ -31,7 +31,9 @@ const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfMo
 const statusOptions = [
   { value: 'all', label: 'All' },
   { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
+  { value: 'ready_for_batch', label: 'Ready' },
+  { value: 'batched', label: 'Batched' },
+  { value: 'published_product', label: 'Published' },
   { value: 'validated', label: 'Valid' },
   { value: 'standalone', label: 'Solo' },
   { value: 'linked', label: 'Brief' },
