@@ -1,50 +1,34 @@
+import { Buffer } from 'node:buffer';
+
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
+const jsonResponse = (response, status, body) => {
+  response.statusCode = status;
+  response.setHeader('Content-Type', 'application/json');
+  response.end(JSON.stringify(body));
+};
+
+const readBody = async (request) => {
+  const chunks = [];
+  for await (const chunk of request) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString('utf8');
+};
+
 let pdfRuntimePromise;
 
 const getPdfRuntime = async () => {
   if (!pdfRuntimePromise) {
-    pdfRuntimePromise = Promise.all([
-      import('pdfjs-dist/legacy/build/pdf.mjs'),
-      import('pdfjs-dist/legacy/build/pdf.worker.mjs?url'),
-    ]).then(([pdfjsModule, workerModule]) => {
-      const { GlobalWorkerOptions, getDocument } = pdfjsModule;
-      GlobalWorkerOptions.workerSrc = workerModule.default;
-      return { getDocument };
-    }).catch((error) => {
-      pdfRuntimePromise = null;
-      throw error;
-    });
+    pdfRuntimePromise = import('pdfjs-dist/legacy/build/pdf.mjs')
+      .then((pdfjsModule) => ({ getDocument: pdfjsModule.getDocument }))
+      .catch((error) => {
+        pdfRuntimePromise = null;
+        throw error;
+      });
   }
 
   return pdfRuntimePromise;
-};
-
-const readFileArrayBuffer = (file) => {
-  if (typeof file.arrayBuffer === 'function') {
-    return file.arrayBuffer();
-  }
-
-  if (typeof FileReader === 'undefined') {
-    throw new Error('This mobile browser cannot read PDF files locally because FileReader is unavailable.');
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error || new Error('Failed to read PDF file on this device.'));
-    reader.onload = () => resolve(reader.result);
-    reader.readAsArrayBuffer(file);
-  });
-};
-
-const arrayBufferToBase64 = (arrayBuffer) => {
-  const bytes = new Uint8Array(arrayBuffer);
-  const chunkSize = 0x8000;
-  let binary = '';
-
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunkSize));
-  }
-
-  return btoa(binary);
 };
 
 const normalizeFragment = (value) =>
@@ -60,11 +44,10 @@ const normalizeDecorativeSpacing = (line) => {
   return line;
 };
 
-const extractPdfLines = async (file) => {
+const extractPdfLines = async (buffer) => {
   const { getDocument } = await getPdfRuntime();
-  const data = new Uint8Array(await readFileArrayBuffer(file));
   const pdf = await getDocument({
-    data,
+    data: new Uint8Array(buffer),
     disableWorker: true,
     useWorkerFetch: false,
     isEvalSupported: false,
@@ -151,8 +134,8 @@ const parseItems = (lines) =>
       grams: Number.parseFloat(match[4].replace(',', '.')),
     }));
 
-const parsePerfumeWorkbookPdfLocally = async (file) => {
-  const extractedLines = await extractPdfLines(file);
+const parsePerfumeWorkbookPdfBuffer = async ({ buffer, fileName }) => {
+  const extractedLines = await extractPdfLines(buffer);
   const lines = normalizeExtractedLines(extractedLines);
   const header = parseHeader(lines);
   const items = parseItems(lines);
@@ -165,7 +148,7 @@ const parsePerfumeWorkbookPdfLocally = async (file) => {
 
   return {
     ...header,
-    fileName: file.name,
+    fileName,
     rawText: lines.join('\n'),
     totalGrams,
     items: items.map((item) => ({
@@ -175,36 +158,31 @@ const parsePerfumeWorkbookPdfLocally = async (file) => {
   };
 };
 
-const parsePerfumeWorkbookPdfOnServer = async (file, localError) => {
-  const dataBase64 = arrayBufferToBase64(await readFileArrayBuffer(file));
-  const response = await fetch('/api/formula/import-pdf', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      fileName: file.name,
-      dataBase64,
-      localError: localError?.message || String(localError || ''),
-    }),
-  });
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(payload.message || 'Failed to parse PDF on server');
+export default async function handler(request, response) {
+  if (request.method !== 'POST') {
+    response.setHeader('Allow', 'POST');
+    return jsonResponse(response, 405, { message: 'Method not allowed' });
   }
 
-  if (!payload.parseResult?.items?.length) {
-    throw new Error('No formula items were detected in this PDF.');
-  }
-
-  return payload.parseResult;
-};
-
-export const parsePerfumeWorkbookPdf = async (file) => {
   try {
-    return await parsePerfumeWorkbookPdfLocally(file);
-  } catch (localError) {
-    return parsePerfumeWorkbookPdfOnServer(file, localError);
+    const body = JSON.parse(await readBody(request));
+    const fileName = String(body.fileName || 'formula.pdf').trim();
+    const dataBase64 = String(body.dataBase64 || '').replace(/^data:application\/pdf;base64,/, '');
+
+    if (!dataBase64) {
+      return jsonResponse(response, 400, { message: 'PDF data is required' });
+    }
+
+    const buffer = Buffer.from(dataBase64, 'base64');
+    if (!buffer.length || buffer.length > MAX_UPLOAD_BYTES) {
+      return jsonResponse(response, 413, { message: 'PDF is empty or too large for mobile import fallback' });
+    }
+
+    const parseResult = await parsePerfumeWorkbookPdfBuffer({ buffer, fileName });
+    return jsonResponse(response, 200, { parseResult });
+  } catch (error) {
+    return jsonResponse(response, 500, {
+      message: error.message || 'Failed to parse PDF on server',
+    });
   }
-};
+}
