@@ -91,11 +91,18 @@ const MobileValidationPage = () => {
   const loadWorkspace = async () => {
     setLoading(true);
     try {
-      const [formulaRows, logRows] = await Promise.all([getFormulas(), getValidationLogs()]);
-      setFormulas(formulaRows || []);
+      const logRows = await getValidationLogs();
       setLogs(logRows || []);
+      setLoading(false);
+      try {
+        const formulaRows = await getFormulas();
+        setFormulas(formulaRows || []);
+      } catch (error) {
+        toast.error('Validation logs loaded, but formula names are delayed');
+      }
     } catch (error) {
       toast.error('Failed to load validation workspace');
+      setLoading(false);
     } finally {
       setLoading(false);
     }

@@ -43,12 +43,19 @@ const MobileBriefsPage = () => {
   const loadData = async (isActive = () => true) => {
     setLoading(true);
     try {
-      const [briefRows, formulaRows] = await Promise.all([getBriefs(), getFormulas()]);
+      const briefRows = await getBriefs();
       if (!isActive()) return;
       setBriefs(briefRows || []);
-      setFormulas(formulaRows || []);
+      setLoading(false);
+      try {
+        const formulaRows = await getFormulas();
+        if (isActive()) setFormulas(formulaRows || []);
+      } catch (error) {
+        toast.error('Briefs loaded, but linked formula names are delayed');
+      }
     } catch (error) {
       toast.error('Failed to load briefs');
+      if (isActive()) setLoading(false);
     } finally {
       if (isActive()) setLoading(false);
     }

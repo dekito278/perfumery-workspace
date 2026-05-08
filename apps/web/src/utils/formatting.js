@@ -31,6 +31,10 @@ export const formatQuantity = (value, decimals = null) => {
     }
   }
   
+  if (decimals === 0) {
+    return numValue.toFixed(0);
+  }
+
   // Use specified decimals and remove trailing zeros
   return numValue.toFixed(decimals).replace(/\.?0+$/, '');
 };

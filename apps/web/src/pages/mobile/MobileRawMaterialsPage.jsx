@@ -120,6 +120,7 @@ const MobileRawMaterialsPage = () => {
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [savingShortlistId, setSavingShortlistId] = useState('');
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [addOpen, setAddOpen] = useState(initialAction === 'add');
@@ -131,18 +132,27 @@ const MobileRawMaterialsPage = () => {
   const [newMaterial, setNewMaterial] = useState({ name: '', category: '', cas_number: '', vendor: '', type: 'material', unit: 'g' });
   const shortlistMaterialIds = useMemo(() => new Set(shortlistItems.map((item) => item.raw_material_id).filter(Boolean)), [shortlistItems]);
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedQuery(query), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [query]);
+
   const loadMaterials = async () => {
     setLoading(true);
     try {
       const result = await fetchMaterialsPage({
         page: 1,
-        pageSize: Math.max(visibleCount, 160),
-        searchTerm: query,
+        pageSize: Math.max(visibleCount, MOBILE_PAGE_SIZE * 2),
+        searchTerm: debouncedQuery,
         typeFilter: 'all',
         categoryFilter: 'all',
         referenceFilter: ['matched', 'unmatched', 'ifra_limited'].includes(referenceFilter) ? referenceFilter : 'all',
       });
-      const enrichedItems = hydrateGuidanceFromPeerMaterials(await enrichMaterialsWithGuidance(result.items || []));
+      const baseItems = result.items || [];
+      setMaterials(baseItems);
+      setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? baseItems.length : result.total || baseItems.length);
+      setLoading(false);
+      const enrichedItems = hydrateGuidanceFromPeerMaterials(await enrichMaterialsWithGuidance(baseItems));
       const filteredItems = enrichedItems.filter((material) => {
         const resolved = getResolvedGuidanceValues(material);
         const hasGuidance = Boolean(resolved.workbook_code || resolved.reference_impact || resolved.reference_life_hours || resolved.ifra_limit);
@@ -152,9 +162,10 @@ const MobileRawMaterialsPage = () => {
         return true;
       });
       setMaterials(filteredItems);
-      setTotal(query || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
+      setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
     } catch (error) {
       toast.error('Failed to load materials');
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -163,9 +174,9 @@ const MobileRawMaterialsPage = () => {
   useEffect(() => {
     loadMaterials();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, referenceFilter, visibleCount]);
+  }, [debouncedQuery, referenceFilter, visibleCount]);
 
-  useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [query, referenceFilter]);
+  useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [debouncedQuery, referenceFilter]);
 
   const refreshShortlist = async () => {
     if (!activeBriefId) {

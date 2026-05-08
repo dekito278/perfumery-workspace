@@ -101,7 +101,7 @@ const MobileProductionCostingPage = () => {
     removeBulkScenario,
   } = useProductionCostPage();
 
-  if (loading || profileLoading || (selectedFormulaId && !formulaProfile)) {
+  if (loading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
         <MobileLoadingState eyebrow="Costing" title="Loading production costing..." subtitle="Preparing formula, solvent, packaging, and quote scenarios." />
@@ -119,6 +119,12 @@ const MobileProductionCostingPage = () => {
           onBack={() => navigate('/mobile/batches')}
           action={<Factory className="h-5 w-5 text-amber-700" />}
         />
+
+        {profileLoading ? (
+          <section className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+            Updating production profile...
+          </section>
+        ) : null}
 
         {!formulas.length ? (
           <MobileEmptyState icon={Package2} title="No formula available" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />

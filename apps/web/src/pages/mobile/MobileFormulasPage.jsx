@@ -56,38 +56,18 @@ const MobileFormulasPage = () => {
   const [duplicatingId, setDuplicatingId] = useState('');
   const [importOpen, setImportOpen] = useState(searchParams.get('action') === 'import');
 
-  const loadFormulas = async () => {
-    setLoading(true);
+  const loadPipeline = async (formulaRows = []) => {
     try {
-      const formulaRows = await getFormulas();
-      setFormulas(formulaRows || []);
-      const [briefRows, logRows, formulaItemEntries, rawMaterialRows] = await Promise.all([
+      const [briefRows, logRows] = await Promise.all([
         getBriefs(),
         getValidationLogs(),
-        Promise.all((formulaRows || []).map(async (formula) => {
-          const items = await getFormulaItems(formula.id);
-          return [formula.id, items || []];
-        })),
-        getRawMaterialOptions(),
       ]);
-      const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
-      const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
-      const referenceStatusMap = await getReferenceMatchStatusMap(materialIds);
-      const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
-      const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
-        formulaId,
-        buildMobileFormulaMetrics({
-          items: formulaItems,
-          rawMaterialsById,
-          referenceLinksMap: buildFormulaReferenceLinksMap(formulaItems, referenceStatusMap),
-        }),
-      ]);
-      setMetrics(Object.fromEntries(metricEntries));
-      const briefsByFormulaId = briefRows.reduce((map, brief) => {
+      const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
         if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
         return map;
       }, new Map());
-      const logsByFormulaId = logRows.reduce((map, log) => {
+      const logsByFormulaId = (logRows || []).reduce((map, log) => {
+        if (!log.formula_id) return map;
         const current = map.get(log.formula_id) || { validationCount: 0, actionNeededCount: 0 };
         current.validationCount += 1;
         if (log.status === 'action_needed') current.actionNeededCount += 1;
@@ -99,9 +79,51 @@ const MobileFormulasPage = () => {
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
     } catch (error) {
-      toast.error('Failed to load formulas');
-    } finally {
+      toast.error('Formula list loaded, but brief/validation badges are delayed');
+    }
+  };
+
+  const loadFormulas = async () => {
+    setLoading(true);
+    try {
+      const formulaRows = await getFormulas();
+      setFormulas(formulaRows || []);
       setLoading(false);
+      loadPipeline(formulaRows || []);
+    } catch (error) {
+      toast.error('Failed to load formulas');
+      setLoading(false);
+    }
+  };
+
+  const loadVisibleMetrics = async (formulaRows = []) => {
+    const missingRows = formulaRows.filter((formula) => formula.id && !metrics[formula.id]);
+    if (!missingRows.length) return;
+
+    try {
+      const formulaItemEntries = await Promise.all(missingRows.map(async (formula) => {
+        const items = await getFormulaItems(formula.id);
+        return [formula.id, items || []];
+      }));
+      const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
+      const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
+      const [rawMaterialRows, referenceStatusMap] = await Promise.all([
+        getRawMaterialOptions(),
+        materialIds.length ? getReferenceMatchStatusMap(materialIds) : Promise.resolve(new Map()),
+      ]);
+      const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
+      const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
+        formulaId,
+        buildMobileFormulaMetrics({
+          items: formulaItems,
+          rawMaterialsById,
+          referenceLinksMap: buildFormulaReferenceLinksMap(formulaItems, referenceStatusMap),
+        }),
+      ]);
+      setMetrics((current) => ({ ...current, ...Object.fromEntries(metricEntries) }));
+    } catch (error) {
+      toast.error('Formula cards loaded, but metrics are delayed');
+    } finally {
     }
   };
 
@@ -119,6 +141,13 @@ const MobileFormulasPage = () => {
     });
   }, [formulas, pipeline, query, status]);
   const visible = getVisibleItems(filtered, visibleCount);
+
+  useEffect(() => {
+    if (!loading && visible.length) {
+      loadVisibleMetrics(visible);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, visible.map((formula) => formula.id).join('|')]);
 
   const handleDuplicate = async (formula) => {
     setDuplicatingId(formula.id);

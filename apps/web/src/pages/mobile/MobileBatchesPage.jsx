@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, PackageCheck, Save } from 'lucide-react';
+import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, PackageCheck, Save, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx';
 import { useProductionCostPage } from '@/hooks/useProductionCostPage.js';
+import { saveCustomProduct } from '@/services/productCatalogService.js';
 import { updateRawMaterial } from '@/services/rawMaterialsService.js';
 import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
@@ -22,7 +23,7 @@ import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
-const targetPresets = ['10', '30', '100', '500'];
+const targetPresets = ['30', '100', '500', '1000'];
 
 const MetricTile = ({ label, value, helper, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
@@ -138,6 +139,9 @@ const MobileBatchesPage = () => {
   const [priceOverrides, setPriceOverrides] = useState(new Map());
   const [visibleRows, setVisibleRows] = useState(BATCH_ROW_PAGE_SIZE);
   const [savingPriceId, setSavingPriceId] = useState('');
+  const [bottleSizeMl, setBottleSizeMl] = useState('30');
+  const [productPrice, setProductPrice] = useState('');
+  const [publishingProduct, setPublishingProduct] = useState(false);
   const {
     bulkComputed,
     bulkInputs,
@@ -202,6 +206,12 @@ const MobileBatchesPage = () => {
   const localBulkCogsPerLiter = (localBulkMaterialCogsPerGram * 1000)
     + parseNumberInput(bulkInputs.handlingCostPerLiter)
     + parseNumberInput(bulkInputs.bulkOverheadCost);
+  const bottleSizeValue = Math.max(parseNumberInput(bottleSizeMl), 0);
+  const productBottleCount = bottleSizeValue > 0 ? Math.floor(targetValue / bottleSizeValue) : 0;
+  const remainingBatchVolume = bottleSizeValue > 0 ? Math.max(targetValue - (productBottleCount * bottleSizeValue), 0) : 0;
+  const productCogsPerBottle = bottleSizeValue > 0 ? dilutionCostPerGram * bottleSizeValue : 0;
+  const productPriceValue = parseNumberInput(productPrice);
+  const productPriceSuggestion = Math.ceil((productCogsPerBottle * 2) / 1000) * 1000;
 
   const updatePriceDraft = (materialId, value) => {
     if (!materialId) return;
@@ -225,6 +235,48 @@ const MobileBatchesPage = () => {
       toast.error(error.message || 'Failed to update price');
     } finally {
       setSavingPriceId('');
+    }
+  };
+
+  const publishBatchAsProduct = async () => {
+    if (!selectedFormula || productBottleCount <= 0) {
+      toast.error('Set formula, batch size, and bottle size first');
+      return;
+    }
+
+    const priceNumber = productPriceValue > 0 ? productPriceValue : productPriceSuggestion;
+    setPublishingProduct(true);
+    try {
+      const materialNames = concentrateRows
+        .map((item) => item.name || item.item_name)
+        .filter(Boolean);
+      await saveCustomProduct({
+        name: selectedFormula.name,
+        category: selectedFormula.category || 'Studio Batch',
+        priceNumber,
+        size: `${formatQuantity(bottleSizeValue, 0)} ml`,
+        notes: selectedFormula.notes || materialNames.slice(0, 5).join(', ') || 'Studio batch perfume',
+        topNotes: materialNames.slice(0, 3),
+        heartNotes: materialNames.slice(3, 6),
+        baseNotes: materialNames.slice(6, 9),
+        description: `Published from ${selectedFormula.name} batch. ${formatQuantity(targetValue, 0)} ml produced into ${productBottleCount} bottles.`,
+        concentration: `${formatPercentage(concentration, 1)} perfume`,
+        stock: productBottleCount,
+        variants: [{
+          id: `${formatQuantity(bottleSizeValue, 0)}-ml`,
+          size: `${formatQuantity(bottleSizeValue, 0)} ml`,
+          priceNumber,
+          stock: productBottleCount,
+        }],
+        tags: ['Studio batch', selectedFormula.category || 'Perfume'],
+        featured: false,
+      });
+      toast.success(`${productBottleCount} bottles published to products`);
+      navigate('/mobile/studio/products?view=list');
+    } catch (error) {
+      toast.error(error.message || 'Failed to publish product');
+    } finally {
+      setPublishingProduct(false);
     }
   };
 
@@ -261,7 +313,7 @@ const MobileBatchesPage = () => {
     }
   };
 
-  if (loading || profileLoading || (selectedFormulaId && !formulaProfile)) {
+  if (loading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
         <MobileLoadingState eyebrow="Batch" title="Loading batch calculator..." subtitle="Preparing formulas, solvent, and material pricing." />
@@ -279,6 +331,12 @@ const MobileBatchesPage = () => {
           onBack={() => navigate('/mobile/formulas')}
           action={<Calculator className="h-5 w-5 text-amber-700" />}
         />
+
+        {profileLoading ? (
+          <section className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+            Updating batch profile...
+          </section>
+        ) : null}
 
         {!formulas.length ? (
           <MobileEmptyState icon={FlaskConical} title="No formula available" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
@@ -419,6 +477,40 @@ const MobileBatchesPage = () => {
               </div>
             </section>
 
+            <section className="mobile-card p-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+                  <ShoppingBag className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Publish to product</div>
+                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">Turn this batch into stock</h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                    {formatQuantity(targetValue, 0)} ml batch / {formatQuantity(bottleSizeValue || 0, 0)} ml bottle = {productBottleCount} bottles
+                    {remainingBatchVolume > 0 ? `, ${formatQuantity(remainingBatchVolume, 1)} ml remainder` : ''}.
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="min-w-0 space-y-2">
+                      <Label className="text-xs font-bold text-[#6b7280]">Bottle ml</Label>
+                      <Input value={bottleSizeMl} onChange={(event) => setBottleSizeMl(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      <Label className="text-xs font-bold text-[#6b7280]">Sell price</Label>
+                      <Input value={productPrice} onChange={(event) => setProductPrice(normalizeLocalizedDecimalInput(event.target.value))} placeholder={formatPrice(productPriceSuggestion)} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <MetricTile label="Stock" value={`${productBottleCount} bottles`} helper="will become product stock" tone="emerald" />
+                    <MetricTile label="COGS / bottle" value={formatPrice(productCogsPerBottle)} helper="material estimate" tone="amber" />
+                  </div>
+                  <Button type="button" onClick={publishBatchAsProduct} disabled={publishingProduct || productBottleCount <= 0} className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold">
+                    <ShoppingBag className="h-4 w-4" />
+                    {publishingProduct ? 'Publishing...' : 'Publish product stock'}
+                  </Button>
+                </div>
+              </div>
+            </section>
+
             <section className="mobile-card overflow-hidden">
               <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
                 <h2 className="text-sm font-bold text-[#1f2937]">Raw material breakdown</h2>
@@ -430,7 +522,7 @@ const MobileBatchesPage = () => {
                     key={item.rowKey}
                     item={item}
                     label={item.name || item.item_name || 'Material'}
-                    helper={`${formatQuantity(item.percentage, 2)}% · ${formatGramAmount(item.batchGram)} · ${formatPricePerUnit(item.unitPrice)}`}
+                    helper={`${formatQuantity(item.percentage, 2)}% / ${formatGramAmount(item.batchGram)} / ${formatPricePerUnit(item.unitPrice)}`}
                     onDraftChange={updatePriceDraft}
                     onSave={saveMaterialPrice}
                     saving={savingPriceId === item.item_id}

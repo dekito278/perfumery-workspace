@@ -16,15 +16,8 @@ import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
-import { getReferenceMatchStatusMap } from '@/services/materialReferenceService.js';
-import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
-import {
-  buildFormulaReferenceLinksMap,
-  buildMobileFormulaMetrics,
-} from '@/utils/mobileFormulaMetrics.js';
 import { getDisplayName, MOBILE_ACTIVITY_LIMIT, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 
 const hasGuidanceCoverage = (material) => (
@@ -43,6 +36,12 @@ const runWithTimeout = (loader, label, timeoutMs = 6000) => Promise.race([
     window.setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
   }),
 ]);
+
+const getRejectedLabel = (result, fallbackLabel) => (
+  result.status === 'rejected'
+    ? result.reason?.message || fallbackLabel
+    : ''
+);
 
 const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
   const tones = {
@@ -128,7 +127,6 @@ const MobileDashboardPage = () => {
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary } = useRawMaterials();
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
-  const { getFormulaItems } = useFormulaItems();
   const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
   const [materials, setMaterials] = useState([]);
@@ -158,31 +156,7 @@ const MobileDashboardPage = () => {
       const briefRows = briefsResult.status === 'fulfilled' ? briefsResult.value : [];
       const logRows = logsResult.status === 'fulfilled' ? logsResult.value : [];
 
-      const formulaItemResults = await Promise.allSettled((formulaRows || []).map(async (formula) => {
-        const items = await runWithTimeout(() => getFormulaItems(formula.id), `Formula ${formula.id} items`, 5000);
-        return [formula.id, items || []];
-      }));
-      const formulaItemEntries = formulaItemResults
-        .filter((result) => result.status === 'fulfilled')
-        .map((result) => result.value);
-      const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
-      const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
-      const [rawMaterialRowsResult, referenceStatusMapResult] = await Promise.allSettled([
-        formulaItemEntries.length ? runWithTimeout(getRawMaterialOptions, 'Raw material options', 5000) : Promise.resolve([]),
-        materialIds.length ? runWithTimeout(() => getReferenceMatchStatusMap(materialIds), 'Reference match status', 5000) : Promise.resolve(new Map()),
-      ]);
-      const rawMaterialRows = rawMaterialRowsResult.status === 'fulfilled' ? rawMaterialRowsResult.value : [];
-      const referenceStatusMap = referenceStatusMapResult.status === 'fulfilled' ? referenceStatusMapResult.value : new Map();
       if (!isActive()) return;
-      const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
-      const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
-        formulaId,
-        buildMobileFormulaMetrics({
-          items: formulaItems,
-          rawMaterialsById,
-          referenceLinksMap: buildFormulaReferenceLinksMap(formulaItems, referenceStatusMap),
-        }),
-      ]);
       const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
         if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
         return map;
@@ -199,24 +173,21 @@ const MobileDashboardPage = () => {
       setFormulas(formulaRows || []);
       setBriefs(briefRows || []);
       setLogs(logRows || []);
-      setMetrics(Object.fromEntries(metricEntries));
+      setMetrics({});
       setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
         briefCount: briefsByFormulaId.get(formula.id) || 0,
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
 
-      const failedResults = [
-        materialsResult,
-        formulasResult,
-        briefsResult,
-        logsResult,
-        rawMaterialRowsResult,
-        referenceStatusMapResult,
-        ...formulaItemResults,
-      ].filter((result) => result.status === 'rejected');
+      const failedLabels = [
+        getRejectedLabel(materialsResult, 'Materials summary'),
+        getRejectedLabel(formulasResult, 'Formulas'),
+        getRejectedLabel(briefsResult, 'Briefs'),
+        getRejectedLabel(logsResult, 'Validation logs'),
+      ].filter(Boolean);
 
-      if (failedResults.length) {
-        toast.error('Some studio data could not be loaded');
+      if (failedLabels.length) {
+        toast.error(`Some studio data could not be loaded: ${failedLabels.slice(0, 2).join(', ')}${failedLabels.length > 2 ? ` +${failedLabels.length - 2}` : ''}`);
       }
     } catch (error) {
       toast.error('Failed to load mobile dashboard');
@@ -229,7 +200,7 @@ const MobileDashboardPage = () => {
     let active = true;
     loadData(() => active);
     return () => { active = false; };
-  }, [fetchMaterialsSummary, getBriefs, getFormulaItems, getFormulas, getValidationLogs]);
+  }, [fetchMaterialsSummary, getBriefs, getFormulas, getValidationLogs]);
 
   const activeBriefs = useMemo(() => briefs.filter((brief) => ['draft', 'active'].includes(brief.status || 'draft')), [briefs]);
   const draftFormulas = useMemo(() => sortByUpdated(formulas.filter((formula) => (formula.status || 'draft') === 'draft')).slice(0, MOBILE_ACTIVITY_LIMIT), [formulas]);
