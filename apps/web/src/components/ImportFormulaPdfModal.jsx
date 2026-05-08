@@ -20,6 +20,10 @@ import { parseDilutionFromMaterialName } from '@/utils/formulaDilutionParsing.js
 import { FORMULA_CATEGORIES } from '@/utils/constants.js';
 
 const normalizeLookupValue = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+const normalizeOptionalText = (value) => {
+  const normalized = String(value || '').trim();
+  return normalized || null;
+};
 
 const buildMissingMaterialKey = (item) => `${item.workbookCode}::${normalizeLookupValue(item.pureMaterialName || item.materialName)}`;
 const buildMissingSolventKey = (solventName) => `solvent::${normalizeLookupValue(solventName)}`;
@@ -314,16 +318,16 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         const key = buildMissingMaterialKey(item);
         const draft = missingMaterialDrafts[key];
         const createdMaterial = await createRawMaterial({
-          name: draft.name.trim(),
-          workbook_code: draft.workbook_code.trim(),
+          name: normalizeOptionalText(draft.name) || item.pureMaterialName || item.materialName,
+          workbook_code: normalizeOptionalText(draft.workbook_code),
           category: draft.category,
           type: draft.type || 'material',
           unit: draft.unit,
           cost_per_unit: draft.cost_per_unit === '' ? 0 : Number(draft.cost_per_unit),
-          vendor: draft.vendor.trim() || null,
+          vendor: normalizeOptionalText(draft.vendor),
           cas_number: null,
           ifra_limit: null,
-          notes: draft.notes.trim() || `Imported from ${parseResult.fileName}`,
+          notes: normalizeOptionalText(draft.notes) || `Imported from ${parseResult.fileName}`,
           is_diluted: false,
           dilution_solvent_id: null,
           dilution_percentage: null,
@@ -340,16 +344,16 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
         const key = buildMissingSolventKey(solventName);
         const draft = missingMaterialDrafts[key];
         const createdSolvent = await createRawMaterial({
-          name: draft.name.trim(),
+          name: normalizeOptionalText(draft.name) || solventName,
           workbook_code: null,
           category: draft.category,
           type: 'solvent',
           unit: draft.unit,
           cost_per_unit: draft.cost_per_unit === '' ? 0 : Number(draft.cost_per_unit),
-          vendor: draft.vendor.trim() || null,
+          vendor: normalizeOptionalText(draft.vendor),
           cas_number: null,
           ifra_limit: null,
-          notes: draft.notes.trim() || `Imported as solvent from ${parseResult.fileName}`,
+          notes: normalizeOptionalText(draft.notes) || `Imported as solvent from ${parseResult.fileName}`,
           is_diluted: false,
           dilution_solvent_id: null,
           dilution_percentage: null,
