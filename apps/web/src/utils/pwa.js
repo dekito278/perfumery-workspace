@@ -22,9 +22,18 @@ export const registerServiceWorker = () => {
   }
 
   window.addEventListener('load', () => {
+    let updateIntervalId = null;
+
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then((registration) => {
-        registration.update?.();
+        const checkForUpdate = () => {
+          const updatePromise = registration.update?.();
+          updatePromise?.catch?.((error) => {
+            console.warn('Solivagant service worker update check failed:', error);
+          });
+        };
+
+        checkForUpdate();
 
         const activateWaitingWorker = () => {
           if (registration.waiting) {
@@ -46,9 +55,19 @@ export const registerServiceWorker = () => {
         });
 
         activateWaitingWorker();
+        window.addEventListener('focus', checkForUpdate);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            checkForUpdate();
+          }
+        });
+        updateIntervalId = window.setInterval(checkForUpdate, 30 * 60 * 1000);
       })
       .catch((error) => {
         console.warn('Solivagant service worker registration failed:', error);
+        if (updateIntervalId) {
+          window.clearInterval(updateIntervalId);
+        }
       });
 
     let refreshing = false;
