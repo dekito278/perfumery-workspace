@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -21,6 +21,7 @@ import {
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -49,6 +50,8 @@ const mobileHomeAssets = {
 
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const adminTapRef = useRef({ count: 0, lastTapAt: 0 });
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
@@ -60,6 +63,19 @@ const MobileStorefrontPage = () => {
     { value: String(limitedProducts.length), label: 'Limited picks' },
     { value: '1:1', label: 'Bespoke' },
   ];
+  const openOwnerAccess = () => {
+    const now = Date.now();
+    const nextCount = now - adminTapRef.current.lastTapAt > 1800
+      ? 1
+      : adminTapRef.current.count + 1;
+
+    adminTapRef.current = { count: nextCount, lastTapAt: now };
+
+    if (nextCount >= 3) {
+      adminTapRef.current = { count: 0, lastTapAt: 0 };
+      navigate(isAuthenticated ? '/mobile/studio' : '/mobile/login');
+    }
+  };
 
   return (
     <MobileCommerceLayout>
@@ -69,7 +85,7 @@ const MobileStorefrontPage = () => {
       </Helmet>
       <main className="mobile-page space-y-4">
         <header className="mb-3 flex items-center justify-between gap-3 pr-12">
-          <button type="button" onClick={() => navigate('/mobile/dashboard')} className="min-w-0" aria-label="Solivagant home">
+          <button type="button" onClick={openOwnerAccess} className="min-w-0" aria-label="Solivagant home">
             <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-12 w-36 rounded-2xl object-contain" />
           </button>
           <div className="flex items-center gap-2">

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, KeyRound, Loader2, PackageCheck, Search, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
+import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import {
   getCustomerPortalByCode,
   setCustomerPortalSecurity,
@@ -27,6 +29,8 @@ const getActiveStep = (status) => {
 };
 
 const CustomerPortalPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   const [customerCode, setCustomerCode] = useState(initialCode.toUpperCase());
@@ -41,6 +45,7 @@ const CustomerPortalPage = () => {
   const [savingSecurity, setSavingSecurity] = useState(false);
 
   const latestOrder = portal?.orders?.[0];
+  const isMobileRoute = location.pathname.startsWith('/mobile');
   const activeOrders = useMemo(() => (
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
@@ -139,6 +144,197 @@ const CustomerPortalPage = () => {
       setSavingSecurity(false);
     }
   };
+
+  if (isMobileRoute) {
+    return (
+      <MobileCommerceLayout>
+        <Helmet>
+          <title>Customer Dashboard - Solivagant</title>
+          <meta name="description" content="Check Solivagant order progress with a customer code." />
+        </Helmet>
+        <main className="mobile-page space-y-4">
+          <MobileTopBar
+            title="Cek Order"
+            subtitle="Customer portal"
+            eyebrow="Solivagant"
+            onBack={() => navigate('/mobile/dashboard')}
+            action={<UserRound className="h-5 w-5 text-[#263d27]" />}
+          />
+
+          <section className="mobile-soft-card overflow-hidden">
+            <div className="bg-[#050705] p-4 text-[#eef2e8]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase text-[#cbd6c5]">
+                <ShoppingBag className="h-3.5 w-3.5" />
+                Order tracker
+              </div>
+              <h1 className="mt-3 text-2xl font-bold leading-tight">Cek progress pesanan.</h1>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
+                Masukkan kode SOLI untuk melihat status order dan data customer.
+              </p>
+            </div>
+            <form onSubmit={loadPortal} className="grid gap-3 p-4">
+              <label className="text-[10px] font-bold uppercase text-[#6b7280]">Customer code</label>
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <input
+                  value={customerCode}
+                  onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+                  placeholder="SOLI09232"
+                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#263d27]"
+                />
+                <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Check customer code">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
+                Kode ini diberikan setelah checkout pertama.
+              </p>
+            </form>
+          </section>
+
+          {portal?.requiresSecurity ? (
+            <section className="mobile-card p-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                  <KeyRound className="h-5 w-5" />
+                </span>
+                <div>
+                  <div className="text-[10px] font-bold uppercase text-[#263d27]">Security check</div>
+                  <h2 className="mt-1 text-lg font-bold text-[#0b130c]">{portal.customer.customerName}</h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">Jawab pertanyaan keamanan untuk membuka dashboard.</p>
+                </div>
+              </div>
+              <form onSubmit={unlockPortal} className="mt-4 grid gap-3">
+                <div className="rounded-2xl bg-[#f7f8f2] p-3">
+                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">Question</div>
+                  <div className="mt-1 text-sm font-bold text-[#0b130c]">{portal.customer.securityQuestion}</div>
+                </div>
+                <input
+                  value={securityAnswer}
+                  onChange={(event) => setSecurityAnswer(event.target.value)}
+                  placeholder="Your answer"
+                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
+                />
+                <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+                  {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                  Unlock
+                </Button>
+              </form>
+            </section>
+          ) : portal ? (
+            <>
+              <section className="mobile-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Welcome back</div>
+                    <h2 className="mt-1 truncate text-lg font-bold text-[#0b130c]">{portal.customer.customerName}</h2>
+                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.contact}</p>
+                  </div>
+                  <button type="button" onClick={copyCode} className="shrink-0 rounded-2xl bg-[#263d27] px-3 py-2 text-xs font-bold tracking-[0.12em] text-[#eef2e8]">
+                    {portal.customer.customerCode}
+                  </button>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="rounded-2xl bg-[#f7f8f2] p-3 text-center">
+                    <div className="text-sm font-bold text-[#0b130c]">{portal.orders.length}</div>
+                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Orders</div>
+                  </div>
+                  <div className="rounded-2xl bg-[#eef2e8] p-3 text-center">
+                    <div className="text-sm font-bold text-[#263d27]">{activeOrders.length}</div>
+                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Active</div>
+                  </div>
+                  <div className="rounded-2xl bg-amber-50 p-3 text-center">
+                    <div className="truncate text-xs font-bold text-amber-800">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
+                    <div className="text-[10px] font-bold uppercase text-amber-700">Latest</div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="mobile-card p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                    <ShieldCheck className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h2 className="text-base font-bold text-[#0b130c]">Security settings</h2>
+                    <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">Tambahkan pertanyaan keamanan untuk dashboard customer.</p>
+                  </div>
+                </div>
+                <form onSubmit={saveSecurity} className="mt-3 grid gap-2">
+                  {portal.customer.securityEnabledAt ? (
+                    <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Current answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                  ) : null}
+                  <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder="Pertanyaan keamanan" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                  <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                  <Button type="submit" className="h-11 rounded-2xl gap-2" disabled={savingSecurity}>
+                    {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                    Save
+                  </Button>
+                </form>
+              </section>
+
+              <section className="space-y-3">
+                <h2 className="text-base font-bold text-[#0b130c]">Order progress</h2>
+                {portal.orders.map((order) => {
+                  const activeStep = getActiveStep(order.status);
+                  return (
+                    <article key={order.orderNumber} className="mobile-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-bold text-[#0b130c]">{order.orderNumber}</h3>
+                          <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
+                        </div>
+                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between rounded-2xl bg-[#f7f8f2] px-3 py-2 text-xs font-bold">
+                        <span>{order.quantity} items</span>
+                        <span>{formatTotal(order.subtotal)}</span>
+                      </div>
+                      <div className="mt-3 grid gap-2">
+                        {order.items.map((item) => (
+                          <div key={`${order.orderNumber}-${item.slug || item.name}`} className="flex items-center justify-between gap-2 rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-semibold">
+                            <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
+                            <span className="shrink-0 text-amber-700">{item.price || '-'}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 grid grid-cols-5 gap-1.5">
+                        {statusSteps.map((step, index) => {
+                          const done = activeStep >= index;
+                          return (
+                            <div key={step} className="min-w-0">
+                              <div className={`h-1.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
+                              <div className={`mt-1 truncate text-[8px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>
+                                {statusLabels[step] || step}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </article>
+                  );
+                })}
+                {!portal.orders.length ? (
+                  <div className="mobile-card p-5 text-center">
+                    <PackageCheck className="mx-auto h-7 w-7 text-amber-700" />
+                    <h3 className="mt-3 font-bold text-[#0b130c]">No orders yet</h3>
+                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">Order baru akan muncul setelah checkout.</p>
+                  </div>
+                ) : null}
+              </section>
+            </>
+          ) : (
+            <section className="mobile-card p-5 text-center">
+              {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
+              <h2 className="mt-3 text-lg font-bold text-[#0b130c]">{searched ? 'Customer code not found' : 'Dashboard tampil di sini'}</h2>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masukkan customer code untuk melihat progres order.'}
+              </p>
+            </section>
+          )}
+        </main>
+      </MobileCommerceLayout>
+    );
+  }
 
   return (
     <>

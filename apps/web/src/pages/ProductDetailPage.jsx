@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
@@ -68,7 +68,7 @@ const ProductDetailPage = () => {
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
-          <ProductVisual product={product} className="min-h-[520px] rounded-[28px]" bottleClassName="left-14 top-14 h-64 w-36 rounded-[2.5rem]" />
+          <ProductGallery product={product} visualClassName="min-h-[520px] rounded-[28px]" />
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
               <Sparkles className="h-4 w-4" />

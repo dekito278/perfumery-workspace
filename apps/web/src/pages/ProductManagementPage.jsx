@@ -34,6 +34,7 @@ const emptyProduct = {
   baseNotes: '',
   description: '',
   imageUrl: '',
+  images: [],
   tags: '',
   mood: '',
   featured: true,
@@ -46,6 +47,7 @@ const toEditableProduct = (product) => ({
   baseNotes: product.baseNotes.join(', '),
   variants: product.variants,
   tags: product.tags.join(', '),
+  images: product.images || (product.imageUrl ? [product.imageUrl] : []),
 });
 
 const ProductManagementPage = () => {
@@ -80,17 +82,29 @@ const ProductManagementPage = () => {
 
   const resetForm = () => setForm(emptyProduct);
 
+  const updateImagesFromText = (value) => {
+    const images = value.split('\n').map((item) => item.trim()).filter(Boolean);
+    setForm((current) => ({ ...current, images, imageUrl: images[0] || '' }));
+  };
+  const removeImage = (imageUrl) => setForm((current) => {
+    const images = (current.images || []).filter((image) => image !== imageUrl);
+    return { ...current, images, imageUrl: images[0] || '' };
+  });
+
   const handleImageUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) {
       return;
     }
 
     setUploadingImage(true);
     try {
-      const imageUrl = await uploadProductImage(file, form.name);
-      updateField('imageUrl', imageUrl);
-      toast.success('Product image uploaded');
+      const uploadedImages = await Promise.all(files.map((file) => uploadProductImage(file, form.name)));
+      setForm((current) => {
+        const images = [...new Set([...(current.images || []), ...uploadedImages])];
+        return { ...current, images, imageUrl: images[0] || '' };
+      });
+      toast.success(files.length > 1 ? 'Product images uploaded' : 'Product image uploaded');
     } catch (error) {
       toast.error(error.message || 'Failed to upload product image');
     } finally {
@@ -231,22 +245,28 @@ const ProductManagementPage = () => {
                 <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="min-h-[220px]" />
                 <div className="grid content-start gap-3">
                   <label>
-                    <span className="text-xs font-bold uppercase text-muted-foreground">Product image URL</span>
-                    <input value={form.imageUrl || ''} onChange={(event) => updateField('imageUrl', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="https://.../product.jpg" />
+                    <span className="text-xs font-bold uppercase text-muted-foreground">Product image URLs</span>
+                    <textarea value={(form.images || []).join('\n')} onChange={(event) => updateImagesFromText(event.target.value)} rows={4} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" placeholder={'https://.../front.jpg\nhttps://.../detail.jpg'} />
                   </label>
                   <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold">
                     <ImagePlus className="h-4 w-4" />
-                    {uploadingImage ? 'Uploading...' : 'Upload image'}
-                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
+                    {uploadingImage ? 'Uploading...' : 'Upload images'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
                   </label>
-                  {form.imageUrl ? (
-                    <Button type="button" variant="outline" className="h-11 rounded-2xl gap-2 bg-white" onClick={() => updateField('imageUrl', '')}>
-                      <ImageOff className="h-4 w-4" />
-                      Remove image
-                    </Button>
+                  {(form.images || []).length ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {form.images.map((image) => (
+                        <div key={image} className="relative overflow-hidden rounded-2xl border bg-white">
+                          <img src={image} alt="" className="h-16 w-full object-cover" />
+                          <button type="button" onClick={() => removeImage(image)} className="absolute right-1 top-1 grid h-7 w-7 min-h-0 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove image">
+                            <ImageOff className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   ) : null}
                   <p className="text-xs font-semibold text-muted-foreground">
-                    JPG, PNG, WebP, atau GIF sampai 5 MB. Upload disimpan ke Supabase Storage dan URL publiknya dipakai di katalog.
+                    JPG, PNG, WebP, atau GIF sampai 15 MB per file. Upload otomatis dikompres ke WebP ringan sekitar 250 KB; gambar pertama menjadi cover katalog.
                   </p>
                 </div>
               </div>

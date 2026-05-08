@@ -24,7 +24,7 @@ const MobileCommerceLayout = ({ children }) => {
       {isAuthenticated ? (
         <Link
           to="/mobile/studio"
-          className="fixed bottom-[86px] right-4 z-40 inline-flex h-11 items-center gap-2 rounded-2xl border border-[#263d27]/20 bg-white px-4 text-xs font-bold text-[#263d27] shadow-lg"
+          className="fixed bottom-[76px] right-4 z-40 inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/16 bg-white/95 px-3 text-xs font-bold text-[#263d27] shadow-sm backdrop-blur"
           aria-label="Back to Studio dashboard"
         >
           <Beaker className="h-4 w-4" />
@@ -43,12 +43,12 @@ const MobileCommerceLayout = ({ children }) => {
               to={item.path}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex h-[56px] flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-bold transition',
+                'flex h-[52px] flex-col items-center justify-center gap-0.5 rounded-[14px] text-[9.5px] font-bold transition',
                 active ? 'bg-[#eef2e8] text-[#263d27]' : 'text-[#8b949e]'
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span>{item.label}</span>
+              <Icon className="h-[19px] w-[19px]" />
+              <span className="max-w-full truncate px-0.5">{item.label}</span>
             </Link>
           );
         })}

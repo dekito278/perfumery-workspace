@@ -8,7 +8,7 @@ const ProductVisual = ({
   label = true,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const imageUrl = String(product?.imageUrl || '').trim();
+  const imageUrl = String(product?.images?.[0] || product?.imageUrl || '').trim();
   const hasImage = Boolean(imageUrl) && !imageFailed;
   const fallbackClass = 'bg-[radial-gradient(circle_at_72%_14%,rgba(238,242,232,0.18),transparent_32%),linear-gradient(135deg,#050705_0%,#132016_52%,#263d27_100%)]';
   void bottleClassName;

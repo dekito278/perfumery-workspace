@@ -38,6 +38,18 @@ const splitList = (value) => {
     .filter(Boolean);
 };
 
+export const normalizeProductImages = (input = {}) => {
+  const rawImages = Array.isArray(input.images)
+    ? input.images
+    : splitList(input.images || input.imageUrls || input.image_urls);
+  const imageUrl = String(input.imageUrl || input.image_url || '').trim();
+  const images = [...rawImages, imageUrl]
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(images)];
+};
+
 export const createProductVariant = (overrides = {}) => ({
   id: overrides.id || `variant-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   size: overrides.size || '30 ml',
@@ -129,6 +141,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
   const primaryVariant = variants[0] || createProductVariant();
   const priceNumber = getProductPriceRange(variants) || parseRupiah(input.priceNumber || input.price);
   const stock = getProductStockTotal(variants);
+  const images = normalizeProductImages(input);
   const id = input.id || `custom-${Date.now()}`;
   const slug = ensureUniqueSlug(toSlug(input.slug || input.name), existingProducts, id);
   const visualIndex = Math.abs(String(slug).split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % FALLBACK_VISUALS.length;
@@ -157,7 +170,8 @@ export const normalizeProduct = (input, existingProducts = []) => {
     featured: Boolean(input.featured),
     popularity: Number(input.popularity || 70),
     visual: input.visual || FALLBACK_VISUALS[visualIndex],
-    imageUrl: input.imageUrl || '',
+    imageUrl: images[0] || '',
+    images,
     source: input.source || 'custom',
     updatedAt: new Date().toISOString(),
   };
@@ -184,6 +198,7 @@ const toDatabasePayload = (product) => ({
   popularity: product.popularity,
   visual: product.visual,
   image_url: product.imageUrl,
+  image_urls: product.images,
   source: 'custom',
 });
 
@@ -209,6 +224,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   popularity: row.popularity,
   visual: row.visual,
   imageUrl: row.image_url,
+  images: row.image_urls,
   source: row.source || 'custom',
 }, featuredProducts);
 

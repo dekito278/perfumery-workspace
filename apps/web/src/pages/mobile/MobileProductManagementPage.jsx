@@ -30,6 +30,7 @@ const emptyProduct = {
   tags: '',
   description: '',
   imageUrl: '',
+  images: [],
   featured: true,
 };
 
@@ -65,17 +66,29 @@ const MobileProductManagementPage = () => {
   }));
   const resetForm = () => setForm(emptyProduct);
 
+  const updateImagesFromText = (value) => {
+    const images = value.split('\n').map((item) => item.trim()).filter(Boolean);
+    setForm((current) => ({ ...current, images, imageUrl: images[0] || '' }));
+  };
+  const removeImage = (imageUrl) => setForm((current) => {
+    const images = (current.images || []).filter((image) => image !== imageUrl);
+    return { ...current, images, imageUrl: images[0] || '' };
+  });
+
   const handleImageUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) {
       return;
     }
 
     setUploadingImage(true);
     try {
-      const imageUrl = await uploadProductImage(file, form.name);
-      updateField('imageUrl', imageUrl);
-      toast.success('Product image uploaded');
+      const uploadedImages = await Promise.all(files.map((file) => uploadProductImage(file, form.name)));
+      setForm((current) => {
+        const images = [...new Set([...(current.images || []), ...uploadedImages])];
+        return { ...current, images, imageUrl: images[0] || '' };
+      });
+      toast.success(files.length > 1 ? 'Product images uploaded' : 'Product image uploaded');
     } catch (error) {
       toast.error(error.message || 'Failed to upload product image');
     } finally {
@@ -107,6 +120,7 @@ const MobileProductManagementPage = () => {
         baseNotes: product.baseNotes.join(', '),
         variants: product.variants,
         tags: product.tags.join(', '),
+        images: product.images || (product.imageUrl ? [product.imageUrl] : []),
       });
       toast.success('Product saved');
     } finally {
@@ -121,6 +135,7 @@ const MobileProductManagementPage = () => {
     baseNotes: product.baseNotes.join(', '),
     variants: product.variants,
     tags: product.tags.join(', '),
+    images: product.images || (product.imageUrl ? [product.imageUrl] : []),
   });
 
   const handleDelete = async (product) => {
@@ -207,18 +222,27 @@ const MobileProductManagementPage = () => {
             <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Notes summary" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="h-40" />
-              <input value={form.imageUrl || ''} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="Product image URL" className="mt-3 h-12 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              <textarea value={(form.images || []).join('\n')} onChange={(event) => updateImagesFromText(event.target.value)} placeholder="Product image URLs, one per line" rows={4} className="mt-3 w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
               <label className="mt-2 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-xs font-bold">
                 <ImagePlus className="h-4 w-4" />
-                {uploadingImage ? 'Uploading...' : 'Upload image'}
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
+                {uploadingImage ? 'Uploading...' : 'Upload images'}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
               </label>
-              {form.imageUrl ? (
-                <Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-2xl gap-2 bg-white" onClick={() => updateField('imageUrl', '')}>
-                  <ImageOff className="h-4 w-4" />
-                  Remove image
-                </Button>
+              {(form.images || []).length ? (
+                <div className="mt-2 grid grid-cols-4 gap-2">
+                  {form.images.map((image) => (
+                    <div key={image} className="relative overflow-hidden rounded-2xl border bg-white">
+                      <img src={image} alt="" className="h-14 w-full object-cover" />
+                      <button type="button" onClick={() => removeImage(image)} className="absolute right-1 top-1 grid h-7 w-7 min-h-0 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove image">
+                        <ImageOff className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               ) : null}
+              <p className="mt-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                Upload otomatis dikompres ke WebP ringan sekitar 250 KB per gambar.
+              </p>
             </div>
             <input value={form.topNotes || ''} onChange={(event) => updateField('topNotes', event.target.value)} placeholder="Top notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.heartNotes || ''} onChange={(event) => updateField('heartNotes', event.target.value)} placeholder="Heart notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
