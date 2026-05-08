@@ -123,6 +123,40 @@ export const getProductLowStock = (product) => {
   return stock > 0 && stock <= 5;
 };
 
+const findProductForOrderItem = (products, item = {}) => products.find((product) => (
+  product.id === item.id
+  || product.id === item.productId
+  || product.slug === item.productSlug
+  || product.slug === item.slug
+));
+
+const deductProductItemStock = (product, item = {}) => {
+  const quantity = Math.max(Number(item.quantity || 1), 0);
+  let deducted = false;
+  const variants = (product.variants || []).map((variant, index) => {
+    const matchesVariant = item.variantId
+      ? variant.id === item.variantId
+      : (variant.size === item.size || (!item.size && index === 0));
+    if (!matchesVariant || deducted) return variant;
+    deducted = true;
+    return {
+      ...variant,
+      stock: Math.max(Number(variant.stock || 0) - quantity, 0),
+    };
+  });
+
+  if (!deducted && variants.length) {
+    variants[0] = {
+      ...variants[0],
+      stock: Math.max(Number(variants[0].stock || 0) - quantity, 0),
+    };
+    deducted = true;
+  }
+
+  const stock = getProductStockTotal(variants);
+  return { product: { ...product, variants, stock }, deducted };
+};
+
 const ensureUniqueSlug = (slug, products, currentId) => {
   const usedSlugs = new Set(products.filter((product) => product.id !== currentId).map((product) => product.slug));
   if (!usedSlugs.has(slug)) return slug;
@@ -351,4 +385,43 @@ export const resetCustomProducts = async () => {
     console.warn('Resetting local storefront products fallback:', error.message || error);
     writeStoredProducts([]);
   }
+};
+
+export const deductInventoryForOrder = async (order) => {
+  if (!order || order.inventoryDeducted || !Array.isArray(order.items)) {
+    return [];
+  }
+
+  const stockItems = order.items.filter((item) => item.type !== 'bespoke_request');
+  if (!stockItems.length) return [];
+
+  const editableProducts = await getEditableProducts();
+  const deductedEvents = [];
+  const nextProducts = editableProducts.map((product) => {
+    const matchingItems = stockItems.filter((item) => findProductForOrderItem([product], item));
+    if (!matchingItems.length) return product;
+
+    return matchingItems.reduce((currentProduct, item) => {
+      const result = deductProductItemStock(currentProduct, item);
+      if (result.deducted) {
+        deductedEvents.push({
+          productId: currentProduct.id,
+          productSlug: currentProduct.slug,
+          productName: currentProduct.name,
+          variantId: item.variantId || '',
+          size: item.size || '',
+          quantity: Number(item.quantity || 1),
+        });
+      }
+      return result.product;
+    }, product);
+  });
+
+  const changedProducts = nextProducts.filter((product) => {
+    const previous = editableProducts.find((item) => item.id === product.id);
+    return previous && JSON.stringify(previous.variants) !== JSON.stringify(product.variants);
+  });
+
+  await Promise.all(changedProducts.map((product) => saveCustomProduct(product)));
+  return deductedEvents;
 };

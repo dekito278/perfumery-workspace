@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, PackageCheck, PackagePlus, Sparkles, UsersRound, WandSparkles } from 'lucide-react';
+import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, UsersRound, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -308,7 +308,7 @@ const MobileDashboardPage = () => {
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button className="rounded-2xl" onClick={() => navigate('/mobile/studio/products')}>Products</Button>
-            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
+            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/studio/fulfillment')}>Fulfillment</Button>
           </div>
         </section>
 
@@ -321,12 +321,12 @@ const MobileDashboardPage = () => {
               </div>
               <div className="grid gap-3">
                 <PriorityCard
-                  icon={PackageCheck}
+                  icon={PackageOpen}
                   label="Commerce"
-                  title="Order queue"
-                  helper="Checkout and customer status"
+                  title="Fulfillment queue"
+                  helper="Paid orders ready to pack"
                   tone="amber"
-                  onClick={() => navigate('/mobile/studio/orders')}
+                  onClick={() => navigate('/mobile/studio/fulfillment')}
                 />
                 <PriorityCard
                   icon={AlertTriangle}
@@ -357,6 +357,7 @@ const MobileDashboardPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowButton icon={PackagePlus} label="Products" helper="Tambah, daftar, kategori" tone="emerald" onClick={() => setProductMenuOpen(true)} />
                 <WorkflowTile icon={PackageCheck} label="Orders" helper="Payment & fulfillment" tone="amber" to="/mobile/studio/orders" />
+                <WorkflowTile icon={PackageOpen} label="Fulfillment" helper="Packing & shipping" tone="emerald" to="/mobile/studio/fulfillment" />
                 <WorkflowTile icon={UsersRound} label="Customers" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
                 <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Bottle, cap, label" tone="rose" to="/mobile/studio/bespoke" />
               </div>

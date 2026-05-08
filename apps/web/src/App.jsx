@@ -14,6 +14,7 @@ import BespokePage from '@/pages/BespokePage.jsx';
 import CartPage from '@/pages/CartPage.jsx';
 import PaymentPage from '@/pages/PaymentPage.jsx';
 import CustomerPortalPage from '@/pages/CustomerPortalPage.jsx';
+import CustomerInvoicePage from '@/pages/CustomerInvoicePage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
@@ -43,6 +44,8 @@ import MobileCartPage from '@/pages/mobile/MobileCartPage.jsx';
 import MobileProductManagementPage from '@/pages/mobile/MobileProductManagementPage.jsx';
 import MobileBespokeSettingsPage from '@/pages/mobile/MobileBespokeSettingsPage.jsx';
 import MobileOrdersPage from '@/pages/mobile/MobileOrdersPage.jsx';
+import MobileOrderDetailPage from '@/pages/mobile/MobileOrderDetailPage.jsx';
+import MobileFulfillmentPage from '@/pages/mobile/MobileFulfillmentPage.jsx';
 import MobileCustomersPage from '@/pages/mobile/MobileCustomersPage.jsx';
 import MobileDashboardPage from '@/pages/mobile/MobileDashboardPage.jsx';
 import MobileBriefsPage from '@/pages/mobile/MobileBriefsPage.jsx';
@@ -118,6 +121,7 @@ function AppRoutes() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/customer" element={<CustomerPortalPage />} />
+        <Route path="/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/mobile/login" element={<MobileLoginPage />} />
 
@@ -138,6 +142,8 @@ function AppRoutes() {
         <Route path="/mobile/payment" element={<PaymentPage />} />
 
         <Route path="/mobile/customer" element={<CustomerPortalPage />} />
+
+        <Route path="/mobile/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
 
         <Route path="/mobile/studio" element={
           <ProtectedRoute>
@@ -160,6 +166,18 @@ function AppRoutes() {
         <Route path="/mobile/studio/orders" element={
           <ProtectedRoute>
             <MobileOrdersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/orders/:orderId" element={
+          <ProtectedRoute>
+            <MobileOrderDetailPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/fulfillment" element={
+          <ProtectedRoute>
+            <MobileFulfillmentPage />
           </ProtectedRoute>
         } />
 

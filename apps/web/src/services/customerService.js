@@ -35,6 +35,17 @@ const normalizePortalOrder = (order = {}) => ({
   paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
   paymentReference: order.payment_reference || order.paymentReference || '',
   source: order.source || 'storefront',
+  bespokeProductionStatus: order.bespoke_production_status || order.bespokeProductionStatus || '',
+  bespokeProductionTimeline: Array.isArray(order.bespoke_production_timeline || order.bespokeProductionTimeline)
+    ? order.bespoke_production_timeline || order.bespokeProductionTimeline
+    : [],
+  shipmentStatus: order.shipment_status || order.shipmentStatus || 'not_ready',
+  courierName: order.courier_name || order.courierName || '',
+  trackingNumber: order.tracking_number || order.trackingNumber || '',
+  trackingUrl: order.tracking_url || order.trackingUrl || '',
+  shippedAt: order.shipped_at || order.shippedAt || '',
+  deliveredAt: order.delivered_at || order.deliveredAt || '',
+  packingNotes: order.packing_notes || order.packingNotes || '',
   createdAt: order.created_at || order.createdAt || new Date().toISOString(),
   updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
 });

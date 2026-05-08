@@ -19,17 +19,18 @@ import { formatRupiah } from '@/services/productCatalogService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
-const OptionButton = ({ active, children, onClick }) => (
+const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
   <button
     type="button"
     onClick={onClick}
     className={cn(
-      'min-h-[48px] rounded-2xl border px-3 py-2 text-left text-xs font-bold leading-snug transition',
+      'min-h-[48px] overflow-hidden rounded-2xl border px-3 py-2 text-left text-xs font-bold leading-snug transition',
       active
         ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
         : 'border-[#e5e7eb] bg-white text-[#6b7280]'
     )}
   >
+    {imageUrl ? <img src={imageUrl} alt="" className="-mx-1 mb-2 h-24 w-[calc(100%+0.5rem)] rounded-xl object-cover" /> : null}
     {children}
   </button>
 );
@@ -38,6 +39,22 @@ const CapMockup = ({ cap, bottle, label }) => {
   const isStone = cap?.value === 'Cap batu';
   const isAcrylic = cap?.value === 'Cap custom akrilik';
   const isSquare = /square|kotak/i.test(`${bottle?.label || ''} ${bottle?.value || ''}`);
+  const visualImage = cap?.imageUrl || bottle?.imageUrl || label?.imageUrl;
+
+  if (visualImage) {
+    return (
+      <div className="relative h-32 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
+        <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Bespoke option'} className="h-full w-full object-cover" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-3">
+          <div className="flex flex-wrap gap-1">
+            {[bottle?.label, cap?.label, label?.label].filter(Boolean).map((item) => (
+              <span key={item} className="rounded-full bg-white/90 px-2 py-1 text-[10px] font-bold text-[#263d27]">{item}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-32 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
@@ -173,9 +190,9 @@ const MobileBespokePage = () => {
       title: 'Pilih ukuran botol',
       description: 'Untuk bespoke saat ini tersedia 30 ml dan 50 ml.',
       render: () => (
-        <div className="grid grid-cols-2 gap-2">
-          {bottleSizeOptions.map((option) => (
-            <OptionButton key={option.value} active={form.size === option.value} onClick={() => updateField('size', option.value)}>{option.label}</OptionButton>
+          <div className="grid grid-cols-2 gap-2">
+            {bottleSizeOptions.map((option) => (
+            <OptionButton key={option.value} active={form.size === option.value} imageUrl={option.imageUrl} onClick={() => updateField('size', option.value)}>{option.label}</OptionButton>
           ))}
         </div>
       ),
@@ -190,7 +207,7 @@ const MobileBespokePage = () => {
           <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
           <div className="grid gap-2">
             {bottleTypeOptions.map((option) => (
-              <OptionButton key={option.value} active={form.bottleType === option.value} onClick={() => updateField('bottleType', option.value)}>
+              <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} onClick={() => updateField('bottleType', option.value)}>
                 <span className="block text-sm">{option.label}</span>
                 <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
                 {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
@@ -210,7 +227,7 @@ const MobileBespokePage = () => {
           <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
           <div className="grid gap-2">
           {capDesignOptions.map((option) => (
-            <OptionButton key={option.value} active={form.capDesign === option.value} onClick={() => updateField('capDesign', option.value)}>
+            <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('capDesign', option.value)}>
               <span className="block text-sm">{option.label}</span>
               <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
               {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
@@ -230,7 +247,7 @@ const MobileBespokePage = () => {
           <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
           <div className="grid gap-2">
             {labelDesignOptions.map((option) => (
-              <OptionButton key={option.value} active={form.labelDesign === option.value} onClick={() => updateField('labelDesign', option.value)}>
+              <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('labelDesign', option.value)}>
                 <span className="block text-sm">{option.label}</span>
                 <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
                 {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
@@ -249,7 +266,7 @@ const MobileBespokePage = () => {
         <div className="grid gap-2">
           <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>Tanpa material eksotis</OptionButton>
           {exoticMaterialOptions.map((option) => (
-            <OptionButton key={option.value} active={form.exoticMaterial === option.value} onClick={() => updateField('exoticMaterial', option.value)}>
+            <OptionButton key={option.value} active={form.exoticMaterial === option.value} imageUrl={option.imageUrl} onClick={() => updateField('exoticMaterial', option.value)}>
               {option.label} {option.price ? `+${formatRupiah(option.price)}` : ''}
             </OptionButton>
           ))}

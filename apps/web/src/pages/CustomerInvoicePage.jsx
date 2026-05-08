@@ -1,0 +1,285 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, CreditCard, FileText, Loader2, Printer, Search, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
+import {
+  getCustomerPortalByCode,
+  verifyCustomerPortalSecurity,
+} from '@/services/customerService.js';
+
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+const formatDate = (value) => (value
+  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  : '-');
+
+const paymentStatusLabels = {
+  unpaid: 'Belum dibayar',
+  pending: 'Menunggu',
+  paid: 'Lunas',
+  failed: 'Gagal',
+  expired: 'Expired',
+  refunded: 'Refunded',
+};
+
+const getPaymentTone = (status) => {
+  if (status === 'paid') return 'bg-emerald-50 text-emerald-700';
+  if (['failed', 'expired'].includes(status)) return 'bg-rose-50 text-rose-700';
+  if (status === 'pending') return 'bg-amber-50 text-amber-700';
+  return 'bg-stone-100 text-stone-600';
+};
+
+const getItemUnitPrice = (item) => {
+  const quantity = Number(item.quantity || 1);
+  const numericPrice = Number(item.priceNumber || 0);
+  if (!numericPrice) return item.price || '-';
+  return formatTotal(numericPrice);
+};
+
+const getItemLineTotal = (item) => {
+  const quantity = Number(item.quantity || 1);
+  const numericPrice = Number(item.priceNumber || 0);
+  if (!numericPrice) return item.price || '-';
+  return formatTotal(numericPrice * quantity);
+};
+
+const InvoiceCard = ({ customer, order, isMobile }) => (
+  <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-[28px] border bg-white shadow-sm'} overflow-hidden`}>
+    <div className="border-b border-[#e5e7eb] bg-[#050705] p-5 text-[#eef2e8] sm:p-7">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase">
+            <FileText className="h-3.5 w-3.5" />
+            Invoice / Receipt
+          </div>
+          <h1 className="mt-4 text-2xl font-bold sm:text-4xl">{order.orderNumber}</h1>
+          <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt)}</p>
+        </div>
+        <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase ${getPaymentTone(order.paymentStatus)}`}>
+          {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+        </span>
+      </div>
+    </div>
+
+    <div className="p-5 sm:p-7">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-[#f8f7f4] p-4">
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Customer</div>
+          <div className="mt-1 text-base font-bold text-[#0b130c]">{customer.customerName}</div>
+          <div className="mt-1 text-sm font-semibold text-[#6b7280]">{customer.contact}</div>
+        </div>
+        <div className="rounded-2xl bg-[#f8f7f4] p-4">
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Payment</div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <CreditCard className="h-4 w-4 text-[#263d27]" />
+            <span className="text-base font-bold text-[#0b130c]">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</span>
+          </div>
+          <div className="mt-1 text-xs font-semibold text-[#6b7280]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</div>
+        </div>
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-2xl border border-[#e5e7eb]">
+        <div className="grid grid-cols-[1fr_54px_86px] gap-2 bg-[#f8f7f4] px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280] sm:grid-cols-[1fr_80px_120px_120px]">
+          <span>Item</span>
+          <span className="text-right">Qty</span>
+          <span className="hidden text-right sm:block">Price</span>
+          <span className="text-right">Total</span>
+        </div>
+        {order.items.map((item) => (
+          <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
+            <span className="min-w-0">
+              <span className="block truncate font-bold text-[#0b130c]">{item.name}</span>
+              {item.size ? <span className="mt-0.5 block text-xs text-[#6b7280]">{item.size}</span> : null}
+            </span>
+            <span className="text-right text-[#1f2937]">{item.quantity || 1}</span>
+            <span className="hidden text-right text-[#1f2937] sm:block">{getItemUnitPrice(item)}</span>
+            <span className="text-right font-bold text-amber-700">{getItemLineTotal(item)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
+        <div className="rounded-2xl bg-[#eef2e8] p-4 text-xs font-semibold leading-relaxed text-[#263d27]">
+          Simpan invoice ini sebagai bukti order. Status payment akan mengikuti update DOKU atau konfirmasi admin.
+        </div>
+        <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+          <div className="flex items-center justify-between text-sm font-semibold text-[#6b7280]">
+            <span>Total items</span>
+            <span>{order.quantity}</span>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
+            <span className="text-sm font-bold uppercase text-[#263d27]">Grand total</span>
+            <span className="text-xl font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const CustomerInvoicePage = () => {
+  const { orderNumber } = useParams();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialCode = searchParams.get('code') || '';
+  const [customerCode, setCustomerCode] = useState(initialCode.toUpperCase());
+  const [portal, setPortal] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [securityLoading, setSecurityLoading] = useState(false);
+  const isMobileRoute = location.pathname.startsWith('/mobile');
+
+  const order = useMemo(() => (
+    portal?.orders?.find((item) => item.orderNumber === orderNumber) || null
+  ), [orderNumber, portal]);
+
+  const dashboardPath = `${isMobileRoute ? '/mobile/customer' : '/customer'}${customerCode ? `?code=${encodeURIComponent(customerCode)}` : ''}`;
+
+  const loadInvoice = async (code) => {
+    if (!code.trim()) {
+      toast.error('Customer code is required');
+      return;
+    }
+
+    setLoading(true);
+    setSearched(true);
+    const result = await getCustomerPortalByCode(code);
+    setLoading(false);
+
+    if (!result) {
+      setPortal(null);
+      toast.error('Customer code not found');
+      return;
+    }
+
+    setPortal(result);
+    setCustomerCode(result.customer.customerCode);
+    setSearchParams({ code: result.customer.customerCode });
+  };
+
+  useEffect(() => {
+    if (initialCode) loadInvoice(initialCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const submitLookup = (event) => {
+    event.preventDefault();
+    loadInvoice(customerCode);
+  };
+
+  const unlockInvoice = async (event) => {
+    event.preventDefault();
+    setSecurityLoading(true);
+    const result = await verifyCustomerPortalSecurity(portal.customer.customerCode, securityAnswer);
+    setSecurityLoading(false);
+
+    if (!result) {
+      toast.error('Security answer salah');
+      return;
+    }
+
+    setPortal(result);
+    setSecurityAnswer('');
+    toast.success('Invoice unlocked');
+  };
+
+  const content = (
+    <main className={isMobileRoute ? 'mobile-page space-y-4' : 'mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8'}>
+      <div className={isMobileRoute ? 'flex items-center justify-between gap-3' : 'mb-5 flex items-center justify-between gap-4'}>
+        <Link to={dashboardPath} className="inline-flex items-center gap-2 text-sm font-bold text-[#263d27]">
+          <ArrowLeft className="h-4 w-4" />
+          Dashboard
+        </Link>
+        {order ? (
+          <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
+        ) : null}
+      </div>
+
+      {!portal ? (
+        <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+              <FileText className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-xl font-bold text-[#0b130c]">Invoice / Receipt</h1>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Masukkan customer code untuk membuka invoice {orderNumber}.</p>
+            </div>
+          </div>
+          <form onSubmit={submitLookup} className="mt-5 grid grid-cols-[1fr_auto] gap-2">
+            <input
+              value={customerCode}
+              onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+              placeholder="SOLI09232"
+              className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#263d27]"
+            />
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Open
+            </Button>
+          </form>
+          {searched && !loading ? <p className="mt-3 text-xs font-semibold text-[#6b7280]">Invoice belum ditemukan untuk data tersebut.</p> : null}
+        </section>
+      ) : portal.requiresSecurity ? (
+        <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="text-xs font-bold uppercase text-[#263d27]">Security check</div>
+              <h1 className="mt-1 text-xl font-bold text-[#0b130c]">Unlock invoice</h1>
+              <p className="mt-2 text-sm font-semibold text-[#6b7280]">{portal.customer.securityQuestion}</p>
+            </div>
+          </div>
+          <form onSubmit={unlockInvoice} className="mt-5 grid gap-3">
+            <input
+              value={securityAnswer}
+              onChange={(event) => setSecurityAnswer(event.target.value)}
+              placeholder="Your answer"
+              className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+            />
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
+              {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              Unlock
+            </Button>
+          </form>
+        </section>
+      ) : order ? (
+        <InvoiceCard customer={portal.customer} order={order} isMobile={isMobileRoute} />
+      ) : (
+        <section className={isMobileRoute ? 'mobile-card p-5 text-center' : 'rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
+          <FileText className="mx-auto h-8 w-8 text-amber-700" />
+          <h1 className="mt-3 text-xl font-bold text-[#0b130c]">Invoice not found</h1>
+          <p className="mt-1 text-sm font-semibold text-[#6b7280]">Order {orderNumber} tidak ditemukan untuk customer code ini.</p>
+        </section>
+      )}
+    </main>
+  );
+
+  if (isMobileRoute) {
+    return (
+      <MobileCommerceLayout>
+        <Helmet><title>Invoice {orderNumber} - Solivagant</title></Helmet>
+        {content}
+      </MobileCommerceLayout>
+    );
+  }
+
+  return (
+    <>
+      <Helmet><title>Invoice {orderNumber} - Solivagant</title></Helmet>
+      <div className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
+        {content}
+      </div>
+    </>
+  );
+};
+
+export default CustomerInvoicePage;

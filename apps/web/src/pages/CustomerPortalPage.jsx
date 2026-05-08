@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, KeyRound, Loader2, PackageCheck, Search, ShieldCheck, ShoppingBag, Sparkles, UserRound } from 'lucide-react';
+import { ArrowLeft, CreditCard, FileText, KeyRound, Loader2, PackageCheck, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -10,7 +10,13 @@ import {
   setCustomerPortalSecurity,
   verifyCustomerPortalSecurity,
 } from '@/services/customerService.js';
-import { getBespokeItem, getOrderStatusLabels, isBespokeOrder } from '@/services/orderService.js';
+import {
+  getBespokeItem,
+  getBespokeProductionStatusLabels,
+  getOrderStatusLabels,
+  getShipmentStatusLabels,
+  isBespokeOrder,
+} from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -18,6 +24,8 @@ const formatDate = (value) => (value
   : '-');
 
 const statusLabels = getOrderStatusLabels();
+const shipmentStatusLabels = getShipmentStatusLabels();
+const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const paymentStatusLabels = {
   unpaid: 'Belum dibayar',
   pending: 'Menunggu',
@@ -28,10 +36,16 @@ const paymentStatusLabels = {
 };
 
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
+const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
   const index = statusSteps.indexOf(status);
+  return index >= 0 ? index : 0;
+};
+
+const getBespokeProductionStep = (status) => {
+  const index = bespokeProductionSteps.indexOf(status || 'review_brief');
   return index >= 0 ? index : 0;
 };
 
@@ -114,6 +128,88 @@ const BespokeDetailPanel = ({ item, compact = false }) => {
   );
 };
 
+const BespokeProductionPanel = ({ order, compact = false }) => {
+  if (!isBespokeOrder(order)) return null;
+  const currentStatus = order.bespokeProductionStatus || 'review_brief';
+  const activeStep = getBespokeProductionStep(currentStatus);
+
+  return (
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7]`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27] sm:text-xs">
+          <Sparkles className="h-3.5 w-3.5" />
+          Bespoke production
+        </div>
+        <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+          {bespokeProductionStatusLabels[currentStatus] || currentStatus}
+        </span>
+      </div>
+      <div className={`mt-3 grid grid-cols-6 ${compact ? 'gap-1' : 'gap-2'}`}>
+        {bespokeProductionSteps.map((step, index) => {
+          const done = activeStep >= index;
+          return (
+            <div key={step} className="min-w-0">
+              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
+              <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-[#263d27]' : 'text-muted-foreground'}`}>
+                {bespokeProductionStatusLabels[step]}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const ShipmentPanel = ({ order, compact = false }) => {
+  if (!order || order.shipmentStatus === 'not_ready') return null;
+
+  return (
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#263d27]/10 bg-white`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27] sm:text-xs">
+          <Truck className="h-3.5 w-3.5" />
+          Shipment
+        </div>
+        <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+          {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
+        </span>
+      </div>
+      <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
+        {order.courierName ? (
+          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">Kurir</div>
+            <div className="mt-1 text-[#0b130c]">{order.courierName}</div>
+          </div>
+        ) : null}
+        {order.trackingNumber ? (
+          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">Resi</div>
+            <div className="mt-1 text-[#0b130c]">{order.trackingNumber}</div>
+          </div>
+        ) : null}
+        {order.shippedAt ? (
+          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">Tanggal kirim</div>
+            <div className="mt-1 text-[#0b130c]">{formatDate(order.shippedAt)}</div>
+          </div>
+        ) : null}
+        {order.deliveredAt ? (
+          <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">Delivered</div>
+            <div className="mt-1 text-[#0b130c]">{formatDate(order.deliveredAt)}</div>
+          </div>
+        ) : null}
+      </div>
+      {order.trackingUrl ? (
+        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 block rounded-2xl bg-[#263d27] px-3 py-2 text-center text-xs font-bold text-[#eef2e8]">
+          Buka tracking
+        </a>
+      ) : null}
+    </div>
+  );
+};
+
 const CustomerPortalPage = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -132,6 +228,7 @@ const CustomerPortalPage = () => {
 
   const latestOrder = portal?.orders?.[0];
   const isMobileRoute = location.pathname.startsWith('/mobile');
+  const invoicePath = (orderNumber) => `${isMobileRoute ? '/mobile/customer/invoice' : '/customer/invoice'}/${orderNumber}?code=${encodeURIComponent(portal?.customer?.customerCode || customerCode)}`;
   const activeOrders = useMemo(() => (
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
@@ -392,6 +489,12 @@ const CustomerPortalPage = () => {
                         <OrderItems order={order} compact />
                       </div>
                       <BespokeDetailPanel item={bespokeItem} compact />
+                      <BespokeProductionPanel order={order} compact />
+                      <ShipmentPanel order={order} compact />
+                      <Link to={invoicePath(order.orderNumber)} className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white text-xs font-bold text-[#263d27]">
+                        <FileText className="h-4 w-4" />
+                        Invoice
+                      </Link>
                       <div className="mt-4">
                         <OrderProgressRail activeStep={activeStep} compact />
                       </div>
@@ -604,6 +707,12 @@ const CustomerPortalPage = () => {
                           <div className="p-4">
                             <OrderItems order={order} />
                             {bespoke ? <BespokeDetailPanel item={bespokeItem} /> : null}
+                            <BespokeProductionPanel order={order} />
+                            <ShipmentPanel order={order} />
+                            <Link to={invoicePath(order.orderNumber)} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
+                              <FileText className="h-4 w-4" />
+                              Invoice / Receipt
+                            </Link>
                             <div className="mt-5">
                               <OrderProgressRail activeStep={activeStep} />
                             </div>

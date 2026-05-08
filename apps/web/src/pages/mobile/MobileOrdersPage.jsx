@@ -1,12 +1,20 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, CreditCard, PackageCheck, Sparkles, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, Clipboard, CreditCard, Eye, PackageCheck, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useOrders } from '@/hooks/useOrders.js';
-import { getBespokeItem, getOrderStatusLabels, isBespokeOrder } from '@/services/orderService.js';
+import { getProductLowStock } from '@/services/productCatalogService.js';
+import {
+  getBespokeItem,
+  getBespokeProductionStatusLabels,
+  getOrderStatusLabels,
+  isBespokeOrder,
+} from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -15,6 +23,7 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 }).format(new Date(value));
 
 const statusLabels = getOrderStatusLabels();
+const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const paymentStatusLabels = {
   unpaid: 'Unpaid',
   pending: 'Pending',
@@ -60,8 +69,11 @@ const getPaymentSummary = (orders) => ({
 });
 
 const MobileOrdersPage = () => {
+  const navigate = useNavigate();
   const { orders, summary, loading, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const products = useCatalogProducts({ editableOnly: true });
   const paymentSummary = getPaymentSummary(orders);
+  const lowStockProducts = products.filter(getProductLowStock);
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
@@ -120,6 +132,35 @@ const MobileOrdersPage = () => {
           </div>
         </section>
 
+        {lowStockProducts.length ? (
+          <section className="mobile-card border border-rose-100 bg-rose-50/70 p-3">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-rose-700">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase text-rose-700">Low stock warning</div>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-rose-800">
+                  {lowStockProducts.length} produk mendekati habis setelah order paid mengurangi stok.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex snap-x gap-2 overflow-x-auto pb-1">
+              {lowStockProducts.map((product) => (
+                <button
+                  key={product.id || product.slug}
+                  type="button"
+                  onClick={() => navigate('/mobile/studio/products')}
+                  className="snap-start whitespace-nowrap rounded-2xl bg-white px-3 py-2 text-left text-[11px] font-bold text-[#1f2937] shadow-sm"
+                >
+                  {product.name}
+                  <span className="ml-2 text-rose-700">{product.stock}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <section className="space-y-3">
           {orders.map((order) => {
             const bespoke = isBespokeOrder(order);
@@ -136,10 +177,16 @@ const MobileOrdersPage = () => {
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {bespoke ? <span className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold uppercase text-[#263d27]">Bespoke</span> : null}
+                  {bespoke ? (
+                    <span className="rounded-full bg-[#f7f8f2] px-2 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+                      {bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}
+                    </span>
+                  ) : null}
                   <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${getPaymentStatusClassName(order.paymentStatus)}`}>
                     {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                   </span>
+                  {order.inventoryDeducted ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase text-emerald-700">Stock cut</span> : null}
                 </div>
               </div>
               {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Local draft</div> : null}
@@ -205,9 +252,10 @@ const MobileOrdersPage = () => {
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
                 <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Copy</Button>
-                <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id)}><Trash2 className="h-4 w-4" />Delete</Button>
+                <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Delete</Button>
               </div>
             </article>
             );

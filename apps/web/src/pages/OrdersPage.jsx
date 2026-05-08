@@ -5,7 +5,12 @@ import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
-import { getBespokeItem, getOrderStatusLabels, isBespokeOrder } from '@/services/orderService.js';
+import {
+  getBespokeItem,
+  getBespokeProductionStatusLabels,
+  getOrderStatusLabels,
+  isBespokeOrder,
+} from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -14,6 +19,7 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 }).format(new Date(value));
 
 const statusLabels = getOrderStatusLabels();
+const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 
 const bespokeDetailRows = (item) => [
   ['Mood', item?.mood],
@@ -78,6 +84,7 @@ const OrdersPage = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-bold">{order.orderNumber}</h3>
                       {bespoke ? <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">Bespoke</span> : null}
+                      {bespoke ? <span className="rounded-full bg-[#f7f8f2] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</span> : null}
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
                       {order.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-600">Local draft</span> : null}
                     </div>

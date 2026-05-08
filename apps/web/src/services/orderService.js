@@ -1,5 +1,6 @@
 import supabase from '@/lib/supabaseClient.js';
 import { saveCustomer } from '@/services/customerService.js';
+import { deductInventoryForOrder } from '@/services/productCatalogService.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 
@@ -11,6 +12,22 @@ const orderStatusLabels = {
   shipped: 'Shipped',
   completed: 'Completed',
   cancelled: 'Cancelled',
+};
+
+const shipmentStatusLabels = {
+  not_ready: 'Not ready',
+  packing: 'Packing',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+};
+
+const bespokeProductionStatusLabels = {
+  review_brief: 'Review brief',
+  formula: 'Formula',
+  sample: 'Sample',
+  approval: 'Approval',
+  production: 'Production',
+  ready: 'Ready',
 };
 
 const localOnlyStatuses = {
@@ -53,6 +70,78 @@ const writeOrders = (orders) => {
 const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}`;
 const isUuid = (value = '') => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
 
+const normalizeTimeline = (timeline) => (
+  Array.isArray(timeline)
+    ? timeline.map((entry) => ({
+      status: entry.status || 'pending_payment',
+      label: entry.label || orderStatusLabels[entry.status] || entry.status || 'Pending payment',
+      note: entry.note || '',
+      at: entry.at || entry.created_at || new Date().toISOString(),
+    })).filter((entry) => entry.status)
+    : []
+);
+
+const appendStatusTimeline = (timeline, status, note = '') => [
+  ...normalizeTimeline(timeline),
+  {
+    status,
+    label: orderStatusLabels[status] || status,
+    note,
+    at: new Date().toISOString(),
+  },
+];
+
+const normalizeBespokeProductionTimeline = (timeline) => (
+  Array.isArray(timeline)
+    ? timeline.map((entry) => ({
+      status: entry.status || 'review_brief',
+      label: entry.label || bespokeProductionStatusLabels[entry.status] || entry.status || 'Review brief',
+      note: entry.note || '',
+      at: entry.at || entry.created_at || new Date().toISOString(),
+    })).filter((entry) => entry.status)
+    : []
+);
+
+const normalizeInventoryEvents = (events) => (
+  Array.isArray(events)
+    ? events.map((event) => ({
+      productId: event.productId || event.product_id || '',
+      productSlug: event.productSlug || event.product_slug || '',
+      productName: event.productName || event.product_name || 'Product',
+      variantId: event.variantId || event.variant_id || '',
+      size: event.size || '',
+      quantity: Number(event.quantity || 0),
+      at: event.at || event.created_at || new Date().toISOString(),
+    })).filter((event) => event.productName && event.quantity > 0)
+    : []
+);
+
+const normalizeProductionLinks = (links) => (
+  links && typeof links === 'object' && !Array.isArray(links)
+    ? {
+      batchReference: links.batchReference || links.batch_reference || '',
+      materialReferences: links.materialReferences || links.material_references || '',
+      notes: links.notes || '',
+      updatedAt: links.updatedAt || links.updated_at || '',
+    }
+    : {
+      batchReference: '',
+      materialReferences: '',
+      notes: '',
+      updatedAt: '',
+    }
+);
+
+const appendBespokeProductionTimeline = (timeline, status, note = '') => [
+  ...normalizeBespokeProductionTimeline(timeline),
+  {
+    status,
+    label: bespokeProductionStatusLabels[status] || status,
+    note,
+    at: new Date().toISOString(),
+  },
+];
+
 const normalizeOrder = (order) => {
   const items = Array.isArray(order.items) ? order.items : [];
   const source = order.source || (items.some((item) => item.type === BESPOKE_SOURCE) ? BESPOKE_SOURCE : 'storefront');
@@ -75,11 +164,44 @@ const normalizeOrder = (order) => {
     paymentProvider: order.payment_provider || order.paymentProvider || 'manual',
     paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
     paymentReference: order.payment_reference || order.paymentReference || '',
+    inventoryDeducted: Boolean(order.inventory_deducted || order.inventoryDeducted),
+    inventoryEvents: normalizeInventoryEvents(order.inventory_events || order.inventoryEvents),
+    productionLinks: normalizeProductionLinks(order.production_links || order.productionLinks),
+    internalNotes: order.internal_notes || order.internalNotes || '',
+    statusTimeline: normalizeTimeline(order.status_timeline || order.statusTimeline),
+    bespokeProductionStatus: order.bespoke_production_status || order.bespokeProductionStatus || (source === BESPOKE_SOURCE ? 'review_brief' : ''),
+    bespokeProductionTimeline: normalizeBespokeProductionTimeline(order.bespoke_production_timeline || order.bespokeProductionTimeline),
+    shipmentStatus: order.shipment_status || order.shipmentStatus || 'not_ready',
+    courierName: order.courier_name || order.courierName || '',
+    trackingNumber: order.tracking_number || order.trackingNumber || '',
+    trackingUrl: order.tracking_url || order.trackingUrl || '',
+    shippedAt: order.shipped_at || order.shippedAt || '',
+    deliveredAt: order.delivered_at || order.deliveredAt || '',
+    packingNotes: order.packing_notes || order.packingNotes || '',
     persistence: order.persistence || 'database',
     createdAt: order.created_at || order.createdAt || new Date().toISOString(),
     updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
   };
 };
+
+const normalizePaymentLog = (log = {}) => ({
+  id: log.id || `${log.request_id || 'doku'}-${log.created_at || log.received_at || Date.now()}`,
+  orderNumber: log.order_number || log.orderNumber || '',
+  requestId: log.request_id || log.requestId || '',
+  originalRequestId: log.original_request_id || log.originalRequestId || '',
+  transactionStatus: log.transaction_status || log.transactionStatus || '',
+  mappedOrderStatus: log.mapped_order_status || log.mappedOrderStatus || '',
+  mappedPaymentStatus: log.mapped_payment_status || log.mappedPaymentStatus || '',
+  processingStatus: log.processing_status || log.processingStatus || 'received',
+  httpStatus: Number(log.http_status || log.httpStatus || 0),
+  signatureValid: typeof log.signature_valid === 'boolean' ? log.signature_valid : log.signatureValid,
+  headers: log.headers && typeof log.headers === 'object' ? log.headers : {},
+  payload: log.payload && typeof log.payload === 'object' ? log.payload : {},
+  rawBody: log.raw_body || log.rawBody || '',
+  errorMessage: log.error_message || log.errorMessage || '',
+  receivedAt: log.received_at || log.receivedAt || log.created_at || log.createdAt || '',
+  createdAt: log.created_at || log.createdAt || log.received_at || log.receivedAt || '',
+});
 
 const buildOrderPayload = ({
   customerName,
@@ -108,6 +230,7 @@ const buildOrderPayload = ({
   payment_provider: paymentProvider,
   payment_status: ['manual', 'whatsapp'].includes(paymentProvider) ? 'pending' : 'unpaid',
   source,
+  ...(source === BESPOKE_SOURCE ? { bespoke_production_status: 'review_brief' } : {}),
 });
 
 const formatLine = (label, value) => `${label}: ${value || '-'}`;
@@ -199,6 +322,8 @@ const createLocalOrder = (payload) => {
 };
 
 export const getOrderStatusLabels = () => orderStatusLabels;
+export const getShipmentStatusLabels = () => shipmentStatusLabels;
+export const getBespokeProductionStatusLabels = () => bespokeProductionStatusLabels;
 
 export const getLocalOrders = () => readOrders().map(normalizeOrder);
 
@@ -217,6 +342,45 @@ export const getOrders = async () => {
   } catch (error) {
     console.warn('Using local storefront orders fallback:', error.message || error);
     return getLocalOrders();
+  }
+};
+
+export const getOrderById = async (orderId) => {
+  const localMatch = getLocalOrders().find((order) => order.id === orderId || order.orderNumber === orderId);
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .select('*')
+      .limit(1);
+    const { data, error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+    return data?.[0] ? normalizeOrder(data[0]) : localMatch || null;
+  } catch (error) {
+    console.warn('Using local storefront order detail fallback:', error.message || error);
+    return localMatch || null;
+  }
+};
+
+export const getOrderPaymentLogs = async (orderIdOrNumber) => {
+  const order = await getOrderById(orderIdOrNumber);
+  const orderNumber = order?.orderNumber || orderIdOrNumber;
+
+  if (!orderNumber) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('storefront_doku_payment_logs')
+      .select('*')
+      .eq('order_number', orderNumber)
+      .order('received_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(normalizePaymentLog);
+  } catch (error) {
+    console.warn('Using empty DOKU payment log fallback:', error.message || error);
+    return [];
   }
 };
 
@@ -316,10 +480,13 @@ export const createBespokeRequest = async (requestData) => {
 };
 
 export const updateOrderStatus = async (orderId, status) => {
+  const currentOrder = await getOrderById(orderId);
+  const statusTimeline = appendStatusTimeline(currentOrder?.statusTimeline, status, 'Status updated from Studio');
+
   try {
     const query = supabase
       .from('storefront_orders')
-      .update({ status });
+      .update({ status, status_timeline: statusTimeline });
     const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) {
@@ -331,11 +498,193 @@ export const updateOrderStatus = async (orderId, status) => {
     console.warn('Updating local storefront order fallback:', error.message || error);
     const nextOrders = readOrders().map(normalizeOrder).map((order) => (
       order.id === orderId || order.orderNumber === orderId
-        ? { ...order, status, updatedAt: new Date().toISOString() }
+        ? { ...order, status, statusTimeline, updatedAt: new Date().toISOString() }
         : order
     ));
     writeOrders(nextOrders);
     return nextOrders;
+  }
+};
+
+export const updateOrderInternalNotes = async (orderId, internalNotes) => {
+  const normalizedNotes = String(internalNotes || '').trim();
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update({ internal_notes: normalizedNotes });
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    return getOrderById(orderId);
+  } catch (error) {
+    console.warn('Updating local storefront order internal notes fallback:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? { ...order, internalNotes: normalizedNotes, updatedAt: new Date().toISOString() }
+        : order
+    ));
+    writeOrders(nextOrders);
+    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
+  }
+};
+
+export const updateOrderShipment = async (orderId, shipmentData = {}) => {
+  const shipmentStatus = shipmentData.shipmentStatus || 'not_ready';
+  const currentOrder = await getOrderById(orderId);
+  const shippedAt = shipmentData.shippedAt
+    || currentOrder?.shippedAt
+    || (shipmentStatus === 'shipped' ? new Date().toISOString() : null);
+  const deliveredAt = shipmentData.deliveredAt
+    || currentOrder?.deliveredAt
+    || (shipmentStatus === 'delivered' ? new Date().toISOString() : null);
+  const patch = {
+    shipment_status: shipmentStatus,
+    courier_name: String(shipmentData.courierName || '').trim() || null,
+    tracking_number: String(shipmentData.trackingNumber || '').trim() || null,
+    tracking_url: String(shipmentData.trackingUrl || '').trim() || null,
+    shipped_at: shippedAt,
+    delivered_at: deliveredAt,
+    packing_notes: String(shipmentData.packingNotes || '').trim() || null,
+    ...(shipmentStatus === 'shipped' ? { status: 'shipped' } : {}),
+    ...(shipmentStatus === 'delivered' ? { status: 'completed' } : {}),
+  };
+  const statusTimeline = ['shipped', 'delivered'].includes(shipmentStatus)
+    ? appendStatusTimeline(currentOrder?.statusTimeline, patch.status, `${shipmentStatusLabels[shipmentStatus]} from fulfillment`)
+    : currentOrder?.statusTimeline || [];
+  const payload = {
+    ...patch,
+    status_timeline: statusTimeline,
+  };
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update(payload);
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    return getOrderById(orderId);
+  } catch (error) {
+    console.warn('Updating local storefront order shipment fallback:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? {
+          ...order,
+          shipmentStatus,
+          courierName: patch.courier_name || '',
+          trackingNumber: patch.tracking_number || '',
+          trackingUrl: patch.tracking_url || '',
+          shippedAt: patch.shipped_at || '',
+          deliveredAt: patch.delivered_at || '',
+          packingNotes: patch.packing_notes || '',
+          ...(patch.status ? { status: patch.status, statusTimeline } : {}),
+          updatedAt: new Date().toISOString(),
+        }
+        : order
+    ));
+    writeOrders(nextOrders);
+    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
+  }
+};
+
+export const updateOrderBespokeProductionStatus = async (orderId, productionStatus) => {
+  const currentOrder = await getOrderById(orderId);
+  const bespokeProductionTimeline = appendBespokeProductionTimeline(
+    currentOrder?.bespokeProductionTimeline,
+    productionStatus,
+    'Bespoke production updated from Studio',
+  );
+  const patch = {
+    bespoke_production_status: productionStatus,
+    bespoke_production_timeline: bespokeProductionTimeline,
+    ...(productionStatus === 'production' ? { status: 'processing' } : {}),
+  };
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update(patch);
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    return getOrderById(orderId);
+  } catch (error) {
+    console.warn('Updating local bespoke production fallback:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? {
+          ...order,
+          bespokeProductionStatus: productionStatus,
+          bespokeProductionTimeline,
+          ...(patch.status ? { status: patch.status } : {}),
+          updatedAt: new Date().toISOString(),
+        }
+        : order
+    ));
+    writeOrders(nextOrders);
+    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
+  }
+};
+
+export const updateOrderProductionLinks = async (orderId, productionLinks = {}) => {
+  const normalizedLinks = normalizeProductionLinks({
+    ...productionLinks,
+    updatedAt: new Date().toISOString(),
+  });
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update({ production_links: normalizedLinks });
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    return getOrderById(orderId);
+  } catch (error) {
+    console.warn('Updating local production links fallback:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? { ...order, productionLinks: normalizedLinks, updatedAt: new Date().toISOString() }
+        : order
+    ));
+    writeOrders(nextOrders);
+    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
+  }
+};
+
+const markOrderInventoryDeducted = async (orderId, events = []) => {
+  const inventoryEvents = normalizeInventoryEvents(events).map((event) => ({
+    ...event,
+    at: event.at || new Date().toISOString(),
+  }));
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update({
+        inventory_deducted: true,
+        inventory_events: inventoryEvents,
+      });
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+  } catch (error) {
+    console.warn('Marking inventory deduction locally:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? { ...order, inventoryDeducted: true, inventoryEvents, updatedAt: new Date().toISOString() }
+        : order
+    ));
+    writeOrders(nextOrders);
   }
 };
 
@@ -345,6 +694,7 @@ export const updateOrderPaymentStatus = async (orderId, {
   paymentReference = '',
   status,
 }) => {
+  const currentOrder = await getOrderById(orderId);
   const patch = {
     payment_status: paymentStatus,
     payment_provider: paymentProvider,
@@ -379,14 +729,22 @@ export const updateOrderPaymentStatus = async (orderId, {
     ));
     writeOrders(nextOrders);
   }
+
+  if (paymentStatus === 'paid' && currentOrder && !currentOrder.inventoryDeducted) {
+    const inventoryEvents = await deductInventoryForOrder(currentOrder);
+    if (inventoryEvents.length) {
+      await markOrderInventoryDeducted(orderId, inventoryEvents);
+      window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    }
+  }
 };
 
 export const deleteOrder = async (orderId) => {
   try {
-    const { error } = await supabase
+    const query = supabase
       .from('storefront_orders')
-      .delete()
-      .eq('id', orderId);
+      .delete();
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) {
       throw error;
