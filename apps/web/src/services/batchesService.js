@@ -2,6 +2,7 @@ import supabase from '@/lib/supabaseClient.js';
 import { getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js';
 
 export const BATCHES_STORAGE_KEY = 'dekito.studio.batches.v1';
+export const BATCH_USAGE_STORAGE_KEY = 'dekito.studio.batchUsage.v1';
 
 const readStoredBatches = () => {
   if (typeof window === 'undefined') return [];
@@ -18,6 +19,22 @@ const writeStoredBatches = (batches) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(BATCHES_STORAGE_KEY, JSON.stringify(batches));
   window.dispatchEvent(new CustomEvent('dekito:batches-updated'));
+};
+
+const readStoredBatchUsage = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const value = window.localStorage.getItem(BATCH_USAGE_STORAGE_KEY);
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeStoredBatchUsage = (records) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(BATCH_USAGE_STORAGE_KEY, JSON.stringify(records));
 };
 
 const buildBatchCode = (formula, createdAt = new Date()) => {
@@ -68,6 +85,12 @@ const normalizeBatch = (input = {}) => {
     sku: input.sku || '',
     product_id: input.product_id || input.productId || null,
     status: input.status || 'planned',
+    is_stock_deducted: Boolean(input.is_stock_deducted ?? input.isStockDeducted ?? false),
+    usage_records: Array.isArray(input.usage_records || input.usageRecords) ? input.usage_records || input.usageRecords : [],
+    qc_status: input.qc_status || input.qcStatus || 'pending',
+    qc_notes: input.qc_notes || input.qcNotes || '',
+    qc_checked_at: input.qc_checked_at || input.qcCheckedAt || null,
+    qc_reviewer: input.qc_reviewer || input.qcReviewer || '',
     notes: input.notes || null,
     created_at: createdAt,
     updated_at: input.updated_at || input.updated || new Date().toISOString(),
@@ -98,7 +121,31 @@ const toDatabasePayload = (batch, userId) => ({
   sku: batch.sku,
   product_id: batch.product_id,
   status: batch.status,
+  is_stock_deducted: batch.is_stock_deducted,
+  qc_status: batch.qc_status,
+  qc_notes: batch.qc_notes,
+  qc_checked_at: batch.qc_checked_at,
+  qc_reviewer: batch.qc_reviewer,
   notes: batch.notes,
+});
+
+const normalizeUsageRecord = (record = {}) => ({
+  ...record,
+  id: record.id || `local-usage-${Date.now()}`,
+  batch_id: record.batch_id || record.batchId || '',
+  raw_material_id: record.raw_material_id || record.rawMaterialId || '',
+  raw_material_name: record.raw_material_name || record.rawMaterialName || record.raw_materials?.name || '',
+  quantity_deducted: Number(record.quantity_deducted ?? record.quantityDeducted ?? 0),
+  type: record.type || 'formula_material',
+  source: record.source || '',
+  cost: Number(record.cost || 0),
+  unit: record.unit || 'ml',
+  unit_cost: Number(record.unit_cost ?? record.unitCost ?? 0),
+  stock_before: Number(record.stock_before ?? record.stockBefore ?? 0),
+  stock_after: Number(record.stock_after ?? record.stockAfter ?? 0),
+  movement: record.movement || '',
+  created_at: record.created_at || record.createdAt || new Date().toISOString(),
+  updated_at: record.updated_at || record.updatedAt || new Date().toISOString(),
 });
 
 const saveLocalBatch = (input) => {
@@ -152,4 +199,52 @@ export const saveBatch = async (input) => {
     console.warn('Saving batch locally because database save failed:', error.message || error);
     return saveLocalBatch(batch);
   }
+};
+
+export const getBatchUsageRecords = async (batchId) => {
+  if (!batchId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('batch_usage_records')
+      .select('*, raw_materials(name)')
+      .eq('batch_id', batchId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return (data || []).map((record) => normalizeUsageRecord(toAppRecord(record)));
+  } catch (error) {
+    console.warn('Using local batch usage fallback:', error.message || error);
+    return readStoredBatchUsage()
+      .filter((record) => record.batch_id === batchId || record.batchId === batchId)
+      .map(normalizeUsageRecord);
+  }
+};
+
+export const deductBatchMaterialStock = async (batchId) => {
+  if (!batchId || String(batchId).startsWith('local-batch-')) {
+    return [];
+  }
+
+  const { data, error } = await supabase.rpc('deduct_batch_material_stock', {
+    p_batch_id: batchId,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to deduct batch material stock');
+  }
+
+  const usageRecords = Array.isArray(data) ? data.map((record) => normalizeUsageRecord(toAppRecord(record))) : [];
+  if (usageRecords.length) {
+    const stored = readStoredBatchUsage();
+    const next = [
+      ...stored.filter((record) => (record.batch_id || record.batchId) !== batchId),
+      ...usageRecords,
+    ];
+    writeStoredBatchUsage(next);
+  }
+
+  window.dispatchEvent(new CustomEvent('dekito:raw-materials-updated'));
+  window.dispatchEvent(new CustomEvent('dekito:batches-updated'));
+  return usageRecords;
 };

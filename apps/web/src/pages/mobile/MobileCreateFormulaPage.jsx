@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
+import { getBespokeItem, getOrderById, updateOrderBespokeProductionStatus, updateOrderProductionLinks } from '@/services/orderService.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
@@ -60,6 +61,10 @@ const MobileCreateFormulaPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const briefId = searchParams.get('briefId') || '';
+  const source = searchParams.get('source') || '';
+  const orderId = searchParams.get('orderId') || '';
+  const nameParam = searchParams.get('name') || '';
+  const notesParam = searchParams.get('notes') || '';
   const seedMaterialIdsParam = searchParams.get('materialIds') || '';
   const seedMaterialIds = useMemo(() => String(seedMaterialIdsParam).split(',').map((value) => value.trim()).filter(Boolean), [seedMaterialIdsParam]);
   const { createFormula, loading } = useFormulas();
@@ -69,6 +74,7 @@ const MobileCreateFormulaPage = () => {
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [briefContext, setBriefContext] = useState(null);
+  const [orderContext, setOrderContext] = useState(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [category, setCategory] = useState('perfume');
@@ -92,15 +98,35 @@ const MobileCreateFormulaPage = () => {
           getRawMaterialOptions(),
           briefId ? getBriefs() : Promise.resolve([]),
         ]);
+        const linkedOrder = source === 'order' && orderId ? await getOrderById(orderId) : null;
+        const orderItem = linkedOrder ? getBespokeItem(linkedOrder) : null;
         const baseRows = rows || [];
         const linkedBrief = briefRows.find((brief) => brief.id === briefId) || null;
         if (!active) return;
         setRawMaterials(baseRows);
         setBriefContext(linkedBrief);
+        setOrderContext(linkedOrder);
         if (linkedBrief) {
           setName((current) => current || `${linkedBrief.title} formula`);
           setCode((current) => current || buildFormulaCode(linkedBrief.title));
           setNotes((current) => current || linkedBrief.mood_story || linkedBrief.description || '');
+        }
+        if (linkedOrder) {
+          const customer = linkedOrder.customerName || linkedOrder.customerCode || 'Customer';
+          const aroma = orderItem?.preferredNotes || orderItem?.notes || orderItem?.mood || 'Bespoke perfume';
+          setName((current) => current || nameParam || `${customer} bespoke formula`);
+          setCode((current) => current || buildFormulaCode(`${linkedOrder.orderNumber || customer}-BESPOKE`));
+          setNotes((current) => current || notesParam || [
+            `Order: ${linkedOrder.orderNumber || '-'}`,
+            `Customer: ${customer}`,
+            orderItem?.size ? `Size: ${orderItem.size}` : '',
+            aroma ? `Aroma: ${aroma}` : '',
+            orderItem?.occasion ? `Occasion: ${orderItem.occasion}` : '',
+            orderItem?.avoidedNotes ? `Avoid: ${orderItem.avoidedNotes}` : '',
+            orderItem?.story ? `Story: ${orderItem.story}` : '',
+            orderItem?.referenceProductName ? `Reference: ${orderItem.referenceProductName}` : '',
+          ].filter(Boolean).join('\n'));
+          setStatus((current) => current === 'draft' ? 'in_review' : current);
         }
         if (seedMaterialIds.length) {
           const seededItems = baseRows
@@ -127,7 +153,7 @@ const MobileCreateFormulaPage = () => {
     };
     loadMaterials();
     return () => { active = false; };
-  }, [briefId, getBriefs, seedMaterialIds]);
+  }, [briefId, getBriefs, nameParam, notesParam, orderId, seedMaterialIds, source]);
 
   const rawMaterialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount), 0), [items]);
@@ -176,6 +202,22 @@ const MobileCreateFormulaPage = () => {
           formula_id: created.id,
         });
       }
+      if (orderContext) {
+        await updateOrderProductionLinks(orderContext.id || orderContext.orderNumber, {
+          ...orderContext.productionLinks,
+          batchReference: created.code,
+          formulaId: created.id,
+          formulaCode: created.code,
+          formulaName: created.name,
+          sourceOrderId: orderContext.id || '',
+          sourceOrderNumber: orderContext.orderNumber || '',
+          notes: [
+            orderContext.productionLinks?.notes,
+            `Formula ${created.code} created from bespoke order ${orderContext.orderNumber || orderContext.id}.`,
+          ].filter(Boolean).join('\n'),
+        });
+        await updateOrderBespokeProductionStatus(orderContext.id || orderContext.orderNumber, 'formula');
+      }
       toast.success('Formula created');
       navigate(`/mobile/formulas/${created.id}`);
     } catch (error) {
@@ -200,6 +242,22 @@ const MobileCreateFormulaPage = () => {
                     <div className="text-[10px] font-bold uppercase text-amber-700">Brief linked</div>
                     <h2 className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{briefContext.title}</h2>
                     <p className="mt-1 mobile-line-clamp-2 text-[11px] font-semibold text-[#6b7280]">{briefContext.mood_story || briefContext.description || 'Formula will be attached to this brief after create.'}</p>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+            {orderContext ? (
+              <section className="mobile-soft-card p-3">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                    <ClipboardList className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Order handoff</div>
+                    <h2 className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{orderContext.orderNumber}</h2>
+                    <p className="mt-1 mobile-line-clamp-2 text-[11px] font-semibold text-[#6b7280]">
+                      Formula will be linked back to {orderContext.customerName || 'this customer'} after create.
+                    </p>
                   </div>
                 </div>
               </section>

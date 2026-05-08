@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clipboard, Copy, CreditCard, History, Mail, MessageCircle, NotebookPen, PackageCheck, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
+import { ArrowLeft, Clipboard, Copy, CreditCard, Factory, FlaskConical, History, Mail, MessageCircle, NotebookPen, PackageCheck, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -95,6 +95,27 @@ const bespokeDetailRows = (item) => [
   ['Reference', item?.referenceProductName],
   ['Story', item?.story],
 ].filter(([, value]) => value);
+
+const buildOrderFormulaParams = (order, item) => {
+  const params = new URLSearchParams({
+    source: 'order',
+    orderId: order?.id || order?.orderNumber || '',
+  });
+  const customer = order?.customerName || order?.customerCode || 'Customer';
+  const aroma = item?.preferredNotes || item?.notes || item?.mood || 'Bespoke perfume';
+  params.set('name', `${customer} bespoke formula`);
+  params.set('notes', [
+    `Order: ${order?.orderNumber || '-'}`,
+    `Customer: ${customer}`,
+    item?.size ? `Size: ${item.size}` : '',
+    aroma ? `Aroma: ${aroma}` : '',
+    item?.occasion ? `Occasion: ${item.occasion}` : '',
+    item?.avoidedNotes ? `Avoid: ${item.avoidedNotes}` : '',
+    item?.story ? `Story: ${item.story}` : '',
+    item?.referenceProductName ? `Reference: ${item.referenceProductName}` : '',
+  ].filter(Boolean).join('\n'));
+  return params.toString();
+};
 
 const MobileOrderDetailPage = () => {
   const navigate = useNavigate();
@@ -240,6 +261,10 @@ const MobileOrderDetailPage = () => {
 
   const openEmailNotification = () => {
     window.location.href = getEmailNotificationUrl(order, notificationEvent, notificationMessage);
+  };
+
+  const openFormulaHandoff = () => {
+    navigate(`/mobile/formulas/new?${buildOrderFormulaParams(order, bespokeItem)}`);
   };
 
   if (loading) {
@@ -597,6 +622,34 @@ const MobileOrderDetailPage = () => {
             <Sparkles className="h-4 w-4" />
             Production linkage
           </div>
+          {bespoke ? (
+            <div className="mb-3 grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={openFormulaHandoff}>
+                <FlaskConical className="h-4 w-4" />
+                {order.productionLinks?.formulaId ? 'New formula' : 'Create formula'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold"
+                onClick={() => navigate(`/mobile/batches?formulaId=${encodeURIComponent(order.productionLinks.formulaId)}`)}
+                disabled={!order.productionLinks?.formulaId}
+              >
+                <Factory className="h-4 w-4" />
+                Open batch
+              </Button>
+            </div>
+          ) : null}
+          {order.productionLinks?.formulaId ? (
+            <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+              <div className="text-[10px] font-bold uppercase text-emerald-700">Formula linked</div>
+              <div className="mt-1 text-sm font-bold text-[#1f2937]">{order.productionLinks.formulaName || order.productionLinks.formulaCode || order.productionLinks.formulaId}</div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Button type="button" size="sm" className="h-9 rounded-xl text-xs" onClick={() => navigate(`/mobile/formulas/${order.productionLinks.formulaId}`)}>Open formula</Button>
+                <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl bg-white text-xs" onClick={() => navigate(`/mobile/batches?formulaId=${encodeURIComponent(order.productionLinks.formulaId)}`)}>Batch</Button>
+              </div>
+            </div>
+          ) : null}
           <div className="grid gap-2">
             <input
               value={productionLinksDraft.batchReference}

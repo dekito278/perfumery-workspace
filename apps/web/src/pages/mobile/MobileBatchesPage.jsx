@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, History, PackageCheck, Save, ShoppingBag } from 'lucide-react';
+import { Calculator, ClipboardCheck, Download, Droplets, Factory, FlaskConical, History, PackageCheck, Save, ScrollText, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -36,7 +36,7 @@ import {
   PRODUCT_FORMULA_TAG_PREFIX,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
-import { getBatches, saveBatch } from '@/services/batchesService.js';
+import { deductBatchMaterialStock, getBatches, getBatchUsageRecords, saveBatch } from '@/services/batchesService.js';
 import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
 import { updateRawMaterial } from '@/services/rawMaterialsService.js';
 import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
@@ -50,6 +50,13 @@ const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
 const targetPresets = ['30', '100', '500', '1000'];
 const workflowStatuses = BATCH_STATUSES.filter((status) => ['planned', 'produced', 'qc', 'ready_for_product', 'converted_to_product'].includes(status.value));
+const STOCK_DEDUCTING_STATUSES = new Set(['produced', 'qc', 'ready_for_product', 'converted_to_product']);
+const QC_STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'needs_adjustment', label: 'Needs adjustment' },
+  { value: 'failed', label: 'Failed' },
+];
 const buildBatchProductKey = ({ bottleMl, concentration, formulaId, lossPercent = 0, targetMl }) => [
   formulaId || 'formula',
   `${formatQuantity(targetMl, 2)}ml`,
@@ -114,6 +121,29 @@ const CostRow = ({ helper, item, label, onDraftChange, onSave, saving, value }) 
       >
         <Save className="h-4 w-4" />
       </Button>
+    </div>
+  </div>
+);
+
+const UsageLedgerRow = ({ record }) => (
+  <div className="rounded-xl border border-[#ece8df] bg-[#fdfcf9] p-3">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <div className="truncate text-xs font-bold text-[#1f2937]">
+          {record.raw_material_name || record.raw_material_id || 'Material'}
+        </div>
+        <div className="mt-0.5 text-[10px] font-bold uppercase text-[#8b949e]">
+          {record.type === 'batch_solvent' ? 'Solvent' : 'Formula material'} / {record.movement || record.source || 'Batch usage'}
+        </div>
+      </div>
+      <div className="shrink-0 text-right">
+        <div className="text-xs font-bold text-[#1f2937]">{formatQuantity(record.quantity_deducted, 2)} {record.unit || ''}</div>
+        <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{formatPrice(record.cost)}</div>
+      </div>
+    </div>
+    <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] font-semibold text-[#6b7280]">
+      <span>Before {formatQuantity(record.stock_before, 2)}</span>
+      <span className="text-right">After {formatQuantity(record.stock_after, 2)}</span>
     </div>
   </div>
 );
@@ -190,6 +220,9 @@ const MobileBatchesPage = () => {
   const [savingBatch, setSavingBatch] = useState(false);
   const [savedBatch, setSavedBatch] = useState(null);
   const [batchHistory, setBatchHistory] = useState([]);
+  const [usageRecords, setUsageRecords] = useState([]);
+  const [qcStatus, setQcStatus] = useState('pending');
+  const [qcNotes, setQcNotes] = useState('');
   const catalogProducts = useCatalogProducts({ editableOnly: true });
   const {
     bulkComputed,
@@ -233,12 +266,18 @@ const MobileBatchesPage = () => {
       if (!selectedFormulaId) {
         setBatchHistory([]);
         setSavedBatch(null);
+        setUsageRecords([]);
+        setQcStatus('pending');
+        setQcNotes('');
         return;
       }
 
       const rows = await getBatches({ formulaId: selectedFormulaId });
       setBatchHistory(rows);
       setSavedBatch(rows[0] || null);
+      setUsageRecords([]);
+      setQcStatus(rows[0]?.qc_status || 'pending');
+      setQcNotes(rows[0]?.qc_notes || '');
       if (rows[0]?.status) {
         setBatchStatus(rows[0].status);
       } else {
@@ -248,6 +287,40 @@ const MobileBatchesPage = () => {
 
     loadBatchHistory();
   }, [selectedFormulaId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadUsageRecords = async () => {
+      if (!savedBatch?.id || String(savedBatch.id).startsWith('local-batch-')) {
+        setUsageRecords([]);
+        return;
+      }
+
+      try {
+        const rows = await getBatchUsageRecords(savedBatch.id);
+        if (!cancelled) {
+          setUsageRecords(rows);
+        }
+      } catch {
+        if (!cancelled) {
+          setUsageRecords([]);
+        }
+      }
+    };
+
+    loadUsageRecords();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [savedBatch?.id]);
+
+  useEffect(() => {
+    if (!savedBatch?.id) return;
+    setQcStatus(savedBatch.qc_status || 'pending');
+    setQcNotes(savedBatch.qc_notes || '');
+  }, [savedBatch?.id, savedBatch?.qc_notes, savedBatch?.qc_status]);
 
   const selectedSolvent = solventOptions.find((material) => material.id === selectedSolventId) || null;
   const targetValue = Math.max(parseNumberInput(targetGrams), 0);
@@ -326,6 +399,10 @@ const MobileBatchesPage = () => {
     selling_price: productPriceNumber,
     sku: productSku,
     status,
+    qc_status: qcStatus,
+    qc_notes: qcNotes.trim(),
+    qc_checked_at: qcStatus === 'pending' ? null : (savedBatch?.qc_checked_at || new Date().toISOString()),
+    qc_reviewer: selectedFormula?.author_name || '',
     notes: `Formula ${selectedFormula?.name || ''} converted through owner batch flow.`,
   });
 
@@ -348,7 +425,15 @@ const MobileBatchesPage = () => {
 
     setSavingBatch(true);
     try {
-      const batch = await saveBatch(buildBatchPayload(nextStatus, overrides));
+      let batch = await saveBatch(buildBatchPayload(nextStatus, overrides));
+      let usageRecords = [];
+
+      if (STOCK_DEDUCTING_STATUSES.has(nextStatus) && !batch.is_stock_deducted) {
+        usageRecords = await deductBatchMaterialStock(batch.id);
+        batch = { ...batch, is_stock_deducted: true, usage_records: usageRecords };
+        setUsageRecords(usageRecords);
+      }
+
       setSavedBatch(batch);
       setBatchStatus(batch.status || nextStatus);
       await refreshBatchHistory();
@@ -357,7 +442,7 @@ const MobileBatchesPage = () => {
         await updateFormulaStatus(selectedFormula.id, 'ready_for_batch');
       }
 
-      toast.success('Batch saved');
+      toast.success(usageRecords.length ? 'Batch saved and material stock deducted' : 'Batch saved');
       return batch;
     } catch (error) {
       toast.error(error.message || 'Failed to save batch');
@@ -369,6 +454,15 @@ const MobileBatchesPage = () => {
 
   const ensureBatchRecord = async (nextStatus = batchStatus) => {
     if (savedBatch?.id && savedBatch.status === nextStatus) {
+      if (STOCK_DEDUCTING_STATUSES.has(nextStatus) && !savedBatch.is_stock_deducted) {
+        const usageRecords = await deductBatchMaterialStock(savedBatch.id);
+        const nextBatch = { ...savedBatch, is_stock_deducted: true, usage_records: usageRecords };
+        setSavedBatch(nextBatch);
+        setUsageRecords(usageRecords);
+        await refreshBatchHistory();
+        return nextBatch;
+      }
+
       return savedBatch;
     }
 
@@ -411,6 +505,11 @@ const MobileBatchesPage = () => {
       return;
     }
 
+    if (qcStatus !== 'passed') {
+      toast.error('QC must pass before drafting product stock');
+      return;
+    }
+
     if (publishedProduct) {
       toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
       navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
@@ -428,6 +527,11 @@ const MobileBatchesPage = () => {
 
     if (productPriceNumber <= 0) {
       toast.error('Set a selling price before drafting product stock');
+      return;
+    }
+
+    if (qcStatus !== 'passed') {
+      toast.error('QC must pass before drafting product stock');
       return;
     }
 
@@ -637,9 +741,15 @@ const MobileBatchesPage = () => {
               <div className="mt-3">
                 <MobileSegmentedControl options={workflowStatuses} value={batchStatus} onChange={setBatchStatus} className="mobile-compact-tabs" />
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2">
                 <MetricTile label="Batch code" value={savedBatch?.batch_code || 'Not saved'} helper={savedBatch ? 'production record' : 'created on save'} />
                 <MetricTile label="History" value={`${batchHistory.length} batch`} helper="for this formula" tone={batchHistory.length ? 'emerald' : 'neutral'} />
+                <MetricTile
+                  label="Stock"
+                  value={savedBatch?.is_stock_deducted ? 'Deducted' : 'Pending'}
+                  helper={STOCK_DEDUCTING_STATUSES.has(batchStatus) ? 'material ledger' : 'after produced'}
+                  tone={savedBatch?.is_stock_deducted ? 'emerald' : 'neutral'}
+                />
               </div>
               <Button
                 type="button"
@@ -650,6 +760,91 @@ const MobileBatchesPage = () => {
                 <Save className="h-4 w-4" />
                 {savingBatch ? 'Saving batch...' : savedBatch ? 'Update production batch' : 'Save production batch'}
               </Button>
+            </section>
+
+            <section className="mobile-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold uppercase text-amber-700">QC gate</div>
+                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Approve before product stock</h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                    Product stock can only be drafted after QC passes.
+                  </p>
+                </div>
+                <MobileStatusBadge
+                  status={qcStatus === 'passed' ? 'approved' : qcStatus}
+                  tone={qcStatus === 'passed' ? 'approved' : qcStatus === 'failed' ? 'danger' : qcStatus === 'needs_adjustment' ? 'warning' : 'planned'}
+                  className="shrink-0"
+                />
+              </div>
+              <div className="mt-3 grid gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">QC status</Label>
+                  <select
+                    value={qcStatus}
+                    onChange={(event) => setQcStatus(event.target.value)}
+                    className="h-11 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-xs font-bold outline-none focus:border-amber-300"
+                  >
+                    {QC_STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">QC notes</Label>
+                  <textarea
+                    value={qcNotes}
+                    onChange={(event) => setQcNotes(event.target.value)}
+                    rows={3}
+                    placeholder="Macération, clarity, scent balance, adjustment notes..."
+                    className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-xs font-semibold outline-none focus:border-amber-300"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant={qcStatus === 'passed' ? 'default' : 'outline'}
+                  onClick={() => saveProductionBatch(qcStatus === 'passed' ? 'ready_for_product' : 'qc')}
+                  disabled={savingBatch}
+                  className="h-11 rounded-2xl gap-2 text-xs font-bold"
+                >
+                  <ClipboardCheck className="h-4 w-4" />
+                  {savingBatch ? 'Saving QC...' : 'Save QC gate'}
+                </Button>
+              </div>
+            </section>
+
+            <section className="mobile-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Material usage ledger</div>
+                  <h2 className="mt-1 text-base font-bold text-[#1f2937]">Stock movements for this batch</h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                    Deducted rows are locked by the batch record so material stock is only cut once.
+                  </p>
+                </div>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                  <ScrollText className="h-4 w-4" />
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <MetricTile label="Rows" value={`${usageRecords.length}`} helper="usage records" tone={usageRecords.length ? 'emerald' : 'neutral'} />
+                <MetricTile
+                  label="Usage cost"
+                  value={formatPrice(usageRecords.reduce((sum, record) => sum + Number(record.cost || 0), 0))}
+                  helper="material only"
+                  tone={usageRecords.length ? 'amber' : 'neutral'}
+                />
+              </div>
+              <div className="mt-3 grid gap-2">
+                {usageRecords.length ? usageRecords.map((record) => (
+                  <UsageLedgerRow key={record.id || `${record.raw_material_id}-${record.type}`} record={record} />
+                )) : (
+                  <div className="rounded-2xl border border-dashed border-[#e5e7eb] bg-white px-3 py-4 text-center">
+                    <div className="text-xs font-bold text-[#1f2937]">No material stock deducted yet</div>
+                    <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Move the batch to Produced, QC, or Ready for product to write the usage ledger.</p>
+                  </div>
+                )}
+              </div>
             </section>
 
             <div className="grid grid-cols-2 gap-2">

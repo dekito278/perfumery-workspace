@@ -129,14 +129,24 @@ const normalizeProductionLinks = (links) => (
   links && typeof links === 'object' && !Array.isArray(links)
     ? {
       batchReference: links.batchReference || links.batch_reference || '',
+      formulaId: links.formulaId || links.formula_id || '',
+      formulaCode: links.formulaCode || links.formula_code || '',
+      formulaName: links.formulaName || links.formula_name || '',
       materialReferences: links.materialReferences || links.material_references || '',
       notes: links.notes || '',
+      sourceOrderId: links.sourceOrderId || links.source_order_id || '',
+      sourceOrderNumber: links.sourceOrderNumber || links.source_order_number || '',
       updatedAt: links.updatedAt || links.updated_at || '',
     }
     : {
       batchReference: '',
+      formulaId: '',
+      formulaCode: '',
+      formulaName: '',
       materialReferences: '',
       notes: '',
+      sourceOrderId: '',
+      sourceOrderNumber: '',
       updatedAt: '',
     }
 );

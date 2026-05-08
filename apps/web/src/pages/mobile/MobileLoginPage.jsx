@@ -50,7 +50,7 @@ const MobileLoginPage = () => {
             {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
             <div className="space-y-2">
               <Label htmlFor="mobile-email">Email</Label>
-              <Input id="mobile-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required className="h-12 rounded-2xl bg-white" />
+              <Input id="mobile-email" type="text" inputMode="email" autoCapitalize="none" value={email} onChange={(event) => setEmail(event.target.value)} required className="h-12 rounded-2xl bg-white" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="mobile-password">Password</Label>
