@@ -96,6 +96,10 @@ export const buildMobileImportErrorMessage = (error) => {
     return `Import gagal karena runtime mobile belum cocok dengan parser PDF. Tutup app lalu buka ulang agar bundle terbaru terpakai. Detail: ${message}`;
   }
 
+  if (/structuredClone|Response\.bytes|replaceAll|URL\.parse|arrayBuffer/i.test(message)) {
+    return `Import gagal karena fitur browser iPhone untuk parser PDF belum siap. Refresh app setelah update, lalu pilih PDF lagi. Detail: ${message}`;
+  }
+
   if (/Loading chunk|Failed to fetch dynamically imported module|import/i.test(message)) {
     return `Import parser belum berhasil dimuat. Coba refresh app sekali agar cache mobile mengambil versi terbaru. Detail: ${message}`;
   }
