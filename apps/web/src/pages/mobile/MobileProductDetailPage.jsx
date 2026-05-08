@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
-import { formatRupiah } from '@/services/productCatalogService.js';
+import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const NoteColumn = ({ title, notes }) => (
   <div className="rounded-2xl bg-[#f7f8f2] p-3">
@@ -27,7 +27,7 @@ const MobileProductDetailPage = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
   const products = useCatalogProducts();
-  const product = products.find((item) => item.slug === slug);
+  const product = products.find((item) => item.slug === slug && isProductVisibleInStorefront(item));
   const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [cartPromptOpen, setCartPromptOpen] = useState(false);

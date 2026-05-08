@@ -13,7 +13,21 @@ import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx';
 import { useProductionCostPage } from '@/hooks/useProductionCostPage.js';
-import { saveCustomProduct } from '@/services/productCatalogService.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import {
+  getProductBatchKey,
+  PRODUCT_BATCH_BOTTLE_TAG_PREFIX,
+  PRODUCT_BATCH_COGS_TAG_PREFIX,
+  PRODUCT_BATCH_DILUTION_TAG_PREFIX,
+  PRODUCT_BATCH_MOVEMENT_TAG_PREFIX,
+  PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX,
+  PRODUCT_BATCH_STOCK_TAG_PREFIX,
+  PRODUCT_BATCH_TAG_PREFIX,
+  PRODUCT_BATCH_TARGET_TAG_PREFIX,
+  PRODUCT_DRAFT_TAG,
+  PRODUCT_FORMULA_TAG_PREFIX,
+  saveCustomProduct,
+} from '@/services/productCatalogService.js';
 import { updateRawMaterial } from '@/services/rawMaterialsService.js';
 import { formatCurrency, formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { calculateIngredientCost, formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
@@ -24,6 +38,12 @@ import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
 const targetPresets = ['30', '100', '500', '1000'];
+const buildBatchProductKey = ({ bottleMl, concentration, formulaId, targetMl }) => [
+  formulaId || 'formula',
+  `${formatQuantity(targetMl, 2)}ml`,
+  `${formatQuantity(bottleMl, 2)}ml`,
+  `${formatQuantity(concentration, 2)}pct`,
+].join(':').replace(/\s+/g, '');
 
 const MetricTile = ({ label, value, helper, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
@@ -142,6 +162,7 @@ const MobileBatchesPage = () => {
   const [bottleSizeMl, setBottleSizeMl] = useState('30');
   const [productPrice, setProductPrice] = useState('');
   const [publishingProduct, setPublishingProduct] = useState(false);
+  const catalogProducts = useCatalogProducts({ editableOnly: true });
   const {
     bulkComputed,
     bulkInputs,
@@ -212,6 +233,15 @@ const MobileBatchesPage = () => {
   const productCogsPerBottle = bottleSizeValue > 0 ? dilutionCostPerGram * bottleSizeValue : 0;
   const productPriceValue = parseNumberInput(productPrice);
   const productPriceSuggestion = Math.ceil((productCogsPerBottle * 2) / 1000) * 1000;
+  const batchProductKey = selectedFormula ? buildBatchProductKey({
+    bottleMl: bottleSizeValue,
+    concentration,
+    formulaId: selectedFormula.id,
+    targetMl: targetValue,
+  }) : '';
+  const publishedProduct = batchProductKey
+    ? catalogProducts.find((product) => getProductBatchKey(product) === batchProductKey)
+    : null;
 
   const updatePriceDraft = (materialId, value) => {
     if (!materialId) return;
@@ -245,11 +275,18 @@ const MobileBatchesPage = () => {
     }
 
     const priceNumber = productPriceValue > 0 ? productPriceValue : productPriceSuggestion;
+    if (publishedProduct) {
+      toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
+      navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
+      return;
+    }
+
     setPublishingProduct(true);
     try {
       const materialNames = concentrateRows
         .map((item) => item.name || item.item_name)
         .filter(Boolean);
+      const publishedAt = new Date().toISOString();
       await saveCustomProduct({
         name: selectedFormula.name,
         category: selectedFormula.category || 'Studio Batch',
@@ -268,10 +305,23 @@ const MobileBatchesPage = () => {
           priceNumber,
           stock: productBottleCount,
         }],
-        tags: ['Studio batch', selectedFormula.category || 'Perfume'],
+        tags: [
+          PRODUCT_DRAFT_TAG,
+          'Studio batch',
+          `${PRODUCT_BATCH_TAG_PREFIX} ${batchProductKey}`,
+          `${PRODUCT_FORMULA_TAG_PREFIX} ${selectedFormula.id}`,
+          `${PRODUCT_BATCH_TARGET_TAG_PREFIX} ${targetValue}`,
+          `${PRODUCT_BATCH_BOTTLE_TAG_PREFIX} ${bottleSizeValue}`,
+          `${PRODUCT_BATCH_DILUTION_TAG_PREFIX} ${concentration}`,
+          `${PRODUCT_BATCH_COGS_TAG_PREFIX} ${Math.round(productCogsPerBottle)}`,
+          `${PRODUCT_BATCH_STOCK_TAG_PREFIX} ${productBottleCount}`,
+          `${PRODUCT_BATCH_MOVEMENT_TAG_PREFIX} Batch converted to inventory`,
+          `${PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX} ${publishedAt}`,
+          selectedFormula.category || 'Perfume',
+        ],
         featured: false,
       });
-      toast.success(`${productBottleCount} bottles published to products`);
+      toast.success(`${productBottleCount} bottles drafted in products`);
       navigate('/mobile/studio/products?view=list');
     } catch (error) {
       toast.error(error.message || 'Failed to publish product');
@@ -484,10 +534,11 @@ const MobileBatchesPage = () => {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold uppercase text-amber-700">Publish to product</div>
-                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">Turn this batch into stock</h2>
+                  <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{publishedProduct ? 'Batch already has product stock' : 'Turn this batch into stock'}</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                    {formatQuantity(targetValue, 0)} ml batch / {formatQuantity(bottleSizeValue || 0, 0)} ml bottle = {productBottleCount} bottles
-                    {remainingBatchVolume > 0 ? `, ${formatQuantity(remainingBatchVolume, 1)} ml remainder` : ''}.
+                    {publishedProduct
+                      ? `${publishedProduct.name} is linked to this formula, batch size, bottle size, and dilution.`
+                      : `${formatQuantity(targetValue, 0)} ml batch / ${formatQuantity(bottleSizeValue || 0, 0)} ml bottle = ${productBottleCount} bottles${remainingBatchVolume > 0 ? `, ${formatQuantity(remainingBatchVolume, 1)} ml remainder` : ''}.`}
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="min-w-0 space-y-2">
@@ -500,12 +551,17 @@ const MobileBatchesPage = () => {
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <MetricTile label="Stock" value={`${productBottleCount} bottles`} helper="will become product stock" tone="emerald" />
+                    <MetricTile label="Stock" value={`${publishedProduct?.stock ?? productBottleCount} bottles`} helper={publishedProduct ? 'linked product stock' : 'will become product stock'} tone="emerald" />
                     <MetricTile label="COGS / bottle" value={formatPrice(productCogsPerBottle)} helper="material estimate" tone="amber" />
                   </div>
-                  <Button type="button" onClick={publishBatchAsProduct} disabled={publishingProduct || productBottleCount <= 0} className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold">
+                  <Button
+                    type="button"
+                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`) : publishBatchAsProduct}
+                    disabled={publishingProduct || (!publishedProduct && productBottleCount <= 0)}
+                    className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold"
+                  >
                     <ShoppingBag className="h-4 w-4" />
-                    {publishingProduct ? 'Publishing...' : 'Publish product stock'}
+                    {publishedProduct ? 'Edit linked product' : publishingProduct ? 'Publishing...' : 'Draft product stock'}
                   </Button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Edit3, ImageOff, ImagePlus, PackagePlus, Plus, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -9,9 +9,18 @@ import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
-import { deleteCustomProduct, formatRupiah, saveCustomProduct } from '@/services/productCatalogService.js';
+import {
+  deleteCustomProduct,
+  formatRupiah,
+  getProductBatchDetails,
+  getProductFormulaId,
+  isProductDraft,
+  PRODUCT_DRAFT_TAG,
+  saveCustomProduct,
+} from '@/services/productCatalogService.js';
 import { uploadProductImage } from '@/services/productImageStorageService.js';
 import { deleteStorefrontCategory, saveStorefrontCategory } from '@/services/storefrontCategoryService.js';
+import { formatQuantity } from '@/utils/formatting.js';
 
 const emptyProduct = {
   name: '',
@@ -33,10 +42,37 @@ const emptyProduct = {
   imageUrl: '',
   images: [],
   featured: true,
+  catalogVisible: true,
+};
+
+const toProductForm = (product) => ({
+  ...product,
+  catalogVisible: !isProductDraft(product),
+  topNotes: product.topNotes.join(', '),
+  heartNotes: product.heartNotes.join(', '),
+  baseNotes: product.baseNotes.join(', '),
+  variants: product.variants,
+  tags: product.tags.join(', '),
+  images: product.images || (product.imageUrl ? [product.imageUrl] : []),
+});
+
+const getTagsForVisibility = (tags, catalogVisible) => {
+  const nextTags = String(tags || '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag) => tag.toLowerCase() !== PRODUCT_DRAFT_TAG.toLowerCase());
+
+  if (!catalogVisible) {
+    nextTags.unshift(PRODUCT_DRAFT_TAG);
+  }
+
+  return [...new Set(nextTags)];
 };
 
 const MobileProductManagementPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const activeView = searchParams.get('view') || 'new';
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
@@ -51,6 +87,17 @@ const MobileProductManagementPage = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
+  const editProductId = searchParams.get('edit') || '';
+  const linkedFormulaId = getProductFormulaId(form);
+  const batchDetails = getProductBatchDetails(form);
+
+  useEffect(() => {
+    if (!editProductId) return;
+    const product = customProducts.find((item) => String(item.id) === editProductId);
+    if (product && form.id !== product.id) {
+      setForm(toProductForm(product));
+    }
+  }, [customProducts, editProductId, form.id]);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -119,16 +166,9 @@ const MobileProductManagementPage = () => {
         stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
         size: form.variants?.[0]?.size || form.size,
         price: formatRupiah(form.priceNumber),
+        tags: getTagsForVisibility(form.tags, form.catalogVisible),
       });
-      setForm({
-        ...product,
-        topNotes: product.topNotes.join(', '),
-        heartNotes: product.heartNotes.join(', '),
-        baseNotes: product.baseNotes.join(', '),
-        variants: product.variants,
-        tags: product.tags.join(', '),
-        images: product.images || (product.imageUrl ? [product.imageUrl] : []),
-      });
+      setForm(toProductForm(product));
       toast.success('Product saved');
     } finally {
       setSavingProduct(false);
@@ -136,16 +176,8 @@ const MobileProductManagementPage = () => {
   };
 
   const handleEdit = (product) => {
-    setForm({
-      ...product,
-      topNotes: product.topNotes.join(', '),
-      heartNotes: product.heartNotes.join(', '),
-      baseNotes: product.baseNotes.join(', '),
-      variants: product.variants,
-      tags: product.tags.join(', '),
-      images: product.images || (product.imageUrl ? [product.imageUrl] : []),
-    });
-    updateView('new');
+    setForm(toProductForm(product));
+    setSearchParams({ view: 'new', edit: product.id }, { replace: true });
   };
 
   const handleDelete = async (product) => {
@@ -215,6 +247,52 @@ const MobileProductManagementPage = () => {
             <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white px-3 text-xs" onClick={resetForm}>New</Button>
           </div>
           <div className="mt-3 grid gap-3">
+            {linkedFormulaId ? (
+              <button
+                type="button"
+                onClick={() => navigate(`/mobile/batches?formulaId=${encodeURIComponent(linkedFormulaId)}`)}
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-xs font-bold text-amber-800"
+              >
+                <span className="block text-[10px] uppercase">Studio batch source</span>
+                <span className="mt-0.5 block text-[#1f2937]">Open linked batch calculator</span>
+              </button>
+            ) : null}
+            {batchDetails.batchKey ? (
+              <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Inventory source</div>
+                    <h3 className="mt-1 text-sm font-bold text-[#1f2937]">{batchDetails.movement || 'Batch converted to inventory'}</h3>
+                  </div>
+                  {batchDetails.publishedAt ? (
+                    <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">
+                      {new Date(batchDetails.publishedAt).toLocaleDateString('id-ID')}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">Batch</div>
+                    <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.targetMl, 0)} ml</div>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">Bottle</div>
+                    <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.bottleMl, 0)} ml</div>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">Dilution</div>
+                    <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.dilutionPercent, 1)}%</div>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">COGS/bottle</div>
+                    <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatRupiah(batchDetails.cogsPerBottle)}</div>
+                  </div>
+                </div>
+                <div className="mt-2 text-[10px] font-bold uppercase text-[#263d27]">
+                  Initial stock {batchDetails.initialStock || 0} bottles
+                </div>
+              </div>
+            ) : null}
             <input value={form.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Product name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <div className="grid grid-cols-2 gap-2">
               <select value={form.category} onChange={(event) => updateField('category', event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300">
@@ -282,6 +360,13 @@ const MobileProductManagementPage = () => {
               <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
               Featured on home
             </label>
+            <label className="flex items-start gap-3 rounded-2xl bg-emerald-50 px-3 py-3 text-xs font-bold text-emerald-800">
+              <input type="checkbox" checked={Boolean(form.catalogVisible)} onChange={(event) => updateField('catalogVisible', event.target.checked)} className="mt-0.5" />
+              <span>
+                <span className="block">Tampilkan di katalog customer</span>
+                <span className="mt-0.5 block text-[10px] font-semibold text-emerald-700/75">Matikan untuk draft: bisa edit foto, deskripsi, notes, dan harga dulu tanpa tampil di shop.</span>
+              </span>
+            </label>
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Saving...' : 'Save product'}</Button>
           </div>
         </form>
@@ -335,6 +420,11 @@ const MobileProductManagementPage = () => {
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
+                    {isProductDraft(product) ? (
+                      <div className="mt-1 w-fit rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase text-amber-700">
+                        Draft - hidden from catalog
+                      </div>
+                    ) : null}
                     <div className="mt-1 flex flex-wrap gap-1">
                       {product.variants.slice(0, 3).map((variant) => (
                         <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
@@ -343,6 +433,20 @@ const MobileProductManagementPage = () => {
                       ))}
                     </div>
                     <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock}</p>
+                    {getProductFormulaId(product) ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/mobile/batches?formulaId=${encodeURIComponent(getProductFormulaId(product))}`)}
+                        className="mt-2 text-[10px] font-bold uppercase text-[#263d27]"
+                      >
+                        View source batch
+                      </button>
+                    ) : null}
+                    {getProductBatchDetails(product).movement ? (
+                      <div className="mt-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                        {getProductBatchDetails(product).movement} / initial {getProductBatchDetails(product).initialStock || 0}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1">

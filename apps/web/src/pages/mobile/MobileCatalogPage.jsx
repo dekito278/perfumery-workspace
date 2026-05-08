@@ -9,7 +9,12 @@ import { catalogSortOptions } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
-import { formatRupiah, getProductLowStock } from '@/services/productCatalogService.js';
+import {
+  formatRupiah,
+  getProductLowStock,
+  getVisibleProductTags,
+  isProductVisibleInStorefront,
+} from '@/services/productCatalogService.js';
 
 const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 const shopTypeOptions = [
@@ -35,12 +40,13 @@ const MobileCatalogPage = () => {
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
-  const products = useCatalogProducts();
+  const catalogProducts = useCatalogProducts();
+  const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
   const scentFamilies = useMemo(() => (
     categories.filter((item) => !commerceCategoryNames.has(String(item.name || '').toLowerCase()))
   ), [categories]);
-  const catalogLoading = Boolean(products.loading);
+  const catalogLoading = Boolean(catalogProducts.loading);
   const hasCatalogProducts = products.length > 0;
 
   const filteredProducts = useMemo(() => {
@@ -56,7 +62,7 @@ const MobileCatalogPage = () => {
         product.notes,
         product.mood,
         product.description,
-        ...product.tags,
+        ...getVisibleProductTags(product),
       ].join(' ').toLowerCase();
       return matchesSegment && matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
     });
@@ -206,7 +212,7 @@ const MobileCatalogPage = () => {
                   </div>
                   {getProductLowStock(product) ? <div className="mt-2 text-[10px] font-bold uppercase text-rose-700">Mau habis</div> : null}
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {product.tags.slice(0, 2).map((tag) => (
+                    {getVisibleProductTags(product).slice(0, 2).map((tag) => (
                       <span key={tag} className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[10px] font-bold uppercase text-[#6b7280]">
                         {tag}
                       </span>

@@ -7,7 +7,12 @@ import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
-import { formatRupiah, getProductLowStock } from '@/services/productCatalogService.js';
+import {
+  formatRupiah,
+  getProductLowStock,
+  getVisibleProductTags,
+  isProductVisibleInStorefront,
+} from '@/services/productCatalogService.js';
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];
@@ -23,9 +28,10 @@ const CatalogPage = () => {
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState('featured');
-  const catalogProducts = useCatalogProducts();
+  const allCatalogProducts = useCatalogProducts();
+  const catalogProducts = useMemo(() => allCatalogProducts.filter(isProductVisibleInStorefront), [allCatalogProducts]);
   const categories = useStorefrontCategories(catalogProducts);
-  const catalogLoading = Boolean(catalogProducts.loading);
+  const catalogLoading = Boolean(allCatalogProducts.loading);
   const hasCatalogProducts = catalogProducts.length > 0;
 
   const products = useMemo(() => {
@@ -35,7 +41,7 @@ const CatalogPage = () => {
         || (segment === 'limited' && (product.featured || product.stock <= 8))
         || (segment === 'regular' && !product.featured && product.stock > 0);
       const matchesCategory = category === 'All' || product.category === category;
-      const searchable = [product.name, product.category, product.notes, product.mood, product.description, ...product.tags].join(' ').toLowerCase();
+      const searchable = [product.name, product.category, product.notes, product.mood, product.description, ...getVisibleProductTags(product)].join(' ').toLowerCase();
       return matchesSegment && matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
     }), sort);
   }, [catalogProducts, category, query, segment, sort]);

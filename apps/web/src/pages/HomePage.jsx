@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
@@ -20,6 +20,7 @@ import {
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 22 },
@@ -70,11 +71,12 @@ const atelierFrames = [
 ];
 
 const HomePage = () => {
-  const products = useCatalogProducts();
+  const catalogProducts = useCatalogProducts();
+  const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
   const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 3);
-  const productsLoading = Boolean(products.loading);
+  const productsLoading = Boolean(catalogProducts.loading);
   const hasProducts = products.length > 0;
   const heroProducts = [homeProducts[0] || products[0], homeProducts[1] || products[1], homeProducts[2] || products[2]].filter(Boolean);
   const storefrontStats = [

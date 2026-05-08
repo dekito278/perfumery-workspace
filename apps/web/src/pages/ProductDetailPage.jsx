@@ -6,12 +6,12 @@ import { toast } from 'sonner';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
-import { formatRupiah } from '@/services/productCatalogService.js';
+import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
   const products = useCatalogProducts();
-  const product = products.find((item) => item.slug === slug);
+  const product = products.find((item) => item.slug === slug && isProductVisibleInStorefront(item));
   const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const selectedVariant = useMemo(() => {

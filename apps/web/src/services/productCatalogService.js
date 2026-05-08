@@ -2,6 +2,28 @@ import { featuredProducts } from '@/data/storefront.js';
 import supabase from '@/lib/supabaseClient.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
+export const PRODUCT_DRAFT_TAG = 'Studio draft';
+export const PRODUCT_BATCH_TAG_PREFIX = 'Batch key:';
+export const PRODUCT_FORMULA_TAG_PREFIX = 'Formula ID:';
+export const PRODUCT_BATCH_TARGET_TAG_PREFIX = 'Batch target ml:';
+export const PRODUCT_BATCH_BOTTLE_TAG_PREFIX = 'Bottle ml:';
+export const PRODUCT_BATCH_DILUTION_TAG_PREFIX = 'Dilution percent:';
+export const PRODUCT_BATCH_COGS_TAG_PREFIX = 'COGS per bottle:';
+export const PRODUCT_BATCH_STOCK_TAG_PREFIX = 'Initial stock:';
+export const PRODUCT_BATCH_MOVEMENT_TAG_PREFIX = 'Stock movement:';
+export const PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX = 'Batch published at:';
+
+const PRODUCT_INTERNAL_TAG_PREFIXES = [
+  PRODUCT_BATCH_TAG_PREFIX,
+  PRODUCT_FORMULA_TAG_PREFIX,
+  PRODUCT_BATCH_TARGET_TAG_PREFIX,
+  PRODUCT_BATCH_BOTTLE_TAG_PREFIX,
+  PRODUCT_BATCH_DILUTION_TAG_PREFIX,
+  PRODUCT_BATCH_COGS_TAG_PREFIX,
+  PRODUCT_BATCH_STOCK_TAG_PREFIX,
+  PRODUCT_BATCH_MOVEMENT_TAG_PREFIX,
+  PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX,
+];
 
 const FALLBACK_VISUALS = [
   'from-[#f5d78f] via-[#f8efe1] to-[#d7b98b]',
@@ -37,6 +59,44 @@ const splitList = (value) => {
     .map((item) => item.trim())
     .filter(Boolean);
 };
+
+export const isProductDraft = (product = {}) => (
+  splitList(product.tags).some((tag) => tag.toLowerCase() === PRODUCT_DRAFT_TAG.toLowerCase())
+);
+
+export const isProductVisibleInStorefront = (product = {}) => !isProductDraft(product);
+
+export const getProductBatchKey = (product = {}) => {
+  const tag = splitList(product.tags).find((item) => item.startsWith(PRODUCT_BATCH_TAG_PREFIX));
+  return tag ? tag.slice(PRODUCT_BATCH_TAG_PREFIX.length).trim() : '';
+};
+
+export const getProductFormulaId = (product = {}) => {
+  const tag = splitList(product.tags).find((item) => item.startsWith(PRODUCT_FORMULA_TAG_PREFIX));
+  return tag ? tag.slice(PRODUCT_FORMULA_TAG_PREFIX.length).trim() : '';
+};
+
+const getProductInternalTagValue = (product = {}, prefix) => {
+  const tag = splitList(product.tags).find((item) => item.startsWith(prefix));
+  return tag ? tag.slice(prefix.length).trim() : '';
+};
+
+export const getVisibleProductTags = (product = {}) => splitList(product.tags).filter((tag) => (
+  tag.toLowerCase() !== PRODUCT_DRAFT_TAG.toLowerCase()
+  && !PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix))
+));
+
+export const getProductBatchDetails = (product = {}) => ({
+  batchKey: getProductBatchKey(product),
+  formulaId: getProductFormulaId(product),
+  targetMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_TARGET_TAG_PREFIX) || 0),
+  bottleMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_BOTTLE_TAG_PREFIX) || 0),
+  dilutionPercent: Number(getProductInternalTagValue(product, PRODUCT_BATCH_DILUTION_TAG_PREFIX) || 0),
+  cogsPerBottle: Number(getProductInternalTagValue(product, PRODUCT_BATCH_COGS_TAG_PREFIX) || 0),
+  initialStock: Number(getProductInternalTagValue(product, PRODUCT_BATCH_STOCK_TAG_PREFIX) || 0),
+  movement: getProductInternalTagValue(product, PRODUCT_BATCH_MOVEMENT_TAG_PREFIX),
+  publishedAt: getProductInternalTagValue(product, PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX),
+});
 
 export const normalizeProductImages = (input = {}) => {
   const rawImages = Array.isArray(input.images)
