@@ -150,6 +150,11 @@ function AppRoutes() {
             <MobileDashboardPage />
           </ProtectedRoute>
         } />
+        <Route path="/mobile/studio/dashboard" element={
+          <ProtectedRoute>
+            <MobileDashboardPage />
+          </ProtectedRoute>
+        } />
 
         <Route path="/mobile/studio/products" element={
           <ProtectedRoute>
@@ -192,6 +197,21 @@ function AppRoutes() {
             <MobileBriefsPage />
           </ProtectedRoute>
         } />
+        <Route path="/mobile/brief" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/briefs" replace />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/drip" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/briefs" replace />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/studio/briefs" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/briefs" replace />
+          </ProtectedRoute>
+        } />
         <Route path="/mobile/briefs/new" element={
           <ProtectedRoute>
             <MobileBriefEditorPage />
@@ -213,6 +233,16 @@ function AppRoutes() {
             <MobileRawMaterialsPage />
           </ProtectedRoute>
         } />
+        <Route path="/mobile/materials" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/raw-materials" replace />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/studio/materials" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/raw-materials" replace />
+          </ProtectedRoute>
+        } />
         <Route path="/mobile/raw-material-audit" element={
           <ProtectedRoute>
             <MobileRawMaterialAuditPage />
@@ -232,6 +262,11 @@ function AppRoutes() {
         <Route path="/mobile/formulas" element={
           <ProtectedRoute>
             <MobileFormulasPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/studio/formulas" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/formulas" replace />
           </ProtectedRoute>
         } />
         <Route path="/mobile/formulas/new" element={
@@ -267,6 +302,16 @@ function AppRoutes() {
         <Route path="/mobile/validation" element={
           <ProtectedRoute>
             <MobileValidationPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/validate" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/validation" replace />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/studio/validation" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/validation" replace />
           </ProtectedRoute>
         } />
         

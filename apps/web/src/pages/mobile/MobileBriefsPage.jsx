@@ -25,6 +25,13 @@ const statusOptions = [
   { value: 'completed', label: 'Completed' },
 ];
 
+const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.race([
+  promise,
+  new Promise((resolve) => {
+    window.setTimeout(() => resolve(fallbackValue), timeoutMs);
+  }),
+]);
+
 const MobileBriefsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -43,15 +50,15 @@ const MobileBriefsPage = () => {
   const loadData = async (isActive = () => true) => {
     setLoading(true);
     try {
-      const briefRows = await getBriefs();
+      const briefRows = await runWithTimeout(getBriefs(), [], 6000);
       if (!isActive()) return;
       setBriefs(briefRows || []);
       setLoading(false);
       try {
-        const formulaRows = await getFormulas();
+        const formulaRows = await runWithTimeout(getFormulas(), [], 4500);
         if (isActive()) setFormulas(formulaRows || []);
       } catch (error) {
-        toast.error('Briefs loaded, but linked formula names are delayed');
+        console.warn('Brief formula names are delayed:', error);
       }
     } catch (error) {
       toast.error('Failed to load briefs');

@@ -53,6 +53,13 @@ const createEmptyLog = (formulaId = 'none') => ({
   tested_at: new Date().toISOString().slice(0, 10),
 });
 
+const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.race([
+  promise,
+  new Promise((resolve) => {
+    window.setTimeout(() => resolve(fallbackValue), timeoutMs);
+  }),
+]);
+
 const StatTile = ({ label, value, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
     ? 'border-amber-200 bg-amber-50 text-amber-800'
@@ -91,14 +98,14 @@ const MobileValidationPage = () => {
   const loadWorkspace = async () => {
     setLoading(true);
     try {
-      const logRows = await getValidationLogs();
+      const logRows = await runWithTimeout(getValidationLogs(), [], 6000);
       setLogs(logRows || []);
       setLoading(false);
       try {
-        const formulaRows = await getFormulas();
+        const formulaRows = await runWithTimeout(getFormulas(), [], 4500);
         setFormulas(formulaRows || []);
       } catch (error) {
-        toast.error('Validation logs loaded, but formula names are delayed');
+        console.warn('Validation formula names are delayed:', error);
       }
     } catch (error) {
       toast.error('Failed to load validation workspace');

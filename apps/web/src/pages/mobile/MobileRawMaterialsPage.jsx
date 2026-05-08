@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, FolderTree, Package, Plus, SlidersHorizontal } from 'lucide-react';
@@ -103,6 +103,13 @@ const referenceOptions = [
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const runWithTimeout = (promise, timeoutMs = 4500) => Promise.race([
+  promise,
+  new Promise((_, reject) => {
+    window.setTimeout(() => reject(new Error('Material guidance timed out')), timeoutMs);
+  }),
+]);
+
 const MobileRawMaterialsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -112,9 +119,11 @@ const MobileRawMaterialsPage = () => {
   const { fetchMaterialsPage, addMaterial, updateMaterial } = useRawMaterials();
   const { getBriefs } = useBriefs();
   const { deleteBriefMaterialShortlistItem, getBriefMaterialShortlist, upsertBriefMaterialShortlist } = useBriefMaterialShortlists();
+  const loadTokenRef = useRef(0);
   const [materials, setMaterials] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [guidanceLoading, setGuidanceLoading] = useState(false);
   const [briefContext, setBriefContext] = useState(null);
   const [shortlistItems, setShortlistItems] = useState([]);
   const [shortlistLoading, setShortlistLoading] = useState(false);
@@ -138,7 +147,21 @@ const MobileRawMaterialsPage = () => {
   }, [query]);
 
   const loadMaterials = async () => {
+    const loadToken = loadTokenRef.current + 1;
+    loadTokenRef.current = loadToken;
+    let baseLoaded = false;
     setLoading(true);
+    setGuidanceLoading(false);
+
+    const applyReferenceFilter = (items = []) => items.filter((material) => {
+      const resolved = getResolvedGuidanceValues(material);
+      const hasGuidance = Boolean(resolved.workbook_code || resolved.reference_impact || resolved.reference_life_hours || resolved.ifra_limit);
+      if (referenceFilter === 'has_guidance') return hasGuidance;
+      if (referenceFilter === 'high_impact') return Number(getResolvedGuidanceNumber(material, 'reference_impact') || 0) >= 7;
+      if (referenceFilter === 'missing_data') return !resolved.reference_impact || !resolved.reference_life_hours;
+      return true;
+    });
+
     try {
       const result = await fetchMaterialsPage({
         page: 1,
@@ -148,26 +171,31 @@ const MobileRawMaterialsPage = () => {
         categoryFilter: 'all',
         referenceFilter: ['matched', 'unmatched', 'ifra_limited'].includes(referenceFilter) ? referenceFilter : 'all',
       });
+      if (loadToken !== loadTokenRef.current) return;
       const baseItems = result.items || [];
-      setMaterials(baseItems);
-      setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? baseItems.length : result.total || baseItems.length);
+      const baseFilteredItems = applyReferenceFilter(baseItems);
+      setMaterials(baseFilteredItems);
+      setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? baseFilteredItems.length : result.total || baseFilteredItems.length);
+      baseLoaded = true;
       setLoading(false);
-      const enrichedItems = hydrateGuidanceFromPeerMaterials(await enrichMaterialsWithGuidance(baseItems));
-      const filteredItems = enrichedItems.filter((material) => {
-        const resolved = getResolvedGuidanceValues(material);
-        const hasGuidance = Boolean(resolved.workbook_code || resolved.reference_impact || resolved.reference_life_hours || resolved.ifra_limit);
-        if (referenceFilter === 'has_guidance') return hasGuidance;
-        if (referenceFilter === 'high_impact') return Number(getResolvedGuidanceNumber(material, 'reference_impact') || 0) >= 7;
-        if (referenceFilter === 'missing_data') return !resolved.reference_impact || !resolved.reference_life_hours;
-        return true;
-      });
+      setGuidanceLoading(true);
+      const enrichedItems = hydrateGuidanceFromPeerMaterials(await runWithTimeout(enrichMaterialsWithGuidance(baseItems)));
+      if (loadToken !== loadTokenRef.current) return;
+      const filteredItems = applyReferenceFilter(enrichedItems);
       setMaterials(filteredItems);
       setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
     } catch (error) {
-      toast.error('Failed to load materials');
-      setLoading(false);
+      if (loadToken === loadTokenRef.current && !baseLoaded) {
+        toast.error('Failed to load materials');
+        setLoading(false);
+      } else {
+        console.warn('Material guidance enrichment delayed:', error);
+      }
     } finally {
-      setLoading(false);
+      if (loadToken === loadTokenRef.current) {
+        setLoading(false);
+        setGuidanceLoading(false);
+      }
     }
   };
 
@@ -325,6 +353,11 @@ const MobileRawMaterialsPage = () => {
         <div className="mobile-material-search-panel">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Search material, CAS, supplier..." disabled={loading} />
           <MobileFilterChips options={referenceOptions} value={referenceFilter} onChange={setReferenceFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
+          {guidanceLoading && !loading ? (
+            <div className="mt-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              Guidance sedang disinkronkan, material tetap bisa dipakai.
+            </div>
+          ) : null}
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/raw-material-audit')}><SlidersHorizontal className="mr-2 h-4 w-4" />Audit</Button>
             <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/categories')}><FolderTree className="mr-2 h-4 w-4" />Categories</Button>

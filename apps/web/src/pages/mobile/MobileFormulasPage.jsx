@@ -37,6 +37,13 @@ const statusOptions = [
   { value: 'linked', label: 'Brief' },
 ];
 
+const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.race([
+  promise,
+  new Promise((resolve) => {
+    window.setTimeout(() => resolve(fallbackValue), timeoutMs);
+  }),
+]);
+
 const MobileFormulasPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -59,8 +66,8 @@ const MobileFormulasPage = () => {
   const loadPipeline = async (formulaRows = []) => {
     try {
       const [briefRows, logRows] = await Promise.all([
-        getBriefs(),
-        getValidationLogs(),
+        runWithTimeout(getBriefs(), [], 4500),
+        runWithTimeout(getValidationLogs(), [], 4500),
       ]);
       const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
         if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
@@ -79,7 +86,7 @@ const MobileFormulasPage = () => {
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
     } catch (error) {
-      toast.error('Formula list loaded, but brief/validation badges are delayed');
+      console.warn('Formula pipeline badges are delayed:', error);
     }
   };
 
@@ -102,14 +109,14 @@ const MobileFormulasPage = () => {
 
     try {
       const formulaItemEntries = await Promise.all(missingRows.map(async (formula) => {
-        const items = await getFormulaItems(formula.id);
+        const items = await runWithTimeout(getFormulaItems(formula.id), [], 4500);
         return [formula.id, items || []];
       }));
       const allItems = formulaItemEntries.flatMap(([, formulaItems]) => formulaItems || []);
       const materialIds = [...new Set(allItems.map((item) => item.item_id).filter(Boolean))];
       const [rawMaterialRows, referenceStatusMap] = await Promise.all([
-        getRawMaterialOptions(),
-        materialIds.length ? getReferenceMatchStatusMap(materialIds) : Promise.resolve(new Map()),
+        runWithTimeout(getRawMaterialOptions(), [], 5000),
+        materialIds.length ? runWithTimeout(getReferenceMatchStatusMap(materialIds), new Map(), 4500) : Promise.resolve(new Map()),
       ]);
       const rawMaterialsById = new Map((rawMaterialRows || []).map((material) => [material.id, material]));
       const metricEntries = formulaItemEntries.map(([formulaId, formulaItems]) => [
@@ -122,7 +129,7 @@ const MobileFormulasPage = () => {
       ]);
       setMetrics((current) => ({ ...current, ...Object.fromEntries(metricEntries) }));
     } catch (error) {
-      toast.error('Formula cards loaded, but metrics are delayed');
+      console.warn('Formula card metrics are delayed:', error);
     } finally {
     }
   };
