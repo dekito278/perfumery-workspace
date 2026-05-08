@@ -165,6 +165,35 @@ const buildRawMaterialPayload = (data) => {
   };
 };
 
+const hasReferenceSourceSnapshots = (data) => (
+  data?.__referenceSourceSnapshots
+  && Object.keys(data.__referenceSourceSnapshots || {}).length > 0
+);
+
+const mergeIncomingGuidanceIntoMatchedRecord = async (matchedRecord, payload, sourceData = {}) => {
+  if (!matchedRecord?.id || !hasReferenceSourceSnapshots(sourceData)) {
+    return matchedRecord;
+  }
+
+  const guidanceSeed = {
+    ...matchedRecord,
+    workbook_code: matchedRecord.workbook_code || payload.workbook_code || null,
+    cas_number: matchedRecord.cas_number || payload.cas_number || null,
+    ifra_limit: matchedRecord.ifra_limit ?? payload.ifra_limit ?? null,
+    reference_abc_primary_family: matchedRecord.reference_abc_primary_family || payload.reference_abc_primary_family || null,
+    reference_impact: matchedRecord.reference_impact ?? payload.reference_impact ?? null,
+    reference_life_hours: matchedRecord.reference_life_hours ?? payload.reference_life_hours ?? null,
+    reference_use_level_typical_percent: matchedRecord.reference_use_level_typical_percent ?? payload.reference_use_level_typical_percent ?? null,
+    reference_use_level_max_percent: matchedRecord.reference_use_level_max_percent ?? payload.reference_use_level_max_percent ?? null,
+    description: matchedRecord.description || payload.description || null,
+    __referenceSourceSnapshots: sourceData.__referenceSourceSnapshots,
+    __referenceFieldLocks: sourceData.__referenceFieldLocks || null,
+  };
+
+  await syncManualReferenceProfileForRawMaterial(guidanceSeed);
+  return matchedRecord;
+};
+
 const getCurrentUserId = async () => {
   const {
     data: { user },
@@ -792,6 +821,7 @@ export const createRawMaterial = async (data) => {
 
     const smartMatch = await findExistingRawMaterialBySmartMatch(userId, payload);
     if (smartMatch?.record) {
+      await mergeIncomingGuidanceIntoMatchedRecord(smartMatch.record, payload, data);
       const solventMap = await getSolventMap(
         smartMatch.record.dilution_solvent_id ? [smartMatch.record.dilution_solvent_id] : []
       );
@@ -804,6 +834,7 @@ export const createRawMaterial = async (data) => {
       findExistingRawMaterialByWorkbookCode,
     });
     if (existingByWorkbookCode) {
+      await mergeIncomingGuidanceIntoMatchedRecord(existingByWorkbookCode, payload, data);
       return await getCreationResolutionForExistingRecord({
         existingRecord: existingByWorkbookCode,
         payload,
@@ -820,6 +851,7 @@ export const createRawMaterial = async (data) => {
       findExistingRawMaterialByName,
     });
     if (existingByName) {
+      await mergeIncomingGuidanceIntoMatchedRecord(existingByName, payload, data);
       return await getCreationResolutionForExistingRecord({
         existingRecord: existingByName,
         payload,

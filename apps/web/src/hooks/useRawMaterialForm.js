@@ -56,6 +56,14 @@ const shouldOverrideNumericGuidance = ({ currentValue, nextValue }) => {
   return !Number.isFinite(currentNumericValue) || currentNumericValue <= 0;
 };
 
+const buildImportedSourceSnapshot = (sourceKey, imported, targetUrl) => ({
+  ...imported,
+  source: imported?.source || sourceKey,
+  source_kind: imported?.source_kind || sourceKey,
+  source_url: imported?.source_url || targetUrl,
+  url: imported?.url || targetUrl,
+});
+
 const createFormDataFromMaterial = (material) => {
   if (!material) {
     return createInitialRawMaterialFormData();
@@ -379,7 +387,7 @@ export const useRawMaterialForm = ({ open, material = null }) => {
           : current.reference_use_level_max_percent,
       }));
 
-      appendSourceSnapshot('perfumersworld', imported._sourceSnapshot || { url: nextUrl, workbook_code: imported.workbook_code || null });
+      appendSourceSnapshot('perfumersworld', buildImportedSourceSnapshot('perfumersworld', imported, nextUrl));
       setInferenceLines([
         imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di PerfumersWorld.',
         imported.uses_in_perfumery ? `Uses in perfumery: ${imported.uses_in_perfumery}` : 'Uses in perfumery tidak tersedia.',
@@ -407,16 +415,33 @@ export const useRawMaterialForm = ({ open, material = null }) => {
 
       applyImportedGuidance((current) => ({
         ...current,
+        workbook_code: imported.workbook_code || current.workbook_code,
         cas_number: imported.cas_number || current.cas_number,
         description: imported.description || current.description,
         ifra_limit: imported.ifra_limit !== null && imported.ifra_limit !== undefined ? String(imported.ifra_limit) : current.ifra_limit,
         scent_family: current.scent_family || imported.family || '',
         reference_abc_primary_family: current.reference_abc_primary_family || imported.reference_abc_primary_family || '',
+        reference_impact: shouldOverrideNumericGuidance({
+          currentValue: current.reference_impact,
+          nextValue: imported.reference_impact,
+        }) ? String(imported.reference_impact) : current.reference_impact,
+        reference_life_hours: shouldOverrideNumericGuidance({
+          currentValue: current.reference_life_hours,
+          nextValue: imported.reference_life_hours,
+        }) ? String(imported.reference_life_hours) : current.reference_life_hours,
+        reference_use_level_typical_percent: imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined
+          ? String(imported.reference_use_level_typical_percent)
+          : current.reference_use_level_typical_percent,
+        reference_use_level_max_percent: imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined
+          ? String(imported.reference_use_level_max_percent)
+          : current.reference_use_level_max_percent,
       }));
 
-      appendSourceSnapshot('scentree', imported._sourceSnapshot || { url: nextUrl, cas_number: imported.cas_number || null });
+      appendSourceSnapshot('scentree', buildImportedSourceSnapshot('scentree', imported, nextUrl));
       setInferenceLines([
-        imported.family ? `Family: ${imported.family}` : 'Family tidak tersedia di ScenTree.',
+        imported.reference_abc_primary_family ? `Family: ${imported.reference_abc_primary_family}` : 'Family tidak tersedia di ScenTree.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di ScenTree.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di ScenTree.',
         imported.ifra_limit !== null && imported.ifra_limit !== undefined
           ? `IFRA limit: ${imported.ifra_limit}%`
           : 'IFRA limit tidak tersedia di ScenTree.',
@@ -446,6 +471,7 @@ export const useRawMaterialForm = ({ open, material = null }) => {
         ...current,
         cas_number: imported.cas_number || current.cas_number,
         description: imported.description || current.description,
+        reference_abc_primary_family: current.reference_abc_primary_family || imported.reference_abc_primary_family || '',
         reference_impact: shouldOverrideNumericGuidance({
           currentValue: current.reference_impact,
           nextValue: imported.reference_impact,
@@ -456,10 +482,12 @@ export const useRawMaterialForm = ({ open, material = null }) => {
         }) ? String(imported.reference_life_hours) : current.reference_life_hours,
       }));
 
-      appendSourceSnapshot('tgsc', imported._sourceSnapshot || { url: nextUrl, cas_number: imported.cas_number || null });
+      appendSourceSnapshot('tgsc', buildImportedSourceSnapshot('tgsc', imported, nextUrl));
       setInferenceLines([
-        imported.odour_profile ? `Odour profile: ${imported.odour_profile}` : 'Odour profile tidak tersedia di TGSC.',
-        imported.substantivity ? `Substantivity: ${imported.substantivity}` : 'Substantivity tidak tersedia di TGSC.',
+        imported.reference_abc_primary_family ? `Family: ${imported.reference_abc_primary_family}` : 'Family tidak tersedia di TGSC.',
+        imported.reference_impact !== null && imported.reference_impact !== undefined ? `Impact: ${imported.reference_impact}` : 'Impact tidak tersedia di TGSC.',
+        imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di TGSC.',
+        imported.odor_description ? `Odour profile: ${imported.odor_description}` : 'Odour profile tidak tersedia di TGSC.',
       ]);
       checkWarnings();
       return imported;
