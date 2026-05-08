@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'solivagant-v2';
+const CACHE_VERSION = 'solivagant-v3';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
@@ -24,6 +24,12 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
@@ -64,31 +70,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isAssetRequest(request) || url.pathname.startsWith('/icons/') || url.pathname === '/manifest.webmanifest') {
-    if (isLocalDev) {
-      event.respondWith(
-        fetch(request)
-          .then((response) => {
-            const responseClone = response.clone();
-            caches.open(APP_SHELL_CACHE).then((cache) => cache.put(request, responseClone));
-            return response;
-          })
-          .catch(() => caches.match(request))
-      );
-      return;
-    }
-
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        return fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           const responseClone = response.clone();
           caches.open(APP_SHELL_CACHE).then((cache) => cache.put(request, responseClone));
           return response;
-        });
-      })
+        })
+        .catch(() => caches.match(request))
     );
   }
 });

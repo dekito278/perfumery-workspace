@@ -22,8 +22,42 @@ export const registerServiceWorker = () => {
   }
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
-      console.warn('Solivagant service worker registration failed:', error);
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        registration.update?.();
+
+        const activateWaitingWorker = () => {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        };
+
+        registration.addEventListener('updatefound', () => {
+          const nextWorker = registration.installing;
+          if (!nextWorker) {
+            return;
+          }
+
+          nextWorker.addEventListener('statechange', () => {
+            if (nextWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              nextWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+
+        activateWaitingWorker();
+      })
+      .catch((error) => {
+        console.warn('Solivagant service worker registration failed:', error);
+      });
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) {
+        return;
+      }
+      refreshing = true;
+      window.location.reload();
     });
   });
 };
