@@ -325,7 +325,7 @@ const FormulasPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Formulas - Solivagant Studio</title>
+        <title>Formulas - Solivagant</title>
         <meta name="description" content="Manage formula compositions, workbook imports, and revision-ready perfume formulas." />
       </Helmet>
 

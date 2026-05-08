@@ -105,7 +105,7 @@ const BriefEditorPage = () => {
   }, [getBriefs, getFormulas, id, isEditMode, navigate, queryFormulaId]);
 
   const pageTitle = useMemo(
-    () => (isEditMode ? 'Edit Brief - Formulation Workspace' : 'New Brief - Formulation Workspace'),
+    () => (isEditMode ? 'Edit Brief - Solivagant' : 'New Brief - Solivagant'),
     [isEditMode]
   );
 

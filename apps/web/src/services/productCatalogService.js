@@ -245,6 +245,11 @@ const writeStoredProducts = (products) => {
   window.dispatchEvent(new CustomEvent('dekito:products-updated'));
 };
 
+const cacheFetchedProducts = (products) => {
+  if (typeof window === 'undefined' || !Array.isArray(products)) return;
+  window.localStorage.setItem(PRODUCT_CATALOG_STORAGE_KEY, JSON.stringify(products));
+};
+
 export const getCatalogProducts = () => {
   return readStoredProducts();
 };
@@ -262,7 +267,9 @@ export const getEditableProducts = async () => {
       throw error;
     }
 
-    return (data || []).map(fromDatabaseRow);
+    const products = (data || []).map(fromDatabaseRow);
+    cacheFetchedProducts(products);
+    return products;
   } catch (error) {
     console.warn('Using local storefront products fallback:', error.message || error);
     return readStoredProducts();

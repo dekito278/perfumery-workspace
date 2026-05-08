@@ -68,7 +68,7 @@ const MobileBespokeSettingsPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>Bespoke Settings - Solivagant Studio</title></Helmet>
+      <Helmet><title>Bespoke Settings - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Bespoke" subtitle="Custom wizard settings" eyebrow="E-commerce" action={<WandSparkles className="h-5 w-5 text-amber-700" />} />
 

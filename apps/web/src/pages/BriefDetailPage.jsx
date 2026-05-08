@@ -81,7 +81,7 @@ const BriefDetailPage = () => {
   return (
     <>
       <Helmet>
-        <title>{`${brief.title} - Composition Project`}</title>
+        <title>{`${brief.title} - Solivagant`}</title>
         <meta name="description" content="Guide one brief through top, middle, and base decisions before turning the shortlist directly into a formula." />
       </Helmet>
 

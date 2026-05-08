@@ -271,7 +271,7 @@ const MobileBatchesPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Batch Calculator - Solivagant Studio</title></Helmet>
+      <Helmet><title>Mobile Batch Calculator - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Batch"

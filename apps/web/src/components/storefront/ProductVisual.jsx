@@ -1,43 +1,67 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils.js';
 
+const fallbackGradients = [
+  'linear-gradient(135deg,#f5d78f 0%,#f8efe1 52%,#d7b98b 100%)',
+  'linear-gradient(135deg,#f0b6c2 0%,#fff2f4 52%,#b97f88 100%)',
+  'linear-gradient(135deg,#a7d8d3 0%,#effaf8 52%,#efd37c 100%)',
+  'linear-gradient(135deg,#e6bd82 0%,#fff4df 52%,#b8885b 100%)',
+  'linear-gradient(135deg,#bad7b6 0%,#f6fbf0 52%,#d8c89b 100%)',
+  'linear-gradient(135deg,#9fb8b3 0%,#eef5f2 52%,#8e806d 100%)',
+];
+
+const getFallbackGradient = (product) => {
+  const value = String(product?.slug || product?.name || product?.category || 'solivagant');
+  const index = Math.abs(value.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % fallbackGradients.length;
+  return fallbackGradients[index];
+};
+
 const ProductVisual = ({
   product,
   className = '',
   bottleClassName = '',
   label = true,
+  priority = false,
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const imageUrl = String(product?.images?.[0] || product?.imageUrl || '').trim();
   const hasImage = Boolean(imageUrl) && !imageFailed;
-  const fallbackClass = 'bg-[radial-gradient(circle_at_72%_14%,rgba(238,242,232,0.18),transparent_32%),linear-gradient(135deg,#050705_0%,#132016_52%,#263d27_100%)]';
   void bottleClassName;
 
   useEffect(() => {
     setImageFailed(false);
+    setImageLoaded(false);
   }, [imageUrl]);
 
   return (
-    <div className={cn('relative overflow-hidden rounded-2xl', hasImage ? 'bg-[#050705]' : fallbackClass, className)}>
+    <div
+      className={cn('relative overflow-hidden rounded-2xl bg-[#050705]', className)}
+      style={{ background: getFallbackGradient(product) }}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_14%,rgba(255,255,255,0.34),transparent_34%),linear-gradient(180deg,rgba(5,7,5,0.02),rgba(5,7,5,0.36))]" />
+      <div className="absolute inset-0 flex items-center justify-center p-8">
+        <img
+          src="/brand/solivagant-logo.png"
+          alt={product?.name ? `${product.name} by Solivagant` : 'Solivagant'}
+          className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-300', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
+          loading="eager"
+          decoding="async"
+        />
+      </div>
       {hasImage ? (
         <img
           src={imageUrl}
-          alt={product.name}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
+          alt={product?.name || 'Solivagant product'}
+          className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0')}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
           referrerPolicy="no-referrer"
+          onLoad={() => setImageLoaded(true)}
           onError={() => setImageFailed(true)}
         />
       ) : (
         <>
-          <div className="absolute inset-0 flex items-center justify-center p-8">
-            <img
-              src="/brand/solivagant-logo.png"
-              alt={product?.name ? `${product.name} by Solivagant` : 'Solivagant'}
-              className="max-h-28 w-full max-w-[72%] object-contain opacity-95"
-              loading="lazy"
-            />
-          </div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(238,242,232,0.12),transparent_38%)]" />
           <div className="absolute bottom-4 left-4 rounded-2xl bg-white/10 px-3 py-2 text-[10px] font-bold uppercase text-[#eef2e8] shadow-sm backdrop-blur">
             Solivagant

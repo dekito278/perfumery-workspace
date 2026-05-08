@@ -58,7 +58,7 @@ const drawFooter = (doc) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...BRAND.muted);
-    doc.text('Solivagant Studio Workbook Export', MARGIN, PAGE_HEIGHT - 5.7);
+    doc.text('Solivagant Workbook Export', MARGIN, PAGE_HEIGHT - 5.7);
     doc.text(`Page ${page} / ${totalPages}`, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 5.7, { align: 'right' });
   }
 };

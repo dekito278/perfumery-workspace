@@ -153,7 +153,7 @@ const MobileEditFormulaPage = () => {
   if (loadingData) {
     return (
       <MobileAuthenticatedLayout showFab={false}>
-        <Helmet><title>Loading Formula Editor - Solivagant Studio</title></Helmet>
+        <Helmet><title>Loading Formula Editor - Solivagant</title></Helmet>
         <MobileLoadingState eyebrow="Formula editor" title="Loading workbook..." subtitle="Syncing composition and material guidance." />
       </MobileAuthenticatedLayout>
     );
@@ -161,7 +161,7 @@ const MobileEditFormulaPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>Edit {name} - Mobile Formula</title></Helmet>
+      <Helmet><title>Edit {name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={name || 'Edit Formula'} subtitle={unsaved ? 'Unsaved revision' : 'Workbook ready'} onBack={() => navigate(`/mobile/formulas/${id}`)} action={<MobileStatusBadge status={status} />} />
         {seededCount ? (

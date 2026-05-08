@@ -259,9 +259,9 @@ const MobileDashboardPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab>
-      <Helmet><title>Studio - Solivagant Studio</title></Helmet>
+      <Helmet><title>Studio - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Studio" subtitle={getDisplayName(currentUser)} eyebrow="Solivagant Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
+        <MobileTopBar title="Studio" subtitle={getDisplayName(currentUser)} eyebrow="Solivagant" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
         <section className="mobile-studio-hero p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">

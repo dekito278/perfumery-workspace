@@ -34,7 +34,7 @@ const MobileCategoriesPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Categories - Solivagant Studio</title></Helmet>
+      <Helmet><title>Mobile Categories - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Categories" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
         {loading ? <MobileLoadingState eyebrow="Materials" title="Loading categories..." subtitle="Preparing classification data." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (

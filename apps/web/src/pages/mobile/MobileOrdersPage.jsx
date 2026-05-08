@@ -37,7 +37,7 @@ const MobileOrdersPage = () => {
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet>
-        <title>Orders - Solivagant Studio</title>
+        <title>Orders - Solivagant</title>
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar

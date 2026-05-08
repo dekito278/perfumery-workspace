@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'perfumer-studio-v1';
+const CACHE_VERSION = 'solivagant-v2';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((cacheNames) => Promise.all(
         cacheNames
-          .filter((cacheName) => cacheName.startsWith('perfumer-studio-') && cacheName !== APP_SHELL_CACHE)
+          .filter((cacheName) => (cacheName.startsWith('perfumer-studio-') || cacheName.startsWith('solivagant-')) && cacheName !== APP_SHELL_CACHE)
           .map((cacheName) => caches.delete(cacheName))
       ))
       .then(() => self.clients.claim())

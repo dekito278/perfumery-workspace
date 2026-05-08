@@ -39,8 +39,8 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Login - Solivagant Studio</title>
-        <meta name="description" content="Sign in to your Solivagant Studio account to manage briefs, materials, formulas, and validation work." />
+        <title>Login - Solivagant</title>
+        <meta name="description" content="Sign in to your Solivagant account to manage briefs, materials, formulas, and validation work." />
       </Helmet>
       <div className="flex min-h-screen items-center justify-center bg-[#050705] p-4">
         <Card className="w-full max-w-md border-white/10 bg-[#f7f8f2] shadow-2xl shadow-black/40">

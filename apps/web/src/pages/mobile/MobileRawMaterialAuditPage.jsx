@@ -61,7 +61,7 @@ const MobileRawMaterialAuditPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Material Audit - Solivagant Studio</title></Helmet>
+      <Helmet><title>Mobile Material Audit - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Material Audit" onBack={() => navigate('/mobile/raw-materials')} action={<AlertTriangle className="h-6 w-6 text-amber-600" />} />
         {loading ? <MobileLoadingState eyebrow="Material audit" title="Scanning materials..." subtitle="Checking duplicates and missing data." className="min-h-[calc(100dvh-260px)]" /> : (

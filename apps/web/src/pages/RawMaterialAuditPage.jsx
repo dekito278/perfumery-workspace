@@ -395,7 +395,7 @@ const RawMaterialAuditPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Material Audit - Solivagant Studio</title>
+        <title>Material Audit - Solivagant</title>
       </Helmet>
 
       <div className="page-container space-y-6">

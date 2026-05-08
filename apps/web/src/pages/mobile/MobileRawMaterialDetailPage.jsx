@@ -204,7 +204,7 @@ const MobileRawMaterialDetailPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>{material.name} - Mobile Material</title></Helmet>
+      <Helmet><title>{material.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={() => navigate('/mobile/raw-materials')} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
         <section className="mobile-card p-2.5">

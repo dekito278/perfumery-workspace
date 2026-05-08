@@ -148,7 +148,7 @@ const MobileBriefEditorPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>{isEditMode ? 'Edit Mobile Brief' : 'New Mobile Brief'} - Solivagant Studio</title></Helmet>
+      <Helmet><title>{isEditMode ? 'Edit Mobile Brief' : 'New Mobile Brief'} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title={isEditMode ? 'Edit Brief' : 'New Brief'} onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />
         <MobileSegmentedControl options={steps} value={step} onChange={setStep} />

@@ -13,7 +13,7 @@ const ShipmentsPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Shipments - Solivagant Studio</title>
+        <title>Shipments - Solivagant</title>
         <meta name="description" content="Prepare future e-commerce shipment workflows for Solivagant orders." />
       </Helmet>
 

@@ -150,7 +150,7 @@ const MobileFormulasPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Formulas - Solivagant Studio</title></Helmet>
+      <Helmet><title>Mobile Formulas - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Formulas"

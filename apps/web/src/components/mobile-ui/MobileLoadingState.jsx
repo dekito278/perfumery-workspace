@@ -2,7 +2,7 @@ import React from 'react';
 import { LoaderCircle } from 'lucide-react';
 
 const MobileLoadingState = ({
-  eyebrow = 'Solivagant Studio',
+  eyebrow = 'Solivagant',
   title = 'Loading...',
   subtitle = 'Preparing your mobile workspace.',
   className = '',

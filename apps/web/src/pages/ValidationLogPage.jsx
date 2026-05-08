@@ -164,7 +164,7 @@ const ValidationLogPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Validation - Formulation Workspace</title>
+        <title>Validation - Solivagant</title>
         <meta name="description" content="Track evaluation backlog, revision notes, and validation checkpoints for formulas." />
       </Helmet>
 

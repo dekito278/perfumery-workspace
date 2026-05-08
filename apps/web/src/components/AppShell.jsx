@@ -181,7 +181,7 @@ const AppShell = ({ children }) => {
               </span>
               {!desktopSidebarCollapsed && (
                 <span>
-                  <span className="app-brand-title">Solivagant Studio</span>
+                  <span className="app-brand-title">Solivagant</span>
                   <span className="app-brand-subtitle">Formulation workspace</span>
                 </span>
               )}
@@ -239,7 +239,7 @@ const AppShell = ({ children }) => {
                         <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
                       </span>
                       <span>
-                        <span className="app-brand-title">Solivagant Studio</span>
+                        <span className="app-brand-title">Solivagant</span>
                         <span className="app-brand-subtitle">Formulation workspace</span>
                       </span>
                     </Link>
@@ -266,7 +266,7 @@ const AppShell = ({ children }) => {
                   <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold leading-none">Solivagant Studio</span>
+                  <span className="block truncate text-sm font-semibold leading-none">Solivagant</span>
                   <span className="mt-1 block truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Halo, {displayName}</span>
                 </span>
               </Link>

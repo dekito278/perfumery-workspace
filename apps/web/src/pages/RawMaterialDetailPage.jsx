@@ -230,7 +230,7 @@ const RawMaterialDetailPage = () => {
   return (
     <>
       <Helmet>
-        <title>{`${material.name} - Material Details`}</title>
+        <title>{`${material.name} - Solivagant`}</title>
         <meta name="description" content={`Detailed view of ${material.name} material with guidance and reference data.`} />
       </Helmet>
 

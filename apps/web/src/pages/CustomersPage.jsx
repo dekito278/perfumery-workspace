@@ -23,7 +23,7 @@ const CustomersPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Customers - Solivagant Studio</title>
+        <title>Customers - Solivagant</title>
         <meta name="description" content="Manage Solivagant storefront customers and repeat-order codes." />
       </Helmet>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

@@ -327,7 +327,7 @@ const CreateFormulaPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Create Formula - Solivagant Studio</title>
+        <title>Create Formula - Solivagant</title>
         <meta
           name="description"
           content="Build a formula on a dedicated page with ingredient composition on the left and a live workbook odour display on the right."

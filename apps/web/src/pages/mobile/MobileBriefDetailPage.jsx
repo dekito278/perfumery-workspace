@@ -102,7 +102,7 @@ const MobileBriefDetailPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>{brief.title} - Mobile Brief</title></Helmet>
+      <Helmet><title>{brief.title} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title={brief.title}

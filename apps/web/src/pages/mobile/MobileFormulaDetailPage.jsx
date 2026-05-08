@@ -146,7 +146,7 @@ const MobileFormulaDetailPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>{formula.name} - Mobile Formula</title></Helmet>
+      <Helmet><title>{formula.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title={formula.name} subtitle={`${formula.code} · ${formatStatus(formula.category || 'perfume')}`} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={formula.status || 'draft'} />} />
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />

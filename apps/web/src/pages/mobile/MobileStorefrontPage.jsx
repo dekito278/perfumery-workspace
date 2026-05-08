@@ -45,6 +45,8 @@ const mobileHomeAssets = {
   perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
 };
 
+const sampleFallbacks = ['Santal Morn', 'Petal Smoke', 'Citrus Veil'];
+
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
   const products = useCatalogProducts();
@@ -58,6 +60,13 @@ const MobileStorefrontPage = () => {
     { value: String(limitedProducts.length), label: 'Limited picks' },
     { value: '1:1', label: 'Bespoke' },
   ];
+  const sampleOrders = (homeProducts.length ? homeProducts : products).slice(0, 3);
+  const animatedSamples = (sampleOrders.length ? sampleOrders.map((product) => product.name) : sampleFallbacks)
+    .map((name, index) => ({
+      name,
+      code: ['SOLI-1024', 'SOLI-1025', 'SOLI-1026'][index] || `SOLI-102${index + 4}`,
+      status: ['Sample dibeli', 'Masuk cart', 'Siap checkout'][index] || 'Sample dibeli',
+    }));
 
   return (
     <MobileCommerceLayout>
@@ -139,6 +148,31 @@ const MobileStorefrontPage = () => {
           </div>
         </motion.section>
 
+        <section className="mobile-sample-flow overflow-hidden p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase text-[#8d7a4f]">Sample beli</div>
+              <h2 className="mt-1 text-base font-bold leading-tight text-[#0b130c]">Checkout sample tetap jalan.</h2>
+            </div>
+            <div className="mobile-sample-flow-orbit" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+          <div className="mobile-sample-flow-track mt-3" aria-label="Animasi sample checkout">
+            {[...animatedSamples, ...animatedSamples].map((sample, index) => (
+              <div key={`${sample.code}-${index}`} className="mobile-sample-flow-item">
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-bold text-[#0b130c]">{sample.name}</span>
+                  <span className="mt-0.5 block text-[10px] font-bold uppercase text-[#7a8377]">{sample.status}</span>
+                </span>
+                <span className="rounded-full bg-[#263d27] px-2 py-1 text-[10px] font-bold text-white">{sample.code}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {!hasProducts ? (
           <motion.section variants={fadeUp} initial="hidden" animate="visible" className="mobile-card overflow-hidden">
             <div className="bg-[linear-gradient(145deg,#050705,#111a11)] p-4 text-[#eef2e8]">
@@ -166,7 +200,7 @@ const MobileStorefrontPage = () => {
           </motion.section>
         ) : null}
 
-        <motion.section variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} className="grid grid-cols-3 gap-2">
+        <motion.section variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-3 gap-2">
           {storefrontSegments.map((segment, index) => (
             <motion.div key={segment.name} variants={fadeUp}>
               <button
@@ -185,17 +219,16 @@ const MobileStorefrontPage = () => {
         </motion.section>
 
         {categories.length ? (
-        <motion.section variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} className="space-y-3">
+        <motion.section variants={stagger} initial="hidden" animate="visible" className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Categories</h2>
             <span className="text-xs font-bold text-[#263d27]">Shop families</span>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="mobile-segment-scroll flex gap-5 overflow-x-auto pb-2 pr-4">
             {categories.slice(0, 6).map((category) => (
               <motion.div key={category.name} variants={fadeUp}>
-                <button type="button" onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)} className={`min-h-[112px] rounded-2xl border p-3 text-left ${category.accent}`}>
-                  <span className="block text-sm font-bold">{category.name}</span>
-                  <span className="mt-2 block text-[11px] font-semibold leading-snug opacity-80">{category.description}</span>
+                <button type="button" onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)} className="h-8 shrink-0 px-0 text-sm font-bold text-[#263d27]">
+                  <span className="block whitespace-nowrap">{category.name}</span>
                 </button>
               </motion.div>
             ))}
@@ -204,16 +237,16 @@ const MobileStorefrontPage = () => {
         ) : null}
 
         {homeProducts.length ? (
-        <motion.section variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} id="mobile-products" className="space-y-3 scroll-mt-4">
+        <motion.section variants={stagger} initial="hidden" animate="visible" id="mobile-products" className="space-y-3 scroll-mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Featured products</h2>
             <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/catalog')}>View all</Button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-          {homeProducts.map((product) => (
+          {homeProducts.map((product, index) => (
             <motion.article key={product.id} variants={fadeUp} className="mobile-card min-w-0 overflow-hidden p-2 shadow-sm shadow-[#263d27]/6">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} />
+                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 2} />
                 <div className="mt-2">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>

@@ -47,7 +47,7 @@ const ProductCategoriesPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Product Categories - Solivagant Studio</title>
+        <title>Product Categories - Solivagant</title>
         <meta name="description" content="Manage e-commerce product categories for the Solivagant storefront." />
       </Helmet>
 

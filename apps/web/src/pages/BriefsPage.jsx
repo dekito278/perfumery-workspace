@@ -177,7 +177,7 @@ const BriefsPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Briefs - Formulation Workspace</title>
+        <title>Briefs - Solivagant</title>
         <meta name="description" content="Review, search, and open formulation briefs before moving into project work." />
       </Helmet>
 

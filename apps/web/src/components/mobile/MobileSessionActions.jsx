@@ -28,7 +28,7 @@ const MobileSessionActions = () => {
       {open ? (
         <div className="mobile-session-panel">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-bold text-[#1f2937]">{currentUser?.email || 'Solivagant Studio'}</div>
+            <div className="truncate text-xs font-bold text-[#1f2937]">{currentUser?.email || 'Solivagant'}</div>
             <div className="text-[10px] font-semibold text-[#6b7280]">Mobile session</div>
           </div>
           <Button type="button" variant="outline" onClick={handleLogout} disabled={loggingOut} className="h-9 rounded-xl border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700">

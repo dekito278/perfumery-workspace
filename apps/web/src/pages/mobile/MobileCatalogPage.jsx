@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, PackagePlus, Search, SlidersHorizontal, WandSparkles } from 'lucide-react';
+import { ArrowUpDown, PackagePlus, Search, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -128,23 +128,22 @@ const MobileCatalogPage = () => {
         ) : null}
 
         {hasCatalogProducts && scentFamilies.length ? (
-        <section className="mobile-card p-2.5">
+        <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-bold uppercase text-[#6b7280]">Scent family</h2>
-            <SlidersHorizontal className="h-3.5 w-3.5 text-[#8b949e]" />
+            <h2 className="text-xs font-bold uppercase text-[#6b7280]">Shop family</h2>
+            <span className="text-[10px] font-bold uppercase text-[#9ca3af]">Slide</span>
           </div>
-          <div className="mobile-segment-scroll mt-2 flex gap-1.5 overflow-x-auto pb-1">
+          <div className="mobile-segment-scroll flex gap-5 overflow-x-auto pb-2 pl-1 pr-4">
             {['All', ...scentFamilies.map((item) => item.name)].map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => updateFilters({ category: item })}
-                style={{ minHeight: 32 }}
                 className={cn(
-                  'h-8 shrink-0 rounded-xl border px-3 text-[11px] font-bold transition',
+                  'relative h-8 shrink-0 px-0 text-sm font-bold transition',
                   category === item
-                    ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
-                    : 'border-transparent bg-[#f7f8f2] text-[#6b7280]'
+                    ? 'text-[#263d27] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-[#263d27]'
+                    : 'text-[#7a8377]'
                 )}
               >
                 {item}
@@ -182,10 +181,10 @@ const MobileCatalogPage = () => {
         ) : null}
 
         <section className="grid grid-cols-2 gap-3">
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product, index) => (
             <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} />
+                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 4} />
                 <div className="mt-2">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>

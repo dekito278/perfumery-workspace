@@ -40,7 +40,7 @@ const CategoriesPage = () => {
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Categories - Solivagant Studio</title>
+        <title>Categories - Solivagant</title>
         <meta name="description" content="Reference the Perfumer's Workbook A-Z material classification system." />
       </Helmet>
       <div className="page-container">

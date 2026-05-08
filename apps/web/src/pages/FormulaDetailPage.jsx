@@ -81,7 +81,7 @@ const FormulaDetailPage = () => {
   return (
     <>
       <Helmet>
-        <title>{`${formula.name} - Formula Details`}</title>
+        <title>{`${formula.name} - Solivagant`}</title>
         <meta name="description" content={`Detailed view of ${formula.name} formula with gram-based composition and cost breakdown.`} />
       </Helmet>
 

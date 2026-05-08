@@ -75,14 +75,14 @@ const PwaInstallPrompt = () => {
   const ios = platform === 'ios';
 
   return (
-    <div className="mobile-pwa-install" role="dialog" aria-label="Install Solivagant Studio">
+    <div className="mobile-pwa-install" role="dialog" aria-label="Install Solivagant">
       <button type="button" className="mobile-pwa-install-close" onClick={dismiss} aria-label="Dismiss install prompt">
         <X className="h-4 w-4" />
       </button>
       <div className="mobile-pwa-install-mark">PS</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold text-[#1f2937]">
-          {ios ? 'Add Solivagant Studio to Home Screen' : 'Install Solivagant Studio Lite'}
+          {ios ? 'Add Solivagant to Home Screen' : 'Install Solivagant Lite'}
         </div>
         <p className="mt-1 text-xs font-medium leading-snug text-[#6b7280]">
           {ios
