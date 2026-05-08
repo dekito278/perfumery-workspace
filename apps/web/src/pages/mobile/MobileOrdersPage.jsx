@@ -1,6 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, PackageCheck, Trash2 } from 'lucide-react';
+import { Clipboard, CreditCard, PackageCheck, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -32,17 +32,36 @@ const getPaymentStatusClassName = (status) => {
 };
 
 const bespokeDetailRows = (item) => [
-  ['Mood', item?.mood],
-  ['Occasion', item?.occasion],
-  ['Budget', item?.budget],
-  ['Size', item?.size],
   ['Aroma', item?.preferredNotes || item?.notes],
-  ['Story', item?.story],
+  ['Momen', item?.occasion],
+  ['Ukuran', item?.size],
+  ['Botol', item?.bottleType],
+  ['Cap', item?.capDesign],
+  ['Label', item?.labelDesign],
+  ['Material', item?.exoticMaterial],
+  ['Budget', item?.budget],
   ['Reference', item?.referenceProductName],
+  ['Story', item?.story],
 ].filter(([, value]) => value);
 
+const nextActionByStatus = {
+  pending_payment: 'Tunggu pembayaran DOKU/manual sebelum produksi.',
+  paid: 'Siap diproses: review brief, siapkan formula, lalu ubah ke Processing.',
+  processing: 'Sedang dikerjakan. Update ke Shipped setelah resi/packing siap.',
+  shipped: 'Dalam pengiriman. Ubah ke Completed saat selesai.',
+  completed: 'Order selesai.',
+  cancelled: 'Order dibatalkan.',
+};
+
+const getPaymentSummary = (orders) => ({
+  pending: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)).length,
+  paid: orders.filter((order) => order.paymentStatus === 'paid').length,
+  attention: orders.filter((order) => ['failed', 'expired'].includes(order.paymentStatus)).length,
+});
+
 const MobileOrdersPage = () => {
-  const { orders, summary, loading, updateStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const paymentSummary = getPaymentSummary(orders);
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
@@ -74,10 +93,31 @@ const MobileOrdersPage = () => {
         </section>
 
         <section className="mobile-card p-3">
-          <div className="text-[10px] font-bold uppercase text-[#263d27]">DOKU payment flow</div>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-            DOKU notification akan mengubah order menjadi Paid otomatis. Setelah itu proses manual dari studio: Processing, Shipped, lalu Completed.
-          </p>
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+              <CreditCard className="h-5 w-5" />
+            </span>
+            <div>
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">DOKU payment flow</div>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                Payment callback mengubah status menjadi Paid otomatis. Setelah itu Studio tinggal lanjut Processing, Shipped, lalu Completed.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-amber-50 px-3 py-2 text-center">
+              <div className="text-sm font-bold text-amber-800">{paymentSummary.pending}</div>
+              <div className="text-[9px] font-bold uppercase text-amber-700">Pending</div>
+            </div>
+            <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-center">
+              <div className="text-sm font-bold text-emerald-700">{paymentSummary.paid}</div>
+              <div className="text-[9px] font-bold uppercase text-emerald-700">Paid</div>
+            </div>
+            <div className="rounded-2xl bg-rose-50 px-3 py-2 text-center">
+              <div className="text-sm font-bold text-rose-700">{paymentSummary.attention}</div>
+              <div className="text-[9px] font-bold uppercase text-rose-700">Issue</div>
+            </div>
+          </div>
         </section>
 
         <section className="space-y-3">
@@ -111,13 +151,49 @@ const MobileOrdersPage = () => {
                   </div>
                 ))}
               </div>
+              <div className="mt-3 rounded-2xl bg-[#f8f7f4] p-3">
+                <div className="text-[10px] font-bold uppercase text-[#6b7280]">Next action</div>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-[#1f2937]">{nextActionByStatus[order.status] || 'Review order dan update status berikutnya.'}</p>
+              </div>
+              <div className="mt-3 rounded-2xl border border-[#e5e7eb] bg-white p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Payment admin</div>
+                    <p className="mt-1 text-xs font-semibold text-[#1f2937]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</p>
+                  </div>
+                  {order.paymentStatus !== 'paid' ? (
+                    <Button type="button" size="sm" className="h-9 shrink-0 rounded-2xl px-3 text-xs" onClick={() => updatePaymentStatus(order.id || order.orderNumber, 'paid')}>
+                      Mark paid
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                  <select
+                    value={order.paymentStatus}
+                    onChange={(event) => updatePaymentStatus(order.id || order.orderNumber, event.target.value)}
+                    className="h-10 rounded-2xl border border-[#e5e7eb] bg-[#f8f7f4] px-3 text-xs font-bold outline-none focus:border-amber-300"
+                  >
+                    {Object.entries(paymentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                  <span className={`grid h-10 place-items-center rounded-2xl px-3 text-[10px] font-bold uppercase ${getPaymentStatusClassName(order.paymentStatus)}`}>
+                    {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+                  </span>
+                </div>
+              </div>
               {bespoke ? (
-                <div className="mt-3 space-y-2 rounded-2xl bg-[#f8f7f4] p-3">
-                  {bespokeDetailRows(bespokeItem).map(([label, value]) => (
-                    <p key={label} className="text-xs font-semibold text-[#6b7280]">
-                      <strong className="text-[#263d27]">{label}:</strong> {value}
-                    </p>
-                  ))}
+                <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-3">
+                  <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Bespoke brief
+                  </div>
+                  <div className="grid gap-2">
+                    {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                      <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
+                        <span className="text-[#6b7280]">{label}</span>
+                        <span className="min-w-0 text-[#1f2937]">{value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -125,7 +201,7 @@ const MobileOrdersPage = () => {
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} items</div>
                   <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
                 </div>
-                <select value={order.status} onChange={(event) => updateStatus(order.id, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
+                <select value={order.status} onChange={(event) => updateStatus(order.id || order.orderNumber, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>

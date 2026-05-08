@@ -5,6 +5,7 @@ import {
   getOrderSummary,
   getLocalOrders,
   getOrders,
+  updateOrderPaymentStatus,
   updateOrderStatus,
 } from '@/services/orderService.js';
 
@@ -41,6 +42,19 @@ export const useOrders = () => {
     summary,
     loading,
     updateStatus: async (orderId, status) => setOrders(await updateOrderStatus(orderId, status)),
+    updatePaymentStatus: async (orderId, paymentStatus) => {
+      const nextOrderStatus = paymentStatus === 'paid'
+        ? 'paid'
+        : ['failed', 'expired'].includes(paymentStatus)
+          ? 'cancelled'
+          : 'pending_payment';
+      await updateOrderPaymentStatus(orderId, {
+        paymentStatus,
+        paymentProvider: 'doku',
+        status: nextOrderStatus,
+      });
+      setOrders(await getOrders());
+    },
     deleteOne: async (orderId) => setOrders(await deleteOrder(orderId)),
     clearAll: () => {
       clearOrders();

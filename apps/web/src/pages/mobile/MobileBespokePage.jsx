@@ -13,7 +13,7 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
-import { createBespokeRequest } from '@/services/orderService.js';
+import { createBespokeRequest, updateOrderPaymentStatus } from '@/services/orderService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 
@@ -349,6 +349,12 @@ const MobileBespokePage = () => {
         customerName: form.customerName,
         contact: form.contact,
         callbackPath: '/mobile/payment',
+      });
+      await updateOrderPaymentStatus(order.id || order.orderNumber, {
+        paymentStatus: 'pending',
+        paymentProvider: 'doku',
+        paymentReference: checkout.requestId || '',
+        status: 'pending_payment',
       });
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentUrl: checkout.paymentUrl,

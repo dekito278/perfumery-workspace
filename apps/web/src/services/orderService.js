@@ -317,10 +317,10 @@ export const createBespokeRequest = async (requestData) => {
 
 export const updateOrderStatus = async (orderId, status) => {
   try {
-    const { error } = await supabase
+    const query = supabase
       .from('storefront_orders')
-      .update({ status })
-      .eq('id', orderId);
+      .update({ status });
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) {
       throw error;
@@ -336,6 +336,48 @@ export const updateOrderStatus = async (orderId, status) => {
     ));
     writeOrders(nextOrders);
     return nextOrders;
+  }
+};
+
+export const updateOrderPaymentStatus = async (orderId, {
+  paymentStatus,
+  paymentProvider = 'doku',
+  paymentReference = '',
+  status,
+}) => {
+  const patch = {
+    payment_status: paymentStatus,
+    payment_provider: paymentProvider,
+    payment_reference: paymentReference,
+    ...(status ? { status } : {}),
+  };
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update(patch);
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) {
+      throw error;
+    }
+
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+  } catch (error) {
+    console.warn('Updating local storefront order payment fallback:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? {
+          ...order,
+          paymentStatus,
+          paymentProvider,
+          paymentReference,
+          ...(status ? { status } : {}),
+          updatedAt: new Date().toISOString(),
+        }
+        : order
+    ));
+    writeOrders(nextOrders);
   }
 };
 

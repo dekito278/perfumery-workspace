@@ -7,7 +7,7 @@ import {
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
-import { createOrder } from '@/services/orderService.js';
+import { createOrder, updateOrderPaymentStatus } from '@/services/orderService.js';
 import {
   describeShippingRate,
   getCheckoutShippingWeight,
@@ -371,6 +371,12 @@ export const useCheckoutFlow = ({
         customerName,
         contact,
         callbackPath: paymentPath,
+      });
+      await updateOrderPaymentStatus(order.id || order.orderNumber, {
+        paymentStatus: 'pending',
+        paymentProvider: 'doku',
+        paymentReference: checkout.requestId || '',
+        status: 'pending_payment',
       });
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentUrl: checkout.paymentUrl,

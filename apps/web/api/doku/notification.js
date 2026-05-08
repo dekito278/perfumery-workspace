@@ -48,14 +48,17 @@ const secureCompare = (left, right) => {
 
 const mapDokuStatus = (status) => {
   const normalizedStatus = String(status || '').toUpperCase();
-  if (normalizedStatus === 'SUCCESS') {
+  if (['SUCCESS', 'PAID', 'SETTLEMENT', 'CAPTURED'].includes(normalizedStatus)) {
     return { orderStatus: 'paid', paymentStatus: 'paid' };
   }
-  if (normalizedStatus === 'PENDING') {
+  if (['PENDING', 'PROCESSING'].includes(normalizedStatus)) {
     return { orderStatus: 'pending_payment', paymentStatus: 'pending' };
   }
   if (['EXPIRED', 'TIMEOUT'].includes(normalizedStatus)) {
     return { orderStatus: 'cancelled', paymentStatus: 'expired' };
+  }
+  if (['FAILED', 'DENIED', 'CANCELLED', 'CANCELED'].includes(normalizedStatus)) {
+    return { orderStatus: 'cancelled', paymentStatus: 'failed' };
   }
   return null;
 };
