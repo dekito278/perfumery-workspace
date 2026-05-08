@@ -14,7 +14,7 @@ const collections = [
   { key: 'bottleTypes', title: 'Jenis botol', helper: 'Desain atau bentuk botol.' },
   { key: 'capDesigns', title: 'Desain cap', helper: 'Cap biasa, cap batu, custom akrilik.' },
   { key: 'labelDesigns', title: 'Desain label', helper: 'Label minimal, custom name, atau style lain.' },
-  { key: 'exoticMaterials', title: 'Exotic ingredient', helper: 'Bahan tambahan yang menambah harga.' },
+  { key: 'exoticMaterials', title: 'Material eksotik', helper: 'Bahan tambahan yang menambah harga.' },
 ];
 
 const emptyOption = {
@@ -29,8 +29,9 @@ const emptyOption = {
 
 const MobileBespokeSettingsPage = () => {
   const settings = useBespokeSettings();
-  const [activeCollection, setActiveCollection] = useState('bottleTypes');
+  const [activeCollection, setActiveCollection] = useState('bottleSizes');
   const [form, setForm] = useState(emptyOption);
+  const [saving, setSaving] = useState(false);
   const collection = collections.find((item) => item.key === activeCollection) || collections[0];
   const options = settings[activeCollection] || [];
 
@@ -39,31 +40,52 @@ const MobileBespokeSettingsPage = () => {
 
   const handleEdit = (option) => setForm(option);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!form.label.trim()) {
       toast.error('Nama opsi wajib diisi');
       return;
     }
-    const savedOption = saveBespokeOption(activeCollection, {
-      ...form,
-      value: form.value || form.label,
-      price: Number(form.price || 0),
-    });
-    setForm(savedOption);
-    toast.success('Opsi bespoke tersimpan');
+    setSaving(true);
+    try {
+      const savedOption = await saveBespokeOption(activeCollection, {
+        ...form,
+        value: form.value || form.label,
+        price: Number(form.price || 0),
+      });
+      setForm(savedOption);
+      toast.success('Opsi bespoke tersimpan');
+    } catch (error) {
+      toast.error('Opsi bespoke gagal tersimpan');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (option) => {
-    deleteBespokeOption(activeCollection, option.id);
-    if (form.id === option.id) resetForm();
-    toast.success('Opsi dihapus');
+  const handleDelete = async (option) => {
+    setSaving(true);
+    try {
+      await deleteBespokeOption(activeCollection, option.id);
+      if (form.id === option.id) resetForm();
+      toast.success('Opsi dihapus');
+    } catch (error) {
+      toast.error('Opsi gagal dihapus');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleReset = () => {
-    resetBespokeSettings();
-    resetForm();
-    toast.success('Bespoke settings dikembalikan ke default');
+  const handleReset = async () => {
+    setSaving(true);
+    try {
+      await resetBespokeSettings();
+      resetForm();
+      toast.success('Bespoke settings dikembalikan ke default');
+    } catch (error) {
+      toast.error('Bespoke settings gagal direset');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -99,6 +121,9 @@ const MobileBespokeSettingsPage = () => {
               </button>
             ))}
           </div>
+          <div className="mt-3 rounded-2xl bg-white px-3 py-3 text-xs font-semibold leading-relaxed text-[#6b7280]">
+            Urutannya mengikuti wizard customer: ukuran botol, jenis botol, desain cap, desain label, lalu material eksotik opsional.
+          </div>
         </section>
 
         <form onSubmit={handleSubmit} className="mobile-card p-4">
@@ -119,7 +144,7 @@ const MobileBespokeSettingsPage = () => {
               <input type="checkbox" checked={Boolean(form.enabled)} onChange={(event) => updateField('enabled', event.target.checked)} />
               Tampilkan ke customer
             </label>
-            <Button type="submit" className="h-12 rounded-2xl gap-2"><Save className="h-4 w-4" />Save option</Button>
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={saving}><Save className="h-4 w-4" />{saving ? 'Saving...' : 'Save option'}</Button>
           </div>
         </form>
 
@@ -129,7 +154,7 @@ const MobileBespokeSettingsPage = () => {
               <h2 className="text-base font-bold text-[#1f2937]">{collection.title}</h2>
               <p className="text-xs font-semibold text-[#6b7280]">{options.length} opsi</p>
             </div>
-            <Button type="button" variant="ghost" className="h-9 px-2 text-xs" onClick={handleReset}>Reset</Button>
+            <Button type="button" variant="ghost" className="h-9 px-2 text-xs" onClick={handleReset} disabled={saving}>Reset</Button>
           </div>
           {options.map((option) => (
             <article key={option.id} className="mobile-card p-3">
@@ -142,8 +167,8 @@ const MobileBespokeSettingsPage = () => {
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => handleEdit(option)} aria-label={`Edit ${option.label}`}><Edit3 className="h-4 w-4" /></Button>
-                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(option)} aria-label={`Delete ${option.label}`}><Trash2 className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => handleEdit(option)} aria-label={`Edit ${option.label}`} disabled={saving}><Edit3 className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(option)} aria-label={`Delete ${option.label}`} disabled={saving}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
             </article>

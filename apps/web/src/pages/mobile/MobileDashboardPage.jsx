@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import SummaryMetricCardMobile from '@/components/mobile/SummaryMetricCardMobile.jsx';
 import ActivityCardMobile from '@/components/mobile/ActivityCardMobile.jsx';
 import FormulaCardMobile from '@/components/mobile/FormulaCardMobile.jsx';
@@ -64,6 +65,27 @@ const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
   );
 };
 
+const WorkflowButton = ({ helper, icon: Icon, label, onClick, tone = 'amber' }) => {
+  const tones = {
+    amber: 'bg-amber-50 text-amber-700',
+    blue: 'bg-blue-50 text-blue-700',
+    emerald: 'bg-emerald-50 text-emerald-700',
+    rose: 'bg-rose-50 text-rose-700',
+  };
+
+  return (
+    <button type="button" onClick={onClick} className="mobile-card flex min-w-0 items-center gap-3.5 p-3.5 text-left">
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${tones[tone] || tones.amber}`}>
+        {Icon ? <Icon className="h-5 w-5" /> : null}
+      </span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate text-sm font-bold text-[#1f2937]">{label}</span>
+        {helper ? <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{helper}</span> : null}
+      </span>
+    </button>
+  );
+};
+
 const StudioChip = ({ label, value, tone = 'amber' }) => {
   const tones = {
     amber: 'bg-amber-50 text-amber-800 border-amber-100',
@@ -119,6 +141,7 @@ const MobileDashboardPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState('');
+  const [productMenuOpen, setProductMenuOpen] = useState(false);
 
   const loadData = async (isActive = () => true) => {
     setLoading(true);
@@ -329,13 +352,13 @@ const MobileDashboardPage = () => {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">E-commerce</h2>
-                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
+                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/dashboard')}>Lihat home</Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <WorkflowTile icon={PackagePlus} label="Products" helper="Catalog admin" tone="emerald" to="/mobile/studio/products" />
-                <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Wizard settings" tone="emerald" to="/mobile/studio/bespoke" />
-                <WorkflowTile icon={PackageCheck} label="Orders" helper="Queue & status" tone="amber" to="/mobile/studio/orders" />
+                <WorkflowButton icon={PackagePlus} label="Products" helper="Tambah, daftar, kategori" tone="emerald" onClick={() => setProductMenuOpen(true)} />
+                <WorkflowTile icon={PackageCheck} label="Orders" helper="Payment & fulfillment" tone="amber" to="/mobile/studio/orders" />
                 <WorkflowTile icon={UsersRound} label="Customers" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
+                <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Bottle, cap, label" tone="rose" to="/mobile/studio/bespoke" />
               </div>
             </section>
 
@@ -432,6 +455,41 @@ const MobileDashboardPage = () => {
           </>
         )}
       </main>
+      <MobileBottomSheet
+        open={productMenuOpen}
+        onOpenChange={setProductMenuOpen}
+        title="Products"
+        description="Pilih area produk yang mau dikelola."
+      >
+        <div className="grid gap-3 pb-2">
+          {[
+            { label: 'Tambah produk baru', helper: 'Form produk, varian, gambar', path: '/mobile/studio/products?view=new', icon: PackagePlus },
+            { label: 'Daftar produk', helper: 'Edit dan hapus produk katalog', path: '/mobile/studio/products?view=list', icon: PackageCheck },
+            { label: 'Kategori produk', helper: 'Kelola family/kategori shop', path: '/mobile/studio/products?view=categories', icon: LibraryBig },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => {
+                  setProductMenuOpen(false);
+                  navigate(item.path);
+                }}
+                className="mobile-card flex items-center gap-3 p-3 text-left"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-[#1f2937]">{item.label}</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-[#6b7280]">{item.helper}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </MobileBottomSheet>
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
     </MobileAuthenticatedLayout>
   );

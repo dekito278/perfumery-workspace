@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { useSearchParams } from 'react-router-dom';
 import { Edit3, ImageOff, ImagePlus, PackagePlus, Plus, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -35,6 +36,8 @@ const emptyProduct = {
 };
 
 const MobileProductManagementPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = searchParams.get('view') || 'new';
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
@@ -64,7 +67,11 @@ const MobileProductManagementPage = () => {
     ...current,
     variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
   }));
-  const resetForm = () => setForm(emptyProduct);
+  const updateView = (view) => setSearchParams(view === 'new' ? {} : { view }, { replace: true });
+  const resetForm = () => {
+    setForm(emptyProduct);
+    updateView('new');
+  };
 
   const updateImagesFromText = (value) => {
     const images = value.split('\n').map((item) => item.trim()).filter(Boolean);
@@ -128,15 +135,18 @@ const MobileProductManagementPage = () => {
     }
   };
 
-  const handleEdit = (product) => setForm({
-    ...product,
-    topNotes: product.topNotes.join(', '),
-    heartNotes: product.heartNotes.join(', '),
-    baseNotes: product.baseNotes.join(', '),
-    variants: product.variants,
-    tags: product.tags.join(', '),
-    images: product.images || (product.imageUrl ? [product.imageUrl] : []),
-  });
+  const handleEdit = (product) => {
+    setForm({
+      ...product,
+      topNotes: product.topNotes.join(', '),
+      heartNotes: product.heartNotes.join(', '),
+      baseNotes: product.baseNotes.join(', '),
+      variants: product.variants,
+      tags: product.tags.join(', '),
+      images: product.images || (product.imageUrl ? [product.imageUrl] : []),
+    });
+    updateView('new');
+  };
 
   const handleDelete = async (product) => {
     await deleteCustomProduct(product.id);
@@ -179,6 +189,26 @@ const MobileProductManagementPage = () => {
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Products" subtitle={`${products.length} catalog items`} eyebrow="Studio admin" action={<PackagePlus className="h-5 w-5 text-amber-700" />} />
 
+        <section className="mobile-card p-2">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-[#f7f8f2] p-1">
+            {[
+              ['new', 'Tambah'],
+              ['list', 'Daftar'],
+              ['categories', 'Kategori'],
+            ].map(([view, label]) => (
+              <button
+                key={view}
+                type="button"
+                onClick={() => updateView(view)}
+                className={`h-10 rounded-xl text-[11px] font-bold transition ${activeView === view ? 'bg-white text-[#263d27] shadow-sm' : 'text-[#7a8377]'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {activeView === 'new' ? (
         <form onSubmit={handleSubmit} className="mobile-card p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-[#1f2937]">{form.id ? 'Edit product' : 'Add product'}</h2>
@@ -255,7 +285,9 @@ const MobileProductManagementPage = () => {
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Saving...' : 'Save product'}</Button>
           </div>
         </form>
+        ) : null}
 
+        {activeView === 'categories' ? (
         <section className="mobile-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -287,7 +319,9 @@ const MobileProductManagementPage = () => {
             })}
           </div>
         </section>
+        ) : null}
 
+        {activeView === 'list' ? (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Daftar produk</h2>
@@ -325,6 +359,7 @@ const MobileProductManagementPage = () => {
             </div>
           ) : null}
         </section>
+        ) : null}
       </main>
     </MobileAuthenticatedLayout>
   );

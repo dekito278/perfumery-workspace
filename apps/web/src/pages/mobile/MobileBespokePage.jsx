@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
@@ -58,11 +58,11 @@ const MobileBespokePage = () => {
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
   const bespokeSettings = useBespokeSettings();
-  const bottleSizeOptions = bespokeSettings.bottleSizes.filter((option) => option.enabled);
-  const bottleTypeOptions = bespokeSettings.bottleTypes.filter((option) => option.enabled);
-  const capDesignOptions = bespokeSettings.capDesigns.filter((option) => option.enabled);
-  const labelDesignOptions = bespokeSettings.labelDesigns.filter((option) => option.enabled);
-  const exoticMaterialOptions = bespokeSettings.exoticMaterials.filter((option) => option.enabled);
+  const bottleSizeOptions = useMemo(() => bespokeSettings.bottleSizes.filter((option) => option.enabled), [bespokeSettings.bottleSizes]);
+  const bottleTypeOptions = useMemo(() => bespokeSettings.bottleTypes.filter((option) => option.enabled), [bespokeSettings.bottleTypes]);
+  const capDesignOptions = useMemo(() => bespokeSettings.capDesigns.filter((option) => option.enabled), [bespokeSettings.capDesigns]);
+  const labelDesignOptions = useMemo(() => bespokeSettings.labelDesigns.filter((option) => option.enabled), [bespokeSettings.labelDesigns]);
+  const exoticMaterialOptions = useMemo(() => bespokeSettings.exoticMaterials.filter((option) => option.enabled), [bespokeSettings.exoticMaterials]);
   const [wizardOpen, setWizardOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
@@ -80,6 +80,27 @@ const MobileBespokePage = () => {
     contact: '',
     deliveryAddress: '',
   });
+
+  useEffect(() => {
+    setForm((current) => {
+      const nextForm = { ...current };
+      const ensureActiveValue = (field, options) => {
+        const valueIsActive = options.some((option) => option.value === nextForm[field]);
+        if (!valueIsActive) nextForm[field] = options[0]?.value || '';
+      };
+
+      ensureActiveValue('size', bottleSizeOptions);
+      ensureActiveValue('bottleType', bottleTypeOptions);
+      ensureActiveValue('capDesign', capDesignOptions);
+      ensureActiveValue('labelDesign', labelDesignOptions);
+
+      if (nextForm.exoticMaterial && !exoticMaterialOptions.some((option) => option.value === nextForm.exoticMaterial)) {
+        nextForm.exoticMaterial = '';
+      }
+
+      return Object.keys(nextForm).some((key) => nextForm[key] !== current[key]) ? nextForm : current;
+    });
+  }, [bottleSizeOptions, bottleTypeOptions, capDesignOptions, labelDesignOptions, exoticMaterialOptions]);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const selectedSize = bottleSizeOptions.find((option) => option.value === form.size) || bottleSizeOptions[0];

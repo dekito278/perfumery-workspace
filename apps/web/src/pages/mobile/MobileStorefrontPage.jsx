@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import {
   perfumerProfile,
-  storefrontSegments,
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
@@ -45,28 +44,13 @@ const mobileHomeAssets = {
   perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
 };
 
-const sampleFallbacks = ['Santal Morn', 'Petal Smoke', 'Citrus Veil'];
-
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
-  const limitedProducts = products.filter((product) => product.featured || product.stock <= 8).slice(0, 2);
   const productsLoading = Boolean(products.loading);
   const hasProducts = products.length > 0;
-  const storefrontStats = [
-    { value: String(products.length), label: 'Scents' },
-    { value: String(limitedProducts.length), label: 'Limited picks' },
-    { value: '1:1', label: 'Bespoke' },
-  ];
-  const sampleOrders = (homeProducts.length ? homeProducts : products).slice(0, 3);
-  const animatedSamples = (sampleOrders.length ? sampleOrders.map((product) => product.name) : sampleFallbacks)
-    .map((name, index) => ({
-      name,
-      code: ['SOLI-1024', 'SOLI-1025', 'SOLI-1026'][index] || `SOLI-102${index + 4}`,
-      status: ['Sample dibeli', 'Masuk cart', 'Siap checkout'][index] || 'Sample dibeli',
-    }));
 
   return (
     <MobileCommerceLayout>
@@ -122,14 +106,6 @@ const MobileStorefrontPage = () => {
               </Button>
             </motion.div>
           </div>
-          <div className="grid grid-cols-3 border-t border-[#263d27]/12 bg-white/70">
-            {storefrontStats.map((stat) => (
-              <div key={stat.label} className="px-3 py-3 text-center">
-                <div className="text-base font-bold text-[#0b130c]">{stat.value}</div>
-                <div className="text-[10px] font-bold uppercase leading-tight text-[#8b949e]">{stat.label}</div>
-              </div>
-            ))}
-          </div>
         </motion.section>
 
         <motion.section
@@ -147,31 +123,6 @@ const MobileStorefrontPage = () => {
             </div>
           </div>
         </motion.section>
-
-        <section className="mobile-sample-flow overflow-hidden p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-bold uppercase text-[#8d7a4f]">Sample beli</div>
-              <h2 className="mt-1 text-base font-bold leading-tight text-[#0b130c]">Checkout sample tetap jalan.</h2>
-            </div>
-            <div className="mobile-sample-flow-orbit" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-          <div className="mobile-sample-flow-track mt-3" aria-label="Animasi sample checkout">
-            {[...animatedSamples, ...animatedSamples].map((sample, index) => (
-              <div key={`${sample.code}-${index}`} className="mobile-sample-flow-item">
-                <span className="min-w-0">
-                  <span className="block truncate text-xs font-bold text-[#0b130c]">{sample.name}</span>
-                  <span className="mt-0.5 block text-[10px] font-bold uppercase text-[#7a8377]">{sample.status}</span>
-                </span>
-                <span className="rounded-full bg-[#263d27] px-2 py-1 text-[10px] font-bold text-white">{sample.code}</span>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {!hasProducts ? (
           <motion.section variants={fadeUp} initial="hidden" animate="visible" className="mobile-card overflow-hidden">
@@ -200,35 +151,17 @@ const MobileStorefrontPage = () => {
           </motion.section>
         ) : null}
 
-        <motion.section variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-3 gap-2">
-          {storefrontSegments.map((segment, index) => (
-            <motion.div key={segment.name} variants={fadeUp}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (segment.filter === 'bespoke') navigate('/mobile/bespoke');
-                  else navigate(`/mobile/catalog?segment=${segment.filter}`);
-                }}
-                className="mobile-card min-h-[116px] w-full overflow-hidden p-3 text-left shadow-sm shadow-[#263d27]/6"
-              >
-                <span className="mb-7 block text-[10px] font-bold uppercase text-[#8d7a4f]">0{index + 1}</span>
-                <span className="block text-[11px] font-bold leading-tight text-[#0b130c]">{segment.name}</span>
-              </button>
-            </motion.div>
-          ))}
-        </motion.section>
-
         {categories.length ? (
-        <motion.section variants={stagger} initial="hidden" animate="visible" className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">Categories</h2>
-            <span className="text-xs font-bold text-[#263d27]">Shop families</span>
-          </div>
-          <div className="mobile-segment-scroll flex gap-5 overflow-x-auto pb-2 pr-4">
-            {categories.slice(0, 6).map((category) => (
-              <motion.div key={category.name} variants={fadeUp}>
-                <button type="button" onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)} className="h-8 shrink-0 px-0 text-sm font-bold text-[#263d27]">
-                  <span className="block whitespace-nowrap">{category.name}</span>
+        <motion.section variants={stagger} initial="hidden" animate="visible" className="mobile-family-strip">
+          <div className="mobile-segment-scroll flex gap-5 overflow-x-auto px-1 pb-2 pr-4">
+            {categories.slice(0, 8).map((category) => (
+              <motion.div key={category.name} variants={fadeUp} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)}
+                  className="mobile-family-link"
+                >
+                  {category.name}
                 </button>
               </motion.div>
             ))}

@@ -15,6 +15,21 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 }).format(new Date(value));
 
 const statusLabels = getOrderStatusLabels();
+const paymentStatusLabels = {
+  unpaid: 'Unpaid',
+  pending: 'Pending',
+  paid: 'Paid',
+  failed: 'Failed',
+  expired: 'Expired',
+  refunded: 'Refunded',
+};
+
+const getPaymentStatusClassName = (status) => {
+  if (status === 'paid') return 'bg-emerald-50 text-emerald-700';
+  if (['failed', 'expired'].includes(status)) return 'bg-rose-50 text-rose-700';
+  if (status === 'pending') return 'bg-amber-50 text-amber-700';
+  return 'bg-stone-100 text-stone-600';
+};
 
 const bespokeDetailRows = (item) => [
   ['Mood', item?.mood],
@@ -58,6 +73,13 @@ const MobileOrdersPage = () => {
           </div>
         </section>
 
+        <section className="mobile-card p-3">
+          <div className="text-[10px] font-bold uppercase text-[#263d27]">DOKU payment flow</div>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+            DOKU notification akan mengubah order menjadi Paid otomatis. Setelah itu proses manual dari studio: Processing, Shipped, lalu Completed.
+          </p>
+        </section>
+
         <section className="space-y-3">
           {orders.map((order) => {
             const bespoke = isBespokeOrder(order);
@@ -75,6 +97,9 @@ const MobileOrdersPage = () => {
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {bespoke ? <span className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold uppercase text-[#263d27]">Bespoke</span> : null}
                   <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${getPaymentStatusClassName(order.paymentStatus)}`}>
+                    {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+                  </span>
                 </div>
               </div>
               {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Local draft</div> : null}
