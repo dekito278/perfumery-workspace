@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { getVisibleItems, MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
+import { runWithTimeout } from '@/utils/asyncTimeout.js';
 
 const tabs = [
   { value: 'pending', label: 'Action' },
@@ -52,13 +53,6 @@ const createEmptyLog = (formulaId = 'none') => ({
   evaluator_name: '',
   tested_at: new Date().toISOString().slice(0, 10),
 });
-
-const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.race([
-  promise,
-  new Promise((resolve) => {
-    window.setTimeout(() => resolve(fallbackValue), timeoutMs);
-  }),
-]);
 
 const StatTile = ({ label, value, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
@@ -261,7 +255,15 @@ const MobileValidationPage = () => {
             </div>
             <PaginationOrLoadMore visibleCount={visible.length} totalCount={activeLogs.length} onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)} />
           </>
-        ) : <MobileEmptyState icon={NotebookPen} title="No validation items" action="New Validation" onAction={openNewLog} />}
+        ) : (
+          <MobileEmptyState
+            icon={NotebookPen}
+            title="No validation items"
+            description="Log blotter, skin, stability, or revision notes here once a formula is ready to review."
+            action="New Validation"
+            onAction={openNewLog}
+          />
+        )}
       </main>
       <MobileFullScreenModal
         open={formOpen}

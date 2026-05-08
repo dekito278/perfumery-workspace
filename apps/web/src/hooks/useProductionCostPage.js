@@ -24,6 +24,7 @@ import {
   buildProductionCostExportConfig,
   buildProductionQuotationExportConfig,
 } from '@/utils/productionCostingExports.js';
+import { runWithTimeout } from '@/utils/asyncTimeout.js';
 
 const importWorkbookActions = () => import('@/utils/workbookPdfExport.js');
 
@@ -57,8 +58,8 @@ export const useProductionCostPage = () => {
       setLoading(true);
       try {
         const [formulasData, rawMaterialsData] = await Promise.all([
-          getFormulas(),
-          getRawMaterialOptions(),
+          runWithTimeout(getFormulas(), [], 8000),
+          runWithTimeout(getRawMaterialOptions(), [], 8000),
         ]);
 
         setFormulas(formulasData);
@@ -176,7 +177,7 @@ export const useProductionCostPage = () => {
 
       setProfileLoading(true);
       try {
-        const items = await getFormulaItems(selectedFormulaId);
+        const items = await runWithTimeout(getFormulaItems(selectedFormulaId), [], 8000);
         const referenceMaps = await buildFormulaItemReferenceMaps(items, rawMaterials);
 
         const enrichedItems = items.map((item) => {

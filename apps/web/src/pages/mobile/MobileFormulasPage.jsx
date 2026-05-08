@@ -24,6 +24,7 @@ import {
   buildMobileFormulaMetrics,
 } from '@/utils/mobileFormulaMetrics.js';
 import { filterByText, getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
+import { runWithTimeout } from '@/utils/asyncTimeout.js';
 
 const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfModal.jsx'));
 
@@ -37,13 +38,6 @@ const statusOptions = [
   { value: 'standalone', label: 'Solo' },
   { value: 'linked', label: 'Brief' },
 ];
-
-const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.race([
-  promise,
-  new Promise((resolve) => {
-    window.setTimeout(() => resolve(fallbackValue), timeoutMs);
-  }),
-]);
 
 const MobileFormulasPage = () => {
   const navigate = useNavigate();
@@ -202,7 +196,13 @@ const MobileFormulasPage = () => {
           </Button>
         </div>
         {loading ? <MobileLoadingSkeleton count={4} /> : formulas.length === 0 ? (
-          <MobileEmptyState icon={Beaker} title="No formulas yet" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
+          <MobileEmptyState
+            icon={Beaker}
+            title="No formulas yet"
+            description="Create a formula manually or import a workbook PDF to start batch costing, validation, and mobile workbook previews."
+            action="New Formula"
+            onAction={() => navigate('/mobile/formulas/new')}
+          />
         ) : filtered.length === 0 ? (
           <MobileEmptyState title="No matching formulas" />
         ) : (

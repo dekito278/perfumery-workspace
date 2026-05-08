@@ -175,7 +175,13 @@ const MobileProductionCostingPage = () => {
         ) : null}
 
         {!formulas.length ? (
-          <MobileEmptyState icon={Package2} title="No formula available" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
+          <MobileEmptyState
+            icon={Package2}
+            title="No formula available"
+            description="Production costing needs at least one saved formula so it can calculate concentrate, solvent, packaging, and margin scenarios."
+            action="New Formula"
+            onAction={() => navigate('/mobile/formulas/new')}
+          />
         ) : (
           <>
             <section className="mobile-soft-card space-y-3 p-4">

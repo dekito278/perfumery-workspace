@@ -667,7 +667,13 @@ const MobileBatchesPage = () => {
         ) : null}
 
         {!formulas.length ? (
-          <MobileEmptyState icon={FlaskConical} title="No formula available" action="New Formula" onAction={() => navigate('/mobile/formulas/new')} />
+          <MobileEmptyState
+            icon={FlaskConical}
+            title="No formula available"
+            description="Create or import a formula first, then this batch calculator will unlock concentrate, dilution, QC, and product stock controls."
+            action="New Formula"
+            onAction={() => navigate('/mobile/formulas/new')}
+          />
         ) : (
           <>
             <section className="mobile-card space-y-3 overflow-hidden p-4">
@@ -796,7 +802,7 @@ const MobileBatchesPage = () => {
                     value={qcNotes}
                     onChange={(event) => setQcNotes(event.target.value)}
                     rows={3}
-                    placeholder="Macération, clarity, scent balance, adjustment notes..."
+                    placeholder="Maceration, clarity, scent balance, adjustment notes..."
                     className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-xs font-semibold outline-none focus:border-amber-300"
                   />
                 </div>

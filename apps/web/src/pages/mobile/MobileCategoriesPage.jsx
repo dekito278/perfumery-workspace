@@ -8,7 +8,14 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
-import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategories.js';
+import { findPerfumersWorldCategoryByValue, PERFUMERS_WORLD_CATEGORIES } from '@/utils/perfumersWorldCategories.js';
+import { runWithTimeout } from '@/utils/asyncTimeout.js';
+
+const fallbackCategories = PERFUMERS_WORLD_CATEGORIES.map((category) => ({
+  id: `standard-${category.code}`,
+  name: category.label,
+  color: category.color,
+}));
 
 const MobileCategoriesPage = () => {
   const navigate = useNavigate();
@@ -20,10 +27,11 @@ const MobileCategoriesPage = () => {
     const loadCategories = async () => {
       setLoading(true);
       try {
-        const rows = await getRawMaterialCategories();
-        if (active) setCategories(rows || []);
+        const rows = await runWithTimeout(getRawMaterialCategories(), fallbackCategories, 8000);
+        if (active) setCategories(rows?.length ? rows : fallbackCategories);
       } catch (error) {
         toast.error('Failed to load categories');
+        if (active) setCategories(fallbackCategories);
       } finally {
         if (active) setLoading(false);
       }
@@ -38,7 +46,7 @@ const MobileCategoriesPage = () => {
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Categories" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
         {loading ? <MobileLoadingState eyebrow="Materials" title="Loading categories..." subtitle="Preparing classification data." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
-          <MobileEmptyState icon={Tag} title="No categories yet" />
+          <MobileEmptyState icon={Tag} title="No categories yet" description="Categories will appear after the material library is available." />
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {categories.map((category) => {
