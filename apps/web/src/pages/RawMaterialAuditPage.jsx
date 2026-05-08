@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Eye, FolderTree, RefreshCw, ScanSearch, ShieldCheck, WandSparkles } from 'lucide-react';
@@ -84,7 +84,7 @@ const RawMaterialAuditPage = () => {
   const [bulkMergeIntentOpen, setBulkMergeIntentOpen] = useState(false);
   const [bulkMergeSubmitting, setBulkMergeSubmitting] = useState(false);
 
-  const loadAudit = async (forceRefresh = false) => {
+  const loadAudit = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     try {
       const rows = await getRawMaterialOptions({ forceRefresh });
@@ -95,11 +95,29 @@ const RawMaterialAuditPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadAudit();
-  }, []);
+    loadAudit(true);
+  }, [loadAudit]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadAudit(true);
+      }
+    };
+
+    window.addEventListener('focus', refreshWhenVisible);
+    window.addEventListener('pageshow', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      window.removeEventListener('focus', refreshWhenVisible);
+      window.removeEventListener('pageshow', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [loadAudit]);
 
   const audit = useMemo(() => buildRawMaterialDuplicateAudit(materials), [materials]);
   const safeCleanupCandidateCount = useMemo(

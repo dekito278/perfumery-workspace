@@ -20,6 +20,12 @@ const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
   label: `${entry.letter} - ${entry.familyName}`,
 }));
 
+const dataStatusOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'needs_review', label: 'Needs review' },
+  { value: 'archived', label: 'Archived' },
+];
+
 const modeCopy = {
   create: {
     title: 'Add new material',
@@ -265,6 +271,65 @@ const RawMaterialFormDialog = ({
                   </p>
                 ) : null}
               </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <FormNumber
+                label="Stock on hand"
+                value={form.formData.stock_quantity}
+                onChange={(event) => form.handleChange('stock_quantity', event.target.value)}
+                onBlur={() => form.handleBlur('stock_quantity')}
+                error={form.errors.stock_quantity}
+                placeholder="0"
+                min="0"
+                step="0.001"
+                unit={form.formData.unit || 'ml'}
+              />
+              <FormNumber
+                label="Minimum stock"
+                value={form.formData.minimum_stock}
+                onChange={(event) => form.handleChange('minimum_stock', event.target.value)}
+                onBlur={() => form.handleBlur('minimum_stock')}
+                error={form.errors.minimum_stock}
+                placeholder="0"
+                min="0"
+                step="0.001"
+                unit={form.formData.unit || 'ml'}
+              />
+              <FormNumber
+                label="Low alert"
+                value={form.formData.low_stock_threshold}
+                onChange={(event) => form.handleChange('low_stock_threshold', event.target.value)}
+                onBlur={() => form.handleBlur('low_stock_threshold')}
+                error={form.errors.low_stock_threshold}
+                placeholder="Optional"
+                min="0"
+                step="0.001"
+                unit={form.formData.unit || 'ml'}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
+              <div className="space-y-2">
+                <Label htmlFor={`${idPrefix}-data-status`}>Cleanup status</Label>
+                <Select
+                  value={form.formData.data_status || 'active'}
+                  onValueChange={(value) => form.handleChange('data_status', value)}
+                >
+                  <SelectTrigger id={`${idPrefix}-data-status`} className="h-10 rounded-xl">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dataStatusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <FormField
+                label="Review note"
+                value={form.formData.review_notes}
+                onChange={(event) => form.handleChange('review_notes', event.target.value)}
+                placeholder="Why this material needs cleanup, review, or archive"
+              />
             </div>
           </div>
 

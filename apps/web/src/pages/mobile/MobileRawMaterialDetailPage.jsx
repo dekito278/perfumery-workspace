@@ -26,6 +26,13 @@ import {
 } from '@/utils/mobileGuidanceImport.js';
 import { enrichMaterialsWithGuidance, getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 
+const runDeleteWithTimeout = (promise, timeoutMs = 30000) => Promise.race([
+  promise,
+  new Promise((_, reject) => {
+    window.setTimeout(() => reject(new Error('Delete is taking longer than expected. Please try again in a moment.')), timeoutMs);
+  }),
+]);
+
 const MobileRawMaterialDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,6 +55,11 @@ const MobileRawMaterialDetailPage = () => {
     vendor: '',
     cas_number: '',
     workbook_code: '',
+    stock_quantity: '',
+    minimum_stock: '',
+    low_stock_threshold: '',
+    data_status: 'active',
+    review_notes: '',
     cost_per_unit: '',
     ifra_limit: '',
     reference_impact: '',
@@ -79,7 +91,7 @@ const MobileRawMaterialDetailPage = () => {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deleteMaterial(id);
+      await runDeleteWithTimeout(deleteMaterial(id), 30000);
       toast.success('Material deleted');
       navigate('/mobile/raw-materials');
     } catch (error) {
@@ -99,6 +111,11 @@ const MobileRawMaterialDetailPage = () => {
       vendor: material.vendor || '',
       cas_number: resolvedValues.cas_number || material.cas_number || '',
       workbook_code: resolvedValues.workbook_code || material.workbook_code || '',
+      stock_quantity: material.stock_quantity ?? '',
+      minimum_stock: material.minimum_stock ?? '',
+      low_stock_threshold: material.low_stock_threshold ?? '',
+      data_status: material.data_status || 'active',
+      review_notes: material.review_notes || '',
       cost_per_unit: material.cost_per_unit ?? '',
       ifra_limit: resolvedValues.ifra_limit ?? material.ifra_limit ?? '',
       reference_impact: resolvedValues.reference_impact ?? material.reference_impact ?? '',
@@ -133,6 +150,11 @@ const MobileRawMaterialDetailPage = () => {
         vendor: editForm.vendor.trim() || null,
         cas_number: editForm.cas_number.trim() || null,
         workbook_code: editForm.workbook_code.trim() || null,
+        stock_quantity: toNullableNumber(editForm.stock_quantity) || 0,
+        minimum_stock: toNullableNumber(editForm.minimum_stock) || 0,
+        low_stock_threshold: toNullableNumber(editForm.low_stock_threshold),
+        data_status: editForm.data_status || 'active',
+        review_notes: editForm.review_notes.trim() || null,
         cost_per_unit: toNullableNumber(editForm.cost_per_unit) || 0,
         ifra_limit: toNullableNumber(editForm.ifra_limit),
         reference_impact: toNullableNumber(editForm.reference_impact),
@@ -160,6 +182,9 @@ const MobileRawMaterialDetailPage = () => {
   const impact = getResolvedGuidanceNumber(material, 'reference_impact');
   const life = getResolvedGuidanceNumber(material, 'reference_life_hours');
   const ready = Boolean(resolved.workbook_code || impact || life || resolved.ifra_limit);
+  const stockQuantity = Number(material.stock_quantity || 0);
+  const stockThreshold = Number(material.low_stock_threshold ?? material.minimum_stock ?? 0);
+  const lowStock = stockThreshold > 0 && stockQuantity <= stockThreshold;
   const handleImportGuidance = async () => {
     if (!/^https?:\/\//i.test(guidanceForm.url.trim())) {
       setGuidanceState('error');
@@ -197,6 +222,8 @@ const MobileRawMaterialDetailPage = () => {
   };
   const sections = [
     ['Basic information', [['Type', formatStatus(material.type)], ['Category', formatStatus(material.category)], ['Unit', material.unit || '-']]],
+    ['Cleanup status', [['Status', formatStatus(material.data_status || 'active')], ['Review note', formatNullable(material.review_notes)], ['Archived', formatNullable(material.archived_at)]]],
+    ['Inventory', [['Stock on hand', `${stockQuantity.toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`], ['Minimum stock', `${Number(material.minimum_stock || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`], ['Low alert', stockThreshold > 0 ? `${stockThreshold.toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}` : '-']]],
     ['CAS and supplier', [['CAS', formatNullable(resolved.cas_number)], ['Supplier', formatNullable(material.vendor)], ['Workbook', formatNullable(resolved.workbook_code)]]],
     ['Usage recommendation', [['Typical use', resolved.reference_use_level_typical_percent != null ? formatPercentage(resolved.reference_use_level_typical_percent, 2) : '-'], ['Max use', resolved.reference_use_level_max_percent != null ? formatPercentage(resolved.reference_use_level_max_percent, 2) : '-']]],
     ['Safety / audit status', [['IFRA', resolved.ifra_limit != null ? formatPercentage(resolved.ifra_limit, 2) : '-'], ['Impact', impact ?? '-'], ['Life hours', life ?? '-']]],
@@ -207,6 +234,14 @@ const MobileRawMaterialDetailPage = () => {
       <Helmet><title>{material.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={() => navigate('/mobile/raw-materials')} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
+        {lowStock ? (
+          <section className="mobile-card border border-rose-200 bg-rose-50 p-3">
+            <div className="text-[10px] font-bold uppercase text-rose-700">Low stock</div>
+            <div className="mt-1 text-sm font-bold text-rose-900">
+              {stockQuantity.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {material.unit || ''} remaining
+            </div>
+          </section>
+        ) : null}
         <section className="mobile-card p-2.5">
           <div className="grid grid-cols-4 gap-1.5">
             <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={openEditSheet}><Pencil className="h-4 w-4" />Edit</Button>
@@ -263,6 +298,11 @@ const MobileRawMaterialDetailPage = () => {
             ['cas_number', 'CAS number'],
             ['workbook_code', 'Workbook code'],
             ['unit', 'Unit'],
+            ['stock_quantity', 'Stock on hand'],
+            ['minimum_stock', 'Minimum stock'],
+            ['low_stock_threshold', 'Low alert'],
+            ['data_status', 'Cleanup status'],
+            ['review_notes', 'Review note'],
             ['cost_per_unit', 'Unit price'],
             ['ifra_limit', 'IFRA limit %'],
             ['reference_impact', 'Impact'],

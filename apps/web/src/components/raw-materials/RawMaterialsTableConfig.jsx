@@ -13,6 +13,13 @@ const hasCustomSolventCalibration = (row) => (
   )
 );
 
+const getStockAlertThreshold = (row) => Number(row.low_stock_threshold ?? row.minimum_stock ?? 0);
+const isLowStock = (row) => {
+  const stock = Number(row.stock_quantity || 0);
+  const threshold = getStockAlertThreshold(row);
+  return threshold > 0 && stock <= threshold;
+};
+
 export const createRawMaterialsColumns = ({
   categoryColorMap,
   getMaterialGuidanceDetails,
@@ -47,6 +54,11 @@ export const createRawMaterialsColumns = ({
                 Unmatched
               </Badge>
             )}
+            {row.data_status && row.data_status !== 'active' ? (
+              <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium">
+                {row.data_status.replace('_', ' ')}
+              </Badge>
+            ) : null}
           </div>
         </button>
       );
@@ -142,6 +154,30 @@ export const createRawMaterialsColumns = ({
                 : 'Impact/life not set'}
             </div>
           </div>
+        </div>
+      );
+    },
+  },
+  {
+    key: 'stock_quantity',
+    label: 'Stock',
+    align: 'right',
+    render: (row) => {
+      const stock = Number(row.stock_quantity || 0);
+      const threshold = getStockAlertThreshold(row);
+      return (
+        <div className="text-right">
+          <div className={`font-mono text-sm font-semibold ${isLowStock(row) ? 'text-rose-700' : 'text-foreground'}`}>
+            {stock.toLocaleString('id-ID', { maximumFractionDigits: 3 })} {row.unit || ''}
+          </div>
+          <div className="mt-1 text-[11px] text-muted-foreground">
+            {threshold > 0 ? `Alert <= ${threshold.toLocaleString('id-ID', { maximumFractionDigits: 3 })}` : 'No alert set'}
+          </div>
+          {isLowStock(row) ? (
+            <Badge variant="outline" className="mt-2 rounded-full border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">
+              Low stock
+            </Badge>
+          ) : null}
         </div>
       );
     },

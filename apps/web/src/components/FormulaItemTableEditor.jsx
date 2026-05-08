@@ -39,11 +39,13 @@ const FormulaItemTableEditor = ({
       ? '-'
       : `${formatQuantity(value, 1)} h`
   );
-  const activeInsightSourceLabel = activeItemInsight?.guidanceSource === 'linked_profile'
-    ? `Workbook linked${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
-    : activeItemInsight?.guidanceSource === 'raw_material_fallback'
-      ? 'Manual guidance from raw material'
-      : 'Guidance missing';
+  const activeInsightSourceLabel = activeItemInsight?.guidanceSourceLabel
+    ? `${activeItemInsight.guidanceSourceLabel} guidance${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
+    : activeItemInsight?.guidanceSource === 'linked_profile'
+      ? `Reference guidance${activeItemInsight.referenceCode ? ` - ${activeItemInsight.referenceCode}` : ''}`
+      : activeItemInsight?.guidanceSource === 'raw_material_fallback'
+        ? 'Manual guidance from raw material'
+        : 'Guidance missing';
   const hasActualizedDilutionInsight = Boolean(
     activeItemInsight?.dilutionFactor !== null
     && activeItemInsight?.dilutionFactor !== undefined

@@ -946,13 +946,23 @@ const FormulaWorkbookSimulationPanel = ({
         ) : null}
         <div className="flex flex-wrap gap-1.5 pt-1.5">
           <SourceBadge
-            label="Workbook link"
-            value={simulation.linkedProfileCount}
+            label="PerfumersWorld"
+            value={simulation.perfumersWorldGuidanceCount}
             toneClass="border-emerald-200 bg-emerald-50 text-emerald-900"
           />
           <SourceBadge
-            label="Manual guidance"
-            value={simulation.fallbackGuidanceCount}
+            label="TGSC"
+            value={simulation.tgscGuidanceCount}
+            toneClass="border-sky-200 bg-sky-50 text-sky-900"
+          />
+          <SourceBadge
+            label="ScenTree"
+            value={simulation.scentreeGuidanceCount}
+            toneClass="border-indigo-200 bg-indigo-50 text-indigo-900"
+          />
+          <SourceBadge
+            label="Manual"
+            value={simulation.manualGuidanceCount + simulation.referenceGuidanceCount}
             toneClass="border-amber-200 bg-amber-50 text-amber-950"
           />
           <SourceBadge

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, FolderTree, Package, Plus, SlidersHorizontal } from 'lucide-react';
+import { Check, FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -11,6 +11,7 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import RawMaterialCardMobile from '@/components/mobile/RawMaterialCardMobile.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -101,12 +102,44 @@ const referenceOptions = [
   { value: 'missing_data', label: 'Missing Data' },
 ];
 
+const cleanupOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'needs_cleanup', label: 'Needs Cleanup' },
+  { value: 'archived', label: 'Archived' },
+  { value: 'all', label: 'All' },
+];
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const runWithTimeout = (promise, timeoutMs = 4500) => Promise.race([
+const runWithTimeout = (promise, timeoutMs = 4500, message = 'Request timed out') => Promise.race([
   promise,
   new Promise((_, reject) => {
-    window.setTimeout(() => reject(new Error('Material guidance timed out')), timeoutMs);
+    window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  }),
+]);
+
+const runMaterialLoadWithTimeout = (promise) => runWithTimeout(
+  promise,
+  15000,
+  'Material loading took too long. Please try again.',
+);
+
+const runGuidanceWithTimeout = (promise) => runWithTimeout(
+  promise,
+  1800,
+  'Material guidance timed out',
+);
+
+const shouldSkipGuidanceEnrichment = ({ cleanupFilter, referenceFilter }) => (
+  cleanupFilter === 'needs_cleanup'
+  || cleanupFilter === 'archived'
+  || referenceFilter === 'missing_data'
+);
+
+const runDeleteWithTimeout = (promise, timeoutMs = 12000) => Promise.race([
+  promise,
+  new Promise((_, reject) => {
+    window.setTimeout(() => reject(new Error('Delete is taking longer than expected. Please try again in a moment.')), timeoutMs);
   }),
 ]);
 
@@ -116,7 +149,7 @@ const MobileRawMaterialsPage = () => {
   const briefId = searchParams.get('briefId') || '';
   const activeBriefId = UUID_PATTERN.test(briefId) ? briefId : '';
   const initialAction = searchParams.get('action') || '';
-  const { fetchMaterialsPage, addMaterial, updateMaterial } = useRawMaterials();
+  const { fetchMaterialsPage, addMaterial, updateMaterial, deleteMaterial } = useRawMaterials();
   const { getBriefs } = useBriefs();
   const { deleteBriefMaterialShortlistItem, getBriefMaterialShortlist, upsertBriefMaterialShortlist } = useBriefMaterialShortlists();
   const loadTokenRef = useRef(0);
@@ -131,6 +164,7 @@ const MobileRawMaterialsPage = () => {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [referenceFilter, setReferenceFilter] = useState('all');
+  const [cleanupFilter, setCleanupFilter] = useState('active');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [addOpen, setAddOpen] = useState(initialAction === 'add');
   const [guidanceTarget, setGuidanceTarget] = useState(null);
@@ -138,7 +172,29 @@ const MobileRawMaterialsPage = () => {
   const [guidanceForm, setGuidanceForm] = useState({ url: '', sourceType: 'perfumersworld' });
   const [guidanceSummary, setGuidanceSummary] = useState([]);
   const [creating, setCreating] = useState(false);
-  const [newMaterial, setNewMaterial] = useState({ name: '', category: '', cas_number: '', vendor: '', type: 'material', unit: 'g' });
+  const [stockTarget, setStockTarget] = useState(null);
+  const [stockSaving, setStockSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [stockForm, setStockForm] = useState({
+    stock_quantity: '',
+    minimum_stock: '',
+    low_stock_threshold: '',
+    cost_per_unit: '',
+  });
+  const createEmptyMaterialForm = () => ({
+    name: '',
+    category: '',
+    cas_number: '',
+    vendor: '',
+    type: 'material',
+    unit: 'g',
+    stock_quantity: '',
+    minimum_stock: '',
+    low_stock_threshold: '',
+    data_status: 'active',
+  });
+  const [newMaterial, setNewMaterial] = useState(createEmptyMaterialForm);
   const shortlistMaterialIds = useMemo(() => new Set(shortlistItems.map((item) => item.raw_material_id).filter(Boolean)), [shortlistItems]);
 
   useEffect(() => {
@@ -153,9 +209,16 @@ const MobileRawMaterialsPage = () => {
     setLoading(true);
     setGuidanceLoading(false);
 
-    const applyReferenceFilter = (items = []) => items.filter((material) => {
+    const applyMaterialFilters = (items = []) => items.filter((material) => {
       const resolved = getResolvedGuidanceValues(material);
       const hasGuidance = Boolean(resolved.workbook_code || resolved.reference_impact || resolved.reference_life_hours || resolved.ifra_limit);
+      const dataStatus = material.data_status || 'active';
+      const missingPrice = Number(material.cost_per_unit || 0) <= 0;
+      const missingStock = Number(material.stock_quantity || 0) <= 0;
+      const needsCleanup = dataStatus === 'needs_review' || !hasGuidance || missingPrice || missingStock;
+      if (cleanupFilter === 'active' && dataStatus === 'archived') return false;
+      if (cleanupFilter === 'archived') return dataStatus === 'archived';
+      if (cleanupFilter === 'needs_cleanup' && !needsCleanup) return false;
       if (referenceFilter === 'has_guidance') return hasGuidance;
       if (referenceFilter === 'high_impact') return Number(getResolvedGuidanceNumber(material, 'reference_impact') || 0) >= 7;
       if (referenceFilter === 'missing_data') return !resolved.reference_impact || !resolved.reference_life_hours;
@@ -163,30 +226,36 @@ const MobileRawMaterialsPage = () => {
     });
 
     try {
-      const result = await fetchMaterialsPage({
+      const result = await runMaterialLoadWithTimeout(fetchMaterialsPage({
         page: 1,
         pageSize: Math.max(visibleCount, MOBILE_PAGE_SIZE * 2),
         searchTerm: debouncedQuery,
         typeFilter: 'all',
         categoryFilter: 'all',
         referenceFilter: ['matched', 'unmatched', 'ifra_limited'].includes(referenceFilter) ? referenceFilter : 'all',
-      });
+        lightweight: true,
+      }));
       if (loadToken !== loadTokenRef.current) return;
       const baseItems = result.items || [];
-      const baseFilteredItems = applyReferenceFilter(baseItems);
+      const baseFilteredItems = applyMaterialFilters(baseItems);
       setMaterials(baseFilteredItems);
       setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? baseFilteredItems.length : result.total || baseFilteredItems.length);
       baseLoaded = true;
       setLoading(false);
+      if (shouldSkipGuidanceEnrichment({ cleanupFilter, referenceFilter })) {
+        setGuidanceLoading(false);
+        return;
+      }
+
       setGuidanceLoading(true);
-      const enrichedItems = hydrateGuidanceFromPeerMaterials(await runWithTimeout(enrichMaterialsWithGuidance(baseItems)));
+      const enrichedItems = hydrateGuidanceFromPeerMaterials(await runGuidanceWithTimeout(enrichMaterialsWithGuidance(baseItems)));
       if (loadToken !== loadTokenRef.current) return;
-      const filteredItems = applyReferenceFilter(enrichedItems);
+      const filteredItems = applyMaterialFilters(enrichedItems);
       setMaterials(filteredItems);
       setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
     } catch (error) {
       if (loadToken === loadTokenRef.current && !baseLoaded) {
-        toast.error('Failed to load materials');
+        toast.error(error.message || 'Failed to load materials');
         setLoading(false);
       } else {
         console.warn('Material guidance enrichment delayed:', error);
@@ -202,9 +271,9 @@ const MobileRawMaterialsPage = () => {
   useEffect(() => {
     loadMaterials();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, referenceFilter, visibleCount]);
+  }, [debouncedQuery, referenceFilter, cleanupFilter, visibleCount]);
 
-  useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [debouncedQuery, referenceFilter]);
+  useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [debouncedQuery, referenceFilter, cleanupFilter]);
 
   const refreshShortlist = async () => {
     if (!activeBriefId) {
@@ -238,6 +307,79 @@ const MobileRawMaterialsPage = () => {
     setGuidanceState('empty');
     setGuidanceSummary([]);
     setGuidanceForm({ url: '', sourceType: 'perfumersworld' });
+  };
+
+  const openStockEditor = (material) => {
+    setStockTarget(material);
+    setStockForm({
+      stock_quantity: material.stock_quantity ?? '',
+      minimum_stock: material.minimum_stock ?? '',
+      low_stock_threshold: material.low_stock_threshold ?? '',
+      cost_per_unit: material.cost_per_unit ?? '',
+    });
+  };
+
+  const toNullableNumber = (value) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  };
+
+  const handleSaveStock = async () => {
+    if (!stockTarget) return;
+    setStockSaving(true);
+    try {
+      const patch = {
+        stock_quantity: toNullableNumber(stockForm.stock_quantity) || 0,
+        minimum_stock: toNullableNumber(stockForm.minimum_stock) || 0,
+        low_stock_threshold: toNullableNumber(stockForm.low_stock_threshold),
+        cost_per_unit: toNullableNumber(stockForm.cost_per_unit) || 0,
+      };
+      const updated = await updateMaterial(stockTarget.id, patch);
+      const [enrichedUpdated] = await enrichMaterialsWithGuidance([updated]);
+      const nextMaterial = enrichedUpdated || updated;
+      setMaterials((current) => current.map((material) => material.id === stockTarget.id ? nextMaterial : material));
+      setStockTarget(nextMaterial);
+      toast.success('Stock and price updated');
+      setStockTarget(null);
+    } catch (error) {
+      toast.error(error.message || 'Failed to update stock');
+    } finally {
+      setStockSaving(false);
+    }
+  };
+
+  const handleDeleteMaterial = async () => {
+    if (!deleteTarget?.id) return;
+    setDeleting(true);
+    try {
+      await runDeleteWithTimeout(deleteMaterial(deleteTarget.id), 30000);
+      setMaterials((current) => current.filter((material) => material.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      toast.success('Material deleted');
+      await loadMaterials();
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete material');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleToggleArchiveMaterial = async (material) => {
+    if (!material?.id) return;
+    const shouldArchive = material.data_status !== 'archived';
+    try {
+      const updated = await updateMaterial(material.id, {
+        data_status: shouldArchive ? 'archived' : 'active',
+        archived_at: shouldArchive ? new Date().toISOString() : null,
+      });
+      setMaterials((current) => current
+        .map((entry) => entry.id === material.id ? { ...entry, ...updated } : entry)
+        .filter((entry) => cleanupFilter === 'all' || cleanupFilter === 'archived' || entry.data_status !== 'archived'));
+      toast.success(shouldArchive ? 'Material archived' : 'Material restored');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update material status');
+    }
   };
 
   const handleImportGuidance = async () => {
@@ -277,12 +419,14 @@ const MobileRawMaterialsPage = () => {
     try {
       await addMaterial({
         ...newMaterial,
-        quantity: 0,
+        stock_quantity: Number(newMaterial.stock_quantity || 0),
+        minimum_stock: Number(newMaterial.minimum_stock || 0),
+        low_stock_threshold: newMaterial.low_stock_threshold === '' ? null : Number(newMaterial.low_stock_threshold || 0),
         cost_per_unit: 0,
       });
       toast.success('Material added');
       setAddOpen(false);
-      setNewMaterial({ name: '', category: '', cas_number: '', vendor: '', type: 'material', unit: 'g' });
+      setNewMaterial(createEmptyMaterialForm());
       await loadMaterials();
     } catch (error) {
       toast.error(error.message || 'Failed to add material');
@@ -352,6 +496,7 @@ const MobileRawMaterialsPage = () => {
         ) : null}
         <div className="mobile-material-search-panel">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Search material, CAS, supplier..." disabled={loading} />
+          <MobileFilterChips options={cleanupOptions} value={cleanupFilter} onChange={setCleanupFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           <MobileFilterChips options={referenceOptions} value={referenceFilter} onChange={setReferenceFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           {guidanceLoading && !loading ? (
             <div className="mt-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
@@ -373,12 +518,14 @@ const MobileRawMaterialsPage = () => {
                   key={material.id}
                   material={material}
                   onOpen={() => navigate(`/mobile/raw-material/${material.id}`)}
-                  onAddToFormula={() => handleToggleBriefMaterial(material)}
+                  onAddToFormula={() => activeBriefId ? handleToggleBriefMaterial(material) : openStockEditor(material)}
+                  onArchive={() => handleToggleArchiveMaterial(material)}
+                  onDelete={() => setDeleteTarget(material)}
                   onOpenGuidance={() => openGuidance(material)}
                   addActionActive={shortlistMaterialIds.has(material.id)}
                   addActionDisabled={savingShortlistId === material.id}
-                  addActionIcon={shortlistMaterialIds.has(material.id) ? Check : Plus}
-                  addActionLabel={activeBriefId ? (shortlistMaterialIds.has(material.id) ? 'Picked' : 'Pick') : 'Formula'}
+                  addActionIcon={activeBriefId ? (shortlistMaterialIds.has(material.id) ? Check : Plus) : PackageCheck}
+                  addActionLabel={activeBriefId ? (shortlistMaterialIds.has(material.id) ? 'Picked' : 'Pick') : 'Stock'}
                 />
               ))}
             </div>
@@ -404,6 +551,109 @@ const MobileRawMaterialsPage = () => {
               <Input value={newMaterial[field]} onChange={(event) => setNewMaterial((current) => ({ ...current, [field]: event.target.value }))} className="rounded-2xl bg-white" />
             </div>
           ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Stock on hand</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                value={newMaterial.stock_quantity}
+                onChange={(event) => setNewMaterial((current) => ({ ...current, stock_quantity: event.target.value }))}
+                className="rounded-2xl bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Minimum stock</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                value={newMaterial.minimum_stock}
+                onChange={(event) => setNewMaterial((current) => ({ ...current, minimum_stock: event.target.value }))}
+                className="rounded-2xl bg-white"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Low stock alert</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.001"
+              value={newMaterial.low_stock_threshold}
+              onChange={(event) => setNewMaterial((current) => ({ ...current, low_stock_threshold: event.target.value }))}
+              className="rounded-2xl bg-white"
+              placeholder="Optional"
+            />
+          </div>
+        </div>
+      </MobileBottomSheet>
+      <DeleteConfirmationDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        itemName={deleteTarget?.name || 'material'}
+        onConfirm={handleDeleteMaterial}
+        loading={deleting}
+      />
+      <MobileBottomSheet
+        open={Boolean(stockTarget)}
+        onOpenChange={(open) => !open && setStockTarget(null)}
+        title="Edit Stock"
+        description={stockTarget?.name}
+        footer={<Button type="button" onClick={handleSaveStock} disabled={stockSaving} className="h-12 w-full rounded-2xl">{stockSaving ? 'Saving...' : 'Update Stock & Price'}</Button>}
+      >
+        <div className="grid gap-4 pb-2">
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+            Current unit: {stockTarget?.unit || 'g'}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Stock on hand</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                value={stockForm.stock_quantity}
+                onChange={(event) => setStockForm((current) => ({ ...current, stock_quantity: event.target.value }))}
+                className="rounded-2xl bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Minimum stock</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                value={stockForm.minimum_stock}
+                onChange={(event) => setStockForm((current) => ({ ...current, minimum_stock: event.target.value }))}
+                className="rounded-2xl bg-white"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Low stock alert</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.001"
+              value={stockForm.low_stock_threshold}
+              onChange={(event) => setStockForm((current) => ({ ...current, low_stock_threshold: event.target.value }))}
+              className="rounded-2xl bg-white"
+              placeholder="Optional"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Unit price per 10 {stockTarget?.unit || 'g'}</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={stockForm.cost_per_unit}
+              onChange={(event) => setStockForm((current) => ({ ...current, cost_per_unit: event.target.value }))}
+              className="rounded-2xl bg-white"
+            />
+          </div>
         </div>
       </MobileBottomSheet>
       <MobileBottomSheet

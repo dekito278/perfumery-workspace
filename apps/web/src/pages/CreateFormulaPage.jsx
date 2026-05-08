@@ -560,7 +560,7 @@ const CreateFormulaPage = () => {
                             Rows {activeFormulaItems.length}
                           </div>
                           <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
-                            Workbook linked {referenceLinksMap.size}
+                            Reference links {referenceLinksMap.size}
                           </div>
                           <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
                             Total {formatGramAmount(totalGrams)}
@@ -745,7 +745,7 @@ const CreateFormulaPage = () => {
                     Rows {activeFormulaItems.length}
                   </div>
                   <div className="rounded-full border border-[#dce6d1] bg-[#f3f8ee] px-3 py-1.5 text-xs font-semibold text-[#31451f]">
-                    Workbook linked {referenceLinksMap.size}
+                    Reference links {referenceLinksMap.size}
                   </div>
                   <div className="rounded-full border border-[#d9def0] bg-[#f3f5fb] px-3 py-1.5 text-xs font-semibold text-[#26314e]">
                     Total {formatGramAmount(totalGrams)}

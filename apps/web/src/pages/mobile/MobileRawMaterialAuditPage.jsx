@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Copy, Database, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Copy, Database, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -29,22 +29,39 @@ const MobileRawMaterialAuditPage = () => {
   const [tab, setTab] = useState('practical');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
 
+  const loadAudit = useCallback(async () => {
+    setLoading(true);
+    try {
+      const rows = await getRawMaterialOptions({ forceRefresh: true });
+      setMaterials(rows || []);
+    } catch (error) {
+      toast.error('Failed to load material audit');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    let active = true;
-    const loadAudit = async () => {
-      setLoading(true);
-      try {
-        const rows = await getRawMaterialOptions({ forceRefresh: true });
-        if (active) setMaterials(rows || []);
-      } catch (error) {
-        toast.error('Failed to load material audit');
-      } finally {
-        if (active) setLoading(false);
+    loadAudit();
+  }, [loadAudit]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadAudit();
       }
     };
-    loadAudit();
-    return () => { active = false; };
-  }, []);
+
+    window.addEventListener('focus', loadAudit);
+    window.addEventListener('pageshow', loadAudit);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      window.removeEventListener('focus', loadAudit);
+      window.removeEventListener('pageshow', loadAudit);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [loadAudit]);
 
   const audit = useMemo(() => buildRawMaterialDuplicateAudit(materials), [materials]);
   const missingMetadata = useMemo(() => materials.filter((material) => !material.cas_number || !material.category || !material.workbook_code), [materials]);
@@ -63,7 +80,21 @@ const MobileRawMaterialAuditPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Material Audit - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Material Audit" onBack={() => navigate('/mobile/raw-materials')} action={<AlertTriangle className="h-6 w-6 text-amber-600" />} />
+        <MobileTopBar
+          title="Material Audit"
+          onBack={() => navigate('/mobile/raw-materials')}
+          action={(
+            <button
+              type="button"
+              onClick={loadAudit}
+              disabled={loading}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 text-amber-700 disabled:opacity-60"
+              aria-label="Refresh audit"
+            >
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+        />
         {loading ? <MobileLoadingState eyebrow="Material audit" title="Scanning materials..." subtitle="Checking duplicates and missing data." className="min-h-[calc(100dvh-260px)]" /> : (
           <>
             <section className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">

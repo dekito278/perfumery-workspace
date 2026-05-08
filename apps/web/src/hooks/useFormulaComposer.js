@@ -4,6 +4,7 @@ import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenc
 import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceGuidance.js';
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
+import { resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
 
 export const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
 
@@ -101,11 +102,9 @@ export const validateComposerFields = ({ name, code, formulaItems, activeFormula
 
 const resolveFormulaItemGuidance = ({ item, rawMaterialsById, referenceLinksMap }) => {
   const rawMaterial = rawMaterialsById.get(item?.item_id) || null;
-  const linkedReferenceProfile = referenceLinksMap.get(item?.item_id)?.reference_profile || null;
-  const fallbackReferenceProfile = linkedReferenceProfile
-    ? null
-    : buildFallbackReferenceProfileFromRawMaterial(rawMaterial);
-  const referenceProfile = linkedReferenceProfile || fallbackReferenceProfile;
+  const referenceLink = referenceLinksMap.get(item?.item_id) || null;
+  const guidance = resolveRawMaterialGuidanceSnapshot(rawMaterial, referenceLink);
+  const referenceProfile = guidance.referenceProfile || buildFallbackReferenceProfileFromRawMaterial(rawMaterial);
   const classDistribution = extractWorkbookClassDistribution(referenceProfile);
   const primaryClass = classDistribution[0] || null;
 

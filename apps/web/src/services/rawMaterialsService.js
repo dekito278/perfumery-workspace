@@ -3,7 +3,6 @@ import supabase from '@/lib/supabaseClient.js';
 import { deriveScentFamilyFromCategory, inferRawMaterialTypeFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import {
   getPrimaryReferenceRawMaterialIds,
-  removeReferenceArtifactsForRawMaterial,
   syncManualReferenceProfileForRawMaterial,
 } from '@/services/materialReferenceService.js';
 import {
@@ -132,6 +131,14 @@ const buildRawMaterialPayload = (data) => {
     category: normalizedCategory,
     type: normalizedType,
     unit: data.unit,
+    stock_quantity: Number(data.stock_quantity || 0),
+    minimum_stock: Number(data.minimum_stock || 0),
+    low_stock_threshold: normalizeOptionalNumber(data.low_stock_threshold),
+    data_status: data.data_status || 'active',
+    review_notes: normalizeOptionalText(data.review_notes),
+    archived_at: data.data_status === 'archived'
+      ? (data.archived_at || new Date().toISOString())
+      : null,
     cost_per_unit: Number(data.cost_per_unit || 0),
     description: normalizeOptionalText(data.description),
     notes: normalizeOptionalText(data.notes),
@@ -483,22 +490,25 @@ export const getRawMaterialsPage = async ({
   typeFilter = 'all',
   categoryFilter = 'all',
   referenceFilter = 'all',
+  lightweight = false,
 } = {}) => {
   try {
     const safePage = Math.max(Number(page) || 1, 1);
     const safePageSize = Math.max(Number(pageSize) || 20, 1);
     const from = (safePage - 1) * safePageSize;
-    const to = from + safePageSize - 1;
+    const to = from + safePageSize + (lightweight ? 1 : 0) - 1;
     const normalizedSearch = String(searchTerm || '').trim();
 
-    const referenceScope = await getPrimaryReferenceRawMaterialIds({
-      searchTerm: normalizedSearch,
-      referenceFilter,
-    });
+    const referenceScope = lightweight
+      ? { hasFilteredIds: false, filteredIds: [], hasAnyMatchedIds: false, matchedIds: [], formatPostgrestInList: () => '()' }
+      : await getPrimaryReferenceRawMaterialIds({
+        searchTerm: normalizedSearch,
+        referenceFilter,
+      });
 
     let query = supabase
       .from('raw_materials')
-      .select('*', { count: 'exact' })
+      .select('*', { count: lightweight ? undefined : 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -528,7 +538,7 @@ export const getRawMaterialsPage = async ({
       query = query.ilike('category', categoryFilter);
     }
 
-    if (referenceFilter === 'matched' || referenceFilter === 'ifra_limited' || referenceFilter === 'has_guidance') {
+    if (!lightweight && (referenceFilter === 'matched' || referenceFilter === 'ifra_limited' || referenceFilter === 'has_guidance')) {
       if (!referenceScope.hasFilteredIds) {
         return {
           items: [],
@@ -539,7 +549,7 @@ export const getRawMaterialsPage = async ({
       }
 
       query = query.in('id', referenceScope.filteredIds);
-    } else if (referenceFilter === 'unmatched') {
+    } else if (!lightweight && referenceFilter === 'unmatched') {
       if (referenceScope.hasAnyMatchedIds) {
         query = query.not('id', 'in', referenceScope.formatPostgrestInList(referenceScope.matchedIds));
       }
@@ -551,12 +561,16 @@ export const getRawMaterialsPage = async ({
       throw error;
     }
 
-    const solventIds = [...new Set((data || []).map((item) => item.dilution_solvent_id).filter(Boolean))];
+    const rawRows = data || [];
+    const pageRows = lightweight && rawRows.length > safePageSize ? rawRows.slice(0, safePageSize) : rawRows;
+    const hasMore = lightweight ? rawRows.length > safePageSize : (from + safePageSize) < Number(count || 0);
+    const solventIds = [...new Set(pageRows.map((item) => item.dilution_solvent_id).filter(Boolean))];
     const solventMap = await getSolventMap(solventIds);
 
     return {
-      items: (data || []).map((row) => mapRawMaterial(row, solventMap)),
-      total: Number(count || 0),
+      items: pageRows.map((row) => mapRawMaterial(row, solventMap)),
+      total: lightweight ? (from + pageRows.length + (hasMore ? 1 : 0)) : Number(count || 0),
+      hasMore,
       page: safePage,
       pageSize: safePageSize,
     };
@@ -620,6 +634,12 @@ export const getRawMaterialOptions = async ({ forceRefresh = false } = {}) => {
           name,
           type,
           unit,
+          stock_quantity,
+          minimum_stock,
+          low_stock_threshold,
+          data_status,
+          review_notes,
+          archived_at,
           category,
           vendor,
           workbook_code,
@@ -1079,32 +1099,15 @@ export const getRawMaterialDeletionDependencies = async (id) => {
   ].filter((entry) => entry.count > 0);
 };
 
-export const deleteRawMaterial = async (id) => {
+export const deleteRawMaterial = async (id, { skipDependencyCheck = false } = {}) => {
   try {
-    const blockers = await getRawMaterialDeletionDependencies(id);
+    const blockers = skipDependencyCheck ? [] : await getRawMaterialDeletionDependencies(id);
 
     if (blockers.length) {
       const blockerSummary = blockers
         .map((entry) => `${entry.count} ${entry.label}`)
         .join(', ');
       throw new Error(`Cannot delete raw material because it is still used in ${blockerSummary}. Remove those references first.`);
-    }
-
-    await removeReferenceArtifactsForRawMaterial(id);
-
-    const [deleteAccordItemsError, deleteAccordDilutionItemsError] = await Promise.all([
-      supabase
-        .from('accord_items')
-        .delete()
-        .eq('raw_material_id', id),
-      supabase
-        .from('accord_items')
-        .delete()
-        .eq('dilution_solvent_id', id),
-    ]).then((results) => results.map((result) => result.error));
-
-    if (deleteAccordItemsError || deleteAccordDilutionItemsError) {
-      throw deleteAccordItemsError || deleteAccordDilutionItemsError;
     }
 
     const { error } = await supabase
@@ -1119,7 +1122,7 @@ export const deleteRawMaterial = async (id) => {
   } catch (error) {
     console.error('Error deleting raw material:', error);
     if (error?.code === '23503') {
-      throw new Error('Cannot delete raw material because it is still referenced by other records.');
+      throw new Error('Cannot delete raw material because it is still used in another record.');
     }
 
     throw new Error(error.message || 'Failed to delete raw material');

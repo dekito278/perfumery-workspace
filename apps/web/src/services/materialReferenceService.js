@@ -744,24 +744,25 @@ export const removeReferenceArtifactsForRawMaterial = async (rawMaterialId) => {
     return;
   }
 
-  const { error: deleteLinksError } = await supabase
-    .from('raw_material_reference_links')
-    .delete()
-    .eq('raw_material_id', rawMaterialId);
+  const [deleteLinksResult, deleteManualProfilesResult] = await Promise.all([
+    supabase
+      .from('raw_material_reference_links')
+      .delete()
+      .eq('raw_material_id', rawMaterialId),
+    supabase
+      .from('material_reference_profiles')
+      .delete()
+      .eq('source_kind', 'manual')
+      .eq('source_raw_material_id', rawMaterialId),
+  ]);
 
-  if (deleteLinksError) {
-    console.error('Error deleting raw material reference links:', deleteLinksError);
-    throw new Error(deleteLinksError.message || 'Failed to delete raw material reference links');
+  if (deleteLinksResult.error) {
+    console.error('Error deleting raw material reference links:', deleteLinksResult.error);
+    throw new Error(deleteLinksResult.error.message || 'Failed to delete raw material reference links');
   }
 
-  const { error: deleteManualProfilesError } = await supabase
-    .from('material_reference_profiles')
-    .delete()
-    .eq('source_kind', 'manual')
-    .eq('source_raw_material_id', rawMaterialId);
-
-  if (deleteManualProfilesError) {
-    console.error('Error deleting manual reference profiles for raw material:', deleteManualProfilesError);
-    throw new Error(deleteManualProfilesError.message || 'Failed to delete manual reference profile');
+  if (deleteManualProfilesResult.error) {
+    console.error('Error deleting manual reference profiles for raw material:', deleteManualProfilesResult.error);
+    throw new Error(deleteManualProfilesResult.error.message || 'Failed to delete manual reference profile');
   }
 };

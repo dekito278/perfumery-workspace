@@ -47,8 +47,9 @@ const FormulaDetailOverviewTab = ({
       {hasFormulaItems ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <OverviewStat label="Workbook links" value={workbookSimulation.linkedProfileCount} />
-            <OverviewStat label="Manual guidance" value={workbookSimulation.fallbackGuidanceCount} />
+            <OverviewStat label="PerfumersWorld" value={workbookSimulation.perfumersWorldGuidanceCount || 0} />
+            <OverviewStat label="TGSC / ScenTree" value={(workbookSimulation.tgscGuidanceCount || 0) + (workbookSimulation.scentreeGuidanceCount || 0)} />
+            <OverviewStat label="Manual guidance" value={(workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0)} />
             <OverviewStat label="Missing guidance" value={workbookSimulation.missingGuidanceCount} />
             <OverviewStat label="IFRA alerts" value={ifraAdvisoryCount} valueClassName={ifraAdvisoryCount > 0 ? 'text-destructive' : ''} />
             <OverviewStat label="Max use alerts" value={maxUseAdvisoryCount} valueClassName={maxUseAdvisoryCount > 0 ? 'text-amber-600' : ''} />

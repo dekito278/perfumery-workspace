@@ -18,6 +18,15 @@ const decodeHtmlEntities = (value) => String(value || '')
 	.replace(/\s+/g, ' ')
 	.trim();
 
+const normalizeNumber = (value) => {
+	if (value === null || value === undefined || value === '') {
+		return null;
+	}
+
+	const numericValue = Number(String(value).replace(',', '.'));
+	return Number.isFinite(numericValue) ? numericValue : null;
+};
+
 const extractBetween = (html, startPattern, endPattern) => {
 	const startMatch = html.match(startPattern);
 	if (!startMatch || startMatch.index === undefined) {
@@ -269,13 +278,31 @@ const inferImpactFromOdorStrength = (odorStrength) => {
 		return null;
 	}
 
+	if (normalized.includes('extreme') || normalized.includes('very high')) return 260;
+	if (normalized.includes('high')) return 180;
 	if (normalized.includes('very strong')) return 280;
 	if (normalized.includes('strong')) return 220;
 	if (normalized.includes('medium strong')) return 180;
 	if (normalized.includes('medium')) return 140;
+	if (normalized.includes('low')) return 70;
 	if (normalized.includes('mild')) return 100;
 	if (normalized.includes('weak')) return 70;
 
+	return null;
+};
+
+const inferImpactFromSmellingRecommendation = (html) => {
+	const match = String(html || '').match(/([0-9]+(?:[.,][0-9]+)?)\s*%\s*solution\s*or\s*less/i);
+	const percent = normalizeNumber(match?.[1]);
+	if (percent === null) {
+		return null;
+	}
+
+	if (percent <= 0.1) return 320;
+	if (percent <= 1) return 250;
+	if (percent <= 5) return 200;
+	if (percent <= 10) return 160;
+	if (percent <= 25) return 120;
 	return null;
 };
 
@@ -460,6 +487,9 @@ const importTgscByUrl = async (url) => {
 		|| '',
 	);
 	const substantivityHours = extractFirstNumber(html, [/Substantivity:\s*<span[^>]*>\s*([0-9]+(?:[.,][0-9]+)?)\s*hour/i]);
+	const odorStrengthImpact = inferImpactFromOdorStrength(odorStrength);
+	const recommendationImpact = inferImpactFromSmellingRecommendation(html);
+	const referenceImpact = Math.max(odorStrengthImpact || 0, recommendationImpact || 0) || null;
 
 	return {
 		source: 'tgsc',
@@ -470,9 +500,9 @@ const importTgscByUrl = async (url) => {
 		ifra_limit: null,
 		ifra_notes: 'TGSC page tidak menampilkan numeric IFRA limit secara langsung pada field yang diimport.',
 		reference_abc_primary_family: mapTgscFamily(`${odorType} ${odorDescription} ${title}`),
-		reference_impact: inferImpactFromOdorStrength(odorStrength),
+		reference_impact: referenceImpact,
 		reference_life_hours: substantivityHours,
-		reference_impact_source: odorStrength ? 'heuristic' : null,
+		reference_impact_source: referenceImpact !== null ? 'heuristic' : null,
 		reference_life_hours_source: substantivityHours !== null ? 'explicit' : null,
 		reference_use_level_typical_percent: null,
 		reference_use_level_max_percent: null,

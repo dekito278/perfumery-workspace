@@ -227,6 +227,10 @@ const RawMaterialDetailPage = () => {
   const dilutionSolventName = material.expand?.dilution_solvent_id?.name || null;
   const referenceProfile = referenceLink?.reference_profile || null;
   const referenceStatus = referenceProfile?.review_status || 'fallback_manual';
+  const stockQuantity = Number(material.stock_quantity || 0);
+  const stockThreshold = Number(material.low_stock_threshold ?? material.minimum_stock ?? 0);
+  const lowStock = stockThreshold > 0 && stockQuantity <= stockThreshold;
+  const formatStock = (value) => `${Number(value || 0).toLocaleString('id-ID', { maximumFractionDigits: 3 })} ${material.unit || ''}`;
   return (
     <>
       <Helmet>
@@ -271,6 +275,10 @@ const RawMaterialDetailPage = () => {
                 <span className="detail-page-meta-label">Unit</span>
                 <span className="detail-page-meta-value">{material.unit || '-'}</span>
               </div>
+              <div className={`detail-page-meta-chip ${lowStock ? 'border-rose-200 bg-rose-50 text-rose-900' : ''}`}>
+                <span className="detail-page-meta-label">{lowStock ? 'Low stock' : 'Stock'}</span>
+                <span className="detail-page-meta-value">{formatStock(stockQuantity)}</span>
+              </div>
               <div className="detail-page-meta-chip">
                 <span className="detail-page-meta-label">Unit price</span>
                 <span className="detail-page-meta-value">{formatPricePerUnit(material.cost_per_unit, material.unit)}</span>
@@ -303,8 +311,8 @@ const RawMaterialDetailPage = () => {
           <DetailSection title="Snapshot">
             <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground mb-1">Workbook code</div>
-                <div className="text-lg font-semibold font-mono">{formatNullable(material.workbook_code, '-')}</div>
+                <div className="text-xs text-muted-foreground mb-1">{lowStock ? 'Low stock' : 'Stock on hand'}</div>
+                <div className={`text-lg font-semibold font-mono ${lowStock ? 'text-rose-700' : ''}`}>{formatStock(stockQuantity)}</div>
               </div>
               <div className="rounded-xl border bg-card p-4">
                 <div className="text-xs text-muted-foreground mb-1">IFRA limit</div>
@@ -330,10 +338,26 @@ const RawMaterialDetailPage = () => {
             </DetailFieldGroup>
             <div className="mt-3">
               <DetailFieldGroup columns={4}>
+                <DetailField label="Cleanup status" value={formatStatus(material.data_status || 'active')} />
+                <DetailField label="Review note" value={formatNullable(material.review_notes)} />
+                <DetailField label="Archived at" value={formatNullable(material.archived_at)} />
+                <DetailField label="Created" value={formatNullable(material.created_at)} />
+              </DetailFieldGroup>
+            </div>
+            <div className="mt-3">
+              <DetailFieldGroup columns={4}>
                 <DetailField label="Workbook code" value={formatNullable(material.workbook_code)} />
                 <DetailField label="CAS number" value={formatNullable(material.cas_number)} />
                 <DetailField label="Reference family" value={formatNullable(material.reference_abc_primary_family || scentFamily)} />
                 <DetailField label="Unit price" value={formatPricePerUnit(material.cost_per_unit, material.unit)} />
+              </DetailFieldGroup>
+            </div>
+            <div className="mt-3">
+              <DetailFieldGroup columns={4}>
+                <DetailField label="Stock on hand" value={formatStock(stockQuantity)} />
+                <DetailField label="Minimum stock" value={formatStock(material.minimum_stock)} />
+                <DetailField label="Low alert" value={stockThreshold > 0 ? formatStock(stockThreshold) : 'N/A'} />
+                <DetailField label="Stock status" value={lowStock ? 'Low stock' : 'Available'} />
               </DetailFieldGroup>
             </div>
             <div className="mt-3">

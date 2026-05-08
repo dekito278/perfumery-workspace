@@ -24,6 +24,11 @@ export const createInitialRawMaterialFormData = () => ({
   type: 'material',
   scent_family: '',
   unit: 'ml',
+  stock_quantity: '',
+  minimum_stock: '',
+  low_stock_threshold: '',
+  data_status: 'active',
+  review_notes: '',
   cost_per_unit: '',
   vendor: '',
   description: '',
@@ -63,6 +68,11 @@ const createFormDataFromMaterial = (material) => {
     type: material.type || 'material',
     scent_family: material.scent_family || '',
     unit: material.unit || 'ml',
+    stock_quantity: material.stock_quantity?.toString() || '',
+    minimum_stock: material.minimum_stock?.toString() || '',
+    low_stock_threshold: material.low_stock_threshold?.toString() || '',
+    data_status: material.data_status || 'active',
+    review_notes: material.review_notes || '',
     cost_per_unit: material.cost_per_unit?.toString() || '',
     vendor: material.vendor || '',
     description: material.description || '',
@@ -168,6 +178,15 @@ export const useRawMaterialForm = ({ open, material = null }) => {
         break;
       case 'cost_per_unit':
         error = validateNonNegativeNumber(value, 'Purchase price');
+        break;
+      case 'stock_quantity':
+        error = value !== '' ? validateNonNegativeNumber(value, 'Stock on hand') : '';
+        break;
+      case 'minimum_stock':
+        error = value !== '' ? validateNonNegativeNumber(value, 'Minimum stock') : '';
+        break;
+      case 'low_stock_threshold':
+        error = value !== '' ? validateNonNegativeNumber(value, 'Low stock threshold') : '';
         break;
       case 'ifra_limit':
       case 'reference_use_level_typical_percent':
@@ -487,6 +506,11 @@ export const useRawMaterialForm = ({ open, material = null }) => {
     type: formData.type,
     scent_family: isSolvent ? null : (formData.scent_family || null),
     unit: formData.unit,
+    stock_quantity: formData.stock_quantity ? parseFloat(formData.stock_quantity) : 0,
+    minimum_stock: formData.minimum_stock ? parseFloat(formData.minimum_stock) : 0,
+    low_stock_threshold: formData.low_stock_threshold ? parseFloat(formData.low_stock_threshold) : null,
+    data_status: formData.data_status || 'active',
+    review_notes: formData.review_notes || null,
     cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : 0,
     vendor: formData.vendor || null,
     description: formData.description || null,

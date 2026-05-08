@@ -43,6 +43,46 @@ const average = (values) => {
   return filteredValues.reduce((sum, value) => sum + value, 0) / filteredValues.length;
 };
 
+const getGuidanceSourceKey = (referenceProfile, guidanceSource) => {
+  if (!referenceProfile || guidanceSource === 'none') {
+    return 'missing';
+  }
+
+  const sourceKind = normalizeText(referenceProfile.source_kind);
+  const snapshotKeys = Object.keys(referenceProfile.source_snapshots || {}).map(normalizeText);
+  const provenanceKinds = Object.values(referenceProfile.field_resolution || {})
+    .map((entry) => normalizeText(entry?.source_kind || entry?.source_priority_winner))
+    .filter(Boolean);
+  const sourceSignals = [sourceKind, ...snapshotKeys, ...provenanceKinds].join(' ');
+
+  if (sourceSignals.includes('perfumersworld') || sourceSignals.includes('approved_pw')) {
+    return 'perfumersworld';
+  }
+
+  if (sourceSignals.includes('tgsc')) {
+    return 'tgsc';
+  }
+
+  if (sourceSignals.includes('scentree')) {
+    return 'scentree';
+  }
+
+  if (sourceKind === 'library' || sourceKind === 'reference_profile') {
+    return 'reference';
+  }
+
+  return 'manual';
+};
+
+const getGuidanceSourceLabel = (sourceKey) => ({
+  perfumersworld: 'PerfumersWorld',
+  tgsc: 'TGSC',
+  scentree: 'ScenTree',
+  reference: 'Reference',
+  manual: 'Manual',
+  missing: 'Missing',
+}[sourceKey] || 'Guidance');
+
 export const inferReferencePyramidPlacement = (lifeHours) => {
   return resolvePyramidPlacement({
     lifeHours: toFiniteNumber(lifeHours),
@@ -502,7 +542,7 @@ const buildPaceAnalysis = ({
       type: 'guidance',
       severity: 'info',
       title: 'Some materials still need guidance',
-      message: `${missingGuidanceCount} of ${eligibleItemCount} materials are still running without workbook or manual guidance, so PACE confidence is reduced.`,
+      message: `${missingGuidanceCount} of ${eligibleItemCount} materials are still running without normalized guidance, so PACE confidence is reduced.`,
     });
   }
 
@@ -565,6 +605,7 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     const guidance = resolveRawMaterialGuidanceSnapshot(rawMaterial, referenceLink);
     const referenceProfile = guidance.referenceProfile;
     const guidanceSource = guidance.guidanceSource;
+    const guidanceSourceKey = getGuidanceSourceKey(referenceProfile, guidanceSource);
     const listedPercentage = Number(item.percentage || 0);
     const listedGrams = Number(item.gram_amount ?? item.grams ?? 0);
     const actualizedMetrics = resolveActualizedRowMetrics({
@@ -591,6 +632,8 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
       reference_link: referenceLink,
       reference_profile: referenceProfile,
       guidanceSource,
+      guidanceSourceKey,
+      guidanceSourceLabel: getGuidanceSourceLabel(guidanceSourceKey),
       listedPercentage,
       listedGrams,
       dilutionFactor: actualizedMetrics.dilutionFactor,
@@ -622,6 +665,10 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
   const linkedProfileCount = rows.filter((row) => row.guidanceSource === 'linked_profile').length;
   const fallbackGuidanceCount = rows.filter((row) => row.guidanceSource === 'raw_material_fallback').length;
   const missingGuidanceCount = rows.filter((row) => row.guidanceSource === 'none').length;
+  const guidanceSourceCounts = guidanceRows.reduce((counts, row) => ({
+    ...counts,
+    [row.guidanceSourceKey]: Number(counts[row.guidanceSourceKey] || 0) + 1,
+  }), {});
   const hasImpactData = guidanceRows.some((row) => row.impact !== null);
   const hasLifeData = guidanceRows.some((row) => row.lifeHours !== null);
   const totalImpactContribution = guidanceRows.reduce((sum, row) => sum + (row.impactContribution || 0), 0);
@@ -678,6 +725,12 @@ export const buildWorkbookSimulation = ({ items, rawMaterialsById, referenceLink
     guidanceBackedCount: guidanceRows.length,
     linkedProfileCount,
     fallbackGuidanceCount,
+    guidanceSourceCounts,
+    perfumersWorldGuidanceCount: guidanceSourceCounts.perfumersworld || 0,
+    tgscGuidanceCount: guidanceSourceCounts.tgsc || 0,
+    scentreeGuidanceCount: guidanceSourceCounts.scentree || 0,
+    manualGuidanceCount: guidanceSourceCounts.manual || 0,
+    referenceGuidanceCount: guidanceSourceCounts.reference || 0,
     missingGuidanceCount,
     hasImpactData,
     hasLifeData,

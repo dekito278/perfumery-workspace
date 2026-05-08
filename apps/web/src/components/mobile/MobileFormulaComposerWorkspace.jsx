@@ -268,7 +268,7 @@ export const CompactWorkbookPreview = ({ items, rawMaterialsById, referenceLinks
               <span className="text-right text-[#6b7280]">{Math.round(Number(entry.percent || 0))}</span>
             </div>
           )) : (
-            <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">No workbook data</div>
+            <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">No guidance data</div>
           )}
         </div>
       </div>
@@ -594,7 +594,7 @@ const MobileFormulaComposerWorkspace = ({
           <MetricPill label="Total" value={formatPercent(insight.totalPercent)} tone={Math.abs(insight.totalPercent - 100) > 0.25 ? 'amber' : 'emerald'} />
           <MetricPill label="Actual" value={formatGram(insight.totalActualActiveGrams)} helper={formatPercent(insight.totalActualActive)} />
           <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} />
-          <MetricPill label="Life" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Workbook hours' : 'No data'} />
+          <MetricPill label="Life" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Guidance hours' : 'No data'} />
         </div>
       </section>
 
@@ -642,7 +642,7 @@ const MobileFormulaComposerWorkspace = ({
                           <h3 className="truncate text-sm font-bold text-[#1f2937]">{item.materialName}</h3>
                         </button>
                         <div className="flex items-center gap-1">
-                          {hasSyncIssue ? <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-label="Workbook guidance needs sync" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+                          {hasSyncIssue ? <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-label="Guidance needs sync" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
                           <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="rounded-lg p-1 text-[#6b7280]"><MoreHorizontal className="h-4 w-4" /></button>
                         </div>
                       </div>
@@ -719,7 +719,7 @@ const MobileFormulaComposerWorkspace = ({
 
           <div className="grid grid-cols-2 gap-2">
             <MetricPill label="Impact" value={impactDisplay} helper={insight.impactLabel} tone={impactTone} />
-            <MetricPill label="Lifetime" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Workbook hours' : 'No data'} tone="emerald" />
+            <MetricPill label="Lifetime" value={lifetimeHelper} helper={workbookSimulation.hasLifeData ? 'Guidance hours' : 'No data'} tone="emerald" />
           </div>
 
           <section className="mobile-card mobile-compact-card p-3">
@@ -738,7 +738,7 @@ const MobileFormulaComposerWorkspace = ({
           </section>
 
           <section className="mobile-card mobile-compact-card p-3">
-            <SectionTitle title="Live Workbook Preview" />
+            <SectionTitle title="Live Guidance Preview" subtitle={`${workbookSimulation.guidanceBackedCount}/${workbookSimulation.eligibleItemCount} guided`} />
             <div className="mt-3">
               <CompactWorkbookPreview
                 items={workbookItems}

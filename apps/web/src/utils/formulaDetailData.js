@@ -163,8 +163,9 @@ export const buildWorkbookBoardStats = ({
   workbookSimulation,
 }) => ([
   { label: 'Guidance-backed', value: `${workbookSimulation.guidanceBackedCount}/${itemCount}` },
-  { label: 'Workbook link', value: workbookSimulation.linkedProfileCount },
-  { label: 'Manual guidance', value: workbookSimulation.fallbackGuidanceCount },
+  { label: 'PerfumersWorld', value: workbookSimulation.perfumersWorldGuidanceCount || 0 },
+  { label: 'TGSC / ScenTree', value: (workbookSimulation.tgscGuidanceCount || 0) + (workbookSimulation.scentreeGuidanceCount || 0) },
+  { label: 'Manual guidance', value: (workbookSimulation.manualGuidanceCount || 0) + (workbookSimulation.referenceGuidanceCount || 0) },
   { label: 'Missing', value: workbookSimulation.missingGuidanceCount },
   { label: 'Reference alerts', value: totalReferenceAlertCount },
   { label: 'Material cost', value: totalCost },

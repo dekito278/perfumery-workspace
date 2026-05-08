@@ -52,12 +52,12 @@ const FormulaReferenceProfileSidebar = ({ details = null, className = '' }) => {
       <div className="border-b border-[#e7decb] px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <BookOpenText className="h-4 w-4 text-primary" />
-          <div className="text-sm font-semibold text-[#3c3222]">Workbook references</div>
+          <div className="text-sm font-semibold text-[#3c3222]">Guidance references</div>
           <Badge variant="outline" className="rounded-full text-[10px]">
-            {referenceProfile?.reference_code ? 'Workbook linked' : missingGuidance ? 'Fallback profile' : 'Reference ready'}
+            {referenceProfile?.reference_code ? 'Guidance linked' : missingGuidance ? 'Fallback profile' : 'Reference ready'}
           </Badge>
         </div>
-        <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a7854]">Reference profile</div>
+        <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a7854]">Guidance profile</div>
         <div className="mt-1 text-sm font-semibold text-[#3f3424]">{rawMaterial.name}</div>
         <p className="mt-1 text-xs text-muted-foreground">
           {referenceProfile?.brief_description || referenceProfile?.odour_description || rawMaterial.description || 'No descriptive profile yet.'}

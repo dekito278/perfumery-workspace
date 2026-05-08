@@ -82,11 +82,11 @@ export const useRawMaterials = () => {
     }
   }, []);
 
-  const deleteMaterial = useCallback(async (id) => {
+  const deleteMaterial = useCallback(async (id, options = {}) => {
     setLoading(true);
     setError(null);
     try {
-      await rawMaterialsService.deleteRawMaterial(id);
+      await rawMaterialsService.deleteRawMaterial(id, options);
     } catch (err) {
       setError(err.message);
       throw err;

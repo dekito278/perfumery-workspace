@@ -374,14 +374,26 @@ const FormulaOdourDisplayPanel = ({
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <SourcePill
-                label="Workbook link"
-                value={charts.simulation.linkedProfileCount}
+                label="PerfumersWorld"
+                value={charts.simulation.perfumersWorldGuidanceCount}
                 className="border-emerald-200 bg-emerald-50 text-emerald-900"
                 compact={isMobile}
               />
               <SourcePill
-                label="Manual guidance"
-                value={charts.simulation.fallbackGuidanceCount}
+                label="TGSC"
+                value={charts.simulation.tgscGuidanceCount}
+                className="border-sky-200 bg-sky-50 text-sky-900"
+                compact={isMobile}
+              />
+              <SourcePill
+                label="ScenTree"
+                value={charts.simulation.scentreeGuidanceCount}
+                className="border-indigo-200 bg-indigo-50 text-indigo-900"
+                compact={isMobile}
+              />
+              <SourcePill
+                label="Manual"
+                value={(charts.simulation.manualGuidanceCount || 0) + (charts.simulation.referenceGuidanceCount || 0)}
                 className="border-amber-200 bg-amber-50 text-amber-950"
                 compact={isMobile}
               />
@@ -604,7 +616,7 @@ const FormulaOdourDisplayPanel = ({
             </div>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed bg-background/70 px-4 py-8 text-sm text-muted-foreground">
-              No workbook data yet.
+              No guidance data yet.
             </div>
           )}
 
