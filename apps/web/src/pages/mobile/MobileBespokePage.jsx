@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, ClipboardList, MessageCircle, MessageSquareHeart, Send, Sparkles, WandSparkles } from 'lucide-react';
+import { CheckCircle2, ClipboardList, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Sheet,
@@ -15,7 +14,6 @@ import {
 } from '@/components/ui/sheet.jsx';
 import {
   bespokeOccasionOptions,
-  feedbackFlowSteps,
 } from '@/data/storefront.js';
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
@@ -372,14 +370,6 @@ const MobileBespokePage = () => {
         <meta name="description" content="Create a custom perfume request with aroma, bottle size, cap design, exotic materials, and payment preference." />
       </Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar
-          title="Custom perfume"
-          subtitle={`${completion}% complete`}
-          eyebrow="Bespoke"
-          onBack={() => navigate('/mobile/dashboard')}
-          action={<WandSparkles className="h-5 w-5 text-[#263d27]" />}
-        />
-
         <section className="mobile-soft-card p-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
             <Sparkles className="h-3.5 w-3.5" />
@@ -410,28 +400,6 @@ const MobileBespokePage = () => {
             <p><strong className="text-[#0b130c]">Bottle:</strong> {form.size} / {form.bottleType} / {form.capDesign} / {form.labelDesign}</p>
             {selectedExoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {selectedExoticMaterial.label}</p> : null}
             <p><strong className="text-[#0b130c]">Budget:</strong> {formatRupiah(estimatedTotal)}</p>
-          </div>
-        </section>
-
-        <section className="mobile-card p-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-700">
-              <MessageSquareHeart className="h-5 w-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-[#0b130c]">After-sample feedback</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Setelah sample dicoba, feedback bisa dipakai untuk revisi aroma atau final bottle.
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 grid gap-2">
-            {feedbackFlowSteps.map((item, index) => (
-              <div key={item.title} className="rounded-2xl bg-[#f7f8f2] p-3 text-xs font-semibold text-[#6b7280]">
-                <span className="font-bold text-[#0b130c]">{index + 1}. {item.title}</span>
-                <span className="mt-1 block">{item.description}</span>
-              </div>
-            ))}
           </div>
         </section>
 

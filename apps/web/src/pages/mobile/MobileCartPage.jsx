@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import {
   Sheet,
@@ -95,14 +94,6 @@ const MobileCartPage = () => {
         <title>Cart - Solivagant</title>
       </Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar
-          title="Cart"
-          subtitle={formatCartSubtitle(items, summary.quantity)}
-          eyebrow="Checkout"
-          onBack={() => navigate('/mobile/catalog')}
-          action={<ShoppingBag className="h-5 w-5 text-amber-700" />}
-        />
-
         {submittedOrder ? (
           <section className="mobile-soft-card border border-[#263d27]/15 p-4">
             <div className="flex items-start gap-3">
@@ -186,12 +177,6 @@ const MobileCartPage = () => {
             </div>
           ) : null}
         </section>
-
-        <Link to="/mobile/catalog" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#1f2937]">
-          Continue shopping
-          <ShoppingBag className="h-4 w-4 text-amber-700" />
-        </Link>
-
         <Sheet open={checkoutOpen && Boolean(items.length)} onOpenChange={setCheckoutOpen}>
           <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#fbfaf7] p-4">
             <SheetHeader className="pr-8 text-left">

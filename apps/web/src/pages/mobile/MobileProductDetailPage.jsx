@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, ClipboardCheck, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -90,16 +90,7 @@ const MobileProductDetailPage = () => {
           subtitle={product.category}
           eyebrow="Product"
           onBack={() => navigate('/mobile/catalog')}
-          action={(
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
-                <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
-              </button>
-              <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
-                <ShoppingBag className="h-5 w-5 text-[#263d27]" />
-              </button>
-            </div>
-          )}
+          action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
         />
 
         <ProductGallery product={product} visualClassName="aspect-square rounded-[24px]" compact />

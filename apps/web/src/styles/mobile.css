@@ -77,6 +77,35 @@
   margin: 0 auto;
 }
 
+.mobile-commerce-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  max-width: 448px;
+  min-height: 64px;
+  margin: 0 auto 12px;
+}
+
+.mobile-commerce-brand {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 64px;
+  align-items: center;
+  overflow: visible;
+}
+
+.mobile-commerce-brand-logo {
+  width: min(230px, calc(100vw - 136px));
+  height: 64px;
+  max-width: none;
+  object-fit: contain;
+  object-position: left center;
+  transform: translateX(-12px) scale(1.12);
+  transform-origin: left center;
+}
+
 .mobile-centered-state {
   display: flex;
   min-height: calc(100dvh - 190px);
@@ -96,6 +125,7 @@
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 14px 32px -30px rgba(24, 47, 27, 0.34);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .mobile-soft-card {
@@ -105,6 +135,30 @@
   border-radius: 16px;
   background: linear-gradient(180deg, #eef2e8 0%, #ffffff 100%);
   box-shadow: 0 14px 32px -30px rgba(24, 47, 27, 0.34);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.mobile-card:active,
+.mobile-soft-card:active {
+  transform: translateY(1px) scale(0.995);
+}
+
+.mobile-app button,
+.mobile-app a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-app button:active,
+.mobile-app a:active {
+  transform: translateY(1px);
+}
+
+.mobile-bottom-nav a {
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.mobile-bottom-nav a:active {
+  transform: translateY(-1px) scale(0.98);
 }
 
 .mobile-card > *,

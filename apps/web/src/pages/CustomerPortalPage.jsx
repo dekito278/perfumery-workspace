@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, KeyRound, Loader2, PackageCheck, Search, ShieldCheck, ShoppingBag, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import {
   getCustomerPortalByCode,
   setCustomerPortalSecurity,
@@ -30,7 +29,6 @@ const getActiveStep = (status) => {
 
 const CustomerPortalPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   const [customerCode, setCustomerCode] = useState(initialCode.toUpperCase());
@@ -153,14 +151,6 @@ const CustomerPortalPage = () => {
           <meta name="description" content="Check Solivagant order progress with a customer code." />
         </Helmet>
         <main className="mobile-page space-y-4">
-          <MobileTopBar
-            title="Cek Order"
-            subtitle="Customer portal"
-            eyebrow="Solivagant"
-            onBack={() => navigate('/mobile/dashboard')}
-            action={<UserRound className="h-5 w-5 text-[#263d27]" />}
-          />
-
           <section className="mobile-soft-card overflow-hidden">
             <div className="bg-[#050705] p-4 text-[#eef2e8]">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase text-[#cbd6c5]">

@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, ClipboardCheck, PackagePlus, Search, ShoppingBag, SlidersHorizontal, WandSparkles } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowUpDown, PackagePlus, Search, SlidersHorizontal, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
@@ -11,6 +10,8 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
 import { formatRupiah, getProductLowStock } from '@/services/productCatalogService.js';
+
+const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];
@@ -31,6 +32,9 @@ const MobileCatalogPage = () => {
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
+  const scentFamilies = useMemo(() => (
+    categories.filter((item) => !commerceCategoryNames.has(String(item.name || '').toLowerCase()))
+  ), [categories]);
   const catalogLoading = Boolean(products.loading);
   const hasCatalogProducts = products.length > 0;
 
@@ -82,22 +86,6 @@ const MobileCatalogPage = () => {
         <meta name="description" content="Browse Solivagant products by category, price, and scent profile." />
       </Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar
-          title="Catalog"
-          subtitle={`${filteredProducts.length} products`}
-          eyebrow="Shop"
-          action={(
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
-                <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
-              </button>
-              <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
-                <ShoppingBag className="h-5 w-5 text-[#263d27]" />
-              </button>
-            </div>
-          )}
-        />
-
         <section className="mobile-card p-2">
           <label className="flex h-12 items-center gap-2 rounded-2xl bg-[#f7f8f2] px-3">
             <Search className="h-4 w-4 text-[#8b949e]" />
@@ -112,19 +100,20 @@ const MobileCatalogPage = () => {
         </section>
 
         {hasCatalogProducts ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">Shop type</h2>
-            <span className="text-xs font-bold text-[#263d27]">Regular / limited</span>
+        <section className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-bold uppercase text-[#6b7280]">Shop type</h2>
+            <span className="text-[10px] font-bold text-[#263d27]">Regular / limited</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
             {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
               <button
                 key={item.filter}
                 type="button"
                 onClick={() => updateFilters({ segment: item.filter })}
+                style={{ minHeight: 34 }}
                 className={cn(
-                  'min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-bold',
+                  'h-[34px] rounded-xl border px-2 py-1 text-[11px] font-bold leading-tight',
                   segment === item.filter
                     ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
@@ -137,20 +126,21 @@ const MobileCatalogPage = () => {
         </section>
         ) : null}
 
-        {hasCatalogProducts && categories.length ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">Scent family</h2>
-            <SlidersHorizontal className="h-4 w-4 text-[#8b949e]" />
+        {hasCatalogProducts && scentFamilies.length ? (
+        <section className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-bold uppercase text-[#6b7280]">Scent family</h2>
+            <SlidersHorizontal className="h-3.5 w-3.5 text-[#8b949e]" />
           </div>
-          <div className="mobile-segment-scroll flex gap-2 overflow-x-auto pb-1">
-            {['All', ...categories.map((item) => item.name)].map((item) => (
+          <div className="mobile-segment-scroll flex gap-1.5 overflow-x-auto pb-1">
+            {['All', ...scentFamilies.map((item) => item.name)].map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => updateFilters({ category: item })}
+                style={{ minHeight: 32 }}
                 className={cn(
-                  'h-10 shrink-0 rounded-2xl border px-4 text-xs font-bold',
+                  'h-8 shrink-0 rounded-xl border px-3 text-[11px] font-bold',
                   category === item
                     ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
@@ -164,19 +154,20 @@ const MobileCatalogPage = () => {
         ) : null}
 
         {hasCatalogProducts ? (
-        <section className="mobile-card p-3">
-          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-[#6b7280]">
-            <ArrowUpDown className="h-4 w-4" />
+        <section className="mobile-card p-2.5">
+          <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase text-[#6b7280]">
+            <ArrowUpDown className="h-3.5 w-3.5" />
             Sort
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
             {catalogSortOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => updateFilters({ sort: option.value })}
+                style={{ minHeight: 34 }}
                 className={cn(
-                  'h-10 rounded-2xl border text-xs font-bold',
+                  'h-[34px] rounded-xl border px-1.5 text-[10px] font-bold leading-tight',
                   sort === option.value
                     ? 'border-[#263d27] bg-[#263d27] text-white'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
@@ -261,11 +252,6 @@ const MobileCatalogPage = () => {
             </div>
           ) : null}
         </section>
-
-        <Link to="/mobile/dashboard" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#0b130c]">
-          Back to storefront
-          <ShoppingBag className="h-4 w-4 text-[#263d27]" />
-        </Link>
       </main>
     </MobileCommerceLayout>
   );

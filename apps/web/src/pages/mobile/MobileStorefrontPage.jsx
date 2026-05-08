@@ -1,12 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import {
-  ClipboardCheck,
   Gem,
   Leaf,
   PackagePlus,
-  ShoppingBag,
   Sparkles,
   UserRound,
   WandSparkles,
@@ -21,7 +19,6 @@ import {
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
-import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -50,8 +47,6 @@ const mobileHomeAssets = {
 
 const MobileStorefrontPage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const adminTapRef = useRef({ count: 0, lastTapAt: 0 });
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
@@ -63,19 +58,6 @@ const MobileStorefrontPage = () => {
     { value: String(limitedProducts.length), label: 'Limited picks' },
     { value: '1:1', label: 'Bespoke' },
   ];
-  const openOwnerAccess = () => {
-    const now = Date.now();
-    const nextCount = now - adminTapRef.current.lastTapAt > 1800
-      ? 1
-      : adminTapRef.current.count + 1;
-
-    adminTapRef.current = { count: nextCount, lastTapAt: now };
-
-    if (nextCount >= 3) {
-      adminTapRef.current = { count: 0, lastTapAt: 0 };
-      navigate(isAuthenticated ? '/mobile/studio' : '/mobile/login');
-    }
-  };
 
   return (
     <MobileCommerceLayout>
@@ -84,20 +66,6 @@ const MobileStorefrontPage = () => {
         <meta name="description" content="Solivagant storefront with featured perfumes, scent categories, and bespoke perfume consultation." />
       </Helmet>
       <main className="mobile-page space-y-4">
-        <header className="mb-3 flex items-center justify-between gap-3 pr-12">
-          <button type="button" onClick={openOwnerAccess} className="min-w-0" aria-label="Solivagant home">
-            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-12 w-36 rounded-2xl object-contain" />
-          </button>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
-              <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
-            </button>
-            <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
-              <ShoppingBag className="h-5 w-5 text-[#263d27]" />
-            </button>
-          </div>
-        </header>
-
         <motion.section
           variants={stagger}
           initial="hidden"

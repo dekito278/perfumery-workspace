@@ -4,6 +4,7 @@ import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
+import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import HomePage from '@/pages/HomePage.jsx';
@@ -106,6 +107,7 @@ function AppRoutes() {
   return (
     <Router>
       <ScrollToTop />
+      <ScrollRevealEffects />
       <MobileBrowserRedirect />
       <Routes>
         <Route path="/" element={<RootRedirect />} />

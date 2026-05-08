@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Beaker, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Beaker, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { cn } from '@/lib/utils.js';
 
@@ -14,11 +14,40 @@ const commerceNavItems = [
 
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const ownerTapRef = useRef({ count: 0, lastTapAt: 0 });
+
+  const openOwnerAccess = () => {
+    const now = Date.now();
+    const nextCount = now - ownerTapRef.current.lastTapAt > 1800
+      ? 1
+      : ownerTapRef.current.count + 1;
+
+    ownerTapRef.current = { count: nextCount, lastTapAt: now };
+
+    if (nextCount >= 3) {
+      ownerTapRef.current = { count: 0, lastTapAt: 0 };
+      navigate(isAuthenticated ? '/mobile/studio' : '/mobile/login');
+    }
+  };
 
   return (
     <div className="mobile-app">
       <div className="mobile-app-shell">
+        <header className="mobile-commerce-header">
+          <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand" aria-label="Solivagant owner access">
+            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mobile-commerce-brand-logo" />
+          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+              <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
+            </button>
+            <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+              <ShoppingBag className="h-5 w-5 text-[#263d27]" />
+            </button>
+          </div>
+        </header>
         {children}
       </div>
       {isAuthenticated ? (

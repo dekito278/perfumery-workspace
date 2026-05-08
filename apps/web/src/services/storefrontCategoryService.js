@@ -10,6 +10,16 @@ const ACCENT_CLASSES = [
   'bg-[#f7f8f2] text-[#263d27] border-[#263d27]/15',
 ];
 
+const DEFAULT_SCENT_FAMILIES = [
+  { name: 'Gourmand', description: 'Vanilla, caramel, chocolate, coffee, and edible sweet notes.' },
+  { name: 'Aquatic', description: 'Clean water, marine breeze, airy mineral freshness.' },
+  { name: 'Woody', description: 'Sandalwood, cedar, vetiver, dry woods, and resinous texture.' },
+  { name: 'Floral', description: 'Rose, jasmine, white florals, powdery petals.' },
+  { name: 'Citrus', description: 'Bergamot, lemon, orange, grapefruit, sparkling freshness.' },
+  { name: 'Amber', description: 'Warm resin, vanilla, labdanum, balsamic depth.' },
+  { name: 'Fresh', description: 'Clean musk, green notes, tea, and crisp aromatics.' },
+];
+
 const makeLocalId = () => `local-category-${Date.now()}`;
 
 const getAccentForName = (name) => {
@@ -32,6 +42,15 @@ export const buildCategoryFromProductName = (name) => {
     source: 'product',
   };
 };
+
+const defaultScentFamilies = () => DEFAULT_SCENT_FAMILIES.map((category, index) => ({
+  id: `default-scent-family-${category.name.toLowerCase()}`,
+  name: category.name,
+  description: category.description,
+  accent: getAccentForName(category.name),
+  sortOrder: index + 1,
+  source: 'default',
+}));
 
 const mapCategory = (row) => ({
   id: row.id,
@@ -67,7 +86,7 @@ export const dispatchStorefrontCategoryUpdate = () => {
   }
 };
 
-export const getLocalStorefrontCategories = () => readStoredCategories();
+export const getLocalStorefrontCategories = () => [...defaultScentFamilies(), ...readStoredCategories()];
 
 export const getStorefrontCategories = async () => {
   try {
@@ -81,10 +100,10 @@ export const getStorefrontCategories = async () => {
       throw error;
     }
 
-    return (data || []).map(mapCategory);
+    return [...defaultScentFamilies(), ...(data || []).map(mapCategory)];
   } catch (error) {
     console.warn('Using local storefront categories fallback:', error.message || error);
-    return readStoredCategories();
+    return getLocalStorefrontCategories();
   }
 };
 
