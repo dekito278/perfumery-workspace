@@ -37,20 +37,57 @@ const getCachedSession = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [mfaChallenge, setMfaChallenge] = useState(null);
   const [session, setSession] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
     let timeoutId = null;
 
-    const finishLoading = (nextSession = null) => {
+    const finishLoading = (nextSession = null, nextMfaChallenge = null) => {
       if (!isMounted) {
         return;
       }
 
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
+      setMfaChallenge(nextMfaChallenge);
       setInitialLoading(false);
+    };
+
+    const resolveMfaChallenge = async (nextSession) => {
+      if (!nextSession?.user) {
+        return null;
+      }
+
+      try {
+        const [{ data: assurance }, { data: factorsData }] = await Promise.all([
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+          supabase.auth.mfa.listFactors(),
+        ]);
+        const verifiedTotp = factorsData?.totp?.find((factor) => factor.status === 'verified');
+
+        if (!verifiedTotp || assurance?.currentLevel === 'aal2') {
+          return null;
+        }
+
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: verifiedTotp.id,
+        });
+
+        if (challengeError) {
+          throw challengeError;
+        }
+
+        return {
+          challengeId: challengeData.id,
+          factorId: verifiedTotp.id,
+          friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
+        };
+      } catch (error) {
+        console.warn('Failed to initialize MFA challenge:', error);
+        return null;
+      }
     };
 
     const initializeAuth = async () => {
@@ -65,10 +102,14 @@ export const AuthProvider = ({ children }) => {
           console.error('Failed to restore Supabase session:', error);
         }
 
-        finishLoading(initialSession || cachedSession);
+        const nextSession = initialSession || cachedSession;
+        const nextMfaChallenge = await resolveMfaChallenge(nextSession);
+        finishLoading(nextSession, nextMfaChallenge);
       } catch (error) {
         console.error('Unexpected auth initialization error:', error);
-        finishLoading(getCachedSession());
+        const cachedSession = getCachedSession();
+        const nextMfaChallenge = await resolveMfaChallenge(cachedSession);
+        finishLoading(cachedSession, nextMfaChallenge);
       }
     };
 
@@ -110,11 +151,96 @@ export const AuthProvider = ({ children }) => {
 
       setSession(data.session);
       setCurrentUser(data.user);
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) {
+        throw factorsError;
+      }
+
+      const verifiedTotp = factorsData?.totp?.find((factor) => factor.status === 'verified');
+      if (verifiedTotp) {
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: verifiedTotp.id,
+        });
+
+        if (challengeError) {
+          throw challengeError;
+        }
+
+        const nextChallenge = {
+          challengeId: challengeData.id,
+          factorId: verifiedTotp.id,
+          friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
+        };
+        setMfaChallenge(nextChallenge);
+        return { ...data, mfaRequired: true, mfaChallenge: nextChallenge };
+      }
+
+      setMfaChallenge(null);
       return data;
     } catch (error) {
       console.error('Login error:', error);
       throw new Error(error.message || 'Login failed');
     }
+  };
+
+  const verifyMfaCode = async (code) => {
+    if (!mfaChallenge?.factorId || !mfaChallenge?.challengeId) {
+      throw new Error('No authenticator challenge is active');
+    }
+
+    const { data, error } = await supabase.auth.mfa.verify({
+      factorId: mfaChallenge.factorId,
+      challengeId: mfaChallenge.challengeId,
+      code: String(code || '').trim(),
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Invalid authenticator code');
+    }
+
+    setSession(data.session);
+    setCurrentUser(data.user ?? data.session?.user ?? null);
+    setMfaChallenge(null);
+    return data;
+  };
+
+  const enrollAuthenticator = async (friendlyName = 'Solivagant Studio') => {
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName,
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to create authenticator setup');
+    }
+
+    return data;
+  };
+
+  const verifyAuthenticatorEnrollment = async ({ factorId, challengeId, code }) => {
+    const { data, error } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId,
+      code: String(code || '').trim(),
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Invalid authenticator code');
+    }
+
+    setSession(data.session);
+    setCurrentUser(data.user ?? data.session?.user ?? null);
+    return data;
+  };
+
+  const challengeAuthenticatorEnrollment = async (factorId) => {
+    const { data, error } = await supabase.auth.mfa.challenge({ factorId });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to verify authenticator setup');
+    }
+
+    return data;
   };
 
   const signup = async (email, password, _passwordConfirm, name) => {
@@ -145,6 +271,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const requestPasswordReset = async (email, redirectTo = `${window.location.origin}/reset-password`) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+
+    if (error) {
+      console.error('Password reset request error:', error);
+      throw new Error(error.message || 'Failed to send password reset email');
+    }
+  };
+
+  const updatePassword = async (password) => {
+    const { data, error } = await supabase.auth.updateUser({ password });
+
+    if (error) {
+      console.error('Password update error:', error);
+      throw new Error(error.message || 'Failed to update password');
+    }
+
+    if (data?.user) {
+      setCurrentUser(data.user);
+    }
+
+    return data;
+  };
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
 
@@ -158,19 +310,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   const getAuthState = () => ({
-    isAuthenticated: !!session?.user,
+    isAuthenticated: !!session?.user && !mfaChallenge,
     user: session?.user ?? null,
   });
 
   const value = {
+    challengeAuthenticatorEnrollment,
     currentUser,
+    enrollAuthenticator,
     login,
+    requestPasswordReset,
     signup,
+    updatePassword,
     logout,
-    isAuthenticated: !!session?.user,
+    isAuthenticated: !!session?.user && !mfaChallenge,
+    mfaChallenge,
     getAuthState,
     initialLoading,
     session,
+    verifyAuthenticatorEnrollment,
+    verifyMfaCode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

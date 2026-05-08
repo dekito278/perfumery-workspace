@@ -16,6 +16,8 @@ import PaymentPage from '@/pages/PaymentPage.jsx';
 import CustomerPortalPage from '@/pages/CustomerPortalPage.jsx';
 import CustomerInvoicePage from '@/pages/CustomerInvoicePage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
+import ResetPasswordPage from '@/pages/ResetPasswordPage.jsx';
+import AuthenticatorSetupPage from '@/pages/AuthenticatorSetupPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
 import ProductCategoriesPage from '@/pages/ProductCategoriesPage.jsx';
@@ -123,7 +125,9 @@ function AppRoutes() {
         <Route path="/customer" element={<CustomerPortalPage />} />
         <Route path="/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/mobile/login" element={<MobileLoginPage />} />
+        <Route path="/mobile/reset-password" element={<ResetPasswordPage mobile />} />
 
         <Route path="/mobile" element={
           <Navigate to="/mobile/dashboard" replace />
@@ -148,6 +152,11 @@ function AppRoutes() {
         <Route path="/mobile/studio" element={
           <ProtectedRoute>
             <MobileDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/authenticator" element={
+          <ProtectedRoute>
+            <AuthenticatorSetupPage mobile />
           </ProtectedRoute>
         } />
         <Route path="/mobile/studio/dashboard" element={
@@ -318,6 +327,11 @@ function AppRoutes() {
         <Route path="/studio" element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/authenticator" element={
+          <ProtectedRoute>
+            <AuthenticatorSetupPage />
           </ProtectedRoute>
         } />
 

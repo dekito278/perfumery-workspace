@@ -12,11 +12,15 @@ import { Helmet } from 'react-helmet';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authenticatorCode, setAuthenticatorCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
+  const [authStep, setAuthStep] = useState('password');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +28,12 @@ const LoginPage = () => {
     setError('');
 
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      if (result?.mfaRequired) {
+        setAuthStep('mfa');
+        toast.info('Enter your authenticator code');
+        return;
+      }
       toast.success('Login successful');
       const redirectTo = location.state?.from?.pathname || '/studio';
       navigate(redirectTo, { replace: true });
@@ -33,6 +42,43 @@ const LoginPage = () => {
       toast.error(err.message || 'Login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMfaSubmit = async (event) => {
+    event.preventDefault();
+    setMfaLoading(true);
+    setError('');
+
+    try {
+      await verifyMfaCode(authenticatorCode);
+      toast.success('Authenticator verified');
+      const redirectTo = location.state?.from?.pathname || '/studio';
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      setError(err.message || 'Invalid authenticator code');
+      toast.error(err.message || 'Invalid authenticator code');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email.trim()) {
+      setError('Enter your email first, then request a reset link.');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    try {
+      await requestPasswordReset(email.trim(), `${window.location.origin}/reset-password`);
+      toast.success('Password reset email sent');
+    } catch (resetError) {
+      setError(resetError.message || 'Failed to send reset email');
+      toast.error(resetError.message || 'Failed to send reset email');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -50,7 +96,38 @@ const LoginPage = () => {
             <CardDescription>Masuk dan lanjut racik hari ini.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {authStep === 'mfa' || mfaChallenge ? (
+              <form onSubmit={handleMfaSubmit} className="space-y-4">
+                {error && (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                  Open your authenticator app and enter the 6 digit code for {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="authenticator-code">Authenticator code</Label>
+                  <Input
+                    id="authenticator-code"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={authenticatorCode}
+                    onChange={(e) => setAuthenticatorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
+                    className="text-foreground text-center text-lg tracking-[0.35em]"
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={mfaLoading || authenticatorCode.length < 6}>
+                  {mfaLoading ? 'Verifying...' : 'Verify authenticator'}
+                </Button>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => setAuthStep('password')}>
+                  Back to password
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                   {error}
@@ -83,7 +160,11 @@ const LoginPage = () => {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign in'}
               </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={handlePasswordReset} disabled={resetLoading}>
+                {resetLoading ? 'Sending reset link...' : 'Forgot password?'}
+              </Button>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

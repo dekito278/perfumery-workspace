@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, UserRound } from 'lucide-react';
+import { KeyRound, LogOut, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
@@ -34,6 +34,10 @@ const MobileSessionActions = () => {
           <Button type="button" variant="outline" onClick={handleLogout} disabled={loggingOut} className="h-9 rounded-xl border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700">
             <LogOut className="mr-1 h-4 w-4" />
             {loggingOut ? '...' : 'Logout'}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => navigate('/mobile/authenticator')} className="h-9 rounded-xl bg-white px-3 text-xs font-bold">
+            <KeyRound className="mr-1 h-4 w-4" />
+            Auth
           </Button>
         </div>
       ) : null}
