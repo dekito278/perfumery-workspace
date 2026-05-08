@@ -47,6 +47,7 @@ const ProductDetailPage = () => {
       size: selectedSize,
       price: formatRupiah(selectedPrice),
       priceNumber: selectedPrice,
+      maxStock: selectedStock,
     }, 1);
     toast.success(`${selectedSize} added to cart`);
   };

@@ -112,7 +112,7 @@ const MobileOrdersPage = () => {
             <div>
               <div className="text-[10px] font-bold uppercase text-[#263d27]">DOKU payment flow</div>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Payment callback mengubah status menjadi Paid otomatis. Setelah itu Studio tinggal lanjut Processing, Shipped, lalu Completed.
+                Checkout mengunci stok sekali, lalu payment callback mengubah status menjadi Paid otomatis. Setelah itu Studio tinggal lanjut Processing, Shipped, lalu Completed.
               </p>
             </div>
           </div>
@@ -141,7 +141,7 @@ const MobileOrdersPage = () => {
               <div className="min-w-0">
                 <div className="text-[10px] font-bold uppercase text-rose-700">Low stock warning</div>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-rose-800">
-                  {lowStockProducts.length} produk mendekati habis setelah order paid mengurangi stok.
+                  {lowStockProducts.length} produk mendekati habis setelah checkout mengurangi stok.
                 </p>
               </div>
             </div>

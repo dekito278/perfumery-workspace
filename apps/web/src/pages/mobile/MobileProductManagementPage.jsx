@@ -70,6 +70,61 @@ const getTagsForVisibility = (tags, catalogVisible) => {
   return [...new Set(nextTags)];
 };
 
+const ProductListCard = ({ onDelete, onEdit, onOpenBatch, product }) => {
+  const formulaId = getProductFormulaId(product);
+  const batchDetails = getProductBatchDetails(product);
+
+  return (
+    <article className="mobile-card p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid min-w-0 flex-1 grid-cols-[72px_1fr] gap-3">
+          <ProductVisual product={product} className="h-20 rounded-2xl" label={false} />
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
+            <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
+            {isProductDraft(product) ? (
+              <div className="mt-1 w-fit rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase text-amber-700">
+                Draft - hidden from catalog
+              </div>
+            ) : null}
+            <div className="mt-1 flex flex-wrap gap-1">
+              {product.variants.slice(0, 3).map((variant) => (
+                <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
+                  {variant.size}: {variant.stock}
+                </span>
+              ))}
+            </div>
+            <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock}</p>
+            {formulaId ? (
+              <button
+                type="button"
+                onClick={() => onOpenBatch(formulaId)}
+                className="mt-2 text-[10px] font-bold uppercase text-[#263d27]"
+              >
+                View source batch
+              </button>
+            ) : null}
+            {batchDetails.movement ? (
+              <div className="mt-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                {batchDetails.movement} / initial {batchDetails.initialStock || 0}
+              </div>
+            ) : null}
+            {batchDetails.sku ? (
+              <div className="mt-1 break-all text-[10px] font-bold uppercase text-[#6b7280]">
+                SKU {batchDetails.sku}
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-1">
+          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => onEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>
+          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => onDelete(product)} aria-label={`Delete ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      </div>
+    </article>
+  );
+};
+
 const MobileProductManagementPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -180,6 +235,10 @@ const MobileProductManagementPage = () => {
     setSearchParams({ view: 'new', edit: product.id }, { replace: true });
   };
 
+  const openSourceBatch = (formulaId) => {
+    navigate(`/mobile/batches?formulaId=${encodeURIComponent(formulaId)}`);
+  };
+
   const handleDelete = async (product) => {
     await deleteCustomProduct(product.id);
     if (form.id === product.id) resetForm();
@@ -270,10 +329,20 @@ const MobileProductManagementPage = () => {
                     </span>
                   ) : null}
                 </div>
+                {batchDetails.sku ? (
+                  <div className="mt-3 rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">SKU</div>
+                    <div className="mt-1 break-all text-xs font-bold text-[#1f2937]">{batchDetails.sku}</div>
+                  </div>
+                ) : null}
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-xl bg-white px-3 py-2">
                     <div className="text-[10px] font-bold uppercase text-[#8b949e]">Batch</div>
                     <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.targetMl, 0)} ml</div>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">Usable</div>
+                    <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.usableMl || batchDetails.targetMl, 0)} ml</div>
                   </div>
                   <div className="rounded-xl bg-white px-3 py-2">
                     <div className="text-[10px] font-bold uppercase text-[#8b949e]">Bottle</div>
@@ -282,6 +351,10 @@ const MobileProductManagementPage = () => {
                   <div className="rounded-xl bg-white px-3 py-2">
                     <div className="text-[10px] font-bold uppercase text-[#8b949e]">Dilution</div>
                     <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.dilutionPercent, 1)}%</div>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase text-[#8b949e]">Loss</div>
+                    <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatQuantity(batchDetails.lossPercent, 1)}%</div>
                   </div>
                   <div className="rounded-xl bg-white px-3 py-2">
                     <div className="text-[10px] font-bold uppercase text-[#8b949e]">COGS/bottle</div>
@@ -413,48 +486,13 @@ const MobileProductManagementPage = () => {
             <span className="text-xs font-bold text-amber-700">{customProducts.length} produk</span>
           </div>
           {customProducts.map((product) => (
-            <article key={product.id} className="mobile-card p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="grid min-w-0 flex-1 grid-cols-[72px_1fr] gap-3">
-                  <ProductVisual product={product} className="h-20 rounded-2xl" label={false} />
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-[#1f2937]">{product.name}</h3>
-                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{product.notes}</p>
-                    {isProductDraft(product) ? (
-                      <div className="mt-1 w-fit rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase text-amber-700">
-                        Draft - hidden from catalog
-                      </div>
-                    ) : null}
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {product.variants.slice(0, 3).map((variant) => (
-                        <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
-                          {variant.size}: {variant.stock}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock}</p>
-                    {getProductFormulaId(product) ? (
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/mobile/batches?formulaId=${encodeURIComponent(getProductFormulaId(product))}`)}
-                        className="mt-2 text-[10px] font-bold uppercase text-[#263d27]"
-                      >
-                        View source batch
-                      </button>
-                    ) : null}
-                    {getProductBatchDetails(product).movement ? (
-                      <div className="mt-1 text-[10px] font-bold uppercase text-[#6b7280]">
-                        {getProductBatchDetails(product).movement} / initial {getProductBatchDetails(product).initialStock || 0}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => handleEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>
-                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(product)} aria-label={`Delete ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
-                </div>
-              </div>
-            </article>
+            <ProductListCard
+              key={product.id}
+              product={product}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onOpenBatch={openSourceBatch}
+            />
           ))}
           {!customProducts.length ? (
             <div className="mobile-card p-5 text-center">

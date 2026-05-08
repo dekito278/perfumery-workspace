@@ -7,6 +7,7 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -19,11 +20,14 @@ import {
   PRODUCT_BATCH_BOTTLE_TAG_PREFIX,
   PRODUCT_BATCH_COGS_TAG_PREFIX,
   PRODUCT_BATCH_DILUTION_TAG_PREFIX,
+  PRODUCT_BATCH_LOSS_TAG_PREFIX,
   PRODUCT_BATCH_MOVEMENT_TAG_PREFIX,
   PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX,
+  PRODUCT_BATCH_SKU_TAG_PREFIX,
   PRODUCT_BATCH_STOCK_TAG_PREFIX,
   PRODUCT_BATCH_TAG_PREFIX,
   PRODUCT_BATCH_TARGET_TAG_PREFIX,
+  PRODUCT_BATCH_USABLE_TAG_PREFIX,
   PRODUCT_DRAFT_TAG,
   PRODUCT_FORMULA_TAG_PREFIX,
   saveCustomProduct,
@@ -38,12 +42,22 @@ import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
 const targetPresets = ['30', '100', '500', '1000'];
-const buildBatchProductKey = ({ bottleMl, concentration, formulaId, targetMl }) => [
+const buildBatchProductKey = ({ bottleMl, concentration, formulaId, lossPercent = 0, targetMl }) => [
   formulaId || 'formula',
   `${formatQuantity(targetMl, 2)}ml`,
   `${formatQuantity(bottleMl, 2)}ml`,
   `${formatQuantity(concentration, 2)}pct`,
+  `${formatQuantity(lossPercent, 2)}loss`,
 ].join(':').replace(/\s+/g, '');
+
+const buildProductSku = ({ bottleMl, concentration, formula, targetMl }) => {
+  const formulaCode = String(formula?.code || formula?.name || 'formula')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 18) || 'FORMULA';
+  return `SLV-${formulaCode}-${formatQuantity(targetMl, 0)}ML-${formatQuantity(bottleMl, 0)}ML-${formatQuantity(concentration, 0)}P`;
+};
 
 const MetricTile = ({ label, value, helper, tone = 'neutral' }) => {
   const toneClass = tone === 'amber'
@@ -160,7 +174,9 @@ const MobileBatchesPage = () => {
   const [visibleRows, setVisibleRows] = useState(BATCH_ROW_PAGE_SIZE);
   const [savingPriceId, setSavingPriceId] = useState('');
   const [bottleSizeMl, setBottleSizeMl] = useState('30');
+  const [productLossPercent, setProductLossPercent] = useState('0');
   const [productPrice, setProductPrice] = useState('');
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [publishingProduct, setPublishingProduct] = useState(false);
   const catalogProducts = useCatalogProducts({ editableOnly: true });
   const {
@@ -228,15 +244,27 @@ const MobileBatchesPage = () => {
     + parseNumberInput(bulkInputs.handlingCostPerLiter)
     + parseNumberInput(bulkInputs.bulkOverheadCost);
   const bottleSizeValue = Math.max(parseNumberInput(bottleSizeMl), 0);
-  const productBottleCount = bottleSizeValue > 0 ? Math.floor(targetValue / bottleSizeValue) : 0;
-  const remainingBatchVolume = bottleSizeValue > 0 ? Math.max(targetValue - (productBottleCount * bottleSizeValue), 0) : 0;
-  const productCogsPerBottle = bottleSizeValue > 0 ? dilutionCostPerGram * bottleSizeValue : 0;
+  const productLossValue = clampPercentage(parseNumberInput(productLossPercent));
+  const usableBatchVolume = targetValue * Math.max(1 - (productLossValue / 100), 0);
+  const productBottleCount = bottleSizeValue > 0 ? Math.floor(usableBatchVolume / bottleSizeValue) : 0;
+  const remainingBatchVolume = bottleSizeValue > 0 ? Math.max(usableBatchVolume - (productBottleCount * bottleSizeValue), 0) : 0;
+  const productCogsPerBottle = productBottleCount > 0 ? dilutionTotalCost / productBottleCount : 0;
   const productPriceValue = parseNumberInput(productPrice);
   const productPriceSuggestion = Math.ceil((productCogsPerBottle * 2) / 1000) * 1000;
+  const productPriceNumber = productPriceValue > 0 ? productPriceValue : productPriceSuggestion;
+  const productMarginPerBottle = productPriceNumber - productCogsPerBottle;
+  const productMarginPercent = productPriceNumber > 0 ? (productMarginPerBottle / productPriceNumber) * 100 : 0;
+  const productSku = selectedFormula ? buildProductSku({
+    bottleMl: bottleSizeValue,
+    concentration,
+    formula: selectedFormula,
+    targetMl: targetValue,
+  }) : '';
   const batchProductKey = selectedFormula ? buildBatchProductKey({
     bottleMl: bottleSizeValue,
     concentration,
     formulaId: selectedFormula.id,
+    lossPercent: productLossValue,
     targetMl: targetValue,
   }) : '';
   const publishedProduct = batchProductKey
@@ -268,19 +296,44 @@ const MobileBatchesPage = () => {
     }
   };
 
-  const publishBatchAsProduct = async () => {
+  const openPublishConfirmation = () => {
     if (!selectedFormula || productBottleCount <= 0) {
       toast.error('Set formula, batch size, and bottle size first');
       return;
     }
 
-    const priceNumber = productPriceValue > 0 ? productPriceValue : productPriceSuggestion;
+    if (productPriceNumber <= 0) {
+      toast.error('Set a selling price before drafting product stock');
+      return;
+    }
+
     if (publishedProduct) {
       toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
       navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
       return;
     }
 
+    setPublishConfirmOpen(true);
+  };
+
+  const publishBatchAsProduct = async () => {
+    if (!selectedFormula || productBottleCount <= 0) {
+      toast.error('Set formula, batch size, and bottle size first');
+      return;
+    }
+
+    if (productPriceNumber <= 0) {
+      toast.error('Set a selling price before drafting product stock');
+      return;
+    }
+
+    if (publishedProduct) {
+      toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
+      navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
+      return;
+    }
+
+    const priceNumber = productPriceNumber;
     setPublishingProduct(true);
     try {
       const materialNames = concentrateRows
@@ -296,7 +349,7 @@ const MobileBatchesPage = () => {
         topNotes: materialNames.slice(0, 3),
         heartNotes: materialNames.slice(3, 6),
         baseNotes: materialNames.slice(6, 9),
-        description: `Published from ${selectedFormula.name} batch. ${formatQuantity(targetValue, 0)} ml produced into ${productBottleCount} bottles.`,
+        description: `Published from ${selectedFormula.name} batch. ${formatQuantity(targetValue, 0)} ml produced with ${formatQuantity(productLossValue, 1)}% loss into ${productBottleCount} bottles.`,
         concentration: `${formatPercentage(concentration, 1)} perfume`,
         stock: productBottleCount,
         variants: [{
@@ -313,8 +366,11 @@ const MobileBatchesPage = () => {
           `${PRODUCT_BATCH_TARGET_TAG_PREFIX} ${targetValue}`,
           `${PRODUCT_BATCH_BOTTLE_TAG_PREFIX} ${bottleSizeValue}`,
           `${PRODUCT_BATCH_DILUTION_TAG_PREFIX} ${concentration}`,
+          `${PRODUCT_BATCH_LOSS_TAG_PREFIX} ${productLossValue}`,
+          `${PRODUCT_BATCH_USABLE_TAG_PREFIX} ${usableBatchVolume}`,
           `${PRODUCT_BATCH_COGS_TAG_PREFIX} ${Math.round(productCogsPerBottle)}`,
           `${PRODUCT_BATCH_STOCK_TAG_PREFIX} ${productBottleCount}`,
+          `${PRODUCT_BATCH_SKU_TAG_PREFIX} ${productSku}`,
           `${PRODUCT_BATCH_MOVEMENT_TAG_PREFIX} Batch converted to inventory`,
           `${PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX} ${publishedAt}`,
           selectedFormula.category || 'Perfume',
@@ -322,6 +378,7 @@ const MobileBatchesPage = () => {
         featured: false,
       });
       toast.success(`${productBottleCount} bottles drafted in products`);
+      setPublishConfirmOpen(false);
       navigate('/mobile/studio/products?view=list');
     } catch (error) {
       toast.error(error.message || 'Failed to publish product');
@@ -537,14 +594,20 @@ const MobileBatchesPage = () => {
                   <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{publishedProduct ? 'Batch already has product stock' : 'Turn this batch into stock'}</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                     {publishedProduct
-                      ? `${publishedProduct.name} is linked to this formula, batch size, bottle size, and dilution.`
-                      : `${formatQuantity(targetValue, 0)} ml batch / ${formatQuantity(bottleSizeValue || 0, 0)} ml bottle = ${productBottleCount} bottles${remainingBatchVolume > 0 ? `, ${formatQuantity(remainingBatchVolume, 1)} ml remainder` : ''}.`}
+                      ? `${publishedProduct.name} is linked to this formula, batch size, bottle size, dilution, and loss.`
+                      : `${formatQuantity(usableBatchVolume, 0)} ml usable / ${formatQuantity(bottleSizeValue || 0, 0)} ml bottle = ${productBottleCount} bottles${remainingBatchVolume > 0 ? `, ${formatQuantity(remainingBatchVolume, 1)} ml remainder` : ''}.`}
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="min-w-0 space-y-2">
                       <Label className="text-xs font-bold text-[#6b7280]">Bottle ml</Label>
                       <Input value={bottleSizeMl} onChange={(event) => setBottleSizeMl(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
                     </div>
+                    <div className="min-w-0 space-y-2">
+                      <Label className="text-xs font-bold text-[#6b7280]">Loss %</Label>
+                      <Input value={productLossPercent} onChange={(event) => setProductLossPercent(normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 gap-2">
                     <div className="min-w-0 space-y-2">
                       <Label className="text-xs font-bold text-[#6b7280]">Sell price</Label>
                       <Input value={productPrice} onChange={(event) => setProductPrice(normalizeLocalizedDecimalInput(event.target.value))} placeholder={formatPrice(productPriceSuggestion)} inputMode="decimal" type="text" className="h-11 rounded-2xl bg-white text-xs font-bold" />
@@ -556,7 +619,7 @@ const MobileBatchesPage = () => {
                   </div>
                   <Button
                     type="button"
-                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`) : publishBatchAsProduct}
+                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`) : openPublishConfirmation}
                     disabled={publishingProduct || (!publishedProduct && productBottleCount <= 0)}
                     className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold"
                   >
@@ -597,6 +660,40 @@ const MobileBatchesPage = () => {
           </>
         )}
       </main>
+      <MobileBottomSheet
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        title="Confirm product draft"
+        description="Review stock, yield, cost, and pricing before product stock is created."
+        footer={(
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => setPublishConfirmOpen(false)}>
+              Review
+            </Button>
+            <Button type="button" className="h-11 rounded-2xl text-xs font-bold" onClick={publishBatchAsProduct} disabled={publishingProduct}>
+              {publishingProduct ? 'Publishing...' : 'Create draft'}
+            </Button>
+          </div>
+        )}
+      >
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
+            <div className="text-[10px] font-bold uppercase text-[#6b7280]">Auto SKU</div>
+            <div className="mt-1 break-all text-sm font-bold text-[#1f2937]">{productSku || '-'}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <MetricTile label="Batch" value={`${formatQuantity(targetValue, 0)} ml`} helper={`${formatQuantity(productLossValue, 1)}% loss`} />
+            <MetricTile label="Usable" value={`${formatQuantity(usableBatchVolume, 0)} ml`} helper={`${formatQuantity(remainingBatchVolume, 1)} ml remainder`} tone="emerald" />
+            <MetricTile label="Stock" value={`${productBottleCount} bottles`} helper={`${formatQuantity(bottleSizeValue, 0)} ml each`} tone="emerald" />
+            <MetricTile label="COGS / bottle" value={formatPrice(productCogsPerBottle)} helper="batch cost allocated" tone="amber" />
+            <MetricTile label="Sell price" value={formatPrice(productPriceNumber)} helper={productPriceValue > 0 ? 'manual price' : 'suggested price'} />
+            <MetricTile label="Margin" value={formatPrice(productMarginPerBottle)} helper={`${formatQuantity(productMarginPercent, 1)}%`} tone={productMarginPerBottle >= 0 ? 'emerald' : 'amber'} />
+          </div>
+          <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+            Product akan dibuat sebagai draft tersembunyi dari katalog customer sampai kamu aktifkan di Studio Products.
+          </p>
+        </div>
+      </MobileBottomSheet>
     </MobileAuthenticatedLayout>
   );
 };

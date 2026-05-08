@@ -136,7 +136,8 @@ const CartPage = () => {
                   <div className="mt-4 flex items-center gap-2">
                     <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                     <span className="grid h-10 min-w-12 place-items-center rounded-2xl bg-[#f7f8f2] text-sm font-bold">{item.quantity}</span>
-                    <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                    <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock}><Plus className="h-4 w-4" /></Button>
+                    {item.maxStock > 0 ? <span className="text-xs font-bold text-muted-foreground">stok {item.maxStock}</span> : null}
                   </div>
                 </article>
               ))}

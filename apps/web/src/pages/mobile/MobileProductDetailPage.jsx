@@ -69,6 +69,7 @@ const MobileProductDetailPage = () => {
       size: selectedSize,
       price: formatRupiah(selectedPrice),
       priceNumber: selectedPrice,
+      maxStock: selectedStock,
     }, 1);
     setLastAddedItem({
       name: product.name,

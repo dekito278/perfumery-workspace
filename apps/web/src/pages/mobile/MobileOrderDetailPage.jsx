@@ -354,14 +354,20 @@ const MobileOrderDetailPage = () => {
                 <div key={`${event.productId}-${event.variantId}-${index}`} className="rounded-2xl bg-[#f8f7f4] px-3 py-2">
                   <div className="text-xs font-bold text-[#0b130c]">{event.productName}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">
-                    -{event.quantity} stok {event.size ? `/ ${event.size}` : ''} / {formatDate(event.at)}
+                    {event.direction === 'in' || event.type === 'restore' ? '+' : '-'}{event.quantity} stok {event.size ? `/ ${event.size}` : ''} / {formatDate(event.at)}
                   </div>
+                  {event.batchKey || event.formulaId || event.sku ? (
+                    <div className="mt-1 text-[10px] font-semibold text-[#263d27]">
+                      {[event.batchKey ? `Batch ${event.batchKey}` : '', event.formulaId ? `Formula ${event.formulaId}` : '', event.sku ? `SKU ${event.sku}` : ''].filter(Boolean).join(' / ')}
+                    </div>
+                  ) : null}
+                  {event.movement ? <div className="mt-1 text-[10px] font-semibold text-[#6b7280]">{event.movement}</div> : null}
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-              Stok produk ready akan otomatis berkurang satu kali saat payment berubah menjadi Paid. Order bespoke hanya dicatat ke linkage produksi.
+              Stok produk ready otomatis berkurang satu kali saat checkout tersimpan. Order bespoke hanya dicatat ke linkage produksi.
             </p>
           )}
         </section>

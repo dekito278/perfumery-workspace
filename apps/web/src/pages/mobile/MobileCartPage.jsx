@@ -156,9 +156,10 @@ const MobileCartPage = () => {
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="grid h-10 min-w-12 place-items-center rounded-2xl bg-[#f8f7f4] text-sm font-bold text-[#1f2937]">{item.quantity}</span>
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)} aria-label={`Increase ${item.name}`}>
+                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock} aria-label={`Increase ${item.name}`}>
                   <Plus className="h-4 w-4" />
                 </Button>
+                {item.maxStock > 0 ? <span className="text-[10px] font-bold text-[#8b949e]">stok {item.maxStock}</span> : null}
               </div>
             </article>
           ))}
@@ -202,7 +203,7 @@ const MobileCartPage = () => {
                             <Minus className="h-4 w-4" />
                           </Button>
                           <span className="grid h-8 min-w-10 place-items-center text-sm font-bold text-[#1f2937]">{item.quantity}</span>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => updateQuantity(item.slug, item.quantity + 1)} aria-label={`Increase ${item.name}`}>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock} aria-label={`Increase ${item.name}`}>
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>

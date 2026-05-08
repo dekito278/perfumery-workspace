@@ -8,8 +8,11 @@ export const PRODUCT_FORMULA_TAG_PREFIX = 'Formula ID:';
 export const PRODUCT_BATCH_TARGET_TAG_PREFIX = 'Batch target ml:';
 export const PRODUCT_BATCH_BOTTLE_TAG_PREFIX = 'Bottle ml:';
 export const PRODUCT_BATCH_DILUTION_TAG_PREFIX = 'Dilution percent:';
+export const PRODUCT_BATCH_LOSS_TAG_PREFIX = 'Loss percent:';
+export const PRODUCT_BATCH_USABLE_TAG_PREFIX = 'Usable ml:';
 export const PRODUCT_BATCH_COGS_TAG_PREFIX = 'COGS per bottle:';
 export const PRODUCT_BATCH_STOCK_TAG_PREFIX = 'Initial stock:';
+export const PRODUCT_BATCH_SKU_TAG_PREFIX = 'SKU:';
 export const PRODUCT_BATCH_MOVEMENT_TAG_PREFIX = 'Stock movement:';
 export const PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX = 'Batch published at:';
 
@@ -19,8 +22,11 @@ const PRODUCT_INTERNAL_TAG_PREFIXES = [
   PRODUCT_BATCH_TARGET_TAG_PREFIX,
   PRODUCT_BATCH_BOTTLE_TAG_PREFIX,
   PRODUCT_BATCH_DILUTION_TAG_PREFIX,
+  PRODUCT_BATCH_LOSS_TAG_PREFIX,
+  PRODUCT_BATCH_USABLE_TAG_PREFIX,
   PRODUCT_BATCH_COGS_TAG_PREFIX,
   PRODUCT_BATCH_STOCK_TAG_PREFIX,
+  PRODUCT_BATCH_SKU_TAG_PREFIX,
   PRODUCT_BATCH_MOVEMENT_TAG_PREFIX,
   PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX,
 ];
@@ -92,8 +98,11 @@ export const getProductBatchDetails = (product = {}) => ({
   targetMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_TARGET_TAG_PREFIX) || 0),
   bottleMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_BOTTLE_TAG_PREFIX) || 0),
   dilutionPercent: Number(getProductInternalTagValue(product, PRODUCT_BATCH_DILUTION_TAG_PREFIX) || 0),
+  lossPercent: Number(getProductInternalTagValue(product, PRODUCT_BATCH_LOSS_TAG_PREFIX) || 0),
+  usableMl: Number(getProductInternalTagValue(product, PRODUCT_BATCH_USABLE_TAG_PREFIX) || 0),
   cogsPerBottle: Number(getProductInternalTagValue(product, PRODUCT_BATCH_COGS_TAG_PREFIX) || 0),
   initialStock: Number(getProductInternalTagValue(product, PRODUCT_BATCH_STOCK_TAG_PREFIX) || 0),
+  sku: getProductInternalTagValue(product, PRODUCT_BATCH_SKU_TAG_PREFIX),
   movement: getProductInternalTagValue(product, PRODUCT_BATCH_MOVEMENT_TAG_PREFIX),
   publishedAt: getProductInternalTagValue(product, PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX),
 });
@@ -186,9 +195,89 @@ export const getProductLowStock = (product) => {
 const findProductForOrderItem = (products, item = {}) => products.find((product) => (
   product.id === item.id
   || product.id === item.productId
+  || product.id === item.product_id
   || product.slug === item.productSlug
+  || product.slug === item.product_slug
   || product.slug === item.slug
 ));
+
+const findVariantForOrderItem = (product = {}, item = {}) => {
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  return variants.find((variant) => (
+    (item.variantId || item.variant_id)
+      ? variant.id === (item.variantId || item.variant_id)
+      : (variant.size === item.size)
+  )) || variants[0] || null;
+};
+
+const createInventoryEvent = (product = {}, item = {}) => {
+  const batchDetails = getProductBatchDetails(product);
+
+  return {
+    type: 'deduct',
+    direction: 'out',
+    productId: product.id,
+    productSlug: product.slug,
+    productName: product.name,
+    variantId: item.variantId || item.variant_id || '',
+    size: item.size || '',
+    quantity: Number(item.quantity || 1),
+    batchKey: batchDetails.batchKey,
+    formulaId: batchDetails.formulaId,
+    sku: batchDetails.sku,
+    initialStock: batchDetails.initialStock,
+    movement: batchDetails.movement || 'Order checkout stock deduction',
+    at: new Date().toISOString(),
+  };
+};
+
+const createInventoryRestoreEvent = (event = {}) => ({
+  ...event,
+  type: 'restore',
+  direction: 'in',
+  quantity: Number(event.quantity || 0),
+  movement: event.movement || 'Order cancelled/payment failed stock restored',
+  restoredAt: new Date().toISOString(),
+  at: new Date().toISOString(),
+});
+
+export const validateOrderStock = async (items = []) => {
+  const stockItems = items.filter((item) => item.type !== 'bespoke_request');
+  if (!stockItems.length) return { ok: true, issues: [] };
+
+  const editableProducts = await getEditableProducts();
+  const issues = stockItems.map((item) => {
+    const product = findProductForOrderItem(editableProducts, item);
+    const variant = product ? findVariantForOrderItem(product, item) : null;
+    const requested = Math.max(Number(item.quantity || 1), 0);
+    const available = Number(variant?.stock ?? product?.stock ?? 0);
+
+    if (!product) {
+      return {
+        item,
+        productName: item.name || 'Product',
+        requested,
+        available: 0,
+        reason: 'not_found',
+      };
+    }
+
+    if (!variant || available < requested) {
+      return {
+        item,
+        productName: product.name,
+        variantName: item.size || variant?.size || product.size || '',
+        requested,
+        available,
+        reason: 'insufficient',
+      };
+    }
+
+    return null;
+  }).filter(Boolean);
+
+  return { ok: issues.length === 0, issues };
+};
 
 const deductProductItemStock = (product, item = {}) => {
   const quantity = Math.max(Number(item.quantity || 1), 0);
@@ -198,23 +287,56 @@ const deductProductItemStock = (product, item = {}) => {
       ? variant.id === item.variantId
       : (variant.size === item.size || (!item.size && index === 0));
     if (!matchesVariant || deducted) return variant;
+    if (Number(variant.stock || 0) < quantity) {
+      throw new Error(`${product.name} ${variant.size || ''} stok tersisa ${Number(variant.stock || 0)}, tidak cukup untuk ${quantity}.`);
+    }
     deducted = true;
     return {
       ...variant,
-      stock: Math.max(Number(variant.stock || 0) - quantity, 0),
+      stock: Number(variant.stock || 0) - quantity,
     };
   });
 
   if (!deducted && variants.length) {
+    if (Number(variants[0].stock || 0) < quantity) {
+      throw new Error(`${product.name} stok tersisa ${Number(variants[0].stock || 0)}, tidak cukup untuk ${quantity}.`);
+    }
     variants[0] = {
       ...variants[0],
-      stock: Math.max(Number(variants[0].stock || 0) - quantity, 0),
+      stock: Number(variants[0].stock || 0) - quantity,
     };
     deducted = true;
   }
 
   const stock = getProductStockTotal(variants);
   return { product: { ...product, variants, stock }, deducted };
+};
+
+const restoreProductItemStock = (product, event = {}) => {
+  const quantity = Math.max(Number(event.quantity || 0), 0);
+  let restored = false;
+  const variants = (product.variants || []).map((variant, index) => {
+    const matchesVariant = event.variantId || event.variant_id
+      ? variant.id === (event.variantId || event.variant_id)
+      : (variant.size === event.size || (!event.size && index === 0));
+    if (!matchesVariant || restored) return variant;
+    restored = true;
+    return {
+      ...variant,
+      stock: Number(variant.stock || 0) + quantity,
+    };
+  });
+
+  if (!restored && variants.length) {
+    variants[0] = {
+      ...variants[0],
+      stock: Number(variants[0].stock || 0) + quantity,
+    };
+    restored = true;
+  }
+
+  const stock = getProductStockTotal(variants);
+  return { product: { ...product, variants, stock }, restored };
 };
 
 const ensureUniqueSlug = (slug, products, currentId) => {
@@ -455,6 +577,23 @@ export const deductInventoryForOrder = async (order) => {
   const stockItems = order.items.filter((item) => item.type !== 'bespoke_request');
   if (!stockItems.length) return [];
 
+  try {
+    const orderId = order.id || order.orderNumber || order.order_number;
+    const { data, error } = await supabase.rpc('storefront_deduct_inventory_for_order', {
+      p_order_id: orderId,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const events = Array.isArray(data) ? data : [];
+    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    return events;
+  } catch (error) {
+    console.warn('Using client inventory deduction fallback:', error.message || error);
+  }
+
   const editableProducts = await getEditableProducts();
   const deductedEvents = [];
   const nextProducts = editableProducts.map((product) => {
@@ -464,14 +603,7 @@ export const deductInventoryForOrder = async (order) => {
     return matchingItems.reduce((currentProduct, item) => {
       const result = deductProductItemStock(currentProduct, item);
       if (result.deducted) {
-        deductedEvents.push({
-          productId: currentProduct.id,
-          productSlug: currentProduct.slug,
-          productName: currentProduct.name,
-          variantId: item.variantId || '',
-          size: item.size || '',
-          quantity: Number(item.quantity || 1),
-        });
+        deductedEvents.push(createInventoryEvent(currentProduct, item));
       }
       return result.product;
     }, product);
@@ -484,4 +616,61 @@ export const deductInventoryForOrder = async (order) => {
 
   await Promise.all(changedProducts.map((product) => saveCustomProduct(product)));
   return deductedEvents;
+};
+
+export const restoreInventoryForOrder = async (order, reason = 'Order cancelled/payment failed stock restored') => {
+  if (!order || !order.inventoryDeducted || !Array.isArray(order.inventoryEvents)) {
+    return [];
+  }
+
+  const deductibleEvents = order.inventoryEvents.filter((event) => (
+    Number(event.quantity || 0) > 0
+    && event.type !== 'restore'
+    && event.direction !== 'in'
+  ));
+  if (!deductibleEvents.length) return [];
+
+  try {
+    const orderId = order.id || order.orderNumber || order.order_number;
+    const { data, error } = await supabase.rpc('storefront_restore_inventory_for_order', {
+      p_order_id: orderId,
+      p_reason: reason,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const events = Array.isArray(data) ? data : [];
+    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    return events;
+  } catch (error) {
+    console.warn('Using client inventory restore fallback:', error.message || error);
+  }
+
+  const editableProducts = await getEditableProducts();
+  const restoredEvents = [];
+  const nextProducts = editableProducts.map((product) => {
+    const matchingEvents = deductibleEvents.filter((event) => findProductForOrderItem([product], event));
+    if (!matchingEvents.length) return product;
+
+    return matchingEvents.reduce((currentProduct, event) => {
+      const result = restoreProductItemStock(currentProduct, event);
+      if (result.restored) {
+        restoredEvents.push(createInventoryRestoreEvent({
+          ...event,
+          movement: reason,
+        }));
+      }
+      return result.product;
+    }, product);
+  });
+
+  const changedProducts = nextProducts.filter((product) => {
+    const previous = editableProducts.find((item) => item.id === product.id);
+    return previous && JSON.stringify(previous.variants) !== JSON.stringify(product.variants);
+  });
+
+  await Promise.all(changedProducts.map((product) => saveCustomProduct(product)));
+  return restoredEvents;
 };

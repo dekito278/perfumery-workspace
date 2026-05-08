@@ -1,6 +1,6 @@
 import supabase from '@/lib/supabaseClient.js';
 import { saveCustomer } from '@/services/customerService.js';
-import { deductInventoryForOrder } from '@/services/productCatalogService.js';
+import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 
@@ -37,6 +37,7 @@ const localOnlyStatuses = {
 };
 
 const BESPOKE_SOURCE = 'bespoke_request';
+const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
 
 export const isBespokeOrder = (order) => (
   order?.source === BESPOKE_SOURCE
@@ -111,6 +112,14 @@ const normalizeInventoryEvents = (events) => (
       variantId: event.variantId || event.variant_id || '',
       size: event.size || '',
       quantity: Number(event.quantity || 0),
+      type: event.type || (event.direction === 'in' ? 'restore' : 'deduct'),
+      direction: event.direction || (event.type === 'restore' ? 'in' : 'out'),
+      batchKey: event.batchKey || event.batch_key || '',
+      formulaId: event.formulaId || event.formula_id || '',
+      sku: event.sku || '',
+      initialStock: Number(event.initialStock || event.initial_stock || 0),
+      movement: event.movement || '',
+      restoredAt: event.restoredAt || event.restored_at || '',
       at: event.at || event.created_at || new Date().toISOString(),
     })).filter((event) => event.productName && event.quantity > 0)
     : []
@@ -394,6 +403,12 @@ export const getOrderSummary = (orders) => ({
 });
 
 export const createOrder = async (orderData) => {
+  const stockValidation = await validateOrderStock(orderData.items || []);
+  if (!stockValidation.ok) {
+    const firstIssue = stockValidation.issues[0];
+    throw new Error(`${firstIssue.productName}${firstIssue.variantName ? ` ${firstIssue.variantName}` : ''} stok tersisa ${firstIssue.available}, tidak cukup untuk ${firstIssue.requested}.`);
+  }
+
   const customer = await saveCustomer({
     customerCode: orderData.customerCode,
     customerName: orderData.customerName,
@@ -409,6 +424,7 @@ export const createOrder = async (orderData) => {
     customerId: isUuid(customer?.id) ? customer.id : '',
   });
 
+  let order;
   try {
     const { error } = await supabase
       .from('storefront_orders')
@@ -419,7 +435,7 @@ export const createOrder = async (orderData) => {
     }
 
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    return normalizeOrder({
+    order = normalizeOrder({
       id: payload.order_number,
       ...payload,
       persistence: 'database',
@@ -428,8 +444,20 @@ export const createOrder = async (orderData) => {
     });
   } catch (error) {
     console.warn('Saving storefront order locally because database save failed:', error.message || error);
-    return createLocalOrder(payload);
+    order = createLocalOrder(payload);
   }
+
+  const inventoryEvents = await deductInventoryForOrder(order);
+  if (inventoryEvents.length) {
+    await markOrderInventoryDeducted(order.id || order.orderNumber, inventoryEvents);
+    return {
+      ...order,
+      inventoryDeducted: true,
+      inventoryEvents: normalizeInventoryEvents(inventoryEvents),
+    };
+  }
+
+  return order;
 };
 
 export const createBespokeRequest = async (requestData) => {
@@ -493,12 +521,27 @@ export const updateOrderStatus = async (orderId, status) => {
       throw error;
     }
 
+    if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
+      await restoreInventoryForOrder(currentOrder, 'Order cancelled stock restored');
+    }
+
     return getOrders();
   } catch (error) {
     console.warn('Updating local storefront order fallback:', error.message || error);
+    let restoredEvents = [];
+    if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
+      restoredEvents = await restoreInventoryForOrder(currentOrder, 'Order cancelled stock restored');
+    }
     const nextOrders = readOrders().map(normalizeOrder).map((order) => (
       order.id === orderId || order.orderNumber === orderId
-        ? { ...order, status, statusTimeline, updatedAt: new Date().toISOString() }
+        ? {
+          ...order,
+          status,
+          statusTimeline,
+          inventoryDeducted: restoredEvents.length ? false : order.inventoryDeducted,
+          inventoryEvents: restoredEvents.length ? [...order.inventoryEvents, ...normalizeInventoryEvents(restoredEvents)] : order.inventoryEvents,
+          updatedAt: new Date().toISOString(),
+        }
         : order
     ));
     writeOrders(nextOrders);
@@ -688,6 +731,33 @@ const markOrderInventoryDeducted = async (orderId, events = []) => {
   }
 };
 
+const markOrderInventoryRestored = async (orderId, currentEvents = [], restoreEvents = []) => {
+  const inventoryEvents = [
+    ...normalizeInventoryEvents(currentEvents),
+    ...normalizeInventoryEvents(restoreEvents),
+  ];
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update({
+        inventory_deducted: false,
+        inventory_events: inventoryEvents,
+      });
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+  } catch (error) {
+    console.warn('Marking inventory restore locally:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? { ...order, inventoryDeducted: false, inventoryEvents, updatedAt: new Date().toISOString() }
+        : order
+    ));
+    writeOrders(nextOrders);
+  }
+};
+
 export const updateOrderPaymentStatus = async (orderId, {
   paymentStatus,
   paymentProvider = 'doku',
@@ -734,6 +804,14 @@ export const updateOrderPaymentStatus = async (orderId, {
     const inventoryEvents = await deductInventoryForOrder(currentOrder);
     if (inventoryEvents.length) {
       await markOrderInventoryDeducted(orderId, inventoryEvents);
+      window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    }
+  }
+
+  if (INVENTORY_RESTORE_PAYMENT_STATUSES.includes(paymentStatus) && currentOrder?.inventoryDeducted) {
+    const restoreEvents = await restoreInventoryForOrder(currentOrder, `Payment ${paymentStatus} stock restored`);
+    if (restoreEvents.length) {
+      await markOrderInventoryRestored(orderId, currentOrder.inventoryEvents, restoreEvents);
       window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     }
   }

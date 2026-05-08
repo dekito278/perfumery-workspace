@@ -79,8 +79,6 @@ const mapDokuStatus = (status) => {
   return null;
 };
 
-const isUuid = (value = '') => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(String(value));
-
 const getSupabaseRestConfig = () => {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -113,115 +111,43 @@ const getOrderByInvoice = async (invoiceNumber) => {
   return rows?.[0] || null;
 };
 
-const findProductForOrderItem = async (item = {}) => {
+const deductInventoryForPaidOrder = async (order) => {
   const { restUrl, headers } = getSupabaseRestConfig();
-  const productId = item.id || item.productId || item.product_id;
-  const productSlug = item.productSlug || item.product_slug || item.slug;
-  const filter = productId && isUuid(productId)
-    ? `id=eq.${encodeURIComponent(productId)}`
-    : `slug=eq.${encodeURIComponent(productSlug || '')}`;
+  if (!order?.id && !order?.order_number) return [];
 
-  if (!productId && !productSlug) return null;
-
-  const response = await fetch(`${restUrl}/storefront_products?${filter}&select=id,slug,name,variants,stock&limit=1`, {
+  const response = await fetch(`${restUrl}/rpc/storefront_deduct_inventory_for_order`, {
+    method: 'POST',
     headers,
+    body: JSON.stringify({
+      p_order_id: order.id || order.order_number,
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to read product for inventory: ${await response.text()}`);
+    throw new Error(`Failed to deduct inventory for ${order.order_number || order.id}: ${await response.text()}`);
   }
 
-  const rows = await response.json();
-  return rows?.[0] || null;
+  return response.json();
 };
 
-const deductProductStock = (product, item = {}) => {
-  const quantity = Math.max(Number(item.quantity || 1), 0);
-  let deducted = false;
-  const variants = (Array.isArray(product.variants) ? product.variants : []).map((variant, index) => {
-    const matchesVariant = item.variantId || item.variant_id
-      ? variant.id === (item.variantId || item.variant_id)
-      : (variant.size === item.size || (!item.size && index === 0));
-    if (!matchesVariant || deducted) return variant;
-    deducted = true;
-    return {
-      ...variant,
-      stock: Math.max(Number(variant.stock || 0) - quantity, 0),
-    };
+const restoreInventoryForOrder = async (order, reason) => {
+  const { restUrl, headers } = getSupabaseRestConfig();
+  if (!order?.id && !order?.order_number) return [];
+
+  const response = await fetch(`${restUrl}/rpc/storefront_restore_inventory_for_order`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      p_order_id: order.id || order.order_number,
+      p_reason: reason,
+    }),
   });
 
-  if (!deducted && variants.length) {
-    variants[0] = {
-      ...variants[0],
-      stock: Math.max(Number(variants[0].stock || 0) - quantity, 0),
-    };
-    deducted = true;
+  if (!response.ok) {
+    throw new Error(`Failed to restore inventory for ${order.order_number || order.id}: ${await response.text()}`);
   }
 
-  const stock = variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
-  return { variants, stock, deducted };
-};
-
-const deductInventoryForPaidOrder = async (order) => {
-  if (!order || order.inventory_deducted || !Array.isArray(order.items)) return [];
-
-  const { restUrl, headers } = getSupabaseRestConfig();
-  const stockItems = order.items.filter((item) => item.type !== 'bespoke_request');
-  const events = [];
-
-  for (const item of stockItems) {
-    const product = await findProductForOrderItem(item);
-    if (!product) continue;
-
-    const result = deductProductStock(product, item);
-    if (!result.deducted) continue;
-
-    const updateResponse = await fetch(`${restUrl}/storefront_products?id=eq.${encodeURIComponent(product.id)}`, {
-      method: 'PATCH',
-      headers: {
-        ...headers,
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
-        variants: result.variants,
-        stock: result.stock,
-      }),
-    });
-
-    if (!updateResponse.ok) {
-      throw new Error(`Failed to deduct stock for ${product.name}: ${await updateResponse.text()}`);
-    }
-
-    events.push({
-      productId: product.id,
-      productSlug: product.slug,
-      productName: product.name,
-      variantId: item.variantId || item.variant_id || '',
-      size: item.size || '',
-      quantity: Number(item.quantity || 1),
-      at: new Date().toISOString(),
-    });
-  }
-
-  if (events.length) {
-    const response = await fetch(`${restUrl}/storefront_orders?id=eq.${encodeURIComponent(order.id)}`, {
-      method: 'PATCH',
-      headers: {
-        ...headers,
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
-        inventory_deducted: true,
-        inventory_events: events,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to mark inventory deduction: ${await response.text()}`);
-    }
-  }
-
-  return events;
+  return response.json();
 };
 
 const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => {
@@ -249,6 +175,10 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => 
 
   if (statusPatch.paymentStatus === 'paid') {
     await deductInventoryForPaidOrder(currentOrder);
+  }
+
+  if (['failed', 'expired', 'refunded'].includes(statusPatch.paymentStatus) && currentOrder?.inventory_deducted) {
+    await restoreInventoryForOrder(currentOrder, `DOKU ${statusPatch.paymentStatus} stock restored`);
   }
 };
 

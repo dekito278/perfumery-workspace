@@ -35,10 +35,11 @@ export const addCartItem = (product, quantity = 1) => {
   const items = readCart();
   const cartSlug = product.cartSlug || product.slug;
   const current = items.find((item) => item.productId === product.id && item.slug === cartSlug);
+  const maxStock = Number(product.maxStock ?? product.stock ?? 0);
   const nextItems = current
     ? items.map((item) => (
       item.productId === product.id && item.slug === cartSlug
-        ? { ...item, quantity: item.quantity + quantity }
+        ? { ...item, quantity: maxStock > 0 ? Math.min(item.quantity + quantity, maxStock) : item.quantity + quantity, maxStock }
         : item
     ))
     : [{
@@ -52,7 +53,8 @@ export const addCartItem = (product, quantity = 1) => {
       size: product.size,
       category: product.category,
       notes: product.notes,
-      quantity,
+      maxStock,
+      quantity: maxStock > 0 ? Math.min(quantity, maxStock) : quantity,
     }, ...items];
   writeCart(nextItems);
   return nextItems;
@@ -61,7 +63,7 @@ export const addCartItem = (product, quantity = 1) => {
 export const updateCartQuantity = (slug, quantity) => {
   const nextQuantity = Math.max(Number(quantity || 1), 1);
   const nextItems = readCart().map((item) => (
-    item.slug === slug ? { ...item, quantity: nextQuantity } : item
+    item.slug === slug ? { ...item, quantity: item.maxStock > 0 ? Math.min(nextQuantity, Number(item.maxStock)) : nextQuantity } : item
   ));
   writeCart(nextItems);
   return nextItems;
