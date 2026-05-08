@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import supabase from '@/lib/supabaseClient.js';
 
 const AuthContext = createContext(null);
@@ -38,20 +38,30 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [mfaChallenge, setMfaChallenge] = useState(null);
+  const mfaChallengeRef = useRef(null);
   const [session, setSession] = useState(null);
+
+  const setActiveMfaChallenge = (nextChallenge) => {
+    mfaChallengeRef.current = nextChallenge;
+    setMfaChallenge(nextChallenge);
+  };
 
   useEffect(() => {
     let isMounted = true;
     let timeoutId = null;
 
-    const finishLoading = (nextSession = null, nextMfaChallenge = null) => {
+    const finishLoading = (nextSession = null, nextMfaChallenge) => {
       if (!isMounted) {
         return;
       }
 
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
-      setMfaChallenge(nextMfaChallenge);
+      if (nextMfaChallenge !== undefined) {
+        setActiveMfaChallenge(nextMfaChallenge);
+      } else if (!nextSession?.user) {
+        setActiveMfaChallenge(null);
+      }
       setInitialLoading(false);
     };
 
@@ -171,11 +181,11 @@ export const AuthProvider = ({ children }) => {
           factorId: verifiedTotp.id,
           friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
         };
-        setMfaChallenge(nextChallenge);
+        setActiveMfaChallenge(nextChallenge);
         return { ...data, mfaRequired: true, mfaChallenge: nextChallenge };
       }
 
-      setMfaChallenge(null);
+      setActiveMfaChallenge(null);
       return data;
     } catch (error) {
       console.error('Login error:', error);
@@ -184,13 +194,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const verifyMfaCode = async (code) => {
-    if (!mfaChallenge?.factorId || !mfaChallenge?.challengeId) {
+    const activeChallenge = mfaChallengeRef.current || mfaChallenge;
+    if (!activeChallenge?.factorId || !activeChallenge?.challengeId) {
       throw new Error('No authenticator challenge is active');
     }
 
     const { data, error } = await supabase.auth.mfa.verify({
-      factorId: mfaChallenge.factorId,
-      challengeId: mfaChallenge.challengeId,
+      factorId: activeChallenge.factorId,
+      challengeId: activeChallenge.challengeId,
       code: String(code || '').trim(),
     });
 
@@ -198,10 +209,15 @@ export const AuthProvider = ({ children }) => {
       throw new Error(error.message || 'Invalid authenticator code');
     }
 
-    setSession(data.session);
-    setCurrentUser(data.user ?? data.session?.user ?? null);
-    setMfaChallenge(null);
-    return data;
+    const {
+      data: { session: verifiedSession },
+    } = await supabase.auth.getSession();
+    const nextSession = data.session || verifiedSession;
+
+    setSession(nextSession);
+    setCurrentUser(data.user ?? nextSession?.user ?? null);
+    setActiveMfaChallenge(null);
+    return { ...data, session: nextSession };
   };
 
   const enrollAuthenticator = async (friendlyName = 'Solivagant Studio') => {
@@ -230,6 +246,7 @@ export const AuthProvider = ({ children }) => {
 
     setSession(data.session);
     setCurrentUser(data.user ?? data.session?.user ?? null);
+    setActiveMfaChallenge(null);
     return data;
   };
 
@@ -307,6 +324,7 @@ export const AuthProvider = ({ children }) => {
 
     setSession(null);
     setCurrentUser(null);
+    setActiveMfaChallenge(null);
   };
 
   const getAuthState = () => ({
