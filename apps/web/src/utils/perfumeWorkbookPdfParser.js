@@ -9,10 +9,30 @@ const getPdfRuntime = async () => {
       const { GlobalWorkerOptions, getDocument } = pdfjsModule;
       GlobalWorkerOptions.workerSrc = workerModule.default;
       return { getDocument };
+    }).catch((error) => {
+      pdfRuntimePromise = null;
+      throw error;
     });
   }
 
   return pdfRuntimePromise;
+};
+
+const readFileArrayBuffer = (file) => {
+  if (typeof file.arrayBuffer === 'function') {
+    return file.arrayBuffer();
+  }
+
+  if (typeof FileReader === 'undefined') {
+    throw new Error('This mobile browser cannot read PDF files locally because FileReader is unavailable.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('Failed to read PDF file on this device.'));
+    reader.onload = () => resolve(reader.result);
+    reader.readAsArrayBuffer(file);
+  });
 };
 
 const normalizeFragment = (value) =>
@@ -30,7 +50,7 @@ const normalizeDecorativeSpacing = (line) => {
 
 const extractPdfLines = async (file) => {
   const { getDocument } = await getPdfRuntime();
-  const data = new Uint8Array(await file.arrayBuffer());
+  const data = new Uint8Array(await readFileArrayBuffer(file));
   const pdf = await getDocument({
     data,
     disableWorker: true,

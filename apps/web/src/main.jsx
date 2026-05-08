@@ -5,6 +5,7 @@ import App from '@/App';
 import '@/index.css';
 import '@/styles/mobile.css';
 import { applyStandaloneClass, registerServiceWorker } from '@/utils/pwa.js';
+import { recordMobileRuntimeError } from '@/utils/mobileDiagnostics.js';
 
 const RESIZE_OBSERVER_MESSAGES = [
   'ResizeObserver loop completed with undelivered notifications.',
@@ -34,7 +35,15 @@ window.addEventListener('error', (event) => {
   if (isResizeObserverNoise(event.message) || isExtensionNoise(event)) {
     event.stopImmediatePropagation();
     event.preventDefault();
+    return;
   }
+
+  recordMobileRuntimeError(event.error || event.message, {
+    source: 'window.error',
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+  });
 }, true);
 
 window.addEventListener('unhandledrejection', (event) => {
@@ -43,7 +52,12 @@ window.addEventListener('unhandledrejection', (event) => {
     || isExtensionNoise({ reason: event.reason })
   ) {
     event.preventDefault();
+    return;
   }
+
+  recordMobileRuntimeError(event.reason, {
+    source: 'window.unhandledrejection',
+  });
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(

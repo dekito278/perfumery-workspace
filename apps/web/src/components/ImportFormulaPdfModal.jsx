@@ -18,6 +18,12 @@ import { findPerfumersWorldCategoryByValue } from '@/utils/perfumersWorldCategor
 import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
 import { parseDilutionFromMaterialName } from '@/utils/formulaDilutionParsing.js';
 import { FORMULA_CATEGORIES } from '@/utils/constants.js';
+import {
+  buildMobileImportErrorMessage,
+  getMissingMobileCapabilities,
+  isMobileLikeRuntime,
+  recordMobileRuntimeError,
+} from '@/utils/mobileDiagnostics.js';
 
 const normalizeLookupValue = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
 const normalizeOptionalText = (value) => {
@@ -81,6 +87,13 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
   const [notes, setNotes] = useState('');
   const [missingMaterialDrafts, setMissingMaterialDrafts] = useState({});
   const [validationErrors, setValidationErrors] = useState({});
+  const mobileImportWarnings = useMemo(() => {
+    if (!isMobileLikeRuntime()) {
+      return [];
+    }
+
+    return getMissingMobileCapabilities();
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -245,8 +258,15 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
       setNotes('');
       toast.success(`Parsed ${parsedResult.items.length} formula items from PDF`);
     } catch (error) {
-      setParseError(error.message || 'Failed to parse PDF');
-      toast.error(error.message || 'Failed to parse PDF');
+      recordMobileRuntimeError(error, {
+        source: 'formula-pdf-import',
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+      });
+      const message = buildMobileImportErrorMessage(error);
+      setParseError(message);
+      toast.error(message);
     } finally {
       setParsing(false);
       event.target.value = '';
@@ -439,6 +459,11 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
               onChange={handleFileChange}
               disabled={isBusy}
             />
+            {mobileImportWarnings.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                Mobile browser ini belum lengkap untuk import lokal: {mobileImportWarnings.join(', ')}. Jika import gagal, refresh app setelah update atau coba dari browser mobile terbaru.
+              </div>
+            )}
             {selectedFileName && (
               <p className="text-xs text-muted-foreground">Selected file: {selectedFileName}</p>
             )}
