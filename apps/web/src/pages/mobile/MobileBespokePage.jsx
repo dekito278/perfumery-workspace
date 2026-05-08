@@ -5,13 +5,7 @@ import { CheckCircle2, ClipboardList, MessageCircle, Send, Sparkles, WandSparkle
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
   bespokeOccasionOptions,
 } from '@/data/storefront.js';
@@ -443,33 +437,32 @@ const MobileBespokePage = () => {
           </section>
         ) : null}
 
-        <Sheet open={wizardOpen} onOpenChange={setWizardOpen}>
-          <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#f7f8f2] p-4">
-            <SheetHeader className="pr-8 text-left">
-              <SheetTitle>{activeStep.title}</SheetTitle>
-              <SheetDescription>Step {step + 1} of {steps.length}. {activeStep.description}</SheetDescription>
-            </SheetHeader>
-            <div className="mt-4">
-              <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
-                <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
-              </div>
-              {activeStep.render()}
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
-                  Back
-                </Button>
-                {step === steps.length - 1 ? (
-                  <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
-                    {saving ? 'Saving...' : 'Save brief'}
-                    <CheckCircle2 className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
-                )}
-              </div>
+        <MobileBottomSheet
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          title={activeStep.title}
+          description={`Step ${step + 1} of ${steps.length}. ${activeStep.description}`}
+        >
+          <div>
+            <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
             </div>
-          </SheetContent>
-        </Sheet>
+            {activeStep.render()}
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
+                Back
+              </Button>
+              {step === steps.length - 1 ? (
+                <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save brief'}
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
+              )}
+            </div>
+          </div>
+        </MobileBottomSheet>
       </main>
     </MobileCommerceLayout>
   );

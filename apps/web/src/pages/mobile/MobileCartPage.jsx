@@ -4,13 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 
@@ -177,15 +171,14 @@ const MobileCartPage = () => {
             </div>
           ) : null}
         </section>
-        <Sheet open={checkoutOpen && Boolean(items.length)} onOpenChange={setCheckoutOpen}>
-          <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-[28px] border-0 bg-[#fbfaf7] p-4">
-            <SheetHeader className="pr-8 text-left">
-              <SheetTitle>Checkout</SheetTitle>
-              <SheetDescription>{formatCartSubtitle(items, summary.quantity)} / {formatTotal(totalDue)}</SheetDescription>
-            </SheetHeader>
-
-            <div className="mt-4 space-y-3">
-              <section className="mobile-card p-3">
+        <MobileBottomSheet
+          open={checkoutOpen && Boolean(items.length)}
+          onOpenChange={setCheckoutOpen}
+          title="Checkout"
+          description={`${formatCartSubtitle(items, summary.quantity)} / ${formatTotal(totalDue)}`}
+        >
+          <div className="space-y-3">
+            <section className="mobile-card p-3">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-sm font-bold text-[#1f2937]">Products in cart</h2>
                   <span className="text-xs font-bold text-amber-700">{summary.quantity} item{summary.quantity > 1 ? 's' : ''}</span>
@@ -319,9 +312,8 @@ const MobileCartPage = () => {
                   {saving ? 'Memproses...' : 'Bayar sekarang'}
                 </Button>
               </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </MobileBottomSheet>
       </main>
     </MobileCommerceLayout>
   );

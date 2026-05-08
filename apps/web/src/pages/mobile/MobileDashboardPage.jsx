@@ -64,6 +64,43 @@ const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
   );
 };
 
+const StudioChip = ({ label, value, tone = 'amber' }) => {
+  const tones = {
+    amber: 'bg-amber-50 text-amber-800 border-amber-100',
+    blue: 'bg-blue-50 text-blue-800 border-blue-100',
+    emerald: 'bg-emerald-50 text-emerald-800 border-emerald-100',
+    rose: 'bg-rose-50 text-rose-800 border-rose-100',
+  };
+
+  return (
+    <div className={`min-w-[108px] rounded-2xl border px-3 py-2 ${tones[tone] || tones.amber}`}>
+      <div className="text-lg font-bold leading-none">{value}</div>
+      <div className="mt-1 truncate text-[10px] font-bold uppercase">{label}</div>
+    </div>
+  );
+};
+
+const PriorityCard = ({ icon: Icon, label, title, helper, tone = 'amber', onClick }) => {
+  const tones = {
+    amber: 'bg-amber-50 text-amber-700',
+    emerald: 'bg-emerald-50 text-emerald-700',
+    rose: 'bg-rose-50 text-rose-700',
+  };
+
+  return (
+    <button type="button" onClick={onClick} className="mobile-card flex w-full items-center gap-3 p-3 text-left">
+      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${tones[tone] || tones.amber}`}>
+        {Icon ? <Icon className="h-5 w-5" /> : null}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10px] font-bold uppercase text-[#9ca3af]">{label}</span>
+        <span className="mt-0.5 block truncate text-sm font-bold text-[#1f2937]">{title}</span>
+        {helper ? <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{helper}</span> : null}
+      </span>
+    </button>
+  );
+};
+
 const MobileDashboardPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -218,30 +255,67 @@ const MobileDashboardPage = () => {
     }
   };
 
+  const attentionCount = actionNeededLogs.length + missingGuidanceMaterials.length;
+
   return (
-    <MobileAuthenticatedLayout>
+    <MobileAuthenticatedLayout showFab>
       <Helmet><title>Studio - Solivagant Studio</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Studio" subtitle={getDisplayName(currentUser)} eyebrow="Solivagant Studio" action={<Sparkles className="h-5 w-5 text-amber-600" />} />
-        <section className="mobile-soft-card p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
+        <section className="mobile-studio-hero p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase text-amber-700">Workspace</div>
-              <h2 className="mt-1 truncate text-lg font-bold text-[#1f2937]">{loading ? 'Syncing data' : actionNeededLogs.length ? `${actionNeededLogs.length} validation action` : 'Ready'}</h2>
+              <h1 className="mt-1 text-2xl font-bold leading-tight text-[#142116]">
+                {loading ? 'Syncing studio' : attentionCount ? 'Ada yang perlu dicek' : 'Studio ready'}
+              </h1>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#68736a]">
+                {getDisplayName(currentUser)} / {loading ? 'mengambil data terbaru' : `${activeBriefs.length} brief aktif, ${draftFormulas.length} draft formula`}
+              </p>
             </div>
-            <div className="shrink-0 rounded-2xl bg-white px-3 py-2 text-right text-[11px] font-bold text-[#6b7280]">
-              {loading ? 'Loading' : `${formulas.length} formulas`}<br />
-              {loading ? 'workspace' : `${materials.length} materials`}
-            </div>
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-amber-700 shadow-sm">
+              <Sparkles className="h-5 w-5" />
+            </span>
+          </div>
+          <div className="mobile-horizontal-scroll mt-4 flex gap-2 overflow-x-auto pb-1">
+            <StudioChip label="Validations" value={loading ? '-' : logs.length} tone="amber" />
+            <StudioChip label="Formulas" value={loading ? '-' : formulas.length} tone="emerald" />
+            <StudioChip label="Materials" value={loading ? '-' : materials.length} tone="blue" />
+            <StudioChip label="Needs action" value={loading ? '-' : attentionCount} tone="rose" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button className="rounded-2xl" onClick={() => navigate('/mobile/formulas/new')}>New Formula</Button>
-            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/briefs/new')}>New Brief</Button>
+            <Button className="rounded-2xl" onClick={() => navigate('/mobile/studio/products')}>Products</Button>
+            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
           </div>
         </section>
 
         {loading ? <MobileLoadingSkeleton count={4} /> : (
           <>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold">Priority</h2>
+                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Open queue</Button>
+              </div>
+              <div className="grid gap-3">
+                <PriorityCard
+                  icon={PackageCheck}
+                  label="Commerce"
+                  title="Order queue"
+                  helper="Checkout and customer status"
+                  tone="amber"
+                  onClick={() => navigate('/mobile/studio/orders')}
+                />
+                <PriorityCard
+                  icon={AlertTriangle}
+                  label="Attention"
+                  title={attentionCount ? `${attentionCount} item perlu dicek` : 'Tidak ada blocker utama'}
+                  helper={actionNeededLogs.length ? 'Validation follow-up tersedia' : missingGuidanceMaterials.length ? 'Raw material guidance belum lengkap' : 'Guidance dan validation aman'}
+                  tone={attentionCount ? 'rose' : 'emerald'}
+                  onClick={() => navigate(actionNeededLogs.length ? '/mobile/validation' : '/mobile/raw-materials')}
+                />
+              </div>
+            </section>
+
             <section className="grid grid-cols-2 gap-3">
               <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={activeBriefs.length} to="/mobile/briefs" />
               <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={formulas.length} tone="blue" to="/mobile/formulas" />
