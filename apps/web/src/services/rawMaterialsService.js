@@ -567,6 +567,20 @@ export const getRawMaterialsPage = async ({
       query = query.ilike('category', categoryFilter);
     }
 
+    if (referenceFilter === 'missing_data') {
+      query = query.or([
+        'reference_abc_primary_family.is.null',
+        'reference_abc_primary_family.eq.',
+        'reference_impact.is.null',
+        'reference_impact.lte.0',
+        'reference_life_hours.is.null',
+        'reference_life_hours.lte.0',
+        'cas_number.is.null',
+        'cas_number.eq.',
+        'ifra_limit.is.null',
+      ].join(','));
+    }
+
     if (!lightweight && (referenceFilter === 'matched' || referenceFilter === 'ifra_limited' || referenceFilter === 'has_guidance')) {
       if (!referenceScope.hasFilteredIds) {
         return {

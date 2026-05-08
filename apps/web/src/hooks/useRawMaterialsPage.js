@@ -12,7 +12,15 @@ import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceG
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 import { buildRawMaterialDuplicateAudit } from '@/utils/rawMaterialDuplicateAudit.js';
 
-const hasReferenceValue = (value) => value !== null && value !== undefined;
+const hasReferenceValue = (value) => value !== null && value !== undefined && value !== '';
+const hasPositiveReferenceValue = (value) => {
+  if (!hasReferenceValue(value)) {
+    return false;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0;
+};
 
 export const shortlistRoles = ['candidate', 'hero', 'support', 'bridge', 'base'];
 
@@ -272,11 +280,11 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
 
   const guidanceGapCount = useMemo(
     () => summaryMaterials.filter((material) => (
-      !material.workbook_code
-      && !material.reference_abc_primary_family
-      && !material.reference_impact
-      && !material.reference_life_hours
-      && !material.ifra_limit
+      !material.reference_abc_primary_family
+      || !hasPositiveReferenceValue(material.reference_impact)
+      || !hasPositiveReferenceValue(material.reference_life_hours)
+      || !material.cas_number
+      || !hasReferenceValue(material.ifra_limit)
     )).length,
     [summaryMaterials]
   );
@@ -349,8 +357,8 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     const resolvedIfra = resolvedReference?.ifra_limit_percent ?? material.ifra_limit ?? null;
 
     const missingClass = !resolvedClass;
-    const missingImpact = !hasReferenceValue(resolvedImpact);
-    const missingLife = !hasReferenceValue(resolvedLife);
+    const missingImpact = !hasPositiveReferenceValue(resolvedImpact);
+    const missingLife = !hasPositiveReferenceValue(resolvedLife);
     const missingCas = !resolvedCas;
     const missingIfra = !hasReferenceValue(resolvedIfra);
     const hasCoreGuidance = !missingClass && !missingImpact && !missingLife;
@@ -523,6 +531,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
         { value: 'all', label: 'All reference states' },
         { value: 'matched', label: 'Matched' },
         { value: 'unmatched', label: 'Unmatched' },
+        { value: 'missing_data', label: 'Missing data' },
         { value: 'ifra_limited', label: 'Has IFRA reference' },
         { value: 'has_guidance', label: 'Has reference guidance' },
         { value: 'approved_pw', label: 'PW approved' },

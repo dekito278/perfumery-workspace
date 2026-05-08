@@ -130,10 +130,9 @@ const runGuidanceWithTimeout = (promise) => runWithTimeout(
   'Material guidance timed out',
 );
 
-const shouldSkipGuidanceEnrichment = ({ cleanupFilter, referenceFilter }) => (
+const shouldSkipGuidanceEnrichment = ({ cleanupFilter }) => (
   cleanupFilter === 'needs_cleanup'
   || cleanupFilter === 'archived'
-  || referenceFilter === 'missing_data'
 );
 
 const runDeleteWithTimeout = (promise, timeoutMs = 12000) => Promise.race([
@@ -221,28 +220,40 @@ const MobileRawMaterialsPage = () => {
       if (cleanupFilter === 'needs_cleanup' && !needsCleanup) return false;
       if (referenceFilter === 'has_guidance') return hasGuidance;
       if (referenceFilter === 'high_impact') return Number(getResolvedGuidanceNumber(material, 'reference_impact') || 0) >= 7;
-      if (referenceFilter === 'missing_data') return !resolved.reference_impact || !resolved.reference_life_hours;
+      if (referenceFilter === 'missing_data') {
+        return (
+          !resolved.reference_abc_primary_family
+          || !Number(resolved.reference_impact || 0)
+          || !Number(resolved.reference_life_hours || 0)
+          || !resolved.cas_number
+          || resolved.ifra_limit === null
+          || resolved.ifra_limit === undefined
+          || resolved.ifra_limit === ''
+        );
+      }
       return true;
     });
 
     try {
       const result = await runMaterialLoadWithTimeout(fetchMaterialsPage({
         page: 1,
-        pageSize: Math.max(visibleCount, MOBILE_PAGE_SIZE * 2),
+        pageSize: referenceFilter === 'missing_data'
+          ? Math.max(visibleCount, MOBILE_PAGE_SIZE * 6)
+          : Math.max(visibleCount, MOBILE_PAGE_SIZE * 2),
         searchTerm: debouncedQuery,
         typeFilter: 'all',
         categoryFilter: 'all',
-        referenceFilter: ['matched', 'unmatched', 'ifra_limited'].includes(referenceFilter) ? referenceFilter : 'all',
+        referenceFilter: ['matched', 'unmatched', 'ifra_limited', 'missing_data'].includes(referenceFilter) ? referenceFilter : 'all',
         lightweight: true,
       }));
       if (loadToken !== loadTokenRef.current) return;
       const baseItems = result.items || [];
       const baseFilteredItems = applyMaterialFilters(baseItems);
       setMaterials(baseFilteredItems);
-      setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? baseFilteredItems.length : result.total || baseFilteredItems.length);
+      setTotal(debouncedQuery || ['has_guidance', 'high_impact'].includes(referenceFilter) ? baseFilteredItems.length : result.total || baseFilteredItems.length);
       baseLoaded = true;
       setLoading(false);
-      if (shouldSkipGuidanceEnrichment({ cleanupFilter, referenceFilter })) {
+      if (shouldSkipGuidanceEnrichment({ cleanupFilter })) {
         setGuidanceLoading(false);
         return;
       }
@@ -252,7 +263,7 @@ const MobileRawMaterialsPage = () => {
       if (loadToken !== loadTokenRef.current) return;
       const filteredItems = applyMaterialFilters(enrichedItems);
       setMaterials(filteredItems);
-      setTotal(debouncedQuery || ['has_guidance', 'high_impact', 'missing_data'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
+      setTotal(debouncedQuery || ['has_guidance', 'high_impact'].includes(referenceFilter) ? filteredItems.length : result.total || filteredItems.length);
     } catch (error) {
       if (loadToken === loadTokenRef.current && !baseLoaded) {
         toast.error(error.message || 'Failed to load materials');
