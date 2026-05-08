@@ -22,14 +22,22 @@ const FormSelect = ({
   onBlur,
   ...props
 }) => {
-  const selectId = id || `select-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const safeLabel = String(label || 'select');
+  const selectId = id || `select-${safeLabel.toLowerCase().replace(/\s+/g, '-')}`;
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
-  const selectedOption = options.find((option) => option.value === value);
-  const filteredOptions = options.filter((option) =>
+  const normalizedOptions = (options || [])
+    .map((option) => ({
+      value: String(option?.value ?? '').trim(),
+      label: String(option?.label ?? option?.value ?? '').trim(),
+    }))
+    .filter((option) => option.value && option.label);
+  const normalizedValue = value === null || value === undefined ? '' : String(value);
+  const selectedOption = normalizedOptions.find((option) => option.value === normalizedValue);
+  const filteredOptions = normalizedOptions.filter((option) =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -170,11 +178,11 @@ const FormSelect = ({
                       className={cn(
                         'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground',
                         highlightedIndex === index && 'bg-accent text-accent-foreground',
-                        value === option.value && 'bg-primary/10'
+                        normalizedValue === option.value && 'bg-primary/10'
                       )}
                     >
                       <span className="pr-3">{option.label}</span>
-                      {value === option.value ? <Check className="h-4 w-4 text-primary" /> : null}
+                      {normalizedValue === option.value ? <Check className="h-4 w-4 text-primary" /> : null}
                     </button>
                   ))
                 )}
@@ -184,9 +192,9 @@ const FormSelect = ({
         </div>
       ) : (
         <Select
-          value={value}
+          value={normalizedValue}
           onValueChange={onChange}
-          disabled={disabled}
+          disabled={disabled || !normalizedOptions.length}
           {...props}
         >
           <SelectTrigger
@@ -197,7 +205,7 @@ const FormSelect = ({
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option) => (
+            {normalizedOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>

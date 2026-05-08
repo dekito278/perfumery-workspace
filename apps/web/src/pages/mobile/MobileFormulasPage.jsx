@@ -7,7 +7,6 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
-import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
@@ -228,7 +227,7 @@ const MobileFormulasPage = () => {
         )}
       </main>
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
-      <MobileBottomSheet open={importOpen} onOpenChange={setImportOpen} title="Import Formula PDF">
+      {importOpen ? (
         <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Loading importer...</div>}>
           <ImportFormulaPdfModal
             open={importOpen}
@@ -240,7 +239,7 @@ const MobileFormulasPage = () => {
             }}
           />
         </Suspense>
-      </MobileBottomSheet>
+      ) : null}
     </MobileAuthenticatedLayout>
   );
 };
