@@ -6,6 +6,7 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { getOrderById } from '@/services/orderService.js';
+import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -120,13 +121,28 @@ const PaymentPageContent = ({ isMobile }) => {
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
   const orderNumber = searchParams.get('order');
+  const paymentReturn = searchParams.get('payment');
 
-  const loadPaymentSession = async () => {
+  const loadPaymentSession = async ({ syncStatus = false } = {}) => {
     const storedSession = readPaymentSession();
+    if (syncStatus && orderNumber) {
+      setRefreshingStatus(true);
+      try {
+        await refreshDokuPaymentStatus(orderNumber);
+      } catch (error) {
+        console.warn('Failed to refresh DOKU payment status:', error.message || error);
+      } finally {
+        setRefreshingStatus(false);
+      }
+    }
+
     if (storedSession?.paymentUrl && (!orderNumber || storedSession.orderNumber === orderNumber || storedSession.invoiceNumber === orderNumber)) {
-      setSession(storedSession);
-      return;
+      if (!orderNumber) {
+        setSession(storedSession);
+        return;
+      }
     }
 
     if (!orderNumber) {
@@ -162,9 +178,11 @@ const PaymentPageContent = ({ isMobile }) => {
   };
 
   useEffect(() => {
-    loadPaymentSession();
+    loadPaymentSession({ syncStatus: paymentReturn === 'doku' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderNumber]);
+  }, [orderNumber, paymentReturn]);
+
+  const refreshPaymentSession = () => loadPaymentSession({ syncStatus: Boolean(orderNumber) });
 
   if (isMobile) {
     return (
@@ -180,7 +198,7 @@ const PaymentPageContent = ({ isMobile }) => {
             onBack={() => navigate('/mobile/cart')}
             action={<CreditCard className="h-5 w-5 text-amber-700" />}
           />
-          {session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder} onRefresh={loadPaymentSession} />}
+          {session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </main>
       </MobileCommerceLayout>
     );
@@ -202,7 +220,7 @@ const PaymentPageContent = ({ isMobile }) => {
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder} onRefresh={loadPaymentSession} />}
+          {session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </section>
       </main>
     </>

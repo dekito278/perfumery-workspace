@@ -35,3 +35,21 @@ export const createDokuCheckout = async ({
 
   return data;
 };
+
+export const refreshDokuPaymentStatus = async (orderNumber) => {
+  const normalizedOrderNumber = String(orderNumber || '').trim();
+  if (!normalizedOrderNumber) {
+    throw new Error('Order number is required');
+  }
+
+  const response = await fetch(`/api/doku/status?order=${encodeURIComponent(normalizedOrderNumber)}`, {
+    method: 'GET',
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to refresh DOKU status');
+  }
+
+  return data;
+};
