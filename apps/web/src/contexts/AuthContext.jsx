@@ -218,8 +218,21 @@ export const AuthProvider = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!nextSession?.user) {
-        authResolutionRef.current += 1;
-        finishLoading(null, null, false);
+        if (event === 'SIGNED_OUT') {
+          authResolutionRef.current += 1;
+          finishLoading(null, null, false);
+          return;
+        }
+
+        if (event === 'INITIAL_SESSION') {
+          const cachedSession = getCachedSession();
+          if (cachedSession?.user) {
+            finishWithResolvedMfa(cachedSession, { allowRememberedSession: true });
+            return;
+          }
+
+          finishLoading(null, null, false);
+        }
         return;
       }
 

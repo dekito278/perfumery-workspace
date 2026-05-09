@@ -12,12 +12,25 @@ export const isIosDevice = () => {
 
 export const isAndroidDevice = () => /android/i.test(window.navigator.userAgent || '');
 
+const isLocalDevelopmentHost = () => ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+
 export const applyStandaloneClass = () => {
   document.documentElement.classList.toggle('pwa-standalone', isStandaloneDisplayMode());
 };
 
 export const registerServiceWorker = () => {
   if (!('serviceWorker' in navigator)) {
+    return;
+  }
+
+  if (isLocalDevelopmentHost()) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch((error) => {
+          console.warn('Solivagant service worker cleanup failed:', error);
+        });
+    });
     return;
   }
 
