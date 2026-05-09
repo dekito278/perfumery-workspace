@@ -18,8 +18,57 @@ const readBody = async (request) => {
 
 let pdfRuntimePromise;
 
+const ensurePdfDomMatrix = () => {
+  if (typeof globalThis.DOMMatrix !== 'undefined') {
+    return;
+  }
+
+  class PdfDOMMatrix {
+    constructor(init) {
+      const values = Array.isArray(init) || ArrayBuffer.isView(init) ? Array.from(init) : null;
+      this.a = Number(values?.[0] ?? 1);
+      this.b = Number(values?.[1] ?? 0);
+      this.c = Number(values?.[2] ?? 0);
+      this.d = Number(values?.[3] ?? 1);
+      this.e = Number(values?.[4] ?? 0);
+      this.f = Number(values?.[5] ?? 0);
+      this.m11 = this.a;
+      this.m12 = this.b;
+      this.m21 = this.c;
+      this.m22 = this.d;
+      this.m41 = this.e;
+      this.m42 = this.f;
+      this.is2D = true;
+    }
+
+    multiplySelf() {
+      return this;
+    }
+
+    preMultiplySelf() {
+      return this;
+    }
+
+    translate() {
+      return this;
+    }
+
+    scale() {
+      return this;
+    }
+
+    invertSelf() {
+      return this;
+    }
+  }
+
+  globalThis.DOMMatrix = PdfDOMMatrix;
+  globalThis.DOMMatrixReadOnly = PdfDOMMatrix;
+};
+
 const getPdfRuntime = async () => {
   if (!pdfRuntimePromise) {
+    ensurePdfDomMatrix();
     pdfRuntimePromise = import('pdfjs-dist/legacy/build/pdf.mjs')
       .then((pdfjsModule) => ({ getDocument: pdfjsModule.getDocument }))
       .catch((error) => {

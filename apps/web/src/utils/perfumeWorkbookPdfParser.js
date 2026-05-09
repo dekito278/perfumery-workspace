@@ -1,7 +1,71 @@
 let pdfRuntimePromise;
 
+const ensurePdfDomMatrix = () => {
+  if (typeof globalThis.DOMMatrix !== 'undefined') {
+    return;
+  }
+
+  if (typeof globalThis.WebKitCSSMatrix !== 'undefined') {
+    globalThis.DOMMatrix = globalThis.WebKitCSSMatrix;
+    globalThis.DOMMatrixReadOnly = globalThis.WebKitCSSMatrix;
+    return;
+  }
+
+  class PdfDOMMatrix {
+    constructor(init) {
+      const values = Array.isArray(init) || ArrayBuffer.isView(init) ? Array.from(init) : null;
+      this.a = Number(values?.[0] ?? 1);
+      this.b = Number(values?.[1] ?? 0);
+      this.c = Number(values?.[2] ?? 0);
+      this.d = Number(values?.[3] ?? 1);
+      this.e = Number(values?.[4] ?? 0);
+      this.f = Number(values?.[5] ?? 0);
+      this.m11 = this.a;
+      this.m12 = this.b;
+      this.m21 = this.c;
+      this.m22 = this.d;
+      this.m41 = this.e;
+      this.m42 = this.f;
+      this.is2D = true;
+    }
+
+    multiplySelf() {
+      return this;
+    }
+
+    preMultiplySelf() {
+      return this;
+    }
+
+    translate() {
+      return this;
+    }
+
+    scale() {
+      return this;
+    }
+
+    invertSelf() {
+      return this;
+    }
+  }
+
+  globalThis.DOMMatrix = PdfDOMMatrix;
+  globalThis.DOMMatrixReadOnly = PdfDOMMatrix;
+};
+
+const shouldPreferServerPdfParsing = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const userAgent = window.navigator.userAgent || '';
+  return /iphone|ipad|ipod/i.test(userAgent) || window.navigator.standalone === true;
+};
+
 const getPdfRuntime = async () => {
   if (!pdfRuntimePromise) {
+    ensurePdfDomMatrix();
     pdfRuntimePromise = Promise.all([
       import('pdfjs-dist/legacy/build/pdf.mjs'),
       import('pdfjs-dist/legacy/build/pdf.worker.mjs?url'),
@@ -202,6 +266,18 @@ const parsePerfumeWorkbookPdfOnServer = async (file, localError) => {
 };
 
 export const parsePerfumeWorkbookPdf = async (file) => {
+  if (shouldPreferServerPdfParsing()) {
+    try {
+      return await parsePerfumeWorkbookPdfOnServer(file, new Error('iOS server-first PDF parsing'));
+    } catch (serverError) {
+      try {
+        return await parsePerfumeWorkbookPdfLocally(file);
+      } catch (localError) {
+        throw serverError?.message ? serverError : localError;
+      }
+    }
+  }
+
   try {
     return await parsePerfumeWorkbookPdfLocally(file);
   } catch (localError) {
