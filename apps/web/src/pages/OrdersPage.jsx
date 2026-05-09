@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, CreditCard, ExternalLink, Loader2, PackageCheck, RefreshCw, Trash2 } from 'lucide-react';
+import { Clipboard, CreditCard, ExternalLink, Loader2, PackageCheck, ReceiptText, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -145,10 +145,22 @@ const OrdersPage = () => {
                       </span>
                       {order.paymentReference ? <span className="rounded-full bg-white px-3 py-1 text-muted-foreground">Ref {order.paymentReference}</span> : null}
                       {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-                        <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-[#263d27] px-3 py-1 text-[#eef2e8]">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          Payment link
-                        </a>
+                        <>
+                          <a href={`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex items-center gap-1 rounded-full bg-[#263d27] px-3 py-1 text-[#eef2e8]">
+                            <CreditCard className="h-3.5 w-3.5" />
+                            Continue payment
+                          </a>
+                          <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#263d27]">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            DOKU URL
+                          </a>
+                        </>
+                      ) : null}
+                      {order.paymentResponse && Object.keys(order.paymentResponse).length ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-muted-foreground">
+                          <ReceiptText className="h-3.5 w-3.5" />
+                          Checkout response saved
+                        </span>
                       ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <button

@@ -37,6 +37,7 @@ const normalizePortalOrder = (order = {}) => ({
   paymentUrl: order.payment_url || order.paymentUrl || '',
   paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
   paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
+  paymentResponse: order.doku_response || order.payment_response || order.paymentResponse || {},
   source: order.source || 'storefront',
   bespokeProductionStatus: order.bespoke_production_status || order.bespokeProductionStatus || '',
   bespokeProductionTimeline: Array.isArray(order.bespoke_production_timeline || order.bespokeProductionTimeline)

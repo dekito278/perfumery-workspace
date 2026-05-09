@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clipboard, Copy, CreditCard, Factory, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
+import { ArrowLeft, Clipboard, Copy, CreditCard, ExternalLink, Factory, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -425,6 +425,18 @@ const MobileOrderDetailPage = () => {
               <div className="mt-1 truncate text-sm font-bold text-[#0b130c]">{order.paymentReference || '-'}</div>
             </div>
           </div>
+          {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+            <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={() => navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`)}>
+              <CreditCard className="h-4 w-4" />
+              Continue payment
+            </Button>
+          ) : null}
+          {order.paymentUrl ? (
+            <Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => window.open(order.paymentUrl, '_blank', 'noopener,noreferrer')}>
+              <ExternalLink className="h-4 w-4" />
+              Open DOKU URL
+            </Button>
+          ) : null}
           {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
             <Button type="button" variant="outline" className="mt-3 h-11 w-full rounded-2xl bg-white gap-2" onClick={syncDokuStatus} disabled={syncingPayment}>
               {syncingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}

@@ -186,7 +186,7 @@ const normalizeOrder = (order) => {
     paymentUrl: order.payment_url || order.paymentUrl || '',
     paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
     paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
-    paymentResponse: order.payment_response || order.paymentResponse || {},
+    paymentResponse: order.doku_response || order.payment_response || order.paymentResponse || {},
     inventoryDeducted: Boolean(order.inventory_deducted || order.inventoryDeducted),
     inventoryEvents: normalizeInventoryEvents(order.inventory_events || order.inventoryEvents),
     productionLinks: normalizeProductionLinks(order.production_links || order.productionLinks),
@@ -790,7 +790,10 @@ export const updateOrderPaymentStatus = async (orderId, {
     ...(paymentUrl ? { payment_url: paymentUrl } : {}),
     ...(paymentExpiresAt ? { payment_expires_at: paymentExpiresAt } : {}),
     ...(paymentSessionId ? { payment_session_id: paymentSessionId } : {}),
-    ...(paymentResponse && typeof paymentResponse === 'object' ? { payment_response: paymentResponse } : {}),
+    ...(paymentResponse && typeof paymentResponse === 'object' ? {
+      payment_response: paymentResponse,
+      doku_response: paymentResponse,
+    } : {}),
     ...(status ? { status } : {}),
   };
 
@@ -801,6 +804,17 @@ export const updateOrderPaymentStatus = async (orderId, {
     const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) {
+      const missingDokuResponseColumn = String(error.message || '').includes('doku_response');
+      if (missingDokuResponseColumn) {
+        const retryPatch = { ...patch };
+        delete retryPatch.doku_response;
+        const retryQuery = supabase
+          .from('storefront_orders')
+          .update(retryPatch);
+        const { error: retryError } = await (isUuid(orderId) ? retryQuery.eq('id', orderId) : retryQuery.eq('order_number', orderId));
+        if (retryError) throw retryError;
+        window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+      } else {
       const missingPaymentSessionColumn = ['payment_url', 'payment_expires_at', 'payment_session_id', 'payment_response']
         .some((column) => String(error.message || '').includes(column));
       if (missingPaymentSessionColumn) {
@@ -818,6 +832,7 @@ export const updateOrderPaymentStatus = async (orderId, {
         window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
       } else {
         throw error;
+      }
       }
     } else {
       window.dispatchEvent(new CustomEvent('dekito:orders-updated'));

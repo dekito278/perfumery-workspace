@@ -38,6 +38,7 @@ const paymentStatusLabels = {
 
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
+const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`;
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
@@ -518,10 +519,10 @@ const CustomerPortalPage = () => {
                         Invoice
                       </Link>
                       {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-                        <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
+                        <Link to={buildPaymentPath({ isMobileRoute, order })} className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
                           <CreditCard className="h-4 w-4" />
                           Continue payment
-                        </a>
+                        </Link>
                       ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <button
@@ -753,10 +754,10 @@ const CustomerPortalPage = () => {
                               Invoice / Receipt
                             </Link>
                             {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-                              <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
+                              <Link to={buildPaymentPath({ isMobileRoute, order })} className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
                                 <CreditCard className="h-4 w-4" />
                                 Continue payment
-                              </a>
+                              </Link>
                             ) : null}
                             {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                               <button
