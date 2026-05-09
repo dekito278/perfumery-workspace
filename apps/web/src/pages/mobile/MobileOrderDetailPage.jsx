@@ -166,14 +166,21 @@ const MobileOrderDetailPage = () => {
 
   const loadOrder = async () => {
     setLoading(true);
-    const nextOrder = await getOrderById(orderId);
-    const nextPaymentLogs = await getOrderPaymentLogs(orderId);
-    setOrder(nextOrder);
-    setPaymentLogs(nextPaymentLogs);
-    setInternalNotesDraft(nextOrder?.internalNotes || '');
-    setShipmentFromOrder(nextOrder);
-    setProductionLinksFromOrder(nextOrder);
-    setLoading(false);
+    try {
+      const nextOrder = await getOrderById(orderId);
+      const nextPaymentLogs = await getOrderPaymentLogs(orderId);
+      setOrder(nextOrder);
+      setPaymentLogs(nextPaymentLogs);
+      setInternalNotesDraft(nextOrder?.internalNotes || '');
+      setShipmentFromOrder(nextOrder);
+      setProductionLinksFromOrder(nextOrder);
+    } catch (error) {
+      setOrder(null);
+      setPaymentLogs([]);
+      toast.error(error.message || 'Failed to load order detail');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -195,54 +202,83 @@ const MobileOrderDetailPage = () => {
     ];
 
   const handleStatusChange = async (status) => {
-    const nextOrders = await updateOrderStatus(order.id || order.orderNumber, status);
-    const nextOrder = nextOrders.find((item) => item.id === order.id || item.orderNumber === order.orderNumber) || await getOrderById(orderId);
-    setOrder(nextOrder);
-    setPaymentLogs(await getOrderPaymentLogs(order.id || order.orderNumber));
-    toast.success('Order status updated');
+    try {
+      const orderKey = order.id || order.orderNumber;
+      const nextOrders = await updateOrderStatus(orderKey, status);
+      const nextOrder = nextOrders.find((item) => item.id === order.id || item.orderNumber === order.orderNumber) || await getOrderById(orderId);
+      setOrder(nextOrder);
+      setPaymentLogs(await getOrderPaymentLogs(orderKey));
+      toast.success('Order status updated');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update order status');
+    }
   };
 
   const saveInternalNotes = async () => {
     setSavingNotes(true);
-    const nextOrder = await updateOrderInternalNotes(order.id || order.orderNumber, internalNotesDraft);
-    setOrder(nextOrder || order);
-    setSavingNotes(false);
-    toast.success('Internal notes saved');
+    try {
+      const nextOrder = await updateOrderInternalNotes(order.id || order.orderNumber, internalNotesDraft);
+      setOrder(nextOrder || order);
+      toast.success('Internal notes saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save internal notes');
+    } finally {
+      setSavingNotes(false);
+    }
   };
 
   const saveShipment = async () => {
     setSavingShipment(true);
-    const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
-      ...shipmentDraft,
-      shippedAt: shipmentDraft.shippedAt ? new Date(shipmentDraft.shippedAt).toISOString() : '',
-      deliveredAt: shipmentDraft.deliveredAt ? new Date(shipmentDraft.deliveredAt).toISOString() : '',
-    });
-    setOrder(nextOrder || order);
-    setShipmentFromOrder(nextOrder || order);
-    setSavingShipment(false);
-    toast.success('Shipment saved');
+    try {
+      const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
+        ...shipmentDraft,
+        shippedAt: shipmentDraft.shippedAt ? new Date(shipmentDraft.shippedAt).toISOString() : '',
+        deliveredAt: shipmentDraft.deliveredAt ? new Date(shipmentDraft.deliveredAt).toISOString() : '',
+      });
+      setOrder(nextOrder || order);
+      setShipmentFromOrder(nextOrder || order);
+      toast.success('Shipment saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save shipment');
+    } finally {
+      setSavingShipment(false);
+    }
   };
 
   const saveBespokeProductionStatus = async (productionStatus) => {
     setSavingBespokeProduction(true);
-    const nextOrder = await updateOrderBespokeProductionStatus(order.id || order.orderNumber, productionStatus);
-    setOrder(nextOrder || order);
-    setSavingBespokeProduction(false);
-    toast.success('Bespoke workflow updated');
+    try {
+      const nextOrder = await updateOrderBespokeProductionStatus(order.id || order.orderNumber, productionStatus);
+      setOrder(nextOrder || order);
+      toast.success('Bespoke workflow updated');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update bespoke workflow');
+    } finally {
+      setSavingBespokeProduction(false);
+    }
   };
 
   const saveProductionLinks = async () => {
     setSavingProductionLinks(true);
-    const nextOrder = await updateOrderProductionLinks(order.id || order.orderNumber, productionLinksDraft);
-    setOrder(nextOrder || order);
-    setProductionLinksFromOrder(nextOrder || order);
-    setSavingProductionLinks(false);
-    toast.success('Production linkage saved');
+    try {
+      const nextOrder = await updateOrderProductionLinks(order.id || order.orderNumber, productionLinksDraft);
+      setOrder(nextOrder || order);
+      setProductionLinksFromOrder(nextOrder || order);
+      toast.success('Production linkage saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save production linkage');
+    } finally {
+      setSavingProductionLinks(false);
+    }
   };
 
   const copyDraft = async () => {
-    await navigator.clipboard.writeText(order?.checkoutDraft || order?.notes || '');
-    toast.success('Order draft copied');
+    try {
+      await navigator.clipboard.writeText(order?.checkoutDraft || order?.notes || '');
+      toast.success('Order draft copied');
+    } catch (error) {
+      toast.error(error.message || 'Failed to copy order draft');
+    }
   };
 
   const notificationMessage = useMemo(
@@ -251,8 +287,12 @@ const MobileOrderDetailPage = () => {
   );
 
   const copyNotification = async () => {
-    await navigator.clipboard.writeText(notificationMessage);
-    toast.success('Notification copied');
+    try {
+      await navigator.clipboard.writeText(notificationMessage);
+      toast.success('Notification copied');
+    } catch (error) {
+      toast.error(error.message || 'Failed to copy notification');
+    }
   };
 
   const openWhatsAppNotification = () => {

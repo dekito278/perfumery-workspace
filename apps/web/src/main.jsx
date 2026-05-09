@@ -65,5 +65,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 
 applyStandaloneClass();
-window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change', applyStandaloneClass);
+const standaloneMediaQuery = window.matchMedia?.('(display-mode: standalone)');
+if (standaloneMediaQuery?.addEventListener) {
+  standaloneMediaQuery.addEventListener('change', applyStandaloneClass);
+} else if (standaloneMediaQuery?.addListener) {
+  standaloneMediaQuery.addListener(applyStandaloneClass);
+}
 registerServiceWorker();

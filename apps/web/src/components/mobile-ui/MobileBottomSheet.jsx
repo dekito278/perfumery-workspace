@@ -36,8 +36,8 @@ const MobileBottomSheet = ({ open, onOpenChange, title, description, children, f
             {description || `${title} sheet`}
           </DrawerDescription>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-4">{children}</div>
-        {footer ? <div className="border-t border-[#e5e7eb] bg-white p-4">{footer}</div> : null}
+        <div className="mobile-bottom-sheet-scroll px-4 pb-4">{children}</div>
+        {footer ? <div className="mobile-bottom-sheet-footer border-t border-[#e5e7eb] bg-white p-4">{footer}</div> : null}
       </DrawerContent>
     </Drawer>
   );

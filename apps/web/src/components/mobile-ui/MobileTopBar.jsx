@@ -12,7 +12,7 @@ const MobileTopBar = ({
   action,
   className,
 }) => (
-  <header className={cn('mb-3 flex items-center gap-3 pr-12', className)}>
+  <header className={cn('mb-3 flex min-w-0 items-center gap-3 pr-12 mobile-top-bar', className)}>
     {onBack ? (
       <Button
         type="button"
@@ -27,7 +27,7 @@ const MobileTopBar = ({
     ) : null}
     <div className="min-w-0 flex-1">
       {eyebrow ? <div className="text-[10px] font-bold uppercase text-[#263d27]">{eyebrow}</div> : null}
-      <h1 className="truncate text-[22px] font-bold leading-tight text-[#0b130c]">{title}</h1>
+      <h1 className="truncate text-[22px] font-bold leading-tight text-[#0b130c] mobile-top-bar-title">{title}</h1>
       {subtitle ? <p className="mt-0.5 truncate text-xs font-medium text-[#6b7280]">{subtitle}</p> : null}
     </div>
     <div className="shrink-0">

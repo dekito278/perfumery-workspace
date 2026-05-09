@@ -38,7 +38,9 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [mfaChallenge, setMfaChallenge] = useState(null);
+  const [mfaResolutionPending, setMfaResolutionPending] = useState(false);
   const mfaChallengeRef = useRef(null);
+  const authResolutionRef = useRef(0);
   const [session, setSession] = useState(null);
 
   const setActiveMfaChallenge = (nextChallenge) => {
@@ -50,13 +52,14 @@ export const AuthProvider = ({ children }) => {
     let isMounted = true;
     let timeoutId = null;
 
-    const finishLoading = (nextSession = null, nextMfaChallenge) => {
+    const finishLoading = (nextSession = null, nextMfaChallenge, nextMfaResolutionPending = false) => {
       if (!isMounted) {
         return;
       }
 
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
+      setMfaResolutionPending(nextMfaResolutionPending);
       if (nextMfaChallenge !== undefined) {
         setActiveMfaChallenge(nextMfaChallenge);
       } else if (!nextSession?.user) {
@@ -100,6 +103,22 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    const finishWithResolvedMfa = async (nextSession = null) => {
+      const resolutionId = authResolutionRef.current + 1;
+      authResolutionRef.current = resolutionId;
+
+      if (nextSession?.user) {
+        setMfaResolutionPending(true);
+      }
+
+      const nextMfaChallenge = await resolveMfaChallenge(nextSession);
+      if (authResolutionRef.current !== resolutionId) {
+        return;
+      }
+
+      finishLoading(nextSession, nextMfaChallenge, false);
+    };
+
     const initializeAuth = async () => {
       try {
         const cachedSession = getCachedSession();
@@ -113,13 +132,11 @@ export const AuthProvider = ({ children }) => {
         }
 
         const nextSession = initialSession || cachedSession;
-        const nextMfaChallenge = await resolveMfaChallenge(nextSession);
-        finishLoading(nextSession, nextMfaChallenge);
+        await finishWithResolvedMfa(nextSession);
       } catch (error) {
         console.error('Unexpected auth initialization error:', error);
         const cachedSession = getCachedSession();
-        const nextMfaChallenge = await resolveMfaChallenge(cachedSession);
-        finishLoading(cachedSession, nextMfaChallenge);
+        await finishWithResolvedMfa(cachedSession);
       }
     };
 
@@ -127,8 +144,12 @@ export const AuthProvider = ({ children }) => {
       const cachedSession = getCachedSession();
       if (!cachedSession) {
         console.info('Auth initialization timed out, continuing without restored session.');
+        finishLoading(null, null, false);
+        return;
       }
-      finishLoading(cachedSession);
+
+      console.info('Auth initialization timed out, waiting for MFA assurance before restoring protected access.');
+      finishLoading(cachedSession, null, true);
     }, AUTH_INIT_TIMEOUT_MS);
 
     initializeAuth();
@@ -136,7 +157,13 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      finishLoading(nextSession);
+      if (!nextSession?.user) {
+        authResolutionRef.current += 1;
+        finishLoading(null, null, false);
+        return;
+      }
+
+      finishWithResolvedMfa(nextSession);
     });
 
     return () => {
@@ -327,12 +354,26 @@ export const AuthProvider = ({ children }) => {
     setActiveMfaChallenge(null);
   };
 
+  const cancelMfaChallenge = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.warn('Failed to sign out while cancelling MFA challenge:', error);
+    }
+
+    setSession(null);
+    setCurrentUser(null);
+    setMfaResolutionPending(false);
+    setActiveMfaChallenge(null);
+  };
+
   const getAuthState = () => ({
-    isAuthenticated: !!session?.user && !mfaChallenge,
+    isAuthenticated: !!session?.user && !mfaChallenge && !mfaResolutionPending,
     user: session?.user ?? null,
   });
 
   const value = {
+    cancelMfaChallenge,
     challengeAuthenticatorEnrollment,
     currentUser,
     enrollAuthenticator,
@@ -341,8 +382,9 @@ export const AuthProvider = ({ children }) => {
     signup,
     updatePassword,
     logout,
-    isAuthenticated: !!session?.user && !mfaChallenge,
+    isAuthenticated: !!session?.user && !mfaChallenge && !mfaResolutionPending,
     mfaChallenge,
+    mfaResolutionPending,
     getAuthState,
     initialLoading,
     session,

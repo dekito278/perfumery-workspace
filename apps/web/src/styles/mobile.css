@@ -1,14 +1,17 @@
 .mobile-app {
-  --mobile-nav-bottom: 0px;
+  --mobile-nav-bottom: env(safe-area-inset-bottom, 0px);
   --mobile-nav-height: 64px;
   --mobile-action-gap: 10px;
   min-height: 100vh;
   min-height: 100dvh;
+  overflow-x: clip;
   background: #f7f8f2;
   color: #0b130c;
   font-size: 13.5px;
   line-height: 1.42;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-x: none;
 }
 
 @media (max-width: 767px) {
@@ -24,6 +27,8 @@
   [contenteditable="true"],
   [role="combobox"],
   [cmdk-input] {
+    appearance: none;
+    -webkit-appearance: none;
     font-size: 16px !important;
     line-height: 1.35;
   }
@@ -47,10 +52,23 @@
   min-height: 44px;
 }
 
+.mobile-app button,
+.mobile-app a,
+.mobile-app [role="button"] {
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.mobile-app :focus-visible {
+  outline: 2px solid rgba(217, 119, 6, 0.62);
+  outline-offset: 3px;
+}
+
 .mobile-app-shell {
   min-height: 100vh;
   min-height: 100dvh;
   padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px calc(env(safe-area-inset-bottom, 0px) + 80px);
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--mobile-nav-height) + 24px);
 }
 
 .pwa-standalone,
@@ -60,12 +78,11 @@
 }
 
 .pwa-standalone .mobile-app {
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
 }
 
 .pwa-standalone .mobile-app-shell {
-  height: 100dvh;
+  min-height: 100dvh;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
@@ -75,6 +92,7 @@
 .mobile-page {
   max-width: 448px;
   margin: 0 auto;
+  overflow-wrap: anywhere;
 }
 
 .mobile-commerce-header {
@@ -111,6 +129,10 @@
   min-height: calc(100dvh - 190px);
   align-items: center;
   justify-content: center;
+}
+
+.mobile-top-bar {
+  min-height: 48px;
 }
 
 .mobile-page-wide {
@@ -210,7 +232,8 @@
 .mobile-app .grid > *,
 .mobile-app [role="combobox"],
 .mobile-app input,
-.mobile-app textarea {
+.mobile-app textarea,
+.mobile-app select {
   min-width: 0;
 }
 
@@ -322,6 +345,18 @@
   backdrop-filter: blur(14px);
 }
 
+.mobile-bottom-nav::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: calc(-1 * var(--mobile-nav-bottom));
+  height: var(--mobile-nav-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  border-left: 1px solid rgba(229, 231, 235, 0.94);
+  border-right: 1px solid rgba(229, 231, 235, 0.94);
+}
+
 .mobile-fab {
   position: fixed;
   right: max(14px, calc((100vw - 430px) / 2 + 14px));
@@ -400,17 +435,38 @@
   cursor: grab;
   scroll-snap-type: x proximity;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
 .mobile-horizontal-scroll:active {
   cursor: grabbing;
 }
 
+.mobile-horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .mobile-bottom-sheet-content {
-  max-height: min(86vh, 720px);
+  display: flex;
+  max-height: min(86dvh, 720px);
+  max-height: min(86svh, 720px);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   background: #f7f8f2;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-bottom-sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-bottom-sheet-footer {
+  flex: 0 0 auto;
 }
 
 .mobile-compact-tabs button {
@@ -494,5 +550,64 @@
 @media (min-width: 768px) {
   .mobile-app-shell {
     padding-top: 24px;
+  }
+}
+
+@media (max-width: 380px) {
+  .mobile-app {
+    --mobile-nav-height: 60px;
+    --mobile-action-gap: 8px;
+    font-size: 13px;
+  }
+
+  .mobile-app-shell {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
+  }
+
+  .pwa-standalone .mobile-app-shell {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+  }
+
+  .mobile-card,
+  .mobile-soft-card {
+    border-radius: 14px;
+  }
+
+  .mobile-bottom-nav {
+    border-radius: 16px 16px 0 0;
+  }
+
+  .mobile-bottom-nav button {
+    height: 54px;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .mobile-bottom-nav svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-session-actions {
+    right: 10px;
+  }
+
+  .mobile-session-panel {
+    width: min(82vw, 292px);
+  }
+
+  .mobile-top-bar {
+    gap: 8px;
+    padding-right: 46px;
+  }
+
+  .mobile-top-bar-title {
+    font-size: 20px;
+  }
+
+  .mobile-app .gap-3 {
+    gap: 0.625rem;
   }
 }

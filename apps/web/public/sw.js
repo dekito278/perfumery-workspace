@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'solivagant-v7';
+const CACHE_VERSION = 'solivagant-v8';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
@@ -49,6 +49,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET' || !isSameOrigin(url)) {
+    return;
+  }
+
+  if (isLocalDev) {
     return;
   }
 

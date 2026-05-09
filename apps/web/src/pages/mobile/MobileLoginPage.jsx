@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 const MobileLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authenticatorCode, setAuthenticatorCode] = useState('');
@@ -62,6 +62,13 @@ const MobileLoginPage = () => {
     }
   };
 
+  const handleBackToPassword = async () => {
+    setError('');
+    setAuthenticatorCode('');
+    setAuthStep('password');
+    await cancelMfaChallenge();
+  };
+
   const handlePasswordReset = async () => {
     if (!email.trim()) {
       setError('Enter your email first, then request a reset link.');
@@ -83,11 +90,11 @@ const MobileLoginPage = () => {
   };
 
   return (
-    <div className="mobile-app min-h-screen px-4 py-6">
+    <div className="mobile-app min-h-[100dvh] px-4 py-6">
       <Helmet>
         <title>Mobile Login - Solivagant</title>
       </Helmet>
-      <div className="mobile-page flex min-h-[calc(100vh-48px)] flex-col justify-center">
+      <div className="mobile-page flex min-h-[calc(100dvh-48px)] flex-col justify-center">
         <div className="mobile-soft-card p-5">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <Beaker className="h-6 w-6" />
@@ -115,7 +122,7 @@ const MobileLoginPage = () => {
               <Button type="submit" disabled={mfaLoading || authenticatorCode.length < 6} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
                 {mfaLoading ? 'Verifying...' : 'Verify authenticator'}
               </Button>
-              <Button type="button" variant="ghost" className="h-11 w-full rounded-2xl" onClick={() => setAuthStep('password')}>
+              <Button type="button" variant="ghost" className="h-11 w-full rounded-2xl" onClick={() => { void handleBackToPassword(); }}>
                 Back to password
               </Button>
             </form>

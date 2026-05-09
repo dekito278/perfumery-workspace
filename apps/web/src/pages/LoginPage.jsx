@@ -12,7 +12,7 @@ import { Helmet } from 'react-helmet';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authenticatorCode, setAuthenticatorCode] = useState('');
@@ -61,6 +61,13 @@ const LoginPage = () => {
     } finally {
       setMfaLoading(false);
     }
+  };
+
+  const handleBackToPassword = async () => {
+    setError('');
+    setAuthenticatorCode('');
+    setAuthStep('password');
+    await cancelMfaChallenge();
   };
 
   const handlePasswordReset = async () => {
@@ -122,7 +129,7 @@ const LoginPage = () => {
                 <Button type="submit" className="w-full" disabled={mfaLoading || authenticatorCode.length < 6}>
                   {mfaLoading ? 'Verifying...' : 'Verify authenticator'}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setAuthStep('password')}>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => { void handleBackToPassword(); }}>
                   Back to password
                 </Button>
               </form>

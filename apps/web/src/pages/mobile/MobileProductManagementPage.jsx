@@ -219,17 +219,20 @@ const MobileProductManagementPage = () => {
     }
     setSavingProduct(true);
     try {
+      const primaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
       const product = await saveCustomProduct({
         ...form,
-        priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
+        priceNumber: primaryVariantPrice,
         compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
         stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
         size: form.variants?.[0]?.size || form.size,
-        price: formatRupiah(form.priceNumber),
+        price: formatRupiah(primaryVariantPrice),
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
       });
       setForm(toProductForm(product));
       toast.success('Product saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save product');
     } finally {
       setSavingProduct(false);
     }
@@ -245,9 +248,13 @@ const MobileProductManagementPage = () => {
   };
 
   const handleDelete = async (product) => {
-    await deleteCustomProduct(product.id);
-    if (form.id === product.id) resetForm();
-    toast.success('Product removed');
+    try {
+      await deleteCustomProduct(product.id);
+      if (form.id === product.id) resetForm();
+      toast.success('Product removed');
+    } catch (error) {
+      toast.error(error.message || 'Failed to remove product');
+    }
   };
 
   const handleCategorySubmit = async (event) => {
@@ -264,17 +271,23 @@ const MobileProductManagementPage = () => {
         updateField('category', category.name);
       }
       toast.success('Category saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save category');
     } finally {
       setSavingCategory(false);
     }
   };
 
   const handleCategoryDelete = async (category) => {
-    await deleteStorefrontCategory(category.id);
-    if (form.category === category.name) {
-      updateField('category', '');
+    try {
+      await deleteStorefrontCategory(category.id);
+      if (form.category === category.name) {
+        updateField('category', '');
+      }
+      toast.success('Category removed');
+    } catch (error) {
+      toast.error(error.message || 'Failed to remove category');
     }
-    toast.success('Category removed');
   };
 
   return (

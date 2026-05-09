@@ -88,14 +88,23 @@ const MobileBrowserRedirect = () => {
 
   useEffect(() => {
     const refreshMobileRoute = () => setMobileRouteTick((current) => current + 1);
+    const standaloneMediaQuery = window.matchMedia?.('(display-mode: standalone)');
     window.addEventListener('resize', refreshMobileRoute);
     window.addEventListener('orientationchange', refreshMobileRoute);
-    window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change', refreshMobileRoute);
+    if (standaloneMediaQuery?.addEventListener) {
+      standaloneMediaQuery.addEventListener('change', refreshMobileRoute);
+    } else if (standaloneMediaQuery?.addListener) {
+      standaloneMediaQuery.addListener(refreshMobileRoute);
+    }
 
     return () => {
       window.removeEventListener('resize', refreshMobileRoute);
       window.removeEventListener('orientationchange', refreshMobileRoute);
-      window.matchMedia?.('(display-mode: standalone)').removeEventListener?.('change', refreshMobileRoute);
+      if (standaloneMediaQuery?.removeEventListener) {
+        standaloneMediaQuery.removeEventListener('change', refreshMobileRoute);
+      } else if (standaloneMediaQuery?.removeListener) {
+        standaloneMediaQuery.removeListener(refreshMobileRoute);
+      }
     };
   }, []);
 

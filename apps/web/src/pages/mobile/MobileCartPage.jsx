@@ -145,7 +145,7 @@ const MobileCartPage = () => {
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-bold text-[#1f2937]">{item.name}</h2>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{item.notes}</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.price} · {item.size}</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.price} / {item.size}</p>
                 </div>
                 <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Remove ${item.name}`}>
                   <Trash2 className="h-4 w-4" />

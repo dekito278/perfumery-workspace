@@ -49,7 +49,7 @@ const PaymentFrame = ({ session, compact = false }) => (
         </div>
       </div>
     </div>
-    <div className={compact ? 'h-[68vh] bg-white' : 'h-[74vh] bg-white'}>
+    <div className={compact ? 'h-[68dvh] bg-white' : 'h-[74dvh] bg-white'}>
       <iframe
         src={session.paymentUrl}
         title="Panel pembayaran"

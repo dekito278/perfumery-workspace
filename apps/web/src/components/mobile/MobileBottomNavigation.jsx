@@ -76,6 +76,8 @@ const MobileBottomNavigation = () => {
               key={group.id}
               type="button"
               aria-current={active ? 'page' : undefined}
+              aria-expanded={openGroupId === group.id}
+              aria-haspopup="dialog"
               onClick={() => setOpenGroupId(group.id)}
               className={cn(
                 'flex h-[58px] items-center justify-center gap-2 rounded-2xl text-xs font-bold transition',
