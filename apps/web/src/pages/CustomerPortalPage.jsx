@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, FileText, KeyRound, Loader2, PackageCheck, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
+import { ArrowLeft, CreditCard, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -17,6 +17,7 @@ import {
   getShipmentStatusLabels,
   isBespokeOrder,
 } from '@/services/orderService.js';
+import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -224,6 +225,7 @@ const CustomerPortalPage = () => {
   const [newSecurityAnswer, setNewSecurityAnswer] = useState('');
   const [currentSecurityAnswer, setCurrentSecurityAnswer] = useState('');
   const [savingSecurity, setSavingSecurity] = useState(false);
+  const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
 
   const latestOrder = portal?.orders?.[0];
@@ -233,9 +235,9 @@ const CustomerPortalPage = () => {
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
 
-  const loadPortalForCode = async (code) => {
+  const loadPortalForCode = async (code, { silent = false } = {}) => {
     if (!code.trim()) {
-      toast.error('Customer code is required');
+      if (!silent) toast.error('Customer code is required');
       return;
     }
 
@@ -246,7 +248,7 @@ const CustomerPortalPage = () => {
 
     if (!result) {
       setPortal(null);
-      toast.error('Customer code not found');
+      if (!silent) toast.error('Customer code not found');
       return;
     }
 
@@ -256,7 +258,7 @@ const CustomerPortalPage = () => {
     setSecurityFormOpen(false);
     setCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
-    toast.success(`${result.customer.customerCode} loaded`);
+    if (!silent) toast.success(`${result.customer.customerCode} loaded`);
   };
 
   useEffect(() => {
@@ -327,6 +329,26 @@ const CustomerPortalPage = () => {
       toast.error(error.message || 'Failed to save security question');
     } finally {
       setSavingSecurity(false);
+    }
+  };
+
+  const refreshPaymentStatus = async (order) => {
+    if (!order?.orderNumber) return;
+
+    setRefreshingPaymentOrder(order.orderNumber);
+    try {
+      const result = await refreshDokuPaymentStatus(order.orderNumber);
+      await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
+      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
+      if (result.syncApplied) {
+        toast.success(`Payment ${statusLabel}`);
+      } else {
+        toast.warning('Payment checked, status belum berubah');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to refresh payment');
+    } finally {
+      setRefreshingPaymentOrder('');
     }
   };
 
@@ -500,6 +522,17 @@ const CustomerPortalPage = () => {
                           <CreditCard className="h-4 w-4" />
                           Continue payment
                         </a>
+                      ) : null}
+                      {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                        <button
+                          type="button"
+                          onClick={() => refreshPaymentStatus(order)}
+                          disabled={refreshingPaymentOrder === order.orderNumber}
+                          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white text-xs font-bold text-[#263d27] disabled:opacity-60"
+                        >
+                          {refreshingPaymentOrder === order.orderNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                          Refresh payment
+                        </button>
                       ) : null}
                       <div className="mt-4">
                         <OrderProgressRail activeStep={activeStep} compact />
@@ -724,6 +757,17 @@ const CustomerPortalPage = () => {
                                 <CreditCard className="h-4 w-4" />
                                 Continue payment
                               </a>
+                            ) : null}
+                            {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                              <button
+                                type="button"
+                                onClick={() => refreshPaymentStatus(order)}
+                                disabled={refreshingPaymentOrder === order.orderNumber}
+                                className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27] disabled:opacity-60"
+                              >
+                                {refreshingPaymentOrder === order.orderNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                Refresh payment
+                              </button>
                             ) : null}
                             <div className="mt-5">
                               <OrderProgressRail activeStep={activeStep} />

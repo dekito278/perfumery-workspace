@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, CreditCard, ExternalLink, PackageCheck, Trash2 } from 'lucide-react';
+import { Clipboard, CreditCard, ExternalLink, Loader2, PackageCheck, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
+import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
   getBespokeItem,
   getBespokeProductionStatusLabels,
@@ -43,11 +44,32 @@ const bespokeDetailRows = (item) => [
 ].filter(([, value]) => value);
 
 const OrdersPage = () => {
-  const { orders, summary, loading, updateStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, reload, updateStatus, deleteOne } = useOrders();
+  const [syncingOrder, setSyncingOrder] = useState('');
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
     toast.success(`${order.orderNumber} copied`);
+  };
+
+  const syncDokuStatus = async (order) => {
+    if (!order?.orderNumber) return;
+
+    setSyncingOrder(order.orderNumber);
+    try {
+      const result = await refreshDokuPaymentStatus(order.orderNumber);
+      await reload();
+      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
+      if (result.syncApplied) {
+        toast.success(`${order.orderNumber} DOKU synced: ${statusLabel}`);
+      } else {
+        toast.warning(result.syncWarning || `${order.orderNumber} DOKU checked, but order was not updated`);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to sync DOKU status');
+    } finally {
+      setSyncingOrder('');
+    }
   };
 
   return (
@@ -127,6 +149,17 @@ const OrdersPage = () => {
                           <ExternalLink className="h-3.5 w-3.5" />
                           Payment link
                         </a>
+                      ) : null}
+                      {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                        <button
+                          type="button"
+                          onClick={() => syncDokuStatus(order)}
+                          disabled={syncingOrder === order.orderNumber}
+                          className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#263d27] disabled:opacity-60"
+                        >
+                          {syncingOrder === order.orderNumber ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                          Sync DOKU
+                        </button>
                       ) : null}
                     </div>
                   </div>

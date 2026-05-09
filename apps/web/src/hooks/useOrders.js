@@ -41,6 +41,7 @@ export const useOrders = () => {
     orders,
     summary,
     loading,
+    reload: async () => setOrders(await getOrders()),
     updateStatus: async (orderId, status) => setOrders(await updateOrderStatus(orderId, status)),
     updatePaymentStatus: async (orderId, paymentStatus) => {
       const nextOrderStatus = paymentStatus === 'paid'

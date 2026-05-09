@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clipboard, Copy, CreditCard, Factory, FlaskConical, History, Mail, MessageCircle, NotebookPen, PackageCheck, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
+import { ArrowLeft, Clipboard, Copy, CreditCard, Factory, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -27,6 +27,7 @@ import {
   getNotificationEventLabels,
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
+import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -126,6 +127,7 @@ const MobileOrderDetailPage = () => {
   const [savingShipment, setSavingShipment] = useState(false);
   const [savingBespokeProduction, setSavingBespokeProduction] = useState(false);
   const [savingProductionLinks, setSavingProductionLinks] = useState(false);
+  const [syncingPayment, setSyncingPayment] = useState(false);
   const [paymentLogs, setPaymentLogs] = useState([]);
   const [notificationEvent, setNotificationEvent] = useState('order_created');
   const [internalNotesDraft, setInternalNotesDraft] = useState('');
@@ -272,6 +274,28 @@ const MobileOrderDetailPage = () => {
     }
   };
 
+  const syncDokuStatus = async () => {
+    if (!order?.orderNumber) return;
+
+    setSyncingPayment(true);
+    try {
+      const result = await refreshDokuPaymentStatus(order.orderNumber);
+      const nextOrder = await getOrderById(order.id || order.orderNumber);
+      setOrder(nextOrder || order);
+      setPaymentLogs(await getOrderPaymentLogs(order.id || order.orderNumber));
+      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
+      if (result.syncApplied) {
+        toast.success(`DOKU synced: ${statusLabel}`);
+      } else {
+        toast.warning(result.syncWarning || 'DOKU checked, but order was not updated');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to sync DOKU status');
+    } finally {
+      setSyncingPayment(false);
+    }
+  };
+
   const copyDraft = async () => {
     try {
       await navigator.clipboard.writeText(order?.checkoutDraft || order?.notes || '');
@@ -401,6 +425,12 @@ const MobileOrderDetailPage = () => {
               <div className="mt-1 truncate text-sm font-bold text-[#0b130c]">{order.paymentReference || '-'}</div>
             </div>
           </div>
+          {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+            <Button type="button" variant="outline" className="mt-3 h-11 w-full rounded-2xl bg-white gap-2" onClick={syncDokuStatus} disabled={syncingPayment}>
+              {syncingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Sync DOKU status
+            </Button>
+          ) : null}
         </section>
 
         <section className="mobile-card p-4">
