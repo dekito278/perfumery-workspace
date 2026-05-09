@@ -1,14 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, CreditCard, ExternalLink, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CreditCard, ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { getOrderById } from '@/services/orderService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+const paymentStatusLabels = {
+  unpaid: 'Belum dibayar',
+  pending: 'Menunggu pembayaran',
+  paid: 'Pembayaran diterima',
+  failed: 'Pembayaran gagal',
+  expired: 'Pembayaran expired',
+  refunded: 'Refunded',
+};
 
 const readPaymentSession = () => {
   try {
@@ -47,6 +56,12 @@ const PaymentFrame = ({ session, compact = false }) => (
           <div className="text-[10px] uppercase text-[#6f7d61]">Total</div>
           <div className="mt-1">{formatTotal(session.amount)}</div>
         </div>
+        {session.paymentStatus ? (
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-[#6f7d61]">Status</div>
+            <div className="mt-1 truncate">{paymentStatusLabels[session.paymentStatus] || session.paymentStatus}</div>
+          </div>
+        ) : null}
       </div>
     </div>
     <div className={compact ? 'h-[68dvh] bg-white' : 'h-[74dvh] bg-white'}>
@@ -70,10 +85,10 @@ const PaymentFrame = ({ session, compact = false }) => (
   </section>
 );
 
-const EmptyPaymentState = ({ isMobile, orderNumber }) => (
+const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }) => (
   <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
-      {orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
+      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
     <h1 className={isMobile ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>
       {orderNumber ? 'Pembayaran sedang diproses' : 'Belum ada sesi pembayaran'}
@@ -90,6 +105,12 @@ const EmptyPaymentState = ({ isMobile, orderNumber }) => (
       <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
         Track order
       </Link>
+      {orderNumber && onRefresh ? (
+        <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </button>
+      ) : null}
     </div>
   </section>
 );
@@ -98,11 +119,52 @@ const PaymentPageContent = ({ isMobile }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
   const orderNumber = searchParams.get('order');
 
+  const loadPaymentSession = async () => {
+    const storedSession = readPaymentSession();
+    if (storedSession?.paymentUrl && (!orderNumber || storedSession.orderNumber === orderNumber || storedSession.invoiceNumber === orderNumber)) {
+      setSession(storedSession);
+      return;
+    }
+
+    if (!orderNumber) {
+      setSession(storedSession);
+      return;
+    }
+
+    setLoadingOrder(true);
+    try {
+      const order = await getOrderById(orderNumber);
+      if (order?.paymentUrl) {
+        const restoredSession = {
+          paymentUrl: order.paymentUrl,
+          invoiceNumber: order.orderNumber,
+          orderNumber: order.orderNumber,
+          customerCode: order.customerCode,
+          amount: order.subtotal,
+          customerName: order.customerName,
+          paymentStatus: order.paymentStatus,
+          paymentExpiresAt: order.paymentExpiresAt,
+          paymentSessionId: order.paymentSessionId,
+          createdAt: order.createdAt,
+        };
+        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(restoredSession));
+        setSession(restoredSession);
+        return;
+      }
+
+      setSession(storedSession);
+    } finally {
+      setLoadingOrder(false);
+    }
+  };
+
   useEffect(() => {
-    setSession(readPaymentSession());
-  }, []);
+    loadPaymentSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderNumber]);
 
   if (isMobile) {
     return (
@@ -118,7 +180,7 @@ const PaymentPageContent = ({ isMobile }) => {
             onBack={() => navigate('/mobile/cart')}
             action={<CreditCard className="h-5 w-5 text-amber-700" />}
           />
-          {session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} />}
+          {session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder} onRefresh={loadPaymentSession} />}
         </main>
       </MobileCommerceLayout>
     );
@@ -140,7 +202,7 @@ const PaymentPageContent = ({ isMobile }) => {
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} />}
+          {session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder} onRefresh={loadPaymentSession} />}
         </section>
       </main>
     </>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, PackageCheck, Trash2 } from 'lucide-react';
+import { Clipboard, CreditCard, ExternalLink, PackageCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -20,6 +20,14 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 
 const statusLabels = getOrderStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
+const paymentStatusLabels = {
+  unpaid: 'Unpaid',
+  pending: 'Pending payment',
+  paid: 'Paid',
+  failed: 'Failed',
+  expired: 'Expired',
+  refunded: 'Refunded',
+};
 
 const bespokeDetailRows = (item) => [
   ['Mood', item?.mood],
@@ -108,6 +116,19 @@ const OrdersPage = () => {
                       </div>
                     ) : null}
                     {order.notes ? <p className="mt-3 text-sm font-semibold text-muted-foreground">Notes: {order.notes}</p> : null}
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#263d27]">
+                        <CreditCard className="h-3.5 w-3.5" />
+                        {order.paymentProvider || 'manual'} / {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+                      </span>
+                      {order.paymentReference ? <span className="rounded-full bg-white px-3 py-1 text-muted-foreground">Ref {order.paymentReference}</span> : null}
+                      {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                        <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-[#263d27] px-3 py-1 text-[#eef2e8]">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Payment link
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="flex min-w-56 flex-col gap-3">
                     <div className="rounded-2xl border bg-white p-3 text-right">

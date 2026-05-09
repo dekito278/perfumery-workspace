@@ -370,12 +370,17 @@ export const useCheckoutFlow = ({
         amount: totalDue,
         customerName,
         contact,
+        items,
         callbackPath: paymentPath,
       });
       await updateOrderPaymentStatus(order.id || order.orderNumber, {
         paymentStatus: 'pending',
         paymentProvider: 'doku',
         paymentReference: checkout.requestId || '',
+        paymentUrl: checkout.paymentUrl,
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
+        paymentResponse: checkout.dokuResponse || {},
         status: 'pending_payment',
       });
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
@@ -385,6 +390,9 @@ export const useCheckoutFlow = ({
         customerCode: order.customerCode || customerCode,
         amount: totalDue,
         customerName,
+        paymentStatus: 'pending',
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
         shippingSummary,
         shippingFee,
         createdAt: new Date().toISOString(),

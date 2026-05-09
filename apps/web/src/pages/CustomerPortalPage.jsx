@@ -495,6 +495,12 @@ const CustomerPortalPage = () => {
                         <FileText className="h-4 w-4" />
                         Invoice
                       </Link>
+                      {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                        <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
+                          <CreditCard className="h-4 w-4" />
+                          Continue payment
+                        </a>
+                      ) : null}
                       <div className="mt-4">
                         <OrderProgressRail activeStep={activeStep} compact />
                       </div>
@@ -713,6 +719,12 @@ const CustomerPortalPage = () => {
                               <FileText className="h-4 w-4" />
                               Invoice / Receipt
                             </Link>
+                            {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                              <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
+                                <CreditCard className="h-4 w-4" />
+                                Continue payment
+                              </a>
+                            ) : null}
                             <div className="mt-5">
                               <OrderProgressRail activeStep={activeStep} />
                             </div>

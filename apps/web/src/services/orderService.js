@@ -183,6 +183,10 @@ const normalizeOrder = (order) => {
     paymentProvider: order.payment_provider || order.paymentProvider || 'manual',
     paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
     paymentReference: order.payment_reference || order.paymentReference || '',
+    paymentUrl: order.payment_url || order.paymentUrl || '',
+    paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
+    paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
+    paymentResponse: order.payment_response || order.paymentResponse || {},
     inventoryDeducted: Boolean(order.inventory_deducted || order.inventoryDeducted),
     inventoryEvents: normalizeInventoryEvents(order.inventory_events || order.inventoryEvents),
     productionLinks: normalizeProductionLinks(order.production_links || order.productionLinks),
@@ -772,6 +776,10 @@ export const updateOrderPaymentStatus = async (orderId, {
   paymentStatus,
   paymentProvider = 'doku',
   paymentReference = '',
+  paymentUrl = '',
+  paymentExpiresAt = '',
+  paymentSessionId = '',
+  paymentResponse = null,
   status,
 }) => {
   const currentOrder = await getOrderById(orderId);
@@ -779,6 +787,10 @@ export const updateOrderPaymentStatus = async (orderId, {
     payment_status: paymentStatus,
     payment_provider: paymentProvider,
     payment_reference: paymentReference,
+    ...(paymentUrl ? { payment_url: paymentUrl } : {}),
+    ...(paymentExpiresAt ? { payment_expires_at: paymentExpiresAt } : {}),
+    ...(paymentSessionId ? { payment_session_id: paymentSessionId } : {}),
+    ...(paymentResponse && typeof paymentResponse === 'object' ? { payment_response: paymentResponse } : {}),
     ...(status ? { status } : {}),
   };
 
@@ -789,10 +801,27 @@ export const updateOrderPaymentStatus = async (orderId, {
     const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) {
-      throw error;
+      const missingPaymentSessionColumn = ['payment_url', 'payment_expires_at', 'payment_session_id', 'payment_response']
+        .some((column) => String(error.message || '').includes(column));
+      if (missingPaymentSessionColumn) {
+        const legacyPatch = {
+          payment_status: paymentStatus,
+          payment_provider: paymentProvider,
+          payment_reference: paymentReference,
+          ...(status ? { status } : {}),
+        };
+        const retryQuery = supabase
+          .from('storefront_orders')
+          .update(legacyPatch);
+        const { error: retryError } = await (isUuid(orderId) ? retryQuery.eq('id', orderId) : retryQuery.eq('order_number', orderId));
+        if (retryError) throw retryError;
+        window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+      } else {
+        throw error;
+      }
+    } else {
+      window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     }
-
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
   } catch (error) {
     console.warn('Updating local storefront order payment fallback:', error.message || error);
     const nextOrders = readOrders().map(normalizeOrder).map((order) => (
@@ -802,6 +831,10 @@ export const updateOrderPaymentStatus = async (orderId, {
           paymentStatus,
           paymentProvider,
           paymentReference,
+          paymentUrl,
+          paymentExpiresAt,
+          paymentSessionId,
+          paymentResponse: paymentResponse || order.paymentResponse,
           ...(status ? { status } : {}),
           updatedAt: new Date().toISOString(),
         }

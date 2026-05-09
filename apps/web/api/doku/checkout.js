@@ -67,6 +67,29 @@ const normalizeCallbackPath = (value) => {
   return path;
 };
 
+const normalizeUrlBase = (value = '') => String(value || '').trim().replace(/\/$/, '');
+
+const toDokuLineItems = (items = []) => (
+  Array.isArray(items)
+    ? items.map((item) => ({
+      name: String(item.name || item.slug || 'Solivagant item').slice(0, 255),
+      quantity: Math.max(1, Math.round(Number(item.quantity || 1))),
+      price: Math.round(Number(item.priceNumber || item.totalPrice || item.price || 0)),
+      ...(item.slug ? { sku: String(item.slug).slice(0, 64) } : {}),
+      ...(item.type ? { type: String(item.type).slice(0, 64) } : {}),
+    })).filter((item) => item.price > 0)
+    : []
+);
+
+const parseDokuExpiredDate = (value) => {
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
+  if (!match) return '';
+  const [, year, month, day, hour, minute, second] = match;
+  const timestamp = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour) - 7, Number(minute), Number(second));
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : '';
+};
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -92,8 +115,21 @@ export default async function handler(request, response) {
       return jsonResponse(response, 400, { message: 'Order number and positive amount are required' });
     }
 
-    const callbackBaseUrl = String(input.callbackBaseUrl || process.env.DOKU_CALLBACK_BASE_URL || '').trim().replace(/\/$/, '');
+    const callbackBaseUrl = normalizeUrlBase(input.callbackBaseUrl || process.env.DOKU_CALLBACK_BASE_URL);
     const callbackPath = normalizeCallbackPath(input.callbackPath);
+    const notificationBaseUrl = normalizeUrlBase(input.notificationBaseUrl || process.env.DOKU_NOTIFICATION_BASE_URL || callbackBaseUrl);
+    const lineItems = toDokuLineItems(input.items);
+    const lineItemsTotal = lineItems.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    if (lineItems.length && lineItemsTotal > 0 && lineItemsTotal < amount) {
+      lineItems.push({
+        name: 'Shipping',
+        quantity: 1,
+        price: amount - lineItemsTotal,
+        type: 'shipping',
+      });
+    }
+    const requestLineItemsTotal = lineItems.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    const requestLineItems = requestLineItemsTotal === amount ? lineItems : [];
     const checkoutBody = {
       order: {
         amount,
@@ -101,6 +137,7 @@ export default async function handler(request, response) {
         currency: 'IDR',
         language: 'ID',
         auto_redirect: false,
+        ...(requestLineItems.length ? { line_items: requestLineItems } : {}),
         ...(callbackBaseUrl ? {
           callback_url: `${callbackBaseUrl}${callbackPath}?order=${encodeURIComponent(orderNumber)}`,
           callback_url_result: `${callbackBaseUrl}${callbackPath}?order=${encodeURIComponent(orderNumber)}&payment=doku`,
@@ -113,6 +150,11 @@ export default async function handler(request, response) {
         name: String(input.customerName || 'Solivagant Customer').trim(),
         ...contactToCustomer(input.contact),
       },
+      ...(notificationBaseUrl ? {
+        additional_info: {
+          override_notification_url: `${notificationBaseUrl}/api/doku/notification`,
+        },
+      } : {}),
     };
 
     const dokuBody = JSON.stringify(checkoutBody);
@@ -167,6 +209,9 @@ export default async function handler(request, response) {
     return jsonResponse(response, 200, {
       paymentUrl,
       invoiceNumber: checkoutPayload?.order?.invoice_number || orderNumber,
+      paymentSessionId: checkoutPayload?.order?.session_id || checkoutPayload?.payment?.token_id || checkoutPayload?.uuid || '',
+      paymentExpiresAt: parseDokuExpiredDate(checkoutPayload?.payment?.expired_date),
+      dokuResponse: checkoutPayload,
       requestId,
     });
   } catch (error) {

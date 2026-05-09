@@ -8,7 +8,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; frame-src 'self' blob:; child-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://*.doku.com; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.doku.com; worker-src 'self' blob:; frame-src 'self' blob: https://*.doku.com; child-src 'self' blob: https://*.doku.com; manifest-src 'self'; upgrade-insecure-requests"
         },
         {
           "key": "X-Frame-Options",
@@ -24,7 +24,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+          "value": "camera=(), microphone=(), geolocation=(), payment=(self \"https://*.doku.com\"), usb=(), interest-cohort=()"
         },
         {
           "key": "X-Robots-Tag",
