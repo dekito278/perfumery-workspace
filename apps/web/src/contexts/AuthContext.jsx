@@ -1,12 +1,12 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import supabase from '@/lib/supabaseClient.js';
+import supabase, { SUPABASE_AUTH_STORAGE_KEY } from '@/lib/supabaseClient.js';
 
 const AuthContext = createContext(null);
 const AUTH_INIT_TIMEOUT_MS = 5000;
-const AUTH_STORAGE_KEY_SUFFIX = '-auth-token';
 const MFA_REMEMBER_STORAGE_KEY = 'solivagant.auth.mfa-remembered.v1';
 const MFA_REMEMBER_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+const SESSION_EXPIRY_LEEWAY_SECONDS = 30;
 
 const getCachedSession = () => {
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -14,18 +14,19 @@ const getCachedSession = () => {
   }
 
   try {
-    const authStorageKey = Object.keys(window.localStorage).find((key) => key.endsWith(AUTH_STORAGE_KEY_SUFFIX));
-    if (!authStorageKey) {
-      return null;
-    }
-
-    const rawValue = window.localStorage.getItem(authStorageKey);
+    const rawValue = window.localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
     if (!rawValue) {
       return null;
     }
 
     const parsedValue = JSON.parse(rawValue);
     if (!parsedValue?.access_token || !parsedValue?.user) {
+      return null;
+    }
+
+    const expiresAt = Number(parsedValue.expires_at || 0);
+    if (expiresAt && expiresAt <= Math.floor(Date.now() / 1000) + SESSION_EXPIRY_LEEWAY_SECONDS) {
+      window.localStorage.removeItem(SUPABASE_AUTH_STORAGE_KEY);
       return null;
     }
 
@@ -91,6 +92,8 @@ export const AuthProvider = ({ children }) => {
   const [mfaChallenge, setMfaChallenge] = useState(null);
   const [mfaResolutionPending, setMfaResolutionPending] = useState(false);
   const mfaChallengeRef = useRef(null);
+  const manualSignOutRef = useRef(false);
+  const sessionRef = useRef(null);
   const authResolutionRef = useRef(0);
   const [session, setSession] = useState(null);
 
@@ -112,6 +115,7 @@ export const AuthProvider = ({ children }) => {
         window.clearTimeout(timeoutId);
         timeoutId = null;
       }
+      sessionRef.current = nextSession;
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
       setMfaResolutionPending(nextMfaResolutionPending);
@@ -219,6 +223,13 @@ export const AuthProvider = ({ children }) => {
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!nextSession?.user) {
         if (event === 'SIGNED_OUT') {
+          const cachedSession = getCachedSession();
+          if (!manualSignOutRef.current && cachedSession?.user) {
+            finishLoading(cachedSession, null, false);
+            return;
+          }
+
+          manualSignOutRef.current = false;
           authResolutionRef.current += 1;
           finishLoading(null, null, false);
           return;
@@ -233,6 +244,13 @@ export const AuthProvider = ({ children }) => {
 
           finishLoading(null, null, false);
         }
+        return;
+      }
+
+      const activeSession = sessionRef.current;
+      if (event === 'SIGNED_IN' && activeSession?.user?.id === nextSession.user.id && !mfaChallengeRef.current) {
+        authResolutionRef.current += 1;
+        finishLoading(nextSession, undefined, false);
         return;
       }
 
@@ -266,6 +284,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       setSession(data.session);
+      sessionRef.current = data.session;
       setCurrentUser(data.user);
       const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (factorsError) {
@@ -321,6 +340,7 @@ export const AuthProvider = ({ children }) => {
     const nextSession = data.session || verifiedSession;
 
     setSession(nextSession);
+    sessionRef.current = nextSession;
     setCurrentUser(data.user ?? nextSession?.user ?? null);
     rememberMfaSession(data.user?.id ?? nextSession?.user?.id);
     setActiveMfaChallenge(null);
@@ -352,6 +372,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setSession(data.session);
+    sessionRef.current = data.session;
     setCurrentUser(data.user ?? data.session?.user ?? null);
     rememberMfaSession(data.user?.id ?? data.session?.user?.id);
     setActiveMfaChallenge(null);
@@ -411,6 +432,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       setSession(data.session ?? null);
+      sessionRef.current = data.session ?? null;
       setCurrentUser(data.user ?? null);
       return {
         ...data,
@@ -449,6 +471,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    manualSignOutRef.current = true;
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -457,12 +480,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     setSession(null);
+    sessionRef.current = null;
     setCurrentUser(null);
     clearRememberedMfaSession();
     setActiveMfaChallenge(null);
   };
 
   const cancelMfaChallenge = async () => {
+    manualSignOutRef.current = true;
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -470,6 +495,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setSession(null);
+    sessionRef.current = null;
     setCurrentUser(null);
     clearRememberedMfaSession();
     setMfaResolutionPending(false);
