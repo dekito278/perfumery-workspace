@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { WorkerMessageHandler } from 'pdfjs-dist/legacy/build/pdf.worker.mjs';
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
@@ -69,6 +70,7 @@ const ensurePdfDomMatrix = () => {
 const getPdfRuntime = async () => {
   if (!pdfRuntimePromise) {
     ensurePdfDomMatrix();
+    globalThis.pdfjsWorker = { WorkerMessageHandler };
     pdfRuntimePromise = import('pdfjs-dist/legacy/build/pdf.mjs')
       .then((pdfjsModule) => ({ getDocument: pdfjsModule.getDocument }))
       .catch((error) => {

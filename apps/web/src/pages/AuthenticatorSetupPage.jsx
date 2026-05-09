@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Copy, KeyRound, ScanLine, ShieldCheck, Smartphone } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Copy, KeyRound, ScanLine, ShieldCheck, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -35,14 +35,37 @@ const SetupContent = ({ mobile = false }) => {
   const navigate = useNavigate();
   const {
     challengeAuthenticatorEnrollment,
+    disableAuthenticator,
     enrollAuthenticator,
+    listAuthenticatorFactors,
     verifyAuthenticatorEnrollment,
   } = useAuth();
   const [factor, setFactor] = useState(null);
+  const [activeFactors, setActiveFactors] = useState([]);
   const [challengeId, setChallengeId] = useState('');
   const [code, setCode] = useState('');
+  const [disableConfirm, setDisableConfirm] = useState('');
+  const [loadingFactors, setLoadingFactors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [disabling, setDisabling] = useState('');
+
+  const loadFactors = async () => {
+    setLoadingFactors(true);
+    try {
+      const factors = await listAuthenticatorFactors();
+      setActiveFactors(factors.filter((item) => item.status === 'verified'));
+    } catch (error) {
+      toast.error(error.message || 'Failed to load authenticator settings');
+    } finally {
+      setLoadingFactors(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFactors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startSetup = async () => {
     setLoading(true);
@@ -71,6 +94,7 @@ const SetupContent = ({ mobile = false }) => {
         code,
       });
       toast.success('Authenticator enabled');
+      await loadFactors();
       navigate(mobile ? '/mobile/studio' : '/studio', { replace: true });
     } catch (error) {
       toast.error(error.message || 'Invalid authenticator code');
@@ -83,6 +107,28 @@ const SetupContent = ({ mobile = false }) => {
     if (!factor?.totp?.secret) return;
     await navigator.clipboard.writeText(factor.totp.secret);
     toast.success('Manual key copied');
+  };
+
+  const handleDisableAuthenticator = async (factorId) => {
+    if (disableConfirm.trim().toUpperCase() !== 'DISABLE') {
+      toast.error('Type DISABLE first to confirm');
+      return;
+    }
+
+    setDisabling(factorId);
+    try {
+      await disableAuthenticator(factorId);
+      setDisableConfirm('');
+      setFactor(null);
+      setChallengeId('');
+      setCode('');
+      await loadFactors();
+      toast.success('Authenticator disabled');
+    } catch (error) {
+      toast.error(error.message || 'Failed to disable authenticator');
+    } finally {
+      setDisabling('');
+    }
   };
 
   const qrCode = factor?.totp?.qr_code;
@@ -192,6 +238,70 @@ const SetupContent = ({ mobile = false }) => {
               {verifying ? 'Verifying...' : 'Enable authenticator'}
             </Button>
           </form>
+        )}
+      </section>
+
+      <section className={setupSectionClassName}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase text-rose-700">MFA settings</div>
+            <h2 className="mt-1 text-base font-bold text-[#1f2937]">Nonaktifkan authenticator</h2>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+              Matikan MFA hanya untuk perangkat/account yang memang aman. Setelah dimatikan, login tidak akan meminta kode 6 digit.
+            </p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-700">
+            <AlertTriangle className="h-4 w-4" />
+          </span>
+        </div>
+
+        {loadingFactors ? (
+          <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 text-sm font-semibold text-[#6b7280]">
+            Loading MFA settings...
+          </div>
+        ) : activeFactors.length ? (
+          <div className="mt-4 grid gap-3">
+            {activeFactors.map((activeFactor) => (
+              <div key={activeFactor.id} className="rounded-2xl border border-rose-100 bg-rose-50/70 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-[#1f2937]">
+                      {activeFactor.friendly_name || 'Authenticator app'}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-[#6b7280]">
+                      Status: {activeFactor.status || 'verified'}
+                    </div>
+                  </div>
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-rose-700" />
+                </div>
+                <div className="mt-3 grid gap-2">
+                  <Label htmlFor={`disable-${activeFactor.id}`} className="text-xs">
+                    Ketik DISABLE untuk konfirmasi
+                  </Label>
+                  <Input
+                    id={`disable-${activeFactor.id}`}
+                    value={disableConfirm}
+                    onChange={(event) => setDisableConfirm(event.target.value)}
+                    placeholder="DISABLE"
+                    className="h-11 rounded-2xl bg-white font-bold uppercase"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="h-11 rounded-2xl"
+                    disabled={disabling === activeFactor.id || disableConfirm.trim().toUpperCase() !== 'DISABLE'}
+                    onClick={() => handleDisableAuthenticator(activeFactor.id)}
+                  >
+                    {disabling === activeFactor.id ? 'Disabling...' : 'Disable MFA'}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 text-sm font-semibold text-[#6b7280]">
+            Belum ada authenticator aktif untuk account ini.
+          </div>
         )}
       </section>
     </main>

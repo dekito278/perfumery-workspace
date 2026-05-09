@@ -5,6 +5,8 @@ import supabase from '@/lib/supabaseClient.js';
 const AuthContext = createContext(null);
 const AUTH_INIT_TIMEOUT_MS = 5000;
 const AUTH_STORAGE_KEY_SUFFIX = '-auth-token';
+const MFA_REMEMBER_STORAGE_KEY = 'solivagant.auth.mfa-remembered.v1';
+const MFA_REMEMBER_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
 const getCachedSession = () => {
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -34,6 +36,55 @@ const getCachedSession = () => {
   }
 };
 
+const readRememberedMfaSession = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null;
+  }
+
+  try {
+    const remembered = JSON.parse(window.localStorage.getItem(MFA_REMEMBER_STORAGE_KEY) || 'null');
+    if (!remembered?.userId || !remembered?.verifiedAt) {
+      return null;
+    }
+
+    if (Date.now() - Number(remembered.verifiedAt) > MFA_REMEMBER_DURATION_MS) {
+      window.localStorage.removeItem(MFA_REMEMBER_STORAGE_KEY);
+      return null;
+    }
+
+    return remembered;
+  } catch {
+    return null;
+  }
+};
+
+const rememberMfaSession = (userId) => {
+  if (typeof window === 'undefined' || !window.localStorage || !userId) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(MFA_REMEMBER_STORAGE_KEY, JSON.stringify({
+      userId,
+      verifiedAt: Date.now(),
+    }));
+  } catch {
+    // Remembering MFA is a convenience path; auth must still work without storage.
+  }
+};
+
+const clearRememberedMfaSession = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(MFA_REMEMBER_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -57,6 +108,10 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       setSession(nextSession);
       setCurrentUser(nextSession?.user ?? null);
       setMfaResolutionPending(nextMfaResolutionPending);
@@ -68,8 +123,13 @@ export const AuthProvider = ({ children }) => {
       setInitialLoading(false);
     };
 
-    const resolveMfaChallenge = async (nextSession) => {
+    const resolveMfaChallenge = async (nextSession, { allowRememberedSession = false } = {}) => {
       if (!nextSession?.user) {
+        return null;
+      }
+
+      const rememberedMfa = allowRememberedSession ? readRememberedMfaSession() : null;
+      if (rememberedMfa?.userId === nextSession.user.id) {
         return null;
       }
 
@@ -103,7 +163,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    const finishWithResolvedMfa = async (nextSession = null) => {
+    const finishWithResolvedMfa = async (nextSession = null, options = {}) => {
       const resolutionId = authResolutionRef.current + 1;
       authResolutionRef.current = resolutionId;
 
@@ -111,7 +171,7 @@ export const AuthProvider = ({ children }) => {
         setMfaResolutionPending(true);
       }
 
-      const nextMfaChallenge = await resolveMfaChallenge(nextSession);
+      const nextMfaChallenge = await resolveMfaChallenge(nextSession, options);
       if (authResolutionRef.current !== resolutionId) {
         return;
       }
@@ -132,11 +192,11 @@ export const AuthProvider = ({ children }) => {
         }
 
         const nextSession = initialSession || cachedSession;
-        await finishWithResolvedMfa(nextSession);
+        await finishWithResolvedMfa(nextSession, { allowRememberedSession: true });
       } catch (error) {
         console.error('Unexpected auth initialization error:', error);
         const cachedSession = getCachedSession();
-        await finishWithResolvedMfa(cachedSession);
+        await finishWithResolvedMfa(cachedSession, { allowRememberedSession: true });
       }
     };
 
@@ -156,14 +216,20 @@ export const AuthProvider = ({ children }) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!nextSession?.user) {
         authResolutionRef.current += 1;
         finishLoading(null, null, false);
         return;
       }
 
-      finishWithResolvedMfa(nextSession);
+      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        authResolutionRef.current += 1;
+        finishLoading(nextSession, undefined, false);
+        return;
+      }
+
+      finishWithResolvedMfa(nextSession, { allowRememberedSession: true });
     });
 
     return () => {
@@ -243,6 +309,7 @@ export const AuthProvider = ({ children }) => {
 
     setSession(nextSession);
     setCurrentUser(data.user ?? nextSession?.user ?? null);
+    rememberMfaSession(data.user?.id ?? nextSession?.user?.id);
     setActiveMfaChallenge(null);
     return { ...data, session: nextSession };
   };
@@ -273,6 +340,7 @@ export const AuthProvider = ({ children }) => {
 
     setSession(data.session);
     setCurrentUser(data.user ?? data.session?.user ?? null);
+    rememberMfaSession(data.user?.id ?? data.session?.user?.id);
     setActiveMfaChallenge(null);
     return data;
   };
@@ -285,6 +353,32 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
+  };
+
+  const listAuthenticatorFactors = async () => {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+
+    if (error) {
+      throw new Error(error.message || 'Failed to load authenticator settings');
+    }
+
+    return data?.totp || [];
+  };
+
+  const disableAuthenticator = async (factorId) => {
+    if (!factorId) {
+      throw new Error('Authenticator factor is required');
+    }
+
+    const { error } = await supabase.auth.mfa.unenroll({ factorId });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to disable authenticator');
+    }
+
+    clearRememberedMfaSession();
+    setActiveMfaChallenge(null);
+    return true;
   };
 
   const signup = async (email, password, _passwordConfirm, name) => {
@@ -351,6 +445,7 @@ export const AuthProvider = ({ children }) => {
 
     setSession(null);
     setCurrentUser(null);
+    clearRememberedMfaSession();
     setActiveMfaChallenge(null);
   };
 
@@ -363,6 +458,7 @@ export const AuthProvider = ({ children }) => {
 
     setSession(null);
     setCurrentUser(null);
+    clearRememberedMfaSession();
     setMfaResolutionPending(false);
     setActiveMfaChallenge(null);
   };
@@ -376,7 +472,9 @@ export const AuthProvider = ({ children }) => {
     cancelMfaChallenge,
     challengeAuthenticatorEnrollment,
     currentUser,
+    disableAuthenticator,
     enrollAuthenticator,
+    listAuthenticatorFactors,
     login,
     requestPasswordReset,
     signup,
