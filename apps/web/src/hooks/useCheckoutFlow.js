@@ -7,7 +7,7 @@ import {
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
-import { createOrder, updateOrderPaymentStatus } from '@/services/orderService.js';
+import { createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import {
   describeShippingRate,
   getCheckoutShippingWeight,
@@ -17,47 +17,15 @@ import {
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
-const extractPostalCode = (value = '') => String(value).match(/\b\d{5}\b/)?.[0] || '';
-
-const buildAddressSearchTerms = (address = '') => {
-  const normalized = String(address || '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const postalCode = extractPostalCode(normalized);
-  const parts = normalized
-    .split(',')
-    .map((part) => part.trim())
-    .filter((part) => part.length >= 3)
-    .filter((part) => !/^[A-Z0-9+]{4,}$/i.test(part));
-  const terms = [
-    postalCode,
-    parts.slice(-3).join(' '),
-    parts.slice(-2).join(' '),
-    parts.find((part) => /\b(kota|kab|regency|city|jakarta|bogor|bekasi|depok|tangerang|bandung|surabaya)\b/i.test(part)),
-    parts.at(-2),
-    parts.at(-1),
-  ];
-
-  return [...new Set(terms.map((term) => String(term || '').trim()).filter((term) => term.length >= 3))];
-};
-
-const scoreDestinationMatch = (destination, address = '') => {
-  const normalizedAddress = String(address || '').toLowerCase();
-  const postalCode = extractPostalCode(address);
-  const fields = [
-    destination.zipCode,
-    destination.subdistrictName,
-    destination.districtName,
-    destination.cityName,
-    destination.provinceName,
-    destination.label,
-  ].map((value) => String(value || '').toLowerCase());
-
-  return fields.reduce((score, field) => (
-    score
-    + (field && normalizedAddress.includes(field) ? 8 : 0)
-    + (postalCode && field.includes(postalCode) ? 20 : 0)
-  ), 0);
+const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
+  const message = String(error?.message || error || '').trim();
+  if (/destination|domestic|data not found|not found/i.test(message)) {
+    return 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.';
+  }
+  if (/network|fetch|failed|unavailable/i.test(message)) {
+    return 'Layanan ongkir belum bisa dihubungi. Coba lagi beberapa saat.';
+  }
+  return fallback;
 };
 
 export const checkoutCourierOptions = [
@@ -99,6 +67,16 @@ export const useCheckoutFlow = ({
   const totalDue = Number(summary.subtotal || 0) + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
+  const canSubmitCheckout = Boolean(
+    items.length
+    && customerName.trim()
+    && contact.trim()
+    && deliveryAddress.trim()
+    && selectedCourier
+    && selectedDestination
+    && selectedShipping
+    && !saving
+  );
   const checkoutDraft = useMemo(() => buildCheckoutDraft({
     customerCode,
     customerName,
@@ -137,12 +115,11 @@ export const useCheckoutFlow = ({
     const nextValue = String(value || '');
     setDestinationSearch(nextValue);
     setDeliveryArea(nextValue);
-    resetShipping();
+    resetShipping({ keepSearch: true });
   };
 
   const updateDeliveryAddress = (value) => {
     setDeliveryAddress(value);
-    resetShipping();
   };
 
   const applyCheckoutCustomer = (customer) => {
@@ -161,24 +138,23 @@ export const useCheckoutFlow = ({
   const searchDestinations = async () => {
     const search = destinationSearch.trim();
     if (search.length < 3) {
-      toast.error('Isi minimal 3 huruf area tujuan');
+      toast.error('Isi minimal 3 huruf area, kecamatan, atau kota');
       return;
     }
 
     setShippingLoading(true);
     setShippingError('');
     setSelectedDestination(null);
-    setSelectedCourier('');
     setSelectedShipping(null);
     setShippingOptions([]);
     try {
       const destinations = await searchShippingDestinations(search);
       setDestinationOptions(destinations);
       if (!destinations.length) {
-        setShippingError('Area tujuan tidak ditemukan');
+        setShippingError('Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
       }
     } catch (error) {
-      setShippingError(error.message || 'Gagal mencari area tujuan');
+      setShippingError(getFriendlyShippingError(error));
     } finally {
       setShippingLoading(false);
     }
@@ -189,10 +165,14 @@ export const useCheckoutFlow = ({
     setDeliveryArea(destination.label);
     setDestinationSearch(destination.label);
     setDestinationOptions([]);
-    setShippingLoading(true);
-    setShippingError('');
     setSelectedShipping(null);
     setShippingOptions([]);
+    if (!selectedCourier) {
+      setShippingError('Pilih ekspedisi dulu untuk melihat layanan ongkir.');
+      return;
+    }
+    setShippingLoading(true);
+    setShippingError('');
     try {
       const rates = await getShippingRates({
         destinationId: destination.id,
@@ -204,16 +184,16 @@ export const useCheckoutFlow = ({
         setShippingError('Belum ada ongkir untuk area ini');
       }
     } catch (error) {
-      setShippingError(error.message || 'Gagal menghitung ongkir');
+      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pilih area atau kurir lain.'));
     } finally {
       setShippingLoading(false);
     }
   };
 
   const autoCalculateShipping = async () => {
-    const terms = buildAddressSearchTerms(deliveryAddress);
-    if (!deliveryAddress.trim() || !terms.length) {
-      toast.error('Isi alamat lengkap beserta kota atau kode pos dulu');
+    const search = destinationSearch.trim();
+    if (search.length < 3) {
+      toast.error('Isi area ongkir dulu, contoh: Jakarta Selatan');
       return;
     }
     if (!selectedCourier) {
@@ -224,43 +204,35 @@ export const useCheckoutFlow = ({
     setShippingLoading(true);
     setShippingError('');
     setDestinationOptions([]);
-    setSelectedDestination(null);
     setSelectedShipping(null);
     setShippingOptions([]);
 
     try {
-      let lastDestinations = [];
-      for (const term of terms) {
-        const destinations = await searchShippingDestinations(term);
-        lastDestinations = destinations;
-        const sortedDestinations = [...destinations].sort((first, second) => (
-          scoreDestinationMatch(second, deliveryAddress) - scoreDestinationMatch(first, deliveryAddress)
-        ));
+      if (selectedDestination?.id && String(selectedDestination.label || '').trim() === search) {
+        const rates = await getShippingRates({
+          destinationId: selectedDestination.id,
+          weight: shippingWeight,
+          couriers: [selectedCourier],
+        });
 
-        for (const destination of sortedDestinations) {
-          const rates = await getShippingRates({
-            destinationId: destination.id,
-            weight: shippingWeight,
-            couriers: [selectedCourier],
-          });
-
-          if (rates.length) {
-            const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
-            setSelectedDestination(destination);
-            setDeliveryArea(destination.label);
-            setDestinationSearch(destination.label);
-            setShippingOptions(sortedRates);
-            return;
-          }
+        if (rates.length) {
+          const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
+          setShippingOptions(sortedRates);
+          return;
         }
+
+        setShippingError('Area ditemukan, tapi ongkir belum tersedia untuk kurir ini. Pilih area lain atau kurir lain.');
+        return;
       }
 
-      setDestinationOptions(lastDestinations);
-      setShippingError(lastDestinations.length
-        ? 'Area ditemukan, tapi ongkir belum tersedia. Pilih area manual atau lengkapi kode pos.'
-        : 'Area tujuan belum ditemukan. Lengkapi alamat dengan kota dan kode pos.');
+      setSelectedDestination(null);
+      const destinations = await searchShippingDestinations(search);
+      setDestinationOptions(destinations);
+      setShippingError(destinations.length
+        ? 'Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.'
+        : 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
     } catch (error) {
-      setShippingError(error.message || 'Gagal menghitung ongkir otomatis');
+      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.'));
     } finally {
       setShippingLoading(false);
     }
@@ -300,10 +272,6 @@ export const useCheckoutFlow = ({
     setSelectedCourier(courierCode);
     setSelectedShipping(null);
     setShippingOptions([]);
-    setSelectedDestination(null);
-    setDestinationOptions([]);
-    setDeliveryArea('');
-    setDestinationSearch('');
     setShippingError('');
   };
 
@@ -351,6 +319,7 @@ export const useCheckoutFlow = ({
     }
 
     setSaving(true);
+    let createdOrder = null;
     try {
       const order = await createOrder({
         customerName,
@@ -365,6 +334,7 @@ export const useCheckoutFlow = ({
         checkoutDraft,
         paymentProvider: 'doku',
       });
+      createdOrder = order;
       const checkout = await createDokuCheckout({
         order,
         amount: totalDue,
@@ -403,6 +373,13 @@ export const useCheckoutFlow = ({
       onSuccess?.(order);
       navigate(paymentPath);
     } catch (error) {
+      if (createdOrder) {
+        try {
+          await updateOrderStatus(createdOrder.id || createdOrder.orderNumber, 'cancelled');
+        } catch (restoreError) {
+          console.warn('Failed to cancel checkout order after payment session error:', restoreError.message || restoreError);
+        }
+      }
       toast.error(error.message || 'Failed to save order');
     } finally {
       setSaving(false);
@@ -434,6 +411,7 @@ export const useCheckoutFlow = ({
     totalDue,
     shippingSummary,
     shippingWeight,
+    canSubmitCheckout,
     setCustomerName,
     setContact,
     setDeliveryAddress: updateDeliveryAddress,

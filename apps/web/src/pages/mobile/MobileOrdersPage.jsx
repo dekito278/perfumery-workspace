@@ -112,7 +112,7 @@ const MobileOrdersPage = () => {
             <div>
               <div className="text-[10px] font-bold uppercase text-[#263d27]">DOKU payment flow</div>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Checkout mengunci stok sekali, lalu payment callback mengubah status menjadi Paid otomatis. Setelah itu Studio tinggal lanjut Processing, Shipped, lalu Completed.
+                Checkout reserve stok sekali untuk mencegah oversell. Jika payment gagal, expired, refunded, atau order dibatalkan, stok dikembalikan otomatis.
               </p>
             </div>
           </div>
@@ -186,7 +186,7 @@ const MobileOrdersPage = () => {
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${getPaymentStatusClassName(order.paymentStatus)}`}>
                     {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                   </span>
-                  {order.inventoryDeducted ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase text-emerald-700">Stock cut</span> : null}
+                  {order.inventoryDeducted ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase text-emerald-700">Stock reserved</span> : null}
                 </div>
               </div>
               {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Local draft</div> : null}

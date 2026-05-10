@@ -536,7 +536,7 @@ export const updateOrderStatus = async (orderId, status) => {
     }
 
     if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
-      await restoreInventoryForOrder(currentOrder, 'Order cancelled stock restored');
+      await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
     }
 
     return getOrders();
@@ -544,7 +544,7 @@ export const updateOrderStatus = async (orderId, status) => {
     console.warn('Updating local storefront order fallback:', error.message || error);
     let restoredEvents = [];
     if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
-      restoredEvents = await restoreInventoryForOrder(currentOrder, 'Order cancelled stock restored');
+      restoredEvents = await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
     }
     const nextOrders = readOrders().map(normalizeOrder).map((order) => (
       order.id === orderId || order.orderNumber === orderId
@@ -867,7 +867,7 @@ export const updateOrderPaymentStatus = async (orderId, {
   }
 
   if (INVENTORY_RESTORE_PAYMENT_STATUSES.includes(paymentStatus) && currentOrder?.inventoryDeducted) {
-    const restoreEvents = await restoreInventoryForOrder(currentOrder, `Payment ${paymentStatus} stock restored`);
+    const restoreEvents = await restoreInventoryForOrder(currentOrder, `Payment ${paymentStatus} stock released`);
     if (restoreEvents.length) {
       await markOrderInventoryRestored(orderId, currentOrder.inventoryEvents, restoreEvents);
       window.dispatchEvent(new CustomEvent('dekito:orders-updated'));

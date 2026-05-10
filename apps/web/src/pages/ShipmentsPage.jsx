@@ -1,23 +1,96 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, PackageCheck, Truck } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, PackageCheck, Save, Truck } from 'lucide-react';
+import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
+import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
+import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
+
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+const formatDate = (value) => (value
+  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  : '-');
+
+const shipmentStatusLabels = getShipmentStatusLabels();
+
+const buildShipmentDraft = (order = {}) => ({
+  shipmentStatus: order.shipmentStatus || 'not_ready',
+  courierName: order.courierName || '',
+  trackingNumber: order.trackingNumber || '',
+  trackingUrl: order.trackingUrl || '',
+  packingNotes: order.packingNotes || '',
+});
 
 const ShipmentsPage = () => {
   const navigate = useNavigate();
-  const { summary } = useOrders();
+  const { orders, summary, loading, reload } = useOrders();
+  const [drafts, setDrafts] = useState({});
+  const [savingOrder, setSavingOrder] = useState('');
+
+  const shipmentOrders = useMemo(() => (
+    orders.filter((order) => order.status !== 'cancelled')
+  ), [orders]);
+
+  useEffect(() => {
+    setDrafts((current) => {
+      const nextDrafts = { ...current };
+      shipmentOrders.forEach((order) => {
+        const key = order.id || order.orderNumber;
+        if (!nextDrafts[key]) {
+          nextDrafts[key] = buildShipmentDraft(order);
+        }
+      });
+      return nextDrafts;
+    });
+  }, [shipmentOrders]);
+
+  const updateDraft = (order, field, value) => {
+    const key = order.id || order.orderNumber;
+    setDrafts((current) => ({
+      ...current,
+      [key]: {
+        ...buildShipmentDraft(order),
+        ...current[key],
+        [field]: value,
+      },
+    }));
+  };
+
+  const saveShipment = async (order) => {
+    const key = order.id || order.orderNumber;
+    const draft = drafts[key] || buildShipmentDraft(order);
+    setSavingOrder(key);
+    try {
+      await updateOrderShipment(key, draft);
+      await reload();
+      toast.success(`${order.orderNumber} shipment saved`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to save shipment');
+    } finally {
+      setSavingOrder('');
+    }
+  };
+
+  const exportShippingLabel = (order) => {
+    if (!canExportShippingLabel(order)) {
+      toast.error('Resi PDF tersedia setelah payment paid');
+      return;
+    }
+    exportShippingLabelPdf(order);
+    toast.success(`${order.orderNumber} resi PDF prepared`);
+  };
 
   return (
     <AuthenticatedLayout>
       <Helmet>
         <title>Shipments - Solivagant</title>
-        <meta name="description" content="Prepare future e-commerce shipment workflows for Solivagant orders." />
+        <meta name="description" content="Manage shipment fulfillment for Solivagant orders." />
       </Helmet>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4">
           <Button variant="ghost" className="h-9 gap-2 rounded-2xl" onClick={() => navigate('/studio')}>
             <ArrowLeft className="h-4 w-4" />
@@ -29,36 +102,125 @@ const ShipmentsPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Truck className="h-4 w-4 text-primary" />
-              E-commerce
+              E-commerce fulfillment
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Shipments</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Area ini disiapkan untuk tracking fulfillment, resi, courier, shipping status, dan handoff dari order e-commerce.
+              Simpan kurir, nomor resi, status pengiriman, dan cetak label setelah order paid.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button className="h-11 rounded-2xl gap-2" onClick={() => navigate('/studio/orders')}>
-                <PackageCheck className="h-4 w-4" />
-                Open orders
-              </Button>
-            </div>
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Active orders</span><strong>{summary.active}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total orders</span><strong>{summary.total}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Shipment rows</span><strong>{shipmentOrders.length}</strong></div>
           </div>
         </div>
 
-        <section className="rounded-2xl border bg-white/90 p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
-              <Truck className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-xl font-bold">Shipment module coming next</h2>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-muted-foreground">
-                Untuk sekarang, payment dan manual order flow tetap masuk ke Orders. Nanti shipment bisa mengambil order yang sudah siap kirim, lalu menyimpan courier, tracking number, status delivery, dan notes packing.
-              </p>
-            </div>
+        <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl font-bold">Fulfillment queue</h2>
+            <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/studio/orders')}>
+              <PackageCheck className="h-4 w-4" />
+              Orders
+            </Button>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            {shipmentOrders.map((order) => {
+              const key = order.id || order.orderNumber;
+              const draft = drafts[key] || buildShipmentDraft(order);
+              const paid = order.paymentStatus === 'paid';
+
+              return (
+                <article key={key} className="rounded-2xl border bg-[#fbfaf7] p-4">
+                  <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-bold">{order.orderNumber}</h3>
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${paid ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+                          {paid ? 'Paid' : 'Waiting payment'}
+                        </span>
+                        <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
+                          {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                        {formatDate(order.createdAt)} / {order.customerName} / {order.contact}
+                      </p>
+                      <div className="mt-3 grid gap-2">
+                        {(order.items || []).map((item) => (
+                          <div key={`${key}-${item.slug || item.name}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
+                            <span className="min-w-0 truncate">{item.name} x{item.quantity}{item.size ? ` / ${item.size}` : ''}</span>
+                            <span className="shrink-0 text-amber-700">{item.price || '-'}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 rounded-2xl bg-white px-3 py-2 text-sm font-bold">
+                        Total {formatTotal(order.subtotal)}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <select
+                        value={draft.shipmentStatus}
+                        onChange={(event) => updateDraft(order, 'shipmentStatus', event.target.value)}
+                        className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300"
+                      >
+                        {Object.entries(shipmentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </select>
+                      <input
+                        value={draft.courierName}
+                        onChange={(event) => updateDraft(order, 'courierName', event.target.value)}
+                        placeholder="Kurir, contoh: JNE / J&T"
+                        className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                      />
+                      <input
+                        value={draft.trackingNumber}
+                        onChange={(event) => updateDraft(order, 'trackingNumber', event.target.value)}
+                        placeholder="Nomor resi"
+                        className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                      />
+                      <input
+                        value={draft.trackingUrl}
+                        onChange={(event) => updateDraft(order, 'trackingUrl', event.target.value)}
+                        placeholder="Tracking URL opsional"
+                        className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                      />
+                      <textarea
+                        value={draft.packingNotes}
+                        onChange={(event) => updateDraft(order, 'packingNotes', event.target.value)}
+                        rows={2}
+                        placeholder="Catatan packing..."
+                        className="rounded-2xl border bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => saveShipment(order)} disabled={savingOrder === key}>
+                          {savingOrder === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                          Save shipment
+                        </Button>
+                        <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}>
+                          <Download className="h-4 w-4" />
+                          Resi PDF
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+
+            {!shipmentOrders.length && !loading ? (
+              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
+                <Truck className="mx-auto h-8 w-8 text-amber-700" />
+                <h3 className="mt-3 font-bold">No shipment rows yet</h3>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">Order checkout akan muncul di sini setelah tersimpan.</p>
+              </div>
+            ) : null}
+            {loading && !shipmentOrders.length ? (
+              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center text-sm font-bold text-muted-foreground">
+                Loading shipments...
+              </div>
+            ) : null}
           </div>
         </section>
       </div>

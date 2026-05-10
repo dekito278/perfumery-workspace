@@ -40,6 +40,7 @@ const MobileCartPage = () => {
     securityChallenge,
     securityAnswer,
     lookupLoading,
+    destinationSearch,
     destinationOptions,
     selectedDestination,
     shippingOptions,
@@ -49,6 +50,7 @@ const MobileCartPage = () => {
     shippingError,
     shippingFee,
     totalDue,
+    canSubmitCheckout,
     setCustomerName,
     setContact,
     setDeliveryAddress,
@@ -57,6 +59,8 @@ const MobileCartPage = () => {
     setSelectedShipping,
     chooseShippingCourier,
     updateCustomerCode,
+    updateDestinationSearch,
+    searchDestinations,
     autoCalculateShipping,
     loadShippingRates,
     lookupCustomer,
@@ -217,8 +221,9 @@ const MobileCartPage = () => {
               </section>
 
               <section className="mobile-card p-3">
-                <h2 className="text-sm font-bold text-[#1f2937]">Customer</h2>
+                <h2 className="text-sm font-bold text-[#1f2937]">Customer & delivery</h2>
                 <div className="mt-3 grid gap-2">
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Data customer</div>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
                     <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold uppercase outline-none focus:border-amber-300" />
                     <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Load'}</Button>
@@ -238,7 +243,20 @@ const MobileCartPage = () => {
                   ) : null}
                   <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Alamat & ongkir</div>
+                  <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <div className="grid gap-2">
+                    <div className="text-[10px] font-bold uppercase text-amber-700">Area ongkir</div>
+                    <div className="grid grid-cols-[1fr_auto] gap-2">
+                      <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota, contoh: Jakarta Selatan" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                      <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
+                        Cari area
+                      </Button>
+                    </div>
+                    <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                      Alamat lengkap untuk kurir. Area ongkir untuk tarif RajaOngkir.
+                    </p>
+                  </div>
                   <div className="grid gap-2">
                     <div className="text-[10px] font-bold uppercase text-amber-700">Pilih ekspedisi</div>
                     <select
@@ -252,8 +270,8 @@ const MobileCartPage = () => {
                       ))}
                     </select>
                   </div>
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || deliveryAddress.trim().length < 8}>
-                    {shippingLoading ? 'Menghitung ongkir...' : 'Hitung ongkir otomatis'}
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+                    {shippingLoading ? 'Menghitung ongkir...' : selectedDestination ? 'Tampilkan layanan ongkir' : 'Cari area ongkir'}
                   </Button>
                   {selectedDestination ? (
                     <p className="rounded-2xl bg-[#eef2e8] px-3 py-2 text-[11px] font-bold text-[#263d27]">
@@ -262,7 +280,7 @@ const MobileCartPage = () => {
                   ) : null}
                   {destinationOptions.length ? (
                     <div className="grid gap-2">
-                      <div className="text-[10px] font-bold uppercase text-amber-700">Pilih area jika hasil otomatis belum tepat</div>
+                      <div className="text-[10px] font-bold uppercase text-amber-700">Pilih area tujuan</div>
                       {destinationOptions.map((destination) => (
                         <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4] px-3 py-2 text-left text-xs font-bold text-[#263d27]">
                           {destination.label}
@@ -308,7 +326,12 @@ const MobileCartPage = () => {
               </section>
 
               <div className="grid gap-2">
-                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={saving}>
+                {!canSubmitCheckout ? (
+                  <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                    Lengkapi customer, alamat, area ongkir, ekspedisi, dan layanan ongkir untuk lanjut bayar.
+                  </p>
+                ) : null}
+                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={!canSubmitCheckout}>
                   <CreditCard className="h-4 w-4" />
                   {saving ? 'Memproses...' : 'Bayar sekarang'}
                 </Button>

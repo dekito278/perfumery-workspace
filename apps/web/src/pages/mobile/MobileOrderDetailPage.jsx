@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clipboard, Copy, CreditCard, ExternalLink, Factory, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
+import { ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -28,6 +28,7 @@ import {
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -296,6 +297,15 @@ const MobileOrderDetailPage = () => {
     }
   };
 
+  const exportShippingLabel = () => {
+    if (!canExportShippingLabel(order)) {
+      toast.error('Resi PDF tersedia setelah payment paid');
+      return;
+    }
+    exportShippingLabelPdf(order);
+    toast.success('Resi PDF prepared');
+  };
+
   const copyDraft = async () => {
     try {
       await navigator.clipboard.writeText(order?.checkoutDraft || order?.notes || '');
@@ -452,7 +462,7 @@ const MobileOrderDetailPage = () => {
               Inventory linkage
             </div>
             <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${order.inventoryDeducted ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-              {order.inventoryDeducted ? 'Deducted' : 'Waiting paid'}
+              {order.inventoryDeducted ? 'Reserved' : 'Waiting checkout'}
             </span>
           </div>
           {order.inventoryEvents?.length ? (
@@ -474,7 +484,7 @@ const MobileOrderDetailPage = () => {
             </div>
           ) : (
             <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-              Stok produk ready otomatis berkurang satu kali saat checkout tersimpan. Order bespoke hanya dicatat ke linkage produksi.
+              Stok produk ready di-reserve saat checkout tersimpan untuk mencegah oversell. Jika payment gagal, expired, refunded, atau order dibatalkan, stok dikembalikan otomatis.
             </p>
           )}
         </section>
@@ -618,6 +628,10 @@ const MobileOrderDetailPage = () => {
             <Button type="button" className="h-11 rounded-2xl gap-2" onClick={saveShipment} disabled={savingShipment}>
               <Send className="h-4 w-4" />
               {savingShipment ? 'Saving...' : 'Save shipment'}
+            </Button>
+            <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
+              <Download className="h-4 w-4" />
+              Resi PDF
             </Button>
           </div>
         </section>

@@ -403,7 +403,7 @@ const CustomerPortalPage = () => {
                 </span>
                 <div>
                   <div className="text-[10px] font-bold uppercase text-[#263d27]">Security check</div>
-                  <h2 className="mt-1 text-lg font-bold text-[#0b130c]">{portal.customer.customerName}</h2>
+                  <h2 className="mt-1 text-lg font-bold text-[#0b130c]">Dashboard protected</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">Jawab pertanyaan keamanan untuk membuka dashboard.</p>
                 </div>
               </div>
@@ -621,7 +621,7 @@ const CustomerPortalPage = () => {
                   </span>
                   <div>
                     <div className="text-xs font-bold uppercase text-[#263d27]">Security check</div>
-                    <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
+                    <h2 className="mt-1 text-2xl font-bold">Dashboard protected</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
                       Customer ini sudah mengaktifkan pertanyaan keamanan. Jawab dulu untuk membuka dashboard.
                     </p>

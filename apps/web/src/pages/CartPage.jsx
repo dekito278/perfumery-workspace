@@ -29,6 +29,7 @@ const CartPage = () => {
     securityChallenge,
     securityAnswer,
     lookupLoading,
+    destinationSearch,
     destinationOptions,
     selectedDestination,
     shippingOptions,
@@ -38,6 +39,7 @@ const CartPage = () => {
     shippingError,
     shippingFee,
     totalDue,
+    canSubmitCheckout,
     setCustomerName,
     setContact,
     setDeliveryAddress,
@@ -46,6 +48,8 @@ const CartPage = () => {
     setSelectedShipping,
     chooseShippingCourier,
     updateCustomerCode,
+    updateDestinationSearch,
+    searchDestinations,
     autoCalculateShipping,
     loadShippingRates,
     lookupCustomer,
@@ -174,7 +178,19 @@ const CartPage = () => {
                 ) : null}
                 <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
-                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <div className="grid gap-2">
+                  <div className="text-xs font-bold uppercase text-[#263d27]">Area ongkir</div>
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota, contoh: Jakarta Selatan" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
+                      Cari
+                    </Button>
+                  </div>
+                  <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                    Alamat lengkap dipakai untuk kurir. Area ongkir dipakai khusus mencari tarif RajaOngkir.
+                  </p>
+                </div>
                 <div className="grid gap-2">
                   <div className="text-xs font-bold uppercase text-[#263d27]">Pilih ekspedisi</div>
                   <select
@@ -188,8 +204,8 @@ const CartPage = () => {
                     ))}
                   </select>
                 </div>
-                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || deliveryAddress.trim().length < 8}>
-                  {shippingLoading ? 'Menghitung ongkir...' : 'Hitung ongkir otomatis'}
+                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+                  {shippingLoading ? 'Menghitung ongkir...' : selectedDestination ? 'Tampilkan layanan ongkir' : 'Cari area ongkir'}
                 </Button>
                 {selectedDestination ? (
                   <p className="rounded-2xl bg-[#eef2e8] px-4 py-3 text-xs font-bold text-[#263d27]">
@@ -198,7 +214,7 @@ const CartPage = () => {
                 ) : null}
                 {destinationOptions.length ? (
                   <div className="grid gap-2">
-                    <div className="text-xs font-bold uppercase text-[#263d27]">Pilih area jika hasil otomatis belum tepat</div>
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Pilih area tujuan</div>
                     {destinationOptions.map((destination) => (
                       <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] px-4 py-3 text-left text-sm font-bold text-[#263d27]">
                         {destination.label}
@@ -241,7 +257,7 @@ const CartPage = () => {
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button type="button" className="h-12 rounded-2xl gap-2 px-5" onClick={() => submitOrder()} disabled={saving}><CreditCard className="h-4 w-4" />{saving ? 'Memproses...' : 'Bayar sekarang'}</Button>
+                <Button type="button" className="h-12 rounded-2xl gap-2 px-5" onClick={() => submitOrder()} disabled={!canSubmitCheckout}><CreditCard className="h-4 w-4" />{saving ? 'Memproses...' : 'Bayar sekarang'}</Button>
                 <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Clear</Button>
               </div>
             </aside>

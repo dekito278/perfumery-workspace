@@ -54,6 +54,18 @@ const normalizePortalOrder = (order = {}) => ({
   updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
 });
 
+const buildLockedPortalCustomer = (customer = {}) => ({
+  ...customer,
+  customerName: 'Protected customer',
+  contact: '',
+  deliveryAddress: '',
+  deliveryArea: '',
+  notes: '',
+  orderCount: 0,
+  lastOrderAt: '',
+  requiresSecurity: true,
+});
+
 const readCustomers = () => {
   if (typeof window === 'undefined') return [];
 
@@ -115,6 +127,34 @@ const saveLocalCustomer = ({
 };
 
 export const getLocalCustomers = () => readCustomers().map(normalizeCustomer);
+
+const getLocalCustomerPortalByCode = (normalizedCode) => {
+  const customer = getLocalCustomers().find((item) => item.customerCode === normalizedCode);
+  if (!customer) return null;
+
+  const orders = (() => {
+    try {
+      const value = window.localStorage.getItem('dekito.storefront.orders.v1');
+      const localOrders = value ? JSON.parse(value) : [];
+      return localOrders
+        .filter((order) => (order.customer_code || order.customerCode) === normalizedCode)
+        .map(normalizePortalOrder);
+    } catch (readError) {
+      return [];
+    }
+  })();
+
+  if (customer.requiresSecurity) {
+    return {
+      customer: buildLockedPortalCustomer(customer),
+      orders: [],
+      requiresSecurity: true,
+      persistence: 'local',
+    };
+  }
+
+  return { customer, orders, requiresSecurity: false, persistence: 'local' };
+};
 
 export const getCustomers = async () => {
   try {
@@ -180,32 +220,29 @@ export const getCustomerPortalByCode = async (customerCode) => {
 
     if (error) throw error;
     const result = data?.[0];
-    if (!result?.customer?.customer_code) return null;
+    if (!result?.customer?.customer_code) return getLocalCustomerPortalByCode(normalizedCode);
+
+    const customer = normalizeCustomer(result.customer);
+    const requiresSecurity = Boolean(result.customer.requires_security || customer.requiresSecurity);
+
+    if (requiresSecurity) {
+      return {
+        customer: buildLockedPortalCustomer(customer),
+        orders: [],
+        requiresSecurity: true,
+        persistence: 'database',
+      };
+    }
 
     return {
-      customer: normalizeCustomer(result.customer),
+      customer,
       orders: Array.isArray(result.orders) ? result.orders.map(normalizePortalOrder) : [],
-      requiresSecurity: Boolean(result.customer.requires_security),
+      requiresSecurity: false,
       persistence: 'database',
     };
   } catch (error) {
     console.warn('Using local customer portal fallback:', error.message || error);
-    const customer = getLocalCustomers().find((item) => item.customerCode === normalizedCode);
-    if (!customer) return null;
-
-    const orders = (() => {
-      try {
-        const value = window.localStorage.getItem('dekito.storefront.orders.v1');
-        const localOrders = value ? JSON.parse(value) : [];
-        return localOrders
-          .filter((order) => (order.customer_code || order.customerCode) === normalizedCode)
-          .map(normalizePortalOrder);
-      } catch (readError) {
-        return [];
-      }
-    })();
-
-    return { customer, orders, requiresSecurity: false, persistence: 'local' };
+    return getLocalCustomerPortalByCode(normalizedCode);
   }
 };
 

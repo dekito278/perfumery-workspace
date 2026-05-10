@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, CreditCard, ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -29,62 +30,132 @@ const readPaymentSession = () => {
   }
 };
 
-const PaymentFrame = ({ session, compact = false }) => (
-  <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#263d27]/15 bg-white shadow-sm'}>
-    <div className={compact ? 'border-b border-[#263d27]/10 bg-[#eef2e8] p-4' : 'border-b border-[#263d27]/10 bg-[#eef2e8] p-5'}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Secure checkout</div>
-          <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
-          <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-            Order tersimpan. Selesaikan pembayaran di panel ini tanpa meninggalkan nuansa Solivagant.
-          </p>
+const PaymentFrame = ({ session, compact = false }) => {
+  const [frameStatus, setFrameStatus] = useState('loading');
+
+  useEffect(() => {
+    setFrameStatus('loading');
+    const timeoutId = window.setTimeout(() => {
+      setFrameStatus((current) => (current === 'loading' ? 'failed' : current));
+    }, 12000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [session.paymentUrl]);
+
+  const statusCopy = {
+    loading: {
+      icon: <Loader2 className="h-4 w-4 animate-spin" />,
+      title: 'Memuat panel pembayaran',
+      description: 'Sebentar ya, Solivagant sedang membuka sesi pembayaran aman.',
+      className: 'border-[#263d27]/10 bg-[#eef2e8] text-[#263d27]',
+    },
+    ready: {
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      title: 'Panel pembayaran siap',
+      description: 'Lanjutkan pembayaran di panel di bawah ini.',
+      className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    },
+    failed: {
+      icon: <AlertCircle className="h-4 w-4" />,
+      title: 'Panel pembayaran belum termuat',
+      description: 'Browser bisa memblokir iframe pembayaran. Gunakan tombol cadangan untuk membukanya di tab baru.',
+      className: 'border-amber-200 bg-amber-50 text-amber-800',
+    },
+  }[frameStatus];
+  const customerCode = session.customerCode || '';
+  const copyCustomerCode = async () => {
+    if (!customerCode) return;
+    await navigator.clipboard.writeText(customerCode);
+    toast.success(`${customerCode} copied`);
+  };
+
+  return (
+    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#263d27]/15 bg-white shadow-sm'}>
+      <div className={compact ? 'border-b border-[#263d27]/10 bg-[#eef2e8] p-4' : 'border-b border-[#263d27]/10 bg-[#eef2e8] p-5'}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Secure checkout</div>
+            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+              Order tersimpan. Selesaikan pembayaran di panel ini tanpa meninggalkan nuansa Solivagant.
+            </p>
+          </div>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
+            <ShieldCheck className="h-5 w-5" />
+          </span>
         </div>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
-          <ShieldCheck className="h-5 w-5" />
-        </span>
-      </div>
-      <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-[#263d27]' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
-        <div className="rounded-2xl bg-white/80 px-4 py-3">
-          <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
-          <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
-        </div>
-        <div className="rounded-2xl bg-white/80 px-4 py-3">
-          <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
-          <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
-        </div>
-        <div className="rounded-2xl bg-white/80 px-4 py-3">
-          <div className="text-[10px] uppercase text-[#6f7d61]">Total</div>
-          <div className="mt-1">{formatTotal(session.amount)}</div>
-        </div>
-        {session.paymentStatus ? (
+        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-[#263d27]' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Status</div>
-            <div className="mt-1 truncate">{paymentStatusLabels[session.paymentStatus] || session.paymentStatus}</div>
+            <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+            <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-[#6f7d61]">Total</div>
+            <div className="mt-1">{formatTotal(session.amount)}</div>
+          </div>
+          {session.paymentStatus ? (
+            <div className="rounded-2xl bg-white/80 px-4 py-3">
+              <div className="text-[10px] uppercase text-[#6f7d61]">Status</div>
+              <div className="mt-1 truncate">{paymentStatusLabels[session.paymentStatus] || session.paymentStatus}</div>
+            </div>
+          ) : null}
+        </div>
+        {customerCode ? (
+          <div className={compact ? 'mt-4 rounded-2xl border border-[#263d27]/15 bg-white p-4' : 'mt-5 rounded-2xl border border-[#263d27]/15 bg-white p-5'}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Kode customer</div>
+                <div className={compact ? 'mt-1 text-2xl font-bold tracking-[0.12em] text-[#263d27]' : 'mt-1 text-3xl font-bold tracking-[0.16em] text-[#263d27]'}>
+                  {customerCode}
+                </div>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+                  Simpan kode ini untuk cek order dan checkout berikutnya tanpa isi ulang data.
+                </p>
+              </div>
+              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-[#f7f8f2] gap-2" onClick={copyCustomerCode}>
+                <Copy className="h-4 w-4" />
+                Copy kode
+              </Button>
+            </div>
           </div>
         ) : null}
       </div>
-    </div>
-    <div className={compact ? 'h-[68dvh] bg-white' : 'h-[74dvh] bg-white'}>
-      <iframe
-        src={session.paymentUrl}
-        title="Panel pembayaran"
-        className="h-full w-full border-0"
-        allow="payment *; clipboard-write"
-        sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
-      />
-    </div>
-    <div className={compact ? 'grid gap-2 border-t border-[#263d27]/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-[#263d27]/10 bg-[#fbfaf7] p-4'}>
-      <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-        Kalau panel pembayaran tidak termuat oleh browser, gunakan tombol cadangan ini.
-      </p>
-      <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
-        <ExternalLink className="h-4 w-4" />
-        Buka pembayaran
-      </Button>
-    </div>
-  </section>
-);
+      <div className="border-b border-[#263d27]/10 bg-white px-4 py-3">
+        <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${statusCopy.className}`}>
+          <span className="mt-0.5 shrink-0">{statusCopy.icon}</span>
+          <div>
+            <div className="text-xs font-bold">{statusCopy.title}</div>
+            <p className="mt-1 text-xs font-semibold leading-relaxed opacity-80">{statusCopy.description}</p>
+          </div>
+        </div>
+      </div>
+      <div className={compact ? 'h-[68dvh] bg-white' : 'h-[74dvh] bg-white'}>
+        <iframe
+          src={session.paymentUrl}
+          title="Panel pembayaran"
+          className="h-full w-full border-0"
+          allow="payment *; clipboard-write"
+          sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+          onLoad={() => setFrameStatus('ready')}
+          onError={() => setFrameStatus('failed')}
+        />
+      </div>
+      <div className={compact ? 'grid gap-2 border-t border-[#263d27]/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-[#263d27]/10 bg-[#fbfaf7] p-4'}>
+        <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
+          Kalau panel pembayaran tidak termuat oleh browser, gunakan tombol cadangan ini.
+        </p>
+        <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
+          <ExternalLink className="h-4 w-4" />
+          Buka pembayaran
+        </Button>
+      </div>
+    </section>
+  );
+};
 
 const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }) => (
   <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>

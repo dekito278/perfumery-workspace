@@ -232,7 +232,7 @@ const createInventoryEvent = (product = {}, item = {}) => {
     formulaId: batchDetails.formulaId,
     sku: batchDetails.sku,
     initialStock: batchDetails.initialStock,
-    movement: batchDetails.movement || 'Order checkout stock deduction',
+    movement: batchDetails.movement || 'Order checkout stock reservation',
     at: new Date().toISOString(),
   };
 };
@@ -242,7 +242,7 @@ const createInventoryRestoreEvent = (event = {}) => ({
   type: 'restore',
   direction: 'in',
   quantity: Number(event.quantity || 0),
-  movement: event.movement || 'Order cancelled/payment failed stock restored',
+  movement: event.movement || 'Order cancelled/payment failed stock released',
   restoredAt: new Date().toISOString(),
   at: new Date().toISOString(),
 });
@@ -624,7 +624,7 @@ export const deductInventoryForOrder = async (order) => {
   return deductedEvents;
 };
 
-export const restoreInventoryForOrder = async (order, reason = 'Order cancelled/payment failed stock restored') => {
+export const restoreInventoryForOrder = async (order, reason = 'Order cancelled/payment failed stock released') => {
   if (!order || !order.inventoryDeducted || !Array.isArray(order.inventoryEvents)) {
     return [];
   }
