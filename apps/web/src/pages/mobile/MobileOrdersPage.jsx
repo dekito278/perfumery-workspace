@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clipboard, CreditCard, Eye, PackageCheck, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, Clipboard, CreditCard, Eye, MessageCircle, PackageCheck, Sparkles, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -15,6 +16,7 @@ import {
   getOrderStatusLabels,
   isBespokeOrder,
 } from '@/services/orderService.js';
+import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -68,16 +70,51 @@ const getPaymentSummary = (orders) => ({
   attention: orders.filter((order) => ['failed', 'expired'].includes(order.paymentStatus)).length,
 });
 
+const orderFilterOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'paid_ready', label: 'Paid ready' },
+  { value: 'follow_up', label: 'Follow-up' },
+  { value: 'bespoke', label: 'Bespoke' },
+];
+
+const getQuickAction = (order) => {
+  if (['unpaid', 'pending'].includes(order.paymentStatus)) return 'Payment follow-up';
+  if (order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)) return 'Packing ready';
+  if (order.shipmentStatus === 'shipped') return 'Delivery follow-up';
+  return 'Review';
+};
+
 const MobileOrdersPage = () => {
   const navigate = useNavigate();
   const { orders, summary, loading, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const [orderFilter, setOrderFilter] = useState('active');
   const products = useCatalogProducts({ editableOnly: true });
   const paymentSummary = getPaymentSummary(orders);
   const lowStockProducts = products.filter(getProductLowStock);
+  const filteredOrders = useMemo(() => orders.filter((order) => {
+    if (orderFilter === 'paid_ready') {
+      return order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status);
+    }
+    if (orderFilter === 'follow_up') {
+      return ['unpaid', 'pending'].includes(order.paymentStatus) || order.shipmentStatus === 'shipped';
+    }
+    if (orderFilter === 'bespoke') return isBespokeOrder(order);
+    return !['completed', 'cancelled'].includes(order.status);
+  }), [orderFilter, orders]);
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
     toast.success(`${order.orderNumber} copied`);
+  };
+
+  const openQuickFollowUp = (order) => {
+    const eventKey = order.shipmentStatus === 'shipped'
+      ? 'shipped'
+      : order.paymentStatus === 'paid'
+        ? 'paid'
+        : 'order_created';
+    const message = buildNotificationMessage(order, eventKey);
+    window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -130,6 +167,12 @@ const MobileOrdersPage = () => {
               <div className="text-[9px] font-bold uppercase text-rose-700">Issue</div>
             </div>
           </div>
+          <MobileFilterChips
+            value={orderFilter}
+            onChange={setOrderFilter}
+            options={orderFilterOptions}
+            className="mt-3 flex-nowrap overflow-x-auto pb-0"
+          />
         </section>
 
         {lowStockProducts.length ? (
@@ -162,9 +205,10 @@ const MobileOrdersPage = () => {
         ) : null}
 
         <section className="space-y-3">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const bespoke = isBespokeOrder(order);
             const bespokeItem = getBespokeItem(order);
+            const packingReady = order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus);
 
             return (
             <article key={order.id} className="mobile-card p-3">
@@ -200,7 +244,7 @@ const MobileOrdersPage = () => {
               </div>
               <div className="mt-3 rounded-2xl bg-[#f8f7f4] p-3">
                 <div className="text-[10px] font-bold uppercase text-[#6b7280]">Next action</div>
-                <p className="mt-1 text-xs font-semibold leading-relaxed text-[#1f2937]">{nextActionByStatus[order.status] || 'Review order dan update status berikutnya.'}</p>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-[#1f2937]">{getQuickAction(order)}. {nextActionByStatus[order.status] || 'Review order dan update status berikutnya.'}</p>
               </div>
               <div className="mt-3 rounded-2xl border border-[#e5e7eb] bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
@@ -252,22 +296,27 @@ const MobileOrdersPage = () => {
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
-                <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Copy</Button>
-                <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Delete</Button>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button type="button" className="h-12 rounded-2xl gap-2 text-xs font-bold" onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
+                {packingReady ? (
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => navigate('/mobile/studio/fulfillment')}><Truck className="h-4 w-4" />Pack</Button>
+                ) : (
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => openQuickFollowUp(order)}><MessageCircle className="h-4 w-4" />WA</Button>
+                )}
+                <Button type="button" variant="outline" className="h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Copy</Button>
+                <Button type="button" variant="outline" className="h-12 rounded-2xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Delete</Button>
               </div>
             </article>
             );
           })}
-          {!orders.length && !loading ? (
+          {!filteredOrders.length && !loading ? (
             <div className="mobile-card p-5 text-center">
               <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
-              <h2 className="mt-3 text-base font-bold text-[#1f2937]">No orders yet</h2>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Checkout cart dan request bespoke yang tersimpan akan muncul di sini.</p>
+              <h2 className="mt-3 text-base font-bold text-[#1f2937]">No orders in this view</h2>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Ganti chip filter untuk melihat order lain.</p>
             </div>
           ) : null}
-          {loading && !orders.length ? (
+          {loading && !filteredOrders.length ? (
             <div className="mobile-card p-5 text-center text-xs font-bold text-[#6b7280]">Loading orders...</div>
           ) : null}
         </section>

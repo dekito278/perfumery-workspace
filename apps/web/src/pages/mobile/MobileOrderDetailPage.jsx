@@ -248,6 +248,25 @@ const MobileOrderDetailPage = () => {
     }
   };
 
+  const quickShipmentUpdate = async (shipmentStatus) => {
+    setSavingShipment(true);
+    try {
+      const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
+        ...shipmentDraft,
+        shipmentStatus,
+        shippedAt: shipmentStatus === 'shipped' ? new Date().toISOString() : shipmentDraft.shippedAt ? new Date(shipmentDraft.shippedAt).toISOString() : '',
+        deliveredAt: shipmentDraft.deliveredAt ? new Date(shipmentDraft.deliveredAt).toISOString() : '',
+      });
+      setOrder(nextOrder || order);
+      setShipmentFromOrder(nextOrder || order);
+      toast.success(shipmentStatus === 'shipped' ? 'Order marked shipped' : 'Order moved to packing');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update shipment');
+    } finally {
+      setSavingShipment(false);
+    }
+  };
+
   const saveBespokeProductionStatus = async (productionStatus) => {
     setSavingBespokeProduction(true);
     try {
@@ -333,6 +352,21 @@ const MobileOrderDetailPage = () => {
     window.open(getWhatsAppNotificationUrl(order, notificationMessage), '_blank', 'noopener,noreferrer');
   };
 
+  const openSmartWhatsAppNotification = () => {
+    const eventKey = order.shipmentStatus === 'shipped' || shipmentDraft.trackingNumber
+      ? 'shipped'
+      : order.paymentStatus === 'paid'
+        ? 'paid'
+        : 'order_created';
+    const message = buildNotificationMessage({
+      ...order,
+      courierName: shipmentDraft.courierName || order.courierName,
+      trackingNumber: shipmentDraft.trackingNumber || order.trackingNumber,
+      trackingUrl: shipmentDraft.trackingUrl || order.trackingUrl,
+    }, eventKey);
+    window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
+  };
+
   const openEmailNotification = () => {
     window.location.href = getEmailNotificationUrl(order, notificationEvent, notificationMessage);
   };
@@ -397,6 +431,41 @@ const MobileOrderDetailPage = () => {
                 </div>
               );
             })}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${getPaymentTone(order.paymentStatus)}`}>
+              {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+            </span>
+            <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+              {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
+            </span>
+            {order.trackingNumber ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">Resi ready</span> : null}
+          </div>
+        </section>
+
+        <section className="mobile-card p-3">
+          <div className="mb-3 text-[10px] font-bold uppercase text-[#263d27]">Quick action</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" className="h-12 rounded-2xl gap-2 text-xs font-bold" onClick={openSmartWhatsAppNotification}>
+              <MessageCircle className="h-4 w-4" />
+              WA update
+            </Button>
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={copyDraft}>
+              <Clipboard className="h-4 w-4" />
+              Copy draft
+            </Button>
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => quickShipmentUpdate('packing')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
+              <PackageCheck className="h-4 w-4" />
+              Pack
+            </Button>
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
+              <Download className="h-4 w-4" />
+              Resi
+            </Button>
+            <Button type="button" className="col-span-2 h-14 rounded-2xl gap-2 text-sm font-bold" onClick={() => quickShipmentUpdate('shipped')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
+              <Send className="h-4 w-4" />
+              Mark shipped
+            </Button>
           </div>
         </section>
 

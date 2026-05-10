@@ -3,6 +3,7 @@ import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
+export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
 
 const orderStatusLabels = {
   draft: 'Draft',
@@ -38,6 +39,8 @@ const localOnlyStatuses = {
 
 const BESPOKE_SOURCE = 'bespoke_request';
 const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
+export const PAYMENT_RESERVATION_TTL_HOURS = 24;
+const ACTIVE_RESERVATION_PAYMENT_STATUSES = ['unpaid', 'pending'];
 
 export const isBespokeOrder = (order) => (
   order?.source === BESPOKE_SOURCE
@@ -66,6 +69,23 @@ const writeOrders = (orders) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
   window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+};
+
+const readLocalAuditLogs = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const value = window.localStorage.getItem(ORDER_AUDIT_LOGS_STORAGE_KEY);
+    return value ? JSON.parse(value) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const writeLocalAuditLogs = (logs) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(ORDER_AUDIT_LOGS_STORAGE_KEY, JSON.stringify(logs));
+  window.dispatchEvent(new CustomEvent('dekito:order-audit-updated'));
 };
 
 const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}`;
@@ -226,6 +246,118 @@ const normalizePaymentLog = (log = {}) => ({
   createdAt: log.created_at || log.createdAt || log.received_at || log.receivedAt || '',
 });
 
+const normalizeAuditLog = (log = {}) => ({
+  id: log.id || `${log.order_number || log.orderNumber || 'order'}-${log.action || 'audit'}-${log.created_at || log.createdAt || Date.now()}`,
+  orderId: log.order_id || log.orderId || '',
+  orderNumber: log.order_number || log.orderNumber || '',
+  action: log.action || '',
+  actorId: log.actor_id || log.actorId || '',
+  actorEmail: log.actor_email || log.actorEmail || '',
+  actorName: log.actor_name || log.actorName || '',
+  previousValues: log.previous_values || log.previousValues || {},
+  nextValues: log.next_values || log.nextValues || {},
+  metadata: log.metadata || {},
+  createdAt: log.created_at || log.createdAt || new Date().toISOString(),
+});
+
+const getCurrentAdminActor = async () => {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    const user = data?.user;
+    if (!user) {
+      return {
+        actorId: null,
+        actorEmail: 'system',
+        actorName: 'System',
+      };
+    }
+
+    return {
+      actorId: user.id || null,
+      actorEmail: user.email || 'admin',
+      actorName: user.user_metadata?.name || user.user_metadata?.full_name || user.email || 'Admin',
+    };
+  } catch (error) {
+    return {
+      actorId: null,
+      actorEmail: 'system',
+      actorName: 'System',
+    };
+  }
+};
+
+const toAuditDbValues = (values = {}) => (
+  Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined))
+);
+
+const saveLocalAuditLog = (log) => {
+  const normalizedLog = normalizeAuditLog({
+    id: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    ...log,
+    createdAt: new Date().toISOString(),
+  });
+  writeLocalAuditLogs([normalizedLog, ...readLocalAuditLogs().map(normalizeAuditLog)].slice(0, 300));
+  return normalizedLog;
+};
+
+const createOrderAuditLog = async ({
+  action,
+  currentOrder,
+  orderId,
+  previousValues = {},
+  nextValues = {},
+  metadata = {},
+}) => {
+  const orderNumber = currentOrder?.orderNumber || currentOrder?.order_number || metadata.orderNumber || orderId;
+  if (!orderNumber || !action) return null;
+
+  const actor = await getCurrentAdminActor();
+  const log = {
+    orderId: isUuid(currentOrder?.id) ? currentOrder.id : null,
+    orderNumber,
+    action,
+    actorId: actor.actorId,
+    actorEmail: actor.actorEmail,
+    actorName: actor.actorName,
+    previousValues: toAuditDbValues(previousValues),
+    nextValues: toAuditDbValues(nextValues),
+    metadata: {
+      ...metadata,
+      orderId: currentOrder?.id || orderId || '',
+    },
+  };
+
+  if (currentOrder?.persistence === 'local') {
+    return saveLocalAuditLog(log);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('storefront_order_audit_logs')
+      .insert({
+        order_id: log.orderId,
+        order_number: log.orderNumber,
+        action: log.action,
+        actor_id: log.actorId,
+        actor_email: log.actorEmail,
+        actor_name: log.actorName,
+        previous_values: log.previousValues,
+        next_values: log.nextValues,
+        metadata: log.metadata,
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    window.dispatchEvent(new CustomEvent('dekito:order-audit-updated'));
+    return normalizeAuditLog(data);
+  } catch (error) {
+    console.warn('Saving order audit log locally:', error.message || error);
+    return saveLocalAuditLog(log);
+  }
+};
+
 const buildOrderPayload = ({
   customerName,
   customerCode = '',
@@ -350,7 +482,35 @@ export const getBespokeProductionStatusLabels = () => bespokeProductionStatusLab
 
 export const getLocalOrders = () => readOrders().map(normalizeOrder);
 
-export const getOrders = async () => {
+const getReservationExpiryDate = (order = {}) => {
+  const explicitExpiry = order.paymentExpiresAt ? new Date(order.paymentExpiresAt) : null;
+  if (explicitExpiry && Number.isFinite(explicitExpiry.getTime())) {
+    return explicitExpiry;
+  }
+
+  const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+  if (createdAt && Number.isFinite(createdAt.getTime())) {
+    return new Date(createdAt.getTime() + (PAYMENT_RESERVATION_TTL_HOURS * 60 * 60 * 1000));
+  }
+
+  return null;
+};
+
+export const getOrderReservationExpiresAt = (order = {}) => (
+  getReservationExpiryDate(order)?.toISOString() || ''
+);
+
+export const isOrderReservationExpired = (order = {}, now = new Date()) => {
+  if (!order?.inventoryDeducted) return false;
+  if (!ACTIVE_RESERVATION_PAYMENT_STATUSES.includes(order.paymentStatus)) return false;
+  if (['cancelled', 'completed'].includes(order.status)) return false;
+
+  const expiresAt = getReservationExpiryDate(order);
+  if (!expiresAt) return false;
+  return expiresAt.getTime() <= now.getTime();
+};
+
+const getOrdersFromSource = async () => {
   try {
     const { data, error } = await supabase
       .from('storefront_orders')
@@ -368,7 +528,37 @@ export const getOrders = async () => {
   }
 };
 
-export const getOrderById = async (orderId) => {
+export const sweepExpiredOrderReservations = async (orders = null, now = new Date()) => {
+  const sourceOrders = Array.isArray(orders) ? orders : await getOrdersFromSource();
+  const expiredOrders = sourceOrders.filter((order) => isOrderReservationExpired(order, now));
+
+  for (const order of expiredOrders) {
+    await updateOrderPaymentStatus(order.id || order.orderNumber, {
+      paymentStatus: 'expired',
+      paymentProvider: order.paymentProvider || 'doku',
+      paymentReference: order.paymentReference || '',
+      paymentUrl: order.paymentUrl || '',
+      paymentExpiresAt: order.paymentExpiresAt || '',
+      paymentSessionId: order.paymentSessionId || '',
+      paymentResponse: order.paymentResponse || null,
+      status: 'cancelled',
+    });
+  }
+
+  return {
+    expiredOrders,
+    orders: expiredOrders.length ? await getOrdersFromSource() : sourceOrders,
+  };
+};
+
+export const getOrders = async ({ sweepExpiredReservations = true } = {}) => {
+  const orders = await getOrdersFromSource();
+  if (!sweepExpiredReservations) return orders;
+  const result = await sweepExpiredOrderReservations(orders);
+  return result.orders;
+};
+
+export const getOrderById = async (orderId, { sweepExpiredReservation = true } = {}) => {
   const localMatch = getLocalOrders().find((order) => order.id === orderId || order.orderNumber === orderId);
 
   try {
@@ -379,15 +569,42 @@ export const getOrderById = async (orderId) => {
     const { data, error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) throw error;
-    return data?.[0] ? normalizeOrder(data[0]) : localMatch || null;
+    const order = data?.[0] ? normalizeOrder(data[0]) : localMatch || null;
+    if (order && sweepExpiredReservation && isOrderReservationExpired(order)) {
+      await updateOrderPaymentStatus(order.id || order.orderNumber, {
+        paymentStatus: 'expired',
+        paymentProvider: order.paymentProvider || 'doku',
+        paymentReference: order.paymentReference || '',
+        paymentUrl: order.paymentUrl || '',
+        paymentExpiresAt: order.paymentExpiresAt || '',
+        paymentSessionId: order.paymentSessionId || '',
+        paymentResponse: order.paymentResponse || null,
+        status: 'cancelled',
+      });
+      return getOrderById(orderId, { sweepExpiredReservation: false });
+    }
+    return order;
   } catch (error) {
     console.warn('Using local storefront order detail fallback:', error.message || error);
+    if (localMatch && sweepExpiredReservation && isOrderReservationExpired(localMatch)) {
+      await updateOrderPaymentStatus(localMatch.id || localMatch.orderNumber, {
+        paymentStatus: 'expired',
+        paymentProvider: localMatch.paymentProvider || 'doku',
+        paymentReference: localMatch.paymentReference || '',
+        paymentUrl: localMatch.paymentUrl || '',
+        paymentExpiresAt: localMatch.paymentExpiresAt || '',
+        paymentSessionId: localMatch.paymentSessionId || '',
+        paymentResponse: localMatch.paymentResponse || null,
+        status: 'cancelled',
+      });
+      return getOrderById(orderId, { sweepExpiredReservation: false });
+    }
     return localMatch || null;
   }
 };
 
 export const getOrderPaymentLogs = async (orderIdOrNumber) => {
-  const order = await getOrderById(orderIdOrNumber);
+  const order = await getOrderById(orderIdOrNumber, { sweepExpiredReservation: false });
   const orderNumber = order?.orderNumber || orderIdOrNumber;
 
   if (!orderNumber) return [];
@@ -404,6 +621,35 @@ export const getOrderPaymentLogs = async (orderIdOrNumber) => {
   } catch (error) {
     console.warn('Using empty DOKU payment log fallback:', error.message || error);
     return [];
+  }
+};
+
+export const getOrderAuditLogs = async (orderIdOrNumber) => {
+  const order = await getOrderById(orderIdOrNumber, { sweepExpiredReservation: false });
+  const orderNumber = order?.orderNumber || orderIdOrNumber;
+  const localLogs = readLocalAuditLogs()
+    .map(normalizeAuditLog)
+    .filter((log) => log.orderNumber === orderNumber || log.orderId === orderIdOrNumber);
+
+  if (!orderNumber) return localLogs;
+
+  try {
+    const { data, error } = await supabase
+      .from('storefront_order_audit_logs')
+      .select('*')
+      .eq('order_number', orderNumber)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    const remoteLogs = (data || []).map(normalizeAuditLog);
+    const seenIds = new Set(remoteLogs.map((log) => log.id));
+    return [
+      ...remoteLogs,
+      ...localLogs.filter((log) => !seenIds.has(log.id)),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.warn('Using local storefront order audit logs fallback:', error.message || error);
+    return localLogs;
   }
 };
 
@@ -522,8 +768,9 @@ export const createBespokeRequest = async (requestData) => {
 };
 
 export const updateOrderStatus = async (orderId, status) => {
-  const currentOrder = await getOrderById(orderId);
+  const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const statusTimeline = appendStatusTimeline(currentOrder?.statusTimeline, status, 'Status updated from Studio');
+  const auditAction = status === 'cancelled' ? 'order_cancelled' : 'order_status_updated';
 
   try {
     const query = supabase
@@ -538,6 +785,21 @@ export const updateOrderStatus = async (orderId, status) => {
     if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
       await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
     }
+
+    await createOrderAuditLog({
+      action: auditAction,
+      currentOrder,
+      orderId,
+      previousValues: {
+        status: currentOrder?.status || '',
+      },
+      nextValues: {
+        status,
+      },
+      metadata: {
+        source: 'studio',
+      },
+    });
 
     return getOrders();
   } catch (error) {
@@ -559,6 +821,21 @@ export const updateOrderStatus = async (orderId, status) => {
         : order
     ));
     writeOrders(nextOrders);
+    await createOrderAuditLog({
+      action: auditAction,
+      currentOrder,
+      orderId,
+      previousValues: {
+        status: currentOrder?.status || '',
+      },
+      nextValues: {
+        status,
+      },
+      metadata: {
+        source: 'studio',
+        persistence: 'local',
+      },
+    });
     return nextOrders;
   }
 };
@@ -590,7 +867,7 @@ export const updateOrderInternalNotes = async (orderId, internalNotes) => {
 
 export const updateOrderShipment = async (orderId, shipmentData = {}) => {
   const shipmentStatus = shipmentData.shipmentStatus || 'not_ready';
-  const currentOrder = await getOrderById(orderId);
+  const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const shippedAt = shipmentData.shippedAt
     || currentOrder?.shippedAt
     || (shipmentStatus === 'shipped' ? new Date().toISOString() : null);
@@ -615,6 +892,35 @@ export const updateOrderShipment = async (orderId, shipmentData = {}) => {
     ...patch,
     status_timeline: statusTimeline,
   };
+  const shipmentAudit = {
+    action: 'shipment_updated',
+    currentOrder,
+    orderId,
+    previousValues: {
+      status: currentOrder?.status || '',
+      shipmentStatus: currentOrder?.shipmentStatus || '',
+      courierName: currentOrder?.courierName || '',
+      trackingNumber: currentOrder?.trackingNumber || '',
+      trackingUrl: currentOrder?.trackingUrl || '',
+      shippedAt: currentOrder?.shippedAt || '',
+      deliveredAt: currentOrder?.deliveredAt || '',
+      packingNotes: currentOrder?.packingNotes || '',
+    },
+    nextValues: {
+      status: patch.status || currentOrder?.status || '',
+      shipmentStatus,
+      courierName: patch.courier_name || '',
+      trackingNumber: patch.tracking_number || '',
+      trackingUrl: patch.tracking_url || '',
+      shippedAt: patch.shipped_at || '',
+      deliveredAt: patch.delivered_at || '',
+      packingNotes: patch.packing_notes || '',
+    },
+    metadata: {
+      source: 'fulfillment',
+      trackingChanged: (currentOrder?.trackingNumber || '') !== (patch.tracking_number || ''),
+    },
+  };
 
   try {
     const query = supabase
@@ -625,6 +931,7 @@ export const updateOrderShipment = async (orderId, shipmentData = {}) => {
     if (error) throw error;
 
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    await createOrderAuditLog(shipmentAudit);
     return getOrderById(orderId);
   } catch (error) {
     console.warn('Updating local storefront order shipment fallback:', error.message || error);
@@ -645,12 +952,19 @@ export const updateOrderShipment = async (orderId, shipmentData = {}) => {
         : order
     ));
     writeOrders(nextOrders);
+    await createOrderAuditLog({
+      ...shipmentAudit,
+      metadata: {
+        ...shipmentAudit.metadata,
+        persistence: 'local',
+      },
+    });
     return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
   }
 };
 
 export const updateOrderBespokeProductionStatus = async (orderId, productionStatus) => {
-  const currentOrder = await getOrderById(orderId);
+  const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const bespokeProductionTimeline = appendBespokeProductionTimeline(
     currentOrder?.bespokeProductionTimeline,
     productionStatus,
@@ -775,26 +1089,53 @@ const markOrderInventoryRestored = async (orderId, currentEvents = [], restoreEv
 export const updateOrderPaymentStatus = async (orderId, {
   paymentStatus,
   paymentProvider = 'doku',
-  paymentReference = '',
-  paymentUrl = '',
-  paymentExpiresAt = '',
-  paymentSessionId = '',
-  paymentResponse = null,
+  paymentReference,
+  paymentUrl,
+  paymentExpiresAt,
+  paymentSessionId,
+  paymentResponse,
   status,
 }) => {
-  const currentOrder = await getOrderById(orderId);
+  const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const patch = {
     payment_status: paymentStatus,
     payment_provider: paymentProvider,
-    payment_reference: paymentReference,
-    ...(paymentUrl ? { payment_url: paymentUrl } : {}),
-    ...(paymentExpiresAt ? { payment_expires_at: paymentExpiresAt } : {}),
-    ...(paymentSessionId ? { payment_session_id: paymentSessionId } : {}),
-    ...(paymentResponse && typeof paymentResponse === 'object' ? {
+    ...(paymentReference !== undefined ? { payment_reference: paymentReference } : {}),
+    ...(paymentUrl !== undefined ? { payment_url: paymentUrl || null } : {}),
+    ...(paymentExpiresAt !== undefined ? { payment_expires_at: paymentExpiresAt || null } : {}),
+    ...(paymentSessionId !== undefined ? { payment_session_id: paymentSessionId || null } : {}),
+    ...(paymentResponse !== undefined && paymentResponse && typeof paymentResponse === 'object' ? {
       payment_response: paymentResponse,
       doku_response: paymentResponse,
     } : {}),
     ...(status ? { status } : {}),
+  };
+  const paymentAudit = {
+    action: 'payment_status_updated',
+    currentOrder,
+    orderId,
+    previousValues: {
+      status: currentOrder?.status || '',
+      paymentStatus: currentOrder?.paymentStatus || '',
+      paymentProvider: currentOrder?.paymentProvider || '',
+      paymentReference: currentOrder?.paymentReference || '',
+      paymentUrl: currentOrder?.paymentUrl || '',
+      paymentExpiresAt: currentOrder?.paymentExpiresAt || '',
+      paymentSessionId: currentOrder?.paymentSessionId || '',
+    },
+    nextValues: {
+      status: status || currentOrder?.status || '',
+      paymentStatus,
+      paymentProvider,
+      paymentReference: paymentReference ?? currentOrder?.paymentReference ?? '',
+      paymentUrl: paymentUrl ?? currentOrder?.paymentUrl ?? '',
+      paymentExpiresAt: paymentExpiresAt ?? currentOrder?.paymentExpiresAt ?? '',
+      paymentSessionId: paymentSessionId ?? currentOrder?.paymentSessionId ?? '',
+    },
+    metadata: {
+      source: 'payment',
+      hasPaymentResponse: Boolean(paymentResponse),
+    },
   };
 
   try {
@@ -837,6 +1178,25 @@ export const updateOrderPaymentStatus = async (orderId, {
     } else {
       window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     }
+    await createOrderAuditLog(paymentAudit);
+    if (status === 'cancelled') {
+      await createOrderAuditLog({
+        action: 'order_cancelled',
+        currentOrder,
+        orderId,
+        previousValues: {
+          status: currentOrder?.status || '',
+          paymentStatus: currentOrder?.paymentStatus || '',
+        },
+        nextValues: {
+          status,
+          paymentStatus,
+        },
+        metadata: {
+          source: 'payment',
+        },
+      });
+    }
   } catch (error) {
     console.warn('Updating local storefront order payment fallback:', error.message || error);
     const nextOrders = readOrders().map(normalizeOrder).map((order) => (
@@ -845,17 +1205,43 @@ export const updateOrderPaymentStatus = async (orderId, {
           ...order,
           paymentStatus,
           paymentProvider,
-          paymentReference,
-          paymentUrl,
-          paymentExpiresAt,
-          paymentSessionId,
-          paymentResponse: paymentResponse || order.paymentResponse,
+          paymentReference: paymentReference ?? order.paymentReference,
+          paymentUrl: paymentUrl ?? order.paymentUrl,
+          paymentExpiresAt: paymentExpiresAt ?? order.paymentExpiresAt,
+          paymentSessionId: paymentSessionId ?? order.paymentSessionId,
+          paymentResponse: paymentResponse ?? order.paymentResponse,
           ...(status ? { status } : {}),
           updatedAt: new Date().toISOString(),
         }
         : order
     ));
     writeOrders(nextOrders);
+    await createOrderAuditLog({
+      ...paymentAudit,
+      metadata: {
+        ...paymentAudit.metadata,
+        persistence: 'local',
+      },
+    });
+    if (status === 'cancelled') {
+      await createOrderAuditLog({
+        action: 'order_cancelled',
+        currentOrder,
+        orderId,
+        previousValues: {
+          status: currentOrder?.status || '',
+          paymentStatus: currentOrder?.paymentStatus || '',
+        },
+        nextValues: {
+          status,
+          paymentStatus,
+        },
+        metadata: {
+          source: 'payment',
+          persistence: 'local',
+        },
+      });
+    }
   }
 
   if (paymentStatus === 'paid' && currentOrder && !currentOrder.inventoryDeducted) {
@@ -876,6 +1262,7 @@ export const updateOrderPaymentStatus = async (orderId, {
 };
 
 export const deleteOrder = async (orderId) => {
+  const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   try {
     const query = supabase
       .from('storefront_orders')
@@ -886,11 +1273,44 @@ export const deleteOrder = async (orderId) => {
       throw error;
     }
 
+    await createOrderAuditLog({
+      action: 'order_deleted',
+      currentOrder: currentOrder ? { ...currentOrder, id: null } : currentOrder,
+      orderId,
+      previousValues: {
+        status: currentOrder?.status || '',
+        paymentStatus: currentOrder?.paymentStatus || '',
+        shipmentStatus: currentOrder?.shipmentStatus || '',
+      },
+      nextValues: {
+        deleted: true,
+      },
+      metadata: {
+        source: 'studio',
+      },
+    });
     return getOrders();
   } catch (error) {
     console.warn('Deleting local storefront order fallback:', error.message || error);
     const nextOrders = readOrders().map(normalizeOrder).filter((order) => order.id !== orderId && order.orderNumber !== orderId);
     writeOrders(nextOrders);
+    await createOrderAuditLog({
+      action: 'order_deleted',
+      currentOrder: currentOrder ? { ...currentOrder, id: null } : currentOrder,
+      orderId,
+      previousValues: {
+        status: currentOrder?.status || '',
+        paymentStatus: currentOrder?.paymentStatus || '',
+        shipmentStatus: currentOrder?.shipmentStatus || '',
+      },
+      nextValues: {
+        deleted: true,
+      },
+      metadata: {
+        source: 'studio',
+        persistence: 'local',
+      },
+    });
     return nextOrders;
   }
 };

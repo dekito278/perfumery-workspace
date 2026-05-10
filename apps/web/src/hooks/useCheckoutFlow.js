@@ -54,6 +54,8 @@ export const useCheckoutFlow = ({
   const [securityChallenge, setSecurityChallenge] = useState(null);
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
+  const [repeatCustomer, setRepeatCustomer] = useState(null);
+  const [repeatAddressMode, setRepeatAddressMode] = useState('new');
   const [destinationSearch, setDestinationSearch] = useState('');
   const [destinationOptions, setDestinationOptions] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
@@ -109,6 +111,8 @@ export const useCheckoutFlow = ({
     setCustomerCode(String(value || '').toUpperCase());
     setSecurityChallenge(null);
     setSecurityAnswer('');
+    setRepeatCustomer(null);
+    setRepeatAddressMode('new');
   };
 
   const updateDestinationSearch = (value) => {
@@ -120,11 +124,16 @@ export const useCheckoutFlow = ({
 
   const updateDeliveryAddress = (value) => {
     setDeliveryAddress(value);
+    if (repeatCustomer?.deliveryAddress && value !== repeatCustomer.deliveryAddress) {
+      setRepeatAddressMode('new');
+    }
   };
 
   const applyCheckoutCustomer = (customer) => {
     setSecurityChallenge(null);
     setSecurityAnswer('');
+    setRepeatCustomer(customer);
+    setRepeatAddressMode(customer.deliveryAddress || customer.deliveryArea ? 'last' : 'new');
     setCustomerCode(customer.customerCode);
     setCustomerName(customer.customerName);
     setContact(customer.contact);
@@ -133,6 +142,23 @@ export const useCheckoutFlow = ({
     setDestinationSearch(customer.deliveryArea || '');
     resetShipping();
     toast.success(`${customer.customerCode} loaded`);
+  };
+
+  const useCustomerLastAddress = () => {
+    if (!repeatCustomer) return;
+    setRepeatAddressMode('last');
+    setDeliveryAddress(repeatCustomer.deliveryAddress || '');
+    setDeliveryArea(repeatCustomer.deliveryArea || '');
+    setDestinationSearch(repeatCustomer.deliveryArea || '');
+    resetShipping({ keepSearch: true });
+  };
+
+  const useCustomerNewAddress = () => {
+    if (!repeatCustomer) return;
+    setRepeatAddressMode('new');
+    setDeliveryAddress('');
+    setDeliveryArea('');
+    resetShipping({ keepSearch: false });
   };
 
   const searchDestinations = async () => {
@@ -257,6 +283,8 @@ export const useCheckoutFlow = ({
       setContact('');
       setDeliveryAddress('');
       setDeliveryArea('');
+      setRepeatCustomer(null);
+      setRepeatAddressMode('new');
       resetShipping({ keepSearch: false });
       setSecurityChallenge(customer);
       setSecurityAnswer('');
@@ -398,6 +426,8 @@ export const useCheckoutFlow = ({
     securityChallenge,
     securityAnswer,
     lookupLoading,
+    repeatCustomer,
+    repeatAddressMode,
     destinationSearch,
     destinationOptions,
     selectedDestination,
@@ -421,6 +451,8 @@ export const useCheckoutFlow = ({
     chooseShippingCourier,
     updateCustomerCode,
     updateDestinationSearch,
+    useCustomerLastAddress,
+    useCustomerNewAddress,
     searchDestinations,
     autoCalculateShipping,
     loadShippingRates,

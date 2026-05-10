@@ -128,8 +128,12 @@ const saveLocalCustomer = ({
 
 export const getLocalCustomers = () => readCustomers().map(normalizeCustomer);
 
+const getLocalCustomerByCode = (normalizedCode) => (
+  getLocalCustomers().find((customer) => customer.customerCode === normalizedCode) || null
+);
+
 const getLocalCustomerPortalByCode = (normalizedCode) => {
-  const customer = getLocalCustomers().find((item) => item.customerCode === normalizedCode);
+  const customer = getLocalCustomerByCode(normalizedCode);
   if (!customer) return null;
 
   const orders = (() => {
@@ -200,12 +204,12 @@ export const lookupCheckoutCustomerByCode = async (customerCode, securityAnswer 
 
     if (error) throw error;
     const customer = data?.[0]?.customer;
-    if (!customer?.customer_code) return null;
+    if (!customer?.customer_code) return getLocalCustomerByCode(normalizedCode);
 
     return normalizeCustomer(customer);
   } catch (error) {
     console.warn('Using local checkout customer lookup fallback:', error.message || error);
-    return getLocalCustomers().find((customer) => customer.customerCode === normalizedCode) || null;
+    return getLocalCustomerByCode(normalizedCode);
   }
 };
 

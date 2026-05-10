@@ -1,6 +1,7 @@
 const notificationEventLabels = {
   order_created: 'Order created',
   paid: 'Paid',
+  processing: 'Processing',
   shipped: 'Shipped',
   completed: 'Completed',
 };
@@ -52,6 +53,16 @@ const templates = {
     getCustomerDashboardUrl(order),
     '',
     'Terima kasih, order kamu sudah masuk antrean produksi/fulfillment.',
+  ],
+  processing: (order) => [
+    buildGreeting(order),
+    '',
+    `Order ${order.orderNumber} sedang kami proses.`,
+    '',
+    'Tim Solivagant sedang menyiapkan pesanan kamu. Progress order bisa dicek di dashboard:',
+    getCustomerDashboardUrl(order),
+    '',
+    'Kami akan kirim update lagi setelah paket masuk proses pengiriman.',
   ],
   shipped: (order) => [
     buildGreeting(order),

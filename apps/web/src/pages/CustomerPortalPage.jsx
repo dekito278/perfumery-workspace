@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
+import { ArrowLeft, CreditCard, ExternalLink, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -36,14 +36,23 @@ const paymentStatusLabels = {
   refunded: 'Refunded',
 };
 
-const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
+const progressSteps = [
+  { key: 'created', label: 'Order dibuat' },
+  { key: 'pending_payment', label: 'Menunggu bayar' },
+  { key: 'paid', label: 'Paid' },
+  { key: 'processing', label: 'Diproses' },
+  { key: 'shipped', label: 'Dikirim' },
+  { key: 'completed', label: 'Selesai' },
+];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`;
+const canOpenPayment = (order) => Boolean(order?.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus));
+const canTrackShipment = (order) => Boolean(order?.trackingUrl && ['shipped', 'completed'].includes(order.status));
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
-  const index = statusSteps.indexOf(status);
-  return index >= 0 ? index : 0;
+  const index = progressSteps.findIndex((step) => step.key === status);
+  return index >= 0 ? index : 1;
 };
 
 const getBespokeProductionStep = (status) => {
@@ -82,14 +91,14 @@ const PaymentBadge = ({ status }) => (
 );
 
 const OrderProgressRail = ({ activeStep, compact = false }) => (
-  <div className={`grid grid-cols-5 ${compact ? 'gap-1.5' : 'gap-2'}`}>
-    {statusSteps.map((step, index) => {
+  <div className={`grid grid-cols-6 ${compact ? 'gap-1' : 'gap-2'}`}>
+    {progressSteps.map((step, index) => {
       const done = activeStep >= index;
       return (
-        <div key={step} className="min-w-0">
+        <div key={step.key} className="min-w-0">
           <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-          <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[8px]' : 'text-[10px]'} ${done ? 'text-[#263d27]' : 'text-muted-foreground'}`}>
-            {statusLabels[step] || step}
+          <div className={`mt-1 font-bold uppercase leading-tight ${compact ? 'text-[7px]' : 'text-[10px]'} ${done ? 'text-[#263d27]' : 'text-muted-foreground'}`}>
+            {step.label}
           </div>
         </div>
       );
@@ -205,7 +214,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
       </div>
       {order.trackingUrl ? (
         <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 block rounded-2xl bg-[#263d27] px-3 py-2 text-center text-xs font-bold text-[#eef2e8]">
-          Buka tracking
+          Lacak paket
         </a>
       ) : null}
     </div>
@@ -518,11 +527,17 @@ const CustomerPortalPage = () => {
                         <FileText className="h-4 w-4" />
                         Invoice
                       </Link>
-                      {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                      {canOpenPayment(order) ? (
                         <Link to={buildPaymentPath({ isMobileRoute, order })} className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
                           <CreditCard className="h-4 w-4" />
-                          Continue payment
+                          Buka pembayaran
                         </Link>
+                      ) : null}
+                      {canTrackShipment(order) ? (
+                        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
+                          <ExternalLink className="h-4 w-4" />
+                          Lacak paket
+                        </a>
                       ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <button
@@ -753,11 +768,17 @@ const CustomerPortalPage = () => {
                               <FileText className="h-4 w-4" />
                               Invoice / Receipt
                             </Link>
-                            {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+                            {canOpenPayment(order) ? (
                               <Link to={buildPaymentPath({ isMobileRoute, order })} className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
                                 <CreditCard className="h-4 w-4" />
-                                Continue payment
+                                Buka pembayaran
                               </Link>
+                            ) : null}
+                            {canTrackShipment(order) ? (
+                              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
+                                <ExternalLink className="h-4 w-4" />
+                                Lacak paket
+                              </a>
                             ) : null}
                             {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                               <button

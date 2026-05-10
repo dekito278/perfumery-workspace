@@ -35,6 +35,11 @@ const safeFilename = (value) => (
     .replace(/\s+/g, '_')
 );
 
+const safeBatchFilename = (count) => (
+  `batch_resi_${count || 0}_orders.pdf`
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
+);
+
 const parseNoteField = (notes = '', label) => {
   const prefix = `${label}:`;
   return String(notes || '')
@@ -73,8 +78,7 @@ const drawLabelValue = (doc, label, value, x, y, width = CONTENT_WIDTH) => {
   return y + 5 + (lines.length * 3.7);
 };
 
-export const exportShippingLabelPdf = (order) => {
-  const doc = new jsPDF({ unit: 'mm', format: 'a6', orientation: 'portrait' });
+const drawShippingLabel = (doc, order) => {
   const address = getOrderAddress(order);
   const area = getOrderArea(order);
   const shipping = getOrderShipping(order);
@@ -147,6 +151,27 @@ export const exportShippingLabelPdf = (order) => {
   doc.setFontSize(7);
   doc.setTextColor(...BRAND.muted);
   doc.text('Scan/check order di admin sebelum serah ke kurir', PAGE_WIDTH / 2, PAGE_HEIGHT - 10.7, { align: 'center' });
+};
+
+export const exportShippingLabelPdf = (order) => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a6', orientation: 'portrait' });
+  drawShippingLabel(doc, order);
 
   doc.save(safeFilename(order.orderNumber));
+};
+
+export const exportShippingLabelsPdf = (orders = []) => {
+  const printableOrders = orders.filter(canExportShippingLabel);
+  if (!printableOrders.length) return 0;
+
+  const doc = new jsPDF({ unit: 'mm', format: 'a6', orientation: 'portrait' });
+  printableOrders.forEach((order, index) => {
+    if (index > 0) {
+      doc.addPage('a6', 'portrait');
+    }
+    drawShippingLabel(doc, order);
+  });
+
+  doc.save(safeBatchFilename(printableOrders.length));
+  return printableOrders.length;
 };

@@ -22,6 +22,7 @@ import DashboardPage from '@/pages/DashboardPage.jsx';
 import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
 import ProductCategoriesPage from '@/pages/ProductCategoriesPage.jsx';
 import OrdersPage from '@/pages/OrdersPage.jsx';
+import OrderDetailPage from '@/pages/OrderDetailPage.jsx';
 import CustomersPage from '@/pages/CustomersPage.jsx';
 import ShipmentsPage from '@/pages/ShipmentsPage.jsx';
 import BriefsPage from '@/pages/BriefsPage.jsx';
@@ -359,6 +360,12 @@ function AppRoutes() {
         <Route path="/studio/orders" element={
           <ProtectedRoute>
             <OrdersPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/orders/:orderId" element={
+          <ProtectedRoute>
+            <OrderDetailPage />
           </ProtectedRoute>
         } />
 

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Clipboard, PackageCheck, PackageOpen, Send, Truck } from 'lucide-react';
+import { ArrowRight, Clipboard, Download, MessageCircle, PackageCheck, PackageOpen, Send, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
+import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
@@ -13,6 +14,8 @@ import {
   isBespokeOrder,
   updateOrderShipment,
 } from '@/services/orderService.js';
+import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -26,6 +29,14 @@ const isPaid = (order) => order.paymentStatus === 'paid';
 const isOpenShipment = (order) => !['shipped', 'delivered'].includes(order.shipmentStatus) && !['shipped', 'completed', 'cancelled'].includes(order.status);
 const isBespokeReady = (order) => !isBespokeOrder(order) || order.bespokeProductionStatus === 'ready';
 const isFulfillmentReady = (order) => isPaid(order) && isOpenShipment(order) && isBespokeReady(order);
+const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumber;
+
+const queueFilterOptions = [
+  { value: 'ready', label: 'Ready' },
+  { value: 'packing', label: 'Packing' },
+  { value: 'need_resi', label: 'Butuh resi' },
+  { value: 'blocked', label: 'Blocked' },
+];
 
 const createDrafts = (orders) => Object.fromEntries(orders.map((order) => [
   order.id || order.orderNumber,
@@ -59,6 +70,7 @@ const MobileFulfillmentPage = () => {
   const { orders, loading } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingId, setSavingId] = useState('');
+  const [queueFilter, setQueueFilter] = useState('ready');
 
   useEffect(() => {
     setDrafts(createDrafts(orders));
@@ -68,6 +80,12 @@ const MobileFulfillmentPage = () => {
   const readyOrders = useMemo(() => paidOrders.filter(isFulfillmentReady), [paidOrders]);
   const packingOrders = useMemo(() => readyOrders.filter((order) => order.shipmentStatus === 'packing'), [readyOrders]);
   const blockedPaidOrders = useMemo(() => paidOrders.filter((order) => isOpenShipment(order) && !isBespokeReady(order)), [paidOrders]);
+  const displayedOrders = useMemo(() => {
+    if (queueFilter === 'packing') return readyOrders.filter((order) => order.shipmentStatus === 'packing');
+    if (queueFilter === 'need_resi') return readyOrders.filter(isNeedsResi);
+    if (queueFilter === 'blocked') return blockedPaidOrders;
+    return readyOrders;
+  }, [blockedPaidOrders, queueFilter, readyOrders]);
   const shippedToday = useMemo(() => {
     const today = new Date().toDateString();
     return orders.filter((order) => order.shipmentStatus === 'shipped' && order.shippedAt && new Date(order.shippedAt).toDateString() === today);
@@ -113,6 +131,28 @@ const MobileFulfillmentPage = () => {
     toast.success('Packing list copied');
   };
 
+  const openWhatsAppFollowUp = (order, draft = {}) => {
+    const notificationOrder = {
+      ...order,
+      courierName: draft.courierName || order.courierName,
+      trackingNumber: draft.trackingNumber || order.trackingNumber,
+      trackingUrl: draft.trackingUrl || order.trackingUrl,
+      packingNotes: draft.packingNotes || order.packingNotes,
+    };
+    const eventKey = notificationOrder.trackingNumber || notificationOrder.shipmentStatus === 'shipped' ? 'shipped' : 'processing';
+    const message = buildNotificationMessage(notificationOrder, eventKey);
+    window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer');
+  };
+
+  const exportResi = (order) => {
+    if (!canExportShippingLabel(order)) {
+      toast.error('Resi PDF tersedia setelah payment paid');
+      return;
+    }
+    exportShippingLabelPdf(order);
+    toast.success('Resi PDF prepared');
+  };
+
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>Fulfillment - Solivagant</title></Helmet>
@@ -145,6 +185,12 @@ const MobileFulfillmentPage = () => {
             <FulfillmentMetric label="Paid blocked" value={loading ? '-' : blockedPaidOrders.length} tone={blockedPaidOrders.length ? 'rose' : 'stone'} />
             <FulfillmentMetric label="Shipped today" value={loading ? '-' : shippedToday.length} tone="stone" />
           </div>
+          <MobileFilterChips
+            value={queueFilter}
+            onChange={setQueueFilter}
+            options={queueFilterOptions}
+            className="mt-3 flex-nowrap overflow-x-auto pb-0"
+          />
         </section>
 
         {blockedPaidOrders.length ? (
@@ -184,10 +230,11 @@ const MobileFulfillmentPage = () => {
             <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>All orders</Button>
           </div>
 
-          {readyOrders.map((order) => {
+          {displayedOrders.map((order) => {
             const orderKey = order.id || order.orderNumber;
             const draft = drafts[orderKey] || {};
             const saving = savingId === orderKey;
+            const blocked = !isFulfillmentReady(order);
 
             return (
               <article key={orderKey} className="mobile-card p-3">
@@ -198,8 +245,16 @@ const MobileFulfillmentPage = () => {
                     <p className="mt-1 text-[10px] font-bold uppercase text-[#9ca3af]">{formatDate(order.createdAt)}</p>
                   </div>
                   <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">
-                    {shipmentStatusLabels[order.shipmentStatus] || 'Ready'}
+                    {blocked ? bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief'] : shipmentStatusLabels[order.shipmentStatus] || 'Ready'}
                   </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">Paid</span>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${draft.trackingNumber || order.trackingNumber ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+                    {draft.trackingNumber || order.trackingNumber ? 'Resi ready' : 'Need resi'}
+                  </span>
+                  {isBespokeOrder(order) ? <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">Bespoke</span> : null}
                 </div>
 
                 <div className="mt-3 grid gap-2">
@@ -217,12 +272,14 @@ const MobileFulfillmentPage = () => {
                     onChange={(event) => updateDraft(orderKey, 'courierName', event.target.value)}
                     placeholder="Kurir"
                     className="h-11 min-w-0 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                    disabled={blocked}
                   />
                   <input
                     value={draft.trackingNumber || ''}
                     onChange={(event) => updateDraft(orderKey, 'trackingNumber', event.target.value)}
                     placeholder="Resi"
                     className="h-11 min-w-0 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                    disabled={blocked}
                   />
                 </div>
                 <textarea
@@ -231,6 +288,7 @@ const MobileFulfillmentPage = () => {
                   rows={2}
                   placeholder="Catatan packing"
                   className="mt-2 w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+                  disabled={blocked}
                 />
 
                 <div className="mt-3 flex items-center justify-between gap-3">
@@ -249,45 +307,53 @@ const MobileFulfillmentPage = () => {
                   </Button>
                 </div>
 
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={() => copyPackingList(order)}>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPackingList(order)}>
                     <Clipboard className="h-4 w-4" />
-                    Copy
+                    Copy list
+                  </Button>
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => openWhatsAppFollowUp(order, draft)}>
+                    <MessageCircle className="h-4 w-4" />
+                    Follow up
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-11 rounded-2xl bg-white gap-1 text-xs"
+                    className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold"
                     onClick={() => saveShipment(order, 'packing')}
-                    disabled={saving}
+                    disabled={saving || blocked}
                   >
                     <PackageOpen className="h-4 w-4" />
                     Pack
                   </Button>
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => exportResi(order)} disabled={!canExportShippingLabel(order)}>
+                    <Download className="h-4 w-4" />
+                    Resi
+                  </Button>
                   <Button
                     type="button"
-                    className="h-11 rounded-2xl gap-1 text-xs"
+                    className="col-span-2 h-14 rounded-2xl gap-2 text-sm font-bold"
                     onClick={() => saveShipment(order, 'shipped')}
-                    disabled={saving}
+                    disabled={saving || blocked}
                   >
                     <Send className="h-4 w-4" />
-                    Ship
+                    Mark shipped
                   </Button>
                 </div>
               </article>
             );
           })}
 
-          {!readyOrders.length && !loading ? (
+          {!displayedOrders.length && !loading ? (
             <div className="mobile-card p-5 text-center">
               <PackageOpen className="mx-auto h-8 w-8 text-amber-700" />
-              <h2 className="mt-3 text-base font-bold text-[#1f2937]">No paid orders ready</h2>
+              <h2 className="mt-3 text-base font-bold text-[#1f2937]">No orders in this view</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Order paid akan muncul setelah payment masuk dan belum dikirim.
+                Ganti chip filter untuk melihat queue packing lain.
               </p>
             </div>
           ) : null}
-          {loading && !readyOrders.length ? (
+          {loading && !displayedOrders.length ? (
             <div className="mobile-card p-5 text-center text-xs font-bold text-[#6b7280]">Loading fulfillment queue...</div>
           ) : null}
         </section>

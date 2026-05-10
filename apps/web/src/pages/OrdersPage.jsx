@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, CreditCard, Download, ExternalLink, Loader2, PackageCheck, ReceiptText, RefreshCw, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Clipboard, CreditCard, Download, ExternalLink, Eye, Loader2, PackageCheck, ReceiptText, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -9,9 +10,11 @@ import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
   getBespokeItem,
   getBespokeProductionStatusLabels,
+  getOrderReservationExpiresAt,
   getOrderStatusLabels,
   isBespokeOrder,
 } from '@/services/orderService.js';
+import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -45,12 +48,44 @@ const bespokeDetailRows = (item) => [
 ].filter(([, value]) => value);
 
 const OrdersPage = () => {
+  const navigate = useNavigate();
   const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [syncingOrder, setSyncingOrder] = useState('');
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
     toast.success(`${order.orderNumber} copied`);
+  };
+
+  const prepareCustomerNotification = async (order, eventKey) => {
+    const message = buildNotificationMessage(order, eventKey);
+    if (!message) return;
+
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success(`${order.orderNumber} customer message copied`, {
+        action: {
+          label: 'Open WA',
+          onClick: () => window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer'),
+        },
+      });
+    } catch (error) {
+      toast.success(`${order.orderNumber} customer message ready`);
+    }
+  };
+
+  const updatePaymentAndNotify = async (order, paymentStatus) => {
+    await updatePaymentStatus(order.id || order.orderNumber, paymentStatus);
+    if (paymentStatus === 'paid') {
+      await prepareCustomerNotification({ ...order, paymentStatus: 'paid', status: 'paid' }, 'paid');
+    }
+  };
+
+  const updateStatusAndNotify = async (order, status) => {
+    await updateStatus(order.id || order.orderNumber, status);
+    if (['processing', 'shipped', 'completed'].includes(status)) {
+      await prepareCustomerNotification({ ...order, status }, status);
+    }
   };
 
   const syncDokuStatus = async (order) => {
@@ -116,6 +151,7 @@ const OrdersPage = () => {
             {orders.map((order) => {
               const bespoke = isBespokeOrder(order);
               const bespokeItem = getBespokeItem(order);
+              const reservationExpiresAt = getOrderReservationExpiresAt(order);
 
               return (
               <article key={order.id} className="rounded-2xl border bg-[#fbfaf7] p-4">
@@ -172,6 +208,13 @@ const OrdersPage = () => {
                           Checkout response saved
                         </span>
                       ) : null}
+                      {order.inventoryDeducted ? (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                          Stock reserved{reservationExpiresAt ? ` until ${formatDate(reservationExpiresAt)}` : ''}
+                        </span>
+                      ) : ['expired', 'failed', 'refunded'].includes(order.paymentStatus) || order.status === 'cancelled' ? (
+                        <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stock released</span>
+                      ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <button
                           type="button"
@@ -193,20 +236,21 @@ const OrdersPage = () => {
                     <div className="rounded-2xl border bg-white p-3">
                       <div className="text-xs font-bold uppercase text-muted-foreground">Payment admin</div>
                       <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
-                        <select value={order.paymentStatus} onChange={(event) => updatePaymentStatus(order.id || order.orderNumber, event.target.value)} className="h-10 rounded-2xl border bg-[#fbfaf7] px-3 text-xs font-bold outline-none focus:border-amber-300">
+                        <select value={order.paymentStatus} onChange={(event) => updatePaymentAndNotify(order, event.target.value)} className="h-10 rounded-2xl border bg-[#fbfaf7] px-3 text-xs font-bold outline-none focus:border-amber-300">
                           {Object.entries(paymentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
                         {order.paymentStatus !== 'paid' ? (
-                          <Button type="button" size="sm" className="h-10 rounded-2xl px-3 text-xs" onClick={() => updatePaymentStatus(order.id || order.orderNumber, 'paid')}>
+                          <Button type="button" size="sm" className="h-10 rounded-2xl px-3 text-xs" onClick={() => updatePaymentAndNotify(order, 'paid')}>
                             Mark paid
                           </Button>
                         ) : null}
                       </div>
                     </div>
-                    <select value={order.status} onChange={(event) => updateStatus(order.id || order.orderNumber, event.target.value)} className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
+                    <select value={order.status} onChange={(event) => updateStatusAndNotify(order, event.target.value)} className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
                       {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
                     <div className="grid grid-cols-2 gap-2">
+                      <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => navigate(`/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Copy</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}><Download className="h-4 w-4" />Resi PDF</Button>
                       <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Delete</Button>

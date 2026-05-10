@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Loader2, PackageCheck, Save, Truck } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Loader2, PackageCheck, Save, Search, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Checkbox } from '@/components/ui/checkbox.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
-import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
+import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { canExportShippingLabel, exportShippingLabelPdf, exportShippingLabelsPdf } from '@/utils/shippingLabelPdf.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -15,6 +17,12 @@ const formatDate = (value) => (value
   : '-');
 
 const shipmentStatusLabels = getShipmentStatusLabels();
+const fulfillmentFilterLabels = {
+  ready_to_ship: 'Paid belum dikirim',
+  all: 'Semua aktif',
+  shipped: 'Sudah dikirim',
+  unpaid: 'Belum paid',
+};
 
 const buildShipmentDraft = (order = {}) => ({
   shipmentStatus: order.shipmentStatus || 'not_ready',
@@ -29,10 +37,50 @@ const ShipmentsPage = () => {
   const { orders, summary, loading, reload } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingOrder, setSavingOrder] = useState('');
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [fulfillmentFilter, setFulfillmentFilter] = useState('ready_to_ship');
+  const [bulkDraft, setBulkDraft] = useState({
+    shipmentStatus: 'packing',
+    courierName: '',
+  });
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const shipmentOrders = useMemo(() => (
     orders.filter((order) => order.status !== 'cancelled')
   ), [orders]);
+
+  const filteredShipmentOrders = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return shipmentOrders.filter((order) => {
+      const paid = order.paymentStatus === 'paid';
+      const shipped = ['shipped', 'delivered'].includes(order.shipmentStatus);
+      const matchesFilter = fulfillmentFilter === 'all'
+        || (fulfillmentFilter === 'ready_to_ship' && paid && !shipped)
+        || (fulfillmentFilter === 'shipped' && shipped)
+        || (fulfillmentFilter === 'unpaid' && !paid);
+
+      if (!matchesFilter) return false;
+      if (!query) return true;
+
+      return [
+        order.orderNumber,
+        order.customerName,
+        order.customerCode,
+        order.contact,
+        order.trackingNumber,
+        order.courierName,
+      ].some((value) => String(value || '').toLowerCase().includes(query));
+    });
+  }, [fulfillmentFilter, searchTerm, shipmentOrders]);
+
+  const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
+  const selectedShipmentOrders = useMemo(() => (
+    shipmentOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber))
+  ), [selectedOrderSet, shipmentOrders]);
+  const selectedPrintableOrders = selectedShipmentOrders.filter(canExportShippingLabel);
+  const visibleOrderKeys = filteredShipmentOrders.map((order) => order.id || order.orderNumber);
+  const allVisibleSelected = visibleOrderKeys.length > 0 && visibleOrderKeys.every((key) => selectedOrderSet.has(key));
 
   useEffect(() => {
     setDrafts((current) => {
@@ -47,6 +95,10 @@ const ShipmentsPage = () => {
     });
   }, [shipmentOrders]);
 
+  useEffect(() => {
+    setSelectedOrders((current) => current.filter((key) => shipmentOrders.some((order) => (order.id || order.orderNumber) === key)));
+  }, [shipmentOrders]);
+
   const updateDraft = (order, field, value) => {
     const key = order.id || order.orderNumber;
     setDrafts((current) => ({
@@ -59,18 +111,87 @@ const ShipmentsPage = () => {
     }));
   };
 
+  const prepareShipmentNotification = async (order) => {
+    const message = buildNotificationMessage(order, 'shipped');
+    if (!message) return;
+
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success(`${order.orderNumber} tracking message copied`, {
+        action: {
+          label: 'Open WA',
+          onClick: () => window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer'),
+        },
+      });
+    } catch (error) {
+      toast.success(`${order.orderNumber} tracking message ready`);
+    }
+  };
+
   const saveShipment = async (order) => {
     const key = order.id || order.orderNumber;
     const draft = drafts[key] || buildShipmentDraft(order);
     setSavingOrder(key);
     try {
-      await updateOrderShipment(key, draft);
+      const nextOrder = await updateOrderShipment(key, draft);
       await reload();
+      if (draft.shipmentStatus === 'shipped' || draft.trackingNumber) {
+        await prepareShipmentNotification(nextOrder || { ...order, ...draft, status: draft.shipmentStatus === 'shipped' ? 'shipped' : order.status });
+      }
       toast.success(`${order.orderNumber} shipment saved`);
     } catch (error) {
       toast.error(error.message || 'Failed to save shipment');
     } finally {
       setSavingOrder('');
+    }
+  };
+
+  const toggleOrderSelection = (order, checked) => {
+    const key = order.id || order.orderNumber;
+    setSelectedOrders((current) => (
+      checked
+        ? Array.from(new Set([...current, key]))
+        : current.filter((value) => value !== key)
+    ));
+  };
+
+  const toggleVisibleSelection = (checked) => {
+    setSelectedOrders((current) => {
+      const visibleSet = new Set(visibleOrderKeys);
+      if (!checked) return current.filter((key) => !visibleSet.has(key));
+      return Array.from(new Set([...current, ...visibleOrderKeys]));
+    });
+  };
+
+  const bulkUpdateShipments = async () => {
+    if (!selectedShipmentOrders.length) {
+      toast.error('Pilih order dulu untuk bulk update');
+      return;
+    }
+
+    const patch = {
+      shipmentStatus: bulkDraft.shipmentStatus,
+      ...(bulkDraft.courierName.trim() ? { courierName: bulkDraft.courierName } : {}),
+    };
+    setBulkSaving(true);
+    try {
+      await Promise.all(selectedShipmentOrders.map((order) => {
+        const key = order.id || order.orderNumber;
+        const currentDraft = drafts[key] || buildShipmentDraft(order);
+        return updateOrderShipment(key, {
+          ...currentDraft,
+          ...patch,
+          trackingNumber: currentDraft.trackingNumber,
+          trackingUrl: currentDraft.trackingUrl,
+          packingNotes: currentDraft.packingNotes,
+        });
+      }));
+      await reload();
+      toast.success(`${selectedShipmentOrders.length} shipment updated`);
+    } catch (error) {
+      toast.error(error.message || 'Bulk update shipment gagal');
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -81,6 +202,15 @@ const ShipmentsPage = () => {
     }
     exportShippingLabelPdf(order);
     toast.success(`${order.orderNumber} resi PDF prepared`);
+  };
+
+  const exportSelectedShippingLabels = () => {
+    const printedCount = exportShippingLabelsPdf(selectedShipmentOrders);
+    if (!printedCount) {
+      toast.error('Pilih order paid untuk cetak bulk resi');
+      return;
+    }
+    toast.success(`${printedCount} resi PDF prepared`);
   };
 
   return (
@@ -112,7 +242,7 @@ const ShipmentsPage = () => {
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Active orders</span><strong>{summary.active}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total orders</span><strong>{summary.total}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Shipment rows</span><strong>{shipmentOrders.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Ready ship</span><strong>{shipmentOrders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length}</strong></div>
           </div>
         </div>
 
@@ -125,17 +255,81 @@ const ShipmentsPage = () => {
             </Button>
           </div>
 
+          <div className="mt-5 grid gap-3 rounded-2xl border bg-[#fbfaf7] p-4">
+            <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Cari customer, order, kontak, kurir, atau nomor resi"
+                  className="h-11 w-full rounded-2xl border bg-white pl-10 pr-3 text-sm font-semibold outline-none focus:border-amber-300"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {Object.entries(fulfillmentFilterLabels).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant="outline"
+                    className={`h-11 rounded-2xl text-xs font-bold ${fulfillmentFilter === value ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-white'}`}
+                    onClick={() => setFulfillmentFilter(value)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 border-t pt-3 lg:grid-cols-[auto_1fr_auto]">
+              <label className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-sm font-bold">
+                <Checkbox checked={allVisibleSelected} onCheckedChange={(checked) => toggleVisibleSelection(Boolean(checked))} />
+                Pilih tampilan
+              </label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  value={bulkDraft.courierName}
+                  onChange={(event) => setBulkDraft((current) => ({ ...current, courierName: event.target.value }))}
+                  placeholder="Bulk kurir, contoh: JNE / J&T"
+                  className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+                />
+                <select
+                  value={bulkDraft.shipmentStatus}
+                  onChange={(event) => setBulkDraft((current) => ({ ...current, shipmentStatus: event.target.value }))}
+                  className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300"
+                >
+                  {Object.entries(shipmentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button type="button" className="h-11 rounded-2xl gap-2" onClick={bulkUpdateShipments} disabled={bulkSaving || !selectedShipmentOrders.length}>
+                  {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Bulk update
+                </Button>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportSelectedShippingLabels} disabled={!selectedPrintableOrders.length}>
+                  <Download className="h-4 w-4" />
+                  Bulk resi
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs font-bold text-muted-foreground">
+              {filteredShipmentOrders.length} tampil / {shipmentOrders.length} shipment, {selectedShipmentOrders.length} dipilih, {selectedPrintableOrders.length} siap cetak.
+            </p>
+          </div>
+
           <div className="mt-5 grid gap-4">
-            {shipmentOrders.map((order) => {
+            {filteredShipmentOrders.map((order) => {
               const key = order.id || order.orderNumber;
               const draft = drafts[key] || buildShipmentDraft(order);
               const paid = order.paymentStatus === 'paid';
+              const selected = selectedOrderSet.has(key);
 
               return (
                 <article key={key} className="rounded-2xl border bg-[#fbfaf7] p-4">
                   <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
+                        <Checkbox checked={selected} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                         <h3 className="text-lg font-bold">{order.orderNumber}</h3>
                         <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${paid ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
                           {paid ? 'Paid' : 'Waiting payment'}
@@ -193,10 +387,14 @@ const ShipmentsPage = () => {
                         placeholder="Catatan packing..."
                         className="rounded-2xl border bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
                       />
-                      <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="grid gap-2 sm:grid-cols-3">
                         <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => saveShipment(order)} disabled={savingOrder === key}>
                           {savingOrder === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                           Save shipment
+                        </Button>
+                        <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate(`/studio/orders/${key}`)}>
+                          <Eye className="h-4 w-4" />
+                          Detail
                         </Button>
                         <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}>
                           <Download className="h-4 w-4" />
@@ -209,11 +407,11 @@ const ShipmentsPage = () => {
               );
             })}
 
-            {!shipmentOrders.length && !loading ? (
+            {!filteredShipmentOrders.length && !loading ? (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
                 <Truck className="mx-auto h-8 w-8 text-amber-700" />
-                <h3 className="mt-3 font-bold">No shipment rows yet</h3>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">Order checkout akan muncul di sini setelah tersimpan.</p>
+                <h3 className="mt-3 font-bold">No shipment rows match</h3>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">Ubah pencarian atau filter untuk melihat shipment lain.</p>
               </div>
             ) : null}
             {loading && !shipmentOrders.length ? (

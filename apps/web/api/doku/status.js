@@ -169,7 +169,7 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => 
   }
 
   if (['failed', 'expired', 'refunded'].includes(statusPatch.paymentStatus) && currentOrder?.inventory_deducted) {
-    await restoreInventoryForOrder(currentOrder, `DOKU status ${statusPatch.paymentStatus} stock restored`);
+    await restoreInventoryForOrder(currentOrder, `DOKU status ${statusPatch.paymentStatus} stock released`);
   }
 };
 

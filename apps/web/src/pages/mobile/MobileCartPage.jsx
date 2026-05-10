@@ -40,6 +40,8 @@ const MobileCartPage = () => {
     securityChallenge,
     securityAnswer,
     lookupLoading,
+    repeatCustomer,
+    repeatAddressMode,
     destinationSearch,
     destinationOptions,
     selectedDestination,
@@ -60,6 +62,8 @@ const MobileCartPage = () => {
     chooseShippingCourier,
     updateCustomerCode,
     updateDestinationSearch,
+    useCustomerLastAddress,
+    useCustomerNewAddress,
     searchDestinations,
     autoCalculateShipping,
     loadShippingRates,
@@ -238,6 +242,24 @@ const MobileCartPage = () => {
                       <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
                         <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Answer" className="h-11 rounded-2xl border border-[#d7dfd0] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                         <Button type="button" className="h-11 rounded-2xl px-4 text-xs font-bold" onClick={verifyCustomerSecurity} disabled={lookupLoading}>{lookupLoading ? '...' : 'Verify'}</Button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
+                    <div className="rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4] p-3">
+                      <div className="text-[10px] font-bold uppercase text-[#263d27]">Repeat customer</div>
+                      <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                        Pakai alamat checkout terakhir atau kirim ke alamat baru.
+                      </p>
+                      <div className="mt-3 grid gap-2">
+                        <button type="button" onClick={useCustomerLastAddress} className={`rounded-2xl border px-3 py-2 text-left text-xs font-bold ${repeatAddressMode === 'last' ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'border-[#263d27]/10 bg-white text-[#1f2937]'}`}>
+                          Pakai alamat terakhir
+                          <span className="mt-1 block text-[11px] font-semibold text-[#6b7280]">{repeatCustomer.deliveryArea || 'Area belum tersimpan'}</span>
+                        </button>
+                        <button type="button" onClick={useCustomerNewAddress} className={`rounded-2xl border px-3 py-2 text-left text-xs font-bold ${repeatAddressMode === 'new' ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'border-[#263d27]/10 bg-white text-[#1f2937]'}`}>
+                          Kirim ke alamat baru
+                          <span className="mt-1 block text-[11px] font-semibold text-[#6b7280]">Kosongkan alamat dan cari area ongkir baru.</span>
+                        </button>
                       </div>
                     </div>
                   ) : null}
