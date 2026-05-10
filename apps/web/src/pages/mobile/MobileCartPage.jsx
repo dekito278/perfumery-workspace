@@ -25,6 +25,12 @@ const formatCartSubtitle = (items, quantity) => {
   return remainingCount ? `${productNames} +${remainingCount} more` : `${quantity} item${quantity > 1 ? 's' : ''}: ${productNames}`;
 };
 
+const CheckoutChip = ({ active, label }) => (
+  <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${active ? 'bg-[#263d27] text-white' : 'bg-[#f8f7f4] text-[#6b7280]'}`}>
+    {label}
+  </span>
+);
+
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
@@ -89,6 +95,9 @@ const MobileCartPage = () => {
   const visibleShippingOptions = selectedCourier
     ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier)
     : [];
+  const customerReady = Boolean(customerName.trim() && contact.trim());
+  const deliveryReady = Boolean(deliveryAddress.trim() && selectedDestination);
+  const shippingReady = Boolean(selectedCourier && selectedShipping);
 
   return (
     <MobileCommerceLayout>
@@ -185,8 +194,27 @@ const MobileCartPage = () => {
           onOpenChange={setCheckoutOpen}
           title="Checkout"
           description={`${formatCartSubtitle(items, summary.quantity)} / ${formatTotal(totalDue)}`}
+          footer={(
+            <div className="grid gap-2">
+              {!canSubmitCheckout ? (
+                <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                  Lengkapi customer, alamat, area ongkir, ekspedisi, dan layanan ongkir untuk lanjut bayar.
+                </p>
+              ) : null}
+              <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={!canSubmitCheckout}>
+                <CreditCard className="h-4 w-4" />
+                {saving ? 'Memproses...' : 'Bayar sekarang'}
+              </Button>
+            </div>
+          )}
         >
           <div className="space-y-3">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <CheckoutChip active={Boolean(items.length)} label="Cart" />
+              <CheckoutChip active={customerReady} label="Customer" />
+              <CheckoutChip active={deliveryReady} label="Delivery" />
+              <CheckoutChip active={shippingReady} label="Shipping" />
+            </div>
             <section className="mobile-card p-3">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-sm font-bold text-[#1f2937]">Products in cart</h2>
@@ -347,17 +375,6 @@ const MobileCartPage = () => {
                 </div>
               </section>
 
-              <div className="grid gap-2">
-                {!canSubmitCheckout ? (
-                  <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-                    Lengkapi customer, alamat, area ongkir, ekspedisi, dan layanan ongkir untuk lanjut bayar.
-                  </p>
-                ) : null}
-                <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={!canSubmitCheckout}>
-                  <CreditCard className="h-4 w-4" />
-                  {saving ? 'Memproses...' : 'Bayar sekarang'}
-                </Button>
-              </div>
           </div>
         </MobileBottomSheet>
       </main>

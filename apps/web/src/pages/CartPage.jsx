@@ -16,6 +16,16 @@ const courierLabels = {
   jne: 'JNE',
 };
 
+const CheckoutSectionTitle = ({ step, title, description }) => (
+  <div className="flex items-start gap-3">
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-sm font-bold text-[#263d27]">{step}</span>
+    <div>
+      <h3 className="text-sm font-bold text-[#0b130c]">{title}</h3>
+      {description ? <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">{description}</p> : null}
+    </div>
+  </div>
+);
+
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const {
@@ -162,14 +172,17 @@ const CartPage = () => {
           {items.length ? (
             <aside className="rounded-2xl border bg-white p-5 shadow-sm">
               <h2 className="text-xl font-bold">Checkout</h2>
-              <div className="mt-4 grid gap-3">
-                <div className="grid grid-cols-[1fr_auto] gap-2">
-                  <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Load'}</Button>
-                </div>
-                <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
-                  Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
-                </p>
+              <div className="mt-4 grid gap-4">
+                <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                  <CheckoutSectionTitle step="1" title="Customer" description="Masuk sebagai repeat customer atau isi data baru." />
+                  <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Load'}</Button>
+                  </div>
+                  <p className="mt-2 rounded-2xl bg-white px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                    Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
+                  </p>
+                </section>
                 {securityChallenge ? (
                   <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
                     <div className="text-xs font-bold uppercase text-[#263d27]">Security question</div>
@@ -180,6 +193,9 @@ const CartPage = () => {
                     </div>
                   </div>
                 ) : null}
+                <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                  <CheckoutSectionTitle step="2" title="Delivery" description="Nama, kontak, dan alamat lengkap untuk kurir." />
+                  <div className="mt-3 grid gap-3">
                 {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
                   <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
                     <div className="text-xs font-bold uppercase text-[#263d27]">Repeat customer</div>
@@ -201,6 +217,11 @@ const CartPage = () => {
                 <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                  </div>
+                </section>
+                <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                  <CheckoutSectionTitle step="3" title="Shipping" description="Cari area, pilih ekspedisi, lalu pilih layanan ongkir." />
+                  <div className="mt-3 grid gap-3">
                 <div className="grid gap-2">
                   <div className="text-xs font-bold uppercase text-[#263d27]">Area ongkir</div>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -262,7 +283,14 @@ const CartPage = () => {
                   </div>
                 ) : null}
                 {shippingError ? <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">{shippingError}</p> : null}
+                  </div>
+                </section>
+                <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                  <CheckoutSectionTitle step="4" title="Payment note" description="Catatan opsional sebelum order dibuat." />
+                  <div className="mt-3">
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                  </div>
+                </section>
               </div>
               <div className="mt-4 rounded-2xl bg-[#f7f8f2] p-4">
                 <div className="flex items-center justify-between text-sm font-bold">

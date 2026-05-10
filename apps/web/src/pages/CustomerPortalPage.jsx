@@ -4,6 +4,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ExternalLink, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
+import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
   getCustomerPortalByCode,
@@ -47,7 +48,7 @@ const progressSteps = [
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`;
 const canOpenPayment = (order) => Boolean(order?.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus));
-const canTrackShipment = (order) => Boolean(order?.trackingUrl && ['shipped', 'completed'].includes(order.status));
+const canTrackShipment = (order) => Boolean(order?.trackingUrl && order?.trackingNumber);
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
@@ -58,13 +59,6 @@ const getActiveStep = (status) => {
 const getBespokeProductionStep = (status) => {
   const index = bespokeProductionSteps.indexOf(status || 'review_brief');
   return index >= 0 ? index : 0;
-};
-
-const getPaymentTone = (status) => {
-  if (status === 'paid') return 'bg-emerald-50 text-emerald-700';
-  if (['failed', 'expired'].includes(status)) return 'bg-rose-50 text-rose-700';
-  if (status === 'pending') return 'bg-amber-50 text-amber-700';
-  return 'bg-stone-100 text-stone-600';
 };
 
 const bespokeDetailRows = (item) => [
@@ -78,33 +72,57 @@ const bespokeDetailRows = (item) => [
 ].filter(([, value]) => value);
 
 const StatusBadge = ({ status }) => (
-  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-800 sm:px-3 sm:text-xs">
+  <StatusChip tone={getOrderStatusTone(status)}>
     {statusLabels[status] || status}
-  </span>
+  </StatusChip>
 );
 
 const PaymentBadge = ({ status }) => (
-  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase sm:px-3 sm:text-xs ${getPaymentTone(status)}`}>
-    <CreditCard className="h-3 w-3" />
+  <StatusChip icon={CreditCard} tone={getPaymentStatusTone(status)}>
     {paymentStatusLabels[status] || status}
-  </span>
+  </StatusChip>
 );
 
-const OrderProgressRail = ({ activeStep, compact = false }) => (
-  <div className={`grid grid-cols-6 ${compact ? 'gap-1' : 'gap-2'}`}>
-    {progressSteps.map((step, index) => {
-      const done = activeStep >= index;
-      return (
-        <div key={step.key} className="min-w-0">
-          <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-          <div className={`mt-1 font-bold uppercase leading-tight ${compact ? 'text-[7px]' : 'text-[10px]'} ${done ? 'text-[#263d27]' : 'text-muted-foreground'}`}>
-            {step.label}
+const ShipmentBadge = ({ status }) => (
+  <StatusChip icon={Truck} tone={getShipmentStatusTone(status)}>
+    {shipmentStatusLabels[status] || status || 'Belum dikirim'}
+  </StatusChip>
+);
+
+const OrderTimeline = ({ order, compact = false }) => {
+  const activeStep = getActiveStep(order.status);
+  const timeline = progressSteps.map((step, index) => {
+    const done = activeStep >= index;
+    const current = activeStep === index;
+    let detail = done ? 'Sudah tercatat' : 'Menunggu tahap sebelumnya';
+    if (step.key === 'created') detail = formatDate(order.createdAt);
+    if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? 'Payment sudah diterima' : 'Menunggu pembayaran selesai';
+    if (step.key === 'paid') detail = paymentStatusLabels[order.paymentStatus] || order.paymentStatus || '-';
+    if (step.key === 'processing') detail = shipmentStatusLabels[order.shipmentStatus] || statusLabels[order.status] || '-';
+    if (step.key === 'shipped') detail = order.trackingNumber ? `${order.courierName || 'Kurir'} / ${order.trackingNumber}` : 'Resi akan muncul setelah paket dikirim';
+    if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt) : 'Menunggu paket diterima';
+
+    return { ...step, done, current, detail };
+  });
+
+  return (
+    <div className={compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
+      {timeline.map((step, index) => (
+        <div key={step.key} className={`rounded-2xl border px-3 py-3 ${step.done ? 'border-[#263d27]/20 bg-white' : 'border-stone-200 bg-stone-50'} ${step.current ? 'ring-2 ring-[#263d27]/15' : ''}`}>
+          <div className="flex items-start gap-3">
+            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-[#263d27] text-white' : 'bg-stone-200 text-stone-500'}`}>
+              {index + 1}
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[#0b130c]">{step.label}</div>
+              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{step.detail}</p>
+            </div>
           </div>
         </div>
-      );
-    })}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 const OrderItems = ({ order, compact = false }) => (
   <div className="grid gap-2">
@@ -182,9 +200,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
           <Truck className="h-3.5 w-3.5" />
           Shipment
         </div>
-        <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
-          {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
-        </span>
+        <ShipmentBadge status={order.shipmentStatus} />
       </div>
       <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
         {order.courierName ? (
@@ -213,8 +229,9 @@ const ShipmentPanel = ({ order, compact = false }) => {
         ) : null}
       </div>
       {order.trackingUrl ? (
-        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 block rounded-2xl bg-[#263d27] px-3 py-2 text-center text-xs font-bold text-[#eef2e8]">
-          Lacak paket
+        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-3 text-xs font-bold text-[#eef2e8]">
+          <ExternalLink className="h-4 w-4" />
+          Track resi
         </a>
       ) : null}
     </div>
@@ -495,7 +512,6 @@ const CustomerPortalPage = () => {
               <section className="space-y-3">
                 <h2 className="text-base font-bold text-[#0b130c]">Order progress</h2>
                 {portal.orders.map((order) => {
-                  const activeStep = getActiveStep(order.status);
                   const bespoke = isBespokeOrder(order);
                   const bespokeItem = getBespokeItem(order);
                   return (
@@ -509,6 +525,7 @@ const CustomerPortalPage = () => {
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <StatusBadge status={order.status} />
                             <PaymentBadge status={order.paymentStatus} />
+                            {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                           </div>
                         </div>
                       </div>
@@ -530,13 +547,13 @@ const CustomerPortalPage = () => {
                       {canOpenPayment(order) ? (
                         <Link to={buildPaymentPath({ isMobileRoute, order })} className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
                           <CreditCard className="h-4 w-4" />
-                          Buka pembayaran
+                          Continue payment
                         </Link>
                       ) : null}
                       {canTrackShipment(order) ? (
                         <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
                           <ExternalLink className="h-4 w-4" />
-                          Lacak paket
+                          Track resi
                         </a>
                       ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
@@ -551,7 +568,7 @@ const CustomerPortalPage = () => {
                         </button>
                       ) : null}
                       <div className="mt-4">
-                        <OrderProgressRail activeStep={activeStep} compact />
+                        <OrderTimeline order={order} compact />
                       </div>
                       </div>
                     </article>
@@ -737,7 +754,6 @@ const CustomerPortalPage = () => {
                   <h2 className="text-xl font-bold">Order progress</h2>
                   <div className="mt-4 grid gap-4">
                     {portal.orders.map((order) => {
-                      const activeStep = getActiveStep(order.status);
                       const bespoke = isBespokeOrder(order);
                       const bespokeItem = getBespokeItem(order);
                       return (
@@ -749,6 +765,7 @@ const CustomerPortalPage = () => {
                                 <h3 className="text-lg font-bold">{order.orderNumber}</h3>
                                 <StatusBadge status={order.status} />
                                 <PaymentBadge status={order.paymentStatus} />
+                                {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                               </div>
                               <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)}</p>
                             </div>
@@ -771,13 +788,13 @@ const CustomerPortalPage = () => {
                             {canOpenPayment(order) ? (
                               <Link to={buildPaymentPath({ isMobileRoute, order })} className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
                                 <CreditCard className="h-4 w-4" />
-                                Buka pembayaran
+                                Continue payment
                               </Link>
                             ) : null}
                             {canTrackShipment(order) ? (
                               <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
                                 <ExternalLink className="h-4 w-4" />
-                                Lacak paket
+                                Track resi
                               </a>
                             ) : null}
                             {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
@@ -792,7 +809,7 @@ const CustomerPortalPage = () => {
                               </button>
                             ) : null}
                             <div className="mt-5">
-                              <OrderProgressRail activeStep={activeStep} />
+                              <OrderTimeline order={order} />
                             </div>
                           </div>
                         </article>

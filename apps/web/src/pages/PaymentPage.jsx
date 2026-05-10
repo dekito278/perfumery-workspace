@@ -12,6 +12,16 @@ import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+const formatDateTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+};
+
 const paymentStatusLabels = {
   unpaid: 'Belum dibayar',
   pending: 'Menunggu pembayaran',
@@ -19,6 +29,39 @@ const paymentStatusLabels = {
   failed: 'Pembayaran gagal',
   expired: 'Pembayaran expired',
   refunded: 'Refunded',
+};
+
+const paymentStatusTone = {
+  unpaid: {
+    className: 'border-amber-200 bg-amber-50 text-amber-900',
+    title: 'Menunggu pembayaran',
+    description: 'Order sudah dibuat. Selesaikan pembayaran sebelum sesi kedaluwarsa.',
+  },
+  pending: {
+    className: 'border-amber-200 bg-amber-50 text-amber-900',
+    title: 'Menunggu pembayaran',
+    description: 'Order sudah dibuat. Selesaikan pembayaran sebelum sesi kedaluwarsa.',
+  },
+  paid: {
+    className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    title: 'Pembayaran diterima',
+    description: 'Terima kasih. Order siap masuk proses packing setelah admin mengecek fulfillment.',
+  },
+  expired: {
+    className: 'border-rose-200 bg-rose-50 text-rose-800',
+    title: 'Sesi pembayaran expired',
+    description: 'Gunakan track order untuk cek status terbaru atau ulangi checkout jika perlu.',
+  },
+  failed: {
+    className: 'border-rose-200 bg-rose-50 text-rose-800',
+    title: 'Pembayaran belum berhasil',
+    description: 'Kamu bisa buka ulang pembayaran atau kembali ke cart untuk mencoba lagi.',
+  },
+  refunded: {
+    className: 'border-slate-200 bg-slate-50 text-slate-700',
+    title: 'Pembayaran refunded',
+    description: 'Status refund sudah tercatat di order.',
+  },
 };
 
 const readPaymentSession = () => {
@@ -63,6 +106,9 @@ const PaymentFrame = ({ session, compact = false }) => {
     },
   }[frameStatus];
   const customerCode = session.customerCode || '';
+  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const currentPaymentTone = paymentStatusTone[session.paymentStatus || 'pending'] || paymentStatusTone.pending;
+  const expiresAtLabel = formatDateTime(session.paymentExpiresAt);
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     await navigator.clipboard.writeText(customerCode);
@@ -123,6 +169,20 @@ const PaymentFrame = ({ session, compact = false }) => {
             </div>
           </div>
         ) : null}
+        <div className={`mt-4 rounded-2xl border px-4 py-3 ${currentPaymentTone.className}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="text-xs font-bold">{currentPaymentTone.title}</div>
+              <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{currentPaymentTone.description}</p>
+              {expiresAtLabel ? <p className="mt-2 text-[11px] font-bold uppercase opacity-80">Batas bayar: {expiresAtLabel}</p> : null}
+            </div>
+            {customerCode ? (
+              <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-[#263d27]">
+                Track order
+              </Link>
+            ) : null}
+          </div>
+        </div>
       </div>
       <div className="border-b border-[#263d27]/10 bg-white px-4 py-3">
         <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${statusCopy.className}`}>
@@ -148,10 +208,17 @@ const PaymentFrame = ({ session, compact = false }) => {
         <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
           Kalau panel pembayaran tidak termuat oleh browser, gunakan tombol cadangan ini.
         </p>
-        <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
-          <ExternalLink className="h-4 w-4" />
-          Buka pembayaran
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {customerCode ? (
+            <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#263d27]">
+              Track order
+            </Link>
+          ) : null}
+          <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
+            <ExternalLink className="h-4 w-4" />
+            Buka pembayaran
+          </Button>
+        </div>
       </div>
     </section>
   );

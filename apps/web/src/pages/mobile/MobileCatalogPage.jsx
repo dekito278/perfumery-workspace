@@ -97,7 +97,8 @@ const MobileCatalogPage = () => {
         <meta name="description" content="Browse Solivagant products by category, price, and scent profile." />
       </Helmet>
       <main className="mobile-page space-y-4">
-        <section className="mobile-card p-2">
+        <section className="mobile-sticky-search">
+          <div className="mobile-card p-2">
           <label className="flex h-12 items-center gap-2 rounded-2xl bg-[#f7f8f2] px-3">
             <Search className="h-4 w-4 text-[#8b949e]" />
             <input
@@ -108,36 +109,34 @@ const MobileCatalogPage = () => {
               className="min-h-0 flex-1 bg-transparent text-sm font-semibold text-[#0b130c] outline-none placeholder:text-[#9ca3af]"
             />
           </label>
-        </section>
-
-        {hasCatalogProducts ? (
-        <section className="mobile-card p-2">
-          <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f7f8f2] p-1">
-            {shopTypeOptions.map((item) => (
-              <button
-                key={item.filter}
-                type="button"
-                onClick={() => updateFilters({ segment: item.filter })}
-                style={{ minHeight: 34 }}
-                className={cn(
-                  'h-[34px] rounded-xl px-2 py-1 text-[11px] font-bold leading-tight transition',
-                  segment === item.filter
-                    ? 'bg-white text-[#263d27] shadow-sm'
-                    : 'text-[#7a8377]'
-                )}
-              >
-                {item.name}
-              </button>
-            ))}
+          {hasCatalogProducts ? (
+            <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f7f8f2] p-1">
+              {shopTypeOptions.map((item) => (
+                <button
+                  key={item.filter}
+                  type="button"
+                  onClick={() => updateFilters({ segment: item.filter })}
+                  style={{ minHeight: 36 }}
+                  className={cn(
+                    'h-9 rounded-xl px-2 py-1 text-[11px] font-bold leading-tight transition',
+                    segment === item.filter
+                      ? 'bg-white text-[#263d27] shadow-sm'
+                      : 'text-[#7a8377]'
+                  )}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
           </div>
         </section>
-        ) : null}
 
         {hasCatalogProducts && scentFamilies.length ? (
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-xs font-bold uppercase text-[#6b7280]">Shop family</h2>
-            <span className="text-[10px] font-bold uppercase text-[#9ca3af]">Slide</span>
+            <span className="text-[10px] font-bold uppercase text-[#9ca3af]">{filteredProducts.length} shown</span>
           </div>
           <div className="mobile-segment-scroll flex gap-5 overflow-x-auto pb-2 pl-1 pr-4">
             {['All', ...scentFamilies.map((item) => item.name)].map((item) => (
@@ -191,10 +190,10 @@ const MobileCatalogPage = () => {
             <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
                 <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 4} />
-                <div className="mt-2">
+                <div className="mt-2 flex min-h-[174px] flex-col">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>
-                    <p className="mt-1 text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
+                    <p className="mobile-line-clamp-2 mt-1 text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div>
@@ -205,7 +204,8 @@ const MobileCatalogPage = () => {
                       {product.stock > 0 ? `${product.stock} left` : 'Sold out'}
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="mt-auto pt-2">
+                  <div className="flex flex-wrap gap-1">
                     {product.variants.slice(0, 3).map((variant) => (
                       <span key={variant.id || variant.size} className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold text-[#263d27]">{variant.size}</span>
                     ))}
@@ -217,6 +217,7 @@ const MobileCatalogPage = () => {
                         {tag}
                       </span>
                     ))}
+                  </div>
                   </div>
                 </div>
               </button>

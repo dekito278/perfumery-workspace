@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -56,6 +56,7 @@ const MobileProductDetailPage = () => {
   const selectedStock = Number(selectedVariant?.stock ?? product.stock ?? 0);
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
+  const soldOut = selectedStock <= 0;
   const lowStock = selectedStock > 0 && selectedStock <= 5;
   const addSelectedVariant = () => {
     if (selectedStock <= 0) {
@@ -132,11 +133,9 @@ const MobileProductDetailPage = () => {
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stock</div>
               </div>
             </div>
-            {lowStock ? (
-              <div className="mt-3 rounded-2xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
-                Stok varian ini mau habis, tinggal {selectedStock}.
-              </div>
-            ) : null}
+            <div className={`mt-3 rounded-2xl px-3 py-2 text-xs font-bold ${soldOut ? 'bg-rose-50 text-rose-700' : lowStock ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
+              {soldOut ? 'Varian ini sedang habis.' : lowStock ? `Stok varian ini mau habis, tinggal ${selectedStock}.` : 'Stok tersedia, siap masuk cart.'}
+            </div>
             <Button className="mt-3 h-12 w-full rounded-2xl gap-2" onClick={addSelectedVariant} disabled={selectedStock <= 0}>
               Add to cart
               <ArrowRight className="h-4 w-4" />
@@ -164,6 +163,24 @@ const MobileProductDetailPage = () => {
           Back to catalog
           <ShoppingBag className="h-4 w-4 text-[#263d27]" />
         </Link>
+
+        <section className="mobile-card border border-[#263d27]/15 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                <PackageCheck className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-bold text-[#0b130c]">{selectedSize}</div>
+                <div className="text-xs font-semibold text-[#6b7280]">{formatRupiah(selectedPrice)}</div>
+              </div>
+            </div>
+            <Button className="h-11 shrink-0 rounded-2xl gap-2 px-4" onClick={addSelectedVariant} disabled={soldOut}>
+              Add
+              <ShoppingBag className="h-4 w-4" />
+            </Button>
+          </div>
+        </section>
       </main>
       <MobileBottomSheet
         open={cartPromptOpen}

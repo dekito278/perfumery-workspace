@@ -24,6 +24,13 @@ const fulfillmentFilterLabels = {
   unpaid: 'Belum paid',
 };
 
+const getShipmentTone = (status) => {
+  if (['delivered', 'completed'].includes(status)) return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  if (status === 'shipped') return 'border-sky-200 bg-sky-50 text-sky-700';
+  if (['packing', 'ready_to_ship'].includes(status)) return 'border-[#263d27]/20 bg-[#eef2e8] text-[#263d27]';
+  return 'border-stone-200 bg-stone-100 text-stone-600';
+};
+
 const buildShipmentDraft = (order = {}) => ({
   shipmentStatus: order.shipmentStatus || 'not_ready',
   courierName: order.courierName || '',
@@ -81,6 +88,15 @@ const ShipmentsPage = () => {
   const selectedPrintableOrders = selectedShipmentOrders.filter(canExportShippingLabel);
   const visibleOrderKeys = filteredShipmentOrders.map((order) => order.id || order.orderNumber);
   const allVisibleSelected = visibleOrderKeys.length > 0 && visibleOrderKeys.every((key) => selectedOrderSet.has(key));
+  const readyToShipCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length;
+  const missingResiCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && ['packing', 'ready_to_ship', 'shipped'].includes(order.shipmentStatus) && !order.trackingNumber).length;
+  const shippedCount = shipmentOrders.filter((order) => ['shipped', 'delivered'].includes(order.shipmentStatus)).length;
+  const filterCounts = {
+    ready_to_ship: readyToShipCount,
+    all: shipmentOrders.length,
+    shipped: shippedCount,
+    unpaid: shipmentOrders.filter((order) => order.paymentStatus !== 'paid').length,
+  };
 
   useEffect(() => {
     setDrafts((current) => {
@@ -242,7 +258,7 @@ const ShipmentsPage = () => {
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Active orders</span><strong>{summary.active}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total orders</span><strong>{summary.total}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Ready ship</span><strong>{shipmentOrders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Ready ship</span><strong>{readyToShipCount}</strong></div>
           </div>
         </div>
 
@@ -275,9 +291,24 @@ const ShipmentsPage = () => {
                     className={`h-11 rounded-2xl text-xs font-bold ${fulfillmentFilter === value ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-white'}`}
                     onClick={() => setFulfillmentFilter(value)}
                   >
-                    {label}
+                    {label} <span className="ml-1 opacity-70">{filterCounts[value]}</span>
                   </Button>
                 ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 border-t pt-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <div className="text-xs font-bold uppercase text-muted-foreground">Ready packing</div>
+                <div className="mt-1 text-2xl font-bold text-[#263d27]">{readyToShipCount}</div>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <div className="text-xs font-bold uppercase text-muted-foreground">Missing resi</div>
+                <div className="mt-1 text-2xl font-bold text-amber-700">{missingResiCount}</div>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <div className="text-xs font-bold uppercase text-muted-foreground">Selected printable</div>
+                <div className="mt-1 text-2xl font-bold text-[#263d27]">{selectedPrintableOrders.length}</div>
               </div>
             </div>
 
@@ -334,9 +365,14 @@ const ShipmentsPage = () => {
                         <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${paid ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
                           {paid ? 'Paid' : 'Waiting payment'}
                         </span>
-                        <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
+                        <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase ${getShipmentTone(order.shipmentStatus)}`}>
                           {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
                         </span>
+                        {paid && !draft.trackingNumber ? (
+                          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold uppercase text-amber-800">
+                            Need resi
+                          </span>
+                        ) : null}
                       </div>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">
                         {formatDate(order.createdAt)} / {order.customerName} / {order.contact}
@@ -349,8 +385,9 @@ const ShipmentsPage = () => {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-3 rounded-2xl bg-white px-3 py-2 text-sm font-bold">
-                        Total {formatTotal(order.subtotal)}
+                      <div className="mt-3 grid gap-2 rounded-2xl bg-white px-3 py-2 text-sm font-bold sm:grid-cols-2">
+                        <span>Total {formatTotal(order.subtotal)}</span>
+                        <span className="text-muted-foreground">{order.courierName || draft.courierName || 'Kurir belum diisi'}{order.trackingNumber || draft.trackingNumber ? ` / ${order.trackingNumber || draft.trackingNumber}` : ''}</span>
                       </div>
                     </div>
 

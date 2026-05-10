@@ -18,6 +18,7 @@ import DashboardSection from '@/components/DashboardSection.jsx';
 import RecentActivityList from '@/components/RecentActivityList.jsx';
 import OperationalInsightCard from '@/components/OperationalInsightCard.jsx';
 import { formatStatus } from '@/utils/formatting.js';
+import { getProductLowStock } from '@/services/productCatalogService.js';
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -64,7 +65,7 @@ const DashboardPage = () => {
   const { getValidationLogs } = useValidationLogs();
   const { getBriefMaterialShortlistsByBriefIds } = useBriefMaterialShortlists();
   const catalogProducts = useCatalogProducts();
-  const { summary: orderSummary } = useOrders();
+  const { orders, summary: orderSummary } = useOrders();
 
   const [materials, setMaterials] = useState([]);
   const [formulas, setFormulas] = useState([]);
@@ -141,6 +142,51 @@ const DashboardPage = () => {
     () => catalogProducts.filter((product) => product.source === 'custom'),
     [catalogProducts]
   );
+  const lowStockProducts = useMemo(
+    () => catalogProducts.filter(getProductLowStock),
+    [catalogProducts]
+  );
+  const paidReadyOrders = useMemo(
+    () => orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status)),
+    [orders]
+  );
+  const paymentFollowUps = useMemo(
+    () => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)),
+    [orders]
+  );
+  const shipmentFollowUps = useMemo(
+    () => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)),
+    [orders]
+  );
+  const todayPriorities = [
+    {
+      icon: Truck,
+      label: 'Paid-ready',
+      title: `${paidReadyOrders.length} order siap packing`,
+      helper: 'Packing, input resi, lalu ship',
+      tone: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+      action: 'Open shipments',
+      onClick: () => navigate('/studio/shipments'),
+    },
+    {
+      icon: PackageCheck,
+      label: 'Follow-up',
+      title: `${paymentFollowUps.length} payment pending`,
+      helper: 'Sync DOKU atau kirim payment link',
+      tone: 'bg-amber-50 text-amber-800 border-amber-100',
+      action: 'Open orders',
+      onClick: () => navigate('/studio/orders'),
+    },
+    {
+      icon: AlertTriangle,
+      label: 'Low stock',
+      title: `${lowStockProducts.length} product hampir habis`,
+      helper: 'Cek varian, restock, atau hide dari storefront',
+      tone: 'bg-rose-50 text-rose-700 border-rose-100',
+      action: 'Open products',
+      onClick: () => navigate('/studio/products'),
+    },
+  ];
   const recentFormulas = useMemo(
     () => [...formulas].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5),
     [formulas]
@@ -344,6 +390,52 @@ const DashboardPage = () => {
                 </Button>
               </div>
             </section>
+          </div>
+        </DashboardSection>
+
+        <DashboardSection title="Today priority" subtitle="Queue kerja harian yang paling perlu disentuh dulu.">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {todayPriorities.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.onClick}
+                  className={`rounded-3xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${item.tone}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/80">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold uppercase">{item.label}</span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-bold text-[#0b130c]">{item.title}</h3>
+                  <p className="mt-2 text-sm font-semibold leading-relaxed opacity-80">{item.helper}</p>
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
+                    {item.action}
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <button type="button" onClick={() => navigate('/studio/orders')} className="rounded-2xl border bg-white p-4 text-left shadow-sm">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Shipment follow-up</div>
+              <div className="mt-1 text-2xl font-bold">{shipmentFollowUps.length}</div>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">Paket shipped yang belum completed.</p>
+            </button>
+            <button type="button" onClick={() => navigate('/validation')} className="rounded-2xl border bg-white p-4 text-left shadow-sm">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Validation follow-up</div>
+              <div className="mt-1 text-2xl font-bold">{actionNeededLogs.length}</div>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">Notes yang butuh action.</p>
+            </button>
+            <button type="button" onClick={() => navigate('/raw-materials')} className="rounded-2xl border bg-white p-4 text-left shadow-sm">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Guidance gaps</div>
+              <div className="mt-1 text-2xl font-bold">{missingGuidanceMaterials.length}</div>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">Material yang perlu dilengkapi.</p>
+            </button>
           </div>
         </DashboardSection>
 

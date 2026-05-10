@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, FileText, Loader2, Printer, Search, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CreditCard, ExternalLink, FileText, Loader2, Printer, Search, ShieldCheck, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
+import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
   getCustomerPortalByCode,
   verifyCustomerPortalSecurity,
 } from '@/services/customerService.js';
+import { getShipmentStatusLabels } from '@/services/orderService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -23,13 +25,19 @@ const paymentStatusLabels = {
   expired: 'Expired',
   refunded: 'Refunded',
 };
+const shipmentStatusLabels = getShipmentStatusLabels();
 
-const getPaymentTone = (status) => {
-  if (status === 'paid') return 'bg-emerald-50 text-emerald-700';
-  if (['failed', 'expired'].includes(status)) return 'bg-rose-50 text-rose-700';
-  if (status === 'pending') return 'bg-amber-50 text-amber-700';
-  return 'bg-stone-100 text-stone-600';
-};
+const PaymentBadge = ({ status }) => (
+  <StatusChip icon={CreditCard} tone={getPaymentStatusTone(status)}>
+    {paymentStatusLabels[status] || status}
+  </StatusChip>
+);
+
+const ShipmentBadge = ({ status }) => (
+  <StatusChip icon={Truck} tone={getShipmentStatusTone(status)}>
+    {shipmentStatusLabels[status] || status || 'Belum dikirim'}
+  </StatusChip>
+);
 
 const getItemUnitPrice = (item) => {
   const quantity = Number(item.quantity || 1);
@@ -57,14 +65,15 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
           <h1 className="mt-4 text-2xl font-bold sm:text-4xl">{order.orderNumber}</h1>
           <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt)}</p>
         </div>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase ${getPaymentTone(order.paymentStatus)}`}>
-          {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <PaymentBadge status={order.paymentStatus} />
+          {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
+        </div>
       </div>
     </div>
 
     <div className="p-5 sm:p-7">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">Customer</div>
           <div className="mt-1 text-base font-bold text-[#0b130c]">{customer.customerName}</div>
@@ -77,6 +86,16 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
             <span className="text-base font-bold text-[#0b130c]">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</div>
+        </div>
+        <div className="rounded-2xl bg-[#f8f7f4] p-4">
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Shipment</div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Truck className="h-4 w-4 text-[#263d27]" />
+            <span className="text-base font-bold text-[#0b130c]">{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus || 'Belum dikirim'}</span>
+          </div>
+          <div className="mt-1 text-xs font-semibold text-[#6b7280]">
+            {order.trackingNumber ? `${order.courierName || 'Kurir'} / ${order.trackingNumber}` : order.courierName || 'Resi akan muncul setelah dikirim'}
+          </div>
         </div>
       </div>
 
@@ -102,7 +121,21 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
         <div className="rounded-2xl bg-[#eef2e8] p-4 text-xs font-semibold leading-relaxed text-[#263d27]">
-          Simpan invoice ini sebagai bukti order. Status payment akan mengikuti update DOKU atau konfirmasi admin.
+          Simpan invoice ini sebagai bukti order. Status payment dan pengiriman akan mengikuti update DOKU, admin, dan kurir.
+          <div className="mt-3 flex flex-wrap gap-2">
+            {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+              <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
+                <CreditCard className="h-4 w-4" />
+                Continue payment
+              </Link>
+            ) : null}
+            {order.trackingUrl && order.trackingNumber ? (
+              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
+                <ExternalLink className="h-4 w-4" />
+                Track resi
+              </a>
+            ) : null}
+          </div>
         </div>
         <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
           <div className="flex items-center justify-between text-sm font-semibold text-[#6b7280]">

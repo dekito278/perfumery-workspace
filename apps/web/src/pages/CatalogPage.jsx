@@ -73,39 +73,53 @@ const CatalogPage = () => {
                 Browse by scent family, notes, price, or mood.
               </p>
             </div>
-            <label className="flex h-12 w-full max-w-md items-center gap-2 rounded-2xl border bg-white px-4">
+            <label className="flex h-12 w-full max-w-md items-center gap-2 rounded-2xl border bg-white px-4 shadow-sm">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search notes or product" className="min-h-0 flex-1 bg-transparent text-sm font-semibold outline-none" />
             </label>
           </div>
           {hasCatalogProducts ? (
-            <>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
-                  <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
-                    {item.name}
-                  </button>
-                ))}
+            <section className="mt-6 rounded-2xl border border-[#263d27]/10 bg-white/86 p-4 shadow-sm">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase text-[#6b7280]">Type</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[{ name: 'All', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
+                      <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold transition', segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm' : 'bg-white text-muted-foreground hover:border-[#263d27]/30 hover:text-[#263d27]')}>
+                        {item.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <div className="text-[11px] font-bold uppercase text-[#6b7280]">Sort</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {catalogSortOptions.map((option) => (
+                      <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-10 rounded-2xl border px-3 text-xs font-bold transition', sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm' : 'bg-white text-muted-foreground hover:border-[#263d27]/30 hover:text-[#263d27]')}>
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {['All', ...categories.map((item) => item.name)].map((item) => (
-                  <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold', category === item ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]' : 'bg-white text-muted-foreground')}>
-                    {item}
-                  </button>
-                ))}
+              <div className="mt-4 border-t border-[#263d27]/10 pt-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="text-[11px] font-bold uppercase text-[#6b7280]">Scent family</div>
+                  <div className="text-xs font-bold text-[#263d27]">{products.length} shown</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {['All', ...categories.map((item) => item.name)].map((item) => (
+                    <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold transition', category === item ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27] shadow-sm' : 'bg-white text-muted-foreground hover:border-[#263d27]/30 hover:text-[#263d27]')}>
+                      {item}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {catalogSortOptions.map((option) => (
-                  <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-9 rounded-2xl border px-3 text-xs font-bold', sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-muted-foreground')}>
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </>
+            </section>
           ) : null}
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {products.map((product) => (
-              <article key={product.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
+              <article key={product.id} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-[#263d27]/18 hover:shadow-xl hover:shadow-[#263d27]/8">
                 <ProductVisual product={product} />
                 <div className="p-3">
                   <div className="flex items-start justify-between gap-3">
@@ -125,7 +139,7 @@ const CatalogPage = () => {
                     ))}
                     {getProductLowStock(product) ? <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">Mau habis</span> : null}
                   </div>
-                    <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-white">
+                    <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-white transition group-hover:bg-[#1c301d]">
                     View product
                     <ArrowRight className="h-4 w-4" />
                   </Link>

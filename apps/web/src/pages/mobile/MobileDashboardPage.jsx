@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, UsersRound, WandSparkles } from 'lucide-react';
+import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -18,7 +18,10 @@ import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
+import { useOrders } from '@/hooks/useOrders.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getDisplayName, MOBILE_ACTIVITY_LIMIT, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
+import { getProductLowStock } from '@/services/productCatalogService.js';
 
 const hasGuidanceCoverage = (material) => (
   Boolean(
@@ -132,6 +135,8 @@ const MobileDashboardPage = () => {
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
   const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
+  const { orders } = useOrders();
+  const catalogProducts = useCatalogProducts();
   const [materials, setMaterials] = useState([]);
   const [formulas, setFormulas] = useState([]);
   const [briefs, setBriefs] = useState([]);
@@ -228,6 +233,10 @@ const MobileDashboardPage = () => {
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
   const actionNeededLogs = useMemo(() => logs.filter((log) => log.status === 'action_needed'), [logs]);
   const missingGuidanceMaterials = useMemo(() => materials.filter((material) => !hasGuidanceCoverage(material)), [materials]);
+  const lowStockProducts = useMemo(() => catalogProducts.filter(getProductLowStock), [catalogProducts]);
+  const paidReadyOrders = useMemo(() => orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status)), [orders]);
+  const paymentFollowUps = useMemo(() => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)), [orders]);
+  const shippedFollowUps = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
     ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula updated', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
@@ -304,6 +313,39 @@ const MobileDashboardPage = () => {
         </section>
 
         <>
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold">Today priority</h2>
+              <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
+            </div>
+            <div className="grid gap-3">
+              <PriorityCard
+                icon={Truck}
+                label="Paid-ready"
+                title={`${paidReadyOrders.length} order siap packing`}
+                helper="Input resi dan mark shipped"
+                tone={paidReadyOrders.length ? 'emerald' : 'amber'}
+                onClick={() => navigate('/mobile/studio/fulfillment')}
+              />
+              <PriorityCard
+                icon={MessageCircle}
+                label="Follow-up"
+                title={`${paymentFollowUps.length} payment pending`}
+                helper={`${shippedFollowUps.length} shipped perlu dicek delivery`}
+                tone={paymentFollowUps.length || shippedFollowUps.length ? 'amber' : 'emerald'}
+                onClick={() => navigate('/mobile/studio/orders')}
+              />
+              <PriorityCard
+                icon={AlertTriangle}
+                label="Low stock"
+                title={`${lowStockProducts.length} product hampir habis`}
+                helper="Cek varian dan publish status"
+                tone={lowStockProducts.length ? 'rose' : 'emerald'}
+                onClick={() => navigate('/mobile/studio/products?view=list')}
+              />
+            </div>
+          </section>
+
           <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">Priority</h2>

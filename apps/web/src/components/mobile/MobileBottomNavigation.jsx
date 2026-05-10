@@ -31,7 +31,7 @@ const navGroups = [
       { path: '/mobile/studio/fulfillment', label: 'Fulfillment', helper: 'Packing and shipping', icon: PackageOpen },
       { path: '/mobile/studio/customers', label: 'Customers', helper: 'Customer code lookup', icon: UsersRound },
       { path: '/mobile/studio/bespoke', label: 'Bespoke', helper: 'Bottle, cap, label', icon: WandSparkles },
-      { path: '/mobile/dashboard', label: 'Lihat home', helper: 'Tampilan customer', icon: Store },
+      { path: '/mobile/dashboard', label: 'Storefront', helper: 'Customer home preview', icon: Store },
     ],
   },
   {
@@ -44,9 +44,9 @@ const navGroups = [
       { path: '/mobile/studio', label: 'Dashboard', helper: 'Studio overview', icon: LayoutDashboard },
       { path: '/mobile/briefs', label: 'Briefs', helper: 'Client/project direction', icon: ClipboardList },
       { path: '/mobile/formulas', label: 'Formulas', helper: 'Composer and formula list', icon: Beaker },
-      { path: '/mobile/batches', label: 'Batch', helper: 'Production and stock draft', icon: Calculator },
+      { path: '/mobile/batches', label: 'Batches', helper: 'Production and stock draft', icon: Calculator },
       { path: '/mobile/raw-materials', label: 'Materials', helper: 'Raw material library', icon: LibraryBig },
-      { path: '/mobile/validation', label: 'Validate', helper: 'Testing and feedback logs', icon: ClipboardCheck },
+      { path: '/mobile/validation', label: 'Validation', helper: 'Testing and feedback logs', icon: ClipboardCheck },
     ],
   },
 ];

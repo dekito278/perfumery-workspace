@@ -79,12 +79,12 @@ const AppShell = ({ children }) => {
       label: 'E-commerce',
       icon: ShoppingBag,
       items: [
-        { path: '/studio/products', label: 'Product management', icon: PackagePlus },
-        { path: '/studio/product-categories', label: 'Product categories', icon: Tags },
+        { path: '/studio/products', label: 'Products', icon: PackagePlus },
+        { path: '/studio/product-categories', label: 'Categories', icon: Tags },
         { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customers', icon: UsersRound },
-        { path: '/studio/shipments', label: 'Shipments', icon: Truck },
-        { path: '/home', label: 'Storefront preview', icon: ShoppingBag },
+        { path: '/studio/shipments', label: 'Fulfillment', icon: Truck },
+        { path: '/home', label: 'Storefront', icon: ShoppingBag, aliases: ['/catalog', '/products', '/cart', '/payment', '/customer'] },
       ],
     },
   ];

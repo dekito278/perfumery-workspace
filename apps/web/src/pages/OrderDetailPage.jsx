@@ -26,6 +26,8 @@ import {
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
+import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
   getOrderAuditLogs,
@@ -76,13 +78,6 @@ const formatDate = (value) => (value
   ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
   : '-');
 
-const getPaymentTone = (status) => {
-  if (status === 'paid') return 'bg-emerald-50 text-emerald-700';
-  if (['failed', 'expired'].includes(status)) return 'bg-rose-50 text-rose-700';
-  if (status === 'pending') return 'bg-amber-50 text-amber-800';
-  return 'bg-stone-100 text-stone-600';
-};
-
 const getLogTone = (status) => {
   if (status === 'applied') return 'bg-emerald-50 text-emerald-700';
   if (status === 'ignored') return 'bg-amber-50 text-amber-700';
@@ -96,6 +91,29 @@ const formatAuditValues = (values = {}) => (
     .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
     .join(' / ') || '-'
 );
+
+const formatAuditValue = (value) => {
+  if (value === '' || value === null || value === undefined) return '-';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const formatAuditLabel = (key) => key
+  .replace(/([A-Z])/g, ' $1')
+  .replace(/_/g, ' ')
+  .replace(/^./, (char) => char.toUpperCase());
+
+const getAuditChanges = (previousValues = {}, nextValues = {}) => {
+  const keys = Array.from(new Set([...Object.keys(previousValues || {}), ...Object.keys(nextValues || {})]));
+  return keys
+    .filter((key) => formatAuditValue(previousValues?.[key]) !== formatAuditValue(nextValues?.[key]))
+    .map((key) => ({
+      key,
+      label: formatAuditLabel(key),
+      before: formatAuditValue(previousValues?.[key]),
+      after: formatAuditValue(nextValues?.[key]),
+    }));
+};
 
 const parseNoteLines = (notes = '') => String(notes || '')
   .split('\n')
@@ -369,7 +387,7 @@ const OrderDetailPage = () => {
     return (
       <AuthenticatedLayout>
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border bg-white p-8 text-center text-sm font-bold text-muted-foreground">Loading order detail...</div>
+          <StateBlock title="Loading order detail" description="Mengambil detail payment, fulfillment, dan audit log." tone="loading" />
         </main>
       </AuthenticatedLayout>
     );
@@ -383,11 +401,7 @@ const OrderDetailPage = () => {
             <ArrowLeft className="h-4 w-4" />
             Orders
           </Button>
-          <section className="mt-5 rounded-2xl border bg-white p-8 text-center">
-            <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
-            <h1 className="mt-3 text-xl font-bold">Order not found</h1>
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">Order {orderId} tidak ditemukan.</p>
-          </section>
+          <StateBlock className="mt-5" title="Order not found" description={`Order ${orderId} tidak ditemukan.`} icon={PackageCheck} />
         </main>
       </AuthenticatedLayout>
     );
@@ -425,12 +439,15 @@ const OrderDetailPage = () => {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold sm:text-4xl">{order.orderNumber}</h1>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${getPaymentTone(order.paymentStatus)}`}>
+              <StatusChip tone={getPaymentStatusTone(order.paymentStatus)} size="md">
                 {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
-              </span>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">
+              </StatusChip>
+              <StatusChip tone={getOrderStatusTone(order.status)} size="md">
                 {statusLabels[order.status] || order.status}
-              </span>
+              </StatusChip>
+              <StatusChip tone={getShipmentStatusTone(order.shipmentStatus)} size="md">
+                {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
+              </StatusChip>
             </div>
             <p className="mt-2 max-w-2xl text-base text-muted-foreground">
               {formatDate(order.createdAt)} / {order.quantity} items / {formatTotal(order.subtotal)}
@@ -462,6 +479,35 @@ const OrderDetailPage = () => {
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Customer</span><strong>{order.customerName}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Shipment</span><strong>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Admin logs</span><strong>{auditLogs.length}</strong></div>
+          </div>
+        </section>
+
+        <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <div className="text-xs font-bold uppercase text-[#263d27]">Action panel</div>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                Jalur cepat untuk pekerjaan harian: konfirmasi payment, mulai packing, cetak resi, dan follow-up customer.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-4">
+              <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => updatePayment('paid')} disabled={savingPayment || order.paymentStatus === 'paid'}>
+                {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                Mark paid
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => updateStatus('processing')} disabled={savingStatus || order.status === 'processing'}>
+                <PackageCheck className="h-4 w-4" />
+                Processing
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
+                <Download className="h-4 w-4" />
+                Resi PDF
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => openWhatsApp(notificationMessage)}>
+                <MessageCircle className="h-4 w-4" />
+                WA update
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -660,23 +706,39 @@ const OrderDetailPage = () => {
             </div>
             {auditLogs.length ? (
               <div className="grid gap-3">
-                {auditLogs.map((log) => (
-                  <article key={log.id} className="rounded-2xl bg-[#fbfaf7] p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold">{auditActionLabels[log.action] || log.action}</div>
-                        <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                          {formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'System'}
+                {auditLogs.map((log) => {
+                  const changes = getAuditChanges(log.previousValues, log.nextValues);
+                  return (
+                    <article key={log.id} className="rounded-2xl bg-[#fbfaf7] p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold">{auditActionLabels[log.action] || log.action}</div>
+                          <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                            {formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'System'}
+                          </div>
                         </div>
+                        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{log.actorEmail || 'system'}</span>
                       </div>
-                      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{log.actorEmail || 'system'}</span>
-                    </div>
-                    <div className="mt-2 grid gap-1 text-xs font-semibold text-muted-foreground">
-                      <div>Before: <span className="text-[#1f2937]">{formatAuditValues(log.previousValues)}</span></div>
-                      <div>After: <span className="text-[#1f2937]">{formatAuditValues(log.nextValues)}</span></div>
-                    </div>
-                  </article>
-                ))}
+                      {changes.length ? (
+                        <div className="mt-3 grid gap-2">
+                          {changes.map((change) => (
+                            <div key={change.key} className="rounded-2xl border border-[#263d27]/10 bg-white px-3 py-2">
+                              <div className="text-[10px] font-bold uppercase text-[#263d27]">{change.label}</div>
+                              <div className="mt-1 grid gap-2 text-xs font-semibold text-muted-foreground sm:grid-cols-2">
+                                <span className="min-w-0 rounded-xl bg-[#f8f7f4] px-2 py-1">Before: <span className="text-[#1f2937]">{change.before}</span></span>
+                                <span className="min-w-0 rounded-xl bg-[#eef2e8] px-2 py-1">After: <span className="text-[#1f2937]">{change.after}</span></span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-xs font-semibold text-muted-foreground">
+                          {formatAuditValues(log.nextValues)}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-5 text-sm font-semibold leading-relaxed text-muted-foreground">

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Clipboard, CreditCard, Download, ExternalLink, Eye, Loader2, PackageCheck, ReceiptText, RefreshCw, Trash2 } from 'lucide-react';
+import { Clipboard, CreditCard, Download, ExternalLink, Eye, Loader2, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
+import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
@@ -12,6 +14,7 @@ import {
   getBespokeProductionStatusLabels,
   getOrderReservationExpiresAt,
   getOrderStatusLabels,
+  getShipmentStatusLabels,
   isBespokeOrder,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
@@ -24,6 +27,7 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 }).format(new Date(value));
 
 const statusLabels = getOrderStatusLabels();
+const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const paymentStatusLabels = {
   unpaid: 'Unpaid',
@@ -32,6 +36,14 @@ const paymentStatusLabels = {
   failed: 'Failed',
   expired: 'Expired',
   refunded: 'Refunded',
+};
+
+const orderFilterLabels = {
+  all: 'All',
+  payment: 'Needs payment',
+  packing: 'Ready packing',
+  shipped: 'Shipped',
+  bespoke: 'Bespoke',
 };
 
 const bespokeDetailRows = (item) => [
@@ -51,6 +63,37 @@ const OrdersPage = () => {
   const navigate = useNavigate();
   const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [syncingOrder, setSyncingOrder] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
+
+  const visibleOrders = orders.filter((order) => {
+    const query = searchTerm.trim().toLowerCase();
+    const shipped = ['shipped', 'delivered'].includes(order.shipmentStatus);
+    const matchesFilter = orderFilter === 'all'
+      || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus))
+      || (orderFilter === 'packing' && order.paymentStatus === 'paid' && !shipped)
+      || (orderFilter === 'shipped' && shipped)
+      || (orderFilter === 'bespoke' && isBespokeOrder(order));
+    if (!matchesFilter) return false;
+    if (!query) return true;
+    return [
+      order.orderNumber,
+      order.customerName,
+      order.customerCode,
+      order.contact,
+      order.paymentReference,
+      order.trackingNumber,
+      order.courierName,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+  });
+
+  const filterCounts = {
+    all: orders.length,
+    payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)).length,
+    packing: orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length,
+    shipped: orders.filter((order) => ['shipped', 'delivered'].includes(order.shipmentStatus)).length,
+    bespoke: orders.filter(isBespokeOrder).length,
+  };
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
@@ -147,8 +190,32 @@ const OrdersPage = () => {
             <h2 className="text-xl font-bold">Orders</h2>
             <span className="text-sm font-bold text-amber-700">{summary.completed} completed</span>
           </div>
+          <div className="mt-4 grid gap-3 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4 lg:grid-cols-[1fr_auto]">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari order, customer, kode, kontak, payment ref, kurir, atau resi"
+                className="h-11 w-full rounded-2xl border bg-white pl-10 pr-3 text-sm font-semibold outline-none focus:border-amber-300"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {Object.entries(orderFilterLabels).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant="outline"
+                  className={`h-11 rounded-2xl text-xs font-bold ${orderFilter === value ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-white'}`}
+                  onClick={() => setOrderFilter(value)}
+                >
+                  {label} <span className="ml-1 opacity-70">{filterCounts[value]}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
           <div className="mt-5 grid gap-4">
-            {orders.map((order) => {
+            {visibleOrders.map((order) => {
               const bespoke = isBespokeOrder(order);
               const bespokeItem = getBespokeItem(order);
               const reservationExpiresAt = getOrderReservationExpiresAt(order);
@@ -159,10 +226,12 @@ const OrdersPage = () => {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-bold">{order.orderNumber}</h3>
-                      {bespoke ? <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">Bespoke</span> : null}
-                      {bespoke ? <span className="rounded-full bg-[#f7f8f2] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</span> : null}
-                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">{statusLabels[order.status] || order.status}</span>
-                      {order.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-600">Local draft</span> : null}
+                      {bespoke ? <StatusChip className="border-[#263d27]/20 bg-[#eef2e8] text-[#263d27]">Bespoke</StatusChip> : null}
+                      {bespoke ? <StatusChip className="border-[#263d27]/10 bg-[#f7f8f2] text-[#263d27]">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
+                      <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                      <StatusChip icon={CreditCard} tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
+                      <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
+                      {order.persistence === 'local' ? <StatusChip>Local draft</StatusChip> : null}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}{order.customerCode ? ` / ${order.customerCode}` : ''}</p>
                     <div className="mt-3 grid gap-2">
@@ -186,7 +255,6 @@ const OrdersPage = () => {
                     {order.notes ? <p className="mt-3 text-sm font-semibold text-muted-foreground">Notes: {order.notes}</p> : null}
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold">
                       <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#263d27]">
-                        <CreditCard className="h-3.5 w-3.5" />
                         {order.paymentProvider || 'manual'} / {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                       </span>
                       {order.paymentReference ? <span className="rounded-full bg-white px-3 py-1 text-muted-foreground">Ref {order.paymentReference}</span> : null}
@@ -260,17 +328,11 @@ const OrdersPage = () => {
               </article>
               );
             })}
-            {!orders.length && !loading ? (
-              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
-                <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
-                <h3 className="mt-3 font-bold">No orders yet</h3>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">Pesanan cart dan request bespoke yang tersimpan akan muncul di sini.</p>
-              </div>
+            {!visibleOrders.length && !loading ? (
+              <StateBlock title="No matching orders" description="Ubah pencarian atau filter untuk melihat order lain." icon={PackageCheck} />
             ) : null}
             {loading && !orders.length ? (
-              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center text-sm font-bold text-muted-foreground">
-                Loading orders...
-              </div>
+              <StateBlock title="Loading orders" description="Mengambil order terbaru dari storefront." tone="loading" />
             ) : null}
           </div>
         </section>
