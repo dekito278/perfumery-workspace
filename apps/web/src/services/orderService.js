@@ -867,10 +867,14 @@ export const reviewOrderPaymentProof = async (orderId, {
     currentOrder,
     orderId,
     previousValues: {
+      paymentStatus: currentOrder.paymentStatus || '',
+      status: currentOrder.status || '',
       paymentProofStatus: currentOrder.paymentProofStatus || 'missing',
       paymentProofNotes: currentOrder.paymentProofNotes || '',
     },
     nextValues: {
+      paymentStatus: nextStatus === 'approved' ? 'paid' : currentOrder.paymentStatus || '',
+      status: nextStatus === 'approved' ? 'paid' : currentOrder.status || '',
       paymentProofStatus: nextStatus,
       paymentProofNotes: normalizedNotes,
     },
@@ -890,6 +894,18 @@ export const reviewOrderPaymentProof = async (orderId, {
 
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     await createOrderAuditLog(proofAudit);
+    if (nextStatus === 'approved' && currentOrder.paymentStatus !== 'paid') {
+      await updateOrderPaymentStatus(orderId, {
+        paymentStatus: 'paid',
+        paymentProvider: currentOrder.paymentProvider || 'manual_transfer_bca',
+        paymentReference: currentOrder.paymentReference || '',
+        paymentUrl: currentOrder.paymentUrl || '',
+        paymentExpiresAt: currentOrder.paymentExpiresAt || '',
+        paymentSessionId: currentOrder.paymentSessionId || '',
+        paymentResponse: currentOrder.paymentResponse || {},
+        status: 'paid',
+      });
+    }
     return getOrderById(orderId, { sweepExpiredReservation: false });
   } catch (error) {
     console.warn('Reviewing payment proof locally:', error.message || error);
@@ -900,6 +916,10 @@ export const reviewOrderPaymentProof = async (orderId, {
           paymentProofStatus: nextStatus,
           paymentProofNotes: normalizedNotes,
           paymentProofUploadedAt: order.paymentProofUploadedAt || reviewedAt,
+          ...(nextStatus === 'approved' ? {
+            paymentStatus: 'paid',
+            status: 'paid',
+          } : {}),
           updatedAt: reviewedAt,
         }
         : order
