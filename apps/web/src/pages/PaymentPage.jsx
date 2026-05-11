@@ -178,7 +178,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             </div>
             {customerCode ? (
               <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-[#263d27]">
-                Track order
+                Lacak order
               </Link>
             ) : null}
           </div>
@@ -211,7 +211,7 @@ const PaymentFrame = ({ session, compact = false }) => {
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
             <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#263d27]">
-              Track order
+              Lacak order
             </Link>
           ) : null}
           <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
@@ -239,10 +239,10 @@ const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }
     </p>
     <div className="mt-5 flex justify-center gap-2">
       <Link to={isMobile ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
-        Open catalog
+        Buka katalog
       </Link>
       <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
-        Track order
+        Lacak order
       </Link>
       {orderNumber && onRefresh ? (
         <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
@@ -330,7 +330,7 @@ const PaymentPageContent = ({ isMobile }) => {
         </Helmet>
         <main className="mobile-page space-y-4">
           <MobileTopBar
-            title="Payment"
+            title="Pembayaran"
             subtitle={session?.orderNumber || orderNumber || 'Solivagant checkout'}
             eyebrow="Secure"
             onBack={() => navigate('/mobile/cart')}
@@ -352,9 +352,9 @@ const PaymentPageContent = ({ isMobile }) => {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <button type="button" onClick={() => navigate('/cart')} className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
               <ArrowLeft className="h-4 w-4" />
-              Cart
+              Keranjang
             </button>
-            <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Home</Link>
+            <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Beranda</Link>
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

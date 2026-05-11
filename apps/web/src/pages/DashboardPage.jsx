@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
@@ -19,8 +19,46 @@ import RecentActivityList from '@/components/RecentActivityList.jsx';
 import OperationalInsightCard from '@/components/OperationalInsightCard.jsx';
 import { formatStatus } from '@/utils/formatting.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
+import { checkDokuHealth, checkShippingHealth, getOpsHealthSnapshot, runOpsHealthRetry } from '@/services/opsHealthService.js';
+import { getAllOrderAuditLogs, isOrderReservationExpired } from '@/services/orderService.js';
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+const formatDate = (value) => (value
+  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  : '-');
+
+const auditActionLabels = {
+  order_status_updated: 'Order status',
+  payment_status_updated: 'Payment status',
+  shipment_updated: 'Fulfillment / resi',
+  order_cancelled: 'Cancel order',
+  order_deleted: 'Delete order',
+};
+const importantAuditKeys = ['paymentStatus', 'status', 'shipmentStatus', 'trackingNumber', 'payment_status', 'shipment_status', 'tracking_number'];
+
+const formatAuditValue = (value) => {
+  if (value === '' || value === null || value === undefined) return '-';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const formatAuditLabel = (key) => key
+  .replace(/([A-Z])/g, ' $1')
+  .replace(/_/g, ' ')
+  .replace(/^./, (char) => char.toUpperCase());
+
+const getAuditChanges = (previousValues = {}, nextValues = {}) => {
+  const keys = Array.from(new Set([...Object.keys(previousValues || {}), ...Object.keys(nextValues || {})]));
+  return keys
+    .filter((key) => formatAuditValue(previousValues?.[key]) !== formatAuditValue(nextValues?.[key]))
+    .map((key) => ({
+      key,
+      label: formatAuditLabel(key),
+      before: formatAuditValue(previousValues?.[key]),
+      after: formatAuditValue(nextValues?.[key]),
+    }));
+};
 
 const isTransientNetworkError = (error) => {
   const message = String(error?.message || '').toLowerCase();
@@ -71,8 +109,16 @@ const DashboardPage = () => {
   const [formulas, setFormulas] = useState([]);
   const [briefs, setBriefs] = useState([]);
   const [validationLogs, setValidationLogs] = useState([]);
+  const [orderAuditLogs, setOrderAuditLogs] = useState([]);
+  const [auditFilters, setAuditFilters] = useState({ admin: 'all', event: 'all', query: '' });
   const [pipelineSummary, setPipelineSummary] = useState({ shortlistCount: 0 });
   const [loading, setLoading] = useState(true);
+  const [healthChecking, setHealthChecking] = useState('');
+  const [serviceHealth, setServiceHealth] = useState({
+    doku: null,
+    shipping: null,
+    lastCheckedAt: '',
+  });
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -82,15 +128,17 @@ const DashboardPage = () => {
         runWithRetry(() => getFormulas()),
         runWithRetry(() => getBriefs()),
         runWithRetry(() => getValidationLogs()),
+        runWithRetry(() => getAllOrderAuditLogs()),
       ]);
 
-      const [materialsResult, formulasResult, briefsResult, validationLogsResult] = results;
+      const [materialsResult, formulasResult, briefsResult, validationLogsResult, orderAuditLogsResult] = results;
       const failedRequests = results.filter((result) => result.status === 'rejected');
 
       setMaterials(materialsResult.status === 'fulfilled' ? materialsResult.value : []);
       setFormulas(formulasResult.status === 'fulfilled' ? formulasResult.value : []);
       setBriefs(briefsResult.status === 'fulfilled' ? briefsResult.value : []);
       setValidationLogs(validationLogsResult.status === 'fulfilled' ? validationLogsResult.value : []);
+      setOrderAuditLogs(orderAuditLogsResult.status === 'fulfilled' ? orderAuditLogsResult.value : []);
 
       const briefRows = briefsResult.status === 'fulfilled' ? briefsResult.value : [];
       const shortlistMap = await getBriefMaterialShortlistsByBriefIds(briefRows.map((brief) => brief.id));
@@ -158,6 +206,88 @@ const DashboardPage = () => {
     () => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)),
     [orders]
   );
+  const opsHealth = useMemo(() => getOpsHealthSnapshot(orders), [orders]);
+  const pendingRevenue = useMemo(
+    () => orders
+      .filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus) && order.status !== 'cancelled')
+      .reduce((sum, order) => sum + Number(order.subtotal || 0), 0),
+    [orders],
+  );
+  const expiredPaymentOrders = useMemo(
+    () => orders.filter((order) => order.paymentStatus === 'expired' || isOrderReservationExpired(order)),
+    [orders],
+  );
+  const shipmentAgingOrders = useMemo(() => {
+    const now = Date.now();
+    return paidReadyOrders
+      .map((order) => ({
+        ...order,
+        agingHours: Math.max(0, Math.round((now - new Date(order.updatedAt || order.createdAt || now).getTime()) / 36e5)),
+      }))
+      .filter((order) => order.agingHours >= 48)
+      .sort((a, b) => b.agingHours - a.agingHours);
+  }, [paidReadyOrders]);
+  const auditAdmins = useMemo(() => (
+    Array.from(new Set(orderAuditLogs.map((log) => log.actorEmail || log.actorName || 'system'))).filter(Boolean)
+  ), [orderAuditLogs]);
+  const auditEvents = useMemo(() => (
+    Array.from(new Set(orderAuditLogs.map((log) => log.action))).filter(Boolean)
+  ), [orderAuditLogs]);
+  const filteredAuditLogs = useMemo(() => {
+    const query = auditFilters.query.trim().toLowerCase();
+    return orderAuditLogs.filter((log) => {
+      const admin = log.actorEmail || log.actorName || 'system';
+      const matchesAdmin = auditFilters.admin === 'all' || admin === auditFilters.admin;
+      const matchesEvent = auditFilters.event === 'all' || log.action === auditFilters.event;
+      const matchesQuery = !query || [
+        log.orderNumber,
+        log.actorEmail,
+        log.actorName,
+        log.action,
+        JSON.stringify(log.previousValues || {}),
+        JSON.stringify(log.nextValues || {}),
+      ].some((value) => String(value || '').toLowerCase().includes(query));
+      return matchesAdmin && matchesEvent && matchesQuery;
+    });
+  }, [auditFilters, orderAuditLogs]);
+
+  const runServiceHealthCheck = async () => {
+    setHealthChecking('services');
+    try {
+      const [doku, shipping] = await Promise.allSettled([
+        checkDokuHealth(orders),
+        checkShippingHealth(),
+      ]);
+      setServiceHealth({
+        doku: doku.status === 'fulfilled' ? doku.value : { ok: false, label: doku.reason?.message || 'DOKU check gagal' },
+        shipping: shipping.status === 'fulfilled' ? shipping.value : { ok: false, label: shipping.reason?.message || 'Shipping check gagal' },
+        lastCheckedAt: new Date().toISOString(),
+      });
+      toast.success('Payment dan shipping health dicek');
+    } catch (error) {
+      toast.error(error.message || 'Health check gagal');
+    } finally {
+      setHealthChecking('');
+    }
+  };
+
+  const retryOpsHealth = async () => {
+    setHealthChecking('retry');
+    try {
+      const result = await runOpsHealthRetry(orders);
+      await loadDashboardData();
+      if (result.errors.length) {
+        toast.error(result.errors[0]);
+        return;
+      }
+      const synced = result.syncResults.filter((item) => item.ok).length;
+      toast.success(`${synced} sync retry, ${result.expiredOrders.length} expired payment disapu`);
+    } catch (error) {
+      toast.error(error.message || 'Retry ops gagal');
+    } finally {
+      setHealthChecking('');
+    }
+  };
   const todayPriorities = [
     {
       icon: Truck,
@@ -436,6 +566,216 @@ const DashboardPage = () => {
               <div className="mt-1 text-2xl font-bold">{missingGuidanceMaterials.length}</div>
               <p className="mt-1 text-xs font-semibold text-muted-foreground">Material yang perlu dilengkapi.</p>
             </button>
+          </div>
+        </DashboardSection>
+
+        <DashboardSection title="Admin ops metrics" subtitle="Angka praktis untuk follow-up order, packing, payment expiry, stock, dan aging shipment.">
+          <div className="grid gap-4 lg:grid-cols-5">
+            {[
+              ['Pending revenue', formatTotal(pendingRevenue), 'Payment unpaid/pending', 'text-amber-700 bg-amber-50'],
+              ['Paid ready ship', paidReadyOrders.length, 'Paid dan belum shipped', 'text-emerald-700 bg-emerald-50'],
+              ['Expired payment', expiredPaymentOrders.length, 'Expired atau melewati TTL', 'text-rose-700 bg-rose-50'],
+              ['Low stock', lowStockProducts.length, 'Produk di bawah threshold', 'text-rose-700 bg-rose-50'],
+              ['Shipment aging', shipmentAgingOrders.length, 'Paid-ready lebih dari 48 jam', 'text-sky-700 bg-sky-50'],
+            ].map(([label, value, helper, tone]) => (
+              <div key={label} className="rounded-2xl border bg-white p-4 shadow-sm">
+                <div className="text-xs font-bold uppercase text-muted-foreground">{label}</div>
+                <div className={`mt-2 w-fit rounded-2xl px-3 py-1 text-2xl font-bold ${tone}`}>{value}</div>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{helper}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <section className="rounded-2xl border bg-white/90 p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-base font-bold">Shipment aging</h3>
+                <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white text-xs" onClick={() => navigate('/studio/shipments')}>Open shipments</Button>
+              </div>
+              <div className="grid gap-2">
+                {shipmentAgingOrders.slice(0, 4).map((order) => (
+                  <button key={order.id || order.orderNumber} type="button" onClick={() => navigate(`/studio/orders/${order.id || order.orderNumber}`)} className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-left">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold">{order.orderNumber}</span>
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-800">{order.agingHours} jam</span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground">{order.customerName} / {order.courierName || 'Kurir belum diisi'}</p>
+                  </button>
+                ))}
+                {!shipmentAgingOrders.length ? <p className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-sm font-semibold text-muted-foreground">Tidak ada paid-ready shipment yang aging di atas 48 jam.</p> : null}
+              </div>
+            </section>
+            <section className="rounded-2xl border bg-white/90 p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-base font-bold">Low-stock notification</h3>
+                <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white text-xs" onClick={() => navigate('/studio/products')}>Open products</Button>
+              </div>
+              <div className="grid gap-2">
+                {lowStockProducts.slice(0, 4).map((product) => (
+                  <button key={product.id || product.slug} type="button" onClick={() => navigate('/studio/products')} className="rounded-2xl bg-rose-50 px-4 py-3 text-left">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-[#1f2937]">{product.name}</span>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">{product.stock} left</span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-rose-800">{product.category} / restock disarankan.</p>
+                  </button>
+                ))}
+                {!lowStockProducts.length ? <p className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-sm font-semibold text-muted-foreground">Tidak ada produk low stock.</p> : null}
+              </div>
+            </section>
+          </div>
+        </DashboardSection>
+
+        <DashboardSection title="Admin audit log" subtitle="Filter perubahan by admin, event, atau order lalu cek diff before-after.">
+          <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
+            <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
+              <input
+                value={auditFilters.query}
+                onChange={(event) => setAuditFilters((current) => ({ ...current, query: event.target.value }))}
+                placeholder="Cari order, admin, event, atau isi diff"
+                className="h-11 rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-amber-300"
+              />
+              <select
+                value={auditFilters.admin}
+                onChange={(event) => setAuditFilters((current) => ({ ...current, admin: event.target.value }))}
+                className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300"
+              >
+                <option value="all">Semua admin</option>
+                {auditAdmins.map((admin) => <option key={admin} value={admin}>{admin}</option>)}
+              </select>
+              <select
+                value={auditFilters.event}
+                onChange={(event) => setAuditFilters((current) => ({ ...current, event: event.target.value }))}
+                className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300"
+              >
+                <option value="all">Semua event</option>
+                {auditEvents.map((event) => <option key={event} value={event}>{auditActionLabels[event] || event}</option>)}
+              </select>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {filteredAuditLogs.slice(0, 8).map((log) => {
+                const changes = getAuditChanges(log.previousValues, log.nextValues);
+                const important = changes.some((change) => importantAuditKeys.includes(change.key));
+                return (
+                  <button key={log.id} type="button" onClick={() => navigate(`/studio/orders/${log.orderId || log.orderNumber}`)} className={`rounded-2xl border p-4 text-left ${important ? 'border-amber-200 bg-amber-50' : 'bg-[#fbfaf7]'}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold">{log.orderNumber || '-'}</div>
+                        <div className="mt-1 text-xs font-semibold text-muted-foreground">{formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'System'}</div>
+                      </div>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{auditActionLabels[log.action] || log.action}</span>
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {changes.slice(0, 2).map((change) => (
+                        <div key={change.key} className="rounded-xl bg-white px-3 py-2 text-xs font-semibold">
+                          <div className="font-bold uppercase text-[#263d27]">{change.label}</div>
+                          <div className="mt-1 text-muted-foreground">Before: <span className="text-[#1f2937]">{change.before}</span></div>
+                          <div className="text-muted-foreground">After: <span className="text-[#1f2937]">{change.after}</span></div>
+                        </div>
+                      ))}
+                      {!changes.length ? <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-muted-foreground">Tidak ada diff field terdeteksi.</div> : null}
+                    </div>
+                  </button>
+                );
+              })}
+              {!filteredAuditLogs.length ? <p className="rounded-2xl border border-dashed bg-[#fbfaf7] px-4 py-5 text-center text-sm font-semibold text-muted-foreground">Belum ada audit log yang cocok dengan filter.</p> : null}
+            </div>
+          </section>
+        </DashboardSection>
+
+        <DashboardSection title="Production health" subtitle="Payment, shipping, dan local fallback dibuat terlihat supaya order kritis tidak diam-diam tersimpan lokal.">
+          <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+            <section className={`rounded-3xl border p-5 shadow-sm ${opsHealth.hasCriticalIssues ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50'}`}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${opsHealth.hasCriticalIssues ? 'bg-white text-rose-700' : 'bg-white text-emerald-700'}`}>
+                    {opsHealth.hasCriticalIssues ? <WifiOff className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
+                  </span>
+                  <div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">Order reliability</div>
+                    <h2 className="mt-1 text-xl font-bold text-[#0b130c]">
+                      {opsHealth.hasCriticalIssues ? 'Ada item yang perlu dicek sebelum follow-up' : 'Order flow terlihat sehat'}
+                    </h2>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
+                      DOKU checkout diblokir saat order hanya local draft. Gunakan retry sync sebelum kirim payment link atau proses fulfillment.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={runServiceHealthCheck} disabled={Boolean(healthChecking)}>
+                    <RefreshCw className={`h-4 w-4 ${healthChecking === 'services' ? 'animate-spin' : ''}`} />
+                    Check API
+                  </Button>
+                  <Button type="button" className="h-11 rounded-2xl gap-2" onClick={retryOpsHealth} disabled={Boolean(healthChecking)}>
+                    <RefreshCw className={`h-4 w-4 ${healthChecking === 'retry' ? 'animate-spin' : ''}`} />
+                    Retry sync
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                <div className="rounded-2xl bg-white px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Local sync</div>
+                  <div className="mt-1 text-2xl font-bold text-[#0b130c]">{opsHealth.syncQueue.length}</div>
+                </div>
+                <div className="rounded-2xl bg-white px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Pending DOKU</div>
+                  <div className="mt-1 text-2xl font-bold text-amber-700">{opsHealth.pendingPaymentOrders.length}</div>
+                </div>
+                <div className="rounded-2xl bg-white px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Expired</div>
+                  <div className="mt-1 text-2xl font-bold text-rose-700">{opsHealth.expiredPaymentOrders.length}</div>
+                </div>
+                <div className="rounded-2xl bg-white px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>
+                  <div className="mt-1 text-2xl font-bold text-[#263d27]">{opsHealth.shipmentNeedsResi.length}</div>
+                </div>
+              </div>
+              {opsHealth.syncQueue.length ? (
+                <div className="mt-4 grid gap-2">
+                  {opsHealth.syncQueue.slice(0, 3).map((item) => (
+                    <div key={item.id || item.orderNumber} className="rounded-2xl border border-white bg-white/90 px-4 py-3 text-sm font-semibold">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-bold text-[#0b130c]">{item.orderNumber}</span>
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${item.severity === 'critical' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}>{item.action}</span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section className="rounded-3xl border bg-white/90 p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">External services</div>
+                  <h2 className="mt-1 text-xl font-bold">DOKU & shipping health</h2>
+                </div>
+                <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
+                  {serviceHealth.lastCheckedAt ? 'Checked' : 'Manual'}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {[
+                  ['DOKU status sync', serviceHealth.doku],
+                  ['RajaOngkir search', serviceHealth.shipping],
+                ].map(([label, result]) => (
+                  <div key={label} className="rounded-2xl border bg-[#fbfaf7] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold">{label}</div>
+                        <p className="mt-1 text-xs font-semibold text-muted-foreground">{result?.label || 'Belum dicek dari dashboard ini.'}</p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${result ? (result.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700') : 'bg-stone-100 text-stone-600'}`}>
+                        {result ? (result.ok ? 'OK' : 'Issue') : 'Idle'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs font-semibold leading-relaxed text-muted-foreground">
+                Tombol Check API melakukan cek ringan: sync status untuk beberapa DOKU pending dan pencarian area shipping. Retry sync juga menyapu payment reservation yang sudah expired.
+              </p>
+            </section>
           </div>
         </DashboardSection>
 

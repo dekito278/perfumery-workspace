@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { cn } from '@/lib/utils.js';
 
-const ProductGallery = ({ product, className = '', visualClassName = '', compact = false }) => {
+const ProductGallery = ({ product, className = '', visualClassName = '', compact = false, priority = false }) => {
   const images = useMemo(() => {
     const rawImages = Array.isArray(product?.images) ? product.images : [];
     return [...new Set([...rawImages, product?.imageUrl].map((item) => String(item || '').trim()).filter(Boolean))];
@@ -31,7 +31,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
   return (
     <div className={cn('space-y-3', className)}>
       <div className="relative">
-        <ProductVisual product={previewProduct} className={visualClassName} />
+        <ProductVisual product={previewProduct} className={visualClassName} priority={priority} />
         {hasMultipleImages ? (
           <>
             <button
@@ -77,7 +77,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
               )}
               aria-label={`Select product image ${index + 1}`}
             >
-              <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>

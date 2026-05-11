@@ -41,7 +41,7 @@ const MobileProductDetailPage = () => {
     return (
       <MobileCommerceLayout>
         <main className="mobile-page grid min-h-[70vh] place-items-center text-xs font-bold text-[#6b7280]">
-          Loading product...
+          Memuat produk...
         </main>
       </MobileCommerceLayout>
     );
@@ -90,12 +90,12 @@ const MobileProductDetailPage = () => {
         <MobileTopBar
           title={product.name}
           subtitle={product.category}
-          eyebrow="Product"
+          eyebrow="Produk"
           onBack={() => navigate('/mobile/catalog')}
           action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
         />
 
-        <ProductGallery product={product} visualClassName="aspect-square rounded-[24px]" compact />
+        <ProductGallery product={product} visualClassName="aspect-square rounded-[24px]" compact priority />
 
         <section className="mobile-card p-4">
           <div className="flex items-start justify-between gap-3">
@@ -110,7 +110,7 @@ const MobileProductDetailPage = () => {
             </div>
           </div>
           <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
-            <label className="text-[10px] font-bold uppercase text-[#6b7280]" htmlFor="mobile-product-variant">Size</label>
+            <label className="text-[10px] font-bold uppercase text-[#6b7280]" htmlFor="mobile-product-variant">Ukuran</label>
             <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
               <select
                 id="mobile-product-variant"
@@ -123,26 +123,26 @@ const MobileProductDetailPage = () => {
                   const stock = Number(variant.stock || 0);
                   return (
                     <option key={variantKey} value={variantKey}>
-                      {variant.size} - {formatRupiah(variant.priceNumber)} {stock <= 0 ? '(Sold out)' : ''}
+                      {variant.size} - {formatRupiah(variant.priceNumber)} {stock <= 0 ? '(Habis)' : ''}
                     </option>
                   );
                 })}
               </select>
               <div className="rounded-2xl bg-white px-3 py-2 text-right">
                 <div className="text-sm font-bold text-[#263d27]">{selectedStock}</div>
-                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stock</div>
+                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stok</div>
               </div>
             </div>
             <div className={`mt-3 rounded-2xl px-3 py-2 text-xs font-bold ${soldOut ? 'bg-rose-50 text-rose-700' : lowStock ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
               {soldOut ? 'Varian ini sedang habis.' : lowStock ? `Stok varian ini mau habis, tinggal ${selectedStock}.` : 'Stok tersedia, siap masuk cart.'}
             </div>
             <Button className="mt-3 h-12 w-full rounded-2xl gap-2" onClick={addSelectedVariant} disabled={selectedStock <= 0}>
-              Add to cart
+              Masukkan keranjang
               <ArrowRight className="h-4 w-4" />
             </Button>
             <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#6b7280]">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-              Ready to order while stock lasts
+              Siap dipesan selama stok tersedia
             </div>
           </div>
         </section>
@@ -150,7 +150,7 @@ const MobileProductDetailPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#263d27]" />
-            <h2 className="text-base font-bold text-[#0b130c]">Scent notes</h2>
+            <h2 className="text-base font-bold text-[#0b130c]">Notes aroma</h2>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <NoteColumn title="Top" notes={product.topNotes} />
@@ -160,7 +160,7 @@ const MobileProductDetailPage = () => {
         </section>
 
         <Link to="/mobile/catalog" className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#0b130c]">
-          Back to catalog
+          Kembali ke katalog
           <ShoppingBag className="h-4 w-4 text-[#263d27]" />
         </Link>
 
@@ -176,7 +176,7 @@ const MobileProductDetailPage = () => {
               </div>
             </div>
             <Button className="h-11 shrink-0 rounded-2xl gap-2 px-4" onClick={addSelectedVariant} disabled={soldOut}>
-              Add
+              Tambah
               <ShoppingBag className="h-4 w-4" />
             </Button>
           </div>
@@ -185,7 +185,7 @@ const MobileProductDetailPage = () => {
       <MobileBottomSheet
         open={cartPromptOpen}
         onOpenChange={setCartPromptOpen}
-        title="Produk masuk cart"
+        title="Produk masuk keranjang"
         description="Swipe turun untuk menutup, atau lanjut checkout."
         footer={(
           <div className="grid grid-cols-2 gap-2">

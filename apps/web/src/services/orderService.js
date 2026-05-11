@@ -4,6 +4,7 @@ import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock }
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
+export const ORDER_SYNC_QUEUE_STORAGE_KEY = 'dekito.storefront.orderSyncQueue.v1';
 
 const orderStatusLabels = {
   draft: 'Draft',
@@ -86,6 +87,50 @@ const writeLocalAuditLogs = (logs) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(ORDER_AUDIT_LOGS_STORAGE_KEY, JSON.stringify(logs));
   window.dispatchEvent(new CustomEvent('dekito:order-audit-updated'));
+};
+
+const readOrderSyncQueue = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const value = window.localStorage.getItem(ORDER_SYNC_QUEUE_STORAGE_KEY);
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeOrderSyncQueue = (queue) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(ORDER_SYNC_QUEUE_STORAGE_KEY, JSON.stringify(queue));
+  window.dispatchEvent(new CustomEvent('dekito:order-sync-updated'));
+};
+
+const upsertOrderSyncIssue = ({ order, action = 'sync_required', reason = '', severity = 'warning' }) => {
+  const orderNumber = order?.orderNumber || order?.order_number || order?.id;
+  if (!orderNumber) return null;
+
+  const issue = {
+    id: `sync-${orderNumber}`,
+    orderNumber,
+    action,
+    reason: String(reason || 'Database write failed. Review and retry sync before customer follow-up.'),
+    severity,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  const currentQueue = readOrderSyncQueue();
+  const nextQueue = [
+    issue,
+    ...currentQueue.filter((item) => item.orderNumber !== orderNumber),
+  ].slice(0, 100);
+  writeOrderSyncQueue(nextQueue);
+  return issue;
+};
+
+const clearOrderSyncIssue = (orderNumber) => {
+  if (!orderNumber) return;
+  writeOrderSyncQueue(readOrderSyncQueue().filter((item) => item.orderNumber !== orderNumber));
 };
 
 const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}`;
@@ -222,6 +267,8 @@ const normalizeOrder = (order) => {
     deliveredAt: order.delivered_at || order.deliveredAt || '',
     packingNotes: order.packing_notes || order.packingNotes || '',
     persistence: order.persistence || 'database',
+    syncStatus: order.sync_status || order.syncStatus || (order.persistence === 'local' ? 'sync_required' : 'synced'),
+    syncReason: order.sync_reason || order.syncReason || '',
     createdAt: order.created_at || order.createdAt || new Date().toISOString(),
     updatedAt: order.updated_at || order.updatedAt || order.created_at || order.createdAt || new Date().toISOString(),
   };
@@ -467,12 +514,21 @@ const createLocalOrder = (payload) => {
     id: payload.order_number,
     ...payload,
     persistence: 'local',
+    sync_status: 'sync_required',
     created_at: createdAt,
     updated_at: createdAt,
   });
 
   const nextOrders = [order, ...readOrders().map(normalizeOrder)];
   writeOrders(nextOrders);
+  upsertOrderSyncIssue({
+    order,
+    action: payload.payment_provider === 'doku' ? 'payment_blocked_until_sync' : 'sync_required',
+    reason: payload.payment_provider === 'doku'
+      ? 'Order tersimpan sebagai local draft karena database gagal. DOKU checkout diblokir sampai sync berhasil.'
+      : 'Order tersimpan lokal karena database gagal. Retry sync dari dashboard sebelum follow-up customer.',
+    severity: payload.payment_provider === 'doku' ? 'critical' : 'warning',
+  });
   return order;
 };
 
@@ -481,6 +537,107 @@ export const getShipmentStatusLabels = () => shipmentStatusLabels;
 export const getBespokeProductionStatusLabels = () => bespokeProductionStatusLabels;
 
 export const getLocalOrders = () => readOrders().map(normalizeOrder);
+export const getOrderSyncQueue = () => readOrderSyncQueue();
+
+const toOrderDatabasePayload = (order) => ({
+  order_number: order.orderNumber,
+  status: order.status || 'pending_payment',
+  customer_name: order.customerName || 'Walk-in customer',
+  customer_code: order.customerCode || null,
+  customer_id: isUuid(order.customerId) ? order.customerId : null,
+  contact: order.contact || '-',
+  notes: order.notes || '',
+  items: Array.isArray(order.items) ? order.items : [],
+  quantity: Number(order.quantity || 0),
+  subtotal: Number(order.subtotal || 0),
+  checkout_draft: order.checkoutDraft || '',
+  payment_provider: order.paymentProvider || 'manual',
+  payment_status: order.paymentStatus || 'unpaid',
+  payment_reference: order.paymentReference || null,
+  payment_url: order.paymentUrl || null,
+  payment_expires_at: order.paymentExpiresAt || null,
+  payment_session_id: order.paymentSessionId || null,
+  payment_response: order.paymentResponse && typeof order.paymentResponse === 'object' ? order.paymentResponse : null,
+  doku_response: order.paymentResponse && typeof order.paymentResponse === 'object' ? order.paymentResponse : null,
+  inventory_deducted: Boolean(order.inventoryDeducted),
+  inventory_events: normalizeInventoryEvents(order.inventoryEvents),
+  production_links: normalizeProductionLinks(order.productionLinks),
+  internal_notes: order.internalNotes || null,
+  status_timeline: normalizeTimeline(order.statusTimeline),
+  source: order.source || 'storefront',
+  bespoke_production_status: order.bespokeProductionStatus || null,
+  bespoke_production_timeline: normalizeBespokeProductionTimeline(order.bespokeProductionTimeline),
+  shipment_status: order.shipmentStatus || 'not_ready',
+  courier_name: order.courierName || null,
+  tracking_number: order.trackingNumber || null,
+  tracking_url: order.trackingUrl || null,
+  shipped_at: order.shippedAt || null,
+  delivered_at: order.deliveredAt || null,
+  packing_notes: order.packingNotes || null,
+});
+
+export const retryLocalOrderSync = async (orderIdOrNumber) => {
+  const localOrders = readOrders().map(normalizeOrder);
+  const localOrder = localOrders.find((order) => order.id === orderIdOrNumber || order.orderNumber === orderIdOrNumber);
+  if (!localOrder) {
+    clearOrderSyncIssue(orderIdOrNumber);
+    return { ok: true, order: null, removed: true };
+  }
+
+  try {
+    const payload = toOrderDatabasePayload(localOrder);
+    const { data, error } = await supabase
+      .from('storefront_orders')
+      .upsert(payload, { onConflict: 'order_number' })
+      .select('*')
+      .single();
+
+    if (error) {
+      const missingDokuResponseColumn = String(error.message || '').includes('doku_response');
+      if (!missingDokuResponseColumn) throw error;
+      const retryPayload = { ...payload };
+      delete retryPayload.doku_response;
+      const { data: retryData, error: retryError } = await supabase
+        .from('storefront_orders')
+        .upsert(retryPayload, { onConflict: 'order_number' })
+        .select('*')
+        .single();
+      if (retryError) throw retryError;
+      const syncedOrder = normalizeOrder(retryData);
+      writeOrders(localOrders.filter((order) => order.orderNumber !== localOrder.orderNumber));
+      clearOrderSyncIssue(localOrder.orderNumber);
+      window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+      return { ok: true, order: syncedOrder };
+    }
+
+    const syncedOrder = normalizeOrder(data);
+    writeOrders(localOrders.filter((order) => order.orderNumber !== localOrder.orderNumber));
+    clearOrderSyncIssue(localOrder.orderNumber);
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    return { ok: true, order: syncedOrder };
+  } catch (error) {
+    upsertOrderSyncIssue({
+      order: localOrder,
+      action: localOrder.paymentProvider === 'doku' ? 'payment_blocked_until_sync' : 'sync_failed',
+      reason: error.message || 'Retry sync failed',
+      severity: localOrder.paymentProvider === 'doku' ? 'critical' : 'warning',
+    });
+    throw error;
+  }
+};
+
+export const retryOrderSyncQueue = async () => {
+  const queue = readOrderSyncQueue();
+  const results = [];
+  for (const item of queue) {
+    try {
+      results.push(await retryLocalOrderSync(item.orderNumber));
+    } catch (error) {
+      results.push({ ok: false, orderNumber: item.orderNumber, message: error.message || 'Retry failed' });
+    }
+  }
+  return results;
+};
 
 const getReservationExpiryDate = (order = {}) => {
   const explicitExpiry = order.paymentExpiresAt ? new Date(order.paymentExpiresAt) : null;
@@ -653,6 +810,33 @@ export const getOrderAuditLogs = async (orderIdOrNumber) => {
   }
 };
 
+export const getAllOrderAuditLogs = async ({ limit = 200 } = {}) => {
+  const localLogs = readLocalAuditLogs().map(normalizeAuditLog);
+
+  try {
+    const { data, error } = await supabase
+      .from('storefront_order_audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    const remoteLogs = (data || []).map(normalizeAuditLog);
+    const seenIds = new Set(remoteLogs.map((log) => log.id));
+    return [
+      ...remoteLogs,
+      ...localLogs.filter((log) => !seenIds.has(log.id)),
+    ]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
+  } catch (error) {
+    console.warn('Using local storefront order audit logs fallback:', error.message || error);
+    return localLogs
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
+  }
+};
+
 export const getOrderSummary = (orders) => ({
   total: orders.length,
   active: orders.filter((order) => !['completed', 'cancelled'].includes(order.status)).length,
@@ -705,6 +889,9 @@ export const createOrder = async (orderData) => {
   } catch (error) {
     console.warn('Saving storefront order locally because database save failed:', error.message || error);
     order = createLocalOrder(payload);
+    if (payload.payment_provider === 'doku') {
+      throw new Error(`Order ${order.orderNumber} tersimpan sebagai local draft karena database gagal. DOKU checkout diblokir sampai order berhasil sync ke Supabase.`);
+    }
   }
 
   const inventoryEvents = await deductInventoryForOrder(order);

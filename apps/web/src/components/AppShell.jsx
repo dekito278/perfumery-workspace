@@ -70,8 +70,9 @@ const AppShell = ({ children }) => {
         { path: '/briefs', label: 'Briefs', icon: ClipboardList },
         { path: '/raw-materials', label: 'Materials', icon: LibraryBig },
         { path: '/formulas', label: 'Formulas', icon: Beaker },
+        { path: '/batches', label: 'Batches', icon: PackageCheck },
         { path: '/validation', label: 'Validation', icon: NotebookPen },
-        { path: '/production-costing', label: 'Costing', icon: Calculator, aliases: ['/batches'] },
+        { path: '/production-costing', label: 'Costing', icon: Calculator },
       ],
     },
     {

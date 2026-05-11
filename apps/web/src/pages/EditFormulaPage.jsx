@@ -24,6 +24,7 @@ import FormulaMaterialLibrary from '@/components/FormulaMaterialLibrary.jsx';
 import FormulaOdourDisplayPanel from '@/components/FormulaOdourDisplayPanel.jsx';
 import FormulaComposerPacePanel from '@/components/FormulaComposerPacePanel.jsx';
 import FormulaReferenceProfileSidebar from '@/components/FormulaReferenceProfileSidebar.jsx';
+import FormulaScaleTool from '@/components/FormulaScaleTool.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
@@ -1586,6 +1587,14 @@ const EditFormulaPage = () => {
                         </div>
 
                         <div className="mt-4">
+                          <FormulaScaleTool
+                            formulaItems={formulaItems}
+                            totalGrams={totalGrams}
+                            replaceFormulaItems={replaceFormulaItems}
+                          />
+                        </div>
+
+                        <div className="mt-4">
                           <FormulaItemTableEditor
                             items={formulaItems}
                             rawMaterials={rawMaterials}
@@ -1801,6 +1810,14 @@ const EditFormulaPage = () => {
                           }}
                         />
                       </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <FormulaScaleTool
+                        formulaItems={formulaItems}
+                        totalGrams={totalGrams}
+                        replaceFormulaItems={replaceFormulaItems}
+                      />
                     </div>
 
                     <div className="mt-4">

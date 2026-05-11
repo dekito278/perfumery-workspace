@@ -19,7 +19,8 @@
     "reference:match:apply": "node tools/match-material-reference-links.mjs --apply",
     "reference:inventory:plan": "node tools/seed-operational-material-library.mjs --out-dir ../../docs/material-library-seed",
     "reference:inventory:apply": "node tools/seed-operational-material-library.mjs --apply --out-dir ../../docs/material-library-seed",
-    "browser:smoke": "node tools/browser-smoke-check.mjs"
+    "browser:smoke": "node tools/browser-smoke-check.mjs",
+    "e2e:production-flow": "node tools/production-flow-e2e.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

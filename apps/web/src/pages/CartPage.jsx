@@ -1,8 +1,9 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 
@@ -27,6 +28,7 @@ const CheckoutSectionTitle = ({ step, title, description }) => (
 );
 
 const CartPage = () => {
+  const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const {
     customerCode,
@@ -97,8 +99,8 @@ const CartPage = () => {
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
         <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]"><ArrowLeft className="h-4 w-4" />Catalog</Link>
-            <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Home</Link>
+            <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]"><ArrowLeft className="h-4 w-4" />Katalog</Link>
+            <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Beranda</Link>
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.8fr] lg:px-8">
@@ -111,7 +113,7 @@ const CartPage = () => {
                       <CheckCircle2 className="h-5 w-5" />
                     </span>
                     <div>
-                      <div className="text-xs font-bold uppercase text-[#263d27]">Order received</div>
+                      <div className="text-xs font-bold uppercase text-[#263d27]">Order diterima</div>
                       <h2 className="mt-1 text-2xl font-bold">{submittedOrder.orderNumber}</h2>
                       <p className="mt-2 max-w-xl text-sm font-semibold leading-relaxed text-muted-foreground">
                         Data customer sudah masuk ke Studio. Simpan kode ini untuk order berikutnya tanpa isi ulang data.
@@ -123,8 +125,8 @@ const CartPage = () => {
                   </button>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <Link to="/catalog" className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold">Shop again</Link>
-                  <Link to={`/customer?code=${submittedOrder.customerCode}`} className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">Track order</Link>
+                  <Link to="/catalog" className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold">Belanja lagi</Link>
+                  <Link to={`/customer?code=${submittedOrder.customerCode}`} className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">Lacak order</Link>
                 </div>
               </section>
             ) : null}
@@ -132,7 +134,7 @@ const CartPage = () => {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <div className="text-xs font-bold uppercase text-[#263d27]">Checkout</div>
-                <h1 className="mt-1 text-4xl font-bold">Cart</h1>
+                <h1 className="mt-1 text-4xl font-bold">Keranjang</h1>
               </div>
               <div className="rounded-2xl border bg-white px-4 py-3 text-right">
                 <div className="text-xs font-bold uppercase text-muted-foreground">Subtotal</div>
@@ -149,7 +151,7 @@ const CartPage = () => {
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">{item.notes}</p>
                       <p className="mt-1 text-xs font-bold uppercase text-[#263d27]">{item.price} · {item.size}</p>
                     </div>
-                    <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Remove ${item.name}`}><Trash2 className="h-4 w-4" /></Button>
+                    <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Hapus ${item.name}`}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
                     <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
@@ -160,11 +162,13 @@ const CartPage = () => {
                 </article>
               ))}
               {!items.length ? (
-                <div className="rounded-2xl border bg-white p-8 text-center">
-                  <ShoppingBag className="mx-auto h-8 w-8 text-[#263d27]" />
-                  <h2 className="mt-3 text-xl font-bold">Cart is empty</h2>
-                  <Link to="/catalog" className="mt-4 inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">Open catalog</Link>
-                </div>
+                <StateBlock
+                  icon={ShoppingBag}
+                  title="Keranjang kosong"
+                  description="Pilih parfum dari katalog untuk mulai checkout."
+                  action="Buka katalog"
+                  onAction={() => navigate('/catalog')}
+                />
               ) : null}
             </div>
           </div>
@@ -176,8 +180,8 @@ const CartPage = () => {
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
                   <CheckoutSectionTitle step="1" title="Customer" description="Masuk sebagai repeat customer atau isi data baru." />
                   <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
-                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Load'}</Button>
+                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Kode customer, contoh SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Cek'}</Button>
                   </div>
                   <p className="mt-2 rounded-2xl bg-white px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
                     Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
@@ -185,16 +189,16 @@ const CartPage = () => {
                 </section>
                 {securityChallenge ? (
                   <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
-                    <div className="text-xs font-bold uppercase text-[#263d27]">Security question</div>
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Pertanyaan keamanan</div>
                     <p className="mt-1 text-sm font-bold">{securityChallenge.securityQuestion}</p>
                     <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                      <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Answer" className="h-12 rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
-                      <Button type="button" className="h-12 rounded-2xl px-4 text-sm font-bold" onClick={verifyCustomerSecurity} disabled={lookupLoading}>{lookupLoading ? '...' : 'Verify'}</Button>
+                      <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-12 rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                      <Button type="button" className="h-12 rounded-2xl px-4 text-sm font-bold" onClick={verifyCustomerSecurity} disabled={lookupLoading}>{lookupLoading ? '...' : 'Verifikasi'}</Button>
                     </div>
                   </div>
                 ) : null}
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
-                  <CheckoutSectionTitle step="2" title="Delivery" description="Nama, kontak, dan alamat lengkap untuk kurir." />
+                  <CheckoutSectionTitle step="2" title="Pengiriman" description="Nama, kontak, dan alamat lengkap untuk kurir." />
                   <div className="mt-3 grid gap-3">
                 {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
                   <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
@@ -214,13 +218,13 @@ const CartPage = () => {
                     </div>
                   </div>
                 ) : null}
-                <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
-                <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp atau email" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
                 <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
                   </div>
                 </section>
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
-                  <CheckoutSectionTitle step="3" title="Shipping" description="Cari area, pilih ekspedisi, lalu pilih layanan ongkir." />
+                  <CheckoutSectionTitle step="3" title="Ongkir" description="Cari area, pilih ekspedisi, lalu pilih layanan ongkir." />
                   <div className="mt-3 grid gap-3">
                 <div className="grid gap-2">
                   <div className="text-xs font-bold uppercase text-[#263d27]">Area ongkir</div>
@@ -286,9 +290,9 @@ const CartPage = () => {
                   </div>
                 </section>
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
-                  <CheckoutSectionTitle step="4" title="Payment note" description="Catatan opsional sebelum order dibuat." />
+                  <CheckoutSectionTitle step="4" title="Catatan order" description="Catatan opsional sebelum order dibuat." />
                   <div className="mt-3">
-                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={3} className="rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
                   </div>
                 </section>
               </div>
@@ -308,7 +312,7 @@ const CartPage = () => {
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-5" onClick={() => submitOrder()} disabled={!canSubmitCheckout}><CreditCard className="h-4 w-4" />{saving ? 'Memproses...' : 'Bayar sekarang'}</Button>
-                <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Clear</Button>
+                <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Kosongkan</Button>
               </div>
             </aside>
           ) : null}

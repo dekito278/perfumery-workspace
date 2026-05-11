@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
@@ -7,66 +7,77 @@ import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
-import HomePage from '@/pages/HomePage.jsx';
-import CatalogPage from '@/pages/CatalogPage.jsx';
-import ProductDetailPage from '@/pages/ProductDetailPage.jsx';
-import BespokePage from '@/pages/BespokePage.jsx';
-import CartPage from '@/pages/CartPage.jsx';
-import PaymentPage from '@/pages/PaymentPage.jsx';
-import CustomerPortalPage from '@/pages/CustomerPortalPage.jsx';
-import CustomerInvoicePage from '@/pages/CustomerInvoicePage.jsx';
-import LoginPage from '@/pages/LoginPage.jsx';
-import ResetPasswordPage from '@/pages/ResetPasswordPage.jsx';
-import AuthenticatorSetupPage from '@/pages/AuthenticatorSetupPage.jsx';
-import DashboardPage from '@/pages/DashboardPage.jsx';
-import ProductManagementPage from '@/pages/ProductManagementPage.jsx';
-import ProductCategoriesPage from '@/pages/ProductCategoriesPage.jsx';
-import OrdersPage from '@/pages/OrdersPage.jsx';
-import OrderDetailPage from '@/pages/OrderDetailPage.jsx';
-import CustomersPage from '@/pages/CustomersPage.jsx';
-import ShipmentsPage from '@/pages/ShipmentsPage.jsx';
-import BriefsPage from '@/pages/BriefsPage.jsx';
-import BriefEditorPage from '@/pages/BriefEditorPage.jsx';
-import BriefDetailPage from '@/pages/BriefDetailPage.jsx';
-import RawMaterialsPage from '@/pages/RawMaterialsPage.jsx';
-import RawMaterialAuditPage from '@/pages/RawMaterialAuditPage.jsx';
-import RawMaterialDetailPage from '@/pages/RawMaterialDetailPage.jsx';
-import CategoriesPage from '@/pages/CategoriesPage.jsx';
-import FormulasPage from '@/pages/FormulasPage.jsx';
-import CreateFormulaPage from '@/pages/CreateFormulaPage.jsx';
-import EditFormulaPage from '@/pages/EditFormulaPage.jsx';
-import FormulaDetailPage from '@/pages/FormulaDetailPage.jsx';
-import ProductionCostPage from '@/pages/ProductionCostPage.jsx';
-import ValidationLogPage from '@/pages/ValidationLogPage.jsx';
-import MobileLoginPage from '@/pages/mobile/MobileLoginPage.jsx';
-import MobileStorefrontPage from '@/pages/mobile/MobileStorefrontPage.jsx';
-import MobileCatalogPage from '@/pages/mobile/MobileCatalogPage.jsx';
-import MobileProductDetailPage from '@/pages/mobile/MobileProductDetailPage.jsx';
-import MobileBespokePage from '@/pages/mobile/MobileBespokePage.jsx';
-import MobileCartPage from '@/pages/mobile/MobileCartPage.jsx';
-import MobileProductManagementPage from '@/pages/mobile/MobileProductManagementPage.jsx';
-import MobileBespokeSettingsPage from '@/pages/mobile/MobileBespokeSettingsPage.jsx';
-import MobileOrdersPage from '@/pages/mobile/MobileOrdersPage.jsx';
-import MobileOrderDetailPage from '@/pages/mobile/MobileOrderDetailPage.jsx';
-import MobileFulfillmentPage from '@/pages/mobile/MobileFulfillmentPage.jsx';
-import MobileCustomersPage from '@/pages/mobile/MobileCustomersPage.jsx';
-import MobileDashboardPage from '@/pages/mobile/MobileDashboardPage.jsx';
-import MobileBriefsPage from '@/pages/mobile/MobileBriefsPage.jsx';
-import MobileBriefEditorPage from '@/pages/mobile/MobileBriefEditorPage.jsx';
-import MobileBriefDetailPage from '@/pages/mobile/MobileBriefDetailPage.jsx';
-import MobileRawMaterialsPage from '@/pages/mobile/MobileRawMaterialsPage.jsx';
-import MobileRawMaterialDetailPage from '@/pages/mobile/MobileRawMaterialDetailPage.jsx';
-import MobileRawMaterialAuditPage from '@/pages/mobile/MobileRawMaterialAuditPage.jsx';
-import MobileCategoriesPage from '@/pages/mobile/MobileCategoriesPage.jsx';
-import MobileFormulasPage from '@/pages/mobile/MobileFormulasPage.jsx';
-import MobileCreateFormulaPage from '@/pages/mobile/MobileCreateFormulaPage.jsx';
-import MobileEditFormulaPage from '@/pages/mobile/MobileEditFormulaPage.jsx';
-import MobileFormulaDetailPage from '@/pages/mobile/MobileFormulaDetailPage.jsx';
-import MobileBatchesPage from '@/pages/mobile/MobileBatchesPage.jsx';
-import MobileProductionCostingPage from '@/pages/mobile/MobileProductionCostingPage.jsx';
-import MobileValidationPage from '@/pages/mobile/MobileValidationPage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
+
+const HomePage = lazy(() => import('@/pages/HomePage.jsx'));
+const CatalogPage = lazy(() => import('@/pages/CatalogPage.jsx'));
+const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage.jsx'));
+const BespokePage = lazy(() => import('@/pages/BespokePage.jsx'));
+const CartPage = lazy(() => import('@/pages/CartPage.jsx'));
+const PaymentPage = lazy(() => import('@/pages/PaymentPage.jsx'));
+const CustomerPortalPage = lazy(() => import('@/pages/CustomerPortalPage.jsx'));
+const CustomerInvoicePage = lazy(() => import('@/pages/CustomerInvoicePage.jsx'));
+const LoginPage = lazy(() => import('@/pages/LoginPage.jsx'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage.jsx'));
+const AuthenticatorSetupPage = lazy(() => import('@/pages/AuthenticatorSetupPage.jsx'));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage.jsx'));
+const ProductManagementPage = lazy(() => import('@/pages/ProductManagementPage.jsx'));
+const ProductCategoriesPage = lazy(() => import('@/pages/ProductCategoriesPage.jsx'));
+const OrdersPage = lazy(() => import('@/pages/OrdersPage.jsx'));
+const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage.jsx'));
+const CustomersPage = lazy(() => import('@/pages/CustomersPage.jsx'));
+const ShipmentsPage = lazy(() => import('@/pages/ShipmentsPage.jsx'));
+const BriefsPage = lazy(() => import('@/pages/BriefsPage.jsx'));
+const BriefEditorPage = lazy(() => import('@/pages/BriefEditorPage.jsx'));
+const BriefDetailPage = lazy(() => import('@/pages/BriefDetailPage.jsx'));
+const RawMaterialsPage = lazy(() => import('@/pages/RawMaterialsPage.jsx'));
+const RawMaterialAuditPage = lazy(() => import('@/pages/RawMaterialAuditPage.jsx'));
+const RawMaterialDetailPage = lazy(() => import('@/pages/RawMaterialDetailPage.jsx'));
+const CategoriesPage = lazy(() => import('@/pages/CategoriesPage.jsx'));
+const FormulasPage = lazy(() => import('@/pages/FormulasPage.jsx'));
+const CreateFormulaPage = lazy(() => import('@/pages/CreateFormulaPage.jsx'));
+const EditFormulaPage = lazy(() => import('@/pages/EditFormulaPage.jsx'));
+const FormulaDetailPage = lazy(() => import('@/pages/FormulaDetailPage.jsx'));
+const BatchProductionPage = lazy(() => import('@/pages/BatchProductionPage.jsx'));
+const ProductionCostPage = lazy(() => import('@/pages/ProductionCostPage.jsx'));
+const ValidationLogPage = lazy(() => import('@/pages/ValidationLogPage.jsx'));
+const MobileLoginPage = lazy(() => import('@/pages/mobile/MobileLoginPage.jsx'));
+const MobileStorefrontPage = lazy(() => import('@/pages/mobile/MobileStorefrontPage.jsx'));
+const MobileCatalogPage = lazy(() => import('@/pages/mobile/MobileCatalogPage.jsx'));
+const MobileProductDetailPage = lazy(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
+const MobileBespokePage = lazy(() => import('@/pages/mobile/MobileBespokePage.jsx'));
+const MobileCartPage = lazy(() => import('@/pages/mobile/MobileCartPage.jsx'));
+const MobileProductManagementPage = lazy(() => import('@/pages/mobile/MobileProductManagementPage.jsx'));
+const MobileBespokeSettingsPage = lazy(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
+const MobileOrdersPage = lazy(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
+const MobileOrderDetailPage = lazy(() => import('@/pages/mobile/MobileOrderDetailPage.jsx'));
+const MobileFulfillmentPage = lazy(() => import('@/pages/mobile/MobileFulfillmentPage.jsx'));
+const MobileCustomersPage = lazy(() => import('@/pages/mobile/MobileCustomersPage.jsx'));
+const MobileDashboardPage = lazy(() => import('@/pages/mobile/MobileDashboardPage.jsx'));
+const MobileBriefsPage = lazy(() => import('@/pages/mobile/MobileBriefsPage.jsx'));
+const MobileBriefEditorPage = lazy(() => import('@/pages/mobile/MobileBriefEditorPage.jsx'));
+const MobileBriefDetailPage = lazy(() => import('@/pages/mobile/MobileBriefDetailPage.jsx'));
+const MobileRawMaterialsPage = lazy(() => import('@/pages/mobile/MobileRawMaterialsPage.jsx'));
+const MobileRawMaterialDetailPage = lazy(() => import('@/pages/mobile/MobileRawMaterialDetailPage.jsx'));
+const MobileRawMaterialAuditPage = lazy(() => import('@/pages/mobile/MobileRawMaterialAuditPage.jsx'));
+const MobileCategoriesPage = lazy(() => import('@/pages/mobile/MobileCategoriesPage.jsx'));
+const MobileFormulasPage = lazy(() => import('@/pages/mobile/MobileFormulasPage.jsx'));
+const MobileCreateFormulaPage = lazy(() => import('@/pages/mobile/MobileCreateFormulaPage.jsx'));
+const MobileEditFormulaPage = lazy(() => import('@/pages/mobile/MobileEditFormulaPage.jsx'));
+const MobileFormulaDetailPage = lazy(() => import('@/pages/mobile/MobileFormulaDetailPage.jsx'));
+const MobileBatchesPage = lazy(() => import('@/pages/mobile/MobileBatchesPage.jsx'));
+const MobileProductionCostingPage = lazy(() => import('@/pages/mobile/MobileProductionCostingPage.jsx'));
+const MobileValidationPage = lazy(() => import('@/pages/mobile/MobileValidationPage.jsx'));
+
+const RouteFallback = () => (
+  <div className="grid min-h-screen place-items-center bg-[#f7f8f2] px-4 text-center">
+    <div>
+      <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
+      <p className="mt-4 text-sm font-bold text-[#263d27]">Loading...</p>
+    </div>
+  </div>
+);
 
 const RootRedirect = () => {
   const { initialLoading } = useAuth();
@@ -124,6 +135,7 @@ function AppRoutes() {
       <ScrollToTop />
       <ScrollRevealEffects />
       <MobileBrowserRedirect />
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/home" element={<HomePage />} />
@@ -463,12 +475,12 @@ function AppRoutes() {
         
         <Route path="/batches" element={
           <ProtectedRoute>
-            <ProductionCostPage />
+            <BatchProductionPage />
           </ProtectedRoute>
         } />
         <Route path="/batches/:id" element={
           <ProtectedRoute>
-            <ProductionCostPage />
+            <BatchProductionPage />
           </ProtectedRoute>
         } />
 
@@ -483,6 +495,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
       </Routes>
+      </Suspense>
       <PwaInstallPrompt />
       <Toaster />
     </Router>

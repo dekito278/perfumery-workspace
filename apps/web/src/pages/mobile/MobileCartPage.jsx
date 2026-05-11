@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
@@ -19,10 +20,10 @@ const courierLabels = {
 };
 
 const formatCartSubtitle = (items, quantity) => {
-  if (!items.length) return 'Cart is empty';
+  if (!items.length) return 'Keranjang kosong';
   const productNames = items.slice(0, 2).map((item) => item.name).join(', ');
   const remainingCount = Math.max(items.length - 2, 0);
-  return remainingCount ? `${productNames} +${remainingCount} more` : `${quantity} item${quantity > 1 ? 's' : ''}: ${productNames}`;
+  return remainingCount ? `${productNames} +${remainingCount} lagi` : `${quantity} item: ${productNames}`;
 };
 
 const CheckoutChip = ({ active, label }) => (
@@ -112,7 +113,7 @@ const MobileCartPage = () => {
                 <CheckCircle2 className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-bold uppercase text-amber-700">Order received</div>
+                <div className="text-[10px] font-bold uppercase text-amber-700">Order diterima</div>
                 <h2 className="mt-1 text-lg font-bold text-[#1f2937]">{submittedOrder.orderNumber}</h2>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                   Data customer sudah masuk ke Studio. Simpan kode ini untuk order berikutnya tanpa isi ulang data.
@@ -121,8 +122,8 @@ const MobileCartPage = () => {
                   {submittedOrder.customerCode || '-'}
                 </button>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/catalog')}>Shop again</Button>
-                  <Button type="button" className="rounded-2xl" onClick={() => navigate(`/mobile/customer?code=${submittedOrder.customerCode}`)}>Track order</Button>
+                  <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/catalog')}>Belanja lagi</Button>
+                  <Button type="button" className="rounded-2xl" onClick={() => navigate(`/mobile/customer?code=${submittedOrder.customerCode}`)}>Lacak order</Button>
                 </div>
               </div>
             </div>
@@ -164,16 +165,16 @@ const MobileCartPage = () => {
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{item.notes}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.price} / {item.size}</p>
                 </div>
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Remove ${item.name}`}>
+                <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Hapus ${item.name}`}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => decreaseQuantity(item)} aria-label={`Decrease ${item.name}`}>
+                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => decreaseQuantity(item)} aria-label={`Kurangi ${item.name}`}>
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="grid h-10 min-w-12 place-items-center rounded-2xl bg-[#f8f7f4] text-sm font-bold text-[#1f2937]">{item.quantity}</span>
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock} aria-label={`Increase ${item.name}`}>
+                <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock} aria-label={`Tambah ${item.name}`}>
                   <Plus className="h-4 w-4" />
                 </Button>
                 {item.maxStock > 0 ? <span className="text-[10px] font-bold text-[#8b949e]">stok {item.maxStock}</span> : null}
@@ -181,12 +182,14 @@ const MobileCartPage = () => {
             </article>
           ))}
           {!items.length ? (
-            <div className="mobile-card p-5 text-center">
-              <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />
-              <h2 className="mt-3 text-base font-bold text-[#1f2937]">Cart is empty</h2>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Add a perfume from the catalog first.</p>
-              <Button className="mt-4 rounded-2xl" onClick={() => navigate('/mobile/catalog')}>Open catalog</Button>
-            </div>
+            <StateBlock
+              className="mobile-card"
+              icon={ShoppingBag}
+              title="Keranjang kosong"
+              description="Pilih parfum dari katalog untuk mulai checkout."
+              action="Buka katalog"
+              onAction={() => navigate('/mobile/catalog')}
+            />
           ) : null}
         </section>
         <MobileBottomSheet
@@ -210,15 +213,15 @@ const MobileCartPage = () => {
         >
           <div className="space-y-3">
             <div className="flex gap-2 overflow-x-auto pb-1">
-              <CheckoutChip active={Boolean(items.length)} label="Cart" />
+              <CheckoutChip active={Boolean(items.length)} label="Keranjang" />
               <CheckoutChip active={customerReady} label="Customer" />
-              <CheckoutChip active={deliveryReady} label="Delivery" />
-              <CheckoutChip active={shippingReady} label="Shipping" />
+              <CheckoutChip active={deliveryReady} label="Alamat" />
+              <CheckoutChip active={shippingReady} label="Ongkir" />
             </div>
             <section className="mobile-card p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-bold text-[#1f2937]">Products in cart</h2>
-                  <span className="text-xs font-bold text-amber-700">{summary.quantity} item{summary.quantity > 1 ? 's' : ''}</span>
+                  <h2 className="text-sm font-bold text-[#1f2937]">Produk di keranjang</h2>
+                  <span className="text-xs font-bold text-amber-700">{summary.quantity} item</span>
                 </div>
                 <div className="mt-3 grid gap-2">
                   {items.map((item) => (
@@ -235,16 +238,16 @@ const MobileCartPage = () => {
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-3">
                         <div className="inline-flex items-center rounded-2xl border border-[#263d27]/10 bg-white p-1">
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => decreaseQuantity(item)} aria-label={`Decrease ${item.name}`}>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => decreaseQuantity(item)} aria-label={`Kurangi ${item.name}`}>
                             <Minus className="h-4 w-4" />
                           </Button>
                           <span className="grid h-8 min-w-10 place-items-center text-sm font-bold text-[#1f2937]">{item.quantity}</span>
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock} aria-label={`Increase ${item.name}`}>
+                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={() => updateQuantity(item.slug, item.quantity + 1)} disabled={item.maxStock > 0 && item.quantity >= item.maxStock} aria-label={`Tambah ${item.name}`}>
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
                         <Button type="button" size="sm" variant="ghost" className="h-9 rounded-2xl px-3 text-xs font-bold text-rose-700" onClick={() => removeItem(item.slug)}>
-                          Remove
+                          Hapus
                         </Button>
                       </div>
                     </div>
@@ -257,19 +260,19 @@ const MobileCartPage = () => {
                 <div className="mt-3 grid gap-2">
                   <div className="text-[10px] font-bold uppercase text-amber-700">Data customer</div>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Customer code, e.g. SOLI09232" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold uppercase outline-none focus:border-amber-300" />
-                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Load'}</Button>
+                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Kode customer, contoh SOLI09232" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold uppercase outline-none focus:border-amber-300" />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Cek'}</Button>
                   </div>
                   <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
                     Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
                   </p>
                   {securityChallenge ? (
                     <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-3">
-                      <div className="text-[10px] font-bold uppercase text-[#263d27]">Security question</div>
+                      <div className="text-[10px] font-bold uppercase text-[#263d27]">Pertanyaan keamanan</div>
                       <p className="mt-1 text-sm font-bold text-[#1f2937]">{securityChallenge.securityQuestion}</p>
                       <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                        <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Answer" className="h-11 rounded-2xl border border-[#d7dfd0] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                        <Button type="button" className="h-11 rounded-2xl px-4 text-xs font-bold" onClick={verifyCustomerSecurity} disabled={lookupLoading}>{lookupLoading ? '...' : 'Verify'}</Button>
+                        <input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-11 rounded-2xl border border-[#d7dfd0] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                        <Button type="button" className="h-11 rounded-2xl px-4 text-xs font-bold" onClick={verifyCustomerSecurity} disabled={lookupLoading}>{lookupLoading ? '...' : 'Verifikasi'}</Button>
                       </div>
                     </div>
                   ) : null}
@@ -291,8 +294,8 @@ const MobileCartPage = () => {
                       </div>
                     </div>
                   ) : null}
-                  <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Customer name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp or email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp atau email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Alamat & ongkir</div>
                   <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <div className="grid gap-2">
@@ -356,7 +359,7 @@ const MobileCartPage = () => {
                     </div>
                   ) : null}
                   {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
-                  <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Delivery notes or request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>
               </section>
 

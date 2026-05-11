@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, ImagePlus, ImageOff, PackagePlus, Plus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
+import { AlertTriangle, Clock3, Edit3, ImagePlus, ImageOff, PackagePlus, Plus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -12,6 +12,9 @@ import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import {
   deleteCustomProduct,
   formatRupiah,
+  getProductRestockThreshold,
+  getProductStockCorrections,
+  getVisibleProductTags,
   resetCustomProducts,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
@@ -23,6 +26,9 @@ const emptyProduct = {
   priceNumber: 289000,
   compareAtPriceNumber: 0,
   stock: 10,
+  restockThreshold: 5,
+  stockAdjustmentNote: '',
+  stockCorrections: [],
   size: '30 ml',
   variants: [
     { id: '10-ml', size: '10 ml', priceNumber: 129000, compareAtPriceNumber: 0, stock: 5 },
@@ -46,15 +52,57 @@ const toEditableProduct = (product) => ({
   heartNotes: product.heartNotes.join(', '),
   baseNotes: product.baseNotes.join(', '),
   variants: product.variants,
-  tags: product.tags.join(', '),
+  tags: getVisibleProductTags(product).join(', '),
+  internalTags: product.tags.filter((tag) => !getVisibleProductTags(product).includes(tag)),
+  restockThreshold: getProductRestockThreshold(product),
+  stockAdjustmentNote: '',
+  stockCorrections: getProductStockCorrections(product),
   images: product.images || (product.imageUrl ? [product.imageUrl] : []),
 });
+
+const buildStockCorrection = ({ form, previousProduct }) => {
+  if (!previousProduct) return null;
+  const previousVariants = new Map((previousProduct.variants || []).map((variant) => [variant.id || variant.size, variant]));
+  const changedVariants = (form.variants || []).map((variant) => {
+    const previous = previousVariants.get(variant.id || variant.size) || {};
+    const before = Number(previous.stock || 0);
+    const after = Number(variant.stock || 0);
+    if (before === after) return null;
+    return {
+      id: variant.id || variant.size,
+      size: variant.size,
+      before,
+      after,
+    };
+  }).filter(Boolean);
+  const previousStock = Number(previousProduct.stock || 0);
+  const nextStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0);
+  if (!changedVariants.length && previousStock === nextStock) return null;
+  return {
+    id: `stock-${Date.now()}`,
+    at: new Date().toISOString(),
+    actor: 'Admin',
+    note: form.stockAdjustmentNote || 'Manual stock correction',
+    previousStock,
+    nextStock,
+    variants: changedVariants,
+  };
+};
 
 const ProductManagementPage = () => {
   const navigate = useNavigate();
   const products = useCatalogProducts();
   const categories = useStorefrontCategories(products);
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
+  const lowStockProducts = useMemo(() => customProducts.filter((product) => product.stock > 0 && product.stock <= getProductRestockThreshold(product)), [customProducts]);
+  const stockCorrectionHistory = useMemo(() => customProducts.flatMap((product) => (
+    getProductStockCorrections(product).map((event) => ({
+      ...event,
+      productId: product.id,
+      productName: product.name,
+      threshold: getProductRestockThreshold(product),
+    }))
+  )).sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()), [customProducts]);
   const categoryUsage = useMemo(() => products.reduce((usage, product) => {
     if (!product.category) return usage;
     usage.set(product.category.toLowerCase(), (usage.get(product.category.toLowerCase()) || 0) + 1);
@@ -122,8 +170,16 @@ const ProductManagementPage = () => {
 
     setSavingProduct(true);
     try {
+      const previousProduct = products.find((product) => product.id === form.id);
+      const stockCorrection = buildStockCorrection({ form, previousProduct });
+      const stockCorrections = stockCorrection
+        ? [stockCorrection, ...(form.stockCorrections || [])]
+        : (form.stockCorrections || []);
       const product = await saveCustomProduct({
         ...form,
+        internalTags: form.internalTags,
+        restockThreshold: Number(form.restockThreshold || 0),
+        stockCorrections,
         priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
         compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
         stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
@@ -131,7 +187,7 @@ const ProductManagementPage = () => {
         price: formatRupiah(form.priceNumber),
       });
       setForm(toEditableProduct(product));
-      toast.success('Product saved to catalog');
+      toast.success(stockCorrection ? 'Product saved and stock correction logged' : 'Product saved to catalog');
     } finally {
       setSavingProduct(false);
     }
@@ -214,6 +270,10 @@ const ProductManagementPage = () => {
                 <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
               </label>
               <label>
+                <span className="text-xs font-bold uppercase text-muted-foreground">Restock threshold</span>
+                <input type="number" value={form.restockThreshold} onChange={(event) => updateField('restockThreshold', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+              </label>
+              <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
                 <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
               </label>
@@ -240,6 +300,10 @@ const ProductManagementPage = () => {
               <label className="sm:col-span-2">
                 <span className="text-xs font-bold uppercase text-muted-foreground">Notes summary</span>
                 <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
+              </label>
+              <label className="sm:col-span-2">
+                <span className="text-xs font-bold uppercase text-muted-foreground">Catatan koreksi stok</span>
+                <input value={form.stockAdjustmentNote} onChange={(event) => updateField('stockAdjustmentNote', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Contoh: restock 20 botol dari batch Mei" />
               </label>
               <div className="sm:col-span-2 grid gap-4 rounded-2xl border bg-[#fbfaf7] p-4 sm:grid-cols-[0.9fr_1.1fr]">
                 <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="min-h-[220px]" />
@@ -300,6 +364,66 @@ const ProductManagementPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
+                  <h2 className="text-xl font-bold">Inventory ops</h2>
+                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Threshold restock, notifikasi low stock, dan riwayat koreksi stok.</p>
+                </div>
+                <AlertTriangle className="h-5 w-5 text-rose-700" />
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-rose-50 px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-rose-700">Low stock</div>
+                  <div className="mt-1 text-2xl font-bold text-rose-800">{lowStockProducts.length}</div>
+                </div>
+                <div className="rounded-2xl bg-amber-50 px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-amber-700">Corrections</div>
+                  <div className="mt-1 text-2xl font-bold text-amber-800">{stockCorrectionHistory.length}</div>
+                </div>
+                <div className="rounded-2xl bg-[#eef2e8] px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-[#263d27]">Avg threshold</div>
+                  <div className="mt-1 text-2xl font-bold text-[#263d27]">
+                    {customProducts.length ? Math.round(customProducts.reduce((sum, product) => sum + getProductRestockThreshold(product), 0) / customProducts.length) : 0}
+                  </div>
+                </div>
+              </div>
+              {lowStockProducts.length ? (
+                <div className="mt-4 grid gap-2">
+                  {lowStockProducts.slice(0, 4).map((product) => (
+                    <button key={product.id} type="button" onClick={() => handleEdit(product)} className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-left">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-bold text-[#1f2937]">{product.name}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">{product.stock} / min {getProductRestockThreshold(product)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 rounded-2xl bg-[#fbfaf7] px-4 py-3 text-sm font-semibold text-muted-foreground">Semua custom product masih di atas restock threshold.</p>
+              )}
+              <div className="mt-5 border-t pt-4">
+                <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+                  <Clock3 className="h-4 w-4" />
+                  Riwayat koreksi stok
+                </div>
+                <div className="grid gap-2">
+                  {stockCorrectionHistory.slice(0, 5).map((event) => (
+                    <div key={`${event.productId}-${event.id}`} className="rounded-2xl bg-[#fbfaf7] px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-[#1f2937]">{event.productName}</div>
+                          <p className="mt-1 text-xs font-semibold text-muted-foreground">{event.note || 'Manual stock correction'}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{event.previousStock} -&gt; {event.nextStock}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {!stockCorrectionHistory.length ? <p className="text-sm font-semibold text-muted-foreground">Belum ada koreksi stok manual yang tercatat.</p> : null}
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
                   <h2 className="text-xl font-bold">Product categories</h2>
                   <p className="mt-1 text-sm font-semibold text-muted-foreground">Kategori tampil di sini sebagai reference. Kelola detailnya di halaman kategori.</p>
                 </div>
@@ -343,7 +467,7 @@ const ProductManagementPage = () => {
                             </span>
                           ))}
                         </div>
-                        <p className="mt-2 text-xs font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock} left</p>
+                        <p className="mt-2 text-xs font-bold uppercase text-amber-700">{product.category} / {product.price} / total {product.stock} left / min {getProductRestockThreshold(product)}</p>
                       </div>
                     </div>
                     <div className="flex shrink-0 gap-2">

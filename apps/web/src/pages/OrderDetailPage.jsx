@@ -49,7 +49,12 @@ import {
   getNotificationEventLabels,
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
-import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
+
+const canExportShippingLabel = (order) => Boolean(
+  order
+    && order.paymentStatus === 'paid'
+    && !['cancelled'].includes(order.status)
+);
 
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
@@ -115,6 +120,8 @@ const getAuditChanges = (previousValues = {}, nextValues = {}) => {
     }));
 };
 
+const importantAuditKeys = ['paymentStatus', 'status', 'shipmentStatus', 'trackingNumber', 'payment_status', 'shipment_status', 'tracking_number'];
+
 const parseNoteLines = (notes = '') => String(notes || '')
   .split('\n')
   .map((line) => line.trim())
@@ -143,6 +150,7 @@ const OrderDetailPage = () => {
   const [order, setOrder] = useState(null);
   const [paymentLogs, setPaymentLogs] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [auditFilters, setAuditFilters] = useState({ admin: 'all', event: 'all', query: '' });
   const [loading, setLoading] = useState(true);
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
@@ -194,6 +202,29 @@ const OrderDetailPage = () => {
     '',
     'Kalau sudah dibayar, status order akan kami update. Terima kasih.',
   ].filter((line) => line !== '').join('\n'), [order]);
+  const auditAdmins = useMemo(() => (
+    Array.from(new Set(auditLogs.map((log) => log.actorEmail || log.actorName || 'system'))).filter(Boolean)
+  ), [auditLogs]);
+  const auditEvents = useMemo(() => (
+    Array.from(new Set(auditLogs.map((log) => log.action))).filter(Boolean)
+  ), [auditLogs]);
+  const filteredAuditLogs = useMemo(() => {
+    const query = auditFilters.query.trim().toLowerCase();
+    return auditLogs.filter((log) => {
+      const admin = log.actorEmail || log.actorName || 'system';
+      const matchesAdmin = auditFilters.admin === 'all' || admin === auditFilters.admin;
+      const matchesEvent = auditFilters.event === 'all' || log.action === auditFilters.event;
+      const matchesQuery = !query || [
+        log.orderNumber,
+        log.actorEmail,
+        log.actorName,
+        log.action,
+        JSON.stringify(log.previousValues || {}),
+        JSON.stringify(log.nextValues || {}),
+      ].some((value) => String(value || '').toLowerCase().includes(query));
+      return matchesAdmin && matchesEvent && matchesQuery;
+    });
+  }, [auditFilters, auditLogs]);
 
   const setShipmentFromOrder = (nextOrder) => {
     setShipmentDraft({
@@ -366,11 +397,12 @@ const OrderDetailPage = () => {
     }
   };
 
-  const exportShippingLabel = () => {
+  const exportShippingLabel = async () => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
+    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
     toast.success('Resi PDF prepared');
   };
@@ -387,7 +419,7 @@ const OrderDetailPage = () => {
     return (
       <AuthenticatedLayout>
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <StateBlock title="Loading order detail" description="Mengambil detail payment, fulfillment, dan audit log." tone="loading" />
+          <StateBlock title="Memuat detail order" description="Mengambil detail payment, fulfillment, dan audit log." tone="loading" />
         </main>
       </AuthenticatedLayout>
     );
@@ -603,7 +635,7 @@ const OrderDetailPage = () => {
               <textarea value={shipmentDraft.packingNotes} onChange={(event) => setShipmentDraft((current) => ({ ...current, packingNotes: event.target.value }))} rows={3} placeholder="Catatan packing..." className="mt-3 w-full rounded-2xl border bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
               <Button type="button" className="mt-3 h-11 rounded-2xl gap-2" onClick={saveShipment} disabled={savingShipment}>
                 {savingShipment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                Save shipment
+                Simpan pengiriman
               </Button>
             </section>
 
@@ -704,12 +736,37 @@ const OrderDetailPage = () => {
               </div>
               <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{auditLogs.length} logs</span>
             </div>
-            {auditLogs.length ? (
+            <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_150px_150px]">
+              <input
+                value={auditFilters.query}
+                onChange={(event) => setAuditFilters((current) => ({ ...current, query: event.target.value }))}
+                placeholder="Filter order, admin, event, atau diff"
+                className="h-10 rounded-2xl border bg-white px-3 text-xs font-semibold outline-none focus:border-amber-300"
+              />
+              <select
+                value={auditFilters.admin}
+                onChange={(event) => setAuditFilters((current) => ({ ...current, admin: event.target.value }))}
+                className="h-10 rounded-2xl border bg-white px-3 text-xs font-bold outline-none focus:border-amber-300"
+              >
+                <option value="all">Semua admin</option>
+                {auditAdmins.map((admin) => <option key={admin} value={admin}>{admin}</option>)}
+              </select>
+              <select
+                value={auditFilters.event}
+                onChange={(event) => setAuditFilters((current) => ({ ...current, event: event.target.value }))}
+                className="h-10 rounded-2xl border bg-white px-3 text-xs font-bold outline-none focus:border-amber-300"
+              >
+                <option value="all">Semua event</option>
+                {auditEvents.map((event) => <option key={event} value={event}>{auditActionLabels[event] || event}</option>)}
+              </select>
+            </div>
+            {filteredAuditLogs.length ? (
               <div className="grid gap-3">
-                {auditLogs.map((log) => {
+                {filteredAuditLogs.map((log) => {
                   const changes = getAuditChanges(log.previousValues, log.nextValues);
+                  const important = changes.some((change) => importantAuditKeys.includes(change.key));
                   return (
-                    <article key={log.id} className="rounded-2xl bg-[#fbfaf7] p-3">
+                    <article key={log.id} className={`rounded-2xl p-3 ${important ? 'border border-amber-200 bg-amber-50' : 'bg-[#fbfaf7]'}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="text-sm font-bold">{auditActionLabels[log.action] || log.action}</div>
@@ -721,15 +778,18 @@ const OrderDetailPage = () => {
                       </div>
                       {changes.length ? (
                         <div className="mt-3 grid gap-2">
-                          {changes.map((change) => (
-                            <div key={change.key} className="rounded-2xl border border-[#263d27]/10 bg-white px-3 py-2">
-                              <div className="text-[10px] font-bold uppercase text-[#263d27]">{change.label}</div>
+                          {changes.map((change) => {
+                            const importantChange = importantAuditKeys.includes(change.key);
+                            return (
+                            <div key={change.key} className={`rounded-2xl border bg-white px-3 py-2 ${importantChange ? 'border-amber-200 ring-1 ring-amber-100' : 'border-[#263d27]/10'}`}>
+                              <div className={`text-[10px] font-bold uppercase ${importantChange ? 'text-amber-800' : 'text-[#263d27]'}`}>{change.label}</div>
                               <div className="mt-1 grid gap-2 text-xs font-semibold text-muted-foreground sm:grid-cols-2">
                                 <span className="min-w-0 rounded-xl bg-[#f8f7f4] px-2 py-1">Before: <span className="text-[#1f2937]">{change.before}</span></span>
                                 <span className="min-w-0 rounded-xl bg-[#eef2e8] px-2 py-1">After: <span className="text-[#1f2937]">{change.after}</span></span>
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="mt-2 text-xs font-semibold text-muted-foreground">
@@ -742,7 +802,7 @@ const OrderDetailPage = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-5 text-sm font-semibold leading-relaxed text-muted-foreground">
-                Belum ada perubahan admin yang tercatat untuk order ini.
+                Belum ada perubahan admin yang cocok dengan filter untuk order ini.
               </div>
             )}
           </section>

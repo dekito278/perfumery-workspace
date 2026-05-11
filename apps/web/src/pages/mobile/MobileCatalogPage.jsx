@@ -201,7 +201,7 @@ const MobileCatalogPage = () => {
                       <div className="text-xs font-bold text-[#0b130c]">{product.price}</div>
                     </div>
                     <div className={cn('rounded-full px-2 py-1 text-[10px] font-bold', getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'text-[#8b949e]')}>
-                      {product.stock > 0 ? `${product.stock} left` : 'Sold out'}
+                      {product.stock > 0 ? `${product.stock} tersisa` : 'Habis'}
                     </div>
                   </div>
                   <div className="mt-auto pt-2">
@@ -226,15 +226,15 @@ const MobileCatalogPage = () => {
           {!filteredProducts.length ? (
             <div className="mobile-card col-span-2 overflow-hidden text-center">
               <div className="bg-[#050705] p-5 text-[#eef2e8]">
-                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mx-auto h-14 w-40 rounded-2xl object-contain" />
+                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mx-auto h-14 w-40 rounded-2xl object-contain" loading="lazy" decoding="async" />
                 <h3 className="mt-5 text-lg font-bold">
-                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'No products found' : 'Belum ada parfum tersedia'}
+                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'Produk tidak ditemukan' : 'Belum ada parfum tersedia'}
                 </h3>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
                   {catalogLoading
                     ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
                     : hasCatalogProducts
-                    ? 'Coba kategori atau keyword aroma lain.'
+                    ? 'Coba kategori atau kata kunci aroma lain.'
                     : 'Produk public akan tampil setelah ditambahkan dari Studio. Customer tetap bisa mulai dari bespoke request.'}
                 </p>
               </div>
@@ -242,11 +242,11 @@ const MobileCatalogPage = () => {
               <div className="grid grid-cols-2 gap-2 p-3">
                 {hasCatalogProducts ? (
                   <Button className="rounded-2xl" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })}>
-                    Reset filters
+                    Reset filter
                   </Button>
                 ) : (
                   <Button className="rounded-2xl gap-2" onClick={() => navigate('/mobile/login')}>
-                    Add product
+                    Tambah produk
                     <PackagePlus className="h-4 w-4" />
                   </Button>
                 )}

@@ -68,9 +68,9 @@ const CatalogPage = () => {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-xs font-bold uppercase text-[#263d27]">Shop</div>
-              <h1 className="mt-1 text-4xl font-bold">Perfume catalog</h1>
+              <h1 className="mt-1 text-4xl font-bold">Katalog parfum</h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-muted-foreground">
-                Browse by scent family, notes, price, or mood.
+                Cari berdasarkan aroma, notes, harga, atau mood.
               </p>
             </div>
             <label className="flex h-12 w-full max-w-md items-center gap-2 rounded-2xl border bg-white px-4 shadow-sm">
@@ -130,7 +130,7 @@ const CatalogPage = () => {
                     <div className="shrink-0 text-right">
                       {product.compareAtPriceNumber > product.priceNumber ? <div className="text-xs font-bold text-muted-foreground line-through">{formatRupiah(product.compareAtPriceNumber)}</div> : null}
                       <div className="text-sm font-bold">{product.price}</div>
-                      <div className={cn('mt-1 text-xs font-bold', getProductLowStock(product) ? 'text-rose-700' : 'text-muted-foreground')}>{product.stock > 0 ? `${product.stock} left` : 'Sold out'}</div>
+                      <div className={cn('mt-1 text-xs font-bold', getProductLowStock(product) ? 'text-rose-700' : 'text-muted-foreground')}>{product.stock > 0 ? `${product.stock} tersisa` : 'Habis'}</div>
                     </div>
                   </div>
                     <div className="mt-3 flex flex-wrap gap-1">
@@ -140,7 +140,7 @@ const CatalogPage = () => {
                     {getProductLowStock(product) ? <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">Mau habis</span> : null}
                   </div>
                     <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-white transition group-hover:bg-[#1c301d]">
-                    View product
+                    Lihat produk
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -152,13 +152,13 @@ const CatalogPage = () => {
               <div className="bg-[#050705] px-6 py-10 text-[#eef2e8]">
                 <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mx-auto h-16 w-48 rounded-2xl object-contain" />
                 <h2 className="mt-6 text-2xl font-bold">
-                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'No products found' : 'Belum ada parfum tersedia'}
+                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'Produk tidak ditemukan' : 'Belum ada parfum tersedia'}
                 </h2>
                 <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-relaxed text-[#cbd6c5]">
                   {catalogLoading
                     ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
                     : hasCatalogProducts
-                    ? 'Coba kategori, tipe shop, atau keyword aroma lain.'
+                    ? 'Coba kategori, tipe shop, atau kata kunci aroma lain.'
                     : 'Koleksi public akan tampil di sini setelah produk ditambahkan dari Studio. Customer masih bisa mulai dari request bespoke.'}
                 </p>
               </div>
@@ -175,12 +175,12 @@ const CatalogPage = () => {
                     }}
                     className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]"
                   >
-                    Reset filters
+                    Reset filter
                     <Search className="h-4 w-4" />
                   </button>
                 ) : (
                   <Link to="/login" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
-                    Add products
+                    Tambah produk
                     <PackagePlus className="h-4 w-4" />
                   </Link>
                 )}

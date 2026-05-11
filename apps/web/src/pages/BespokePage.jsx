@@ -68,7 +68,7 @@ const BespokePage = () => {
 
     const customer = await lookupCustomerByCode(form.customerCode);
     if (!customer) {
-      toast.error('Customer code not found');
+      toast.error('Kode customer tidak ditemukan');
       return;
     }
 

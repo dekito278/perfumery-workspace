@@ -7,6 +7,8 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
+import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import {
   getBespokeProductionStatusLabels,
@@ -15,7 +17,12 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
-import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
+
+const canExportShippingLabel = (order) => Boolean(
+  order
+    && order.paymentStatus === 'paid'
+    && !['cancelled'].includes(order.status)
+);
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -32,10 +39,12 @@ const isFulfillmentReady = (order) => isPaid(order) && isOpenShipment(order) && 
 const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumber;
 
 const queueFilterOptions = [
-  { value: 'ready', label: 'Ready' },
+  { value: 'paid', label: 'Paid' },
   { value: 'packing', label: 'Packing' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'follow_up', label: 'Follow-up' },
   { value: 'need_resi', label: 'Butuh resi' },
-  { value: 'blocked', label: 'Blocked' },
+  { value: 'blocked', label: 'Tertahan' },
 ];
 
 const createDrafts = (orders) => Object.fromEntries(orders.map((order) => [
@@ -70,7 +79,7 @@ const MobileFulfillmentPage = () => {
   const { orders, loading, reload } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingId, setSavingId] = useState('');
-  const [queueFilter, setQueueFilter] = useState('ready');
+  const [queueFilter, setQueueFilter] = useState('paid');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -80,13 +89,20 @@ const MobileFulfillmentPage = () => {
   const paidOrders = useMemo(() => orders.filter(isPaid), [orders]);
   const readyOrders = useMemo(() => paidOrders.filter(isFulfillmentReady), [paidOrders]);
   const packingOrders = useMemo(() => readyOrders.filter((order) => order.shipmentStatus === 'packing'), [readyOrders]);
+  const shippedOrders = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
+  const followUpOrders = useMemo(() => orders.filter((order) => (
+    ['unpaid', 'pending'].includes(order.paymentStatus)
+    || (order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status))
+  )), [orders]);
   const blockedPaidOrders = useMemo(() => paidOrders.filter((order) => isOpenShipment(order) && !isBespokeReady(order)), [paidOrders]);
   const displayedOrders = useMemo(() => {
     if (queueFilter === 'packing') return readyOrders.filter((order) => order.shipmentStatus === 'packing');
+    if (queueFilter === 'shipped') return shippedOrders;
+    if (queueFilter === 'follow_up') return followUpOrders;
     if (queueFilter === 'need_resi') return readyOrders.filter(isNeedsResi);
     if (queueFilter === 'blocked') return blockedPaidOrders;
-    return readyOrders;
-  }, [blockedPaidOrders, queueFilter, readyOrders]);
+    return paidOrders.filter((order) => !['completed', 'cancelled'].includes(order.status));
+  }, [blockedPaidOrders, followUpOrders, paidOrders, queueFilter, readyOrders, shippedOrders]);
   const searchedOrders = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return displayedOrders;
@@ -105,6 +121,32 @@ const MobileFulfillmentPage = () => {
     return orders.filter((order) => order.shipmentStatus === 'shipped' && order.shippedAt && new Date(order.shippedAt).toDateString() === today);
   }, [orders]);
 
+  const findScannedOrder = (query) => {
+    const normalizedQuery = String(query || '').trim().toLowerCase();
+    if (!normalizedQuery) return null;
+    return orders.find((order) => [
+      order.orderNumber,
+      order.customerCode,
+      order.trackingNumber,
+      order.contact,
+    ].some((value) => String(value || '').trim().toLowerCase() === normalizedQuery));
+  };
+
+  const submitScannerSearch = (event) => {
+    event?.preventDefault();
+    const query = searchTerm.trim();
+    if (!query) return;
+    const directMatch = findScannedOrder(query);
+    const singleVisibleMatch = searchedOrders.length === 1 ? searchedOrders[0] : null;
+    const targetOrder = directMatch || singleVisibleMatch;
+    if (targetOrder) {
+      navigate(`/mobile/studio/orders/${targetOrder.id || targetOrder.orderNumber}`);
+      toast.success(`Buka ${targetOrder.orderNumber}`);
+      return;
+    }
+    toast.info(`${searchedOrders.length} order cocok. Pilih salah satu dari antrean.`);
+  };
+
   const updateDraft = (orderKey, field, value) => {
     setDrafts((current) => ({
       ...current,
@@ -115,9 +157,9 @@ const MobileFulfillmentPage = () => {
     }));
   };
 
-  const saveShipment = async (order, shipmentStatus) => {
+  const saveShipment = async (order, shipmentStatus, overrides = {}) => {
     const orderKey = order.id || order.orderNumber;
-    const draft = drafts[orderKey] || {};
+    const draft = { ...(drafts[orderKey] || {}), ...overrides };
     setSavingId(orderKey);
     try {
       await updateOrderShipment(orderKey, {
@@ -126,9 +168,9 @@ const MobileFulfillmentPage = () => {
         shippedAt: shipmentStatus === 'shipped' ? new Date().toISOString() : order.shippedAt,
       });
       await reload();
-      toast.success(shipmentStatus === 'shipped' ? 'Order marked shipped' : 'Order marked packed');
+      toast.success(shipmentStatus === 'shipped' ? 'Order ditandai dikirim' : 'Order ditandai packed');
     } catch (error) {
-      toast.error(error.message || 'Failed to save shipment');
+      toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
       setSavingId('');
     }
@@ -147,7 +189,7 @@ const MobileFulfillmentPage = () => {
       draft.packingNotes || order.packingNotes ? `\nCatatan: ${draft.packingNotes || order.packingNotes}` : '',
     ].filter(Boolean);
     await navigator.clipboard.writeText(lines.join('\n'));
-    toast.success('Packing list copied');
+    toast.success('Packing list disalin');
   };
 
   const openWhatsAppFollowUp = (order, draft = {}) => {
@@ -164,13 +206,14 @@ const MobileFulfillmentPage = () => {
     window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer');
   };
 
-  const exportResi = (order) => {
+  const exportResi = async (order) => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
+    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
-    toast.success('Resi PDF prepared');
+    toast.success('Resi PDF siap');
   };
 
   return (
@@ -179,7 +222,7 @@ const MobileFulfillmentPage = () => {
       <main className="mobile-page space-y-4">
         <MobileTopBar
           title="Fulfillment"
-          subtitle={`${readyOrders.length} paid ready to ship`}
+          subtitle={`${readyOrders.length} paid siap kirim`}
           eyebrow="Studio mobile"
           action={<PackageOpen className="h-5 w-5 text-amber-700" />}
         />
@@ -187,9 +230,9 @@ const MobileFulfillmentPage = () => {
         <section className="mobile-studio-hero p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Packing dashboard</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">Dashboard packing</div>
               <h1 className="mt-1 text-2xl font-bold leading-tight text-[#142116]">
-                {loading ? 'Syncing orders' : readyOrders.length ? 'Ready to pack' : 'Queue clear'}
+                {loading ? 'Sinkron order' : readyOrders.length ? 'Siap packing' : 'Antrean kosong'}
               </h1>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#68736a]">
                 Paid storefront order masuk sini setelah siap dikirim. Bespoke muncul setelah production status Ready.
@@ -200,10 +243,10 @@ const MobileFulfillmentPage = () => {
             </span>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <FulfillmentMetric label="Ready" value={loading ? '-' : readyOrders.length} tone="emerald" />
+            <FulfillmentMetric label="Siap" value={loading ? '-' : readyOrders.length} tone="emerald" />
             <FulfillmentMetric label="Packing" value={loading ? '-' : packingOrders.length} tone="amber" />
-            <FulfillmentMetric label="Paid blocked" value={loading ? '-' : blockedPaidOrders.length} tone={blockedPaidOrders.length ? 'rose' : 'stone'} />
-            <FulfillmentMetric label="Shipped today" value={loading ? '-' : shippedToday.length} tone="stone" />
+            <FulfillmentMetric label="Paid tertahan" value={loading ? '-' : blockedPaidOrders.length} tone={blockedPaidOrders.length ? 'rose' : 'stone'} />
+            <FulfillmentMetric label="Dikirim hari ini" value={loading ? '-' : shippedToday.length} tone="stone" />
           </div>
           <MobileFilterChips
             value={queueFilter}
@@ -211,17 +254,18 @@ const MobileFulfillmentPage = () => {
             options={queueFilterOptions}
             className="mt-3 flex-nowrap overflow-x-auto pb-0"
           />
-          <label className="relative mt-3 block">
+          <form className="relative mt-3 block" onSubmit={submitScannerSearch}>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b949e]" />
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search / scan order, customer, resi"
+              placeholder="Cari / scan order, customer, resi"
               className="h-12 w-full rounded-2xl border border-[#e5e7eb] bg-white pl-10 pr-10 text-sm font-bold outline-none focus:border-amber-300"
               autoCapitalize="characters"
+              enterKeyHint="search"
             />
             <ScanLine className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-700" />
-          </label>
+          </form>
           <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
             {searchedOrders.length} order tampil. Scan barcode/resi atau ketik nama customer untuk lompat cepat.
           </p>
@@ -234,7 +278,7 @@ const MobileFulfillmentPage = () => {
                 <PackageCheck className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase text-amber-800">Paid but not ready</div>
+                <div className="text-[10px] font-bold uppercase text-amber-800">Paid tapi belum siap</div>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">
                   {blockedPaidOrders.length} bespoke order masih menunggu workflow produksi sebelum masuk packing.
                 </p>
@@ -260,8 +304,8 @@ const MobileFulfillmentPage = () => {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-[#0b130c]">Ready queue</h2>
-            <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>All orders</Button>
+            <h2 className="text-base font-bold text-[#0b130c]">Antrean siap</h2>
+            <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Semua order</Button>
           </div>
 
           {searchedOrders.map((order) => {
@@ -278,17 +322,17 @@ const MobileFulfillmentPage = () => {
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
                     <p className="mt-1 text-[10px] font-bold uppercase text-[#9ca3af]">{formatDate(order.createdAt)}</p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">
+                  <StatusChip size="xs" tone={blocked ? 'warning' : getShipmentStatusTone(order.shipmentStatus)}>
                     {blocked ? bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief'] : shipmentStatusLabels[order.shipmentStatus] || 'Ready'}
-                  </span>
+                  </StatusChip>
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">Paid</span>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${draft.trackingNumber || order.trackingNumber ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-                    {draft.trackingNumber || order.trackingNumber ? 'Resi ready' : 'Need resi'}
-                  </span>
-                  {isBespokeOrder(order) ? <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">Bespoke</span> : null}
+                  <StatusChip size="xs" tone={getPaymentStatusTone(order.paymentStatus)}>Sudah dibayar</StatusChip>
+                  <StatusChip size="xs" tone={draft.trackingNumber || order.trackingNumber ? 'success' : 'warning'}>
+                    {draft.trackingNumber || order.trackingNumber ? 'Resi siap' : 'Butuh resi'}
+                  </StatusChip>
+                  {isBespokeOrder(order) ? <StatusChip size="xs" tone="primary">Bespoke</StatusChip> : null}
                 </div>
 
                 <div className="mt-3 grid gap-2">
@@ -304,10 +348,19 @@ const MobileFulfillmentPage = () => {
                   <input
                     value={draft.trackingNumber || ''}
                     onChange={(event) => updateDraft(orderKey, 'trackingNumber', event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter') return;
+                      event.preventDefault();
+                      const nextTrackingNumber = String(event.currentTarget.value || '').trim();
+                      if (!nextTrackingNumber) return;
+                      updateDraft(orderKey, 'trackingNumber', nextTrackingNumber);
+                      saveShipment(order, draft.shipmentStatus === 'shipped' ? 'shipped' : 'packing', { trackingNumber: nextTrackingNumber });
+                    }}
                     placeholder="Scan / paste nomor resi"
                     className="h-14 min-w-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 text-base font-bold tracking-[0.04em] text-[#1f2937] outline-none focus:border-amber-400"
                     disabled={blocked}
                     autoCapitalize="characters"
+                    enterKeyHint="done"
                   />
                   <div className="grid grid-cols-2 gap-2">
                   <input
@@ -352,13 +405,14 @@ const MobileFulfillmentPage = () => {
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPackingList(order, draft)}>
-                    <Clipboard className="h-4 w-4" />
-                    Copy list
-                  </Button>
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => openWhatsAppFollowUp(order, draft)}>
-                    <MessageCircle className="h-4 w-4" />
-                    Follow up
+                  <Button
+                    type="button"
+                    className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100"
+                    onClick={() => saveShipment(order, 'shipped')}
+                    disabled={saving || blocked}
+                  >
+                    <Send className="h-5 w-5" />
+                    Tandai dikirim
                   </Button>
                   <Button
                     type="button"
@@ -367,20 +421,19 @@ const MobileFulfillmentPage = () => {
                     disabled={saving || blocked}
                   >
                     <PackageOpen className="h-4 w-4" />
-                    Mark packed
+                    Packed
                   </Button>
-                  <Button type="button" variant="outline" className="h-14 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => exportResi(order)} disabled={!canExportShippingLabel(order)}>
+                  <Button type="button" variant="outline" className="h-14 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => openWhatsAppFollowUp(order, draft)}>
+                    <MessageCircle className="h-4 w-4" />
+                    WA customer
+                  </Button>
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPackingList(order, draft)}>
+                    <Clipboard className="h-4 w-4" />
+                    Salin list
+                  </Button>
+                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => exportResi(order)} disabled={!canExportShippingLabel(order)}>
                     <Download className="h-4 w-4" />
                     Resi
-                  </Button>
-                  <Button
-                    type="button"
-                    className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold"
-                    onClick={() => saveShipment(order, 'shipped')}
-                    disabled={saving || blocked}
-                  >
-                    <Send className="h-4 w-4" />
-                    Mark shipped
                   </Button>
                 </div>
               </article>
@@ -388,16 +441,20 @@ const MobileFulfillmentPage = () => {
           })}
 
           {!searchedOrders.length && !loading ? (
-            <div className="mobile-card p-5 text-center">
-              <PackageOpen className="mx-auto h-8 w-8 text-amber-700" />
-              <h2 className="mt-3 text-base font-bold text-[#1f2937]">No orders in this view</h2>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Ganti chip filter atau bersihkan search untuk melihat queue packing lain.
-              </p>
-            </div>
+            <StateBlock
+              className="mobile-card"
+              icon={PackageOpen}
+              title="Tidak ada order di tampilan ini"
+              description="Ganti chip filter atau bersihkan pencarian untuk melihat antrean packing lain."
+            />
           ) : null}
           {loading && !searchedOrders.length ? (
-            <div className="mobile-card p-5 text-center text-xs font-bold text-[#6b7280]">Loading fulfillment queue...</div>
+            <StateBlock
+              className="mobile-card"
+              tone="loading"
+              title="Memuat antrean fulfillment"
+              description="Sebentar, order paid sedang disiapkan."
+            />
           ) : null}
         </section>
       </main>

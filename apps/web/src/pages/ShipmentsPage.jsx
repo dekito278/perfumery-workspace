@@ -6,10 +6,17 @@ import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Checkbox } from '@/components/ui/checkbox.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
+import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
-import { canExportShippingLabel, exportShippingLabelPdf, exportShippingLabelsPdf } from '@/utils/shippingLabelPdf.js';
+
+const canExportShippingLabel = (order) => Boolean(
+  order
+    && order.paymentStatus === 'paid'
+    && !['cancelled'].includes(order.status)
+);
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -22,13 +29,6 @@ const fulfillmentFilterLabels = {
   all: 'Semua aktif',
   shipped: 'Sudah dikirim',
   unpaid: 'Belum paid',
-};
-
-const getShipmentTone = (status) => {
-  if (['delivered', 'completed'].includes(status)) return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-  if (status === 'shipped') return 'border-sky-200 bg-sky-50 text-sky-700';
-  if (['packing', 'ready_to_ship'].includes(status)) return 'border-[#263d27]/20 bg-[#eef2e8] text-[#263d27]';
-  return 'border-stone-200 bg-stone-100 text-stone-600';
 };
 
 const buildShipmentDraft = (order = {}) => ({
@@ -133,14 +133,14 @@ const ShipmentsPage = () => {
 
     try {
       await navigator.clipboard.writeText(message);
-      toast.success(`${order.orderNumber} tracking message copied`, {
+      toast.success(`${order.orderNumber} pesan resi disalin`, {
         action: {
-          label: 'Open WA',
+          label: 'Buka WA',
           onClick: () => window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
-      toast.success(`${order.orderNumber} tracking message ready`);
+      toast.success(`${order.orderNumber} pesan resi siap`);
     }
   };
 
@@ -154,9 +154,9 @@ const ShipmentsPage = () => {
       if (draft.shipmentStatus === 'shipped' || draft.trackingNumber) {
         await prepareShipmentNotification(nextOrder || { ...order, ...draft, status: draft.shipmentStatus === 'shipped' ? 'shipped' : order.status });
       }
-      toast.success(`${order.orderNumber} shipment saved`);
+      toast.success(`${order.orderNumber} pengiriman tersimpan`);
     } catch (error) {
-      toast.error(error.message || 'Failed to save shipment');
+      toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
       setSavingOrder('');
     }
@@ -203,7 +203,7 @@ const ShipmentsPage = () => {
         });
       }));
       await reload();
-      toast.success(`${selectedShipmentOrders.length} shipment updated`);
+      toast.success(`${selectedShipmentOrders.length} pengiriman diperbarui`);
     } catch (error) {
       toast.error(error.message || 'Bulk update shipment gagal');
     } finally {
@@ -211,28 +211,30 @@ const ShipmentsPage = () => {
     }
   };
 
-  const exportShippingLabel = (order) => {
+  const exportShippingLabel = async (order) => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
+    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
-    toast.success(`${order.orderNumber} resi PDF prepared`);
+    toast.success(`${order.orderNumber} resi PDF siap`);
   };
 
-  const exportSelectedShippingLabels = () => {
+  const exportSelectedShippingLabels = async () => {
+    const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
     const printedCount = exportShippingLabelsPdf(selectedShipmentOrders);
     if (!printedCount) {
       toast.error('Pilih order paid untuk cetak bulk resi');
       return;
     }
-    toast.success(`${printedCount} resi PDF prepared`);
+    toast.success(`${printedCount} resi PDF siap`);
   };
 
   return (
     <AuthenticatedLayout>
       <Helmet>
-        <title>Shipments - Solivagant</title>
+        <title>Pengiriman - Solivagant</title>
         <meta name="description" content="Manage shipment fulfillment for Solivagant orders." />
       </Helmet>
 
@@ -240,7 +242,7 @@ const ShipmentsPage = () => {
         <div className="mb-4">
           <Button variant="ghost" className="h-9 gap-2 rounded-2xl" onClick={() => navigate('/studio')}>
             <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
+            Kembali ke dashboard
           </Button>
         </div>
 
@@ -248,26 +250,26 @@ const ShipmentsPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Truck className="h-4 w-4 text-primary" />
-              E-commerce fulfillment
+              Fulfillment e-commerce
             </div>
-            <h1 className="text-3xl font-bold sm:text-4xl">Shipments</h1>
+            <h1 className="text-3xl font-bold sm:text-4xl">Pengiriman</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
               Simpan kurir, nomor resi, status pengiriman, dan cetak label setelah order paid.
             </p>
           </div>
           <div className="dashboard-hero-panel">
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Active orders</span><strong>{summary.active}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total orders</span><strong>{summary.total}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Ready ship</span><strong>{readyToShipCount}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Order aktif</span><strong>{summary.active}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total order</span><strong>{summary.total}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Siap kirim</span><strong>{readyToShipCount}</strong></div>
           </div>
         </div>
 
         <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-bold">Fulfillment queue</h2>
+            <h2 className="text-xl font-bold">Antrean fulfillment</h2>
             <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/studio/orders')}>
               <PackageCheck className="h-4 w-4" />
-              Orders
+              Order
             </Button>
           </div>
 
@@ -299,15 +301,15 @@ const ShipmentsPage = () => {
 
             <div className="grid gap-3 border-t pt-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Ready packing</div>
+                <div className="text-xs font-bold uppercase text-muted-foreground">Siap packing</div>
                 <div className="mt-1 text-2xl font-bold text-[#263d27]">{readyToShipCount}</div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Missing resi</div>
+                <div className="text-xs font-bold uppercase text-muted-foreground">Belum ada resi</div>
                 <div className="mt-1 text-2xl font-bold text-amber-700">{missingResiCount}</div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Selected printable</div>
+                <div className="text-xs font-bold uppercase text-muted-foreground">Siap cetak</div>
                 <div className="mt-1 text-2xl font-bold text-[#263d27]">{selectedPrintableOrders.length}</div>
               </div>
             </div>
@@ -335,11 +337,11 @@ const ShipmentsPage = () => {
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button type="button" className="h-11 rounded-2xl gap-2" onClick={bulkUpdateShipments} disabled={bulkSaving || !selectedShipmentOrders.length}>
                   {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Bulk update
+                  Update massal
                 </Button>
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportSelectedShippingLabels} disabled={!selectedPrintableOrders.length}>
                   <Download className="h-4 w-4" />
-                  Bulk resi
+                  Cetak resi
                 </Button>
               </div>
             </div>
@@ -362,16 +364,14 @@ const ShipmentsPage = () => {
                       <div className="flex flex-wrap items-center gap-2">
                         <Checkbox checked={selected} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                         <h3 className="text-lg font-bold">{order.orderNumber}</h3>
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${paid ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-                          {paid ? 'Paid' : 'Waiting payment'}
-                        </span>
-                        <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase ${getShipmentTone(order.shipmentStatus)}`}>
+                        <StatusChip icon={PackageCheck} tone={getPaymentStatusTone(order.paymentStatus)}>
+                          {paid ? 'Sudah dibayar' : 'Menunggu bayar'}
+                        </StatusChip>
+                        <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>
                           {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
-                        </span>
+                        </StatusChip>
                         {paid && !draft.trackingNumber ? (
-                          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold uppercase text-amber-800">
-                            Need resi
-                          </span>
+                          <StatusChip tone="warning">Butuh resi</StatusChip>
                         ) : null}
                       </div>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">
@@ -427,7 +427,7 @@ const ShipmentsPage = () => {
                       <div className="grid gap-2 sm:grid-cols-3">
                         <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => saveShipment(order)} disabled={savingOrder === key}>
                           {savingOrder === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                          Save shipment
+                          Simpan pengiriman
                         </Button>
                         <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate(`/studio/orders/${key}`)}>
                           <Eye className="h-4 w-4" />
@@ -445,16 +445,20 @@ const ShipmentsPage = () => {
             })}
 
             {!filteredShipmentOrders.length && !loading ? (
-              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
-                <Truck className="mx-auto h-8 w-8 text-amber-700" />
-                <h3 className="mt-3 font-bold">No shipment rows match</h3>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">Ubah pencarian atau filter untuk melihat shipment lain.</p>
-              </div>
+              <StateBlock
+                className="bg-[#fbfaf7]"
+                icon={Truck}
+                title="Shipment tidak ditemukan"
+                description="Ubah pencarian atau filter untuk melihat shipment lain."
+              />
             ) : null}
             {loading && !shipmentOrders.length ? (
-              <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center text-sm font-bold text-muted-foreground">
-                Loading shipments...
-              </div>
+              <StateBlock
+                className="bg-[#fbfaf7]"
+                tone="loading"
+                title="Memuat shipment"
+                description="Sebentar, data pengiriman sedang disiapkan."
+              />
             ) : null}
           </div>
         </section>

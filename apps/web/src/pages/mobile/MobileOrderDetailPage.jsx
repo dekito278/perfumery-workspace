@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
+import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import {
   getBespokeItem,
   getBespokeProductionStatusLabels,
@@ -28,7 +30,12 @@ import {
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
-import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
+
+const canExportShippingLabel = (order) => Boolean(
+  order
+    && order.paymentStatus === 'paid'
+    && !['cancelled'].includes(order.status)
+);
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -42,21 +49,14 @@ const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'comple
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 
 const paymentStatusLabels = {
-  unpaid: 'Unpaid',
-  pending: 'Pending',
-  paid: 'Paid',
-  failed: 'Failed',
-  expired: 'Expired',
-  refunded: 'Refunded',
+  unpaid: 'Belum dibayar',
+  pending: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
+  failed: 'Gagal',
+  expired: 'Kedaluwarsa',
+  refunded: 'Refund',
 };
 const notificationEventLabels = getNotificationEventLabels();
-
-const getPaymentTone = (status) => {
-  if (status === 'paid') return 'bg-emerald-50 text-emerald-700';
-  if (['failed', 'expired'].includes(status)) return 'bg-rose-50 text-rose-700';
-  if (status === 'pending') return 'bg-amber-50 text-amber-700';
-  return 'bg-stone-100 text-stone-600';
-};
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
@@ -242,20 +242,21 @@ const MobileOrderDetailPage = () => {
       setShipmentFromOrder(nextOrder || order);
       toast.success('Shipment saved');
     } catch (error) {
-      toast.error(error.message || 'Failed to save shipment');
+      toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
       setSavingShipment(false);
     }
   };
 
-  const quickShipmentUpdate = async (shipmentStatus) => {
+  const quickShipmentUpdate = async (shipmentStatus, overrides = {}) => {
     setSavingShipment(true);
+    const nextShipmentDraft = { ...shipmentDraft, ...overrides };
     try {
       const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
-        ...shipmentDraft,
+        ...nextShipmentDraft,
         shipmentStatus,
-        shippedAt: shipmentStatus === 'shipped' ? new Date().toISOString() : shipmentDraft.shippedAt ? new Date(shipmentDraft.shippedAt).toISOString() : '',
-        deliveredAt: shipmentDraft.deliveredAt ? new Date(shipmentDraft.deliveredAt).toISOString() : '',
+        shippedAt: shipmentStatus === 'shipped' ? new Date().toISOString() : nextShipmentDraft.shippedAt ? new Date(nextShipmentDraft.shippedAt).toISOString() : '',
+        deliveredAt: nextShipmentDraft.deliveredAt ? new Date(nextShipmentDraft.deliveredAt).toISOString() : '',
       });
       setOrder(nextOrder || order);
       setShipmentFromOrder(nextOrder || order);
@@ -316,11 +317,12 @@ const MobileOrderDetailPage = () => {
     }
   };
 
-  const exportShippingLabel = () => {
+  const exportShippingLabel = async () => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
+    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
     toast.success('Resi PDF prepared');
   };
@@ -379,7 +381,12 @@ const MobileOrderDetailPage = () => {
     return (
       <MobileAuthenticatedLayout showFab={false}>
         <main className="mobile-page">
-          <div className="mobile-card p-5 text-center text-xs font-bold text-[#6b7280]">Loading order detail...</div>
+          <StateBlock
+            className="mobile-card"
+            tone="loading"
+            title="Memuat detail order"
+            description="Sebentar, data order sedang disiapkan."
+          />
         </main>
       </MobileAuthenticatedLayout>
     );
@@ -389,10 +396,10 @@ const MobileOrderDetailPage = () => {
     return (
       <MobileAuthenticatedLayout showFab={false}>
         <main className="mobile-page space-y-4">
-          <MobileTopBar title="Order not found" subtitle="Studio orders" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
+          <MobileTopBar title="Order tidak ditemukan" subtitle="Studio orders" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
           <Button type="button" className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/studio/orders')}>
             <ArrowLeft className="h-4 w-4" />
-            Back to orders
+            Kembali ke order
           </Button>
         </main>
       </MobileAuthenticatedLayout>
@@ -406,20 +413,20 @@ const MobileOrderDetailPage = () => {
         <MobileTopBar
           title={order.orderNumber}
           subtitle={formatDate(order.createdAt)}
-          eyebrow="Order detail"
+          eyebrow="Detail order"
           action={<PackageCheck className="h-5 w-5 text-amber-700" />}
         />
 
         <section className="mobile-soft-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase text-[#263d27]">Current status</div>
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">Status saat ini</div>
               <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{statusLabels[order.status] || order.status}</h1>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} items / {formatTotal(order.subtotal)}</p>
             </div>
-            <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${getPaymentTone(order.paymentStatus)}`}>
+            <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
-            </span>
+            </StatusChip>
           </div>
           <div className="mt-4 grid grid-cols-5 gap-1.5">
             {statusSteps.map((step, index) => {
@@ -433,38 +440,38 @@ const MobileOrderDetailPage = () => {
             })}
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${getPaymentTone(order.paymentStatus)}`}>
+            <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
-            </span>
-            <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+            </StatusChip>
+            <StatusChip size="sm" tone={getShipmentStatusTone(order.shipmentStatus)}>
               {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
-            </span>
-            {order.trackingNumber ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">Resi ready</span> : null}
+            </StatusChip>
+            {order.trackingNumber ? <StatusChip size="sm" tone="success">Resi siap</StatusChip> : null}
           </div>
         </section>
 
         <section className="mobile-card p-3">
-          <div className="mb-3 text-[10px] font-bold uppercase text-[#263d27]">Quick action</div>
+          <div className="mb-3 text-[10px] font-bold uppercase text-[#263d27]">Aksi cepat</div>
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" className="h-12 rounded-2xl gap-2 text-xs font-bold" onClick={openSmartWhatsAppNotification}>
+            <Button type="button" className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100" onClick={() => quickShipmentUpdate('shipped')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
+              <Send className="h-5 w-5" />
+              Tandai dikirim
+            </Button>
+            <Button type="button" variant="outline" className="h-14 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => quickShipmentUpdate('packing')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
+              <PackageCheck className="h-4 w-4" />
+              Packed
+            </Button>
+            <Button type="button" className="h-14 rounded-2xl gap-2 text-xs font-bold" onClick={openSmartWhatsAppNotification}>
               <MessageCircle className="h-4 w-4" />
-              WA update
+              WA customer
             </Button>
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={copyDraft}>
               <Clipboard className="h-4 w-4" />
-              Copy draft
-            </Button>
-            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => quickShipmentUpdate('packing')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
-              <PackageCheck className="h-4 w-4" />
-              Pack
+              Salin draft
             </Button>
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
               <Download className="h-4 w-4" />
               Resi
-            </Button>
-            <Button type="button" className="col-span-2 h-14 rounded-2xl gap-2 text-sm font-bold" onClick={() => quickShipmentUpdate('shipped')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
-              <Send className="h-4 w-4" />
-              Mark shipped
             </Button>
           </div>
         </section>
@@ -507,19 +514,19 @@ const MobileOrderDetailPage = () => {
           {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
             <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={() => navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`)}>
               <CreditCard className="h-4 w-4" />
-              Continue payment
+              Lanjut bayar
             </Button>
           ) : null}
           {order.paymentUrl ? (
             <Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => window.open(order.paymentUrl, '_blank', 'noopener,noreferrer')}>
               <ExternalLink className="h-4 w-4" />
-              Open DOKU URL
+              Buka URL DOKU
             </Button>
           ) : null}
           {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
             <Button type="button" variant="outline" className="mt-3 h-11 w-full rounded-2xl bg-white gap-2" onClick={syncDokuStatus} disabled={syncingPayment}>
               {syncingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Sync DOKU status
+              Sinkron status DOKU
             </Button>
           ) : null}
         </section>
@@ -528,10 +535,10 @@ const MobileOrderDetailPage = () => {
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
               <PackageCheck className="h-4 w-4" />
-              Inventory linkage
+              Link inventory
             </div>
             <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${order.inventoryDeducted ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-              {order.inventoryDeducted ? 'Reserved' : 'Waiting checkout'}
+              {order.inventoryDeducted ? 'Reserved' : 'Menunggu checkout'}
             </span>
           </div>
           {order.inventoryEvents?.length ? (
@@ -599,7 +606,7 @@ const MobileOrderDetailPage = () => {
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
               <History className="h-4 w-4" />
-              Payment log DOKU
+              Log payment DOKU
             </div>
             <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
               {paymentLogs.length} logs
@@ -658,8 +665,18 @@ const MobileOrderDetailPage = () => {
             <input
               value={shipmentDraft.trackingNumber}
               onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingNumber: event.target.value }))}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                const trackingNumber = String(event.currentTarget.value || '').trim();
+                if (!trackingNumber) return;
+                setShipmentDraft((current) => ({ ...current, trackingNumber, shipmentStatus: current.shipmentStatus === 'shipped' ? 'shipped' : 'packing' }));
+                quickShipmentUpdate(shipmentDraft.shipmentStatus === 'shipped' ? 'shipped' : 'packing', { trackingNumber });
+              }}
               placeholder="Nomor resi"
-              className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300"
+              className="h-14 rounded-2xl border border-amber-200 bg-amber-50 px-4 text-base font-bold tracking-[0.04em] outline-none focus:border-amber-400"
+              autoCapitalize="characters"
+              enterKeyHint="done"
             />
             <input
               value={shipmentDraft.trackingUrl}
@@ -678,7 +695,7 @@ const MobileOrderDetailPage = () => {
                 />
               </label>
               <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-                Delivered
+                Terkirim
                 <input
                   type="datetime-local"
                   value={shipmentDraft.deliveredAt}
@@ -696,7 +713,7 @@ const MobileOrderDetailPage = () => {
             />
             <Button type="button" className="h-11 rounded-2xl gap-2" onClick={saveShipment} disabled={savingShipment}>
               <Send className="h-4 w-4" />
-              {savingShipment ? 'Saving...' : 'Save shipment'}
+              {savingShipment ? 'Menyimpan...' : 'Simpan pengiriman'}
             </Button>
             <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
               <Download className="h-4 w-4" />
@@ -706,7 +723,7 @@ const MobileOrderDetailPage = () => {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-bold text-[#0b130c]">Items</h2>
+          <h2 className="text-base font-bold text-[#0b130c]">Item</h2>
           {order.items.map((item) => (
             <article key={`${order.orderNumber}-${item.slug || item.name}`} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">

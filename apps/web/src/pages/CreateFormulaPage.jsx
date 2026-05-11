@@ -16,6 +16,7 @@ import FormulaReferenceProfileSidebar from '@/components/FormulaReferenceProfile
 import FormulaMetadataDialog from '@/components/FormulaMetadataDialog.jsx';
 import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
 import FormulaMaterialLibrary from '@/components/FormulaMaterialLibrary.jsx';
+import FormulaScaleTool from '@/components/FormulaScaleTool.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
@@ -583,6 +584,14 @@ const CreateFormulaPage = () => {
                           </Button>
                         </div>
 
+                        <div className="mt-4">
+                          <FormulaScaleTool
+                            formulaItems={formulaItems}
+                            totalGrams={totalGrams}
+                            replaceFormulaItems={replaceFormulaItems}
+                          />
+                        </div>
+
                         <div className="mt-4 max-h-[25rem] overflow-y-auto pr-1">
                           <FormulaItemTableEditor
                             items={formulaItems}
@@ -800,6 +809,14 @@ const CreateFormulaPage = () => {
                       }}
                     />
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <FormulaScaleTool
+                    formulaItems={formulaItems}
+                    totalGrams={totalGrams}
+                    replaceFormulaItems={replaceFormulaItems}
+                  />
                 </div>
 
                 <div className="mt-4 max-h-[25rem] overflow-y-auto pr-1">

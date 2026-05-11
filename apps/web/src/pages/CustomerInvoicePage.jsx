@@ -4,6 +4,7 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CreditCard, ExternalLink, FileText, Loader2, Printer, Search, ShieldCheck, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
@@ -19,11 +20,11 @@ const formatDate = (value) => (value
 
 const paymentStatusLabels = {
   unpaid: 'Belum dibayar',
-  pending: 'Menunggu',
-  paid: 'Lunas',
+  pending: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
   failed: 'Gagal',
-  expired: 'Expired',
-  refunded: 'Refunded',
+  expired: 'Kedaluwarsa',
+  refunded: 'Refund',
 };
 const shipmentStatusLabels = getShipmentStatusLabels();
 
@@ -60,7 +61,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase">
             <FileText className="h-3.5 w-3.5" />
-            Invoice / Receipt
+            Invoice
           </div>
           <h1 className="mt-4 text-2xl font-bold sm:text-4xl">{order.orderNumber}</h1>
           <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt)}</p>
@@ -80,7 +81,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
           <div className="mt-1 text-sm font-semibold text-[#6b7280]">{customer.contact}</div>
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Payment</div>
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pembayaran</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <CreditCard className="h-4 w-4 text-[#263d27]" />
             <span className="text-base font-bold text-[#0b130c]">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</span>
@@ -88,7 +89,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</div>
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Shipment</div>
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pengiriman</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <Truck className="h-4 w-4 text-[#263d27]" />
             <span className="text-base font-bold text-[#0b130c]">{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus || 'Belum dikirim'}</span>
@@ -103,7 +104,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
         <div className="grid grid-cols-[1fr_54px_86px] gap-2 bg-[#f8f7f4] px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280] sm:grid-cols-[1fr_80px_120px_120px]">
           <span>Item</span>
           <span className="text-right">Qty</span>
-          <span className="hidden text-right sm:block">Price</span>
+          <span className="hidden text-right sm:block">Harga</span>
           <span className="text-right">Total</span>
         </div>
         {order.items.map((item) => (
@@ -126,24 +127,24 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
             {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
               <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
                 <CreditCard className="h-4 w-4" />
-                Continue payment
+                Lanjut bayar
               </Link>
             ) : null}
             {order.trackingUrl && order.trackingNumber ? (
               <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
                 <ExternalLink className="h-4 w-4" />
-                Track resi
+                Lacak resi
               </a>
             ) : null}
           </div>
         </div>
         <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
           <div className="flex items-center justify-between text-sm font-semibold text-[#6b7280]">
-            <span>Total items</span>
+            <span>Total item</span>
             <span>{order.quantity}</span>
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
-            <span className="text-sm font-bold uppercase text-[#263d27]">Grand total</span>
+            <span className="text-sm font-bold uppercase text-[#263d27]">Total bayar</span>
             <span className="text-xl font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</span>
           </div>
         </div>
@@ -173,7 +174,7 @@ const CustomerInvoicePage = () => {
 
   const loadInvoice = async (code) => {
     if (!code.trim()) {
-      toast.error('Customer code is required');
+      toast.error('Kode customer wajib diisi');
       return;
     }
 
@@ -184,7 +185,7 @@ const CustomerInvoicePage = () => {
 
     if (!result) {
       setPortal(null);
-      toast.error('Customer code not found');
+      toast.error('Kode customer tidak ditemukan');
       return;
     }
 
@@ -216,7 +217,7 @@ const CustomerInvoicePage = () => {
 
     setPortal(result);
     setSecurityAnswer('');
-    toast.success('Invoice unlocked');
+    toast.success('Invoice terbuka');
   };
 
   const content = (
@@ -241,8 +242,8 @@ const CustomerInvoicePage = () => {
               <FileText className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-[#0b130c]">Invoice / Receipt</h1>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Masukkan customer code untuk membuka invoice {orderNumber}.</p>
+              <h1 className="text-xl font-bold text-[#0b130c]">Invoice</h1>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Masukkan kode customer untuk membuka invoice {orderNumber}.</p>
             </div>
           </div>
           <form onSubmit={submitLookup} className="mt-5 grid grid-cols-[1fr_auto] gap-2">
@@ -254,7 +255,7 @@ const CustomerInvoicePage = () => {
             />
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              Open
+              Buka
             </Button>
           </form>
           {searched && !loading ? <p className="mt-3 text-xs font-semibold text-[#6b7280]">Invoice belum ditemukan untuk data tersebut.</p> : null}
@@ -266,8 +267,8 @@ const CustomerInvoicePage = () => {
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-xs font-bold uppercase text-[#263d27]">Security check</div>
-              <h1 className="mt-1 text-xl font-bold text-[#0b130c]">Unlock invoice</h1>
+              <div className="text-xs font-bold uppercase text-[#263d27]">Cek keamanan</div>
+              <h1 className="mt-1 text-xl font-bold text-[#0b130c]">Buka invoice</h1>
               <p className="mt-2 text-sm font-semibold text-[#6b7280]">{portal.customer.securityQuestion}</p>
             </div>
           </div>
@@ -275,23 +276,24 @@ const CustomerInvoicePage = () => {
             <input
               value={securityAnswer}
               onChange={(event) => setSecurityAnswer(event.target.value)}
-              placeholder="Your answer"
+              placeholder="Jawaban"
               className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
             />
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
               {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-              Unlock
+              Buka
             </Button>
           </form>
         </section>
       ) : order ? (
         <InvoiceCard customer={portal.customer} order={order} isMobile={isMobileRoute} />
       ) : (
-        <section className={isMobileRoute ? 'mobile-card p-5 text-center' : 'rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
-          <FileText className="mx-auto h-8 w-8 text-amber-700" />
-          <h1 className="mt-3 text-xl font-bold text-[#0b130c]">Invoice not found</h1>
-          <p className="mt-1 text-sm font-semibold text-[#6b7280]">Order {orderNumber} tidak ditemukan untuk customer code ini.</p>
-        </section>
+        <StateBlock
+          className={isMobileRoute ? 'mobile-card' : 'rounded-[28px]'}
+          icon={FileText}
+          title="Invoice tidak ditemukan"
+          description={`Order ${orderNumber} tidak ditemukan untuk kode customer ini.`}
+        />
       )}
     </main>
   );

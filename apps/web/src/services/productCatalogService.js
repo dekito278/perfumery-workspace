@@ -17,6 +17,8 @@ export const PRODUCT_BATCH_STOCK_TAG_PREFIX = 'Initial stock:';
 export const PRODUCT_BATCH_SKU_TAG_PREFIX = 'SKU:';
 export const PRODUCT_BATCH_MOVEMENT_TAG_PREFIX = 'Stock movement:';
 export const PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX = 'Batch published at:';
+export const PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX = 'Restock threshold:';
+export const PRODUCT_STOCK_CORRECTION_TAG_PREFIX = 'Stock correction:';
 
 const PRODUCT_INTERNAL_TAG_PREFIXES = [
   PRODUCT_BATCH_TAG_PREFIX,
@@ -33,6 +35,8 @@ const PRODUCT_INTERNAL_TAG_PREFIXES = [
   PRODUCT_BATCH_SKU_TAG_PREFIX,
   PRODUCT_BATCH_MOVEMENT_TAG_PREFIX,
   PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX,
+  PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX,
+  PRODUCT_STOCK_CORRECTION_TAG_PREFIX,
 ];
 
 const FALLBACK_VISUALS = [
@@ -112,6 +116,47 @@ export const getProductBatchDetails = (product = {}) => ({
   movement: getProductInternalTagValue(product, PRODUCT_BATCH_MOVEMENT_TAG_PREFIX),
   publishedAt: getProductInternalTagValue(product, PRODUCT_BATCH_PUBLISHED_AT_TAG_PREFIX),
 });
+
+export const getProductRestockThreshold = (product = {}, fallback = 5) => {
+  const rawThreshold = product.restockThreshold ?? getProductInternalTagValue(product, PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX);
+  const threshold = Number(rawThreshold === '' || rawThreshold === null || rawThreshold === undefined ? fallback : rawThreshold);
+  return Number.isFinite(threshold) && threshold >= 0 ? threshold : fallback;
+};
+
+const serializeStockCorrection = (event = {}) => `${PRODUCT_STOCK_CORRECTION_TAG_PREFIX}${encodeURIComponent(JSON.stringify({
+  id: event.id || `stock-${Date.now()}`,
+  at: event.at || new Date().toISOString(),
+  note: event.note || '',
+  actor: event.actor || 'Admin',
+  previousStock: Number(event.previousStock || 0),
+  nextStock: Number(event.nextStock || 0),
+  variants: Array.isArray(event.variants) ? event.variants : [],
+}))}`;
+
+const parseStockCorrectionTag = (tag = '') => {
+  if (!String(tag).startsWith(PRODUCT_STOCK_CORRECTION_TAG_PREFIX)) return null;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(String(tag).slice(PRODUCT_STOCK_CORRECTION_TAG_PREFIX.length).trim()));
+    return {
+      id: parsed.id || `stock-${parsed.at || Date.now()}`,
+      at: parsed.at || new Date().toISOString(),
+      note: parsed.note || '',
+      actor: parsed.actor || 'Admin',
+      previousStock: Number(parsed.previousStock || 0),
+      nextStock: Number(parsed.nextStock || 0),
+      variants: Array.isArray(parsed.variants) ? parsed.variants : [],
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const getProductStockCorrections = (product = {}) => (
+  splitList(product.tags)
+    .map(parseStockCorrectionTag)
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+);
 
 export const normalizeProductImages = (input = {}) => {
   const rawImages = Array.isArray(input.images)
@@ -195,7 +240,7 @@ export const getProductStockTotal = (variants = []) => variants.reduce((sum, var
 
 export const getProductLowStock = (product) => {
   const stock = Number(product?.stock || 0);
-  return stock > 0 && stock <= 5;
+  return stock > 0 && stock <= getProductRestockThreshold(product);
 };
 
 const findProductForOrderItem = (products, item = {}) => products.find((product) => (
@@ -367,6 +412,14 @@ export const normalizeProduct = (input, existingProducts = []) => {
   const id = input.id || `custom-${Date.now()}`;
   const slug = ensureUniqueSlug(toSlug(input.slug || input.name), existingProducts, id);
   const visualIndex = Math.abs(String(slug).split('').reduce((sum, character) => sum + character.charCodeAt(0), 0)) % FALLBACK_VISUALS.length;
+  const parsedVisibleTags = splitList(input.tags)
+    .filter((tag) => !PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix)));
+  const visibleTags = parsedVisibleTags.length ? parsedVisibleTags : ['Custom'];
+  const preservedInternalTags = [...splitList(input.tags), ...splitList(input.internalTags)]
+    .filter((tag) => PRODUCT_INTERNAL_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix)))
+    .filter((tag) => !tag.startsWith(PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX) && !tag.startsWith(PRODUCT_STOCK_CORRECTION_TAG_PREFIX));
+  const restockThreshold = getProductRestockThreshold(input);
+  const stockCorrections = Array.isArray(input.stockCorrections) ? input.stockCorrections : getProductStockCorrections(input);
 
   return {
     id,
@@ -387,7 +440,12 @@ export const normalizeProduct = (input, existingProducts = []) => {
     concentration: input.concentration || 'Eau de Parfum',
     stock,
     variants,
-    tags: splitList(input.tags).length ? splitList(input.tags) : ['Custom'],
+    tags: [
+      ...visibleTags,
+      ...preservedInternalTags,
+      `${PRODUCT_RESTOCK_THRESHOLD_TAG_PREFIX}${restockThreshold}`,
+      ...stockCorrections.slice(0, 20).map(serializeStockCorrection),
+    ],
     intensity: input.intensity || 'Medium',
     featured: Boolean(input.featured),
     popularity: Number(input.popularity || 70),

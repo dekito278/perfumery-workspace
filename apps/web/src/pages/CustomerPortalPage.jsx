@@ -4,6 +4,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ExternalLink, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import {
@@ -30,17 +31,17 @@ const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const paymentStatusLabels = {
   unpaid: 'Belum dibayar',
-  pending: 'Menunggu',
-  paid: 'Lunas',
+  pending: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
   failed: 'Gagal',
-  expired: 'Expired',
-  refunded: 'Refunded',
+  expired: 'Kedaluwarsa',
+  refunded: 'Refund',
 };
 
 const progressSteps = [
   { key: 'created', label: 'Order dibuat' },
   { key: 'pending_payment', label: 'Menunggu bayar' },
-  { key: 'paid', label: 'Paid' },
+  { key: 'paid', label: 'Sudah dibayar' },
   { key: 'processing', label: 'Diproses' },
   { key: 'shipped', label: 'Dikirim' },
   { key: 'completed', label: 'Selesai' },
@@ -96,7 +97,7 @@ const OrderTimeline = ({ order, compact = false }) => {
     const current = activeStep === index;
     let detail = done ? 'Sudah tercatat' : 'Menunggu tahap sebelumnya';
     if (step.key === 'created') detail = formatDate(order.createdAt);
-    if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? 'Payment sudah diterima' : 'Menunggu pembayaran selesai';
+    if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? 'Pembayaran sudah diterima' : 'Menunggu pembayaran selesai';
     if (step.key === 'paid') detail = paymentStatusLabels[order.paymentStatus] || order.paymentStatus || '-';
     if (step.key === 'processing') detail = shipmentStatusLabels[order.shipmentStatus] || statusLabels[order.status] || '-';
     if (step.key === 'shipped') detail = order.trackingNumber ? `${order.courierName || 'Kurir'} / ${order.trackingNumber}` : 'Resi akan muncul setelah paket dikirim';
@@ -275,7 +276,7 @@ const CustomerPortalPage = () => {
 
     if (!result) {
       setPortal(null);
-      if (!silent) toast.error('Customer code not found');
+      if (!silent) toast.error('Kode customer tidak ditemukan');
       return;
     }
 
@@ -366,7 +367,7 @@ const CustomerPortalPage = () => {
     try {
       const result = await refreshDokuPaymentStatus(order.orderNumber);
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
-      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
+      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'dicek';
       if (result.syncApplied) {
         toast.success(`Payment ${statusLabel}`);
       } else {
@@ -411,7 +412,7 @@ const CustomerPortalPage = () => {
                   placeholder="SOLI09232"
                   className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#263d27]"
                 />
-                <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Check customer code">
+                <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Cek kode customer">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>
               </div>
@@ -428,25 +429,25 @@ const CustomerPortalPage = () => {
                   <KeyRound className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-[#263d27]">Security check</div>
-                  <h2 className="mt-1 text-lg font-bold text-[#0b130c]">Dashboard protected</h2>
+                  <div className="text-[10px] font-bold uppercase text-[#263d27]">Cek keamanan</div>
+                  <h2 className="mt-1 text-lg font-bold text-[#0b130c]">Dashboard terlindungi</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">Jawab pertanyaan keamanan untuk membuka dashboard.</p>
                 </div>
               </div>
               <form onSubmit={unlockPortal} className="mt-4 grid gap-3">
                 <div className="rounded-2xl bg-[#f7f8f2] p-3">
-                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">Question</div>
+                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pertanyaan</div>
                   <div className="mt-1 text-sm font-bold text-[#0b130c]">{portal.customer.securityQuestion}</div>
                 </div>
                 <input
                   value={securityAnswer}
                   onChange={(event) => setSecurityAnswer(event.target.value)}
-                  placeholder="Your answer"
+                  placeholder="Jawaban"
                   className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
                 />
                 <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
                   {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  Unlock
+                  Buka
                 </Button>
               </form>
             </section>
@@ -455,7 +456,7 @@ const CustomerPortalPage = () => {
               <section className="mobile-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Welcome back</div>
+                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Selamat datang kembali</div>
                     <h2 className="mt-1 truncate text-lg font-bold text-[#0b130c]">{portal.customer.customerName}</h2>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.contact}</p>
                   </div>
@@ -500,17 +501,17 @@ const CustomerPortalPage = () => {
                       <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Current answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
                     ) : null}
                     <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder="Pertanyaan keamanan" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
-                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
                     <Button type="submit" className="h-11 rounded-2xl gap-2" disabled={savingSecurity}>
                       {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                      Save protection
+                      Simpan proteksi
                     </Button>
                   </form>
                 ) : null}
               </section>
 
               <section className="space-y-3">
-                <h2 className="text-base font-bold text-[#0b130c]">Order progress</h2>
+                <h2 className="text-base font-bold text-[#0b130c]">Progres order</h2>
                 {portal.orders.map((order) => {
                   const bespoke = isBespokeOrder(order);
                   const bespokeItem = getBespokeItem(order);
@@ -531,7 +532,7 @@ const CustomerPortalPage = () => {
                       </div>
                       <div className="p-4">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="text-[10px] font-bold uppercase text-[#6b7280]">{bespoke ? 'Custom perfume' : 'Order item'}</div>
+                        <div className="text-[10px] font-bold uppercase text-[#6b7280]">{bespoke ? 'Parfum custom' : 'Item order'}</div>
                         <div className="text-sm font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</div>
                       </div>
                       <div className="mt-3">
@@ -547,13 +548,13 @@ const CustomerPortalPage = () => {
                       {canOpenPayment(order) ? (
                         <Link to={buildPaymentPath({ isMobileRoute, order })} className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
                           <CreditCard className="h-4 w-4" />
-                          Continue payment
+                          Lanjut bayar
                         </Link>
                       ) : null}
                       {canTrackShipment(order) ? (
                         <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
                           <ExternalLink className="h-4 w-4" />
-                          Track resi
+                          Lacak resi
                         </a>
                       ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
@@ -564,7 +565,7 @@ const CustomerPortalPage = () => {
                           className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white text-xs font-bold text-[#263d27] disabled:opacity-60"
                         >
                           {refreshingPaymentOrder === order.orderNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          Refresh payment
+                          Cek pembayaran
                         </button>
                       ) : null}
                       <div className="mt-4">
@@ -575,20 +576,21 @@ const CustomerPortalPage = () => {
                   );
                 })}
                 {!portal.orders.length ? (
-                  <div className="mobile-card p-5 text-center">
-                    <PackageCheck className="mx-auto h-7 w-7 text-amber-700" />
-                    <h3 className="mt-3 font-bold text-[#0b130c]">No orders yet</h3>
-                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">Order baru akan muncul setelah checkout.</p>
-                  </div>
+                  <StateBlock
+                    className="mobile-card"
+                    icon={PackageCheck}
+                    title="Belum ada order"
+                    description="Order baru akan muncul setelah checkout."
+                  />
                 ) : null}
               </section>
             </>
           ) : (
             <section className="mobile-card p-5 text-center">
               {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
-              <h2 className="mt-3 text-lg font-bold text-[#0b130c]">{searched ? 'Customer code not found' : 'Dashboard tampil di sini'}</h2>
+              <h2 className="mt-3 text-lg font-bold text-[#0b130c]">{searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masukkan customer code untuk melihat progres order.'}
+                {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
               </p>
             </section>
           )}
@@ -606,8 +608,8 @@ const CustomerPortalPage = () => {
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
         <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]"><ArrowLeft className="h-4 w-4" />Home</Link>
-            <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Shop</Link>
+            <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]"><ArrowLeft className="h-4 w-4" />Beranda</Link>
+            <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Katalog</Link>
           </div>
         </section>
 
@@ -616,7 +618,7 @@ const CustomerPortalPage = () => {
             <div className="rounded-[28px] border border-[#263d27]/10 bg-white/70 p-6 shadow-sm">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
                 <UserRound className="h-4 w-4" />
-                Customer portal
+                Portal customer
               </div>
               <h1 className="mt-5 text-4xl font-bold leading-tight sm:text-5xl">Cek order dengan kode unik.</h1>
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
@@ -625,7 +627,7 @@ const CustomerPortalPage = () => {
             </div>
 
             <form onSubmit={loadPortal} className="rounded-2xl border bg-white p-4 shadow-sm">
-              <label className="text-xs font-bold uppercase text-muted-foreground">Customer code</label>
+              <label className="text-xs font-bold uppercase text-muted-foreground">Kode customer</label>
               <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={customerCode}
@@ -635,7 +637,7 @@ const CustomerPortalPage = () => {
                 />
                 <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  Check
+                  Cek
                 </Button>
               </div>
               <p className="mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
@@ -652,8 +654,8 @@ const CustomerPortalPage = () => {
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-[#263d27]">Security check</div>
-                    <h2 className="mt-1 text-2xl font-bold">Dashboard protected</h2>
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Cek keamanan</div>
+                    <h2 className="mt-1 text-2xl font-bold">Dashboard terlindungi</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
                       Customer ini sudah mengaktifkan pertanyaan keamanan. Jawab dulu untuk membuka dashboard.
                     </p>
@@ -661,18 +663,18 @@ const CustomerPortalPage = () => {
                 </div>
                 <form onSubmit={unlockPortal} className="mt-5 grid gap-3">
                   <div className="rounded-2xl bg-[#f7f8f2] p-4">
-                    <div className="text-xs font-bold uppercase text-muted-foreground">Question</div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">Pertanyaan</div>
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
                   <input
                     value={securityAnswer}
                     onChange={(event) => setSecurityAnswer(event.target.value)}
-                    placeholder="Your answer"
+                    placeholder="Jawaban"
                     className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
                   />
                   <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
                     {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                    Unlock dashboard
+                    Buka dashboard
                   </Button>
                 </form>
               </section>
@@ -681,7 +683,7 @@ const CustomerPortalPage = () => {
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase text-[#263d27]">Welcome back</div>
+                      <div className="text-xs font-bold uppercase text-[#263d27]">Selamat datang kembali</div>
                       <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.contact}</p>
                     </div>
@@ -691,15 +693,15 @@ const CustomerPortalPage = () => {
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Orders</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">Order</div>
                       <div className="mt-1 text-2xl font-bold">{portal.orders.length}</div>
                     </div>
                     <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Active</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">Aktif</div>
                       <div className="mt-1 text-2xl font-bold">{activeOrders.length}</div>
                     </div>
                     <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Latest</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">Terbaru</div>
                       <div className="mt-1 text-sm font-bold">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
                     </div>
                   </div>
@@ -712,12 +714,12 @@ const CustomerPortalPage = () => {
                         <ShieldCheck className="h-5 w-5" />
                       </span>
                       <span>
-                        <span className="block text-lg font-bold">{portal.customer.securityEnabledAt ? 'Dashboard protected' : 'Protect dashboard'}</span>
+                        <span className="block text-lg font-bold">{portal.customer.securityEnabledAt ? 'Dashboard terlindungi' : 'Proteksi dashboard'}</span>
                         <span className="mt-0.5 block text-sm font-semibold text-muted-foreground">Tambahkan pertanyaan keamanan hanya jika diperlukan.</span>
                       </span>
                     </span>
                     <span className="shrink-0 rounded-full bg-[#f7f8f2] px-4 py-2 text-xs font-bold uppercase text-[#263d27]">
-                      {securityFormOpen ? 'Close' : 'Open'}
+                      {securityFormOpen ? 'Tutup' : 'Buka'}
                     </span>
                   </button>
                   {securityFormOpen ? (
@@ -726,7 +728,7 @@ const CustomerPortalPage = () => {
                         <input
                           value={currentSecurityAnswer}
                           onChange={(event) => setCurrentSecurityAnswer(event.target.value)}
-                          placeholder="Current answer"
+                          placeholder="Jawaban saat ini"
                           className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
                         />
                       ) : null}
@@ -739,19 +741,19 @@ const CustomerPortalPage = () => {
                       <input
                         value={newSecurityAnswer}
                         onChange={(event) => setNewSecurityAnswer(event.target.value)}
-                        placeholder="Answer"
+                        placeholder="Jawaban"
                         className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
                       />
                       <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingSecurity}>
                         {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                        Save protection
+                        Simpan proteksi
                       </Button>
                     </form>
                   ) : null}
                 </section>
 
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">
-                  <h2 className="text-xl font-bold">Order progress</h2>
+                  <h2 className="text-xl font-bold">Progres order</h2>
                   <div className="mt-4 grid gap-4">
                     {portal.orders.map((order) => {
                       const bespoke = isBespokeOrder(order);
@@ -770,7 +772,7 @@ const CustomerPortalPage = () => {
                               <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)}</p>
                             </div>
                             <div className="text-right">
-                              <div className="text-xs font-bold uppercase text-muted-foreground">{order.quantity} items</div>
+                              <div className="text-xs font-bold uppercase text-muted-foreground">{order.quantity} item</div>
                               <div className="text-lg font-bold">{formatTotal(order.subtotal)}</div>
                             </div>
                             </div>
@@ -783,18 +785,18 @@ const CustomerPortalPage = () => {
                             <ShipmentPanel order={order} />
                             <Link to={invoicePath(order.orderNumber)} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
                               <FileText className="h-4 w-4" />
-                              Invoice / Receipt
+                              Invoice
                             </Link>
                             {canOpenPayment(order) ? (
                               <Link to={buildPaymentPath({ isMobileRoute, order })} className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
                                 <CreditCard className="h-4 w-4" />
-                                Continue payment
+                                Lanjut bayar
                               </Link>
                             ) : null}
                             {canTrackShipment(order) ? (
                               <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
                                 <ExternalLink className="h-4 w-4" />
-                                Track resi
+                                Lacak resi
                               </a>
                             ) : null}
                             {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
@@ -805,7 +807,7 @@ const CustomerPortalPage = () => {
                                 className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27] disabled:opacity-60"
                               >
                                 {refreshingPaymentOrder === order.orderNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                Refresh payment
+                                Cek pembayaran
                               </button>
                             ) : null}
                             <div className="mt-5">
@@ -816,23 +818,22 @@ const CustomerPortalPage = () => {
                       );
                     })}
                     {!portal.orders.length ? (
-                      <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-8 text-center">
-                        <PackageCheck className="mx-auto h-8 w-8 text-amber-700" />
-                        <h3 className="mt-3 font-bold">No orders yet</h3>
-                        <p className="mt-1 text-sm font-medium text-muted-foreground">Order baru akan muncul setelah checkout.</p>
-                      </div>
+                      <StateBlock
+                        className="bg-[#fbfaf7]"
+                        icon={PackageCheck}
+                        title="Belum ada order"
+                        description="Order baru akan muncul setelah checkout."
+                      />
                     ) : null}
                   </div>
                 </section>
               </>
             ) : (
-              <section className="rounded-2xl border border-dashed bg-white p-8 text-center">
-                {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
-                <h2 className="mt-3 text-xl font-bold">{searched ? 'Customer code not found' : 'Your dashboard appears here'}</h2>
-                <p className="mt-1 text-sm font-medium text-muted-foreground">
-                  {searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masukkan customer code untuk melihat progres order.'}
-                </p>
-              </section>
+              <StateBlock
+                icon={searched ? Search : ShoppingBag}
+                title={searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}
+                description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
+              />
             )}
           </div>
         </section>

@@ -18,7 +18,12 @@ import {
   isBespokeOrder,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
-import { canExportShippingLabel, exportShippingLabelPdf } from '@/utils/shippingLabelPdf.js';
+
+const canExportShippingLabel = (order) => Boolean(
+  order
+    && order.paymentStatus === 'paid'
+    && !['cancelled'].includes(order.status)
+);
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -151,11 +156,12 @@ const OrdersPage = () => {
     }
   };
 
-  const exportShippingLabel = (order) => {
+  const exportShippingLabel = async (order) => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
+    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
     toast.success(`${order.orderNumber} resi PDF prepared`);
   };
@@ -262,7 +268,7 @@ const OrdersPage = () => {
                         <>
                           <a href={`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex items-center gap-1 rounded-full bg-[#263d27] px-3 py-1 text-[#eef2e8]">
                             <CreditCard className="h-3.5 w-3.5" />
-                            Continue payment
+                            Lanjut bayar
                           </a>
                           <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#263d27]">
                             <ExternalLink className="h-3.5 w-3.5" />
@@ -332,7 +338,7 @@ const OrdersPage = () => {
               <StateBlock title="No matching orders" description="Ubah pencarian atau filter untuk melihat order lain." icon={PackageCheck} />
             ) : null}
             {loading && !orders.length ? (
-              <StateBlock title="Loading orders" description="Mengambil order terbaru dari storefront." tone="loading" />
+              <StateBlock title="Memuat order" description="Mengambil order terbaru dari storefront." tone="loading" />
             ) : null}
           </div>
         </section>
