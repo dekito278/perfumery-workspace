@@ -16,6 +16,10 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const allDeps = Object.keys(pkg.dependencies || {});
 
 const isDev = process.env.NODE_ENV !== 'production';
+const appBuildId = process.env.VERCEL_GIT_COMMIT_SHA
+	|| process.env.CF_PAGES_COMMIT_SHA
+	|| process.env.GITHUB_SHA
+	|| new Date().toISOString().replace(/[-:.TZ]/g, '');
 
 const configHorizonsViteErrorHandler = `
 const observer = new MutationObserver((mutations) => {
@@ -365,6 +369,9 @@ const loadLocalApiEnv = () => {
 };
 
 export default defineConfig({
+	define: {
+		'import.meta.env.VITE_APP_BUILD_ID': JSON.stringify(appBuildId),
+	},
 	optimizeDeps: {
 		include: allDeps,
 	},

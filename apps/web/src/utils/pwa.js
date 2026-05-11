@@ -13,6 +13,7 @@ export const isIosDevice = () => {
 export const isAndroidDevice = () => /android/i.test(window.navigator.userAgent || '');
 
 const isLocalDevelopmentHost = () => ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+const SERVICE_WORKER_BUILD_ID = import.meta.env.VITE_APP_BUILD_ID || 'local';
 
 export const applyStandaloneClass = () => {
   document.documentElement.classList.toggle('pwa-standalone', isStandaloneDisplayMode());
@@ -37,7 +38,7 @@ export const registerServiceWorker = () => {
   window.addEventListener('load', () => {
     let updateIntervalId = null;
 
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(SERVICE_WORKER_BUILD_ID)}`, { scope: '/' })
       .then((registration) => {
         const checkForUpdate = () => {
           const updatePromise = registration.update?.();
