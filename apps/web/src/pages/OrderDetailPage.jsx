@@ -89,6 +89,10 @@ const paymentProofToneByStatus = {
 const auditActionLabels = {
   order_status_updated: 'Order status',
   payment_status_updated: 'Payment status',
+  payment_proof_uploaded: 'Proof uploaded',
+  payment_proof_approved: 'Proof approved',
+  payment_proof_rejected: 'Proof rejected',
+  payment_proof_reviewed: 'Proof reviewed',
   shipment_updated: 'Fulfillment / resi',
   order_cancelled: 'Cancel order',
   order_deleted: 'Delete order',

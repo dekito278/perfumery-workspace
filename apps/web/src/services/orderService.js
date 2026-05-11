@@ -816,6 +816,9 @@ export const submitOrderPaymentProof = async (orderNumber, {
   } catch (error) {
     console.warn('Saving payment proof locally:', error.message || error);
     const uploadedAt = new Date().toISOString();
+    const currentOrder = readOrders()
+      .map(normalizeOrder)
+      .find((order) => order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber);
     const nextOrders = readOrders().map(normalizeOrder).map((order) => (
       order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber
         ? {
@@ -835,6 +838,29 @@ export const submitOrderPaymentProof = async (orderNumber, {
     if (!updatedOrder) {
       throw new Error(error.message || 'Gagal menyimpan bukti transfer ke order');
     }
+    await createOrderAuditLog({
+      action: 'payment_proof_uploaded',
+      currentOrder: currentOrder || updatedOrder,
+      orderId: normalizedOrderNumber,
+      previousValues: {
+        paymentProofStatus: currentOrder?.paymentProofStatus || 'missing',
+        paymentProofUrl: currentOrder?.paymentProofUrl || '',
+        paymentProofFileName: currentOrder?.paymentProofFileName || '',
+        paymentProofContentType: currentOrder?.paymentProofContentType || '',
+        paymentProofUploadedAt: currentOrder?.paymentProofUploadedAt || '',
+      },
+      nextValues: {
+        paymentProofStatus: 'submitted',
+        paymentProofUrl,
+        paymentProofFileName: fileName || '',
+        paymentProofContentType: contentType || '',
+        paymentProofUploadedAt: uploadedAt,
+      },
+      metadata: {
+        source: 'customer_payment_page',
+        persistence: 'local',
+      },
+    });
     return updatedOrder;
   }
 };
@@ -867,24 +893,41 @@ export const reviewOrderPaymentProof = async (orderId, {
     } : {}),
   };
   const proofAudit = {
-    action: 'payment_proof_reviewed',
+    action: nextStatus === 'approved' ? 'payment_proof_approved' : 'payment_proof_rejected',
     currentOrder,
     orderId,
     previousValues: {
-      paymentStatus: currentOrder.paymentStatus || '',
-      status: currentOrder.status || '',
       paymentProofStatus: currentOrder.paymentProofStatus || 'missing',
       paymentProofNotes: currentOrder.paymentProofNotes || '',
+      paymentProofUploadedAt: currentOrder.paymentProofUploadedAt || '',
     },
     nextValues: {
-      paymentStatus: nextStatus === 'approved' ? 'paid' : nextStatus === 'rejected' ? 'pending' : currentOrder.paymentStatus || '',
-      status: nextStatus === 'approved' ? 'paid' : nextStatus === 'rejected' ? 'pending_payment' : currentOrder.status || '',
       paymentProofStatus: nextStatus,
       paymentProofNotes: normalizedNotes,
+      paymentProofUploadedAt: currentOrder.paymentProofUploadedAt || reviewedAt,
     },
     metadata: {
       source: 'admin_order_detail',
       hasPaymentProofUrl: Boolean(currentOrder.paymentProofUrl),
+    },
+  };
+  const paymentStatusChangedByReview = nextStatus === 'rejected'
+    && ((currentOrder.paymentStatus || '') !== 'pending' || (currentOrder.status || '') !== 'pending_payment');
+  const rejectionPaymentAudit = {
+    action: 'payment_status_updated',
+    currentOrder,
+    orderId,
+    previousValues: {
+      status: currentOrder.status || '',
+      paymentStatus: currentOrder.paymentStatus || '',
+    },
+    nextValues: {
+      status: 'pending_payment',
+      paymentStatus: 'pending',
+    },
+    metadata: {
+      source: 'payment_proof_rejected',
+      reason: normalizedNotes,
     },
   };
 
@@ -898,6 +941,9 @@ export const reviewOrderPaymentProof = async (orderId, {
 
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     await createOrderAuditLog(proofAudit);
+    if (paymentStatusChangedByReview) {
+      await createOrderAuditLog(rejectionPaymentAudit);
+    }
     if (nextStatus === 'approved' && currentOrder.paymentStatus !== 'paid') {
       await updateOrderPaymentStatus(orderId, {
         paymentStatus: 'paid',
@@ -940,6 +986,15 @@ export const reviewOrderPaymentProof = async (orderId, {
         persistence: 'local',
       },
     });
+    if (paymentStatusChangedByReview) {
+      await createOrderAuditLog({
+        ...rejectionPaymentAudit,
+        metadata: {
+          ...rejectionPaymentAudit.metadata,
+          persistence: 'local',
+        },
+      });
+    }
     return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
   }
 };

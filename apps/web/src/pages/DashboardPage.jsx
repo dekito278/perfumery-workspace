@@ -31,11 +31,15 @@ const formatDate = (value) => (value
 const auditActionLabels = {
   order_status_updated: 'Order status',
   payment_status_updated: 'Payment status',
+  payment_proof_uploaded: 'Proof uploaded',
+  payment_proof_approved: 'Proof approved',
+  payment_proof_rejected: 'Proof rejected',
+  payment_proof_reviewed: 'Proof reviewed',
   shipment_updated: 'Fulfillment / resi',
   order_cancelled: 'Cancel order',
   order_deleted: 'Delete order',
 };
-const importantAuditKeys = ['paymentStatus', 'status', 'shipmentStatus', 'trackingNumber', 'payment_status', 'shipment_status', 'tracking_number'];
+const importantAuditKeys = ['paymentStatus', 'status', 'paymentProofStatus', 'shipmentStatus', 'trackingNumber', 'payment_status', 'payment_proof_status', 'shipment_status', 'tracking_number'];
 
 const formatAuditValue = (value) => {
   if (value === '' || value === null || value === undefined) return '-';
