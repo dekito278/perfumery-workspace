@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FileCheck2, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -30,6 +30,7 @@ import {
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -55,6 +56,18 @@ const paymentStatusLabels = {
   failed: 'Gagal',
   expired: 'Kedaluwarsa',
   refunded: 'Refund',
+};
+const paymentProofStatusLabels = {
+  missing: 'Belum upload bukti',
+  submitted: 'Bukti terkirim',
+  approved: 'Bukti disetujui',
+  rejected: 'Bukti ditolak',
+};
+const paymentProofToneByStatus = {
+  missing: 'warning',
+  submitted: 'info',
+  approved: 'success',
+  rejected: 'danger',
 };
 const notificationEventLabels = getNotificationEventLabels();
 
@@ -129,6 +142,8 @@ const MobileOrderDetailPage = () => {
   const [savingBespokeProduction, setSavingBespokeProduction] = useState(false);
   const [savingProductionLinks, setSavingProductionLinks] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
+  const [paymentProofPreviewUrl, setPaymentProofPreviewUrl] = useState('');
+  const [loadingPaymentProof, setLoadingPaymentProof] = useState(false);
   const [paymentLogs, setPaymentLogs] = useState([]);
   const [notificationEvent, setNotificationEvent] = useState('order_created');
   const [internalNotesDraft, setInternalNotesDraft] = useState('');
@@ -197,12 +212,46 @@ const MobileOrderDetailPage = () => {
   const activeStep = getActiveStep(order?.status);
   const bespokeProductionStatus = order?.bespokeProductionStatus || 'review_brief';
   const bespokeProductionStep = getBespokeProductionStep(bespokeProductionStatus);
+  const hasPaymentProofPath = Boolean(order?.paymentProofUrl);
+  const paymentProofStatus = order?.paymentProofStatus || 'missing';
+  const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
     : [
       { status: 'pending_payment', label: statusLabels.pending_payment, note: 'Order created', at: order?.createdAt },
       ...(activeStep >= 1 ? statusSteps.slice(1, activeStep + 1).map((status) => ({ status, label: statusLabels[status], note: '', at: order?.updatedAt })) : []),
     ];
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPaymentProofPreview = async () => {
+      if (!order?.paymentProofUrl) {
+        setPaymentProofPreviewUrl('');
+        return;
+      }
+
+      setLoadingPaymentProof(true);
+      try {
+        const nextUrl = /^https?:\/\//i.test(order.paymentProofUrl)
+          ? order.paymentProofUrl
+          : await createPaymentProofSignedUrl(order.paymentProofUrl);
+        if (!cancelled) setPaymentProofPreviewUrl(nextUrl);
+      } catch (error) {
+        if (!cancelled) {
+          setPaymentProofPreviewUrl('');
+          toast.error(error.message || 'Gagal membuka bukti transfer');
+        }
+      } finally {
+        if (!cancelled) setLoadingPaymentProof(false);
+      }
+    };
+
+    loadPaymentProofPreview();
+    return () => {
+      cancelled = true;
+    };
+  }, [order?.paymentProofUrl]);
 
   const handleStatusChange = async (status) => {
     try {
@@ -314,6 +363,22 @@ const MobileOrderDetailPage = () => {
       toast.error(error.message || 'Failed to sync DOKU status');
     } finally {
       setSyncingPayment(false);
+    }
+  };
+
+  const openPaymentProof = async () => {
+    if (!order?.paymentProofUrl) {
+      toast.error('File bukti transfer belum tersedia');
+      return;
+    }
+
+    try {
+      const signedUrl = paymentProofPreviewUrl || (/^https?:\/\//i.test(order.paymentProofUrl)
+        ? order.paymentProofUrl
+        : await createPaymentProofSignedUrl(order.paymentProofUrl));
+      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      toast.error(error.message || 'Gagal membuka bukti transfer');
     }
   };
 
@@ -529,6 +594,45 @@ const MobileOrderDetailPage = () => {
               Sinkron status DOKU
             </Button>
           ) : null}
+          <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase text-[#6b7280]">Bukti transfer</div>
+                <div className="mt-2">
+                  <StatusChip size="sm" tone={paymentProofToneByStatus[paymentProofStatus] || 'warning'}>
+                    {paymentProofStatusLabels[paymentProofStatus] || paymentProofStatus}
+                  </StatusChip>
+                </div>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                  {hasPaymentProofPath ? 'File bukti transfer sudah tersimpan di order.' : 'Belum ada file bukti transfer.'}
+                </p>
+              </div>
+              <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-2xl bg-white" onClick={openPaymentProof} disabled={!hasPaymentProofPath || loadingPaymentProof} aria-label="Buka bukti transfer">
+                {loadingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : hasPaymentProofPath ? <ExternalLink className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+              </Button>
+            </div>
+            {order.paymentProofFileName ? (
+              <div className="mt-3 truncate rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#263d27]">
+                {order.paymentProofFileName}
+              </div>
+            ) : null}
+            <div className="mt-2 grid gap-1 text-[10px] font-semibold text-[#6b7280]">
+              <span>Dikirim: {formatDate(order.paymentProofUploadedAt)}</span>
+              <span>Type: {order.paymentProofContentType || '-'}</span>
+              {order.paymentProofNotes ? <span>Catatan: {order.paymentProofNotes}</span> : null}
+            </div>
+            {paymentProofPreviewUrl && paymentProofIsImage ? (
+              <button type="button" onClick={openPaymentProof} className="mt-3 block overflow-hidden rounded-2xl border bg-white text-left">
+                <img src={paymentProofPreviewUrl} alt={`Bukti transfer ${order.orderNumber}`} className="max-h-64 w-full object-contain" />
+              </button>
+            ) : null}
+            {paymentProofPreviewUrl && !paymentProofIsImage ? (
+              <button type="button" onClick={openPaymentProof} className="mt-3 flex w-full items-center gap-2 rounded-2xl border bg-white px-3 py-2 text-left text-xs font-bold text-[#263d27]">
+                <FileCheck2 className="h-4 w-4" />
+                File siap dibuka
+              </button>
+            ) : null}
+          </div>
         </section>
 
         <section className="mobile-card p-4">

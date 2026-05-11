@@ -3,11 +3,13 @@ import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  AlertCircle,
   Clipboard,
   Copy,
   CreditCard,
   Download,
   ExternalLink,
+  FileCheck2,
   FileText,
   History,
   Loader2,
@@ -49,6 +51,7 @@ import {
   getNotificationEventLabels,
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
+import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -68,6 +71,18 @@ const paymentStatusLabels = {
   failed: 'Failed',
   expired: 'Expired',
   refunded: 'Refunded',
+};
+const paymentProofStatusLabels = {
+  missing: 'No proof uploaded',
+  submitted: 'Proof submitted',
+  approved: 'Proof approved',
+  rejected: 'Proof rejected',
+};
+const paymentProofToneByStatus = {
+  missing: 'warning',
+  submitted: 'info',
+  approved: 'success',
+  rejected: 'danger',
 };
 
 const auditActionLabels = {
@@ -157,6 +172,8 @@ const OrderDetailPage = () => {
   const [savingShipment, setSavingShipment] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
+  const [paymentProofPreviewUrl, setPaymentProofPreviewUrl] = useState('');
+  const [loadingPaymentProof, setLoadingPaymentProof] = useState(false);
   const [notificationEvent, setNotificationEvent] = useState('order_created');
   const [internalNotesDraft, setInternalNotesDraft] = useState('');
   const [shipmentDraft, setShipmentDraft] = useState({
@@ -175,6 +192,9 @@ const OrderDetailPage = () => {
   const area = getNoteValue(noteRows, 'Area');
   const shipping = getNoteValue(noteRows, 'Shipping');
   const reservationExpiresAt = getOrderReservationExpiresAt(order);
+  const hasPaymentProofPath = Boolean(order?.paymentProofUrl);
+  const paymentProofStatus = order?.paymentProofStatus || 'missing';
+  const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
   const activeStep = Math.max(0, statusSteps.indexOf(order?.status || 'pending_payment'));
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
@@ -225,6 +245,37 @@ const OrderDetailPage = () => {
       return matchesAdmin && matchesEvent && matchesQuery;
     });
   }, [auditFilters, auditLogs]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPaymentProofPreview = async () => {
+      if (!order?.paymentProofUrl) {
+        setPaymentProofPreviewUrl('');
+        return;
+      }
+
+      setLoadingPaymentProof(true);
+      try {
+        const nextUrl = /^https?:\/\//i.test(order.paymentProofUrl)
+          ? order.paymentProofUrl
+          : await createPaymentProofSignedUrl(order.paymentProofUrl);
+        if (!cancelled) setPaymentProofPreviewUrl(nextUrl);
+      } catch (error) {
+        if (!cancelled) {
+          setPaymentProofPreviewUrl('');
+          toast.error(error.message || 'Failed to open payment proof');
+        }
+      } finally {
+        if (!cancelled) setLoadingPaymentProof(false);
+      }
+    };
+
+    loadPaymentProofPreview();
+    return () => {
+      cancelled = true;
+    };
+  }, [order?.paymentProofUrl]);
 
   const setShipmentFromOrder = (nextOrder) => {
     setShipmentDraft({
@@ -394,6 +445,22 @@ const OrderDetailPage = () => {
       toast.error(error.message || 'Failed to sync DOKU status');
     } finally {
       setSyncingPayment(false);
+    }
+  };
+
+  const openPaymentProof = async () => {
+    if (!order?.paymentProofUrl) {
+      toast.error('Payment proof file is not available');
+      return;
+    }
+
+    try {
+      const signedUrl = paymentProofPreviewUrl || (/^https?:\/\//i.test(order.paymentProofUrl)
+        ? order.paymentProofUrl
+        : await createPaymentProofSignedUrl(order.paymentProofUrl));
+      window.open(signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      toast.error(error.message || 'Failed to open payment proof');
     }
   };
 
@@ -607,6 +674,48 @@ const OrderDetailPage = () => {
                     {syncingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                     Sync DOKU
                   </Button>
+                ) : null}
+              </div>
+              <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-xs font-bold uppercase text-muted-foreground">Bukti transfer</div>
+                      <StatusChip tone={paymentProofToneByStatus[paymentProofStatus] || 'warning'}>
+                        {paymentProofStatusLabels[paymentProofStatus] || paymentProofStatus}
+                      </StatusChip>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-[#1f2937]">
+                      {hasPaymentProofPath
+                        ? 'File bukti transfer sudah tersimpan di order.'
+                        : 'Belum ada file bukti transfer untuk order ini.'}
+                    </p>
+                    {order.paymentProofFileName ? (
+                      <div className="mt-2 truncate rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#263d27]">
+                        {order.paymentProofFileName}
+                      </div>
+                    ) : null}
+                    <div className="mt-2 grid gap-1 text-xs font-semibold text-muted-foreground">
+                      <span>Uploaded: {formatDate(order.paymentProofUploadedAt)}</span>
+                      <span>Type: {order.paymentProofContentType || '-'}</span>
+                      {order.paymentProofNotes ? <span>Notes: {order.paymentProofNotes}</span> : null}
+                    </div>
+                  </div>
+                  <Button type="button" variant="outline" className="h-11 shrink-0 rounded-2xl bg-white gap-2" onClick={openPaymentProof} disabled={!hasPaymentProofPath || loadingPaymentProof}>
+                    {loadingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : hasPaymentProofPath ? <ExternalLink className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                    Buka file
+                  </Button>
+                </div>
+                {paymentProofPreviewUrl && paymentProofIsImage ? (
+                  <button type="button" onClick={openPaymentProof} className="mt-4 block overflow-hidden rounded-2xl border bg-white text-left">
+                    <img src={paymentProofPreviewUrl} alt={`Bukti transfer ${order.orderNumber}`} className="max-h-80 w-full object-contain" />
+                  </button>
+                ) : null}
+                {paymentProofPreviewUrl && !paymentProofIsImage ? (
+                  <button type="button" onClick={openPaymentProof} className="mt-4 flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-left text-sm font-bold text-[#263d27]">
+                    <FileCheck2 className="h-5 w-5" />
+                    File siap dibuka di tab baru
+                  </button>
                 ) : null}
               </div>
             </section>
