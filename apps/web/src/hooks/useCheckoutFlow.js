@@ -393,6 +393,7 @@ export const useCheckoutFlow = ({
           paymentSessionId: '',
           paymentResponse: manualPaymentResponse,
           status: 'pending_payment',
+          audit: false,
         });
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
           paymentType: paymentMethodDetails.provider,
@@ -433,6 +434,7 @@ export const useCheckoutFlow = ({
         paymentSessionId: checkout.paymentSessionId || '',
         paymentResponse: checkout.dokuResponse || {},
         status: 'pending_payment',
+        audit: false,
       });
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentUrl: checkout.paymentUrl,

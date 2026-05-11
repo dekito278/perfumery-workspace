@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { getOrderById, submitOrderPaymentProof } from '@/services/orderService.js';
+import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
@@ -526,7 +526,7 @@ const PaymentPageContent = ({ isMobile }) => {
 
     setLoadingOrder(true);
     try {
-      const order = await getOrderById(orderNumber);
+      const order = await getPublicOrderPaymentSession(orderNumber) || await getOrderById(orderNumber);
       if (order?.paymentUrl) {
         const restoredSession = {
           paymentUrl: order.paymentUrl,

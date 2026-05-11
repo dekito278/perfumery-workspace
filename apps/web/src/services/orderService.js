@@ -865,6 +865,24 @@ export const submitOrderPaymentProof = async (orderNumber, {
   }
 };
 
+export const getPublicOrderPaymentSession = async (orderNumber) => {
+  const normalizedOrderNumber = String(orderNumber || '').trim();
+  if (!normalizedOrderNumber) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_payment_session_lookup', {
+      p_order_number: normalizedOrderNumber,
+    });
+
+    if (error) throw error;
+    if (!data?.order_number) return null;
+    return normalizeOrder(data);
+  } catch (error) {
+    console.warn('Using empty public payment session fallback:', error.message || error);
+    return null;
+  }
+};
+
 export const reviewOrderPaymentProof = async (orderId, {
   paymentProofStatus,
   notes = '',
@@ -1500,6 +1518,7 @@ export const updateOrderPaymentStatus = async (orderId, {
   paymentSessionId,
   paymentResponse,
   status,
+  audit = true,
 }) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const patch = {
@@ -1583,7 +1602,9 @@ export const updateOrderPaymentStatus = async (orderId, {
     } else {
       window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     }
-    await createOrderAuditLog(paymentAudit);
+    if (audit) {
+      await createOrderAuditLog(paymentAudit);
+    }
     if (status === 'cancelled') {
       await createOrderAuditLog({
         action: 'order_cancelled',
@@ -1621,13 +1642,15 @@ export const updateOrderPaymentStatus = async (orderId, {
         : order
     ));
     writeOrders(nextOrders);
-    await createOrderAuditLog({
-      ...paymentAudit,
-      metadata: {
-        ...paymentAudit.metadata,
-        persistence: 'local',
-      },
-    });
+    if (audit) {
+      await createOrderAuditLog({
+        ...paymentAudit,
+        metadata: {
+          ...paymentAudit.metadata,
+          persistence: 'local',
+        },
+      });
+    }
     if (status === 'cancelled') {
       await createOrderAuditLog({
         action: 'order_cancelled',
