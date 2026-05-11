@@ -39,6 +39,7 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   PAYMENT_RESERVATION_TTL_HOURS,
+  reviewOrderPaymentProof,
   updateOrderInternalNotes,
   updateOrderPaymentStatus,
   updateOrderShipment,
@@ -169,6 +170,7 @@ const OrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
+  const [savingPaymentProof, setSavingPaymentProof] = useState(false);
   const [savingShipment, setSavingShipment] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
@@ -464,6 +466,35 @@ const OrderDetailPage = () => {
     }
   };
 
+  const reviewPaymentProof = async (nextStatus) => {
+    if (!order?.paymentProofUrl) {
+      toast.error('Payment proof file is not available');
+      return;
+    }
+
+    const notes = nextStatus === 'rejected'
+      ? window.prompt('Catatan penolakan untuk customer:', order.paymentProofNotes || '') || ''
+      : '';
+    if (nextStatus === 'rejected' && !notes.trim()) {
+      toast.error('Catatan penolakan wajib diisi');
+      return;
+    }
+
+    setSavingPaymentProof(true);
+    try {
+      const nextOrder = await reviewOrderPaymentProof(orderKey, {
+        paymentProofStatus: nextStatus,
+        notes,
+      });
+      setOrder(nextOrder || order);
+      toast.success(nextStatus === 'approved' ? 'Bukti transfer approved' : 'Bukti transfer rejected');
+    } catch (error) {
+      toast.error(error.message || 'Failed to review payment proof');
+    } finally {
+      setSavingPaymentProof(false);
+    }
+  };
+
   const exportShippingLabel = async () => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
@@ -704,6 +735,16 @@ const OrderDetailPage = () => {
                   <Button type="button" variant="outline" className="h-11 shrink-0 rounded-2xl bg-white gap-2" onClick={openPaymentProof} disabled={!hasPaymentProofPath || loadingPaymentProof}>
                     {loadingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : hasPaymentProofPath ? <ExternalLink className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                     Buka file
+                  </Button>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => reviewPaymentProof('approved')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'approved'}>
+                    {savingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                    Approve bukti
+                  </Button>
+                  <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-rose-700" onClick={() => reviewPaymentProof('rejected')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'rejected'}>
+                    <AlertCircle className="h-4 w-4" />
+                    Reject bukti
                   </Button>
                 </div>
                 {paymentProofPreviewUrl && paymentProofIsImage ? (

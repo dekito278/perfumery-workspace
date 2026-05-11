@@ -16,6 +16,7 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
+  reviewOrderPaymentProof,
   updateOrderBespokeProductionStatus,
   updateOrderInternalNotes,
   updateOrderProductionLinks,
@@ -139,6 +140,7 @@ const MobileOrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingShipment, setSavingShipment] = useState(false);
+  const [savingPaymentProof, setSavingPaymentProof] = useState(false);
   const [savingBespokeProduction, setSavingBespokeProduction] = useState(false);
   const [savingProductionLinks, setSavingProductionLinks] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
@@ -382,6 +384,35 @@ const MobileOrderDetailPage = () => {
     }
   };
 
+  const reviewPaymentProof = async (nextStatus) => {
+    if (!order?.paymentProofUrl) {
+      toast.error('File bukti transfer belum tersedia');
+      return;
+    }
+
+    const notes = nextStatus === 'rejected'
+      ? window.prompt('Catatan penolakan untuk customer:', order.paymentProofNotes || '') || ''
+      : '';
+    if (nextStatus === 'rejected' && !notes.trim()) {
+      toast.error('Catatan penolakan wajib diisi');
+      return;
+    }
+
+    setSavingPaymentProof(true);
+    try {
+      const nextOrder = await reviewOrderPaymentProof(order.id || order.orderNumber, {
+        paymentProofStatus: nextStatus,
+        notes,
+      });
+      setOrder(nextOrder || order);
+      toast.success(nextStatus === 'approved' ? 'Bukti transfer disetujui' : 'Bukti transfer ditolak');
+    } catch (error) {
+      toast.error(error.message || 'Gagal review bukti transfer');
+    } finally {
+      setSavingPaymentProof(false);
+    }
+  };
+
   const exportShippingLabel = async () => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
@@ -616,6 +647,16 @@ const MobileOrderDetailPage = () => {
                 {order.paymentProofFileName}
               </div>
             ) : null}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button type="button" className="h-10 rounded-2xl gap-2 text-xs" onClick={() => reviewPaymentProof('approved')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'approved'}>
+                {savingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                Approve
+              </Button>
+              <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs text-rose-700" onClick={() => reviewPaymentProof('rejected')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'rejected'}>
+                <AlertCircle className="h-4 w-4" />
+                Reject
+              </Button>
+            </div>
             <div className="mt-2 grid gap-1 text-[10px] font-semibold text-[#6b7280]">
               <span>Dikirim: {formatDate(order.paymentProofUploadedAt)}</span>
               <span>Type: {order.paymentProofContentType || '-'}</span>

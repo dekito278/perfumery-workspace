@@ -839,6 +839,83 @@ export const submitOrderPaymentProof = async (orderNumber, {
   }
 };
 
+export const reviewOrderPaymentProof = async (orderId, {
+  paymentProofStatus,
+  notes = '',
+} = {}) => {
+  const nextStatus = String(paymentProofStatus || '').trim();
+  if (!['approved', 'rejected'].includes(nextStatus)) {
+    throw new Error('Status bukti transfer tidak valid');
+  }
+
+  const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
+  if (!currentOrder?.paymentProofUrl) {
+    throw new Error('Bukti transfer belum tersedia');
+  }
+
+  const normalizedNotes = nextStatus === 'rejected'
+    ? String(notes || '').trim() || 'Bukti transfer ditolak admin'
+    : '';
+  const reviewedAt = new Date().toISOString();
+  const patch = {
+    payment_proof_status: nextStatus,
+    payment_proof_notes: normalizedNotes || null,
+    payment_proof_uploaded_at: currentOrder.paymentProofUploadedAt || reviewedAt,
+  };
+  const proofAudit = {
+    action: 'payment_proof_reviewed',
+    currentOrder,
+    orderId,
+    previousValues: {
+      paymentProofStatus: currentOrder.paymentProofStatus || 'missing',
+      paymentProofNotes: currentOrder.paymentProofNotes || '',
+    },
+    nextValues: {
+      paymentProofStatus: nextStatus,
+      paymentProofNotes: normalizedNotes,
+    },
+    metadata: {
+      source: 'admin_order_detail',
+      hasPaymentProofUrl: Boolean(currentOrder.paymentProofUrl),
+    },
+  };
+
+  try {
+    const query = supabase
+      .from('storefront_orders')
+      .update(patch);
+    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+
+    if (error) throw error;
+
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    await createOrderAuditLog(proofAudit);
+    return getOrderById(orderId, { sweepExpiredReservation: false });
+  } catch (error) {
+    console.warn('Reviewing payment proof locally:', error.message || error);
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === orderId || order.orderNumber === orderId
+        ? {
+          ...order,
+          paymentProofStatus: nextStatus,
+          paymentProofNotes: normalizedNotes,
+          paymentProofUploadedAt: order.paymentProofUploadedAt || reviewedAt,
+          updatedAt: reviewedAt,
+        }
+        : order
+    ));
+    writeOrders(nextOrders);
+    await createOrderAuditLog({
+      ...proofAudit,
+      metadata: {
+        ...proofAudit.metadata,
+        persistence: 'local',
+      },
+    });
+    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
+  }
+};
+
 export const getOrderAuditLogs = async (orderIdOrNumber) => {
   const order = await getOrderById(orderIdOrNumber, { sweepExpiredReservation: false });
   const orderNumber = order?.orderNumber || orderIdOrNumber;
