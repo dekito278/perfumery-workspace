@@ -53,7 +53,7 @@ const MobileCommerceLayout = ({ children }) => {
       {isAuthenticated ? (
         <Link
           to="/mobile/studio"
-          className="fixed bottom-[76px] right-4 z-40 inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/16 bg-white/95 px-3 text-xs font-bold text-[#263d27] shadow-sm backdrop-blur"
+          className="mobile-studio-floating-link inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/16 bg-white/95 px-3 text-xs font-bold text-[#263d27] shadow-sm backdrop-blur"
           aria-label="Back to Studio dashboard"
         >
           <Beaker className="h-4 w-4" />

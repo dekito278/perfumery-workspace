@@ -220,9 +220,56 @@ const MobileCartPage = () => {
             <div className="flex gap-2 overflow-x-auto pb-1">
               <CheckoutChip active={Boolean(items.length)} label="Keranjang" />
               <CheckoutChip active={customerReady} label="Customer" />
+              <CheckoutChip active={Boolean(selectedPaymentMethod)} label="Bayar" />
               <CheckoutChip active={deliveryReady} label="Alamat" />
               <CheckoutChip active={shippingReady} label="Ongkir" />
             </div>
+            <section className="mobile-card p-3">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Kontak & pembayaran</div>
+              <h2 className="mt-1 text-sm font-bold text-[#1f2937]">Nomor pengiriman wajib, email tidak wajib</h2>
+              <div className="mt-3 grid gap-2">
+                <div className="grid gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-amber-700">Nama penerima</label>
+                  <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                </div>
+                <div className="grid gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-amber-700">Nomor WhatsApp / telepon</label>
+                  <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contoh: 081234567890" inputMode="tel" autoComplete="tel" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                </div>
+                {contact.trim() && !validPhoneContact ? (
+                  <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">
+                    Nomor WhatsApp/telepon wajib untuk pengiriman. Email bisa ditulis di catatan.
+                  </p>
+                ) : (
+                  <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                    Kurir wajib punya nomor aktif untuk menghubungi penerima.
+                  </p>
+                )}
+                <div className="pt-1 text-[10px] font-bold uppercase text-amber-700">Metode bayar</div>
+                {checkoutPaymentMethods.map((method) => {
+                  const active = selectedPaymentMethod === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => setSelectedPaymentMethod(method.id)}
+                      className={`rounded-2xl border px-3 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-bold text-[#1f2937]">{method.label}</span>
+                        {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                      </div>
+                      <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{method.description}</p>
+                      {method.accountNumber ? (
+                        <div className="mt-2 rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">
+                          {method.bankName} {method.accountNumber} / A/N {method.accountName}
+                        </div>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
             <section className="mobile-card p-3">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-sm font-bold text-[#1f2937]">Produk di keranjang</h2>
@@ -261,7 +308,7 @@ const MobileCartPage = () => {
               </section>
 
               <section className="mobile-card p-3">
-                <h2 className="text-sm font-bold text-[#1f2937]">Customer & delivery</h2>
+                <h2 className="text-sm font-bold text-[#1f2937]">Kode customer & alamat</h2>
                 <div className="mt-3 grid gap-2">
                   <div className="text-[10px] font-bold uppercase text-amber-700">Data customer</div>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -299,23 +346,6 @@ const MobileCartPage = () => {
                       </div>
                     </div>
                   ) : null}
-                  <div className="grid gap-1.5">
-                    <label className="text-[10px] font-bold uppercase text-amber-700">Nama penerima</label>
-                    <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <label className="text-[10px] font-bold uppercase text-amber-700">Nomor WhatsApp / telepon</label>
-                    <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contoh: 081234567890" inputMode="tel" autoComplete="tel" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  </div>
-                  {contact.trim() && !validPhoneContact ? (
-                    <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">
-                      Nomor WhatsApp/telepon wajib untuk pengiriman. Email bisa ditulis di catatan.
-                    </p>
-                  ) : (
-                    <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-                      Email tidak wajib. Kurir butuh nomor aktif untuk menghubungi penerima.
-                    </p>
-                  )}
                   <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Alamat & ongkir</div>
                   <div className="grid gap-1.5">
                     <label className="text-[10px] font-bold uppercase text-amber-700">Alamat lengkap pengiriman</label>
@@ -382,29 +412,7 @@ const MobileCartPage = () => {
                     </div>
                   ) : null}
                   {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
-                  <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Metode bayar</div>
-                  <div className="grid gap-2">
-                    {checkoutPaymentMethods.map((method) => {
-                      const active = selectedPaymentMethod === method.id;
-                      return (
-                        <button
-                          key={method.id}
-                          type="button"
-                          onClick={() => setSelectedPaymentMethod(method.id)}
-                          className={`rounded-2xl border px-3 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-sm font-bold text-[#1f2937]">{method.label}</span>
-                            {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
-                          </div>
-                          <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{method.description}</p>
-                          {method.accountNumber ? (
-                            <p className="mt-2 text-[11px] font-bold text-[#263d27]">{method.bankName} {method.accountNumber} / A/N {method.accountName}</p>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Catatan</div>
                   <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>
               </section>
