@@ -1,0 +1,14 @@
+node_modules
+apps/*/node_modules
+apps/*/dist
+
+backups
+docs
+app.tar.gz
+
+apps/pocketbase
+
+*.log
+vite-*.log
+.codex-dev-server.*.log
+.codex-temp

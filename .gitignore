@@ -25,3 +25,5 @@ docs/material-reference-match-report/
 
 .DS_Store
 Thumbs.db
+
+.vercel
