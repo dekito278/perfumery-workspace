@@ -8,6 +8,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { getOrderById } from '@/services/orderService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -72,6 +73,25 @@ const readPaymentSession = () => {
     return null;
   }
 };
+
+const buildManualTransferFromOrder = (order) => ({
+  paymentType: order.paymentProvider || MANUAL_TRANSFER_PAYMENT.provider,
+  paymentProvider: order.paymentProvider || MANUAL_TRANSFER_PAYMENT.provider,
+  invoiceNumber: order.orderNumber,
+  orderNumber: order.orderNumber,
+  customerCode: order.customerCode,
+  amount: order.subtotal,
+  customerName: order.customerName,
+  paymentStatus: order.paymentStatus,
+  paymentReference: order.paymentReference,
+  manualTransfer: {
+    bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
+    accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
+    accountName: order.paymentResponse?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+    amount: order.subtotal,
+  },
+  createdAt: order.createdAt,
+});
 
 const PaymentFrame = ({ session, compact = false }) => {
   const [frameStatus, setFrameStatus] = useState('loading');
@@ -224,6 +244,103 @@ const PaymentFrame = ({ session, compact = false }) => {
   );
 };
 
+const ManualTransferPanel = ({ session, compact = false }) => {
+  const customerCode = session.customerCode || '';
+  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const transfer = {
+    bankName: session.manualTransfer?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
+    accountNumber: session.manualTransfer?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
+    accountName: session.manualTransfer?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+  };
+
+  const copyValue = async (label, value) => {
+    if (!value) return;
+    await navigator.clipboard.writeText(String(value));
+    toast.success(`${label} copied`);
+  };
+
+  return (
+    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#263d27]/15 bg-white shadow-sm'}>
+      <div className={compact ? 'border-b border-[#263d27]/10 bg-[#eef2e8] p-4' : 'border-b border-[#263d27]/10 bg-[#eef2e8] p-5'}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Transfer manual</div>
+            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+              Transfer sesuai total bayar ke rekening di bawah. Admin akan cek dan update status setelah dana masuk.
+            </p>
+          </div>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
+            <CreditCard className="h-5 w-5" />
+          </span>
+        </div>
+        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-[#263d27]' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+            <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-[#6f7d61]">Total transfer</div>
+            <div className="mt-1">{formatTotal(session.amount)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
+        <div className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Rekening tujuan</div>
+          <div className="mt-3 grid gap-3">
+            <div className="rounded-2xl bg-white p-4">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Bank</div>
+              <div className="mt-1 text-xl font-bold text-[#263d27]">{transfer.bankName}</div>
+            </div>
+            <button type="button" onClick={() => copyValue('Nomor rekening', transfer.accountNumber)} className="rounded-2xl border border-[#263d27]/10 bg-white p-4 text-left">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Nomor rekening</div>
+                  <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-[#263d27]">{transfer.accountNumber}</div>
+                </div>
+                <Copy className="h-4 w-4 text-[#263d27]" />
+              </div>
+            </button>
+            <button type="button" onClick={() => copyValue('Nama rekening', transfer.accountName)} className="rounded-2xl border border-[#263d27]/10 bg-white p-4 text-left">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Atas nama</div>
+                  <div className="mt-1 text-lg font-bold text-[#0b130c]">{transfer.accountName}</div>
+                </div>
+                <Copy className="h-4 w-4 text-[#263d27]" />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <div className="text-xs font-bold uppercase">Instruksi</div>
+          <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
+            <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
+            <li>2. Simpan bukti transfer.</li>
+            <li>3. Admin akan update status payment setelah pembayaran dicek.</li>
+          </ol>
+          <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
+            <Copy className="h-4 w-4" />
+            Copy total transfer
+          </Button>
+          {customerCode ? (
+            <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
+              Lacak order
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }) => (
   <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
@@ -262,10 +379,13 @@ const PaymentPageContent = ({ isMobile }) => {
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const orderNumber = searchParams.get('order');
   const paymentReturn = searchParams.get('payment');
+  const isSessionForOrder = (candidate) => (
+    candidate && (!orderNumber || candidate.orderNumber === orderNumber || candidate.invoiceNumber === orderNumber)
+  );
 
   const loadPaymentSession = async ({ syncStatus = false } = {}) => {
     const storedSession = readPaymentSession();
-    if (syncStatus && orderNumber) {
+    if (syncStatus && orderNumber && paymentReturn === 'doku') {
       setRefreshingStatus(true);
       try {
         await refreshDokuPaymentStatus(orderNumber);
@@ -276,7 +396,7 @@ const PaymentPageContent = ({ isMobile }) => {
       }
     }
 
-    if (storedSession?.paymentUrl && (!orderNumber || storedSession.orderNumber === orderNumber || storedSession.invoiceNumber === orderNumber)) {
+    if ((storedSession?.paymentUrl || isManualTransferPayment(storedSession?.paymentProvider || storedSession?.paymentType)) && isSessionForOrder(storedSession)) {
       if (!orderNumber) {
         setSession(storedSession);
         return;
@@ -309,6 +429,13 @@ const PaymentPageContent = ({ isMobile }) => {
         return;
       }
 
+      if (order && isManualTransferPayment(order.paymentProvider)) {
+        const restoredManualSession = buildManualTransferFromOrder(order);
+        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(restoredManualSession));
+        setSession(restoredManualSession);
+        return;
+      }
+
       setSession(storedSession);
     } finally {
       setLoadingOrder(false);
@@ -336,7 +463,9 @@ const PaymentPageContent = ({ isMobile }) => {
             onBack={() => navigate('/mobile/cart')}
             action={<CreditCard className="h-5 w-5 text-amber-700" />}
           />
-          {session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
+            <ManualTransferPanel session={session} compact />
+          ) : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </main>
       </MobileCommerceLayout>
     );
@@ -358,7 +487,9 @@ const PaymentPageContent = ({ isMobile }) => {
           </div>
         </section>
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
+            <ManualTransferPanel session={session} />
+          ) : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </section>
       </main>
     </>

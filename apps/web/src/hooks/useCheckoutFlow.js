@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import {
   buildCheckoutDraft,
   buildOrderNotes,
+  getCheckoutPaymentMethod,
+  isManualTransferPayment,
+  MANUAL_TRANSFER_PAYMENT,
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
@@ -27,6 +30,8 @@ const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. 
   }
   return fallback;
 };
+
+const hasValidPhoneContact = (value) => String(value || '').replace(/[^0-9]/g, '').length >= 8;
 
 export const checkoutCourierOptions = [
   { courierCode: 'jnt', label: 'JnT' },
@@ -62,17 +67,21 @@ export const useCheckoutFlow = ({
   const [shippingOptions, setShippingOptions] = useState([]);
   const [selectedCourier, setSelectedCourier] = useState('');
   const [selectedShipping, setSelectedShipping] = useState(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(MANUAL_TRANSFER_PAYMENT.id);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
-  const paymentMethod = 'DOKU payment';
+  const paymentMethodDetails = getCheckoutPaymentMethod(selectedPaymentMethod);
+  const paymentMethod = paymentMethodDetails.label;
+  const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
   const shippingFee = Number(selectedShipping?.cost || 0);
   const totalDue = Number(summary.subtotal || 0) + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
+  const validPhoneContact = hasValidPhoneContact(contact);
   const canSubmitCheckout = Boolean(
     items.length
     && customerName.trim()
-    && contact.trim()
+    && validPhoneContact
     && deliveryAddress.trim()
     && selectedCourier
     && selectedDestination
@@ -333,8 +342,12 @@ export const useCheckoutFlow = ({
 
   const submitOrder = async ({ onSuccess } = {}) => {
     if (!items.length) return;
-    if (!customerName.trim() || !contact.trim() || !deliveryAddress.trim()) {
-      toast.error('Name, contact, and address are required');
+    if (!customerName.trim() || !deliveryAddress.trim()) {
+      toast.error('Nama dan alamat pengiriman wajib diisi');
+      return;
+    }
+    if (!validPhoneContact) {
+      toast.error('Nomor WhatsApp/telepon wajib diisi untuk pengiriman');
       return;
     }
     if (!selectedDestination) {
@@ -360,9 +373,49 @@ export const useCheckoutFlow = ({
         subtotal: totalDue,
         quantity: summary.quantity,
         checkoutDraft,
-        paymentProvider: 'doku',
+        paymentProvider: paymentMethodDetails.provider,
       });
       createdOrder = order;
+      if (isManualPayment) {
+        const manualPaymentResponse = {
+          method: paymentMethodDetails.provider,
+          bankName: paymentMethodDetails.bankName,
+          accountNumber: paymentMethodDetails.accountNumber,
+          accountName: paymentMethodDetails.accountName,
+          amount: totalDue,
+        };
+        await updateOrderPaymentStatus(order.id || order.orderNumber, {
+          paymentStatus: 'pending',
+          paymentProvider: paymentMethodDetails.provider,
+          paymentReference: `${paymentMethodDetails.bankName}-${order.orderNumber}`,
+          paymentUrl: '',
+          paymentExpiresAt: '',
+          paymentSessionId: '',
+          paymentResponse: manualPaymentResponse,
+          status: 'pending_payment',
+        });
+        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+          paymentType: paymentMethodDetails.provider,
+          paymentProvider: paymentMethodDetails.provider,
+          invoiceNumber: order.orderNumber,
+          orderNumber: order.orderNumber,
+          customerCode: order.customerCode || customerCode,
+          amount: totalDue,
+          customerName,
+          paymentStatus: 'pending',
+          manualTransfer: manualPaymentResponse,
+          shippingSummary,
+          shippingFee,
+          createdAt: new Date().toISOString(),
+        }));
+        clearCart();
+        setSubmittedOrder(order);
+        toast.success(`Order ${order.orderNumber} saved. Transfer ke ${paymentMethodDetails.bankName} ${paymentMethodDetails.accountNumber}.`);
+        onSuccess?.(order);
+        navigate(`${paymentPath}?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
+        return;
+      }
+
       const checkout = await createDokuCheckout({
         order,
         amount: totalDue,
@@ -434,9 +487,13 @@ export const useCheckoutFlow = ({
     shippingOptions,
     selectedCourier,
     selectedShipping,
+    selectedPaymentMethod,
+    paymentMethodDetails,
     shippingLoading,
     shippingError,
     paymentMethod,
+    isManualPayment,
+    validPhoneContact,
     shippingFee,
     totalDue,
     shippingSummary,
@@ -448,6 +505,7 @@ export const useCheckoutFlow = ({
     setNotes,
     setSecurityAnswer,
     setSelectedShipping: chooseShippingRate,
+    setSelectedPaymentMethod,
     chooseShippingCourier,
     updateCustomerCode,
     updateDestinationSearch,

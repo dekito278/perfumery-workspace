@@ -314,7 +314,9 @@ const MobileBespokePage = () => {
           <input
             value={form.contact}
             onChange={(event) => updateField('contact', event.target.value)}
-            placeholder="WhatsApp or email"
+            placeholder="Nomor WhatsApp / telepon"
+            inputMode="tel"
+            autoComplete="tel"
             className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
           />
           <textarea

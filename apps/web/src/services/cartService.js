@@ -1,13 +1,42 @@
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
 
+export const MANUAL_TRANSFER_PAYMENT = {
+  id: 'manual_transfer_bca',
+  provider: 'manual_transfer_bca',
+  label: 'Transfer manual BCA',
+  shortLabel: 'BCA Transfer',
+  bankName: 'BCA',
+  accountNumber: '7401775441',
+  accountName: 'Ade Rizki Wiranto',
+  description: 'Transfer sesuai total bayar, lalu admin akan konfirmasi manual.',
+};
+
+export const checkoutPaymentMethods = [
+  MANUAL_TRANSFER_PAYMENT,
+  {
+    id: 'doku',
+    provider: 'doku',
+    label: 'DOKU Checkout',
+    shortLabel: 'DOKU',
+    description: 'Bayar lewat panel DOKU dengan metode pembayaran digital.',
+  },
+];
+
 export const checkoutPaymentOptions = [
-  'Manual confirmation',
+  MANUAL_TRANSFER_PAYMENT.label,
   'DOKU Checkout',
   'WhatsApp confirmation',
   'QRIS payment request',
   'Bank transfer request',
   'Payment link request',
 ];
+
+export const getCheckoutPaymentMethod = (methodId) => (
+  checkoutPaymentMethods.find((method) => method.id === methodId || method.provider === methodId)
+  || MANUAL_TRANSFER_PAYMENT
+);
+
+export const isManualTransferPayment = (provider) => provider === MANUAL_TRANSFER_PAYMENT.provider || provider === 'manual';
 
 export const getStorefrontWhatsAppNumber = () => String(import.meta.env.VITE_STOREFRONT_WHATSAPP_NUMBER || '')
   .replace(/[^0-9]/g, '');

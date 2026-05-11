@@ -20,6 +20,7 @@ import {
   isBespokeOrder,
 } from '@/services/orderService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { isManualTransferPayment } from '@/services/cartService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -47,8 +48,11 @@ const progressSteps = [
   { key: 'completed', label: 'Selesai' },
 ];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
-const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`;
-const canOpenPayment = (order) => Boolean(order?.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus));
+const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
+const canOpenPayment = (order) => Boolean(
+  ['unpaid', 'pending'].includes(order?.paymentStatus)
+  && (order?.paymentUrl || isManualTransferPayment(order?.paymentProvider))
+);
 const canTrackShipment = (order) => Boolean(order?.trackingUrl && order?.trackingNumber);
 
 const getActiveStep = (status) => {

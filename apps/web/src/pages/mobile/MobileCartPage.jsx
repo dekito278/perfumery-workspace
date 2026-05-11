@@ -8,6 +8,7 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
+import { checkoutPaymentMethods } from '@/services/cartService.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 
@@ -59,6 +60,9 @@ const MobileCartPage = () => {
     shippingError,
     shippingFee,
     totalDue,
+    selectedPaymentMethod,
+    isManualPayment,
+    validPhoneContact,
     canSubmitCheckout,
     setCustomerName,
     setContact,
@@ -66,6 +70,7 @@ const MobileCartPage = () => {
     setNotes,
     setSecurityAnswer,
     setSelectedShipping,
+    setSelectedPaymentMethod,
     chooseShippingCourier,
     updateCustomerCode,
     updateDestinationSearch,
@@ -96,7 +101,7 @@ const MobileCartPage = () => {
   const visibleShippingOptions = selectedCourier
     ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier)
     : [];
-  const customerReady = Boolean(customerName.trim() && contact.trim());
+  const customerReady = Boolean(customerName.trim() && validPhoneContact);
   const deliveryReady = Boolean(deliveryAddress.trim() && selectedDestination);
   const shippingReady = Boolean(selectedCourier && selectedShipping);
 
@@ -206,7 +211,7 @@ const MobileCartPage = () => {
               ) : null}
               <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={!canSubmitCheckout}>
                 <CreditCard className="h-4 w-4" />
-                {saving ? 'Memproses...' : 'Bayar sekarang'}
+                {saving ? 'Memproses...' : (isManualPayment ? 'Buat order & lihat rekening' : 'Bayar sekarang')}
               </Button>
             </div>
           )}
@@ -294,20 +299,38 @@ const MobileCartPage = () => {
                       </div>
                     </div>
                   ) : null}
-                  <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="WhatsApp atau email" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <div className="grid gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-amber-700">Nama penerima</label>
+                    <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama customer" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-amber-700">Nomor WhatsApp / telepon</label>
+                    <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contoh: 081234567890" inputMode="tel" autoComplete="tel" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  </div>
+                  {contact.trim() && !validPhoneContact ? (
+                    <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">
+                      Nomor WhatsApp/telepon wajib untuk pengiriman. Email bisa ditulis di catatan.
+                    </p>
+                  ) : (
+                    <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+                      Email tidak wajib. Kurir butuh nomor aktif untuk menghubungi penerima.
+                    </p>
+                  )}
                   <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Alamat & ongkir</div>
-                  <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <div className="grid gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-amber-700">Alamat lengkap pengiriman</label>
+                    <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Nama jalan, nomor rumah, patokan, RT/RW jika ada" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  </div>
                   <div className="grid gap-2">
-                    <div className="text-[10px] font-bold uppercase text-amber-700">Area ongkir</div>
+                    <div className="text-[10px] font-bold uppercase text-amber-700">Kecamatan / kota tujuan</div>
                     <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota, contoh: Jakarta Selatan" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                      <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                       <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
                         Cari area
                       </Button>
                     </div>
                     <p className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-                      Alamat lengkap untuk kurir. Area ongkir untuk tarif RajaOngkir.
+                      Alamat lengkap tetap wajib. Kolom ini hanya untuk menemukan tarif ongkir RajaOngkir.
                     </p>
                   </div>
                   <div className="grid gap-2">
@@ -359,6 +382,29 @@ const MobileCartPage = () => {
                     </div>
                   ) : null}
                   {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
+                  <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Metode bayar</div>
+                  <div className="grid gap-2">
+                    {checkoutPaymentMethods.map((method) => {
+                      const active = selectedPaymentMethod === method.id;
+                      return (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod(method.id)}
+                          className={`rounded-2xl border px-3 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-bold text-[#1f2937]">{method.label}</span>
+                            {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                          </div>
+                          <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{method.description}</p>
+                          {method.accountNumber ? (
+                            <p className="mt-2 text-[11px] font-bold text-[#263d27]">{method.bankName} {method.accountNumber} / A/N {method.accountName}</p>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>
               </section>

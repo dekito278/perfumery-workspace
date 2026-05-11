@@ -181,7 +181,7 @@ const BespokePage = () => {
               </label>
               <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Contact</span>
-                <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" placeholder="WhatsApp or email" />
+                <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} className="mt-2 h-12 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" placeholder="Nomor WhatsApp / telepon" inputMode="tel" autoComplete="tel" />
               </label>
             </div>
             <div className="mt-5">
