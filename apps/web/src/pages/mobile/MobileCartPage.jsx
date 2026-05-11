@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Check, CheckCircle2, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
@@ -27,10 +27,57 @@ const formatCartSubtitle = (items, quantity) => {
   return remainingCount ? `${productNames} +${remainingCount} lagi` : `${quantity} item: ${productNames}`;
 };
 
-const CheckoutChip = ({ active, label }) => (
-  <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${active ? 'bg-[#263d27] text-white' : 'bg-[#f8f7f4] text-[#6b7280]'}`}>
-    {label}
-  </span>
+const CheckoutProgress = ({ steps }) => {
+  const currentIndex = Math.max(steps.findIndex((step) => !step.complete), 0);
+  const currentStep = steps[currentIndex] || steps[steps.length - 1];
+  const completedCount = steps.filter((step) => step.complete).length;
+  const progressPercent = Math.min(Math.max((completedCount / steps.length) * 100, 8), 100);
+
+  return (
+    <section className="rounded-2xl border border-[#263d27]/10 bg-white/95 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase text-amber-700">
+            Step {Math.min(currentIndex + 1, steps.length)}/{steps.length}
+          </div>
+          <div className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{currentStep.label}</div>
+        </div>
+        <span className="shrink-0 rounded-full bg-[#eef2e8] px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+          {completedCount}/{steps.length} beres
+        </span>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#eef2e8]">
+        <div className="h-full rounded-full bg-[#263d27] transition-all" style={{ width: `${progressPercent}%` }} />
+      </div>
+      <div className="mt-2 grid grid-cols-5 gap-1" aria-label="Checkout progress">
+        {steps.map((step, index) => (
+          <span
+            key={step.label}
+            className={`h-1.5 rounded-full ${step.complete ? 'bg-[#263d27]' : index === currentIndex ? 'bg-amber-400' : 'bg-[#e5e7eb]'}`}
+            title={step.label}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const CheckoutRequirementChecklist = ({ items }) => (
+  <div className="grid grid-cols-2 gap-1.5">
+    {items.map((item) => (
+      <span
+        key={item.label}
+        className={`inline-flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-bold ${
+          item.complete ? 'bg-[#eef2e8] text-[#263d27]' : 'bg-amber-50 text-amber-800'
+        }`}
+      >
+        <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-full ${item.complete ? 'bg-[#263d27] text-white' : 'bg-amber-200 text-amber-800'}`}>
+          {item.complete ? <Check className="h-3 w-3" /> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+        </span>
+        <span className="truncate">{item.label}</span>
+      </span>
+    ))}
+  </div>
 );
 
 const MobileCartPage = () => {
@@ -104,6 +151,20 @@ const MobileCartPage = () => {
   const customerReady = Boolean(customerName.trim() && validPhoneContact);
   const deliveryReady = Boolean(deliveryAddress.trim() && selectedDestination);
   const shippingReady = Boolean(selectedCourier && selectedShipping);
+  const checkoutRequirements = [
+    { label: 'Nama', complete: Boolean(customerName.trim()) },
+    { label: 'Nomor WA', complete: validPhoneContact },
+    { label: 'Alamat', complete: Boolean(deliveryAddress.trim()) },
+    { label: 'Area', complete: Boolean(selectedDestination) },
+    { label: 'Kurir', complete: Boolean(selectedCourier && selectedShipping) },
+  ];
+  const checkoutSteps = [
+    { label: 'Keranjang', complete: Boolean(items.length) },
+    { label: 'Customer', complete: customerReady },
+    { label: 'Alamat', complete: deliveryReady },
+    { label: 'Ongkir', complete: shippingReady },
+    { label: 'Bayar', complete: Boolean(selectedPaymentMethod) },
+  ];
 
   return (
     <MobileCommerceLayout>
@@ -202,12 +263,12 @@ const MobileCartPage = () => {
           onOpenChange={setCheckoutOpen}
           title="Checkout"
           description={`${formatCartSubtitle(items, summary.quantity)} / ${formatTotal(totalDue)}`}
+          variant="fullscreen"
+          hideFooterOnInputFocus
           footer={(
             <div className="grid gap-2">
               {!canSubmitCheckout ? (
-                <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-                  Lengkapi customer, alamat, area ongkir, ekspedisi, dan layanan ongkir untuk lanjut bayar.
-                </p>
+                <CheckoutRequirementChecklist items={checkoutRequirements} />
               ) : null}
               <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={!canSubmitCheckout}>
                 <CreditCard className="h-4 w-4" />
@@ -217,15 +278,9 @@ const MobileCartPage = () => {
           )}
         >
           <div className="space-y-3">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <CheckoutChip active={Boolean(items.length)} label="Keranjang" />
-              <CheckoutChip active={customerReady} label="Customer" />
-              <CheckoutChip active={Boolean(selectedPaymentMethod)} label="Bayar" />
-              <CheckoutChip active={deliveryReady} label="Alamat" />
-              <CheckoutChip active={shippingReady} label="Ongkir" />
-            </div>
+            <CheckoutProgress steps={checkoutSteps} />
             <section className="mobile-card p-3">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Kontak & pembayaran</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">Kontak penerima</div>
               <h2 className="mt-1 text-sm font-bold text-[#1f2937]">Nomor pengiriman wajib, email tidak wajib</h2>
               <div className="mt-3 grid gap-2">
                 <div className="grid gap-1.5">
@@ -245,29 +300,6 @@ const MobileCartPage = () => {
                     Kurir wajib punya nomor aktif untuk menghubungi penerima.
                   </p>
                 )}
-                <div className="pt-1 text-[10px] font-bold uppercase text-amber-700">Metode bayar</div>
-                {checkoutPaymentMethods.map((method) => {
-                  const active = selectedPaymentMethod === method.id;
-                  return (
-                    <button
-                      key={method.id}
-                      type="button"
-                      onClick={() => setSelectedPaymentMethod(method.id)}
-                      className={`rounded-2xl border px-3 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-bold text-[#1f2937]">{method.label}</span>
-                        {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
-                      </div>
-                      <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{method.description}</p>
-                      {method.accountNumber ? (
-                        <div className="mt-2 rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">
-                          {method.bankName} {method.accountNumber} / A/N {method.accountName}
-                        </div>
-                      ) : null}
-                    </button>
-                  );
-                })}
               </div>
             </section>
             <section className="mobile-card p-3">
@@ -412,6 +444,29 @@ const MobileCartPage = () => {
                     </div>
                   ) : null}
                   {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
+                  <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Metode bayar</div>
+                  {checkoutPaymentMethods.map((method) => {
+                    const active = selectedPaymentMethod === method.id;
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setSelectedPaymentMethod(method.id)}
+                        className={`rounded-2xl border px-3 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-bold text-[#1f2937]">{method.label}</span>
+                          {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                        </div>
+                        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{method.description}</p>
+                        {method.accountNumber ? (
+                          <div className="mt-2 rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">
+                            {method.bankName} {method.accountNumber} / A/N {method.accountName}
+                          </div>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                   <div className="pt-2 text-[10px] font-bold uppercase text-amber-700">Catatan</div>
                   <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </div>

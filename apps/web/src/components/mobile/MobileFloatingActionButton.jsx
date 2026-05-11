@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calculator, FileUp, FlaskConical, Plus, Upload, WandSparkles } from 'lucide-react';
+import { Calculator, ChevronRight, FileUp, FlaskConical, Plus, WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 
@@ -52,7 +52,7 @@ const MobileFloatingActionButton = () => {
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-[#1f2937]">{action.label}</span>
                 </span>
-                <Upload className="h-4 w-4 text-[#9ca3af]" />
+                <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
               </button>
             );
           })}

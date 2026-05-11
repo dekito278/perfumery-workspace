@@ -355,31 +355,6 @@ const MobileDashboardPage = () => {
             </div>
           </section>
 
-          <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold">Priority</h2>
-                <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Open queue</Button>
-              </div>
-              <div className="grid gap-3">
-                <PriorityCard
-                  icon={PackageOpen}
-                  label="Commerce"
-                  title="Fulfillment queue"
-                  helper="Paid orders ready to pack"
-                  tone="amber"
-                  onClick={() => navigate('/mobile/studio/fulfillment')}
-                />
-                <PriorityCard
-                  icon={AlertTriangle}
-                  label="Attention"
-                  title={attentionCount ? `${attentionCount} item perlu dicek` : 'Tidak ada blocker utama'}
-                  helper={actionNeededLogs.length ? 'Validation follow-up tersedia' : missingGuidanceMaterials.length ? 'Raw material guidance belum lengkap' : 'Guidance dan validation aman'}
-                  tone={attentionCount ? 'rose' : 'emerald'}
-                  onClick={() => navigate(actionNeededLogs.length ? '/mobile/validation' : '/mobile/raw-materials')}
-                />
-              </div>
-            </section>
-
             <section className="grid grid-cols-2 gap-3">
               <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={loadedSections.briefs ? activeBriefs.length : '-'} to="/mobile/briefs" />
               <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={loadedSections.formulas ? formulas.length : '-'} tone="blue" to="/mobile/formulas" />

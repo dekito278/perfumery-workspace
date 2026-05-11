@@ -399,7 +399,7 @@
 .mobile-fab {
   position: fixed;
   right: max(14px, calc((100vw - 430px) / 2 + 14px));
-  top: calc(env(safe-area-inset-top, 0px) + 132px);
+  bottom: calc(var(--mobile-nav-bottom) + var(--mobile-nav-height) + 16px);
   z-index: 55;
 }
 
@@ -496,12 +496,75 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.mobile-bottom-sheet-fullscreen {
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - 10px);
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 10px);
+}
+
+.mobile-bottom-sheet-keyboard-active {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 8px);
+}
+
+.mobile-bottom-sheet-fullscreen.mobile-bottom-sheet-keyboard-active {
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - 4px);
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 4px);
+}
+
+.mobile-bottom-sheet-keyboard-active .mobile-card,
+.mobile-bottom-sheet-keyboard-active .mobile-soft-card {
+  border-radius: 14px;
+  padding: 0.625rem;
+}
+
+.mobile-bottom-sheet-keyboard-active .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.5rem;
+}
+
+.mobile-bottom-sheet-keyboard-active .grid.gap-2 {
+  gap: 0.375rem;
+}
+
+.mobile-bottom-sheet-keyboard-active .grid.gap-1\.5 {
+  gap: 0.25rem;
+}
+
+.mobile-bottom-sheet-keyboard-active label,
+.mobile-bottom-sheet-keyboard-active .text-\[10px\].font-bold.uppercase {
+  font-size: 9px;
+  line-height: 1.15;
+}
+
+.mobile-bottom-sheet-keyboard-active input,
+.mobile-bottom-sheet-keyboard-active select {
+  min-height: 44px;
+  height: 44px;
+  border-radius: 14px;
+  padding-left: 11px;
+  padding-right: 11px;
+}
+
+.mobile-bottom-sheet-keyboard-active textarea {
+  min-height: 76px;
+  border-radius: 14px;
+  padding: 10px 11px;
+}
+
+.mobile-bottom-sheet-keyboard-active p.rounded-2xl,
+.mobile-bottom-sheet-keyboard-active div.rounded-2xl {
+  border-radius: 14px;
+}
+
 .mobile-bottom-sheet-scroll {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: 28px;
+}
+
+.mobile-bottom-sheet-scroll-with-footer {
+  scroll-padding-bottom: 132px;
 }
 
 .mobile-bottom-sheet-footer {
@@ -631,6 +694,11 @@
 
   .mobile-session-actions {
     right: 10px;
+  }
+
+  .mobile-fab {
+    right: max(10px, calc((100vw - 430px) / 2 + 10px));
+    bottom: calc(var(--mobile-nav-bottom) + var(--mobile-nav-height) + 12px);
   }
 
   .mobile-session-panel {
