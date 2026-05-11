@@ -12,6 +12,7 @@ import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/compo
 import {
   getBespokeItem,
   getBespokeProductionStatusLabels,
+  getOrderAuditLogs,
   getOrderById,
   getOrderPaymentLogs,
   getOrderStatusLabels,
@@ -72,6 +73,13 @@ const paymentProofToneByStatus = {
   rejected: 'danger',
 };
 const notificationEventLabels = getNotificationEventLabels();
+const paymentProofAuditLabels = {
+  payment_proof_uploaded: 'Bukti diupload',
+  payment_proof_approved: 'Bukti disetujui',
+  payment_proof_rejected: 'Bukti ditolak',
+  payment_proof_reviewed: 'Bukti direview',
+};
+const paymentProofAuditActions = Object.keys(paymentProofAuditLabels);
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
@@ -113,6 +121,34 @@ const bespokeDetailRows = (item) => [
   ['Story', item?.story],
 ].filter(([, value]) => value);
 
+const getProofTimeline = (logs = []) => logs
+  .filter((log) => paymentProofAuditActions.includes(log.action))
+  .map((log, index, proofLogs) => {
+    const nextValues = log.nextValues || {};
+    const previousValues = log.previousValues || {};
+    const status = nextValues.paymentProofStatus || nextValues.payment_proof_status || (
+      log.action === 'payment_proof_uploaded'
+        ? 'submitted'
+        : log.action === 'payment_proof_approved'
+          ? 'approved'
+          : log.action === 'payment_proof_rejected'
+            ? 'rejected'
+            : ''
+    );
+    return {
+      id: log.id,
+      attempt: proofLogs.length - index,
+      label: paymentProofAuditLabels[log.action] || log.action,
+      at: log.createdAt,
+      actor: log.actorName || log.actorEmail || 'System',
+      status,
+      notes: nextValues.paymentProofNotes || nextValues.payment_proof_notes || log.metadata?.reason || '',
+      fileName: nextValues.paymentProofFileName || nextValues.payment_proof_file_name || log.metadata?.fileName || '',
+      filePath: nextValues.paymentProofUrl || nextValues.payment_proof_url || '',
+      previousStatus: previousValues.paymentProofStatus || previousValues.payment_proof_status || '',
+    };
+  });
+
 const buildOrderFormulaParams = (order, item) => {
   const params = new URLSearchParams({
     source: 'order',
@@ -150,6 +186,7 @@ const MobileOrderDetailPage = () => {
   const [rejectProofOpen, setRejectProofOpen] = useState(false);
   const [rejectProofNotes, setRejectProofNotes] = useState('');
   const [paymentLogs, setPaymentLogs] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [notificationEvent, setNotificationEvent] = useState('order_created');
   const [internalNotesDraft, setInternalNotesDraft] = useState('');
   const [shipmentDraft, setShipmentDraft] = useState({
@@ -191,15 +228,20 @@ const MobileOrderDetailPage = () => {
     setLoading(true);
     try {
       const nextOrder = await getOrderById(orderId);
-      const nextPaymentLogs = await getOrderPaymentLogs(orderId);
+      const [nextPaymentLogs, nextAuditLogs] = await Promise.all([
+        getOrderPaymentLogs(orderId),
+        getOrderAuditLogs(orderId),
+      ]);
       setOrder(nextOrder);
       setPaymentLogs(nextPaymentLogs);
+      setAuditLogs(nextAuditLogs);
       setInternalNotesDraft(nextOrder?.internalNotes || '');
       setShipmentFromOrder(nextOrder);
       setProductionLinksFromOrder(nextOrder);
     } catch (error) {
       setOrder(null);
       setPaymentLogs([]);
+      setAuditLogs([]);
       toast.error(error.message || 'Failed to load order detail');
     } finally {
       setLoading(false);
@@ -220,6 +262,7 @@ const MobileOrderDetailPage = () => {
   const hasPaymentProofPath = Boolean(order?.paymentProofUrl);
   const paymentProofStatus = order?.paymentProofStatus || 'missing';
   const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
+  const proofTimeline = useMemo(() => getProofTimeline(auditLogs), [auditLogs]);
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
     : [
@@ -405,6 +448,7 @@ const MobileOrderDetailPage = () => {
         notes,
       });
       setOrder(nextOrder || order);
+      setAuditLogs(await getOrderAuditLogs(order.id || order.orderNumber));
       if (nextStatus === 'rejected') {
         setRejectProofOpen(false);
         setRejectProofNotes('');
@@ -709,6 +753,44 @@ const MobileOrderDetailPage = () => {
               </button>
             ) : null}
           </div>
+        </section>
+
+        <section className="mobile-card p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+              <FileCheck2 className="h-4 w-4" />
+              Timeline bukti
+            </div>
+            <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{proofTimeline.length} event</span>
+          </div>
+          {proofTimeline.length ? (
+            <div className="grid gap-2">
+              {proofTimeline.map((event) => (
+                <article key={event.id} className="rounded-2xl bg-[#f8f7f4] px-3 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-[#0b130c]">{event.label}</div>
+                      <div className="mt-1 text-[10px] font-semibold text-[#6b7280]">{formatDate(event.at)} / {event.actor}</div>
+                    </div>
+                    <StatusChip size="sm" tone={paymentProofToneByStatus[event.status] || 'warning'}>
+                      {paymentProofStatusLabels[event.status] || event.status || `Attempt ${event.attempt}`}
+                    </StatusChip>
+                  </div>
+                  <div className="mt-2 grid gap-1 text-[10px] font-semibold text-[#6b7280]">
+                    <span>Attempt: {event.attempt}</span>
+                    {event.previousStatus ? <span>Previous: {paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span> : null}
+                    {event.fileName ? <span>File: {event.fileName}</span> : null}
+                    {event.filePath ? <span className="break-all">Path: {event.filePath}</span> : null}
+                    {event.notes ? <span className="rounded-xl bg-white px-2 py-1 text-rose-700">Catatan: {event.notes}</span> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-dashed bg-[#f8f7f4] px-3 py-3 text-xs font-semibold leading-relaxed text-[#6b7280]">
+              Belum ada history upload, approve, atau reject bukti transfer.
+            </p>
+          )}
         </section>
 
         <section className="mobile-card p-4">
