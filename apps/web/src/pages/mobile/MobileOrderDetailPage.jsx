@@ -408,8 +408,28 @@ const MobileOrderDetailPage = () => {
       if (nextStatus === 'rejected') {
         setRejectProofOpen(false);
         setRejectProofNotes('');
+        const notificationOrder = nextOrder || { ...order, paymentProofStatus: 'rejected', paymentProofNotes: notes };
+        const message = buildNotificationMessage(notificationOrder, 'payment_proof_rejected');
+        try {
+          await navigator.clipboard.writeText(message);
+          toast.success('Template WA reject disalin', {
+            action: {
+              label: 'Open WA',
+              onClick: () => window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
+            },
+          });
+        } catch {
+          toast.success('Template WA reject siap', {
+            action: {
+              label: 'Open WA',
+              onClick: () => window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
+            },
+          });
+        }
       }
-      toast.success(nextStatus === 'approved' ? 'Bukti transfer disetujui' : 'Bukti transfer ditolak');
+      if (nextStatus === 'approved') {
+        toast.success('Bukti transfer disetujui');
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal review bukti transfer');
     } finally {

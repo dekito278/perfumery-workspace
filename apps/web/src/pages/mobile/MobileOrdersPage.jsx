@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clipboard, CreditCard, Eye, FileCheck2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -100,8 +100,12 @@ const getQuickAction = (order) => {
 
 const MobileOrdersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { orders, summary, loading, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
-  const [orderFilter, setOrderFilter] = useState('active');
+  const [orderFilter, setOrderFilter] = useState(() => {
+    const filter = new URLSearchParams(location.search).get('filter');
+    return orderFilterOptions.some((option) => option.value === filter) ? filter : 'active';
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const products = useCatalogProducts({ editableOnly: true });
   const paymentSummary = getPaymentSummary(orders);

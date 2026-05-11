@@ -494,8 +494,11 @@ const OrderDetailPage = () => {
       if (nextStatus === 'rejected') {
         setRejectProofOpen(false);
         setRejectProofNotes('');
+        await prepareCustomerNotification(nextOrder || { ...order, paymentProofStatus: 'rejected', paymentProofNotes: notes }, 'payment_proof_rejected');
       }
-      toast.success(nextStatus === 'approved' ? 'Bukti transfer approved' : 'Bukti transfer rejected');
+      if (nextStatus === 'approved') {
+        toast.success('Bukti transfer approved');
+      }
     } catch (error) {
       toast.error(error.message || 'Failed to review payment proof');
     } finally {

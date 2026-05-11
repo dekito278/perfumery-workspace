@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -81,10 +81,14 @@ const bespokeDetailRows = (item) => [
 
 const OrdersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [syncingOrder, setSyncingOrder] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [orderFilter, setOrderFilter] = useState('all');
+  const [orderFilter, setOrderFilter] = useState(() => {
+    const filter = new URLSearchParams(location.search).get('filter');
+    return orderFilterLabels[filter] ? filter : 'all';
+  });
 
   const visibleOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();

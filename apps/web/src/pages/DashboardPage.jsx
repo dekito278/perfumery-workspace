@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, FileCheck2, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
@@ -202,6 +202,10 @@ const DashboardPage = () => {
     () => orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status)),
     [orders]
   );
+  const proofReviewOrders = useMemo(
+    () => orders.filter((order) => order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status)),
+    [orders]
+  );
   const paymentFollowUps = useMemo(
     () => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)),
     [orders]
@@ -293,6 +297,15 @@ const DashboardPage = () => {
     }
   };
   const todayPriorities = [
+    {
+      icon: FileCheck2,
+      label: 'Proof review',
+      title: `${proofReviewOrders.length} bukti perlu dicek`,
+      helper: 'Approve/reject bukti transfer manual',
+      tone: 'bg-sky-50 text-sky-700 border-sky-100',
+      action: 'Review proof',
+      onClick: () => navigate('/studio/orders?filter=proof_review'),
+    },
     {
       icon: Truck,
       label: 'Paid-ready',
@@ -528,7 +541,7 @@ const DashboardPage = () => {
         </DashboardSection>
 
         <DashboardSection title="Today priority" subtitle="Queue kerja harian yang paling perlu disentuh dulu.">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
             {todayPriorities.map((item) => {
               const Icon = item.icon;
               return (
@@ -574,9 +587,10 @@ const DashboardPage = () => {
         </DashboardSection>
 
         <DashboardSection title="Admin ops metrics" subtitle="Angka praktis untuk follow-up order, packing, payment expiry, stock, dan aging shipment.">
-          <div className="grid gap-4 lg:grid-cols-5">
+          <div className="grid gap-4 lg:grid-cols-6">
             {[
               ['Pending revenue', formatTotal(pendingRevenue), 'Payment unpaid/pending', 'text-amber-700 bg-amber-50'],
+              ['Proof review', proofReviewOrders.length, 'Bukti transfer submitted', 'text-sky-700 bg-sky-50'],
               ['Paid ready ship', paidReadyOrders.length, 'Paid dan belum shipped', 'text-emerald-700 bg-emerald-50'],
               ['Expired payment', expiredPaymentOrders.length, 'Expired atau melewati TTL', 'text-rose-700 bg-rose-50'],
               ['Low stock', lowStockProducts.length, 'Produk di bawah threshold', 'text-rose-700 bg-rose-50'],

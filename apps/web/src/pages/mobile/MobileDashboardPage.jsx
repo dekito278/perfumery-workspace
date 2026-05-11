@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
+import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -235,6 +235,7 @@ const MobileDashboardPage = () => {
   const missingGuidanceMaterials = useMemo(() => materials.filter((material) => !hasGuidanceCoverage(material)), [materials]);
   const lowStockProducts = useMemo(() => catalogProducts.filter(getProductLowStock), [catalogProducts]);
   const paidReadyOrders = useMemo(() => orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status)), [orders]);
+  const proofReviewOrders = useMemo(() => orders.filter((order) => order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status)), [orders]);
   const paymentFollowUps = useMemo(() => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)), [orders]);
   const shippedFollowUps = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
@@ -319,6 +320,14 @@ const MobileDashboardPage = () => {
               <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
             </div>
             <div className="grid gap-3">
+              <PriorityCard
+                icon={FileCheck2}
+                label="Bukti transfer"
+                title={`${proofReviewOrders.length} bukti perlu dicek`}
+                helper="Approve atau reject dari detail order"
+                tone={proofReviewOrders.length ? 'amber' : 'emerald'}
+                onClick={() => navigate('/mobile/studio/orders?filter=proof_review')}
+              />
               <PriorityCard
                 icon={Truck}
                 label="Paid-ready"

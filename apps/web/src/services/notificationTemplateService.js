@@ -1,6 +1,7 @@
 const notificationEventLabels = {
   order_created: 'Order created',
   paid: 'Paid',
+  payment_proof_rejected: 'Payment proof rejected',
   processing: 'Processing',
   shipped: 'Shipped',
   completed: 'Completed',
@@ -25,6 +26,11 @@ const getCustomerDashboardUrl = (order) => {
 const getInvoiceUrl = (order) => {
   if (typeof window === 'undefined' || !order?.customerCode || !order?.orderNumber) return '';
   return `${window.location.origin}/mobile/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode)}`;
+};
+
+const getManualPaymentUploadUrl = (order) => {
+  if (typeof window === 'undefined' || !order?.orderNumber) return '';
+  return `${window.location.origin}/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`;
 };
 
 const buildGreeting = (order) => `Halo ${order?.customerName || 'Kak'},`;
@@ -53,6 +59,20 @@ const templates = {
     getCustomerDashboardUrl(order),
     '',
     'Terima kasih, order kamu sudah masuk antrean produksi/fulfillment.',
+  ],
+  payment_proof_rejected: (order) => [
+    buildGreeting(order),
+    '',
+    `Bukti transfer untuk order ${order.orderNumber} belum bisa kami validasi.`,
+    order.paymentProofNotes ? `Catatan admin: ${order.paymentProofNotes}` : '',
+    '',
+    'Mohon upload ulang bukti transfer yang jelas lewat link berikut:',
+    getManualPaymentUploadUrl(order),
+    '',
+    `Total order: ${formatTotal(order.subtotal)}`,
+    order.customerCode ? `Customer code: ${order.customerCode}` : '',
+    '',
+    'Status order tetap pending sampai bukti transfer baru kami cek. Terima kasih.',
   ],
   processing: (order) => [
     buildGreeting(order),
