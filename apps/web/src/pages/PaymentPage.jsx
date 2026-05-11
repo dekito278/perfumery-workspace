@@ -412,6 +412,12 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                   ? 'Bukti transfer sudah terkirim. Tunggu admin mengecek pembayaran.'
                   : 'Bukti transfer wajib diupload agar pembayaran manual bisa dicek dan order diproses.'}
               </p>
+              {proofStatus === 'rejected' && session.paymentProofNotes ? (
+                <div className="mt-3 rounded-2xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold leading-relaxed text-rose-800">
+                  <span className="block text-[10px] font-bold uppercase text-rose-700">Alasan admin</span>
+                  {session.paymentProofNotes}
+                </div>
+              ) : null}
               {session.paymentProofFileName ? (
                 <div className="mt-2 truncate rounded-xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
                   {session.paymentProofFileName}

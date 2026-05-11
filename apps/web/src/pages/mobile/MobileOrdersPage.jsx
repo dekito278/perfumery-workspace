@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clipboard, CreditCard, Eye, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
+import { AlertTriangle, Clipboard, CreditCard, Eye, FileCheck2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
@@ -67,6 +67,7 @@ const getPaymentSummary = (orders) => ({
 
 const orderFilterOptions = [
   { value: 'active', label: 'Aktif' },
+  { value: 'proof_review', label: 'Bukti' },
   { value: 'paid', label: 'Paid' },
   { value: 'packing', label: 'Packing' },
   { value: 'shipped', label: 'Shipped' },
@@ -74,7 +75,23 @@ const orderFilterOptions = [
   { value: 'bespoke', label: 'Bespoke' },
 ];
 
+const paymentProofStatusLabels = {
+  missing: 'Belum ada bukti',
+  submitted: 'Bukti perlu dicek',
+  approved: 'Bukti disetujui',
+  rejected: 'Bukti ditolak',
+};
+
+const paymentProofToneByStatus = {
+  missing: 'warning',
+  submitted: 'info',
+  approved: 'success',
+  rejected: 'danger',
+};
+
 const getQuickAction = (order) => {
+  if (order.paymentProofStatus === 'submitted') return 'Cek bukti transfer';
+  if (order.paymentProofStatus === 'rejected') return 'Menunggu upload ulang bukti';
   if (['unpaid', 'pending'].includes(order.paymentStatus)) return 'Follow-up pembayaran';
   if (order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)) return 'Siap packing';
   if (order.shipmentStatus === 'shipped') return 'Follow-up pengiriman';
@@ -90,6 +107,7 @@ const MobileOrdersPage = () => {
   const paymentSummary = getPaymentSummary(orders);
   const lowStockProducts = products.filter(getProductLowStock);
   const filteredOrders = useMemo(() => orders.filter((order) => {
+    if (orderFilter === 'proof_review') return order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status);
     if (orderFilter === 'paid') return order.paymentStatus === 'paid' && !['completed', 'cancelled'].includes(order.status);
     if (orderFilter === 'packing') return order.shipmentStatus === 'packing' && !['completed', 'cancelled'].includes(order.status);
     if (orderFilter === 'shipped') return order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status);
@@ -274,6 +292,11 @@ const MobileOrdersPage = () => {
                   <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
                     {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                   </StatusChip>
+                  {order.paymentProofStatus && order.paymentProofStatus !== 'missing' ? (
+                    <StatusChip size="sm" tone={paymentProofToneByStatus[order.paymentProofStatus] || 'warning'}>
+                      {paymentProofStatusLabels[order.paymentProofStatus] || order.paymentProofStatus}
+                    </StatusChip>
+                  ) : null}
                   {order.inventoryDeducted ? <StatusChip size="sm" tone="success">Stok reserved</StatusChip> : null}
                 </div>
               </div>
@@ -290,6 +313,19 @@ const MobileOrdersPage = () => {
                 <div className="text-[10px] font-bold uppercase text-[#6b7280]">Aksi berikutnya</div>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-[#1f2937]">{getQuickAction(order)}. {nextActionByStatus[order.status] || 'Review order dan update status berikutnya.'}</p>
               </div>
+              {order.paymentProofStatus === 'submitted' ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}
+                  className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-left text-xs font-bold text-sky-700"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <FileCheck2 className="h-4 w-4" />
+                    Bukti transfer perlu dicek
+                  </span>
+                  <Eye className="h-4 w-4" />
+                </button>
+              ) : null}
               <div className="mt-3 rounded-2xl border border-[#e5e7eb] bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

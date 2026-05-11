@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -180,6 +181,8 @@ const OrderDetailPage = () => {
   const [syncingPayment, setSyncingPayment] = useState(false);
   const [paymentProofPreviewUrl, setPaymentProofPreviewUrl] = useState('');
   const [loadingPaymentProof, setLoadingPaymentProof] = useState(false);
+  const [rejectProofOpen, setRejectProofOpen] = useState(false);
+  const [rejectProofNotes, setRejectProofNotes] = useState('');
   const [notificationEvent, setNotificationEvent] = useState('order_created');
   const [internalNotesDraft, setInternalNotesDraft] = useState('');
   const [shipmentDraft, setShipmentDraft] = useState({
@@ -470,15 +473,12 @@ const OrderDetailPage = () => {
     }
   };
 
-  const reviewPaymentProof = async (nextStatus) => {
+  const reviewPaymentProof = async (nextStatus, notes = '') => {
     if (!order?.paymentProofUrl) {
       toast.error('Payment proof file is not available');
       return;
     }
 
-    const notes = nextStatus === 'rejected'
-      ? window.prompt('Catatan penolakan untuk customer:', order.paymentProofNotes || '') || ''
-      : '';
     if (nextStatus === 'rejected' && !notes.trim()) {
       toast.error('Catatan penolakan wajib diisi');
       return;
@@ -491,6 +491,10 @@ const OrderDetailPage = () => {
         notes,
       });
       setOrder(nextOrder || order);
+      if (nextStatus === 'rejected') {
+        setRejectProofOpen(false);
+        setRejectProofNotes('');
+      }
       toast.success(nextStatus === 'approved' ? 'Bukti transfer approved' : 'Bukti transfer rejected');
     } catch (error) {
       toast.error(error.message || 'Failed to review payment proof');
@@ -498,6 +502,17 @@ const OrderDetailPage = () => {
       setSavingPaymentProof(false);
     }
   };
+
+  const openRejectProofDialog = () => {
+    if (!order?.paymentProofUrl) {
+      toast.error('Payment proof file is not available');
+      return;
+    }
+    setRejectProofNotes(order.paymentProofNotes || '');
+    setRejectProofOpen(true);
+  };
+
+  const submitRejectProof = () => reviewPaymentProof('rejected', rejectProofNotes);
 
   const exportShippingLabel = async () => {
     if (!canExportShippingLabel(order)) {
@@ -746,7 +761,7 @@ const OrderDetailPage = () => {
                     {savingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     Approve bukti
                   </Button>
-                  <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-rose-700" onClick={() => reviewPaymentProof('rejected')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'rejected'}>
+                  <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-rose-700" onClick={openRejectProofDialog} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'rejected'}>
                     <AlertCircle className="h-4 w-4" />
                     Reject bukti
                   </Button>
@@ -1030,6 +1045,41 @@ const OrderDetailPage = () => {
           </section>
         </div>
       </div>
+      <Dialog open={rejectProofOpen} onOpenChange={setRejectProofOpen}>
+        <DialogContent className="max-w-xl rounded-[24px] p-6">
+          <DialogHeader>
+            <DialogTitle>Reject bukti transfer</DialogTitle>
+            <DialogDescription className="not-sr-only text-sm text-muted-foreground">
+              Tulis alasan yang jelas untuk customer. Alasan ini akan tampil di halaman payment dan lacak order.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <label htmlFor="reject-proof-notes" className="text-xs font-bold uppercase text-muted-foreground">
+              Alasan penolakan
+            </label>
+            <textarea
+              id="reject-proof-notes"
+              value={rejectProofNotes}
+              onChange={(event) => setRejectProofNotes(event.target.value)}
+              rows={5}
+              className="min-h-32 rounded-2xl border bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+              placeholder="Contoh: Nominal transfer belum sesuai total order. Mohon upload ulang bukti transfer yang benar."
+            />
+            <p className="text-xs font-semibold leading-relaxed text-muted-foreground">
+              Order tetap pending. Customer bisa upload ulang bukti transfer setelah reject.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => setRejectProofOpen(false)} disabled={savingPaymentProof}>
+              Batal
+            </Button>
+            <Button type="button" className="rounded-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={submitRejectProof} disabled={savingPaymentProof || !rejectProofNotes.trim()}>
+              {savingPaymentProof ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-2 h-4 w-4" />}
+              Reject bukti
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AuthenticatedLayout>
   );
 };

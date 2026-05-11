@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Clipboard, CreditCard, Download, ExternalLink, Eye, Loader2, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
+import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -45,10 +45,25 @@ const paymentStatusLabels = {
 
 const orderFilterLabels = {
   all: 'All',
+  proof_review: 'Proof review',
   payment: 'Needs payment',
   packing: 'Ready packing',
   shipped: 'Shipped',
   bespoke: 'Bespoke',
+};
+
+const paymentProofStatusLabels = {
+  missing: 'No proof',
+  submitted: 'Proof submitted',
+  approved: 'Proof approved',
+  rejected: 'Proof rejected',
+};
+
+const paymentProofToneByStatus = {
+  missing: 'warning',
+  submitted: 'info',
+  approved: 'success',
+  rejected: 'danger',
 };
 
 const bespokeDetailRows = (item) => [
@@ -75,6 +90,7 @@ const OrdersPage = () => {
     const query = searchTerm.trim().toLowerCase();
     const shipped = ['shipped', 'delivered'].includes(order.shipmentStatus);
     const matchesFilter = orderFilter === 'all'
+      || (orderFilter === 'proof_review' && order.paymentProofStatus === 'submitted')
       || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus))
       || (orderFilter === 'packing' && order.paymentStatus === 'paid' && !shipped)
       || (orderFilter === 'shipped' && shipped)
@@ -94,6 +110,7 @@ const OrdersPage = () => {
 
   const filterCounts = {
     all: orders.length,
+    proof_review: orders.filter((order) => order.paymentProofStatus === 'submitted').length,
     payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)).length,
     packing: orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length,
     shipped: orders.filter((order) => ['shipped', 'delivered'].includes(order.shipmentStatus)).length,
@@ -206,7 +223,7 @@ const OrdersPage = () => {
                 className="h-11 w-full rounded-2xl border bg-white pl-10 pr-3 text-sm font-semibold outline-none focus:border-amber-300"
               />
             </label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
               {Object.entries(orderFilterLabels).map(([value, label]) => (
                 <Button
                   key={value}
@@ -237,6 +254,11 @@ const OrdersPage = () => {
                       <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
                       <StatusChip icon={CreditCard} tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
                       <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
+                      {order.paymentProofStatus && order.paymentProofStatus !== 'missing' ? (
+                        <StatusChip icon={FileCheck2} tone={paymentProofToneByStatus[order.paymentProofStatus] || 'warning'}>
+                          {paymentProofStatusLabels[order.paymentProofStatus] || order.paymentProofStatus}
+                        </StatusChip>
+                      ) : null}
                       {order.persistence === 'local' ? <StatusChip>Local draft</StatusChip> : null}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}{order.customerCode ? ` / ${order.customerCode}` : ''}</p>
@@ -280,6 +302,22 @@ const OrdersPage = () => {
                         <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-muted-foreground">
                           <ReceiptText className="h-3.5 w-3.5" />
                           Checkout response saved
+                        </span>
+                      ) : null}
+                      {order.paymentProofStatus === 'submitted' ? (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/studio/orders/${order.id || order.orderNumber}`)}
+                          className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-3 py-1 text-sky-700"
+                        >
+                          <FileCheck2 className="h-3.5 w-3.5" />
+                          Bukti perlu dicek
+                        </button>
+                      ) : null}
+                      {order.paymentProofStatus === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+                          <FileCheck2 className="h-3.5 w-3.5" />
+                          Bukti ditolak
                         </span>
                       ) : null}
                       {order.inventoryDeducted ? (
