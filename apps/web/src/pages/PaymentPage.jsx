@@ -319,7 +319,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Transfer manual</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-              Transfer sesuai total bayar ke rekening di bawah. Bukti transfer wajib diupload agar order bisa diproses.
+              Transfer sesuai total bayar ke rekening di bawah, lalu wajib upload bukti transfer di halaman ini. Order baru masuk pengecekan admin setelah bukti transfer terkirim.
             </p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
@@ -375,8 +375,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <div className="text-xs font-bold uppercase">Instruksi</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
-            <li>2. Upload bukti transfer dari form di bawah. Step ini wajib.</li>
-            <li>3. Admin akan update status payment setelah pembayaran dicek.</li>
+            <li>2. Upload bukti transfer lewat form di bawah. Ini wajib untuk pembayaran manual.</li>
+            <li>3. Admin akan cek bukti transfer dan update status payment setelah valid.</li>
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
@@ -390,7 +390,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           {customerCode && needsProofUpload ? (
             <div className="mt-2 flex items-start gap-2 rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              Upload bukti transfer dulu untuk melanjutkan ke tracking order.
+              Bukti transfer wajib dikirim dulu. Setelah upload berhasil, kamu bisa lanjut ke tracking order.
             </div>
           ) : null}
         </div>
@@ -410,7 +410,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                   ? 'Bukti sebelumnya ditolak. Upload ulang bukti transfer yang jelas.'
                   : hasSubmittedProof
                   ? 'Bukti transfer sudah terkirim. Tunggu admin mengecek pembayaran.'
-                  : 'Upload bukti transfer agar order bisa diproses.'}
+                  : 'Bukti transfer wajib diupload agar pembayaran manual bisa dicek dan order diproses.'}
               </p>
               {session.paymentProofFileName ? (
                 <div className="mt-2 truncate rounded-xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
