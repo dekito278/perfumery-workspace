@@ -258,7 +258,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
   const orderNumber = session.orderNumber || session.invoiceNumber;
   const proofStatus = session.paymentProofStatus || 'missing';
-  const hasSubmittedProof = Boolean(session.paymentProofUrl) || ['submitted', 'approved'].includes(proofStatus);
+  const hasSubmittedProof = Boolean(session.paymentProofUrl) && ['submitted', 'approved'].includes(proofStatus);
+  const needsProofUpload = !hasSubmittedProof;
   const transfer = {
     bankName: session.manualTransfer?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: session.manualTransfer?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
@@ -318,7 +319,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Transfer manual</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-              Transfer sesuai total bayar ke rekening di bawah. Admin akan cek dan update status setelah dana masuk.
+              Transfer sesuai total bayar ke rekening di bawah. Bukti transfer wajib diupload agar order bisa diproses.
             </p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
@@ -374,17 +375,23 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <div className="text-xs font-bold uppercase">Instruksi</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
-            <li>2. Upload bukti transfer dari form di bawah.</li>
+            <li>2. Upload bukti transfer dari form di bawah. Step ini wajib.</li>
             <li>3. Admin akan update status payment setelah pembayaran dicek.</li>
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
             Copy total transfer
           </Button>
-          {customerCode ? (
+          {customerCode && hasSubmittedProof ? (
             <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
               Lacak order
             </Link>
+          ) : null}
+          {customerCode && needsProofUpload ? (
+            <div className="mt-2 flex items-start gap-2 rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              Upload bukti transfer dulu untuk melanjutkan ke tracking order.
+            </div>
           ) : null}
         </div>
 
@@ -394,9 +401,14 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               {hasSubmittedProof ? <FileCheck2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold uppercase text-[#6f7d61]">Bukti transfer</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs font-bold uppercase text-[#6f7d61]">Bukti transfer</div>
+                {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">Wajib</span> : null}
+              </div>
               <p className="mt-1 text-sm font-semibold leading-relaxed text-[#263d27]">
-                {hasSubmittedProof
+                {proofStatus === 'rejected'
+                  ? 'Bukti sebelumnya ditolak. Upload ulang bukti transfer yang jelas.'
+                  : hasSubmittedProof
                   ? 'Bukti transfer sudah terkirim. Tunggu admin mengecek pembayaran.'
                   : 'Upload bukti transfer agar order bisa diproses.'}
               </p>
@@ -421,6 +433,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={chooseProofFile}
                 disabled={uploadingProof}
+                required={needsProofUpload}
+                aria-required={needsProofUpload}
                 className="block w-full rounded-2xl border border-[#263d27]/15 bg-[#fbfaf7] px-3 py-2 text-sm font-semibold text-[#263d27] file:mr-3 file:rounded-xl file:border-0 file:bg-[#263d27] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#eef2e8]"
               />
             </label>
@@ -431,7 +445,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             ) : null}
             <Button type="button" className="h-11 rounded-2xl gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
               {uploadingProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {hasSubmittedProof ? 'Upload ulang bukti' : 'Upload bukti transfer'}
+              {hasSubmittedProof ? 'Upload ulang bukti' : 'Upload bukti transfer wajib'}
             </Button>
             <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
               Format JPG, PNG, WebP, atau PDF. Maksimal 5 MB.

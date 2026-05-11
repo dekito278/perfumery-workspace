@@ -356,7 +356,7 @@ const CartPage = () => {
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button type="button" className="h-12 rounded-2xl gap-2 px-5" onClick={() => submitOrder()} disabled={!canSubmitCheckout}><CreditCard className="h-4 w-4" />{saving ? 'Memproses...' : (isManualPayment ? 'Buat order & lihat rekening' : 'Bayar sekarang')}</Button>
+                <Button type="button" className="h-12 rounded-2xl gap-2 px-5" onClick={() => submitOrder()} disabled={!canSubmitCheckout}><CreditCard className="h-4 w-4" />{saving ? 'Memproses...' : (isManualPayment ? 'Buat order & upload bukti' : 'Bayar sekarang')}</Button>
                 <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={clear}>Kosongkan</Button>
               </div>
             </aside>

@@ -8,7 +8,7 @@ export const MANUAL_TRANSFER_PAYMENT = {
   bankName: 'BCA',
   accountNumber: '7401775441',
   accountName: 'Ade Rizki Wiranto',
-  description: 'Transfer sesuai total bayar, lalu admin akan konfirmasi manual.',
+  description: 'Transfer sesuai total bayar, lalu wajib upload bukti transfer.',
 };
 
 export const checkoutPaymentMethods = [

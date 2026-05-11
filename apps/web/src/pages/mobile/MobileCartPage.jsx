@@ -211,7 +211,7 @@ const MobileCartPage = () => {
               ) : null}
               <Button type="button" className="h-12 w-full rounded-2xl gap-2" onClick={() => submitOrder({ onSuccess: () => setCheckoutOpen(false) })} disabled={!canSubmitCheckout}>
                 <CreditCard className="h-4 w-4" />
-                {saving ? 'Memproses...' : (isManualPayment ? 'Buat order & lihat rekening' : 'Bayar sekarang')}
+                {saving ? 'Memproses...' : (isManualPayment ? 'Buat order & upload bukti' : 'Bayar sekarang')}
               </Button>
             </div>
           )}

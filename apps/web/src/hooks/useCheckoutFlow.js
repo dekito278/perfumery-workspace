@@ -410,7 +410,7 @@ export const useCheckoutFlow = ({
         }));
         clearCart();
         setSubmittedOrder(order);
-        toast.success(`Order ${order.orderNumber} saved. Transfer ke ${paymentMethodDetails.bankName} ${paymentMethodDetails.accountNumber}.`);
+        toast.success(`Order ${order.orderNumber} saved. Upload bukti transfer wajib setelah transfer.`);
         onSuccess?.(order);
         navigate(`${paymentPath}?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
