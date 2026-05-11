@@ -252,6 +252,12 @@ const normalizeOrder = (order) => {
     paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
     paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
     paymentResponse: order.doku_response || order.payment_response || order.paymentResponse || {},
+    paymentProofUrl: order.payment_proof_url || order.paymentProofUrl || '',
+    paymentProofFileName: order.payment_proof_file_name || order.paymentProofFileName || '',
+    paymentProofContentType: order.payment_proof_content_type || order.paymentProofContentType || '',
+    paymentProofUploadedAt: order.payment_proof_uploaded_at || order.paymentProofUploadedAt || '',
+    paymentProofStatus: order.payment_proof_status || order.paymentProofStatus || 'missing',
+    paymentProofNotes: order.payment_proof_notes || order.paymentProofNotes || '',
     inventoryDeducted: Boolean(order.inventory_deducted || order.inventoryDeducted),
     inventoryEvents: normalizeInventoryEvents(order.inventory_events || order.inventoryEvents),
     productionLinks: normalizeProductionLinks(order.production_links || order.productionLinks),
@@ -778,6 +784,58 @@ export const getOrderPaymentLogs = async (orderIdOrNumber) => {
   } catch (error) {
     console.warn('Using empty DOKU payment log fallback:', error.message || error);
     return [];
+  }
+};
+
+export const submitOrderPaymentProof = async (orderNumber, {
+  paymentProofUrl,
+  fileName,
+  contentType,
+} = {}) => {
+  const normalizedOrderNumber = String(orderNumber || '').trim();
+  if (!normalizedOrderNumber) {
+    throw new Error('Order number is required');
+  }
+  if (!paymentProofUrl) {
+    throw new Error('Bukti transfer belum diupload');
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_submit_payment_proof', {
+      p_order_number: normalizedOrderNumber,
+      p_payment_proof_url: paymentProofUrl,
+      p_file_name: fileName || '',
+      p_content_type: contentType || '',
+    });
+
+    if (error) throw error;
+
+    const normalizedOrder = normalizeOrder(data || {});
+    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+    return normalizedOrder;
+  } catch (error) {
+    console.warn('Saving payment proof locally:', error.message || error);
+    const uploadedAt = new Date().toISOString();
+    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
+      order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber
+        ? {
+          ...order,
+          paymentProofUrl,
+          paymentProofFileName: fileName || '',
+          paymentProofContentType: contentType || '',
+          paymentProofUploadedAt: uploadedAt,
+          paymentProofStatus: 'submitted',
+          paymentProofNotes: '',
+          updatedAt: uploadedAt,
+        }
+        : order
+    ));
+    writeOrders(nextOrders);
+    const updatedOrder = nextOrders.find((order) => order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber);
+    if (!updatedOrder) {
+      throw new Error(error.message || 'Gagal menyimpan bukti transfer ke order');
+    }
+    return updatedOrder;
   }
 };
 

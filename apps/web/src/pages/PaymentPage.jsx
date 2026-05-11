@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { getOrderById } from '@/services/orderService.js';
+import { getOrderById, submitOrderPaymentProof } from '@/services/orderService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
+import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -84,6 +85,12 @@ const buildManualTransferFromOrder = (order) => ({
   customerName: order.customerName,
   paymentStatus: order.paymentStatus,
   paymentReference: order.paymentReference,
+  paymentProofUrl: order.paymentProofUrl,
+  paymentProofFileName: order.paymentProofFileName,
+  paymentProofContentType: order.paymentProofContentType,
+  paymentProofUploadedAt: order.paymentProofUploadedAt,
+  paymentProofStatus: order.paymentProofStatus,
+  paymentProofNotes: order.paymentProofNotes,
   manualTransfer: {
     bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
@@ -244,9 +251,14 @@ const PaymentFrame = ({ session, compact = false }) => {
   );
 };
 
-const ManualTransferPanel = ({ session, compact = false }) => {
+const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => {
+  const [proofFile, setProofFile] = useState(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
   const customerCode = session.customerCode || '';
   const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+  const orderNumber = session.orderNumber || session.invoiceNumber;
+  const proofStatus = session.paymentProofStatus || 'missing';
+  const hasSubmittedProof = Boolean(session.paymentProofUrl) || ['submitted', 'approved'].includes(proofStatus);
   const transfer = {
     bankName: session.manualTransfer?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: session.manualTransfer?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
@@ -257,6 +269,45 @@ const ManualTransferPanel = ({ session, compact = false }) => {
     if (!value) return;
     await navigator.clipboard.writeText(String(value));
     toast.success(`${label} copied`);
+  };
+
+  const chooseProofFile = (event) => {
+    const [file] = Array.from(event.target.files || []);
+    setProofFile(file || null);
+  };
+
+  const submitProof = async () => {
+    if (!proofFile) {
+      toast.error('Pilih file bukti transfer dulu');
+      return;
+    }
+
+    setUploadingProof(true);
+    try {
+      const uploadedProof = await uploadPaymentProof({ file: proofFile, orderNumber });
+      const updatedOrder = await submitOrderPaymentProof(orderNumber, {
+        paymentProofUrl: uploadedProof.paymentProofUrl,
+        fileName: uploadedProof.fileName,
+        contentType: uploadedProof.contentType,
+      });
+      const nextSession = {
+        ...session,
+        paymentProofUrl: updatedOrder.paymentProofUrl || uploadedProof.paymentProofUrl,
+        paymentProofFileName: updatedOrder.paymentProofFileName || uploadedProof.fileName,
+        paymentProofContentType: updatedOrder.paymentProofContentType || uploadedProof.contentType,
+        paymentProofUploadedAt: updatedOrder.paymentProofUploadedAt || uploadedProof.uploadedAt,
+        paymentProofStatus: updatedOrder.paymentProofStatus || 'submitted',
+        paymentProofNotes: updatedOrder.paymentProofNotes || '',
+      };
+      sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(nextSession));
+      onProofSubmitted?.(nextSession);
+      setProofFile(null);
+      toast.success('Bukti transfer terkirim. Admin akan cek pembayaran.');
+    } catch (error) {
+      toast.error(error.message || 'Gagal upload bukti transfer');
+    } finally {
+      setUploadingProof(false);
+    }
   };
 
   return (
@@ -323,7 +374,7 @@ const ManualTransferPanel = ({ session, compact = false }) => {
           <div className="text-xs font-bold uppercase">Instruksi</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
-            <li>2. Simpan bukti transfer.</li>
+            <li>2. Upload bukti transfer dari form di bawah.</li>
             <li>3. Admin akan update status payment setelah pembayaran dicek.</li>
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
@@ -335,6 +386,57 @@ const ManualTransferPanel = ({ session, compact = false }) => {
               Lacak order
             </Link>
           ) : null}
+        </div>
+
+        <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+          <div className="flex items-start gap-3">
+            <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${hasSubmittedProof ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+              {hasSubmittedProof ? <FileCheck2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold uppercase text-[#6f7d61]">Bukti transfer</div>
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-[#263d27]">
+                {hasSubmittedProof
+                  ? 'Bukti transfer sudah terkirim. Tunggu admin mengecek pembayaran.'
+                  : 'Upload bukti transfer agar order bisa diproses.'}
+              </p>
+              {session.paymentProofFileName ? (
+                <div className="mt-2 truncate rounded-xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
+                  {session.paymentProofFileName}
+                </div>
+              ) : null}
+              {session.paymentProofUploadedAt ? (
+                <div className="mt-1 text-[11px] font-semibold text-[#6f7d61]">
+                  Dikirim {formatDateTime(session.paymentProofUploadedAt)}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3">
+            <label className="block">
+              <span className="sr-only">Upload bukti transfer</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={chooseProofFile}
+                disabled={uploadingProof}
+                className="block w-full rounded-2xl border border-[#263d27]/15 bg-[#fbfaf7] px-3 py-2 text-sm font-semibold text-[#263d27] file:mr-3 file:rounded-xl file:border-0 file:bg-[#263d27] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#eef2e8]"
+              />
+            </label>
+            {proofFile ? (
+              <div className="truncate text-xs font-semibold text-[#6f7d61]">
+                {proofFile.name}
+              </div>
+            ) : null}
+            <Button type="button" className="h-11 rounded-2xl gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
+              {uploadingProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {hasSubmittedProof ? 'Upload ulang bukti' : 'Upload bukti transfer'}
+            </Button>
+            <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+              Format JPG, PNG, WebP, atau PDF. Maksimal 5 MB.
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -422,6 +524,12 @@ const PaymentPageContent = ({ isMobile }) => {
           paymentStatus: order.paymentStatus,
           paymentExpiresAt: order.paymentExpiresAt,
           paymentSessionId: order.paymentSessionId,
+          paymentProofUrl: order.paymentProofUrl,
+          paymentProofFileName: order.paymentProofFileName,
+          paymentProofContentType: order.paymentProofContentType,
+          paymentProofUploadedAt: order.paymentProofUploadedAt,
+          paymentProofStatus: order.paymentProofStatus,
+          paymentProofNotes: order.paymentProofNotes,
           createdAt: order.createdAt,
         };
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(restoredSession));
@@ -464,7 +572,7 @@ const PaymentPageContent = ({ isMobile }) => {
             action={<CreditCard className="h-5 w-5 text-amber-700" />}
           />
           {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
-            <ManualTransferPanel session={session} compact />
+            <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
           ) : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </main>
       </MobileCommerceLayout>
@@ -488,7 +596,7 @@ const PaymentPageContent = ({ isMobile }) => {
         </section>
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
-            <ManualTransferPanel session={session} />
+            <ManualTransferPanel session={session} onProofSubmitted={setSession} />
           ) : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </section>
       </main>
