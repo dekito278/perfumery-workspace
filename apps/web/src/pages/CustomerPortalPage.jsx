@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, ExternalLink, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CreditCard, ExternalLink, FileCheck2, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
@@ -37,6 +37,18 @@ const paymentStatusLabels = {
   failed: 'Gagal',
   expired: 'Kedaluwarsa',
   refunded: 'Refund',
+};
+const paymentProofStatusLabels = {
+  missing: 'Belum upload bukti',
+  submitted: 'Bukti terkirim',
+  approved: 'Bukti disetujui',
+  rejected: 'Bukti ditolak',
+};
+const paymentProofToneByStatus = {
+  missing: 'warning',
+  submitted: 'info',
+  approved: 'success',
+  rejected: 'danger',
 };
 
 const progressSteps = [
@@ -93,6 +105,57 @@ const ShipmentBadge = ({ status }) => (
     {shipmentStatusLabels[status] || status || 'Belum dikirim'}
   </StatusChip>
 );
+
+const PaymentProofBadge = ({ status }) => (
+  <StatusChip icon={status === 'missing' ? Upload : FileCheck2} tone={paymentProofToneByStatus[status] || 'warning'}>
+    {paymentProofStatusLabels[status] || status || paymentProofStatusLabels.missing}
+  </StatusChip>
+);
+
+const PaymentProofPanel = ({ order, compact = false }) => {
+  if (!isManualTransferPayment(order.paymentProvider)) return null;
+
+  const status = order.paymentProofStatus || 'missing';
+  const submitted = Boolean(order.paymentProofUrl) && ['submitted', 'approved'].includes(status);
+  const rejected = status === 'rejected';
+  const message = rejected
+    ? 'Bukti transfer ditolak. Upload ulang bukti transfer dari halaman pembayaran.'
+    : submitted
+      ? 'Bukti transfer sudah terkirim dan sedang/selesai dicek admin.'
+      : 'Bukti transfer belum diupload. Order manual baru diproses setelah bukti terkirim.';
+
+  return (
+    <div className={`mt-3 rounded-2xl border ${rejected || !submitted ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-100 bg-emerald-50 text-emerald-900'} ${compact ? 'p-3' : 'p-4'}`}>
+      <div className="flex items-start gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${submitted ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-amber-700'}`}>
+          {submitted ? <FileCheck2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-xs font-bold uppercase">Bukti transfer</div>
+            <PaymentProofBadge status={status} />
+          </div>
+          <p className="mt-1 text-xs font-semibold leading-relaxed">{message}</p>
+          {order.paymentProofFileName ? (
+            <div className="mt-2 truncate rounded-xl bg-white/75 px-3 py-2 text-xs font-bold">
+              {order.paymentProofFileName}
+            </div>
+          ) : null}
+          {order.paymentProofUploadedAt ? (
+            <div className="mt-1 text-[11px] font-semibold opacity-80">
+              Dikirim {formatDate(order.paymentProofUploadedAt)}
+            </div>
+          ) : null}
+          {order.paymentProofNotes ? (
+            <div className="mt-2 rounded-xl bg-white/75 px-3 py-2 text-xs font-semibold">
+              Catatan admin: {order.paymentProofNotes}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const OrderTimeline = ({ order, compact = false }) => {
   const activeStep = getActiveStep(order.status);
@@ -530,6 +593,7 @@ const CustomerPortalPage = () => {
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <StatusBadge status={order.status} />
                             <PaymentBadge status={order.paymentStatus} />
+                            {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
                             {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                           </div>
                         </div>
@@ -544,6 +608,7 @@ const CustomerPortalPage = () => {
                       </div>
                       <BespokeDetailPanel item={bespokeItem} compact />
                       <BespokeProductionPanel order={order} compact />
+                      <PaymentProofPanel order={order} compact />
                       <ShipmentPanel order={order} compact />
                       <Link to={invoicePath(order.orderNumber)} className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white text-xs font-bold text-[#263d27]">
                         <FileText className="h-4 w-4" />
@@ -771,6 +836,7 @@ const CustomerPortalPage = () => {
                                 <h3 className="text-lg font-bold">{order.orderNumber}</h3>
                                 <StatusBadge status={order.status} />
                                 <PaymentBadge status={order.paymentStatus} />
+                                {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
                                 {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                               </div>
                               <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)}</p>
@@ -786,6 +852,7 @@ const CustomerPortalPage = () => {
                             <OrderItems order={order} />
                             {bespoke ? <BespokeDetailPanel item={bespokeItem} /> : null}
                             <BespokeProductionPanel order={order} />
+                            <PaymentProofPanel order={order} />
                             <ShipmentPanel order={order} />
                             <Link to={invoicePath(order.orderNumber)} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
                               <FileText className="h-4 w-4" />

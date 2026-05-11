@@ -38,6 +38,12 @@ const normalizePortalOrder = (order = {}) => ({
   paymentExpiresAt: order.payment_expires_at || order.paymentExpiresAt || '',
   paymentSessionId: order.payment_session_id || order.paymentSessionId || '',
   paymentResponse: order.doku_response || order.payment_response || order.paymentResponse || {},
+  paymentProofUrl: order.payment_proof_url || order.paymentProofUrl || '',
+  paymentProofFileName: order.payment_proof_file_name || order.paymentProofFileName || '',
+  paymentProofContentType: order.payment_proof_content_type || order.paymentProofContentType || '',
+  paymentProofUploadedAt: order.payment_proof_uploaded_at || order.paymentProofUploadedAt || '',
+  paymentProofStatus: order.payment_proof_status || order.paymentProofStatus || 'missing',
+  paymentProofNotes: order.payment_proof_notes || order.paymentProofNotes || '',
   source: order.source || 'storefront',
   bespokeProductionStatus: order.bespoke_production_status || order.bespokeProductionStatus || '',
   bespokeProductionTimeline: Array.isArray(order.bespoke_production_timeline || order.bespokeProductionTimeline)
