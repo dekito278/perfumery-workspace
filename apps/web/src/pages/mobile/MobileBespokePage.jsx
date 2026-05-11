@@ -488,13 +488,9 @@ const MobileBespokePage = () => {
           onOpenChange={setWizardOpen}
           title={activeStep.title}
           description={`Step ${step + 1} of ${steps.length}. ${activeStep.description}`}
-        >
-          <div>
-            <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
-              <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
-            </div>
-            {activeStep.render()}
-            <div className="mt-5 grid grid-cols-2 gap-2">
+          variant="fullscreen"
+          footer={(
+            <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
                 Back
               </Button>
@@ -507,6 +503,13 @@ const MobileBespokePage = () => {
                 <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
               )}
             </div>
+          )}
+        >
+          <div>
+            <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+            </div>
+            {activeStep.render()}
           </div>
         </MobileBottomSheet>
       </main>
