@@ -1,71 +1,81 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { cn } from '@/lib/utils.js';
 
 const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
+const MIN_KEYBOARD_MODAL_HEIGHT = 260;
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 const MobileFullScreenModal = ({ open, title, children, footer, onClose, hideFooterOnInputFocus = true }) => {
   const modalRef = useRef(null);
-  const pageScrollRef = useRef(0);
   const [inputFocused, setInputFocused] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
 
+    const html = document.documentElement;
     const body = document.body;
     const previousStyles = {
+      htmlOverscrollBehavior: html.style.overscrollBehavior,
       overflow: body.style.overflow,
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
     };
-    pageScrollRef.current = window.scrollY || window.pageYOffset || 0;
 
+    html.style.overscrollBehavior = 'none';
     body.style.overflow = 'hidden';
-    body.style.position = 'fixed';
-    body.style.top = `-${pageScrollRef.current}px`;
-    body.style.left = '0';
-    body.style.right = '0';
-    body.style.width = '100%';
 
     return () => {
+      html.style.overscrollBehavior = previousStyles.htmlOverscrollBehavior;
       body.style.overflow = previousStyles.overflow;
-      body.style.position = previousStyles.position;
-      body.style.top = previousStyles.top;
-      body.style.left = previousStyles.left;
-      body.style.right = previousStyles.right;
-      body.style.width = previousStyles.width;
-      window.scrollTo(0, pageScrollRef.current);
     };
   }, [open]);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!open) return undefined;
 
     const modal = modalRef.current;
     if (!modal) return undefined;
+    let frameId = 0;
+    const settleTimers = [];
 
     const updateViewportMetrics = () => {
-      const viewport = window.visualViewport;
-      const height = viewport?.height || window.innerHeight;
-      const offsetTop = viewport?.offsetTop || 0;
-      const availableHeight = Math.max(360, height - offsetTop);
-      modal.style.setProperty('--mobile-fullscreen-modal-height', `${availableHeight}px`);
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        const viewport = window.visualViewport;
+        const layoutHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+        const visualHeight = viewport?.height || window.innerHeight || layoutHeight;
+        const offsetTop = viewport?.offsetTop || 0;
+        const keyboardOffset = Math.max(0, layoutHeight - visualHeight - offsetTop);
+        const visibleHeight = Math.min(layoutHeight, visualHeight + offsetTop);
+        const availableHeight = Math.max(MIN_KEYBOARD_MODAL_HEIGHT, visibleHeight);
+
+        modal.style.setProperty('--mobile-fullscreen-modal-height', `${availableHeight}px`);
+        modal.style.setProperty('--mobile-fullscreen-modal-bottom', `${keyboardOffset}px`);
+      });
     };
 
-    updateViewportMetrics();
+    const scheduleSettledUpdates = () => {
+      updateViewportMetrics();
+      [80, 180, 320].forEach((delay) => {
+        settleTimers.push(window.setTimeout(updateViewportMetrics, delay));
+      });
+    };
+
+    scheduleSettledUpdates();
     window.visualViewport?.addEventListener('resize', updateViewportMetrics);
     window.visualViewport?.addEventListener('scroll', updateViewportMetrics);
     window.addEventListener('resize', updateViewportMetrics);
+    window.addEventListener('orientationchange', scheduleSettledUpdates);
 
     return () => {
+      window.cancelAnimationFrame(frameId);
+      settleTimers.forEach((timerId) => window.clearTimeout(timerId));
       window.visualViewport?.removeEventListener('resize', updateViewportMetrics);
       window.visualViewport?.removeEventListener('scroll', updateViewportMetrics);
       window.removeEventListener('resize', updateViewportMetrics);
+      window.removeEventListener('orientationchange', scheduleSettledUpdates);
       modal.style.removeProperty('--mobile-fullscreen-modal-height');
+      modal.style.removeProperty('--mobile-fullscreen-modal-bottom');
     };
   }, [open]);
 

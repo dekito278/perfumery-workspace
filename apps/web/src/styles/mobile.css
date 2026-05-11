@@ -511,12 +511,15 @@
 
 .mobile-bottom-sheet-content {
   display: flex;
+  bottom: var(--mobile-bottom-sheet-keyboard-offset, 0px);
   max-height: min(86dvh, 720px);
   max-height: min(86svh, 720px);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   background: #f7f8f2;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateZ(0);
+  will-change: bottom, height, max-height;
 }
 
 .mobile-bottom-sheet-fullscreen {
@@ -527,6 +530,7 @@
 .mobile-bottom-sheet-keyboard-active {
   max-height: var(--mobile-bottom-sheet-available-height, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
   padding-bottom: 0;
+  transition: none;
 }
 
 .mobile-bottom-sheet-fullscreen.mobile-bottom-sheet-keyboard-active {
@@ -586,6 +590,7 @@
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   scroll-padding-bottom: 28px;
+  scrollbar-gutter: stable;
 }
 
 .mobile-bottom-sheet-scroll-with-footer {
@@ -605,12 +610,15 @@
 }
 
 .mobile-fullscreen-modal {
+  bottom: var(--mobile-fullscreen-modal-bottom, 0px);
   height: var(--mobile-fullscreen-modal-height, 100dvh);
   min-height: var(--mobile-fullscreen-modal-height, 100dvh);
   max-height: var(--mobile-fullscreen-modal-height, 100dvh);
   overflow: hidden;
   padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px calc(env(safe-area-inset-bottom, 0px) + 16px);
   background: #f7f8f2;
+  transform: translateZ(0);
+  will-change: bottom, height;
 }
 
 .mobile-fullscreen-modal-keyboard-active {
