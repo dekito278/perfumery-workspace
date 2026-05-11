@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
+import { cn } from '@/lib/utils.js';
 
 const ResetPasswordPage = ({ mobile = false }) => {
   const navigate = useNavigate();
@@ -15,9 +17,10 @@ const ResetPasswordPage = ({ mobile = false }) => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const keyboardActive = useMobileKeyboardState();
   const loginPath = mobile ? '/mobile/login' : '/login';
   const shellClassName = mobile
-    ? 'mobile-app min-h-screen px-4 py-6'
+    ? cn('mobile-app min-h-screen px-4 py-6', keyboardActive && 'mobile-keyboard-active')
     : 'min-h-screen bg-background flex items-center justify-center p-4';
   const cardClassName = mobile
     ? 'mobile-soft-card p-5'

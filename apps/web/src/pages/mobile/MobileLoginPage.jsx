@@ -7,11 +7,14 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
+import { cn } from '@/lib/utils.js';
 
 const MobileLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cancelMfaChallenge, login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const keyboardActive = useMobileKeyboardState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authenticatorCode, setAuthenticatorCode] = useState('');
@@ -90,11 +93,11 @@ const MobileLoginPage = () => {
   };
 
   return (
-    <div className="mobile-app min-h-[100dvh] px-4 py-6">
+    <div className={cn('mobile-app min-h-[100dvh] px-4 py-6', keyboardActive && 'mobile-keyboard-active')}>
       <Helmet>
         <title>Mobile Login - Solivagant</title>
       </Helmet>
-      <div className="mobile-page flex min-h-[calc(100dvh-48px)] flex-col justify-center">
+      <div className={cn('mobile-page flex min-h-[calc(100dvh-48px)] flex-col justify-center', keyboardActive && 'min-h-0 justify-start pt-6')}>
         <div className="mobile-soft-card p-5">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <Beaker className="h-6 w-6" />

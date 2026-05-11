@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Beaker, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
 import { cn } from '@/lib/utils.js';
 
 const commerceNavItems = [
@@ -16,6 +17,7 @@ const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const keyboardActive = useMobileKeyboardState();
   const ownerTapRef = useRef({ count: 0, lastTapAt: 0 });
 
   const openOwnerAccess = () => {
@@ -33,7 +35,7 @@ const MobileCommerceLayout = ({ children }) => {
   };
 
   return (
-    <div className="mobile-app">
+    <div className={cn('mobile-app', keyboardActive && 'mobile-keyboard-active')}>
       <div className="mobile-app-shell">
         <header className="mobile-commerce-header">
           <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand" aria-label="Solivagant owner access">

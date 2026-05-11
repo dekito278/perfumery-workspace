@@ -63,6 +63,16 @@
   }
 }
 
+.mobile-app.mobile-keyboard-active .mobile-bottom-nav,
+.mobile-app.mobile-keyboard-active .mobile-fab,
+.mobile-app.mobile-keyboard-active .mobile-studio-floating-link,
+.mobile-app.mobile-keyboard-active .mobile-fixed-action,
+.mobile-app.mobile-keyboard-active .mobile-pwa-install {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+}
+
 .mobile-app * {
   letter-spacing: 0;
 }
@@ -140,6 +150,13 @@
   overscroll-behavior-y: contain;
   padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 82px);
+}
+
+.mobile-app.mobile-keyboard-active .mobile-app-shell,
+.pwa-standalone .mobile-app.mobile-keyboard-active .mobile-app-shell {
+  min-height: var(--mobile-visual-viewport-height, 100dvh);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  scroll-padding-bottom: 24px;
 }
 
 .mobile-page {
