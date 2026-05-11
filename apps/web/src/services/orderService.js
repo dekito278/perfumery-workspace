@@ -861,6 +861,10 @@ export const reviewOrderPaymentProof = async (orderId, {
     payment_proof_status: nextStatus,
     payment_proof_notes: normalizedNotes || null,
     payment_proof_uploaded_at: currentOrder.paymentProofUploadedAt || reviewedAt,
+    ...(nextStatus === 'rejected' ? {
+      payment_status: 'pending',
+      status: 'pending_payment',
+    } : {}),
   };
   const proofAudit = {
     action: 'payment_proof_reviewed',
@@ -873,8 +877,8 @@ export const reviewOrderPaymentProof = async (orderId, {
       paymentProofNotes: currentOrder.paymentProofNotes || '',
     },
     nextValues: {
-      paymentStatus: nextStatus === 'approved' ? 'paid' : currentOrder.paymentStatus || '',
-      status: nextStatus === 'approved' ? 'paid' : currentOrder.status || '',
+      paymentStatus: nextStatus === 'approved' ? 'paid' : nextStatus === 'rejected' ? 'pending' : currentOrder.paymentStatus || '',
+      status: nextStatus === 'approved' ? 'paid' : nextStatus === 'rejected' ? 'pending_payment' : currentOrder.status || '',
       paymentProofStatus: nextStatus,
       paymentProofNotes: normalizedNotes,
     },
@@ -919,6 +923,10 @@ export const reviewOrderPaymentProof = async (orderId, {
           ...(nextStatus === 'approved' ? {
             paymentStatus: 'paid',
             status: 'paid',
+          } : {}),
+          ...(nextStatus === 'rejected' ? {
+            paymentStatus: 'pending',
+            status: 'pending_payment',
           } : {}),
           updatedAt: reviewedAt,
         }
