@@ -31,7 +31,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
   return (
     <div className={cn('space-y-3', className)}>
       <div className="relative">
-        <ProductVisual product={previewProduct} className={visualClassName} priority={priority} sizes="(max-width: 767px) 100vw, 520px" />
+        <ProductVisual product={previewProduct} className={visualClassName || 'aspect-square'} priority={priority} sizes="(max-width: 767px) 100vw, 520px" />
         {hasMultipleImages ? (
           <>
             <button

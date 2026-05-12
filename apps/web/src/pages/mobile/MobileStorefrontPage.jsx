@@ -9,7 +9,6 @@ import {
   UserRound,
   WandSparkles,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -17,22 +16,10 @@ import {
   perfumerProfile,
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useMobileRenderSectionMonitor } from '@/hooks/useMobileRenderSectionMonitor.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-};
+import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 
 const mobileNotes = [
   { icon: Sparkles, label: 'Luxury' },
@@ -45,7 +32,7 @@ const mobileHomeAssets = {
   perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
 };
 
-const MobileStorefrontPage = () => {
+export const MobileStorefrontContent = ({ active = true }) => {
   const navigate = useNavigate();
   const catalogProducts = useCatalogProducts();
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
@@ -53,41 +40,54 @@ const MobileStorefrontPage = () => {
   const homeProducts = products.filter((product) => product.featured).slice(0, 3);
   const productsLoading = Boolean(catalogProducts.loading);
   const hasProducts = products.length > 0;
+  const handleStaticImageError = (source) => {
+    logMobileRenderIssue('image-load-failed', {
+      source,
+    }, {
+      throttleKey: `image-load-failed:${source}`,
+    });
+  };
+
+  useMobileRenderSectionMonitor({
+    active,
+    loading: productsLoading,
+    section: 'mobile-home-featured-products',
+    visibleCount: homeProducts.length,
+    expectedCount: products.length,
+    reason: products.length ? 'no-featured-products' : 'no-products',
+  });
 
   return (
-    <MobileCommerceLayout>
+    <>
+      {active ? (
       <Helmet>
         <title>Solivagant - Home</title>
         <meta name="description" content="Solivagant storefront with featured perfumes, scent categories, and bespoke perfume consultation." />
       </Helmet>
+      ) : null}
       <main className="mobile-page space-y-4">
-        <motion.section
-          variants={stagger}
-          initial="hidden"
-          animate="visible"
-          className="mobile-soft-card overflow-hidden border-[#263d27]/14 bg-[linear-gradient(145deg,#fbfaf4,#eef4eb_58%,#f7efe3)] shadow-xl shadow-[#263d27]/8"
-        >
+        <section className="mobile-soft-card overflow-hidden border-[#263d27]/14 bg-[linear-gradient(145deg,#fbfaf4,#eef4eb_58%,#f7efe3)] shadow-xl shadow-[#263d27]/8">
           <div className="p-4">
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/12 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase text-[#263d27] shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/12 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase text-[#263d27] shadow-sm">
               <UserRound className="h-3.5 w-3.5" />
               {perfumerProfile.name} / Perfumer
-            </motion.div>
-            <motion.h2 variants={fadeUp} className="mt-3 text-[28px] font-bold leading-none text-[#0b130c]">
+            </div>
+            <h2 className="mt-3 text-[28px] font-bold leading-none text-[#0b130c]">
               Signature perfume, made personal.
-            </motion.h2>
-            <motion.p variants={fadeUp} className="mt-3 text-sm font-medium leading-relaxed text-[#526351]">
+            </h2>
+            <p className="mt-3 text-sm font-medium leading-relaxed text-[#526351]">
               {perfumerProfile.intro}
-            </motion.p>
-            <motion.div variants={fadeUp} className="mt-4 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-white/74">
-              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="420" />
+            </p>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-white/74">
+              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="420" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
               <div className="p-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Meet the perfumer</p>
                 <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
                 <p className="mt-1 text-[11px] font-bold text-[#263d27]">{perfumerProfile.title}</p>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#667264]">{perfumerProfile.experienceSummary}</p>
               </div>
-            </motion.div>
-            <motion.div variants={fadeUp} className="mt-3 grid grid-cols-3 gap-2">
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
               {mobileNotes.map((note) => {
                 const Icon = note.icon;
 
@@ -98,38 +98,33 @@ const MobileStorefrontPage = () => {
                   </div>
                 );
               })}
-            </motion.div>
-            <motion.div variants={fadeUp} className="mt-4 grid grid-cols-2 gap-2">
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <Button className="rounded-2xl shadow-lg shadow-[#263d27]/18" onClick={() => navigate('/mobile/catalog')}>
                 Shop
               </Button>
               <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/bespoke')}>
                 Bespoke
               </Button>
-            </motion.div>
+            </div>
           </div>
-        </motion.section>
+        </section>
 
-        <motion.section
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="mobile-card overflow-hidden bg-[#050705] text-[#eef2e8] shadow-xl shadow-[#263d27]/14"
-        >
-          <div className="relative min-h-[220px]">
-            <img src={mobileHomeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" width="640" height="360" />
+        <section className="mobile-card overflow-hidden bg-[#050705] text-[#eef2e8] shadow-xl shadow-[#263d27]/14">
+          <div className="relative aspect-[16/9] min-h-[220px]">
+            <img src={mobileHomeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" width="640" height="360" onError={() => handleStaticImageError('home-raw-material-library')} />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.08),rgba(5,7,5,0.82))]" />
             <div className="absolute inset-x-0 bottom-0 p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#c6d5bf]">Inside the atelier</p>
               <h2 className="mt-2 text-xl font-bold leading-tight">Real raw materials, real studio work.</h2>
             </div>
           </div>
-        </motion.section>
+        </section>
 
         {!hasProducts ? (
-          <motion.section variants={fadeUp} initial="hidden" animate="visible" className="mobile-card overflow-hidden">
+          <section className="mobile-card overflow-hidden">
             <div className="bg-[linear-gradient(145deg,#050705,#111a11)] p-4 text-[#eef2e8]">
-              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-14 w-40 rounded-2xl object-contain" loading="lazy" decoding="async" width="160" height="56" />
+              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-14 w-40 rounded-2xl object-contain" loading="lazy" decoding="async" width="160" height="56" onError={() => handleStaticImageError('solivagant-logo')} />
               <div className="mt-5 h-px w-20 bg-[#8d7a4f]" />
               <h2 className="mt-4 text-xl font-bold leading-tight">{productsLoading ? 'Memuat koleksi parfum.' : 'Private scent atelier is being prepared.'}</h2>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
@@ -150,14 +145,14 @@ const MobileStorefrontPage = () => {
               </Button>
             </div>
             ) : null}
-          </motion.section>
+          </section>
         ) : null}
 
         {categories.length ? (
-        <motion.section variants={stagger} initial="hidden" animate="visible" className="mobile-family-strip">
+        <section className="mobile-family-strip">
           <div className="mobile-segment-scroll flex gap-5 overflow-x-auto px-1 pb-2 pr-4">
             {categories.slice(0, 8).map((category) => (
-              <motion.div key={category.name} variants={fadeUp} className="shrink-0">
+              <div key={category.name} className="shrink-0">
                 <button
                   type="button"
                   onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)}
@@ -165,21 +160,21 @@ const MobileStorefrontPage = () => {
                 >
                   {category.name}
                 </button>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.section>
+        </section>
         ) : null}
 
         {homeProducts.length ? (
-        <motion.section variants={stagger} initial="hidden" animate="visible" id="mobile-products" className="space-y-3 scroll-mt-4">
+        <section id="mobile-products" className="space-y-3 scroll-mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Featured products</h2>
             <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/catalog')}>View all</Button>
           </div>
           <div className="grid grid-cols-2 gap-3">
           {homeProducts.map((product, index) => (
-            <motion.article key={product.id} variants={fadeUp} className="mobile-card min-w-0 overflow-hidden p-2 shadow-sm shadow-[#263d27]/6">
+            <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2 shadow-sm shadow-[#263d27]/6">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
                 <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} />
                 <div className="mt-2">
@@ -193,12 +188,20 @@ const MobileStorefrontPage = () => {
                   </div>
                 </div>
               </button>
-            </motion.article>
+            </article>
           ))}
           </div>
-        </motion.section>
+        </section>
         ) : null}
       </main>
+    </>
+  );
+};
+
+const MobileStorefrontPage = () => {
+  return (
+    <MobileCommerceLayout>
+      <MobileStorefrontContent />
     </MobileCommerceLayout>
   );
 };

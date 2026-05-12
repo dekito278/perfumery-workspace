@@ -6,6 +6,9 @@ const TARGET_IMAGE_SIZE_BYTES = 250 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
 const MIN_IMAGE_DIMENSION = 760;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const PRODUCT_STORAGE_PUBLIC_PATH = `/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`;
+const PRODUCT_STORAGE_RENDER_PATH = `/storage/v1/render/image/public/${PRODUCT_IMAGES_BUCKET}/`;
+const PRODUCT_IMAGE_WIDTHS = [240, 360, 520, 720];
 
 const canvasToBlob = (canvas, type, quality) => new Promise((resolve, reject) => {
   canvas.toBlob((blob) => {
@@ -24,6 +27,44 @@ const sanitizeName = (value) => String(value || 'product')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
   || 'product';
+
+export const getOptimizedProductImageUrl = (imageUrl, width = 520) => {
+  const sourceUrl = String(imageUrl || '').trim();
+  if (!sourceUrl) return '';
+
+  try {
+    const url = new URL(sourceUrl);
+    if (!url.pathname.includes(PRODUCT_STORAGE_PUBLIC_PATH)) {
+      return sourceUrl;
+    }
+
+    url.pathname = url.pathname.replace(PRODUCT_STORAGE_PUBLIC_PATH, PRODUCT_STORAGE_RENDER_PATH);
+    url.searchParams.set('width', String(width));
+    url.searchParams.set('quality', '76');
+    url.searchParams.set('resize', 'cover');
+    return url.toString();
+  } catch {
+    return sourceUrl;
+  }
+};
+
+export const getProductImageSrcSet = (imageUrl) => {
+  const sourceUrl = String(imageUrl || '').trim();
+  if (!sourceUrl) return undefined;
+
+  try {
+    const url = new URL(sourceUrl);
+    if (!url.pathname.includes(PRODUCT_STORAGE_PUBLIC_PATH)) {
+      return undefined;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return PRODUCT_IMAGE_WIDTHS
+    .map((width) => `${getOptimizedProductImageUrl(sourceUrl, width)} ${width}w`)
+    .join(', ');
+};
 
 export const validateProductImageFile = (file) => {
   if (!file) {

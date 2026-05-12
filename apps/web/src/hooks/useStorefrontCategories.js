@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   buildCategoryFromProductName,
   getLocalStorefrontCategories,
-  getStorefrontCategories,
+  prefetchStorefrontCategories,
   STOREFRONT_CATEGORY_UPDATED_EVENT,
 } from '@/services/storefrontCategoryService.js';
 
@@ -38,25 +38,26 @@ export const useStorefrontCategories = (products = []) => {
   useEffect(() => {
     let isMounted = true;
 
-    const syncCategories = async () => {
+    const syncCategories = async ({ force = false } = {}) => {
       setLoading(true);
-      const nextCategories = await getStorefrontCategories();
+      const nextCategories = await prefetchStorefrontCategories({ force });
       if (isMounted) {
         setManagedCategories(nextCategories);
         setLoading(false);
       }
     };
+    const refreshCategories = () => syncCategories({ force: true });
 
-    window.addEventListener('storage', syncCategories);
-    window.addEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, syncCategories);
-    window.addEventListener('dekito:products-updated', syncCategories);
+    window.addEventListener('storage', refreshCategories);
+    window.addEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, refreshCategories);
+    window.addEventListener('dekito:products-updated', refreshCategories);
     syncCategories();
 
     return () => {
       isMounted = false;
-      window.removeEventListener('storage', syncCategories);
-      window.removeEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, syncCategories);
-      window.removeEventListener('dekito:products-updated', syncCategories);
+      window.removeEventListener('storage', refreshCategories);
+      window.removeEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, refreshCategories);
+      window.removeEventListener('dekito:products-updated', refreshCategories);
     };
   }, []);
 

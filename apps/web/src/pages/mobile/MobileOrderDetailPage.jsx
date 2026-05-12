@@ -34,6 +34,7 @@ import {
 } from '@/services/notificationTemplateService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
+import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -742,8 +743,21 @@ const MobileOrderDetailPage = () => {
               {order.paymentProofNotes ? <span>Catatan: {order.paymentProofNotes}</span> : null}
             </div>
             {paymentProofPreviewUrl && paymentProofIsImage ? (
-              <button type="button" onClick={openPaymentProof} className="mt-3 block overflow-hidden rounded-2xl border bg-white text-left">
-                <img src={paymentProofPreviewUrl} alt={`Bukti transfer ${order.orderNumber}`} className="max-h-64 w-full object-contain" />
+              <button type="button" onClick={openPaymentProof} className="mt-3 block aspect-[4/3] w-full overflow-hidden rounded-2xl border bg-white text-left">
+                <img
+                  src={paymentProofPreviewUrl}
+                  alt={`Bukti transfer ${order.orderNumber}`}
+                  className="h-full w-full object-contain"
+                  loading="lazy"
+                  decoding="async"
+                  width="640"
+                  height="480"
+                  onError={() => logMobileRenderIssue('image-load-failed', {
+                    source: 'payment-proof-preview',
+                    orderId: order.id,
+                    orderNumber: order.orderNumber,
+                  })}
+                />
               </button>
             ) : null}
             {paymentProofPreviewUrl && !paymentProofIsImage ? (

@@ -1,6 +1,8 @@
 import supabase from '@/lib/supabaseClient.js';
+import { beginMobileFetchMonitor } from '@/utils/mobileRenderMonitoring.js';
 
 export const STOREFRONT_CATEGORY_STORAGE_KEY = 'dekito.storefront.categories.v1';
+export const STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY = 'dekito.storefront.categories.lastValid.v1';
 export const STOREFRONT_CATEGORY_UPDATED_EVENT = 'dekito:storefront-categories-updated';
 
 const ACCENT_CLASSES = [
@@ -74,10 +76,42 @@ const readStoredCategories = () => {
   }
 };
 
+const readLastValidCategories = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const value = window.localStorage.getItem(STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : null;
+    const categories = Array.isArray(parsed?.categories) ? parsed.categories : parsed;
+    return Array.isArray(categories) ? categories.map(mapCategory) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 const writeStoredCategories = (categories) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(STOREFRONT_CATEGORY_STORAGE_KEY, JSON.stringify(categories));
   window.dispatchEvent(new CustomEvent(STOREFRONT_CATEGORY_UPDATED_EVENT));
+};
+
+const cacheLastValidCategories = (categories) => {
+  if (typeof window === 'undefined' || !Array.isArray(categories) || categories.length === 0) return;
+  window.localStorage.setItem(STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY, JSON.stringify({
+    cachedAt: new Date().toISOString(),
+    categories,
+  }));
+};
+
+const withTimeout = (promise, timeoutMs, timeoutMessage) => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
 };
 
 export const dispatchStorefrontCategoryUpdate = () => {
@@ -86,25 +120,73 @@ export const dispatchStorefrontCategoryUpdate = () => {
   }
 };
 
-export const getLocalStorefrontCategories = () => [...defaultScentFamilies(), ...readStoredCategories()];
+export const getLocalStorefrontCategories = () => {
+  const storedCategories = readStoredCategories();
+  const lastValidCategories = readLastValidCategories();
+  return [...defaultScentFamilies(), ...(storedCategories.length ? storedCategories : lastValidCategories)];
+};
 
-export const getStorefrontCategories = async () => {
+const PREFETCH_CACHE_TTL_MS = 30000;
+
+let storefrontCategoriesRequest = null;
+let storefrontCategoriesWarmCache = null;
+let storefrontCategoriesWarmCacheAt = 0;
+
+export const getStorefrontCategories = async ({ useLastValidFallback = true, timeoutMs = 5000 } = {}) => {
+  const fetchMonitor = beginMobileFetchMonitor('storefront-categories', {
+    thresholdMs: 2200,
+    metadata: { timeoutMs },
+  });
+
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('storefront_product_categories')
       .select('*')
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
 
+    const { data, error } = typeof window === 'undefined'
+      ? await query
+      : await withTimeout(query, timeoutMs, 'Storefront categories request timed out');
+
     if (error) {
       throw error;
     }
 
-    return [...defaultScentFamilies(), ...(data || []).map(mapCategory)];
+    const categories = (data || []).map(mapCategory);
+    cacheLastValidCategories(categories);
+    const nextCategories = [...defaultScentFamilies(), ...categories];
+    fetchMonitor.finish('success', { count: nextCategories.length });
+    return nextCategories;
   } catch (error) {
     console.warn('Using local storefront categories fallback:', error.message || error);
-    return getLocalStorefrontCategories();
+    const fallbackCategories = useLastValidFallback ? readLastValidCategories() : [];
+    const nextCategories = [...defaultScentFamilies(), ...(fallbackCategories.length ? fallbackCategories : readStoredCategories())];
+    fetchMonitor.finish('fallback', {
+      count: nextCategories.length,
+      error: error.message || String(error),
+    });
+    return nextCategories;
   }
+};
+
+export const prefetchStorefrontCategories = ({ force = false } = {}) => {
+  const cacheIsFresh = storefrontCategoriesWarmCache && Date.now() - storefrontCategoriesWarmCacheAt < PREFETCH_CACHE_TTL_MS;
+  if (!force && cacheIsFresh) {
+    return Promise.resolve(storefrontCategoriesWarmCache);
+  }
+
+  if (!storefrontCategoriesRequest || force) {
+    storefrontCategoriesRequest = getStorefrontCategories({ useLastValidFallback: true, timeoutMs: 4200 }).then((categories) => {
+      storefrontCategoriesWarmCache = categories;
+      storefrontCategoriesWarmCacheAt = Date.now();
+      return categories;
+    }).finally(() => {
+      storefrontCategoriesRequest = null;
+    });
+  }
+
+  return storefrontCategoriesRequest;
 };
 
 export const saveStorefrontCategory = async (input) => {

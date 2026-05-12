@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils.js';
+import {
+  getOptimizedProductImageUrl,
+  getProductImageSrcSet,
+} from '@/services/productImageStorageService.js';
+import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 
 const fallbackGradients = [
   'linear-gradient(135deg,#f5d78f 0%,#f8efe1 52%,#d7b98b 100%)',
@@ -16,6 +21,8 @@ const getFallbackGradient = (product) => {
   return fallbackGradients[index];
 };
 
+const loadedProductImages = new Set();
+
 const ProductVisual = ({
   product,
   className = '',
@@ -27,12 +34,14 @@ const ProductVisual = ({
   const [imageFailed, setImageFailed] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const imageUrl = String(product?.images?.[0] || product?.imageUrl || '').trim();
+  const optimizedImageUrl = getOptimizedProductImageUrl(imageUrl, priority ? 720 : 520);
+  const imageSrcSet = getProductImageSrcSet(imageUrl);
   const hasImage = Boolean(imageUrl) && !imageFailed;
   void bottleClassName;
 
   useEffect(() => {
     setImageFailed(false);
-    setImageLoaded(false);
+    setImageLoaded(Boolean(imageUrl && loadedProductImages.has(imageUrl)));
   }, [imageUrl]);
 
   return (
@@ -45,7 +54,7 @@ const ProductVisual = ({
         <img
           src="/brand/solivagant-logo.png"
           alt={product?.name ? `${product.name} by Solivagant` : 'Solivagant'}
-          className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-300', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
+          className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-150', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
           width="320"
@@ -57,17 +66,31 @@ const ProductVisual = ({
       ) : null}
       {hasImage ? (
         <img
-          src={imageUrl}
+          src={optimizedImageUrl}
           alt={product?.name || 'Solivagant product'}
-          className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0')}
+          className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-150', imageLoaded ? 'opacity-100' : 'opacity-0')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          srcSet={imageSrcSet}
           sizes={sizes}
           width="640"
           height="640"
           referrerPolicy="no-referrer"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageFailed(true)}
+          onLoad={() => {
+            loadedProductImages.add(imageUrl);
+            setImageLoaded(true);
+          }}
+          onError={() => {
+            logMobileRenderIssue('image-load-failed', {
+              source: 'product-visual',
+              productId: product?.id,
+              productName: product?.name,
+              imageUrl,
+            }, {
+              throttleKey: `image-load-failed:${imageUrl}`,
+            });
+            setImageFailed(true);
+          }}
         />
       ) : (
         <>

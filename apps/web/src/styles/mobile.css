@@ -327,16 +327,42 @@
 
 .mobile-catalog-card {
   content-visibility: auto;
-  contain-intrinsic-size: 310px 178px;
+  contain-intrinsic-size: 330px 178px;
+  height: 100%;
 }
 
 .mobile-catalog-card button {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
   min-height: 0;
 }
 
 .mobile-catalog-visual {
+  flex: none;
   background-color: #263d27;
   transform: translateZ(0);
+}
+
+.mobile-catalog-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #edf1e8;
+}
+
+.mobile-catalog-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  animation: mobile-catalog-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes mobile-catalog-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .mobile-loading-state {
@@ -367,6 +393,49 @@
   50% {
     transform: scale(1.03);
     box-shadow: 0 22px 48px -26px rgba(24, 47, 27, 0.72);
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-card,
+  .mobile-soft-card {
+    transition-duration: 90ms;
+  }
+
+  .mobile-app button,
+  .mobile-app a,
+  .mobile-bottom-nav a,
+  .mobile-bottom-nav button,
+  .mobile-family-link::after {
+    transition-duration: 80ms;
+  }
+
+  .mobile-app .scroll-reveal,
+  .mobile-app .scroll-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .mobile-app .mobile-catalog-visual .animate-pulse {
+    animation: none;
+  }
+
+  .mobile-catalog-skeleton::after {
+    animation-duration: 1.8s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-app *,
+  .mobile-app *::before,
+  .mobile-app *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .mobile-app .scroll-reveal,
+  .mobile-app .scroll-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

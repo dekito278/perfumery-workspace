@@ -43,8 +43,7 @@ const BatchProductionPage = lazy(() => import('@/pages/BatchProductionPage.jsx')
 const ProductionCostPage = lazy(() => import('@/pages/ProductionCostPage.jsx'));
 const ValidationLogPage = lazy(() => import('@/pages/ValidationLogPage.jsx'));
 const MobileLoginPage = lazy(() => import('@/pages/mobile/MobileLoginPage.jsx'));
-const MobileStorefrontPage = lazy(() => import('@/pages/mobile/MobileStorefrontPage.jsx'));
-const MobileCatalogPage = lazy(() => import('@/pages/mobile/MobileCatalogPage.jsx'));
+const MobileCommerceTabsPage = lazy(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
 const MobileProductDetailPage = lazy(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
 const MobileBespokePage = lazy(() => import('@/pages/mobile/MobileBespokePage.jsx'));
 const MobileCartPage = lazy(() => import('@/pages/mobile/MobileCartPage.jsx'));
@@ -155,9 +154,9 @@ function AppRoutes() {
           <Navigate to="/mobile/dashboard" replace />
         } />
 
-        <Route path="/mobile/dashboard" element={<MobileStorefrontPage />} />
+        <Route path="/mobile/dashboard" element={<MobileCommerceTabsPage />} />
 
-        <Route path="/mobile/catalog" element={<MobileCatalogPage />} />
+        <Route path="/mobile/catalog" element={<MobileCommerceTabsPage />} />
 
         <Route path="/mobile/products/:slug" element={<MobileProductDetailPage />} />
 

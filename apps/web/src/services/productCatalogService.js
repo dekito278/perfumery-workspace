@@ -1,7 +1,9 @@
 import { featuredProducts } from '@/data/storefront.js';
 import supabase from '@/lib/supabaseClient.js';
+import { beginMobileFetchMonitor } from '@/utils/mobileRenderMonitoring.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
+export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
 export const PRODUCT_DRAFT_TAG = 'Studio draft';
 export const PRODUCT_BATCH_TAG_PREFIX = 'Batch key:';
 export const PRODUCT_BATCH_ID_TAG_PREFIX = 'Batch ID:';
@@ -519,29 +521,77 @@ const readStoredProducts = () => {
   }
 };
 
+const readLastValidProducts = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const value = window.localStorage.getItem(PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY);
+    const parsed = value ? JSON.parse(value) : null;
+    const products = Array.isArray(parsed?.products) ? parsed.products : parsed;
+    return Array.isArray(products) ? products : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 const writeStoredProducts = (products) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(PRODUCT_CATALOG_STORAGE_KEY, JSON.stringify(products));
   window.dispatchEvent(new CustomEvent('dekito:products-updated'));
 };
 
-const cacheFetchedProducts = (products) => {
-  if (typeof window === 'undefined' || !Array.isArray(products)) return;
-  window.localStorage.setItem(PRODUCT_CATALOG_STORAGE_KEY, JSON.stringify(products));
+const cacheLastValidProducts = (products) => {
+  if (typeof window === 'undefined' || !Array.isArray(products) || products.length === 0) return;
+  window.localStorage.setItem(PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY, JSON.stringify({
+    cachedAt: new Date().toISOString(),
+    products,
+  }));
 };
 
+const cacheFetchedProducts = (products) => {
+  if (typeof window === 'undefined' || !Array.isArray(products) || products.length === 0) return;
+  window.localStorage.setItem(PRODUCT_CATALOG_STORAGE_KEY, JSON.stringify(products));
+  cacheLastValidProducts(products);
+};
+
+const withTimeout = (promise, timeoutMs, timeoutMessage) => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+};
+
+const PREFETCH_CACHE_TTL_MS = 30000;
+
+let catalogProductsRequest = null;
+let catalogProductsWarmCache = null;
+let catalogProductsWarmCacheAt = 0;
+
 export const getCatalogProducts = () => {
-  return readStoredProducts();
+  return readStoredProducts().length ? readStoredProducts() : readLastValidProducts();
 };
 
 export const getLocalCatalogProducts = () => getCatalogProducts();
 
-export const getEditableProducts = async () => {
+export const getEditableProducts = async ({ useLastValidFallback = true, timeoutMs = 5000 } = {}) => {
+  const fetchMonitor = beginMobileFetchMonitor('storefront-products', {
+    thresholdMs: 2200,
+    metadata: { timeoutMs },
+  });
+
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('storefront_products')
       .select('*')
       .order('created_at', { ascending: false });
+
+    const { data, error } = typeof window === 'undefined'
+      ? await query
+      : await withTimeout(query, timeoutMs, 'Storefront products request timed out');
 
     if (error) {
       throw error;
@@ -549,16 +599,42 @@ export const getEditableProducts = async () => {
 
     const products = (data || []).map(fromDatabaseRow);
     cacheFetchedProducts(products);
+    fetchMonitor.finish('success', { count: products.length });
     return products;
   } catch (error) {
     console.warn('Using local storefront products fallback:', error.message || error);
-    return readStoredProducts();
+    const fallbackProducts = useLastValidFallback ? readLastValidProducts() : [];
+    const products = fallbackProducts.length ? fallbackProducts : readStoredProducts();
+    fetchMonitor.finish('fallback', {
+      count: products.length,
+      error: error.message || String(error),
+    });
+    return products;
   }
 };
 
 export const getCatalogProductsAsync = async () => {
-  const editableProducts = await getEditableProducts();
+  const editableProducts = await getEditableProducts({ useLastValidFallback: true, timeoutMs: 4200 });
   return editableProducts;
+};
+
+export const prefetchCatalogProducts = ({ force = false } = {}) => {
+  const cacheIsFresh = catalogProductsWarmCache && Date.now() - catalogProductsWarmCacheAt < PREFETCH_CACHE_TTL_MS;
+  if (!force && cacheIsFresh) {
+    return Promise.resolve(catalogProductsWarmCache);
+  }
+
+  if (!catalogProductsRequest || force) {
+    catalogProductsRequest = getCatalogProductsAsync().then((products) => {
+      catalogProductsWarmCache = products;
+      catalogProductsWarmCacheAt = Date.now();
+      return products;
+    }).finally(() => {
+      catalogProductsRequest = null;
+    });
+  }
+
+  return catalogProductsRequest;
 };
 
 const saveLocalCustomProduct = (input) => {

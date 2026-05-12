@@ -2,12 +2,13 @@ import React, { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Beaker, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useMobileCommercePrefetch } from '@/hooks/useMobileCommercePrefetch.js';
 import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
 import { cn } from '@/lib/utils.js';
 
 const commerceNavItems = [
-  { path: '/mobile/dashboard', label: 'Home', icon: Home },
-  { path: '/mobile/catalog', label: 'Shop', icon: Search, aliases: ['/mobile/products'] },
+  { path: '/mobile/dashboard', label: 'Home', icon: Home, keepAlive: true },
+  { path: '/mobile/catalog', label: 'Shop', icon: Search, aliases: ['/mobile/products'], keepAlive: true },
   { path: '/mobile/bespoke', label: 'Bespoke', icon: MessageCircle },
   { path: '/mobile/cart', label: 'Cart', icon: ShoppingBag },
   { path: '/mobile/customer', label: 'Cek Order', icon: UserRound },
@@ -19,6 +20,7 @@ const MobileCommerceLayout = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const keyboardActive = useMobileKeyboardState();
   const ownerTapRef = useRef({ count: 0, lastTapAt: 0 });
+  useMobileCommercePrefetch();
 
   const openOwnerAccess = () => {
     const now = Date.now();
@@ -72,6 +74,7 @@ const MobileCommerceLayout = ({ children }) => {
             <Link
               key={item.path}
               to={item.path}
+              state={item.keepAlive ? { restoreScroll: true } : undefined}
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'flex h-[52px] flex-col items-center justify-center gap-0.5 rounded-[14px] text-[9.5px] font-bold transition',

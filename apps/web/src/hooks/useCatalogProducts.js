@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
-  getCatalogProductsAsync,
   getEditableProducts,
   getLocalCatalogProducts,
+  prefetchCatalogProducts,
 } from '@/services/productCatalogService.js';
 
 export const useCatalogProducts = ({ editableOnly = false } = {}) => {
@@ -11,23 +11,26 @@ export const useCatalogProducts = ({ editableOnly = false } = {}) => {
 
   useEffect(() => {
     let isMounted = true;
-    const syncProducts = async () => {
+    const syncProducts = async ({ force = false } = {}) => {
       setLoading(true);
-      const nextProducts = editableOnly ? await getEditableProducts() : await getCatalogProductsAsync();
+      const nextProducts = editableOnly
+        ? await getEditableProducts({ useLastValidFallback: false, timeoutMs: 8000 })
+        : await prefetchCatalogProducts({ force });
       if (isMounted) {
         setProducts(nextProducts);
         setLoading(false);
       }
     };
+    const refreshProducts = () => syncProducts({ force: true });
 
-    window.addEventListener('storage', syncProducts);
-    window.addEventListener('dekito:products-updated', syncProducts);
+    window.addEventListener('storage', refreshProducts);
+    window.addEventListener('dekito:products-updated', refreshProducts);
     syncProducts();
 
     return () => {
       isMounted = false;
-      window.removeEventListener('storage', syncProducts);
-      window.removeEventListener('dekito:products-updated', syncProducts);
+      window.removeEventListener('storage', refreshProducts);
+      window.removeEventListener('dekito:products-updated', refreshProducts);
     };
   }, [editableOnly]);
 
