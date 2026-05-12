@@ -22,6 +22,7 @@ const ProductVisual = ({
   bottleClassName = '',
   label = true,
   priority = false,
+  sizes = '(max-width: 767px) 46vw, 320px',
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -45,10 +46,15 @@ const ProductVisual = ({
           src="/brand/solivagant-logo.png"
           alt={product?.name ? `${product.name} by Solivagant` : 'Solivagant'}
           className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-300', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
-          loading="eager"
+          loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          width="320"
+          height="128"
         />
       </div>
+      {hasImage && !imageLoaded ? (
+        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.05),rgba(255,255,255,0.24),rgba(255,255,255,0.05))]" />
+      ) : null}
       {hasImage ? (
         <img
           src={imageUrl}
@@ -56,6 +62,10 @@ const ProductVisual = ({
           className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          fetchPriority={priority ? 'high' : 'low'}
+          sizes={sizes}
+          width="640"
+          height="640"
           referrerPolicy="no-referrer"
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageFailed(true)}

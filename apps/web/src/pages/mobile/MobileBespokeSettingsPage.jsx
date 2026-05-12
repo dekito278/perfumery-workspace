@@ -161,7 +161,7 @@ const MobileBespokeSettingsPage = () => {
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               {form.imageUrl ? (
                 <div className="relative overflow-hidden rounded-2xl border bg-white">
-                  <img src={form.imageUrl} alt={form.label || 'Bespoke option'} className="h-36 w-full object-cover" />
+                  <img src={form.imageUrl} alt={form.label || 'Bespoke option'} className="h-36 w-full object-cover" loading="lazy" decoding="async" fetchPriority="low" width="360" height="144" />
                   <button type="button" onClick={() => updateField('imageUrl', '')} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove option image">
                     <ImageOff className="h-4 w-4" />
                   </button>
@@ -200,7 +200,7 @@ const MobileBespokeSettingsPage = () => {
           {options.map((option) => (
             <article key={option.id} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
-                {option.imageUrl ? <img src={option.imageUrl} alt={option.label} className="h-16 w-16 shrink-0 rounded-2xl object-cover" /> : null}
+                {option.imageUrl ? <img src={option.imageUrl} alt={option.label} className="h-16 w-16 shrink-0 rounded-2xl object-cover" loading="lazy" decoding="async" fetchPriority="low" width="64" height="64" /> : null}
                 <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-bold text-[#1f2937]">{option.label}</h3>
                   <p className="mt-1 text-xs font-semibold leading-snug text-[#6b7280]">{option.description || '-'}</p>

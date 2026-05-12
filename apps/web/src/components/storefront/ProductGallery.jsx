@@ -31,7 +31,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
   return (
     <div className={cn('space-y-3', className)}>
       <div className="relative">
-        <ProductVisual product={previewProduct} className={visualClassName} priority={priority} />
+        <ProductVisual product={previewProduct} className={visualClassName} priority={priority} sizes="(max-width: 767px) 100vw, 520px" />
         {hasMultipleImages ? (
           <>
             <button
@@ -77,7 +77,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
               )}
               aria-label={`Select product image ${index + 1}`}
             >
-              <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+              <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" fetchPriority="low" width="96" height="96" />
             </button>
           ))}
         </div>

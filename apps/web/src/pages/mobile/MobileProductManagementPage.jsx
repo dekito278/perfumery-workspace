@@ -437,7 +437,7 @@ const MobileProductManagementPage = () => {
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {form.images.map((image) => (
                     <div key={image} className="relative overflow-hidden rounded-2xl border bg-white">
-                      <img src={image} alt="" className="h-14 w-full object-cover" />
+                      <img src={image} alt="" className="h-14 w-full object-cover" loading="lazy" decoding="async" fetchPriority="low" width="120" height="56" />
                       <button type="button" onClick={() => removeImage(image)} className="absolute right-1 top-1 grid h-7 w-7 min-h-0 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove image">
                         <ImageOff className="h-3.5 w-3.5" />
                       </button>

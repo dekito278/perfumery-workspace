@@ -79,7 +79,7 @@ const MobileStorefrontPage = () => {
               {perfumerProfile.intro}
             </motion.p>
             <motion.div variants={fadeUp} className="mt-4 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-white/74">
-              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" loading="eager" decoding="async" />
+              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" loading="eager" decoding="async" fetchPriority="high" width="640" height="420" />
               <div className="p-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Meet the perfumer</p>
                 <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
@@ -117,7 +117,7 @@ const MobileStorefrontPage = () => {
           className="mobile-card overflow-hidden bg-[#050705] text-[#eef2e8] shadow-xl shadow-[#263d27]/14"
         >
           <div className="relative min-h-[220px]">
-            <img src={mobileHomeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" />
+            <img src={mobileHomeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" fetchPriority="low" width="640" height="360" />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.08),rgba(5,7,5,0.82))]" />
             <div className="absolute inset-x-0 bottom-0 p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#c6d5bf]">Inside the atelier</p>
@@ -129,7 +129,7 @@ const MobileStorefrontPage = () => {
         {!hasProducts ? (
           <motion.section variants={fadeUp} initial="hidden" animate="visible" className="mobile-card overflow-hidden">
             <div className="bg-[linear-gradient(145deg,#050705,#111a11)] p-4 text-[#eef2e8]">
-              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-14 w-40 rounded-2xl object-contain" loading="lazy" decoding="async" />
+              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-14 w-40 rounded-2xl object-contain" loading="lazy" decoding="async" fetchPriority="low" width="160" height="56" />
               <div className="mt-5 h-px w-20 bg-[#8d7a4f]" />
               <h2 className="mt-4 text-xl font-bold leading-tight">{productsLoading ? 'Memuat koleksi parfum.' : 'Private scent atelier is being prepared.'}</h2>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
@@ -181,7 +181,7 @@ const MobileStorefrontPage = () => {
           {homeProducts.map((product, index) => (
             <motion.article key={product.id} variants={fadeUp} className="mobile-card min-w-0 overflow-hidden p-2 shadow-sm shadow-[#263d27]/6">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 2} />
+                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} />
                 <div className="mt-2">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>

@@ -189,7 +189,7 @@ const MobileCatalogPage = () => {
           {filteredProducts.map((product, index) => (
             <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 4} />
+                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 2} />
                 <div className="mt-2 flex min-h-[174px] flex-col">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>

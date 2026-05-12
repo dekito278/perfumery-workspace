@@ -30,7 +30,7 @@ const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
         : 'border-[#e5e7eb] bg-white text-[#6b7280]'
     )}
   >
-    {imageUrl ? <img src={imageUrl} alt="" className="-mx-1 mb-2 h-24 w-[calc(100%+0.5rem)] rounded-xl object-cover" /> : null}
+    {imageUrl ? <img src={imageUrl} alt="" className="-mx-1 mb-2 h-24 w-[calc(100%+0.5rem)] rounded-xl object-cover" loading="lazy" decoding="async" fetchPriority="low" width="220" height="120" /> : null}
     {children}
   </button>
 );
@@ -44,7 +44,7 @@ const CapMockup = ({ cap, bottle, label }) => {
   if (visualImage) {
     return (
       <div className="relative h-32 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
-        <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Bespoke option'} className="h-full w-full object-cover" />
+        <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Bespoke option'} className="h-full w-full object-cover" loading="lazy" decoding="async" fetchPriority="low" width="360" height="224" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-3">
           <div className="flex flex-wrap gap-1">
             {[bottle?.label, cap?.label, label?.label].filter(Boolean).map((item) => (
