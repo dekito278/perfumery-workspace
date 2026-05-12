@@ -27,6 +27,14 @@ const ScrollRevealEffects = () => {
   const location = useLocation();
 
   useEffect(() => {
+    if (location.pathname.startsWith('/mobile')) {
+      document.querySelectorAll('.scroll-reveal').forEach((element) => {
+        element.classList.remove('scroll-reveal', 'is-visible');
+        element.style.removeProperty('--reveal-delay');
+      });
+      return undefined;
+    }
+
     if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
       return undefined;
     }

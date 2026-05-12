@@ -62,7 +62,6 @@ const ProductVisual = ({
           className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-300', imageLoaded ? 'opacity-100' : 'opacity-0')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          fetchPriority={priority ? 'high' : 'low'}
           sizes={sizes}
           width="640"
           height="640"

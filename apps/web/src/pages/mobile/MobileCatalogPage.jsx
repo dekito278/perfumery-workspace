@@ -1,14 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpDown, PackagePlus, Search, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { catalogSortOptions } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { cn } from '@/lib/utils.js';
+import { getVisibleItems, MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 import {
   formatRupiah,
   getProductLowStock,
@@ -16,6 +18,7 @@ import {
   isProductVisibleInStorefront,
 } from '@/services/productCatalogService.js';
 
+const MOBILE_CATALOG_PAGE_SIZE = MOBILE_PAGE_SIZE * 2;
 const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 const shopTypeOptions = [
   { name: 'All', filter: 'all' },
@@ -40,6 +43,7 @@ const MobileCatalogPage = () => {
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
+  const [visibleCount, setVisibleCount] = useState(MOBILE_CATALOG_PAGE_SIZE);
   const catalogProducts = useCatalogProducts();
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
@@ -69,6 +73,11 @@ const MobileCatalogPage = () => {
 
     return sortProducts(matchingProducts, sort);
   }, [category, products, query, segment, sort]);
+  const visibleProducts = useMemo(() => getVisibleItems(filteredProducts, visibleCount), [filteredProducts, visibleCount]);
+
+  useEffect(() => {
+    setVisibleCount(MOBILE_CATALOG_PAGE_SIZE);
+  }, [category, query, segment, sort]);
 
   const updateFilters = (next) => {
     const updated = {
@@ -185,44 +194,60 @@ const MobileCatalogPage = () => {
         </section>
         ) : null}
 
-        <section className="grid grid-cols-2 gap-3">
-          {filteredProducts.map((product, index) => (
-            <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2">
+        <section className="grid grid-cols-2 gap-2.5">
+          {visibleProducts.map((product, index) => (
+            <article key={product.id} className="mobile-card mobile-catalog-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index < 2} />
-                <div className="mt-2 flex min-h-[174px] flex-col">
+                <ProductVisual
+                  product={product}
+                  className="aspect-square rounded-xl mobile-catalog-visual"
+                  bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]"
+                  label={false}
+                  priority={index < 2}
+                  sizes="(max-width: 448px) 44vw, 198px"
+                />
+                <div className="mt-2 flex min-h-[146px] flex-col">
                   <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>
-                    <p className="mobile-line-clamp-2 mt-1 text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
+                    <h3 className="mobile-line-clamp-2 min-h-[34px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
+                    <p className="mobile-line-clamp-2 mt-1 min-h-[29px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <div>
+                  <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5">
+                    <div className="min-w-0">
                       {product.compareAtPriceNumber > product.priceNumber ? <div className="text-[10px] font-bold text-[#9ca3af] line-through">{formatRupiah(product.compareAtPriceNumber)}</div> : null}
-                      <div className="text-xs font-bold text-[#0b130c]">{product.price}</div>
+                      <div className="truncate text-xs font-bold text-[#0b130c]">{product.price}</div>
                     </div>
-                    <div className={cn('rounded-full px-2 py-1 text-[10px] font-bold', getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'text-[#8b949e]')}>
+                    <div className={cn('max-w-[64px] rounded-full px-2 py-1 text-center text-[9px] font-bold leading-tight', getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'text-[#8b949e]')}>
                       {product.stock > 0 ? `${product.stock} tersisa` : 'Habis'}
                     </div>
                   </div>
                   <div className="mt-auto pt-2">
-                  <div className="flex flex-wrap gap-1">
-                    {product.variants.slice(0, 3).map((variant) => (
-                      <span key={variant.id || variant.size} className="rounded-full bg-[#eef2e8] px-2 py-1 text-[10px] font-bold text-[#263d27]">{variant.size}</span>
-                    ))}
-                  </div>
-                  {getProductLowStock(product) ? <div className="mt-2 text-[10px] font-bold uppercase text-rose-700">Mau habis</div> : null}
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {getVisibleProductTags(product).slice(0, 2).map((tag) => (
-                      <span key={tag} className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[10px] font-bold uppercase text-[#6b7280]">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                    <div className="flex min-h-[22px] flex-wrap gap-1">
+                      {product.variants.slice(0, 2).map((variant) => (
+                        <span key={variant.id || variant.size} className="max-w-full truncate rounded-full bg-[#eef2e8] px-2 py-1 text-[9px] font-bold text-[#263d27]">{variant.size}</span>
+                      ))}
+                    </div>
+                    {getProductLowStock(product) ? <div className="mt-2 text-[10px] font-bold uppercase text-rose-700">Mau habis</div> : null}
+                    <div className="mt-2 flex min-h-[21px] flex-wrap gap-1">
+                      {getVisibleProductTags(product).slice(0, 1).map((tag) => (
+                        <span key={tag} className="max-w-full truncate rounded-full bg-[#f3f4f6] px-2 py-1 text-[9px] font-bold uppercase text-[#6b7280]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </button>
             </article>
           ))}
+          {visibleProducts.length < filteredProducts.length ? (
+            <div className="col-span-2">
+              <PaginationOrLoadMore
+                visibleCount={visibleProducts.length}
+                totalCount={filteredProducts.length}
+                onLoadMore={() => setVisibleCount((current) => current + MOBILE_CATALOG_PAGE_SIZE)}
+              />
+            </div>
+          ) : null}
           {!filteredProducts.length ? (
             <div className="mobile-card col-span-2 overflow-hidden text-center">
               <div className="bg-[#050705] p-5 text-[#eef2e8]">

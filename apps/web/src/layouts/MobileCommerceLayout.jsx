@@ -39,7 +39,7 @@ const MobileCommerceLayout = ({ children }) => {
       <div className="mobile-app-shell">
         <header className="mobile-commerce-header">
           <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand" aria-label="Solivagant owner access">
-            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mobile-commerce-brand-logo" loading="eager" decoding="async" fetchPriority="high" width="238" height="68" />
+            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mobile-commerce-brand-logo" loading="eager" decoding="async" width="238" height="68" />
           </button>
           <div className="flex shrink-0 items-center gap-2">
             <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">

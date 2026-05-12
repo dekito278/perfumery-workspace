@@ -325,6 +325,20 @@
   box-shadow: 0 14px 32px -30px rgba(24, 47, 27, 0.42);
 }
 
+.mobile-catalog-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 310px 178px;
+}
+
+.mobile-catalog-card button {
+  min-height: 0;
+}
+
+.mobile-catalog-visual {
+  background-color: #263d27;
+  transform: translateZ(0);
+}
+
 .mobile-loading-state {
   width: min(100%, 330px);
   padding: 28px 22px;
