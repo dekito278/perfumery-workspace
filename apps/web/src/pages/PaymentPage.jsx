@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
-import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, updateOrderPaymentStatus } from '@/services/orderService.js';
+import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 
@@ -98,6 +98,27 @@ const buildManualTransferFromOrder = (order) => ({
     amount: order.subtotal,
   },
   createdAt: order.createdAt,
+});
+
+const buildDokuSessionFromCheckout = (order, checkout) => ({
+  paymentType: 'doku',
+  paymentProvider: 'doku',
+  paymentUrl: checkout.paymentUrl,
+  invoiceNumber: checkout.invoiceNumber || order.orderNumber,
+  orderNumber: order.orderNumber,
+  customerCode: order.customerCode,
+  amount: order.subtotal,
+  customerName: order.customerName,
+  paymentStatus: 'pending',
+  paymentExpiresAt: checkout.paymentExpiresAt || '',
+  paymentSessionId: checkout.paymentSessionId || '',
+  paymentProofUrl: order.paymentProofUrl,
+  paymentProofFileName: order.paymentProofFileName,
+  paymentProofContentType: order.paymentProofContentType,
+  paymentProofUploadedAt: order.paymentProofUploadedAt,
+  paymentProofStatus: order.paymentProofStatus,
+  paymentProofNotes: order.paymentProofNotes,
+  createdAt: order.createdAt || new Date().toISOString(),
 });
 
 const PaymentFrame = ({ session, compact = false }) => {
@@ -505,6 +526,40 @@ const PaymentPageContent = ({ isMobile }) => {
     candidate && (!orderNumber || candidate.orderNumber === orderNumber || candidate.invoiceNumber === orderNumber)
   );
 
+  const recoverDokuPaymentSession = async (order) => {
+    if (!order?.orderNumber || order.paymentStatus === 'paid') {
+      return null;
+    }
+
+    try {
+      const checkout = await createDokuCheckout({
+        order,
+        amount: order.subtotal,
+        customerName: order.customerName,
+        contact: order.contact,
+        items: order.items || [],
+        callbackPath: isMobile ? '/mobile/payment' : '/payment',
+      });
+      await updateOrderPaymentStatus(order.id || order.orderNumber, {
+        paymentStatus: 'pending',
+        paymentProvider: 'doku',
+        paymentReference: checkout.requestId || '',
+        paymentUrl: checkout.paymentUrl,
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
+        paymentResponse: checkout.dokuResponse || {},
+        status: 'pending_payment',
+        audit: false,
+      });
+      const recoveredSession = buildDokuSessionFromCheckout(order, checkout);
+      sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(recoveredSession));
+      return recoveredSession;
+    } catch (error) {
+      console.warn('Failed to recover DOKU payment session:', error.message || error);
+      return null;
+    }
+  };
+
   const loadPaymentSession = async ({ syncStatus = false } = {}) => {
     const storedSession = readPaymentSession();
     if (syncStatus && orderNumber && paymentReturn === 'doku') {
@@ -562,6 +617,14 @@ const PaymentPageContent = ({ isMobile }) => {
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(restoredManualSession));
         setSession(restoredManualSession);
         return;
+      }
+
+      if (order && order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus || 'unpaid')) {
+        const recoveredDokuSession = await recoverDokuPaymentSession(order);
+        if (recoveredDokuSession) {
+          setSession(recoveredDokuSession);
+          return;
+        }
       }
 
       setSession(storedSession);

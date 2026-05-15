@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, ClipboardList, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
+import { CheckCircle2, ClipboardList, CreditCard, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -12,8 +12,9 @@ import {
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
+import { checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment } from '@/services/cartService.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
-import { createBespokeRequest, updateOrderPaymentStatus } from '@/services/orderService.js';
+import { createBespokeRequest, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 
@@ -97,6 +98,7 @@ const MobileBespokePage = () => {
     capDesign: capDesignOptions[0]?.value || '',
     labelDesign: labelDesignOptions[0]?.value || '',
     exoticMaterial: '',
+    paymentMethod: checkoutPaymentMethods[0]?.id || 'manual_transfer_bca',
     customerName: '',
     contact: '',
     deliveryAddress: '',
@@ -129,6 +131,8 @@ const MobileBespokePage = () => {
   const selectedCap = capDesignOptions.find((option) => option.value === form.capDesign) || capDesignOptions[0];
   const selectedLabel = labelDesignOptions.find((option) => option.value === form.labelDesign) || labelDesignOptions[0];
   const selectedExoticMaterial = exoticMaterialOptions.find((option) => option.value === form.exoticMaterial);
+  const selectedPaymentMethod = getCheckoutPaymentMethod(form.paymentMethod);
+  const isManualPayment = isManualTransferPayment(selectedPaymentMethod.provider);
   const estimatedTotal = Number(selectedSize?.price || 0) + Number(selectedBottleType?.price || 0) + Number(selectedCap?.price || 0) + Number(selectedLabel?.price || 0) + Number(selectedExoticMaterial?.price || 0);
   const budgetSummary = [
     selectedSize ? `${selectedSize.label} bottle` : '',
@@ -309,6 +313,44 @@ const MobileBespokePage = () => {
       isComplete: () => estimatedTotal > 0,
     },
     {
+      key: 'payment',
+      title: 'Pilih metode bayar',
+      description: 'Pilih DOKU untuk pembayaran digital, atau BCA untuk transfer manual dengan upload bukti.',
+      render: () => (
+        <div className="grid gap-2">
+          {checkoutPaymentMethods.map((method) => {
+            const active = form.paymentMethod === method.id;
+            return (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => updateField('paymentMethod', method.id)}
+                className={cn(
+                  'rounded-2xl border px-4 py-4 text-left transition',
+                  active ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold text-[#0b130c]">{method.label}</span>
+                  {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                </div>
+                <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
+                {method.accountNumber ? (
+                  <div className="mt-3 rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">
+                    {method.bankName} {method.accountNumber} / A/N {method.accountName}
+                  </div>
+                ) : null}
+              </button>
+            );
+          })}
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white px-4 py-3 text-xs font-bold text-[#263d27]">
+            Total bayar: {formatRupiah(estimatedTotal)}
+          </div>
+        </div>
+      ),
+      isComplete: () => Boolean(form.paymentMethod),
+    },
+    {
       key: 'contact',
       title: 'Data pengiriman',
       description: 'Isi seperti checkout biasa. Customer lama bisa load pakai kode.',
@@ -373,36 +415,95 @@ const MobileBespokePage = () => {
     }
 
     setSaving(true);
+    let createdOrder = null;
     try {
       const order = await createBespokeRequest({
         ...form,
         preferredNotes: form.scentDescription,
         budget: formatRupiah(estimatedTotal),
         totalPrice: estimatedTotal,
-        paymentProvider: 'doku',
+        paymentProvider: selectedPaymentMethod.provider,
         referenceProductName: referenceProduct?.name || '',
         referenceProductSlug: referenceProduct?.slug || '',
       });
+      createdOrder = order;
+      if (isManualPayment) {
+        const manualPaymentResponse = {
+          method: selectedPaymentMethod.provider,
+          bankName: selectedPaymentMethod.bankName,
+          accountNumber: selectedPaymentMethod.accountNumber,
+          accountName: selectedPaymentMethod.accountName,
+          amount: estimatedTotal,
+        };
+        await updateOrderPaymentStatus(order.id || order.orderNumber, {
+          paymentStatus: 'pending',
+          paymentProvider: selectedPaymentMethod.provider,
+          paymentReference: `${selectedPaymentMethod.bankName}-${order.orderNumber}`,
+          paymentUrl: '',
+          paymentExpiresAt: '',
+          paymentSessionId: '',
+          paymentResponse: manualPaymentResponse,
+          status: 'pending_payment',
+          audit: false,
+        });
+        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+          paymentType: selectedPaymentMethod.provider,
+          paymentProvider: selectedPaymentMethod.provider,
+          invoiceNumber: order.orderNumber,
+          orderNumber: order.orderNumber,
+          customerCode: order.customerCode || form.customerCode,
+          amount: estimatedTotal,
+          customerName: form.customerName,
+          paymentStatus: 'pending',
+          manualTransfer: manualPaymentResponse,
+          createdAt: new Date().toISOString(),
+        }));
+
+        setSubmittedRequest({
+          ...form,
+          orderNumber: order.orderNumber,
+          customerCode: order.customerCode || form.customerCode,
+          budget: formatRupiah(estimatedTotal),
+          reference: referenceProduct?.name || '',
+          createdAt: new Date().toISOString(),
+        });
+        setWizardOpen(false);
+        toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+        navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
+        return;
+      }
+
       const checkout = await createDokuCheckout({
         order,
         amount: estimatedTotal,
         customerName: form.customerName,
         contact: form.contact,
+        items: order.items || [],
         callbackPath: '/mobile/payment',
       });
       await updateOrderPaymentStatus(order.id || order.orderNumber, {
         paymentStatus: 'pending',
         paymentProvider: 'doku',
         paymentReference: checkout.requestId || '',
+        paymentUrl: checkout.paymentUrl,
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
+        paymentResponse: checkout.dokuResponse || {},
         status: 'pending_payment',
+        audit: false,
       });
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+        paymentType: 'doku',
+        paymentProvider: 'doku',
         paymentUrl: checkout.paymentUrl,
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
         amount: estimatedTotal,
         customerName: form.customerName,
+        paymentStatus: 'pending',
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
         createdAt: new Date().toISOString(),
       }));
 
@@ -416,8 +517,15 @@ const MobileBespokePage = () => {
       });
       setWizardOpen(false);
       toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
-      navigate('/mobile/payment');
+      navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
+      if (createdOrder) {
+        try {
+          await updateOrderStatus(createdOrder.id || createdOrder.orderNumber, 'cancelled');
+        } catch (restoreError) {
+          console.warn('Failed to cancel bespoke order after payment session error:', restoreError.message || restoreError);
+        }
+      }
       toast.error(error.message || 'Failed to save bespoke request');
     } finally {
       setSaving(false);
@@ -461,6 +569,7 @@ const MobileBespokePage = () => {
             <p><strong className="text-[#0b130c]">Bottle:</strong> {form.size} / {form.bottleType} / {form.capDesign} / {form.labelDesign}</p>
             {selectedExoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {selectedExoticMaterial.label}</p> : null}
             <p><strong className="text-[#0b130c]">Budget:</strong> {formatRupiah(estimatedTotal)}</p>
+            <p><strong className="text-[#0b130c]">Payment:</strong> {selectedPaymentMethod.shortLabel || selectedPaymentMethod.label}</p>
           </div>
         </section>
 
@@ -510,6 +619,7 @@ const MobileBespokePage = () => {
           title={activeStep.title}
           description={`Step ${step + 1} of ${steps.length}. ${activeStep.description}`}
           variant="fullscreen"
+          hideFooterOnInputFocus={false}
           footer={(
             <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
@@ -517,8 +627,8 @@ const MobileBespokePage = () => {
               </Button>
               {step === steps.length - 1 ? (
                 <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
-                  {saving ? 'Saving...' : 'Save brief'}
-                  <CheckCircle2 className="h-4 w-4" />
+                  {saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang')}
+                  {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </Button>
               ) : (
                 <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
