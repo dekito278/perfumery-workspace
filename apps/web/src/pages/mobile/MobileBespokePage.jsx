@@ -24,14 +24,18 @@ const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
     type="button"
     onClick={onClick}
     className={cn(
-      'min-h-[48px] overflow-hidden rounded-2xl border px-3 py-2 text-left text-xs font-bold leading-snug transition',
+      'min-h-[48px] overflow-hidden rounded-2xl border p-2 text-left text-xs font-bold leading-snug transition',
       active
         ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]'
         : 'border-[#e5e7eb] bg-white text-[#6b7280]'
     )}
   >
-    {imageUrl ? <img src={imageUrl} alt="" className="-mx-1 mb-2 h-24 w-[calc(100%+0.5rem)] rounded-xl object-cover" loading="lazy" decoding="async" width="220" height="120" /> : null}
-    {children}
+    {imageUrl ? (
+      <span className="mb-2 block aspect-square w-full overflow-hidden rounded-xl bg-[#f8f7f4]">
+        <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" width="240" height="240" />
+      </span>
+    ) : null}
+    <span className="block px-1 py-0.5">{children}</span>
   </button>
 );
 
@@ -43,8 +47,8 @@ const CapMockup = ({ cap, bottle, label }) => {
 
   if (visualImage) {
     return (
-      <div className="relative h-32 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
-        <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Bespoke option'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="224" />
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
+        <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Bespoke option'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-3">
           <div className="flex flex-wrap gap-1">
             {[bottle?.label, cap?.label, label?.label].filter(Boolean).map((item) => (
@@ -57,13 +61,13 @@ const CapMockup = ({ cap, bottle, label }) => {
   }
 
   return (
-    <div className="relative h-32 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
-      <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#d8c8a4]/50 to-transparent" />
-      <div className={`absolute left-1/2 top-5 h-20 w-11 -translate-x-1/2 border border-[#263d27]/20 bg-white shadow-sm ${isSquare ? 'rounded-xl' : 'rounded-b-[24px] rounded-t-xl'}`} />
-      <div className="absolute left-1/2 top-2 h-7 w-14 -translate-x-1/2 rounded-xl border border-[#263d27]/20 bg-[#1f2937] shadow-sm" />
-      {isStone ? <div className="absolute left-1/2 top-1 h-8 w-16 -translate-x-1/2 rounded-[18px] bg-[radial-gradient(circle_at_30%_25%,#f9fafb,#8b8a7c_45%,#2f352f)] shadow-md" /> : null}
-      {isAcrylic ? <div className="absolute left-1/2 top-1 h-8 w-16 -translate-x-1/2 rounded-xl bg-[linear-gradient(135deg,rgba(245,158,11,.85),rgba(236,72,153,.75),rgba(59,130,246,.8))] shadow-md" /> : null}
-      <div className="absolute left-1/2 top-14 min-w-10 -translate-x-1/2 rounded-lg border border-[#263d27]/10 bg-[#eef2e8] px-2 py-1 text-center text-[9px] font-bold text-[#263d27]">{label?.label || 'Label'}</div>
+    <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4]">
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#d8c8a4]/50 to-transparent" />
+      <div className={`absolute left-1/2 top-[24%] h-[44%] w-[27%] -translate-x-1/2 border border-[#263d27]/20 bg-white shadow-sm ${isSquare ? 'rounded-xl' : 'rounded-b-[24px] rounded-t-xl'}`} />
+      <div className="absolute left-1/2 top-[14%] h-[16%] w-[36%] -translate-x-1/2 rounded-xl border border-[#263d27]/20 bg-[#1f2937] shadow-sm" />
+      {isStone ? <div className="absolute left-1/2 top-[10%] h-[18%] w-[42%] -translate-x-1/2 rounded-[18px] bg-[radial-gradient(circle_at_30%_25%,#f9fafb,#8b8a7c_45%,#2f352f)] shadow-md" /> : null}
+      {isAcrylic ? <div className="absolute left-1/2 top-[10%] h-[18%] w-[42%] -translate-x-1/2 rounded-xl bg-[linear-gradient(135deg,rgba(245,158,11,.85),rgba(236,72,153,.75),rgba(59,130,246,.8))] shadow-md" /> : null}
+      <div className="absolute left-1/2 top-[47%] min-w-10 -translate-x-1/2 rounded-lg border border-[#263d27]/10 bg-[#eef2e8] px-2 py-1 text-center text-[9px] font-bold text-[#263d27]">{label?.label || 'Label'}</div>
       <div className="absolute bottom-3 left-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-[#263d27]">{bottle?.label || 'Bottle'}</div>
       <div className="absolute bottom-3 right-3 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-[#263d27]">{cap?.label}</div>
     </div>
@@ -162,13 +166,27 @@ const MobileBespokePage = () => {
       title: 'Silakan bercerita',
       description: 'Ceritakan suasana, karakter, orang, tempat, atau memori yang ingin dijadikan aroma.',
       render: () => (
-        <textarea
-          value={form.scentDescription}
-          onChange={(event) => updateField('scentDescription', event.target.value)}
-          placeholder="Contoh: aku mau parfum yang terasa clean, dewasa, agak woody, sedikit vanilla, tapi tidak terlalu manis. Cocok untuk kerja dan malam..."
-          rows={5}
-          className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-[#263d27]"
-        />
+        <div className="space-y-3">
+          <textarea
+            value={form.scentDescription}
+            onChange={(event) => updateField('scentDescription', event.target.value)}
+            placeholder="Contoh: clean, dewasa, woody, sedikit vanilla, tidak terlalu manis. Cocok untuk kerja dan malam."
+            rows={8}
+            className="min-h-[184px] w-full resize-none rounded-2xl border border-[#263d27]/25 bg-white px-4 py-4 text-base font-semibold leading-relaxed text-[#0b130c] outline-none focus:border-[#263d27]"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            {['Clean', 'Woody', 'Vanilla', 'Fresh'].map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-left text-xs font-bold text-[#263d27]"
+                onClick={() => updateField('scentDescription', `${form.scentDescription}${form.scentDescription.trim() ? ', ' : ''}${item}`)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
       ),
       isComplete: () => form.scentDescription.trim().length > 3,
     },
@@ -190,8 +208,8 @@ const MobileBespokePage = () => {
       title: 'Pilih ukuran botol',
       description: 'Untuk bespoke saat ini tersedia 30 ml dan 50 ml.',
       render: () => (
-          <div className="grid grid-cols-2 gap-2">
-            {bottleSizeOptions.map((option) => (
+        <div className="grid grid-cols-2 gap-2">
+          {bottleSizeOptions.map((option) => (
             <OptionButton key={option.value} active={form.size === option.value} imageUrl={option.imageUrl} onClick={() => updateField('size', option.value)}>{option.label}</OptionButton>
           ))}
         </div>
@@ -204,8 +222,10 @@ const MobileBespokePage = () => {
       description: 'Jenis botol bisa kamu atur dari Studio Bespoke.',
       render: () => (
         <div className="grid gap-3">
-          <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
-          <div className="grid gap-2">
+          <div className="mx-auto w-full max-w-[280px]">
+            <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             {bottleTypeOptions.map((option) => (
               <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} onClick={() => updateField('bottleType', option.value)}>
                 <span className="block text-sm">{option.label}</span>
@@ -224,8 +244,10 @@ const MobileBespokePage = () => {
       description: 'Mockup sementara. Gambar final bisa diganti nanti.',
       render: () => (
         <div className="grid gap-3">
-          <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
-          <div className="grid gap-2">
+          <div className="mx-auto w-full max-w-[280px]">
+            <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
           {capDesignOptions.map((option) => (
             <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('capDesign', option.value)}>
               <span className="block text-sm">{option.label}</span>
@@ -244,8 +266,10 @@ const MobileBespokePage = () => {
       description: 'Label bisa dibuat minimal atau personal sesuai opsi Studio.',
       render: () => (
         <div className="grid gap-3">
-          <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
-          <div className="grid gap-2">
+          <div className="mx-auto w-full max-w-[280px]">
+            <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             {labelDesignOptions.map((option) => (
               <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('labelDesign', option.value)}>
                 <span className="block text-sm">{option.label}</span>
@@ -263,7 +287,7 @@ const MobileBespokePage = () => {
       title: 'Material eksotis',
       description: 'Material ini mengikuti daftar yang aktif dari Studio.',
       render: () => (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>Tanpa material eksotis</OptionButton>
           {exoticMaterialOptions.map((option) => (
             <OptionButton key={option.value} active={form.exoticMaterial === option.value} imageUrl={option.imageUrl} onClick={() => updateField('exoticMaterial', option.value)}>

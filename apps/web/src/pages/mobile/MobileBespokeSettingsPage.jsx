@@ -160,14 +160,14 @@ const MobileBespokeSettingsPage = () => {
             <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Deskripsi pendek untuk customer" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               {form.imageUrl ? (
-                <div className="relative overflow-hidden rounded-2xl border bg-white">
-                  <img src={form.imageUrl} alt={form.label || 'Bespoke option'} className="h-36 w-full object-cover" loading="lazy" decoding="async" width="360" height="144" />
+                <div className="relative aspect-square overflow-hidden rounded-2xl border bg-white">
+                  <img src={form.imageUrl} alt={form.label || 'Bespoke option'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
                   <button type="button" onClick={() => updateField('imageUrl', '')} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove option image">
                     <ImageOff className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
-                <div className="grid h-28 place-items-center rounded-2xl border border-dashed bg-white text-center text-xs font-bold text-[#6b7280]">
+                <div className="grid aspect-square place-items-center rounded-2xl border border-dashed bg-white text-center text-xs font-bold text-[#6b7280]">
                   Belum ada gambar
                 </div>
               )}
