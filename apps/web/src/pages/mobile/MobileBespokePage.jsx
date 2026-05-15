@@ -16,9 +16,39 @@ import { checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayme
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
+import {
+  describeShippingRate,
+  getCheckoutShippingWeight,
+  getShippingRates,
+  searchShippingDestinations,
+} from '@/services/shippingService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
+
+const checkoutCourierOptions = [
+  { courierCode: 'jnt', label: 'JnT' },
+  { courierCode: 'jne', label: 'JNE' },
+  { courierCode: 'ide', label: 'IDEXPRES' },
+  { courierCode: 'pos', label: 'POS' },
+  { courierCode: 'anteraja', label: 'ANTERAJA' },
+];
+
+const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
+  ...labels,
+  [courier.courierCode]: courier.label,
+}), {});
+
+const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
+  const message = String(error?.message || error || '').trim();
+  if (/destination|domestic|data not found|not found/i.test(message)) {
+    return 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.';
+  }
+  if (/network|fetch|failed|unavailable/i.test(message)) {
+    return 'Layanan ongkir belum bisa dihubungi. Coba lagi beberapa saat.';
+  }
+  return fallback;
+};
 
 const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
   <button
@@ -89,6 +119,14 @@ const MobileBespokePage = () => {
   const [step, setStep] = useState(0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [destinationSearch, setDestinationSearch] = useState('');
+  const [destinationOptions, setDestinationOptions] = useState([]);
+  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [selectedCourier, setSelectedCourier] = useState('');
+  const [selectedShipping, setSelectedShipping] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState('');
   const [form, setForm] = useState({
     customerCode: '',
     scentDescription: referenceProduct?.notes || '',
@@ -134,6 +172,13 @@ const MobileBespokePage = () => {
   const selectedPaymentMethod = getCheckoutPaymentMethod(form.paymentMethod);
   const isManualPayment = isManualTransferPayment(selectedPaymentMethod.provider);
   const estimatedTotal = Number(selectedSize?.price || 0) + Number(selectedBottleType?.price || 0) + Number(selectedCap?.price || 0) + Number(selectedLabel?.price || 0) + Number(selectedExoticMaterial?.price || 0);
+  const shippingFee = Number(selectedShipping?.cost || 0);
+  const totalDue = estimatedTotal + shippingFee;
+  const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
+  const shippingWeight = useMemo(() => getCheckoutShippingWeight([{ quantity: 1 }]), []);
+  const visibleShippingOptions = selectedCourier
+    ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier)
+    : shippingOptions;
   const budgetSummary = [
     selectedSize ? `${selectedSize.label} bottle` : '',
     selectedBottleType ? selectedBottleType.label : '',
@@ -161,7 +206,131 @@ const MobileBespokePage = () => {
       contact: customer.contact,
       deliveryAddress: customer.deliveryAddress || '',
     }));
+    updateDestinationSearch(customer.deliveryArea || '');
     toast.success(`${customer.customerCode} loaded`);
+  };
+
+  const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
+    setSelectedDestination(null);
+    setSelectedShipping(null);
+    setShippingOptions([]);
+    setDestinationOptions([]);
+    setShippingError('');
+    if (!keepCourier) setSelectedCourier('');
+    if (!keepSearch) setDestinationSearch('');
+  };
+
+  const updateDestinationSearch = (value) => {
+    const nextValue = String(value || '');
+    setDestinationSearch(nextValue);
+    resetShipping({ keepSearch: true });
+  };
+
+  const chooseShippingCourier = (courierCode) => {
+    setSelectedCourier(courierCode);
+    setSelectedShipping(null);
+    setShippingOptions([]);
+    setShippingError('');
+  };
+
+  const searchDestinations = async () => {
+    const search = destinationSearch.trim();
+    if (search.length < 3) {
+      toast.error('Isi minimal 3 huruf area, kecamatan, atau kota');
+      return;
+    }
+
+    setShippingLoading(true);
+    setShippingError('');
+    setSelectedDestination(null);
+    setSelectedShipping(null);
+    setShippingOptions([]);
+    try {
+      const destinations = await searchShippingDestinations(search);
+      setDestinationOptions(destinations);
+      if (!destinations.length) {
+        setShippingError('Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+      }
+    } catch (error) {
+      setShippingError(getFriendlyShippingError(error));
+    } finally {
+      setShippingLoading(false);
+    }
+  };
+
+  const loadShippingRates = async (destination) => {
+    setSelectedDestination(destination);
+    setDestinationSearch(destination.label);
+    setDestinationOptions([]);
+    setSelectedShipping(null);
+    setShippingOptions([]);
+    if (!selectedCourier) {
+      setShippingError('Pilih ekspedisi dulu untuk melihat layanan ongkir.');
+      return;
+    }
+
+    setShippingLoading(true);
+    setShippingError('');
+    try {
+      const rates = await getShippingRates({
+        destinationId: destination.id,
+        weight: shippingWeight,
+        couriers: [selectedCourier],
+      });
+      setShippingOptions(rates);
+      if (!rates.length) {
+        setShippingError('Belum ada ongkir untuk area ini');
+      }
+    } catch (error) {
+      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pilih area atau kurir lain.'));
+    } finally {
+      setShippingLoading(false);
+    }
+  };
+
+  const autoCalculateShipping = async () => {
+    const search = destinationSearch.trim();
+    if (search.length < 3) {
+      toast.error('Isi area ongkir dulu, contoh: Jakarta Selatan');
+      return;
+    }
+    if (!selectedCourier) {
+      toast.error('Pilih ekspedisi dulu');
+      return;
+    }
+
+    setShippingLoading(true);
+    setShippingError('');
+    setDestinationOptions([]);
+    setSelectedShipping(null);
+    setShippingOptions([]);
+
+    try {
+      if (selectedDestination?.id && String(selectedDestination.label || '').trim() === search) {
+        const rates = await getShippingRates({
+          destinationId: selectedDestination.id,
+          weight: shippingWeight,
+          couriers: [selectedCourier],
+        });
+        const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
+        setShippingOptions(sortedRates);
+        if (!sortedRates.length) {
+          setShippingError('Area ditemukan, tapi ongkir belum tersedia untuk kurir ini. Pilih area lain atau kurir lain.');
+        }
+        return;
+      }
+
+      setSelectedDestination(null);
+      const destinations = await searchShippingDestinations(search);
+      setDestinationOptions(destinations);
+      setShippingError(destinations.length
+        ? 'Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.'
+        : 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+    } catch (error) {
+      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.'));
+    } finally {
+      setShippingLoading(false);
+    }
   };
 
   const steps = useMemo(() => [
@@ -313,44 +482,6 @@ const MobileBespokePage = () => {
       isComplete: () => estimatedTotal > 0,
     },
     {
-      key: 'payment',
-      title: 'Pilih metode bayar',
-      description: 'Pilih DOKU untuk pembayaran digital, atau BCA untuk transfer manual dengan upload bukti.',
-      render: () => (
-        <div className="grid gap-2">
-          {checkoutPaymentMethods.map((method) => {
-            const active = form.paymentMethod === method.id;
-            return (
-              <button
-                key={method.id}
-                type="button"
-                onClick={() => updateField('paymentMethod', method.id)}
-                className={cn(
-                  'rounded-2xl border px-4 py-4 text-left transition',
-                  active ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
-                )}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold text-[#0b130c]">{method.label}</span>
-                  {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
-                </div>
-                <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
-                {method.accountNumber ? (
-                  <div className="mt-3 rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">
-                    {method.bankName} {method.accountNumber} / A/N {method.accountName}
-                  </div>
-                ) : null}
-              </button>
-            );
-          })}
-          <div className="rounded-2xl border border-[#263d27]/10 bg-white px-4 py-3 text-xs font-bold text-[#263d27]">
-            Total bayar: {formatRupiah(estimatedTotal)}
-          </div>
-        </div>
-      ),
-      isComplete: () => Boolean(form.paymentMethod),
-    },
-    {
       key: 'contact',
       title: 'Data pengiriman',
       description: 'Isi seperti checkout biasa. Customer lama bisa load pakai kode.',
@@ -393,7 +524,132 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => form.customerName.trim() && form.contact.trim() && form.deliveryAddress.trim(),
     },
-  ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedLabel]);
+    {
+      key: 'shipping',
+      title: 'Pilih ongkir',
+      description: 'Cari area RajaOngkir, pilih ekspedisi, lalu pilih layanan pengiriman.',
+      render: () => (
+        <div className="grid gap-3">
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 text-xs font-bold text-[#263d27]">
+            <div className="flex items-center justify-between gap-3">
+              <span>Budget parfum</span>
+              <span>{formatRupiah(estimatedTotal)}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3 text-[#1f2937]">
+              <span>Ongkir</span>
+              <span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-sm">
+              <span>Total bayar</span>
+              <span>{formatRupiah(totalDue)}</span>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <div className="text-[10px] font-bold uppercase text-[#263d27]">Kecamatan / kota tujuan</div>
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <input
+                value={destinationSearch}
+                onChange={(event) => updateDestinationSearch(event.target.value)}
+                placeholder="Contoh: Kebayoran Baru"
+                className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
+              />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
+                Cari area
+              </Button>
+            </div>
+            <p className="rounded-2xl bg-white px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
+              Alamat lengkap tetap diambil dari step data pengiriman. Kolom ini hanya untuk menemukan tarif ongkir.
+            </p>
+          </div>
+          <select
+            value={selectedCourier}
+            onChange={(event) => chooseShippingCourier(event.target.value)}
+            className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-bold text-[#1f2937] outline-none focus:border-[#263d27]"
+          >
+            <option value="">Pilih kurir</option>
+            {checkoutCourierOptions.map((courier) => (
+              <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+            ))}
+          </select>
+          <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+            {shippingLoading ? 'Menghitung ongkir...' : selectedDestination ? 'Tampilkan layanan ongkir' : 'Cari area ongkir'}
+          </Button>
+          {selectedDestination ? (
+            <p className="rounded-2xl bg-[#eef2e8] px-3 py-2 text-[11px] font-bold text-[#263d27]">
+              Area ongkir: {selectedDestination.label}
+            </p>
+          ) : null}
+          {destinationOptions.length ? (
+            <div className="grid gap-2">
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">Pilih area tujuan</div>
+              {destinationOptions.map((destination) => (
+                <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="rounded-2xl border border-[#263d27]/10 bg-white px-3 py-2 text-left text-xs font-bold text-[#263d27]">
+                  {destination.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {visibleShippingOptions.length ? (
+            <div className="grid gap-2">
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">Harga {courierLabels[selectedCourier] || 'ekspedisi'}</div>
+              {visibleShippingOptions.map((rate) => {
+                const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
+                return (
+                  <button key={`${rate.courierCode}-${rate.service}-${rate.cost}`} type="button" onClick={() => setSelectedShipping(rate)} className={cn('rounded-2xl border px-3 py-3 text-left transition', active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white')}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-[#1f2937]">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
+                      <span className="text-sm font-bold text-[#263d27]">{formatRupiah(rate.cost)}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+          {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
+        </div>
+      ),
+      isComplete: () => Boolean(selectedDestination && selectedCourier && selectedShipping),
+    },
+    {
+      key: 'payment',
+      title: 'Pilih metode bayar',
+      description: 'Pilih DOKU untuk pembayaran digital, atau BCA untuk transfer manual dengan upload bukti.',
+      render: () => (
+        <div className="grid gap-2">
+          {checkoutPaymentMethods.map((method) => {
+            const active = form.paymentMethod === method.id;
+            return (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => updateField('paymentMethod', method.id)}
+                className={cn(
+                  'rounded-2xl border px-4 py-4 text-left transition',
+                  active ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold text-[#0b130c]">{method.label}</span>
+                  {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                </div>
+                <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
+                {method.accountNumber ? (
+                  <div className="mt-3 rounded-2xl bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">
+                    {method.bankName} {method.accountNumber} / A/N {method.accountName}
+                  </div>
+                ) : null}
+              </button>
+            );
+          })}
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white px-4 py-3 text-xs font-bold text-[#263d27]">
+            Total bayar: {formatRupiah(totalDue)}
+          </div>
+        </div>
+      ),
+      isComplete: () => Boolean(form.paymentMethod),
+    },
+  ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, visibleShippingOptions]);
 
   const activeStep = steps[step];
   const completion = Math.round(((step + Number(activeStep.isComplete())) / steps.length) * 100);
@@ -419,9 +675,14 @@ const MobileBespokePage = () => {
     try {
       const order = await createBespokeRequest({
         ...form,
+        deliveryArea: selectedDestination?.label || destinationSearch,
         preferredNotes: form.scentDescription,
         budget: formatRupiah(estimatedTotal),
-        totalPrice: estimatedTotal,
+        itemPrice: estimatedTotal,
+        estimatedTotal,
+        shippingFee,
+        shippingSummary,
+        totalPrice: totalDue,
         paymentProvider: selectedPaymentMethod.provider,
         referenceProductName: referenceProduct?.name || '',
         referenceProductSlug: referenceProduct?.slug || '',
@@ -433,7 +694,7 @@ const MobileBespokePage = () => {
           bankName: selectedPaymentMethod.bankName,
           accountNumber: selectedPaymentMethod.accountNumber,
           accountName: selectedPaymentMethod.accountName,
-          amount: estimatedTotal,
+          amount: totalDue,
         };
         await updateOrderPaymentStatus(order.id || order.orderNumber, {
           paymentStatus: 'pending',
@@ -452,10 +713,12 @@ const MobileBespokePage = () => {
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || form.customerCode,
-          amount: estimatedTotal,
+          amount: totalDue,
           customerName: form.customerName,
           paymentStatus: 'pending',
           manualTransfer: manualPaymentResponse,
+          shippingSummary,
+          shippingFee,
           createdAt: new Date().toISOString(),
         }));
 
@@ -464,6 +727,9 @@ const MobileBespokePage = () => {
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || form.customerCode,
           budget: formatRupiah(estimatedTotal),
+          shipping: shippingSummary,
+          shippingFee,
+          totalDue: formatRupiah(totalDue),
           reference: referenceProduct?.name || '',
           createdAt: new Date().toISOString(),
         });
@@ -475,7 +741,7 @@ const MobileBespokePage = () => {
 
       const checkout = await createDokuCheckout({
         order,
-        amount: estimatedTotal,
+        amount: totalDue,
         customerName: form.customerName,
         contact: form.contact,
         items: order.items || [],
@@ -499,11 +765,13 @@ const MobileBespokePage = () => {
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
-        amount: estimatedTotal,
+        amount: totalDue,
         customerName: form.customerName,
         paymentStatus: 'pending',
         paymentExpiresAt: checkout.paymentExpiresAt || '',
         paymentSessionId: checkout.paymentSessionId || '',
+        shippingSummary,
+        shippingFee,
         createdAt: new Date().toISOString(),
       }));
 
@@ -512,6 +780,9 @@ const MobileBespokePage = () => {
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
         budget: formatRupiah(estimatedTotal),
+        shipping: shippingSummary,
+        shippingFee,
+        totalDue: formatRupiah(totalDue),
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),
       });
@@ -569,6 +840,8 @@ const MobileBespokePage = () => {
             <p><strong className="text-[#0b130c]">Bottle:</strong> {form.size} / {form.bottleType} / {form.capDesign} / {form.labelDesign}</p>
             {selectedExoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {selectedExoticMaterial.label}</p> : null}
             <p><strong className="text-[#0b130c]">Budget:</strong> {formatRupiah(estimatedTotal)}</p>
+            <p><strong className="text-[#0b130c]">Ongkir:</strong> {shippingSummary || '-'}</p>
+            <p><strong className="text-[#0b130c]">Total bayar:</strong> {formatRupiah(totalDue)}</p>
             <p><strong className="text-[#0b130c]">Payment:</strong> {selectedPaymentMethod.shortLabel || selectedPaymentMethod.label}</p>
           </div>
         </section>
@@ -590,6 +863,8 @@ const MobileBespokePage = () => {
                   <p><strong className="text-[#0b130c]">Bottle:</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
                   {submittedRequest.exoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {submittedRequest.exoticMaterial}</p> : null}
                   <p><strong className="text-[#0b130c]">Budget:</strong> {submittedRequest.budget}</p>
+                  <p><strong className="text-[#0b130c]">Ongkir:</strong> {submittedRequest.shipping || '-'}</p>
+                  <p><strong className="text-[#0b130c]">Total bayar:</strong> {submittedRequest.totalDue || submittedRequest.budget}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>

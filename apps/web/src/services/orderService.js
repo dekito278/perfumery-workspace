@@ -447,6 +447,8 @@ const buildBespokeCheckoutDraft = ({
   customerCode,
   customerName,
   contact,
+  deliveryAddress,
+  deliveryArea,
   referenceProductName,
   mood,
   occasion,
@@ -461,12 +463,16 @@ const buildBespokeCheckoutDraft = ({
   labelDesign,
   exoticMaterial,
   paymentProvider,
+  shippingSummary,
+  shippingFee,
   totalPrice,
 }) => [
   'Solivagant Bespoke Request',
   customerCode ? formatLine('Customer code', customerCode) : '',
   formatLine('Customer', customerName),
   formatLine('Contact', contact),
+  formatLine('Address', deliveryAddress),
+  formatLine('Area', deliveryArea),
   formatLine('Reference scent', referenceProductName),
   formatLine('Mood', mood),
   formatLine('Occasion', occasion),
@@ -479,11 +485,15 @@ const buildBespokeCheckoutDraft = ({
   formatLine('Cap design', capDesign),
   formatLine('Label design', labelDesign),
   formatLine('Exotic material', exoticMaterial),
+  formatLine('Shipping', shippingSummary),
+  shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
   totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
   formatLine('Payment rail', paymentProvider || 'manual'),
 ].filter((line) => line !== '').join('\n');
 
 const buildBespokeNotes = ({
+  deliveryAddress,
+  deliveryArea,
   mood,
   occasion,
   budget,
@@ -496,9 +506,13 @@ const buildBespokeNotes = ({
   bottleType,
   labelDesign,
   exoticMaterial,
+  shippingSummary,
+  shippingFee,
   totalPrice,
   referenceProductName,
 }) => [
+  formatLine('Address', deliveryAddress),
+  formatLine('Area', deliveryArea),
   formatLine('Mood', mood),
   formatLine('Occasion', occasion),
   formatLine('Budget', budget),
@@ -510,6 +524,8 @@ const buildBespokeNotes = ({
   formatLine('Cap design', capDesign),
   formatLine('Label design', labelDesign),
   formatLine('Exotic material', exoticMaterial),
+  formatLine('Shipping', shippingSummary),
+  shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
   totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
   formatLine('Reference scent', referenceProductName),
 ].join('\n');
@@ -1150,19 +1166,20 @@ export const createBespokeRequest = async (requestData) => {
   };
   const aromaBrief = normalizedRequest.preferredNotes || normalizedRequest.scentDescription || normalizedRequest.mood || 'Custom aroma brief';
   const totalPrice = Number(normalizedRequest.totalPrice || normalizedRequest.estimatedTotal || 0);
+  const itemPrice = Number(normalizedRequest.itemPrice || normalizedRequest.estimatedTotal || totalPrice || 0);
   const item = {
     slug: 'bespoke-perfume-request',
     type: BESPOKE_SOURCE,
     name: 'Bespoke perfume request',
     quantity: 1,
-    price: totalPrice ? `Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}` : normalizedRequest.budget || 'Custom quote',
-    priceNumber: totalPrice,
+    price: itemPrice ? `Rp ${new Intl.NumberFormat('id-ID').format(itemPrice)}` : normalizedRequest.budget || 'Custom quote',
+    priceNumber: itemPrice,
     size: normalizedRequest.size || '-',
     notes: aromaBrief,
     mood: normalizedRequest.mood || '',
     occasion: normalizedRequest.occasion || '',
     budget: normalizedRequest.budget || '',
-    totalPrice,
+    totalPrice: itemPrice,
     preferredNotes: normalizedRequest.preferredNotes || normalizedRequest.scentDescription || '',
     avoidedNotes: normalizedRequest.avoidedNotes || '',
     story: normalizedRequest.story || '',
