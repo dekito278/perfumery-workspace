@@ -132,10 +132,10 @@ const MobileBespokePage = () => {
   const estimatedTotal = Number(selectedSize?.price || 0) + Number(selectedBottleType?.price || 0) + Number(selectedCap?.price || 0) + Number(selectedLabel?.price || 0) + Number(selectedExoticMaterial?.price || 0);
   const budgetSummary = [
     selectedSize ? `${selectedSize.label} bottle` : '',
-    selectedBottleType ? `${selectedBottleType.label}${selectedBottleType.price ? ` +${formatRupiah(selectedBottleType.price)}` : ''}` : '',
-    selectedCap ? `${selectedCap.label}${selectedCap.price ? ` +${formatRupiah(selectedCap.price)}` : ''}` : '',
-    selectedLabel ? `${selectedLabel.label}${selectedLabel.price ? ` +${formatRupiah(selectedLabel.price)}` : ''}` : '',
-    selectedExoticMaterial ? `${selectedExoticMaterial.label} +${formatRupiah(selectedExoticMaterial.price)}` : '',
+    selectedBottleType ? selectedBottleType.label : '',
+    selectedCap ? selectedCap.label : '',
+    selectedLabel ? selectedLabel.label : '',
+    selectedExoticMaterial ? selectedExoticMaterial.label : '',
   ].filter(Boolean).join(' / ');
 
   const lookupCustomer = async () => {
@@ -230,7 +230,6 @@ const MobileBespokePage = () => {
               <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} onClick={() => updateField('bottleType', option.value)}>
                 <span className="block text-sm">{option.label}</span>
                 <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
-                {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
               </OptionButton>
             ))}
           </div>
@@ -252,7 +251,6 @@ const MobileBespokePage = () => {
             <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('capDesign', option.value)}>
               <span className="block text-sm">{option.label}</span>
               <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
-              {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
             </OptionButton>
           ))}
           </div>
@@ -274,7 +272,6 @@ const MobileBespokePage = () => {
               <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('labelDesign', option.value)}>
                 <span className="block text-sm">{option.label}</span>
                 <span className="mt-1 block text-[11px] font-semibold opacity-75">{option.description}</span>
-                {option.price ? <span className="mt-1 block text-[11px] text-[#263d27]">+{formatRupiah(option.price)}</span> : null}
               </OptionButton>
             ))}
           </div>
@@ -291,7 +288,7 @@ const MobileBespokePage = () => {
           <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>Tanpa material eksotis</OptionButton>
           {exoticMaterialOptions.map((option) => (
             <OptionButton key={option.value} active={form.exoticMaterial === option.value} imageUrl={option.imageUrl} onClick={() => updateField('exoticMaterial', option.value)}>
-              {option.label} {option.price ? `+${formatRupiah(option.price)}` : ''}
+              {option.label}
             </OptionButton>
           ))}
         </div>
