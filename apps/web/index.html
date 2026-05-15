@@ -68,6 +68,140 @@
 				</div>
 			</div>
 		</div>
+		<script>
+			(function () {
+				var RECOVERY_KEY = 'solivagant.pwa.module-recovery.v2';
+				var MAX_RECOVERY_ATTEMPTS = 2;
+				var MODULE_FAILURE_MESSAGES = [
+					'Importing a module script failed',
+					'Failed to fetch dynamically imported module',
+					'Loading chunk',
+					'Unable to preload CSS',
+				];
+
+				function getRecoveryAttempts() {
+					try {
+						return Number(window.sessionStorage.getItem(RECOVERY_KEY) || '0');
+					} catch (error) {
+						return 0;
+					}
+				}
+
+				function setRecoveryAttempts(value) {
+					try {
+						window.sessionStorage.setItem(RECOVERY_KEY, String(value));
+					} catch (error) {
+						// Session storage is optional; recovery should still continue.
+					}
+				}
+
+				function isModuleFailure(eventOrReason) {
+					var target = eventOrReason && eventOrReason.target;
+					var message = String(
+						(eventOrReason && eventOrReason.message)
+						|| (eventOrReason && eventOrReason.reason && eventOrReason.reason.message)
+						|| eventOrReason
+						|| ''
+					);
+
+					if (target && target.tagName === 'SCRIPT' && target.type === 'module') {
+						return true;
+					}
+
+					return MODULE_FAILURE_MESSAGES.some(function (entry) {
+						return message.indexOf(entry) !== -1;
+					});
+				}
+
+				function renderManualRecovery() {
+					var root = document.getElementById('root');
+					if (!root) return;
+
+					root.innerHTML = [
+						'<div class="app-boot-fallback" role="alert">',
+						'  <div>',
+						'    <p>App cache perlu direset.</p>',
+						'    <button type="button" data-reset-app-cache style="margin-top:16px;min-height:44px;border:0;border-radius:14px;background:#263d27;color:white;padding:0 18px;font-weight:800;">Reset app cache</button>',
+						'  </div>',
+						'</div>',
+					].join('');
+
+					var button = root.querySelector('[data-reset-app-cache]');
+					if (button) {
+						button.addEventListener('click', function () {
+							setRecoveryAttempts(0);
+							recoverFromModuleFailure('manual reset');
+						});
+					}
+				}
+
+				async function clearAppRuntimeCache() {
+					if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+						var registrations = await navigator.serviceWorker.getRegistrations();
+						await Promise.all(registrations.map(function (registration) {
+							return registration.unregister();
+						}));
+					}
+
+					if (window.caches && window.caches.keys) {
+						var cacheNames = await window.caches.keys();
+						await Promise.all(cacheNames
+							.filter(function (cacheName) {
+								return cacheName.indexOf('solivagant-') === 0 || cacheName.indexOf('perfumer-studio-') === 0;
+							})
+							.map(function (cacheName) {
+								return window.caches.delete(cacheName);
+							}));
+					}
+				}
+
+				async function recoverFromModuleFailure(reason) {
+					if (!window.navigator.onLine) {
+						return;
+					}
+
+					var attempts = getRecoveryAttempts();
+					if (attempts >= MAX_RECOVERY_ATTEMPTS) {
+						renderManualRecovery();
+						return;
+					}
+
+					setRecoveryAttempts(attempts + 1);
+
+					try {
+						await clearAppRuntimeCache();
+					} catch (error) {
+						// Reload anyway. A new navigation may install the latest service worker.
+					}
+
+					var nextUrl = new URL(window.location.href);
+					nextUrl.searchParams.set('pwa-recover', Date.now().toString(36));
+					nextUrl.searchParams.set('reason', String(reason || 'module').slice(0, 24));
+					window.location.replace(nextUrl.toString());
+				}
+
+				window.addEventListener('error', function (event) {
+					if (isModuleFailure(event)) {
+						event.preventDefault();
+						recoverFromModuleFailure(event.message || 'module-script');
+					}
+				}, true);
+
+				window.addEventListener('unhandledrejection', function (event) {
+					if (isModuleFailure(event)) {
+						event.preventDefault();
+						recoverFromModuleFailure(event.reason || 'module-rejection');
+					}
+				});
+
+				window.setTimeout(function () {
+					var root = document.getElementById('root');
+					if (root && root.querySelector('.app-boot-fallback')) {
+						recoverFromModuleFailure('boot-timeout');
+					}
+				}, 14000);
+			})();
+		</script>
 		<script type="module" src="/src/main.jsx"></script>
 	</body>
 </html>
