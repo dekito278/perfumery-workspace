@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from '@/App';
 import '@/index.css';
 import '@/styles/mobile.css';
-import { applyStandaloneClass, registerServiceWorker } from '@/utils/pwa.js';
+import { applyStandaloneClass, installStaleShellRecovery, registerServiceWorker } from '@/utils/pwa.js';
 import { recordMobileRuntimeError } from '@/utils/mobileDiagnostics.js';
 
 const RESIZE_OBSERVER_MESSAGES = [
@@ -30,6 +30,8 @@ const isExtensionNoise = ({ message, filename, reason }) => {
     || EXTENSION_ERROR_MESSAGES.some((entry) => messageText.includes(entry))
   );
 };
+
+installStaleShellRecovery();
 
 window.addEventListener('error', (event) => {
   if (isResizeObserverNoise(event.message) || isExtensionNoise(event)) {

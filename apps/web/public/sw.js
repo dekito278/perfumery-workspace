@@ -1,10 +1,7 @@
-const CACHE_VERSION = 'solivagant-v11';
+const CACHE_VERSION = 'solivagant-v12';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
-  '/',
-  '/mobile/login',
-  '/mobile/dashboard',
   OFFLINE_URL,
   '/manifest.webmanifest',
   '/favicon.svg',
@@ -21,7 +18,11 @@ const isLocalDev = ['localhost', '127.0.0.1', '::1'].includes(self.location.host
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_SHELL_CACHE)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => Promise.all(
+        PRECACHE_URLS.map((url) => cache.add(url).catch((error) => {
+          console.warn('Solivagant precache skipped:', url, error);
+        }))
+      ))
       .then(() => self.skipWaiting())
   );
 });
@@ -59,15 +60,13 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(APP_SHELL_CACHE).then((cache) => cache.put(request, responseClone));
-          return response;
-        })
+        .then((response) => response)
         .catch(async () => (
-          await caches.match(request)
-          || await caches.match('/mobile/dashboard')
-          || await caches.match(OFFLINE_URL)
+          await caches.match(OFFLINE_URL)
+          || new Response('Solivagant is offline. Reconnect and reload.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          })
         ))
     );
     return;

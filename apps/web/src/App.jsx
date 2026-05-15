@@ -82,7 +82,7 @@ const RootRedirect = () => {
   const { initialLoading } = useAuth();
 
   if (initialLoading) {
-    return null;
+    return <RouteFallback />;
   }
 
   if (isMobileBrowser()) {

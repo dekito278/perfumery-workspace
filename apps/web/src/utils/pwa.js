@@ -14,9 +14,77 @@ export const isAndroidDevice = () => /android/i.test(window.navigator.userAgent 
 
 const isLocalDevelopmentHost = () => ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 const SERVICE_WORKER_BUILD_ID = import.meta.env.VITE_APP_BUILD_ID || 'local';
+const STALE_SHELL_RECOVERY_KEY = 'solivagant.pwa.stale-shell-recovered';
+const STALE_CHUNK_ERROR_PATTERNS = [
+  /Failed to fetch dynamically imported module/i,
+  /Importing a module script failed/i,
+  /Loading chunk [\w-]+ failed/i,
+  /Unable to preload CSS/i,
+];
 
 export const applyStandaloneClass = () => {
   document.documentElement.classList.toggle('pwa-standalone', isStandaloneDisplayMode());
+};
+
+const isStaleShellError = (error) => {
+  const message = String(error?.message || error?.reason?.message || error?.reason || error || '');
+  return STALE_CHUNK_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+};
+
+const clearAppCaches = async () => {
+  if (!('caches' in window)) {
+    return;
+  }
+
+  const cacheNames = await window.caches.keys();
+  await Promise.all(
+    cacheNames
+      .filter((cacheName) => cacheName.startsWith('perfumer-studio-') || cacheName.startsWith('solivagant-'))
+      .map((cacheName) => window.caches.delete(cacheName))
+  );
+};
+
+const reloadWithoutStaleShell = () => {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.set('pwa-recover', Date.now().toString(36));
+  window.location.replace(nextUrl.toString());
+};
+
+const recoverFromStaleShell = async (error) => {
+  if (!isStaleShellError(error) || !window.navigator.onLine) {
+    return false;
+  }
+
+  try {
+    if (window.sessionStorage.getItem(STALE_SHELL_RECOVERY_KEY) === SERVICE_WORKER_BUILD_ID) {
+      return false;
+    }
+    window.sessionStorage.setItem(STALE_SHELL_RECOVERY_KEY, SERVICE_WORKER_BUILD_ID);
+  } catch {
+    // Session storage is only used to avoid reload loops.
+  }
+
+  try {
+    const registrations = await navigator.serviceWorker?.getRegistrations?.();
+    await Promise.all((registrations || []).map((registration) => registration.unregister()));
+    await clearAppCaches();
+  } catch (recoveryError) {
+    console.warn('Solivagant stale shell recovery failed:', recoveryError);
+  }
+
+  console.warn('Solivagant is reloading after a stale app bundle error:', error);
+  reloadWithoutStaleShell();
+  return true;
+};
+
+export const installStaleShellRecovery = () => {
+  window.addEventListener('error', (event) => {
+    recoverFromStaleShell(event.error || event.message);
+  }, true);
+
+  window.addEventListener('unhandledrejection', (event) => {
+    recoverFromStaleShell(event.reason);
+  });
 };
 
 export const registerServiceWorker = () => {
