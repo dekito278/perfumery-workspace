@@ -11,6 +11,7 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
@@ -51,6 +52,13 @@ const BATCH_ROW_PAGE_SIZE = 8;
 const targetPresets = ['30', '100', '500', '1000'];
 const workflowStatuses = BATCH_STATUSES.filter((status) => ['planned', 'produced', 'qc', 'ready_for_product', 'converted_to_product'].includes(status.value));
 const STOCK_DEDUCTING_STATUSES = new Set(['produced', 'qc', 'ready_for_product', 'converted_to_product']);
+const batchSteps = [
+  { value: 'setup', label: 'Setup' },
+  { value: 'produce', label: 'Produce' },
+  { value: 'qc', label: 'QC' },
+  { value: 'stock', label: 'Stock' },
+  { value: 'review', label: 'Review' },
+];
 const QC_STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
   { value: 'passed', label: 'Passed' },
@@ -148,6 +156,57 @@ const UsageLedgerRow = ({ record }) => (
   </div>
 );
 
+const BatchStepHero = ({ activeStep, batchStatus, savedBatch, selectedFormula }) => {
+  const copy = {
+    setup: {
+      eyebrow: 'Batch setup',
+      title: selectedFormula ? `Prepare ${selectedFormula.name}` : 'Choose a formula to batch',
+      description: 'Set formula, batch size, dilution, solvent, and quick costing before committing production.',
+    },
+    produce: {
+      eyebrow: 'Production record',
+      title: savedBatch ? 'Update the saved batch' : 'Save this as a production batch',
+      description: 'Lock the working batch context, status, and material movement trigger in one clear step.',
+    },
+    qc: {
+      eyebrow: 'QC gate',
+      title: 'Approve or flag adjustment',
+      description: 'Capture the batch quality decision before creating product stock.',
+    },
+    stock: {
+      eyebrow: 'Product stock',
+      title: 'Convert approved batch to inventory',
+      description: 'Review yield, bottle count, COGS, and price before drafting a linked product.',
+    },
+    review: {
+      eyebrow: 'Review',
+      title: 'Check history and material breakdown',
+      description: 'Use this final step for exports, formula handoff, validation, and detailed cost rows.',
+    },
+  }[activeStep];
+
+  return (
+    <section className="mobile-soft-card p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+          <Factory className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">{copy.eyebrow}</div>
+          <h2 className="mt-0.5 text-lg font-bold leading-tight text-[#0b130c]">{copy.title}</h2>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{copy.description}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <MobileStatusBadge status={batchStatus} className="h-6 px-2.5 text-[10px]" />
+            <span className="rounded-full border border-[#ece8df] bg-white px-2.5 py-1 text-[10px] font-bold text-[#6b7280]">
+              {savedBatch?.batch_code || 'Unsaved batch'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const SolventPriceEditor = ({ material, priceDraft, onDraftChange, onSave, saving }) => (
   <div className="grid grid-cols-[1fr_44px] gap-2">
     <Input
@@ -217,6 +276,7 @@ const MobileBatchesPage = () => {
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [publishingProduct, setPublishingProduct] = useState(false);
   const [batchStatus, setBatchStatus] = useState('planned');
+  const [batchStep, setBatchStep] = useState('setup');
   const [savingBatch, setSavingBatch] = useState(false);
   const [savedBatch, setSavedBatch] = useState(null);
   const [batchHistory, setBatchHistory] = useState([]);
@@ -641,6 +701,60 @@ const MobileBatchesPage = () => {
     }
   };
 
+  const goToNextStep = () => {
+    const currentIndex = batchSteps.findIndex((step) => step.value === batchStep);
+    const nextStep = batchSteps[Math.min(currentIndex + 1, batchSteps.length - 1)]?.value || 'review';
+    setBatchStep(nextStep);
+  };
+
+  const goToPreviousStep = () => {
+    const currentIndex = batchSteps.findIndex((step) => step.value === batchStep);
+    const previousStep = batchSteps[Math.max(currentIndex - 1, 0)]?.value || 'setup';
+    setBatchStep(previousStep);
+  };
+
+  const handleBatchPrimaryAction = async () => {
+    if (batchStep === 'setup') {
+      if (!selectedFormula || targetValue <= 0 || concentration <= 0 || !selectedSolventId) {
+        toast.error('Set formula, target, dilution, and solvent first');
+        return;
+      }
+      goToNextStep();
+      return;
+    }
+
+    if (batchStep === 'produce') {
+      const batch = await saveProductionBatch(batchStatus);
+      if (batch) setBatchStep('qc');
+      return;
+    }
+
+    if (batchStep === 'qc') {
+      const batch = await saveProductionBatch(qcStatus === 'passed' ? 'ready_for_product' : 'qc');
+      if (batch) setBatchStep(qcStatus === 'passed' ? 'stock' : 'review');
+      return;
+    }
+
+    if (batchStep === 'stock') {
+      if (publishedProduct) {
+        navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
+        return;
+      }
+      openPublishConfirmation();
+      return;
+    }
+
+    exportFormulaPdf();
+  };
+
+  const primaryActionLabel = {
+    setup: 'Continue to production',
+    produce: savingBatch ? 'Saving batch...' : savedBatch ? 'Update batch' : 'Save batch',
+    qc: savingBatch ? 'Saving QC...' : 'Save QC gate',
+    stock: publishedProduct ? 'Edit linked product' : publishingProduct ? 'Publishing...' : 'Draft product stock',
+    review: 'Export formula PDF',
+  }[batchStep];
+
   if (loading || (selectedFormulaId && !formulaProfile)) {
     return (
       <MobileAuthenticatedLayout>
@@ -676,7 +790,10 @@ const MobileBatchesPage = () => {
           />
         ) : (
           <>
-            <section className="mobile-card space-y-3 overflow-hidden p-4">
+            <BatchStepHero activeStep={batchStep} batchStatus={batchStatus} savedBatch={savedBatch} selectedFormula={selectedFormula} />
+            <MobileSegmentedControl options={batchSteps} value={batchStep} onChange={setBatchStep} className="mobile-compact-tabs" />
+
+            {batchStep === 'setup' ? <section className="mobile-card space-y-3 overflow-hidden p-4">
               <div className="grid gap-3">
                 <div className="min-w-0 space-y-2">
                   <Label className="text-xs font-bold text-[#6b7280]">Formula</Label>
@@ -731,9 +848,9 @@ const MobileBatchesPage = () => {
                   />
                 </div>
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card p-4">
+            {batchStep === 'produce' ? <section className="mobile-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[10px] font-bold uppercase text-amber-700">Owner production flow</div>
@@ -757,18 +874,9 @@ const MobileBatchesPage = () => {
                   tone={savedBatch?.is_stock_deducted ? 'emerald' : 'neutral'}
                 />
               </div>
-              <Button
-                type="button"
-                onClick={() => saveProductionBatch(batchStatus)}
-                disabled={savingBatch}
-                className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold"
-              >
-                <Save className="h-4 w-4" />
-                {savingBatch ? 'Saving batch...' : savedBatch ? 'Update production batch' : 'Save production batch'}
-              </Button>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card p-4">
+            {batchStep === 'qc' ? <section className="mobile-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[10px] font-bold uppercase text-amber-700">QC gate</div>
@@ -806,20 +914,10 @@ const MobileBatchesPage = () => {
                     className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 text-xs font-semibold outline-none focus:border-amber-300"
                   />
                 </div>
-                <Button
-                  type="button"
-                  variant={qcStatus === 'passed' ? 'default' : 'outline'}
-                  onClick={() => saveProductionBatch(qcStatus === 'passed' ? 'ready_for_product' : 'qc')}
-                  disabled={savingBatch}
-                  className="h-11 rounded-2xl gap-2 text-xs font-bold"
-                >
-                  <ClipboardCheck className="h-4 w-4" />
-                  {savingBatch ? 'Saving QC...' : 'Save QC gate'}
-                </Button>
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card p-4">
+            {batchStep === 'qc' || batchStep === 'review' ? <section className="mobile-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[10px] font-bold uppercase text-amber-700">Material usage ledger</div>
@@ -851,9 +949,9 @@ const MobileBatchesPage = () => {
                   </div>
                 )}
               </div>
-            </section>
+            </section> : null}
 
-            <div className="grid grid-cols-2 gap-2">
+            {batchStep === 'review' ? <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" onClick={exportFormulaPdf} className="h-11 rounded-2xl bg-white text-xs font-bold">
                 <Download className="mr-1 h-4 w-4" />
                 Formula PDF
@@ -870,9 +968,9 @@ const MobileBatchesPage = () => {
                 <ClipboardCheck className="mr-1 h-4 w-4" />
                 Validate
               </Button>
-            </div>
+            </div> : null}
 
-            <section className="mobile-card p-4">
+            {batchStep === 'setup' ? <section className="mobile-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-bold text-[#1f2937]">Batch presets</h2>
@@ -880,7 +978,7 @@ const MobileBatchesPage = () => {
                 </div>
                 <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">{pricedRows}/{concentrateRows.length} priced</span>
               </div>
-              <div className="mt-3 grid grid-cols-4 gap-2">
+              <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
                 {targetPresets.map((preset) => {
                   const active = String(targetValue) === preset;
                   return (
@@ -888,16 +986,16 @@ const MobileBatchesPage = () => {
                       key={preset}
                       type="button"
                       onClick={() => setTargetGrams(preset)}
-                      className={`h-10 rounded-xl border text-xs font-bold ${active ? 'border-amber-300 bg-amber-100 text-amber-800' : 'border-[#ece8df] bg-white text-[#1f2937]'}`}
+                      className={`h-10 min-w-[72px] rounded-xl border px-3 text-xs font-bold ${active ? 'border-amber-300 bg-amber-100 text-amber-800' : 'border-[#ece8df] bg-white text-[#1f2937]'}`}
                     >
                       {preset}g
                     </button>
                   );
                 })}
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-soft-card p-4">
+            {batchStep === 'setup' || batchStep === 'review' ? <section className="mobile-soft-card p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
                   <PackageCheck className="h-5 w-5" />
@@ -911,9 +1009,9 @@ const MobileBatchesPage = () => {
                   </div>
                 </div>
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card p-4">
+            {batchStep === 'setup' || batchStep === 'review' ? <section className="mobile-card p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-800">
                   <Droplets className="h-5 w-5" />
@@ -929,9 +1027,9 @@ const MobileBatchesPage = () => {
                   </div>
                 </div>
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card p-4">
+            {batchStep === 'stock' ? <section className="mobile-card p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
                   <ShoppingBag className="h-5 w-5" />
@@ -968,16 +1066,17 @@ const MobileBatchesPage = () => {
                     type="button"
                     onClick={publishedProduct ? () => navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`) : openPublishConfirmation}
                     disabled={publishingProduct || (!publishedProduct && productBottleCount <= 0)}
-                    className="mt-3 h-11 w-full rounded-2xl gap-2 text-xs font-bold"
+                    variant="outline"
+                    className="mt-3 h-11 w-full rounded-2xl bg-white gap-2 text-xs font-bold"
                   >
                     <ShoppingBag className="h-4 w-4" />
-                    {publishedProduct ? 'Edit linked product' : publishingProduct ? 'Publishing...' : 'Draft product stock'}
+                    {publishedProduct ? 'Open linked product' : 'Review product draft'}
                   </Button>
                 </div>
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card overflow-hidden">
+            {batchStep === 'review' ? <section className="mobile-card overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
                 <div>
                   <h2 className="text-sm font-bold text-[#1f2937]">Batch history</h2>
@@ -1008,9 +1107,9 @@ const MobileBatchesPage = () => {
                   <div className="py-4 text-xs font-semibold text-[#6b7280]">No saved batch yet.</div>
                 )}
               </div>
-            </section>
+            </section> : null}
 
-            <section className="mobile-card overflow-hidden">
+            {batchStep === 'review' ? <section className="mobile-card overflow-hidden">
               <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
                 <h2 className="text-sm font-bold text-[#1f2937]">Raw material breakdown</h2>
                 <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Scaled to {formatGramAmount(targetValue)} full concentrate.</p>
@@ -1036,10 +1135,33 @@ const MobileBatchesPage = () => {
                   onLoadMore={() => setVisibleRows((current) => current + BATCH_ROW_PAGE_SIZE)}
                 />
               </div>
-            </section>
+            </section> : null}
           </>
         )}
       </main>
+      {formulas.length ? (
+        <StickyBottomActionBar fixed reserveSpace aria-label="Batch workflow actions">
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl bg-white px-4"
+              onClick={batchStep === 'setup' ? () => navigate('/mobile/formulas') : goToPreviousStep}
+              disabled={savingBatch || publishingProduct}
+            >
+              {batchStep === 'setup' ? 'Close' : 'Back'}
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl"
+              onClick={handleBatchPrimaryAction}
+              disabled={savingBatch || publishingProduct}
+            >
+              {primaryActionLabel}
+            </Button>
+          </div>
+        </StickyBottomActionBar>
+      ) : null}
       <MobileBottomSheet
         open={publishConfirmOpen}
         onOpenChange={setPublishConfirmOpen}
