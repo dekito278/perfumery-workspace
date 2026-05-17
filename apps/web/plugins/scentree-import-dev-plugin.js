@@ -2,6 +2,13 @@ import { Buffer } from 'node:buffer';
 
 const SCENTREE_HOSTS = new Set(['www.scentree.co', 'scentree.co']);
 const PERFUMERSWORLD_HOSTS = new Set(['www.perfumersworld.com', 'perfumersworld.com']);
+
+const PERFUMERSWORLD_FETCH_HEADERS = {
+	'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+	Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+	'Accept-Language': 'en-US,en;q=0.9',
+	'Cache-Control': 'no-cache',
+};
 const TGSC_HOSTS = new Set(['www.thegoodscentscompany.com', 'thegoodscentscompany.com']);
 
 const decodeHtmlEntities = (value) => String(value || '')
@@ -429,6 +436,12 @@ const importPerfumersWorldByUrl = async (url) => {
 	const useLevelTypical = extractUsageBlockPercent(html, 'Average');
 	const useLevelMax = extractUsageBlockPercent(html, 'Maximum');
 	const ifraText = decodeHtmlEntities(html.match(/DOCUMENTATION\s+IFRA\s+Status[\s\S]{0,120}/i)?.[0] || '');
+
+	if (!title && !sku && !casNumber) {
+		const error = new Error('PerfumersWorld page loaded, but product data could not be read. Check that the URL is a public product page.');
+		error.statusCode = 422;
+		throw error;
+	}
 
 	return {
 		source: 'perfumersworld',

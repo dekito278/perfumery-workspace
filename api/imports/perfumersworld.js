@@ -1,5 +1,12 @@
 const PERFUMERSWORLD_HOSTS = new Set(['www.perfumersworld.com', 'perfumersworld.com']);
 
+const PERFUMERSWORLD_FETCH_HEADERS = {
+	'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+	Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+	'Accept-Language': 'en-US,en;q=0.9',
+	'Cache-Control': 'no-cache',
+};
+
 const decodeHtmlEntities = (value) => String(value || '')
 	.replace(/&nbsp;/g, ' ')
 	.replace(/&amp;/g, '&')
@@ -75,6 +82,24 @@ const extractUsageBlockPercent = (html, label) => {
 	return normalizeNumber(lastMatch?.[1]);
 };
 
+const readRequestBody = async (req) => {
+	if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+		return req.body;
+	}
+
+	if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+		return JSON.parse(req.body.toString('utf8') || '{}');
+	}
+
+	const chunks = [];
+	for await (const chunk of req) {
+		chunks.push(chunk);
+	}
+
+	const rawBody = Buffer.concat(chunks).toString('utf8');
+	return rawBody ? JSON.parse(rawBody) : {};
+};
+
 const importPerfumersWorldByUrl = async (url) => {
 	const parsedUrl = new URL(String(url || '').trim());
 	if (!PERFUMERSWORLD_HOSTS.has(parsedUrl.hostname)) {
@@ -84,10 +109,7 @@ const importPerfumersWorldByUrl = async (url) => {
 	}
 
 	const response = await fetch(parsedUrl.toString(), {
-		headers: {
-			'User-Agent': 'PerfumerStudio/1.0 (+internal reference importer)',
-			'Accept-Language': 'en-US,en;q=0.9',
-		},
+		headers: PERFUMERSWORLD_FETCH_HEADERS,
 	});
 
 	if (!response.ok) {
@@ -107,6 +129,12 @@ const importPerfumersWorldByUrl = async (url) => {
 	const useLevelTypical = extractUsageBlockPercent(html, 'Average');
 	const useLevelMax = extractUsageBlockPercent(html, 'Maximum');
 	const ifraText = decodeHtmlEntities(html.match(/DOCUMENTATION\s+IFRA\s+Status[\s\S]{0,120}/i)?.[0] || '');
+
+	if (!title && !sku && !casNumber) {
+		const error = new Error('PerfumersWorld page loaded, but product data could not be read. Check that the URL is a public product page.');
+		error.statusCode = 422;
+		throw error;
+	}
 
 	return {
 		source: 'perfumersworld',
@@ -144,7 +172,8 @@ module.exports = async (req, res) => {
 	}
 
 	try {
-		const url = String(req.body?.url || '').trim();
+		const body = await readRequestBody(req);
+		const url = String(body?.url || '').trim();
 		if (!url) {
 			res.statusCode = 400;
 			res.end(JSON.stringify({ message: 'URL is required' }));

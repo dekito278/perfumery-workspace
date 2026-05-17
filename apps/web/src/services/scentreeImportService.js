@@ -1,5 +1,24 @@
 const API_BASE_URL = '/api';
 
+const parseImportResponse = async (response, fallbackMessage) => {
+	const responseText = await response.text();
+	let payload = {};
+
+	if (responseText) {
+		try {
+			payload = JSON.parse(responseText);
+		} catch {
+			payload = {};
+		}
+	}
+
+	if (!response.ok) {
+		throw new Error(payload?.message || `${fallbackMessage} (${response.status})`);
+	}
+
+	return payload;
+};
+
 export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
 	const normalizedCode = String(workbookCode || '').trim().toUpperCase();
 	if (!normalizedCode) {
@@ -18,13 +37,7 @@ export const importScentreeByUrl = async (url) => {
 		body: JSON.stringify({ url }),
 	});
 
-	const payload = await response.json().catch(() => ({}));
-
-	if (!response.ok) {
-		throw new Error(payload?.message || 'Failed to import ScenTree data');
-	}
-
-	return payload;
+	return parseImportResponse(response, 'Failed to import ScenTree data');
 };
 
 export const importPerfumersWorldByUrl = async (url) => {
@@ -36,13 +49,7 @@ export const importPerfumersWorldByUrl = async (url) => {
 		body: JSON.stringify({ url }),
 	});
 
-	const payload = await response.json().catch(() => ({}));
-
-	if (!response.ok) {
-		throw new Error(payload?.message || 'Failed to import PerfumersWorld data');
-	}
-
-	return payload;
+	return parseImportResponse(response, 'Failed to import PerfumersWorld data');
 };
 
 export const importTgscByUrl = async (url) => {
@@ -54,11 +61,5 @@ export const importTgscByUrl = async (url) => {
 		body: JSON.stringify({ url }),
 	});
 
-	const payload = await response.json().catch(() => ({}));
-
-	if (!response.ok) {
-		throw new Error(payload?.message || 'Failed to import TGSC data');
-	}
-
-	return payload;
+	return parseImportResponse(response, 'Failed to import TGSC data');
 };
