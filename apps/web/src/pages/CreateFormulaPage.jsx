@@ -18,6 +18,7 @@ import FormulaItemTableEditor from '@/components/FormulaItemTableEditor.jsx';
 import FormulaMaterialLibrary from '@/components/FormulaMaterialLibrary.jsx';
 import FormulaScaleTool from '@/components/FormulaScaleTool.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
+import FormulaMaterialQuickCreateDialog from '@/components/FormulaMaterialQuickCreateDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useBriefProjects } from '@/hooks/useBriefProjects.js';
@@ -69,6 +70,8 @@ const CreateFormulaPage = () => {
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
+  const [quickCreateIntent, setQuickCreateIntent] = useState(null);
+  const [quickCreateLoading, setQuickCreateLoading] = useState(false);
   const [briefContext, setBriefContext] = useState(null);
   const [projectContext, setProjectContext] = useState(null);
   const [projectStageItems, setProjectStageItems] = useState([]);
@@ -215,26 +218,30 @@ const CreateFormulaPage = () => {
     setGuidanceEditorMaterial(updatedMaterial);
   };
 
-  const handleCreateMissingMaterial = async ({ name: materialName, rowIndex }) => {
+  const handleCreateMissingMaterial = ({ name: materialName, rowIndex }) => {
     const nextName = normalizeQuickMaterialName(materialName);
-    if (!nextName) {
-      return;
-    }
+    if (!nextName) return;
+    setQuickCreateIntent({ name: nextName, rowIndex });
+  };
 
-    const confirmed = window.confirm(`Tambah "${nextName}" sebagai raw material baru?\n\nMaterial akan langsung dipilih di row ini. CAS, workbook, impact, dan life bisa dilengkapi nanti dari guidance editor.`);
-    if (!confirmed) {
-      return;
-    }
+  const handleConfirmQuickCreateMaterial = async () => {
+    const nextName = normalizeQuickMaterialName(quickCreateIntent?.name);
+    if (!nextName) return;
+    const rowIndex = Number.isFinite(quickCreateIntent?.rowIndex) ? quickCreateIntent.rowIndex : 0;
 
+    setQuickCreateLoading(true);
     try {
       const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
       setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
       updateItem(rowIndex, createdMaterial.id, createdMaterial);
       setActiveRowIndex(rowIndex);
       setFocusRowIndex(rowIndex);
+      setQuickCreateIntent(null);
       toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
     } catch (error) {
       toast.error(error.message || 'Failed to add raw material');
+    } finally {
+      setQuickCreateLoading(false);
     }
   };
 
@@ -893,7 +900,17 @@ const CreateFormulaPage = () => {
           </>
         )}
 
-        <RawMaterialGuidanceQuickEditDialog
+        <FormulaMaterialQuickCreateDialog
+        open={Boolean(quickCreateIntent)}
+        materialName={quickCreateIntent?.name || ''}
+        loading={quickCreateLoading}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setQuickCreateIntent(null);
+        }}
+        onConfirm={handleConfirmQuickCreateMaterial}
+      />
+
+      <RawMaterialGuidanceQuickEditDialog
           open={guidanceEditorOpen}
           onOpenChange={setGuidanceEditorOpen}
           material={guidanceEditorMaterial}

@@ -8,6 +8,7 @@ import {
   Pause,
   PieChartIcon,
   Play,
+  PlusCircle,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -391,6 +392,7 @@ const MobileFormulaComposerWorkspace = ({
   onUpdateItem,
   onRemoveItem,
   onAddMaterial,
+  onCreateMissingMaterial,
   onOpenMetadata,
   onSave,
   saveLabel,
@@ -455,6 +457,11 @@ const MobileFormulaComposerWorkspace = ({
       .filter((material) => !compositionIds.has(material.id))
       .slice(0, FINDER_RESULT_SIZE);
   }, [compositionIds, finderQuery, rawMaterials]);
+  const normalizedFinderQuery = finderQuery.trim().replace(/\s+/g, ' ');
+  const finderHasExactMatch = normalizedFinderQuery
+    ? rawMaterials.some((material) => material.name?.trim().toLowerCase() === normalizedFinderQuery.toLowerCase())
+    : false;
+  const canQuickCreateFinderMaterial = Boolean(onCreateMissingMaterial && normalizedFinderQuery.length >= 2 && !finderHasExactMatch);
 
   useEffect(() => {
     setCompositionVisible((current) => Math.max(COMPOSER_PAGE_SIZE, Math.min(current, Math.max(composition.length, COMPOSER_PAGE_SIZE))));
@@ -618,7 +625,18 @@ const MobileFormulaComposerWorkspace = ({
                 </div>
               )) : (
                 <div className="w-full rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-3 text-xs font-semibold text-[#6b7280]">
-                  No matching material. Try a broader name or open Materials.
+                  <p>No matching material. Try a broader name or create it as a new raw material.</p>
+                  {canQuickCreateFinderMaterial ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onCreateMissingMaterial({ name: normalizedFinderQuery })}
+                      className="mt-3 h-9 rounded-xl border-amber-200 bg-white px-3 text-xs font-bold text-amber-800"
+                    >
+                      <PlusCircle className="mr-1.5 h-4 w-4" />
+                      Tambah raw material baru
+                    </Button>
+                  ) : null}
                 </div>
               )}
             </div>

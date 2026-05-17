@@ -18,6 +18,7 @@ import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
+import FormulaMaterialQuickCreateDialog from '@/components/FormulaMaterialQuickCreateDialog.jsx';
 import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
@@ -34,6 +35,8 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const [loadingData, setLoadingData] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [focusRowIndex, setFocusRowIndex] = useState(null);
+  const [quickCreateIntent, setQuickCreateIntent] = useState(null);
+  const [quickCreateLoading, setQuickCreateLoading] = useState(false);
 
   const createEmptyFormulaItem = () => ({
     item_id: '',
@@ -101,21 +104,29 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     setFormulaItems(updated);
   };
 
-  const handleCreateMissingMaterial = async ({ name: materialName, rowIndex }) => {
+  const handleCreateMissingMaterial = ({ name: materialName, rowIndex }) => {
     const nextName = normalizeQuickMaterialName(materialName);
     if (!nextName) return;
+    setQuickCreateIntent({ name: nextName, rowIndex });
+  };
 
-    const confirmed = window.confirm(`Tambah "${nextName}" sebagai raw material baru?\n\nMaterial akan langsung dipilih di row ini. Data workbook bisa dilengkapi nanti.`);
-    if (!confirmed) return;
+  const handleConfirmQuickCreateMaterial = async () => {
+    const nextName = normalizeQuickMaterialName(quickCreateIntent?.name);
+    if (!nextName) return;
+    const rowIndex = Number.isFinite(quickCreateIntent?.rowIndex) ? quickCreateIntent.rowIndex : 0;
 
+    setQuickCreateLoading(true);
     try {
       const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
       setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
       updateItem(rowIndex, createdMaterial.id, createdMaterial);
       setFocusRowIndex(rowIndex);
+      setQuickCreateIntent(null);
       toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
     } catch (error) {
       toast.error(error.message || 'Failed to add raw material');
+    } finally {
+      setQuickCreateLoading(false);
     }
   };
 
@@ -486,6 +497,15 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
             </DialogFooter>
           </form>
         )}
+      <FormulaMaterialQuickCreateDialog
+        open={Boolean(quickCreateIntent)}
+        materialName={quickCreateIntent?.name || ''}
+        loading={quickCreateLoading}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setQuickCreateIntent(null);
+        }}
+        onConfirm={handleConfirmQuickCreateMaterial}
+      />
       </DialogContent>
     </Dialog>
   );

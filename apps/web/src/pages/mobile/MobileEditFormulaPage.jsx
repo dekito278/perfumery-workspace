@@ -11,18 +11,20 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileFormField from '@/components/mobile-ui/MobileFormField.jsx';
 import MobileFormulaComposerWorkspace from '@/components/mobile/MobileFormulaComposerWorkspace.jsx';
+import FormulaMaterialQuickCreateDialog from '@/components/FormulaMaterialQuickCreateDialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
-import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
+import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const createItem = (material, gramAmount = '1', item = {}) => ({
   row_key: `${material.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -70,6 +72,8 @@ const MobileEditFormulaPage = () => {
   const [items, setItems] = useState([]);
   const [seededCount, setSeededCount] = useState(0);
   const [composerOverlayOpen, setComposerOverlayOpen] = useState(false);
+  const [quickCreateIntent, setQuickCreateIntent] = useState(null);
+  const [quickCreateLoading, setQuickCreateLoading] = useState(false);
   const metadataRef = useRef(null);
 
   useEffect(() => {
@@ -131,6 +135,29 @@ const MobileEditFormulaPage = () => {
     }
     setItems((current) => [createItem(material), ...current]);
     toast.success('Material added to composition');
+  };
+
+  const handleCreateMissingMaterial = ({ name: materialName }) => {
+    const nextName = normalizeQuickMaterialName(materialName);
+    if (!nextName) return;
+    setQuickCreateIntent({ name: nextName });
+  };
+
+  const handleConfirmQuickCreateMaterial = async () => {
+    const nextName = normalizeQuickMaterialName(quickCreateIntent?.name);
+    if (!nextName) return;
+
+    setQuickCreateLoading(true);
+    try {
+      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
+      setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
+      addMaterial(createdMaterial);
+      setQuickCreateIntent(null);
+    } catch (error) {
+      toast.error(error.message || 'Failed to add raw material');
+    } finally {
+      setQuickCreateLoading(false);
+    }
   };
 
   const scrollToMetadata = () => metadataRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -221,6 +248,7 @@ const MobileEditFormulaPage = () => {
           onUpdateItem={updateItem}
           onRemoveItem={removeItem}
           onAddMaterial={addMaterial}
+          onCreateMissingMaterial={handleCreateMissingMaterial}
           onOpenMetadata={scrollToMetadata}
           onSave={handleSubmit}
           saveLabel="Save"
@@ -228,6 +256,15 @@ const MobileEditFormulaPage = () => {
           saveDisabled={!unsaved}
           showActionBar={false}
           onOverlayOpenChange={setComposerOverlayOpen}
+        />
+        <FormulaMaterialQuickCreateDialog
+          open={Boolean(quickCreateIntent)}
+          materialName={quickCreateIntent?.name || ''}
+          loading={quickCreateLoading}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setQuickCreateIntent(null);
+          }}
+          onConfirm={handleConfirmQuickCreateMaterial}
         />
         {!composerOverlayOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula editor actions">
           <div className="grid grid-cols-2 items-stretch gap-2">
