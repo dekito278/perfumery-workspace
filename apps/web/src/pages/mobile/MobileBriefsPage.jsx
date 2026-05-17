@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -9,6 +9,7 @@ import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import BriefCardMobile from '@/components/mobile/BriefCardMobile.jsx';
@@ -16,6 +17,8 @@ import { Button } from '@/components/ui/button.jsx';
 import { useBriefs } from '@/hooks/useBriefs.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { filterByText, getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const statusOptions = [
   { value: 'all', label: 'All' },
@@ -34,6 +37,7 @@ const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.rac
 
 const MobileBriefsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const queryFormulaId = searchParams.get('formulaId') || '';
   const { getBriefs, deleteBrief } = useBriefs();
@@ -46,9 +50,11 @@ const MobileBriefsPage = () => {
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   const loadData = async (isActive = () => true) => {
     setLoading(true);
+    setLoadError('');
     try {
       const briefRows = await runWithTimeout(getBriefs(), [], 6000);
       if (!isActive()) return;
@@ -62,6 +68,7 @@ const MobileBriefsPage = () => {
       }
     } catch (error) {
       toast.error('Failed to load briefs');
+      if (isActive()) setLoadError(error.message || 'Briefs could not be loaded right now.');
       if (isActive()) setLoading(false);
     } finally {
       if (isActive()) setLoading(false);
@@ -88,6 +95,7 @@ const MobileBriefsPage = () => {
     setDeleting(true);
     try {
       await deleteBrief(deleteTarget.id);
+      triggerMobileHaptic('success');
       toast.success('Brief deleted');
       setDeleteTarget(null);
       await loadData();
@@ -104,16 +112,38 @@ const MobileBriefsPage = () => {
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Briefs"
-          action={<Button type="button" size="icon" onClick={() => navigate(queryFormulaId ? `/mobile/briefs/new?formulaId=${queryFormulaId}` : '/mobile/briefs/new')} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" onClick={() => navigate(queryFormulaId ? `/mobile/briefs/new?formulaId=${queryFormulaId}` : '/mobile/briefs/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Search briefs or formulas..." disabled={loading} />
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
         </div>
-        {loading ? <MobileLoadingSkeleton count={4} /> : briefs.length === 0 ? (
-          <MobileEmptyState icon={ClipboardList} title="No briefs yet" action="New Brief" onAction={() => navigate('/mobile/briefs/new')} />
+        {loading ? <MobileLoadingSkeleton count={4} title="Loading briefs..." subtitle="Preparing recent projects and linked formulas." /> : loadError ? (
+          <MobileStatePanel
+            tone="error"
+            title="Couldn’t load briefs"
+            description={loadError}
+            action="Try again"
+            onAction={() => loadData()}
+          />
+        ) : briefs.length === 0 ? (
+          <MobileEmptyState
+            icon={ClipboardList}
+            title="No briefs yet"
+            description="Start with a brief to capture the scent direction, shortlist materials, and keep the project history together."
+            action="New Brief"
+            onAction={() => navigate('/mobile/briefs/new')}
+          />
         ) : filtered.length === 0 ? (
-          <MobileEmptyState title="No matching briefs" />
+          <MobileEmptyState
+            title="No matching briefs"
+            description="Try a different keyword or clear the current status filter."
+            action="Clear filters"
+            onAction={() => {
+              setQuery('');
+              setStatus('all');
+            }}
+          />
         ) : (
           <>
             <div className="space-y-2">
@@ -122,7 +152,7 @@ const MobileBriefsPage = () => {
                   key={brief.id}
                   brief={brief}
                   linkedFormula={formulasById.get(brief.formula_id)}
-                  onOpen={() => navigate(`/mobile/briefs/${brief.id}`)}
+                  onOpen={() => navigate(`/mobile/briefs/${brief.id}`, { state: getMobileFromState(location) })}
                   onDelete={() => setDeleteTarget(brief)}
                 />
               ))}

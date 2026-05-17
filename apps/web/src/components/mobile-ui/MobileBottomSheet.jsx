@@ -1,6 +1,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer.jsx';
+import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.js';
 import { cn } from '@/lib/utils.js';
+import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
 const MIN_KEYBOARD_SHEET_HEIGHT = 260;
@@ -19,6 +21,7 @@ const MobileBottomSheet = ({
   const contentRef = useRef(null);
   const touchStartRef = useRef(null);
   const [inputFocused, setInputFocused] = useState(false);
+  useMobileKeyboardAvoidance(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -92,7 +95,16 @@ const MobileBottomSheet = ({
   const handleTouchStart = (event) => {
     const touch = event.touches?.[0];
     if (!touch) return;
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    const scrollContainer = contentRef.current?.querySelector?.('.mobile-bottom-sheet-scroll');
+    const startedOnHeader = Boolean(event.target?.closest?.('[data-mobile-sheet-drag-zone]'));
+    const startedAtTop = !scrollContainer || scrollContainer.scrollTop <= 2;
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      startedOnHeader,
+      startedAtTop,
+      startedAt: performance.now(),
+    };
   };
 
   const handleTouchEnd = (event) => {
@@ -103,7 +115,12 @@ const MobileBottomSheet = ({
 
     const deltaY = touch.clientY - start.y;
     const deltaX = Math.abs(touch.clientX - start.x);
-    if (deltaY > 86 && deltaX < 72) {
+    const duration = Math.max(performance.now() - start.startedAt, 1);
+    const velocity = deltaY / duration;
+    const deliberatePull = deltaY > 112 || (deltaY > 84 && velocity > 0.42);
+    const eligibleZone = start.startedOnHeader || start.startedAtTop;
+    if (eligibleZone && deliberatePull && deltaX < 56) {
+      triggerMobileHaptic('light');
       onOpenChange?.(false);
     }
   };
@@ -138,14 +155,23 @@ const MobileBottomSheet = ({
         onFocusCapture={handleFocusCapture}
         onBlurCapture={handleBlurCapture}
       >
-        <DrawerHeader className="text-left">
+        <DrawerHeader className="mobile-sheet-drag-zone text-left" data-mobile-sheet-drag-zone>
           <DrawerTitle className="text-lg">{title}</DrawerTitle>
           <DrawerDescription className={description ? 'text-xs' : 'sr-only'}>
             {description || `${title} sheet`}
           </DrawerDescription>
         </DrawerHeader>
         <div className={cn('mobile-bottom-sheet-scroll px-4 pb-4', footerVisible && 'mobile-bottom-sheet-scroll-with-footer')}>{children}</div>
-        {footerVisible ? <div className="mobile-bottom-sheet-footer border-t border-[#e5e7eb] bg-white p-4">{footer}</div> : null}
+        {footer ? (
+          <div
+            className={cn(
+              'mobile-bottom-sheet-footer border-t border-[#e5e7eb] bg-white',
+              footerVisible ? 'mobile-overlay-footer-visible' : 'mobile-overlay-footer-hidden'
+            )}
+          >
+            <div className="p-4">{footer}</div>
+          </div>
+        ) : null}
       </DrawerContent>
     </Drawer>
   );

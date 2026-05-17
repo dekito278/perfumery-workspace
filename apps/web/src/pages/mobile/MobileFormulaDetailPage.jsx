@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Calculator, Copy, Download, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -8,6 +8,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
+import MobileActionDock from '@/components/mobile-ui/MobileActionDock.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
@@ -22,6 +23,7 @@ import { formatPrice } from '@/utils/pricingUtils.js';
 import { buildMobileFormulaMetrics } from '@/utils/mobileFormulaMetrics.js';
 import { MOBILE_ACTIVITY_LIMIT } from '@/pages/mobile/mobilePageUtils.js';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
+import { getMobileFromState, useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 
 const tabs = [
   { value: 'summary', label: 'Summary' },
@@ -69,6 +71,8 @@ const MiniBarRows = ({ rows = [], labelKey = 'label', valueKey = 'value', empty 
 const MobileFormulaDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const handleBack = useMobileBackNavigation('/mobile/formulas');
   const [tab, setTab] = useState('summary');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -163,7 +167,7 @@ const MobileFormulaDetailPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>{formula.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title={formula.name} subtitle={`${formula.code} / ${formatStatus(formula.category || 'perfume')}`} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={formula.status || 'draft'} />} />
+        <MobileTopBar title={formula.name} subtitle={`${formula.code} / ${formatStatus(formula.category || 'perfume')}`} onBack={handleBack} action={<MobileStatusBadge status={formula.status || 'draft'} />} />
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
         {tab === 'summary' ? (
           <section className="space-y-3">
@@ -182,8 +186,8 @@ const MobileFormulaDetailPage = () => {
               ['Notes', formula.notes || '-'],
             ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
-              <Button variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Ready Batch</Button>
+              <Button variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
+              <Button className="mobile-interactive mobile-pressable h-11 rounded-2xl text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Ready Batch</Button>
             </div>
           </section>
         ) : null}
@@ -277,12 +281,20 @@ const MobileFormulaDetailPage = () => {
           )) : <MobileEmptyState title="No activity yet" />
         ) : null}
         <StickyBottomActionBar>
-          <div className="grid grid-cols-4 gap-2">
-            <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/formulas/${id}/edit`)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
-            <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/batches?formulaId=${id}`)}><Calculator className="mr-1 h-4 w-4" />Batch</Button>
-            <Button variant="outline" className="rounded-2xl bg-white text-xs" onClick={handleDuplicate}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>
-            <Button variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
-          </div>
+          <MobileActionDock
+            className="border-0 bg-transparent p-0 shadow-none"
+            primary={(
+              <Button className="mobile-interactive mobile-pressable h-11 w-full rounded-2xl text-xs font-bold" onClick={() => navigate(`/mobile/batches?formulaId=${id}`)}>
+                <Calculator className="mr-2 h-4 w-4" />
+                Open Batch Calculator
+              </Button>
+            )}
+            secondary={[
+              <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/formulas/${id}/edit`, { state: getMobileFromState(location) })}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
+              <Button key="duplicate" variant="outline" className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white text-xs" onClick={handleDuplicate}><Copy className="mr-1 h-4 w-4" />Duplicate</Button>,
+            ]}
+            destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-10 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
+          />
         </StickyBottomActionBar>
       </main>
       <DeleteConfirmationDialog open={deleteOpen} onOpenChange={setDeleteOpen} itemName={formula.name} onConfirm={handleDelete} loading={deleting} />

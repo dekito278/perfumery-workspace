@@ -3,14 +3,20 @@ import MobileBottomNavigation from '@/components/mobile/MobileBottomNavigation.j
 import MobileFloatingActionButton from '@/components/mobile/MobileFloatingActionButton.jsx';
 import MobileSessionActions from '@/components/mobile/MobileSessionActions.jsx';
 import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
+import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.js';
+import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js';
+import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
 
 const MobileAppShell = ({ children, showFab = true }) => {
   const keyboardActive = useMobileKeyboardState();
+  useMobileKeyboardAvoidance();
+  useMobileFormEnhancements();
+  useMobileTouchFeedback();
 
   return (
     <div className={cn('mobile-app', keyboardActive && 'mobile-keyboard-active')}>
-      <div className="mobile-app-shell">
+      <div className="mobile-app-shell" data-mobile-primary-scroller="true">
         {children}
       </div>
       <MobileSessionActions />

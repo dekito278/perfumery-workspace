@@ -31,6 +31,7 @@ const MobileStatusBadge = ({ status = 'draft', children, className, tone }) => {
     <span
       className={cn(
         'inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-semibold capitalize',
+        ['active', 'approved', 'completed', 'ready_for_batch', 'ready_for_product', 'converted_to_product', 'published_product', 'validated'].includes(key) && 'mobile-success-pulse',
         toneByStatus[key] || 'bg-amber-50 text-amber-700 border-amber-200',
         className
       )}

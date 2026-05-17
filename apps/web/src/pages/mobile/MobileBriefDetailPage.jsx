@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Beaker, BookmarkPlus, Check, Pencil, Sparkles, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import BriefWizardDialog from '@/components/briefs/BriefWizardDialog.jsx';
@@ -8,7 +8,9 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
+import MobileActionDock from '@/components/mobile-ui/MobileActionDock.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import { getMobileFromState, useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -29,6 +31,8 @@ const tabs = [
 const MobileBriefDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const handleBack = useMobileBackNavigation('/mobile/briefs');
   const [tab, setTab] = useState('overview');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -107,7 +111,7 @@ const MobileBriefDetailPage = () => {
         <MobileTopBar
           title={brief.title}
           subtitle={`Updated ${formatDate(brief.updated || brief.created)}`}
-          onBack={() => navigate('/mobile/briefs')}
+          onBack={handleBack}
           action={<MobileStatusBadge status={brief.status || 'draft'} />}
         />
         <section className="mobile-soft-card p-4">
@@ -278,14 +282,19 @@ const MobileBriefDetailPage = () => {
           ) : null}
         </section>
 
-        <section className="mobile-card p-3">
-          <div className="grid grid-cols-4 gap-1.5">
-            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={() => navigate(`/mobile/briefs/${brief.id}/edit`)}><Pencil className="h-4 w-4" />Edit</Button>
-            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={() => navigate(`/mobile/raw-materials?briefId=${brief.id}`)}><BookmarkPlus className="h-4 w-4" />Pick</Button>
-            <Button className="h-12 flex-col gap-0.5 rounded-2xl px-1 text-[10px]" onClick={() => navigate(formulaTarget)}><Beaker className="h-4 w-4" />Formula</Button>
-            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl border-rose-100 bg-rose-50 px-1 text-[10px] text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</Button>
-          </div>
-        </section>
+        <MobileActionDock
+          primary={(
+            <Button className="mobile-interactive mobile-pressable h-12 w-full rounded-2xl text-xs font-bold" onClick={() => navigate(formulaTarget)}>
+              <Beaker className="mr-2 h-4 w-4" />
+              {formula ? 'Open Formula' : 'Create Formula'}
+            </Button>
+          )}
+          secondary={[
+            <Button key="pick" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/raw-materials?briefId=${brief.id}`)}><BookmarkPlus className="mr-1 h-4 w-4" />Pick</Button>,
+            <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/briefs/${brief.id}/edit`, { state: getMobileFromState(location) })}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
+          ]}
+          destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-11 rounded-2xl border-rose-100 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
+        />
       </main>
       <DeleteConfirmationDialog open={deleteOpen} onOpenChange={setDeleteOpen} itemName={brief.title} onConfirm={handleDelete} loading={deleting} />
       <BriefWizardDialog

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Download, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { isAndroidDevice, isIosDevice, isStandaloneDisplayMode } from '@/utils/pwa.js';
 
-const DISMISS_KEY = 'perfumer-pwa-install-dismissed-v1';
+const DISMISS_KEY = 'solivagant-pwa-install-dismissed-v2';
+const IOS_PROMPT_DELAY_MS = 9000;
 
 const shouldShowPrompt = () => {
   if (typeof window === 'undefined') return false;
@@ -12,6 +14,7 @@ const shouldShowPrompt = () => {
 };
 
 const PwaInstallPrompt = () => {
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [visible, setVisible] = useState(false);
   const platform = useMemo(() => {
@@ -20,6 +23,7 @@ const PwaInstallPrompt = () => {
     if (isAndroidDevice()) return 'android';
     return 'other';
   }, []);
+  const canSurfacePrompt = location.pathname === '/mobile/dashboard';
 
   useEffect(() => {
     if (!shouldShowPrompt()) {
@@ -29,7 +33,7 @@ const PwaInstallPrompt = () => {
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
       setDeferredPrompt(event);
-      setVisible(true);
+      setVisible(canSurfacePrompt);
     };
     const handleInstalled = () => {
       setVisible(false);
@@ -41,7 +45,7 @@ const PwaInstallPrompt = () => {
     window.addEventListener('appinstalled', handleInstalled);
 
     if (platform === 'ios') {
-      const timer = window.setTimeout(() => setVisible(shouldShowPrompt()), 1200);
+      const timer = window.setTimeout(() => setVisible(canSurfacePrompt && shouldShowPrompt()), IOS_PROMPT_DELAY_MS);
       return () => {
         window.clearTimeout(timer);
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -53,7 +57,18 @@ const PwaInstallPrompt = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleInstalled);
     };
-  }, [platform]);
+  }, [canSurfacePrompt, platform]);
+
+  useEffect(() => {
+    if (!canSurfacePrompt) {
+      setVisible(false);
+      return;
+    }
+
+    if (platform === 'android' && deferredPrompt && shouldShowPrompt()) {
+      setVisible(true);
+    }
+  }, [canSurfacePrompt, deferredPrompt, platform]);
 
   const dismiss = () => {
     window.localStorage.setItem(DISMISS_KEY, 'true');
@@ -79,15 +94,15 @@ const PwaInstallPrompt = () => {
       <button type="button" className="mobile-pwa-install-close" onClick={dismiss} aria-label="Dismiss install prompt">
         <X className="h-4 w-4" />
       </button>
-      <div className="mobile-pwa-install-mark">PS</div>
+      <div className="mobile-pwa-install-mark">S</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold text-[#1f2937]">
-          {ios ? 'Add Solivagant to Home Screen' : 'Install Solivagant Lite'}
+          {ios ? 'Add Solivagant to Home Screen' : 'Install Solivagant'}
         </div>
         <p className="mt-1 text-xs font-medium leading-snug text-[#6b7280]">
           {ios
             ? 'Tap Share, then Add to Home Screen for a standalone iOS app view.'
-            : 'Install the lightweight app for fullscreen mobile access.'}
+            : 'Install for fullscreen access, faster relaunch, and a cleaner app experience.'}
         </p>
         <div className="mt-3 flex gap-2">
           {ios ? (

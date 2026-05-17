@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Clipboard, Download, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import {
@@ -17,6 +17,7 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -76,6 +77,7 @@ const FulfillmentMetric = ({ label, value, tone = 'amber' }) => {
 
 const MobileFulfillmentPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { orders, loading, reload } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingId, setSavingId] = useState('');
@@ -140,7 +142,7 @@ const MobileFulfillmentPage = () => {
     const singleVisibleMatch = searchedOrders.length === 1 ? searchedOrders[0] : null;
     const targetOrder = directMatch || singleVisibleMatch;
     if (targetOrder) {
-      navigate(`/mobile/studio/orders/${targetOrder.id || targetOrder.orderNumber}`);
+      navigate(`/mobile/studio/orders/${targetOrder.id || targetOrder.orderNumber}`, { state: getMobileFromState(location) });
       toast.success(`Buka ${targetOrder.orderNumber}`);
       return;
     }
@@ -289,7 +291,7 @@ const MobileFulfillmentPage = () => {
                 <button
                   key={order.id || order.orderNumber}
                   type="button"
-                  onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}
+                  onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`, { state: getMobileFromState(location) })}
                   className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-left"
                 >
                   <span className="min-w-0 truncate text-xs font-bold text-[#1f2937]">{order.orderNumber}</span>
@@ -315,7 +317,7 @@ const MobileFulfillmentPage = () => {
             const blocked = !isFulfillmentReady(order);
 
             return (
-              <article key={orderKey} className="mobile-card p-3">
+              <article key={orderKey} className="mobile-card mobile-list-card p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{order.orderNumber}</h3>
@@ -396,8 +398,8 @@ const MobileFulfillmentPage = () => {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-9 px-2 text-xs"
-                    onClick={() => navigate(`/mobile/studio/orders/${orderKey}`)}
+                    className="mobile-interactive mobile-pressable h-9 px-2 text-xs"
+                    onClick={() => navigate(`/mobile/studio/orders/${orderKey}`, { state: getMobileFromState(location) })}
                   >
                     Detail
                     <ArrowRight className="h-4 w-4" />
@@ -407,7 +409,7 @@ const MobileFulfillmentPage = () => {
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button
                     type="button"
-                    className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100"
+                    className="mobile-interactive mobile-pressable col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100"
                     onClick={() => saveShipment(order, 'shipped')}
                     disabled={saving || blocked}
                   >
@@ -416,22 +418,22 @@ const MobileFulfillmentPage = () => {
                   </Button>
                   <Button
                     type="button"
-                    className="h-14 rounded-2xl gap-1 text-xs font-bold"
+                    className="mobile-interactive mobile-pressable h-14 rounded-2xl gap-1 text-xs font-bold"
                     onClick={() => saveShipment(order, 'packing')}
                     disabled={saving || blocked}
                   >
                     <PackageOpen className="h-4 w-4" />
                     Packed
                   </Button>
-                  <Button type="button" variant="outline" className="h-14 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => openWhatsAppFollowUp(order, draft)}>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-14 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => openWhatsAppFollowUp(order, draft)}>
                     <MessageCircle className="h-4 w-4" />
                     WA customer
                   </Button>
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPackingList(order, draft)}>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPackingList(order, draft)}>
                     <Clipboard className="h-4 w-4" />
                     Salin list
                   </Button>
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => exportResi(order)} disabled={!canExportShippingLabel(order)}>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => exportResi(order)} disabled={!canExportShippingLabel(order)}>
                     <Download className="h-4 w-4" />
                     Resi
                   </Button>
@@ -441,16 +443,14 @@ const MobileFulfillmentPage = () => {
           })}
 
           {!searchedOrders.length && !loading ? (
-            <StateBlock
-              className="mobile-card"
+            <MobileStatePanel
               icon={PackageOpen}
               title="Tidak ada order di tampilan ini"
               description="Ganti chip filter atau bersihkan pencarian untuk melihat antrean packing lain."
             />
           ) : null}
           {loading && !searchedOrders.length ? (
-            <StateBlock
-              className="mobile-card"
+            <MobileStatePanel
               tone="loading"
               title="Memuat antrean fulfillment"
               description="Sebentar, order paid sedang disiapkan."

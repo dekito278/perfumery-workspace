@@ -2,14 +2,18 @@
   "name": "Solivagant",
   "short_name": "Solivagant",
   "description": "Solivagant storefront and studio workspace for products, orders, briefs, raw materials, formulas, and validation.",
-  "id": "/?source=pwa",
+  "id": "/",
   "start_url": "/mobile/dashboard?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#050705",
+  "background_color": "#f7f8f2",
   "theme_color": "#263d27",
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {

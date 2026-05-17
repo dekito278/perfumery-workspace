@@ -57,6 +57,7 @@ const ProductVisual = ({
           className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-150', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          fetchpriority={priority ? 'high' : 'auto'}
           width="320"
           height="128"
         />
@@ -71,6 +72,7 @@ const ProductVisual = ({
           className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-150', imageLoaded ? 'opacity-100' : 'opacity-0')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          fetchpriority={priority ? 'high' : 'auto'}
           srcSet={imageSrcSet}
           sizes={sizes}
           width="640"

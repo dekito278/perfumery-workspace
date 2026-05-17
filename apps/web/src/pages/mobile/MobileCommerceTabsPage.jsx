@@ -12,10 +12,10 @@ const MobileCommerceTabsPage = () => {
   return (
     <MobileCommerceLayout>
       <div className="mobile-keepalive-tabs">
-        <div className={isHomeActive ? 'block' : 'hidden'} aria-hidden={!isHomeActive}>
+        <div className={isHomeActive ? 'mobile-keepalive-tab is-active' : 'mobile-keepalive-tab is-inactive is-before'} aria-hidden={!isHomeActive}>
           <MobileStorefrontContent active={isHomeActive} />
         </div>
-        <div className={isCatalogActive ? 'block' : 'hidden'} aria-hidden={!isCatalogActive}>
+        <div className={isCatalogActive ? 'mobile-keepalive-tab is-active' : 'mobile-keepalive-tab is-inactive is-after'} aria-hidden={!isCatalogActive}>
           <MobileCatalogContent active={isCatalogActive} />
         </div>
       </div>

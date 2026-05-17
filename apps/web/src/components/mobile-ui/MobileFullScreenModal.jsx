@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
+import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.js';
 import { cn } from '@/lib/utils.js';
 
 const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="combobox"], [cmdk-input]';
@@ -10,6 +11,7 @@ const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : us
 const MobileFullScreenModal = ({ open, title, children, footer, onClose, hideFooterOnInputFocus = true }) => {
   const modalRef = useRef(null);
   const [inputFocused, setInputFocused] = useState(false);
+  useMobileKeyboardAvoidance(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -109,12 +111,16 @@ const MobileFullScreenModal = ({ open, title, children, footer, onClose, hideFoo
       <div className="mobile-page-wide flex h-full flex-col">
         <header className="mb-4 flex items-center gap-3">
           <div className="min-w-0 flex-1 text-xl font-bold">{title}</div>
-          <Button type="button" variant="outline" size="icon" onClick={onClose} className="rounded-2xl bg-white">
+          <Button type="button" variant="outline" size="icon" onClick={onClose} className="mobile-interactive mobile-pressable rounded-2xl bg-white">
             <X className="h-5 w-5" />
           </Button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto pb-4">{children}</div>
-        {footerVisible ? <div className="pt-3">{footer}</div> : null}
+        {footer ? (
+          <div className={cn('mobile-fullscreen-modal-footer', footerVisible ? 'mobile-overlay-footer-visible' : 'mobile-overlay-footer-hidden')}>
+            <div className="pt-3">{footer}</div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

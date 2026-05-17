@@ -3,7 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Beaker, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useMobileCommercePrefetch } from '@/hooks/useMobileCommercePrefetch.js';
+import { useMobileKeyboardAvoidance } from '@/hooks/useMobileKeyboardAvoidance.js';
 import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
+import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js';
+import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
 
 const commerceNavItems = [
@@ -19,6 +22,9 @@ const MobileCommerceLayout = ({ children }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const keyboardActive = useMobileKeyboardState();
+  useMobileKeyboardAvoidance();
+  useMobileFormEnhancements();
+  useMobileTouchFeedback();
   const ownerTapRef = useRef({ count: 0, lastTapAt: 0 });
   useMobileCommercePrefetch();
 
@@ -38,16 +44,16 @@ const MobileCommerceLayout = ({ children }) => {
 
   return (
     <div className={cn('mobile-app', keyboardActive && 'mobile-keyboard-active')}>
-      <div className="mobile-app-shell">
+      <div className="mobile-app-shell" data-mobile-primary-scroller="true">
         <header className="mobile-commerce-header">
           <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand" aria-label="Solivagant owner access">
             <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mobile-commerce-brand-logo" loading="eager" decoding="async" width="238" height="68" />
           </button>
           <div className="flex shrink-0 items-center gap-2">
-            <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+            <button type="button" onClick={() => navigate('/mobile/customer')} aria-label="Check order" className="mobile-interactive mobile-pressable grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
               <ClipboardCheck className="h-5 w-5 text-[#263d27]" />
             </button>
-            <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
+            <button type="button" onClick={() => navigate('/mobile/cart')} aria-label="Open cart" className="mobile-interactive mobile-pressable grid h-10 w-10 place-items-center rounded-2xl border border-[#e5e7eb] bg-white">
               <ShoppingBag className="h-5 w-5 text-[#263d27]" />
             </button>
           </div>

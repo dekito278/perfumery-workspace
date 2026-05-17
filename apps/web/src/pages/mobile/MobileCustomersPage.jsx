@@ -4,6 +4,7 @@ import { Clipboard, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCustomers } from '@/hooks/useCustomers.js';
 
@@ -47,7 +48,7 @@ const MobileCustomersPage = () => {
 
         <section className="space-y-3">
           {customers.map((customer) => (
-            <article key={customer.id || customer.customerCode} className="mobile-card p-3">
+            <article key={customer.id || customer.customerCode} className="mobile-card mobile-list-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -57,7 +58,7 @@ const MobileCustomersPage = () => {
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.contact}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.deliveryArea || customer.deliveryAddress || 'No address saved'}</p>
                 </div>
-                <button type="button" onClick={() => copyCode(customer)} className="shrink-0 rounded-2xl bg-[#263d27] px-3 py-2 text-xs font-bold text-[#eef2e8]">
+                <button type="button" onClick={() => copyCode(customer)} className="mobile-interactive mobile-pressable shrink-0 rounded-2xl bg-[#263d27] px-3 py-2 text-xs font-bold text-[#eef2e8]">
                   {customer.customerCode}
                 </button>
               </div>
@@ -65,21 +66,25 @@ const MobileCustomersPage = () => {
                 <p><strong className="block text-[10px] uppercase text-[#263d27]">Orders</strong>{customer.orderCount}</p>
                 <p><strong className="block text-[10px] uppercase text-[#263d27]">Last order</strong>{formatDate(customer.lastOrderAt)}</p>
               </div>
-              <Button type="button" variant="outline" className="mt-3 w-full rounded-2xl gap-2 bg-white" onClick={() => copyCode(customer)}>
+              <Button type="button" variant="outline" className="mobile-interactive mobile-pressable mt-3 w-full rounded-2xl gap-2 bg-white" onClick={() => copyCode(customer)}>
                 <Clipboard className="h-4 w-4" />
                 Copy customer code
               </Button>
             </article>
           ))}
           {!customers.length && !loading ? (
-            <div className="mobile-card p-5 text-center">
-              <UsersRound className="mx-auto h-8 w-8 text-amber-700" />
-              <h2 className="mt-3 text-base font-bold text-[#1f2937]">No customers yet</h2>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Customer dari checkout dan bespoke request akan muncul di sini.</p>
-            </div>
+            <MobileStatePanel
+              icon={UsersRound}
+              title="No customers yet"
+              description="Customer dari checkout dan bespoke request akan muncul di sini."
+            />
           ) : null}
           {loading && !customers.length ? (
-            <div className="mobile-card p-5 text-center text-xs font-bold text-[#6b7280]">Loading customers...</div>
+            <MobileStatePanel
+              tone="loading"
+              title="Loading customers"
+              description="Menyiapkan customer terbaru dan histori order."
+            />
           ) : null}
         </section>
       </main>

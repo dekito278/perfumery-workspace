@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useOrders } from '@/hooks/useOrders.js';
@@ -19,6 +19,7 @@ import {
   isBespokeOrder,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -146,7 +147,7 @@ const MobileOrdersPage = () => {
     ].some((value) => String(value || '').trim().toLowerCase() === query));
     const targetOrder = directMatch || (filteredOrders.length === 1 ? filteredOrders[0] : null);
     if (targetOrder) {
-      navigate(`/mobile/studio/orders/${targetOrder.id || targetOrder.orderNumber}`);
+      navigate(`/mobile/studio/orders/${targetOrder.id || targetOrder.orderNumber}`, { state: getMobileFromState(location) });
       toast.success(`Buka ${targetOrder.orderNumber}`);
       return;
     }
@@ -277,7 +278,7 @@ const MobileOrdersPage = () => {
             const packingReady = order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus);
 
             return (
-            <article key={order.id} className="mobile-card p-3">
+            <article key={order.id} className="mobile-card mobile-list-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-bold text-[#1f2937]">{order.orderNumber}</h2>
@@ -320,8 +321,8 @@ const MobileOrdersPage = () => {
               {order.paymentProofStatus === 'submitted' ? (
                 <button
                   type="button"
-                  onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}
-                  className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-left text-xs font-bold text-sky-700"
+                  onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`, { state: getMobileFromState(location) })}
+                  className="mobile-interactive mobile-pressable mt-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-left text-xs font-bold text-sky-700"
                 >
                   <span className="inline-flex items-center gap-2">
                     <FileCheck2 className="h-4 w-4" />
@@ -381,29 +382,27 @@ const MobileOrdersPage = () => {
                 </select>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button type="button" className="h-12 rounded-2xl gap-2 text-xs font-bold" onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
+                <Button type="button" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 text-xs font-bold" onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`, { state: getMobileFromState(location) })}><Eye className="h-4 w-4" />Detail</Button>
                 {packingReady ? (
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => navigate('/mobile/studio/fulfillment')}><Truck className="h-4 w-4" />Packing</Button>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => navigate('/mobile/studio/fulfillment')}><Truck className="h-4 w-4" />Packing</Button>
                 ) : (
-                  <Button type="button" variant="outline" className="h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => openQuickFollowUp(order)}><MessageCircle className="h-4 w-4" />WA</Button>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => openQuickFollowUp(order)}><MessageCircle className="h-4 w-4" />WA</Button>
                 )}
-                <Button type="button" variant="outline" className="h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
-                <Button type="button" variant="outline" className="h-12 rounded-2xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
+                <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
+                <Button type="button" variant="outline" className="mobile-interactive mobile-delete-action h-12 rounded-2xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
               </div>
             </article>
             );
           })}
           {!filteredOrders.length && !loading ? (
-            <StateBlock
-              className="mobile-card"
+            <MobileStatePanel
               icon={PackageCheck}
               title="Tidak ada order di tampilan ini"
               description="Ganti chip filter untuk melihat order lain."
             />
           ) : null}
           {loading && !filteredOrders.length ? (
-            <StateBlock
-              className="mobile-card"
+            <MobileStatePanel
               tone="loading"
               title="Memuat order"
               description="Sebentar, order terbaru sedang disiapkan."

@@ -24,6 +24,7 @@ const DeleteConfirmationDialog = ({ open, onOpenChange, itemName, onConfirm, loa
         <AlertDialogAction
           onClick={onConfirm}
           disabled={loading}
+          data-haptic="warning"
           className="rounded-2xl bg-[#ef4444] text-white hover:bg-[#dc2626]"
         >
           {loading ? 'Deleting...' : 'Delete'}

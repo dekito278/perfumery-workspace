@@ -10,6 +10,7 @@ import MobileSearchableSelector from '@/components/mobile-ui/MobileSearchableSel
 import MobileFullScreenModal from '@/components/mobile-ui/MobileFullScreenModal.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
@@ -22,6 +23,7 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { getVisibleItems, MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 import { runWithTimeout } from '@/utils/asyncTimeout.js';
+import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const tabs = [
   { value: 'pending', label: 'Action' },
@@ -88,9 +90,11 @@ const MobileValidationPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [formState, setFormState] = useState(createEmptyLog(queryFormulaId));
+  const [loadError, setLoadError] = useState('');
 
   const loadWorkspace = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const logRows = await runWithTimeout(getValidationLogs(), [], 6000);
       setLogs(logRows || []);
@@ -103,6 +107,7 @@ const MobileValidationPage = () => {
       }
     } catch (error) {
       toast.error('Failed to load validation workspace');
+      setLoadError(error.message || 'Validation workspace could not be loaded right now.');
       setLoading(false);
     } finally {
       setLoading(false);
@@ -181,9 +186,11 @@ const MobileValidationPage = () => {
     try {
       if (editingLogId) {
         await updateValidationLog(editingLogId, formState);
+        triggerMobileHaptic('success');
         toast.success('Validation log updated');
       } else {
         await createValidationLog(formState);
+        triggerMobileHaptic('success');
         toast.success(formState.status === 'approved' ? 'Validation completed' : 'Validation saved');
       }
       setFormOpen(false);
@@ -201,6 +208,7 @@ const MobileValidationPage = () => {
     setDeleting(true);
     try {
       await deleteValidationLog(deleteTarget.id);
+      triggerMobileHaptic('success');
       toast.success('Validation log deleted');
       if (editingLogId === deleteTarget.id) {
         resetEditor();
@@ -221,7 +229,7 @@ const MobileValidationPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Validation - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title="Validation" subtitle="Tests and revision notes" action={<Button type="button" size="icon" onClick={openNewLog} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
+        <MobileTopBar title="Validation" subtitle="Tests and revision notes" action={<Button type="button" size="icon" onClick={openNewLog} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>} />
         <section className="mobile-soft-card p-4">
           <div className="flex items-start gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
@@ -239,7 +247,15 @@ const MobileValidationPage = () => {
           </div>
         </section>
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
-        {loading ? <MobileLoadingSkeleton count={4} /> : visible.length ? (
+        {loading ? <MobileLoadingSkeleton count={4} title="Loading validation..." subtitle="Preparing action queue, approvals, and recent notes." /> : loadError ? (
+          <MobileStatePanel
+            tone="error"
+            title="Couldn’t load validation"
+            description={loadError}
+            action="Try again"
+            onAction={loadWorkspace}
+          />
+        ) : visible.length ? (
           <>
             <div className="space-y-2">
               {visible.map((log) => (
@@ -258,10 +274,14 @@ const MobileValidationPage = () => {
         ) : (
           <MobileEmptyState
             icon={NotebookPen}
-            title="No validation items"
-            description="Log blotter, skin, stability, or revision notes here once a formula is ready to review."
-            action="New Validation"
-            onAction={openNewLog}
+            title={tab === 'pending' ? 'No items need action' : tab === 'completed' ? 'No approved validations yet' : 'No validation notes yet'}
+            description={tab === 'pending'
+              ? 'When a test needs follow-up, it will appear here for quick review.'
+              : tab === 'completed'
+                ? 'Approved validation results will collect here after review.'
+                : 'Log blotter, skin, stability, or revision notes once a formula is ready to review.'}
+            action={tab === 'in_progress' ? 'New Validation' : 'View logged'}
+            onAction={tab === 'in_progress' ? openNewLog : () => setTab('in_progress')}
           />
         )}
       </main>

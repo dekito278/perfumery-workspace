@@ -33,6 +33,7 @@ import {
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 
@@ -173,6 +174,7 @@ const buildOrderFormulaParams = (order, item) => {
 
 const MobileOrderDetailPage = () => {
   const navigate = useNavigate();
+  const handleBack = useMobileBackNavigation('/mobile/studio/orders');
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -590,6 +592,7 @@ const MobileOrderDetailPage = () => {
           title={order.orderNumber}
           subtitle={formatDate(order.createdAt)}
           eyebrow="Detail order"
+          onBack={handleBack}
           action={<PackageCheck className="h-5 w-5 text-amber-700" />}
         />
 

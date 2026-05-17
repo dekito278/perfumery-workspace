@@ -8,6 +8,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
+import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -25,6 +26,7 @@ const NoteColumn = ({ title, notes }) => (
 
 const MobileProductDetailPage = () => {
   const navigate = useNavigate();
+  const handleBack = useMobileBackNavigation('/mobile/catalog');
   const { slug } = useParams();
   const products = useCatalogProducts();
   const product = products.find((item) => item.slug === slug && isProductVisibleInStorefront(item));
@@ -91,7 +93,7 @@ const MobileProductDetailPage = () => {
           title={product.name}
           subtitle={product.category}
           eyebrow="Produk"
-          onBack={() => navigate('/mobile/catalog')}
+          onBack={handleBack}
           action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
         />
 

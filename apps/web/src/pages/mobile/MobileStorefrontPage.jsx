@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Gem,
   Leaf,
@@ -20,6 +20,7 @@ import { useMobileRenderSectionMonitor } from '@/hooks/useMobileRenderSectionMon
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const mobileNotes = [
   { icon: Sparkles, label: 'Luxury' },
@@ -33,11 +34,12 @@ const mobileHomeAssets = {
 };
 
 export const MobileStorefrontContent = ({ active = true }) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const catalogProducts = useCatalogProducts();
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
-  const homeProducts = products.filter((product) => product.featured).slice(0, 3);
+  const homeProducts = useMemo(() => products.filter((product) => product.featured).slice(0, 3), [products]);
   const productsLoading = Boolean(catalogProducts.loading);
   const hasProducts = products.length > 0;
   const handleStaticImageError = (source) => {
@@ -79,7 +81,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               {perfumerProfile.intro}
             </p>
             <div className="mt-4 overflow-hidden rounded-2xl border border-[#263d27]/10 bg-white/74">
-              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="420" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
+              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-72 w-full object-cover object-[58%_34%]" loading="eager" decoding="async" fetchpriority="high" width="640" height="420" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
               <div className="p-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Meet the perfumer</p>
                 <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
@@ -175,8 +177,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
           <div className="grid grid-cols-2 gap-3">
           {homeProducts.map((product, index) => (
             <article key={product.id} className="mobile-card min-w-0 overflow-hidden p-2 shadow-sm shadow-[#263d27]/6">
-              <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
-                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} />
+              <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location) })} className="block w-full text-left">
+                <ProductVisual product={product} className="aspect-square rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 44vw, 198px" />
                 <div className="mt-2">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{product.name}</h3>

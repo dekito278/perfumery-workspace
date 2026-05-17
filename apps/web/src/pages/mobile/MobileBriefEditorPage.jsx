@@ -8,6 +8,8 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileSearchableSelector from '@/components/mobile-ui/MobileSearchableSelector.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
+import MobileFormField from '@/components/mobile-ui/MobileFormField.jsx';
+import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -93,7 +95,8 @@ const MobileBriefEditorPage = () => {
   const currentIndex = steps.findIndex((item) => item.value === step);
   const setField = (field, value) => setFormState((current) => ({ ...current, [field]: value }));
   const goNext = () => setStep(steps[Math.min(currentIndex + 1, steps.length - 1)].value);
-  const goBack = () => currentIndex === 0 ? navigate('/mobile/briefs') : setStep(steps[Math.max(currentIndex - 1, 0)].value);
+  const returnToParent = useMobileBackNavigation(isEditMode ? `/mobile/briefs/${id}` : '/mobile/briefs');
+  const goBack = () => currentIndex === 0 ? returnToParent() : setStep(steps[Math.max(currentIndex - 1, 0)].value);
 
   const handleGenerate = () => {
     const recommendation = generateBriefRecommendations(descriptionInput);
@@ -156,22 +159,23 @@ const MobileBriefEditorPage = () => {
           <section className="mobile-card p-4">
             {step === 'idea' ? (
               <div className="space-y-4">
-                <Label>Describe idea</Label>
-                <Textarea value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} className="min-h-[180px] rounded-2xl bg-white" placeholder="Rose kering, panas, elegan, breathable..." />
+                <MobileFormField label="Describe idea" helper="Tulis ringkasan yang cukup jelas agar rekomendasi awal lebih tepat.">
+                  <Textarea value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} className="min-h-[180px] rounded-2xl bg-white" placeholder="Rose kering, panas, elegan, breathable..." />
+                </MobileFormField>
                 <Button type="button" variant="outline" onClick={handleGenerate} className="w-full rounded-2xl bg-white">Generate Recommendation</Button>
               </div>
             ) : null}
             {step === 'direction' ? (
               <div className="grid gap-4">
-                <div className="space-y-2"><Label>Mood and story</Label><Textarea value={formState.mood_story} onChange={(event) => setField('mood_story', event.target.value)} className="min-h-[120px] rounded-2xl" /></div>
-                <div className="space-y-2"><Label>Audience and usage</Label><Textarea value={formState.audience_usage} onChange={(event) => setField('audience_usage', event.target.value)} className="min-h-[120px] rounded-2xl" /></div>
-                <div className="space-y-2"><Label>Performance target</Label><Textarea value={formState.performance_target} onChange={(event) => setField('performance_target', event.target.value)} className="min-h-[120px] rounded-2xl" /></div>
-                <div className="space-y-2"><Label>Budget and direction</Label><Textarea value={formState.budget_direction} onChange={(event) => setField('budget_direction', event.target.value)} className="min-h-[120px] rounded-2xl" /></div>
+                <MobileFormField label="Mood and story" helper="Nuansa, emosi, dan cerita yang ingin dibawa."><Textarea value={formState.mood_story} onChange={(event) => setField('mood_story', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Audience and usage" helper="Siapa yang memakai dan kapan dipakai."><Textarea value={formState.audience_usage} onChange={(event) => setField('audience_usage', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Performance target" helper="Ekspektasi projection, longevity, atau feel pemakaian."><Textarea value={formState.performance_target} onChange={(event) => setField('performance_target', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Budget and direction" helper="Batas biaya atau batasan bahan bila ada."><Textarea value={formState.budget_direction} onChange={(event) => setField('budget_direction', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
               </div>
             ) : null}
             {step === 'identity' ? (
               <div className="grid gap-4">
-                <div className="space-y-2"><Label>Title</Label><Input value={formState.title} onChange={(event) => setField('title', event.target.value)} className="rounded-2xl" /></div>
+                <MobileFormField label="Title" helper="Nama singkat yang mudah dikenali tim."><Input value={formState.title} onChange={(event) => setField('title', event.target.value)} className="rounded-2xl" required /></MobileFormField>
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <MobileSegmentedControl options={[{ value: 'draft', label: 'Draft' }, { value: 'active', label: 'Active' }, { value: 'archived', label: 'Archived' }]} value={formState.status} onChange={(value) => setField('status', value)} />

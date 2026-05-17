@@ -22,6 +22,7 @@ import { FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
+import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 
 const createItem = (material, gramAmount = '1', item = {}) => ({
   row_key: `${material.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -50,6 +51,7 @@ const buildItemsForSubmit = (itemsWithInsights) => itemsWithInsights.map((item) 
 const MobileEditFormulaPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const handleBack = useMobileBackNavigation(`/mobile/formulas/${id}`);
   const [searchParams] = useSearchParams();
   const seedMaterialIdsParam = searchParams.get('materialIds') || '';
   const seedMaterialIds = useMemo(() => String(seedMaterialIdsParam).split(',').map((value) => value.trim()).filter(Boolean), [seedMaterialIdsParam]);
@@ -163,7 +165,7 @@ const MobileEditFormulaPage = () => {
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>Edit {name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={name || 'Edit Formula'} subtitle={unsaved ? 'Unsaved revision' : 'Workbook ready'} onBack={() => navigate(`/mobile/formulas/${id}`)} action={<MobileStatusBadge status={status} />} />
+        <MobileTopBar title={name || 'Edit Formula'} subtitle={unsaved ? 'Unsaved revision' : 'Workbook ready'} onBack={handleBack} action={<MobileStatusBadge status={status} />} />
         {seededCount ? (
           <section className="mobile-card p-3">
             <div className="flex items-center justify-between gap-3">

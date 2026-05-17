@@ -12,7 +12,7 @@ const SummaryMetricCardMobile = ({ icon: Icon, label, onClick, to, value, tone =
   const actionProps = to ? { to } : (onClick ? { type: 'button', onClick } : {});
 
   return (
-    <Component {...actionProps} className="mobile-card block w-full p-3.5 text-left">
+    <Component {...actionProps} className="mobile-card mobile-interactive mobile-pressable block w-full p-3.5 text-left">
       <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${tones[tone] || tones.amber}`}>
         {Icon ? <Icon className="h-4 w-4" /> : null}
       </div>

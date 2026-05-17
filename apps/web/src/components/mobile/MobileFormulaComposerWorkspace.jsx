@@ -16,6 +16,7 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
+import MobileInlineNotice from '@/components/mobile-ui/MobileInlineNotice.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
@@ -882,9 +883,9 @@ const MobileFormulaComposerWorkspace = ({
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} placeholder="https://..." className="h-10 rounded-xl bg-white text-xs" /></div>
           <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">{guidanceSummary.slice(0, 3).join(' · ')}</div> : null}
-          {guidanceState === 'error' ? <div className="rounded-xl bg-rose-50 p-2 text-xs font-semibold text-rose-700">Unable to import guidance.</div> : null}
-          {guidanceState === 'success' ? <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">Guidance imported and insights updated.</div> : null}
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 3).join(' · ')} /> : null}
+          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Unable to import guidance. Check the URL and try again." /> : null}
+          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Guidance imported and insights updated." /> : null}
         </div>
       </MobileBottomSheet>
     </>

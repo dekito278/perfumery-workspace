@@ -6,8 +6,11 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
+import MobileActionDock from '@/components/mobile-ui/MobileActionDock.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
+import MobileInlineNotice from '@/components/mobile-ui/MobileInlineNotice.jsx';
+import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -36,6 +39,7 @@ const runDeleteWithTimeout = (promise, timeoutMs = 30000) => Promise.race([
 const MobileRawMaterialDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const handleBack = useMobileBackNavigation('/mobile/raw-materials');
   const { deleteMaterial, updateMaterial } = useRawMaterials();
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -233,7 +237,7 @@ const MobileRawMaterialDetailPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>{material.name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={() => navigate('/mobile/raw-materials')} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
+        <MobileTopBar title={material.name} subtitle={resolved.cas_number ? `CAS ${resolved.cas_number}` : undefined} onBack={handleBack} action={<MobileStatusBadge tone={ready ? 'active' : 'warning'}>{ready ? 'Ready' : 'Audit'}</MobileStatusBadge>} />
         {lowStock ? (
           <section className="mobile-card border border-rose-200 bg-rose-50 p-3">
             <div className="text-[10px] font-bold uppercase text-rose-700">Low stock</div>
@@ -242,14 +246,19 @@ const MobileRawMaterialDetailPage = () => {
             </div>
           </section>
         ) : null}
-        <section className="mobile-card p-2.5">
-          <div className="grid grid-cols-4 gap-1.5">
-            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={openEditSheet}><Pencil className="h-4 w-4" />Edit</Button>
-            <Button className="h-12 flex-col gap-0.5 rounded-2xl px-1 text-[10px]" onClick={() => navigate(`/mobile/formulas/new?materialIds=${material.id}`)}><Plus className="h-4 w-4" />Formula</Button>
-            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl bg-white px-1 text-[10px]" onClick={() => setGuidanceOpen(true)}><Link2 className="h-4 w-4" />Import</Button>
-            <Button variant="outline" className="h-12 flex-col gap-0.5 rounded-2xl border-rose-200 bg-rose-50 px-1 text-[10px] text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" />Delete</Button>
-          </div>
-        </section>
+        <MobileActionDock
+          primary={(
+            <Button className="mobile-interactive mobile-add-action mobile-pressable h-12 w-full rounded-2xl text-xs font-bold" onClick={() => navigate(`/mobile/formulas/new?materialIds=${material.id}`)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Use in Formula
+            </Button>
+          )}
+          secondary={[
+            <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={openEditSheet}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
+            <Button key="import" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => setGuidanceOpen(true)}><Link2 className="mr-1 h-4 w-4" />Import</Button>,
+          ]}
+          destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-11 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
+        />
         {sections.map(([title, rows]) => (
           <section key={title} className="mobile-card mobile-compact-card p-3">
             <h2 className="text-sm font-bold">{title}</h2>
@@ -349,9 +358,9 @@ const MobileRawMaterialDetailPage = () => {
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} className="h-10 rounded-xl bg-white text-xs" placeholder="https://..." /></div>
           <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">{guidanceSummary.slice(0, 3).join(' · ')}</div> : null}
-          {guidanceState === 'error' ? <div className="rounded-xl bg-rose-50 p-2 text-xs font-semibold text-rose-700">URL import failed. Check the address and try again.</div> : null}
-          {guidanceState === 'success' ? <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">Guidance imported and material insights updated.</div> : null}
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 3).join(' · ')} /> : null}
+          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Check the URL and try again." /> : null}
+          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Guidance imported and material insights updated." /> : null}
         </div>
       </MobileBottomSheet>
     </MobileAuthenticatedLayout>

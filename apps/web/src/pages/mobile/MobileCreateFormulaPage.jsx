@@ -8,6 +8,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
+import MobileFormField from '@/components/mobile-ui/MobileFormField.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileFormulaComposerWorkspace from '@/components/mobile/MobileFormulaComposerWorkspace.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -315,18 +316,25 @@ const MobileCreateFormulaPage = () => {
       </main>
       <MobileBottomSheet open={metadataOpen} onOpenChange={setMetadataOpen} title="Formula Metadata" footer={<Button className="h-10 w-full rounded-xl text-xs" onClick={() => setMetadataOpen(false)}>Save Metadata</Button>}>
         <div className="grid gap-3 pb-2">
-          <div className="space-y-1"><Label htmlFor="mobile-formula-name" className="text-xs">Formula name</Label><Input id="mobile-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>
-          <div className="space-y-1">
+          <MobileFormField id="mobile-formula-name" label="Formula name" helper="Nama yang akan terlihat di daftar formula.">
+            <Input id="mobile-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
+          </MobileFormField>
+          <div data-mobile-field className="mobile-form-field space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="mobile-formula-code" className="text-xs">Formula code</Label>
               <button type="button" onClick={() => setCode(buildFormulaCode(name || briefContext?.title))} className="text-[11px] font-bold text-amber-700">Generate</button>
             </div>
-            <Input id="mobile-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
+            <Input id="mobile-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
+            <p className="mobile-form-helper text-xs font-medium text-[#6b7280]">Gunakan kode singkat yang mudah dicari.</p>
           </div>
           <div className="space-y-1"><Label className="text-xs">Category</Label><button type="button" onClick={() => setCategoryOpen(true)} className="mobile-card w-full p-3 text-left text-xs font-bold">{category}</button></div>
-          <div className="space-y-1"><Label htmlFor="mobile-formula-version" className="text-xs">Version</Label><Input id="mobile-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>
+          <MobileFormField id="mobile-formula-version" label="Version" helper="Contoh: v1, pilot, atau revisi berikutnya.">
+            <Input id="mobile-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
+          </MobileFormField>
           <div className="space-y-1"><Label className="text-xs">Status</Label><MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} /></div>
-          <div className="space-y-1"><Label htmlFor="mobile-formula-notes" className="text-xs">Notes</Label><Textarea id="mobile-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" /></div>
+          <MobileFormField id="mobile-formula-notes" label="Notes" helper="Catatan opsional untuk revisi atau arah evaluasi.">
+            <Textarea id="mobile-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" />
+          </MobileFormField>
         </div>
       </MobileBottomSheet>
       <MobileBottomSheet open={categoryOpen} onOpenChange={setCategoryOpen} title="Formula Category">

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -22,6 +22,7 @@ import { useOrders } from '@/hooks/useOrders.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getDisplayName, MOBILE_ACTIVITY_LIMIT, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const hasGuidanceCoverage = (material) => (
   Boolean(
@@ -58,7 +59,7 @@ const WorkflowTile = ({ helper, icon: Icon, label, to, tone = 'amber' }) => {
   };
 
   return (
-    <Link to={to} className="mobile-card flex min-w-0 items-center gap-3.5 p-3.5 text-left">
+    <Link to={to} className="mobile-card mobile-interactive mobile-pressable flex min-w-0 items-center gap-3.5 p-3.5 text-left">
       <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${tones[tone] || tones.amber}`}>
         {Icon ? <Icon className="h-5 w-5" /> : null}
       </span>
@@ -79,7 +80,7 @@ const WorkflowButton = ({ helper, icon: Icon, label, onClick, tone = 'amber' }) 
   };
 
   return (
-    <button type="button" onClick={onClick} className="mobile-card flex min-w-0 items-center gap-3.5 p-3.5 text-left">
+    <button type="button" onClick={onClick} className="mobile-card mobile-interactive mobile-pressable flex min-w-0 items-center gap-3.5 p-3.5 text-left">
       <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${tones[tone] || tones.amber}`}>
         {Icon ? <Icon className="h-5 w-5" /> : null}
       </span>
@@ -115,7 +116,7 @@ const PriorityCard = ({ icon: Icon, label, title, helper, tone = 'amber', onClic
   };
 
   return (
-    <button type="button" onClick={onClick} className="mobile-card flex w-full items-center gap-3 p-3 text-left">
+    <button type="button" onClick={onClick} className="mobile-card mobile-interactive mobile-pressable flex w-full items-center gap-3 p-3 text-left">
       <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${tones[tone] || tones.amber}`}>
         {Icon ? <Icon className="h-5 w-5" /> : null}
       </span>
@@ -130,6 +131,7 @@ const PriorityCard = ({ icon: Icon, label, title, helper, tone = 'amber', onClic
 
 const MobileDashboardPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary } = useRawMaterials();
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
@@ -435,7 +437,7 @@ const MobileDashboardPage = () => {
                     title={material.name}
                     meta="Missing raw material guidance"
                     date={material.updated || material.created}
-                    onClick={() => navigate(`/mobile/raw-material/${material.id}`)}
+                    onClick={() => navigate(`/mobile/raw-material/${material.id}`, { state: getMobileFromState(location) })}
                   />
                 ))}
               </section>
@@ -450,9 +452,9 @@ const MobileDashboardPage = () => {
                   metrics={metrics[formula.id]}
                   pipeline={pipeline[formula.id]}
                   duplicating={duplicatingId === formula.id}
-                  onView={() => navigate(`/mobile/formulas/${formula.id}`)}
+                  onView={() => navigate(`/mobile/formulas/${formula.id}`, { state: getMobileFromState(location) })}
                   onDuplicate={() => handleDuplicate(formula)}
-                  onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`)}
+                  onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`, { state: getMobileFromState(location) })}
                   onDelete={() => setDeleteTarget(formula)}
                 />
               ))}
@@ -461,7 +463,7 @@ const MobileDashboardPage = () => {
             <section className="space-y-3">
               <div className="flex items-center justify-between"><h2 className="text-base font-bold">Brief updates</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/briefs')}>View all</Button></div>
               {recentBriefs.slice(0, 2).map((brief) => (
-                <BriefCardMobile key={brief.id} brief={brief} linkedFormula={formulasById.get(brief.formula_id)} onOpen={() => navigate(`/mobile/briefs/${brief.id}`)} />
+                <BriefCardMobile key={brief.id} brief={brief} linkedFormula={formulasById.get(brief.formula_id)} onOpen={() => navigate(`/mobile/briefs/${brief.id}`, { state: getMobileFromState(location) })} />
               ))}
             </section>
 

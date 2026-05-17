@@ -5,7 +5,7 @@ import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import { formatDate, formatGramAmount } from '@/utils/formatting.js';
 
 const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicate, onEdit, onDelete, duplicating = false }) => (
-  <article className="mobile-card mobile-compact-card p-4">
+  <article className="mobile-card mobile-compact-card mobile-list-card mobile-interactive p-4">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-sm font-bold text-[#1f2937]">{formula.name}</h3>
@@ -41,10 +41,10 @@ const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicat
     </div>
     <div className="mt-3 text-[11px] font-medium text-[#9ca3af]">Updated {formatDate(formula.updated || formula.created)}</div>
     <div className="mt-3 grid grid-cols-4 gap-2">
-      <Button type="button" variant="outline" size="icon" onClick={onView} className="h-9 w-full rounded-xl bg-white" aria-label="View formula"><Eye className="h-4 w-4" /></Button>
-      <Button type="button" variant="outline" size="icon" onClick={onDuplicate} disabled={duplicating} className="h-9 w-full rounded-xl bg-white" aria-label="Duplicate formula"><Copy className="h-4 w-4" /></Button>
-      <Button type="button" variant="outline" size="icon" onClick={onEdit} className="h-9 w-full rounded-xl bg-white" aria-label="Edit formula"><Pencil className="h-4 w-4" /></Button>
-      <Button type="button" variant="outline" size="icon" onClick={onDelete} className="h-9 w-full rounded-xl border-rose-200 bg-rose-50 text-rose-700" aria-label="Delete formula"><Trash2 className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onView} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="View formula"><Eye className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onDuplicate} disabled={duplicating} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Duplicate formula"><Copy className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onEdit} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Edit formula"><Pencil className="h-4 w-4" /></Button>
+      <Button type="button" variant="outline" size="icon" onClick={onDelete} className="mobile-interactive mobile-delete-action h-9 w-full rounded-xl border-rose-200 bg-rose-50 text-rose-700" aria-label="Delete formula"><Trash2 className="h-4 w-4" /></Button>
     </div>
   </article>
 );

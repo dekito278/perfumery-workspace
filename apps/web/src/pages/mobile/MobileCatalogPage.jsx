@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpDown, PackagePlus, Search, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -18,6 +18,7 @@ import {
 } from '@/services/productCatalogService.js';
 import { getOptimizedProductImageUrl } from '@/services/productImageStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const MOBILE_CATALOG_COLUMNS = 2;
 const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 330;
@@ -78,9 +79,11 @@ const getScrollParent = (element) => {
 };
 
 export const MobileCatalogContent = ({ active = true }) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
+  const deferredQuery = useDeferredValue(query);
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
@@ -107,7 +110,7 @@ export const MobileCatalogContent = ({ active = true }) => {
   }, [active, searchParams]);
 
   const filteredProducts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
     const matchingProducts = products.filter((product) => {
       const matchesSegment = segment === 'all'
         || (segment === 'limited' && (product.featured || product.stock <= 8))
@@ -125,7 +128,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     });
 
     return sortProducts(matchingProducts, sort);
-  }, [category, products, query, segment, sort]);
+  }, [category, deferredQuery, products, segment, sort]);
   const totalVirtualRows = Math.ceil(filteredProducts.length / MOBILE_CATALOG_COLUMNS);
   const virtualStartRow = Math.min(virtualRows.start, Math.max(totalVirtualRows - 1, 0));
   const virtualEndRow = Math.min(Math.max(virtualRows.end, virtualStartRow + 1), totalVirtualRows);
@@ -178,7 +181,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     setVirtualRows({ start: 0, end: 8 });
     requestAnimationFrame(syncVirtualRows);
     return undefined;
-  }, [active, category, query, segment, sort, syncVirtualRows]);
+  }, [active, category, deferredQuery, segment, sort, syncVirtualRows]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -390,7 +393,7 @@ export const MobileCatalogContent = ({ active = true }) => {
 
                   return (
                     <article key={product.id} className="mobile-card mobile-catalog-card min-w-0 overflow-hidden p-2">
-                      <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`)} className="block w-full text-left">
+                      <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location) })} className="block w-full text-left">
                         <ProductVisual
                           product={product}
                           className="aspect-square rounded-xl mobile-catalog-visual"

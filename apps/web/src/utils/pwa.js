@@ -14,6 +14,8 @@ export const isAndroidDevice = () => /android/i.test(window.navigator.userAgent 
 
 const isLocalDevelopmentHost = () => ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 const SERVICE_WORKER_BUILD_ID = import.meta.env.VITE_APP_BUILD_ID || 'local';
+const UPDATE_AVAILABLE_EVENT = 'solivagant:pwa-update-available';
+const OFFLINE_STATE_EVENT = 'solivagant:pwa-connectivity-change';
 const STALE_SHELL_RECOVERY_KEY = 'solivagant.pwa.stale-shell-recovered';
 const STALE_CHUNK_ERROR_PATTERNS = [
   /Failed to fetch dynamically imported module/i,
@@ -24,6 +26,33 @@ const STALE_CHUNK_ERROR_PATTERNS = [
 
 export const applyStandaloneClass = () => {
   document.documentElement.classList.toggle('pwa-standalone', isStandaloneDisplayMode());
+};
+
+export const installConnectivityEvents = () => {
+  const dispatchConnectivity = () => {
+    window.dispatchEvent(new CustomEvent(OFFLINE_STATE_EVENT, {
+      detail: { online: window.navigator.onLine },
+    }));
+  };
+
+  window.addEventListener('online', dispatchConnectivity);
+  window.addEventListener('offline', dispatchConnectivity);
+  dispatchConnectivity();
+};
+
+export const subscribeToPwaUpdates = (listener) => {
+  window.addEventListener(UPDATE_AVAILABLE_EVENT, listener);
+  return () => window.removeEventListener(UPDATE_AVAILABLE_EVENT, listener);
+};
+
+export const subscribeToConnectivity = (listener) => {
+  window.addEventListener(OFFLINE_STATE_EVENT, listener);
+  return () => window.removeEventListener(OFFLINE_STATE_EVENT, listener);
+};
+
+export const activateWaitingServiceWorker = async () => {
+  const registration = await navigator.serviceWorker?.getRegistration?.('/');
+  registration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
 };
 
 const isStaleShellError = (error) => {
@@ -117,10 +146,8 @@ export const registerServiceWorker = () => {
 
         checkForUpdate();
 
-        const activateWaitingWorker = () => {
-          if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
+        const notifyUpdateAvailable = () => {
+          window.dispatchEvent(new CustomEvent(UPDATE_AVAILABLE_EVENT));
         };
 
         registration.addEventListener('updatefound', () => {
@@ -131,12 +158,14 @@ export const registerServiceWorker = () => {
 
           nextWorker.addEventListener('statechange', () => {
             if (nextWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              nextWorker.postMessage({ type: 'SKIP_WAITING' });
+              notifyUpdateAvailable();
             }
           });
         });
 
-        activateWaitingWorker();
+        if (registration.waiting) {
+          notifyUpdateAvailable();
+        }
         window.addEventListener('focus', checkForUpdate);
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') {

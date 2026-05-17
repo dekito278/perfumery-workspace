@@ -5,7 +5,7 @@ import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
 
 const ValidationCardMobile = ({ log, formula, onDelete, onEdit, onOpen }) => (
-  <article className="mobile-card mobile-compact-card p-3">
+  <article className="mobile-card mobile-compact-card mobile-list-card p-3">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-sm font-bold text-[#1f2937]">{formula?.name || 'Unknown formula'}</h3>

@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Beaker, FileUp, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -9,6 +9,7 @@ import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import FormulaCardMobile from '@/components/mobile/FormulaCardMobile.jsx';
@@ -25,6 +26,8 @@ import {
 } from '@/utils/mobileFormulaMetrics.js';
 import { filterByText, getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 import { runWithTimeout } from '@/utils/asyncTimeout.js';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfModal.jsx'));
 
@@ -41,6 +44,7 @@ const statusOptions = [
 
 const MobileFormulasPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
@@ -57,6 +61,7 @@ const MobileFormulasPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState('');
   const [importOpen, setImportOpen] = useState(searchParams.get('action') === 'import');
+  const [loadError, setLoadError] = useState('');
 
   const loadPipeline = async (formulaRows = []) => {
     try {
@@ -87,6 +92,7 @@ const MobileFormulasPage = () => {
 
   const loadFormulas = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const formulaRows = await getFormulas();
       setFormulas(formulaRows || []);
@@ -94,6 +100,7 @@ const MobileFormulasPage = () => {
       loadPipeline(formulaRows || []);
     } catch (error) {
       toast.error('Failed to load formulas');
+      setLoadError(error.message || 'Formulas could not be loaded right now.');
       setLoading(false);
     }
   };
@@ -155,6 +162,7 @@ const MobileFormulasPage = () => {
     setDuplicatingId(formula.id);
     try {
       await duplicateFormula(formula.id);
+      triggerMobileHaptic('success');
       toast.success('Formula duplicated');
       await loadFormulas();
     } catch (error) {
@@ -169,6 +177,7 @@ const MobileFormulasPage = () => {
     setDeleting(true);
     try {
       await deleteFormula(deleteTarget.id);
+      triggerMobileHaptic('success');
       toast.success('Formula deleted');
       setDeleteTarget(null);
       await loadFormulas();
@@ -185,17 +194,25 @@ const MobileFormulasPage = () => {
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Formulas"
-          action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Search formula, code, category..." disabled={loading} />
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
-          <Button type="button" variant="outline" onClick={() => setImportOpen(true)} className="mt-2 h-11 w-full rounded-2xl bg-white">
+          <Button type="button" variant="outline" onClick={() => setImportOpen(true)} className="mobile-interactive mobile-pressable mt-2 h-11 w-full rounded-2xl bg-white">
             <FileUp className="mr-2 h-4 w-4" />
             Import Formula PDF
           </Button>
         </div>
-        {loading ? <MobileLoadingSkeleton count={4} /> : formulas.length === 0 ? (
+        {loading ? <MobileLoadingSkeleton count={4} title="Loading formulas..." subtitle="Preparing workbook summaries, validation, and batch readiness." /> : loadError ? (
+          <MobileStatePanel
+            tone="error"
+            title="Couldn’t load formulas"
+            description={loadError}
+            action="Try again"
+            onAction={loadFormulas}
+          />
+        ) : formulas.length === 0 ? (
           <MobileEmptyState
             icon={Beaker}
             title="No formulas yet"
@@ -204,7 +221,15 @@ const MobileFormulasPage = () => {
             onAction={() => navigate('/mobile/formulas/new')}
           />
         ) : filtered.length === 0 ? (
-          <MobileEmptyState title="No matching formulas" />
+          <MobileEmptyState
+            title="No matching formulas"
+            description="No formula fits the current search and status combination."
+            action="Clear filters"
+            onAction={() => {
+              setQuery('');
+              setStatus('all');
+            }}
+          />
         ) : (
           <>
             <div className="space-y-2">
@@ -215,9 +240,9 @@ const MobileFormulasPage = () => {
                   metrics={metrics[formula.id]}
                   pipeline={pipeline[formula.id]}
                   duplicating={duplicatingId === formula.id}
-                  onView={() => navigate(`/mobile/formulas/${formula.id}`)}
+                  onView={() => navigate(`/mobile/formulas/${formula.id}`, { state: getMobileFromState(location) })}
                   onDuplicate={() => handleDuplicate(formula)}
-                  onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`)}
+                  onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`, { state: getMobileFromState(location) })}
                   onDelete={() => setDeleteTarget(formula)}
                 />
               ))}
@@ -234,6 +259,7 @@ const MobileFormulasPage = () => {
             onOpenChange={setImportOpen}
             onSuccess={(createdFormula) => {
               setImportOpen(false);
+              triggerMobileHaptic('success');
               toast.success('Formula imported');
               navigate(createdFormula?.id ? `/mobile/formulas/${createdFormula.id}` : '/mobile/formulas');
             }}

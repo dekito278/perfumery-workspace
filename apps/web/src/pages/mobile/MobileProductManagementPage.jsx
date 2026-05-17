@@ -75,7 +75,7 @@ const ProductListCard = ({ onDelete, onEdit, onOpenBatch, product }) => {
   const batchDetails = getProductBatchDetails(product);
 
   return (
-    <article className="mobile-card p-3">
+    <article className="mobile-card mobile-list-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="grid min-w-0 flex-1 grid-cols-[72px_1fr] gap-3">
           <ProductVisual product={product} className="h-20 rounded-2xl" label={false} />
@@ -99,7 +99,7 @@ const ProductListCard = ({ onDelete, onEdit, onOpenBatch, product }) => {
               <button
                 type="button"
                 onClick={() => onOpenBatch(formulaId)}
-                className="mt-2 text-[10px] font-bold uppercase text-[#263d27]"
+                className="mobile-interactive mobile-pressable mt-2 text-[10px] font-bold uppercase text-[#263d27]"
               >
                 View source batch
               </button>

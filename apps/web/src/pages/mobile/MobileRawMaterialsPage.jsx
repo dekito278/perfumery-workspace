@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -8,9 +8,13 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
+import MobileInlineNotice from '@/components/mobile-ui/MobileInlineNotice.jsx';
+import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import RawMaterialCardMobile from '@/components/mobile/RawMaterialCardMobile.jsx';
@@ -144,6 +148,7 @@ const runDeleteWithTimeout = (promise, timeoutMs = 12000) => Promise.race([
 
 const MobileRawMaterialsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const briefId = searchParams.get('briefId') || '';
   const activeBriefId = UUID_PATTERN.test(briefId) ? briefId : '';
@@ -175,6 +180,7 @@ const MobileRawMaterialsPage = () => {
   const [stockSaving, setStockSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [stockForm, setStockForm] = useState({
     stock_quantity: '',
     minimum_stock: '',
@@ -206,6 +212,7 @@ const MobileRawMaterialsPage = () => {
     loadTokenRef.current = loadToken;
     let baseLoaded = false;
     setLoading(true);
+    setLoadError('');
     setGuidanceLoading(false);
 
     const applyMaterialFilters = (items = []) => items.filter((material) => {
@@ -267,6 +274,7 @@ const MobileRawMaterialsPage = () => {
     } catch (error) {
       if (loadToken === loadTokenRef.current && !baseLoaded) {
         toast.error(error.message || 'Failed to load materials');
+        setLoadError(error.message || 'Materials could not be loaded right now.');
         setLoading(false);
       } else {
         console.warn('Material guidance enrichment delayed:', error);
@@ -351,6 +359,7 @@ const MobileRawMaterialsPage = () => {
       const nextMaterial = enrichedUpdated || updated;
       setMaterials((current) => current.map((material) => material.id === stockTarget.id ? nextMaterial : material));
       setStockTarget(nextMaterial);
+      triggerMobileHaptic('success');
       toast.success('Stock and price updated');
       setStockTarget(null);
     } catch (error) {
@@ -367,6 +376,7 @@ const MobileRawMaterialsPage = () => {
       await runDeleteWithTimeout(deleteMaterial(deleteTarget.id), 30000);
       setMaterials((current) => current.filter((material) => material.id !== deleteTarget.id));
       setDeleteTarget(null);
+      triggerMobileHaptic('success');
       toast.success('Material deleted');
       await loadMaterials();
     } catch (error) {
@@ -387,6 +397,7 @@ const MobileRawMaterialsPage = () => {
       setMaterials((current) => current
         .map((entry) => entry.id === material.id ? { ...entry, ...updated } : entry)
         .filter((entry) => cleanupFilter === 'all' || cleanupFilter === 'archived' || entry.data_status !== 'archived'));
+      triggerMobileHaptic('success');
       toast.success(shouldArchive ? 'Material archived' : 'Material restored');
     } catch (error) {
       toast.error(error.message || 'Failed to update material status');
@@ -413,6 +424,7 @@ const MobileRawMaterialsPage = () => {
       setMaterials((current) => current.map((material) => material.id === updated.id ? enrichedUpdated : material));
       setGuidanceState('success');
       setGuidanceTarget(enrichedUpdated);
+      triggerMobileHaptic('success');
       toast.success(`${getGuidanceSourceLabel(guidanceForm.sourceType)} guidance imported`);
       await loadMaterials();
     } catch (error) {
@@ -435,6 +447,7 @@ const MobileRawMaterialsPage = () => {
         low_stock_threshold: newMaterial.low_stock_threshold === '' ? null : Number(newMaterial.low_stock_threshold || 0),
         cost_per_unit: 0,
       });
+      triggerMobileHaptic('success');
       toast.success('Material added');
       setAddOpen(false);
       setNewMaterial(createEmptyMaterialForm());
@@ -460,6 +473,7 @@ const MobileRawMaterialsPage = () => {
       if (existingItem) {
         await deleteBriefMaterialShortlistItem(existingItem.id);
         setShortlistItems((current) => current.filter((item) => item.id !== existingItem.id));
+        triggerMobileHaptic('success');
         toast.success('Removed from brief shortlist');
       } else {
         const nextItems = await upsertBriefMaterialShortlist(activeBriefId, [{
@@ -467,6 +481,7 @@ const MobileRawMaterialsPage = () => {
           role: 'candidate',
         }]);
         setShortlistItems(nextItems || []);
+        triggerMobileHaptic('success');
         toast.success('Added to brief shortlist');
       }
     } catch (error) {
@@ -483,7 +498,7 @@ const MobileRawMaterialsPage = () => {
         <MobileTopBar
           title="Materials"
           subtitle={activeBriefId ? (briefContext?.title || 'Brief picker') : undefined}
-          action={<Button type="button" size="icon" onClick={() => setAddOpen(true)} className="h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" onClick={() => setAddOpen(true)} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         {activeBriefId ? (
           <section className="mobile-soft-card p-3">
@@ -510,17 +525,42 @@ const MobileRawMaterialsPage = () => {
           <MobileFilterChips options={cleanupOptions} value={cleanupFilter} onChange={setCleanupFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           <MobileFilterChips options={referenceOptions} value={referenceFilter} onChange={setReferenceFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
           {guidanceLoading && !loading ? (
-            <div className="mt-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-              Guidance sedang disinkronkan, material tetap bisa dipakai.
-            </div>
+            <MobileInlineNotice
+              tone="loading"
+              title="Guidance sedang disinkronkan"
+              description="Material tetap bisa dipakai sambil data referensi diperbarui."
+              className="mt-2"
+            />
           ) : null}
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/raw-material-audit')}><SlidersHorizontal className="mr-2 h-4 w-4" />Audit</Button>
-            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/categories')}><FolderTree className="mr-2 h-4 w-4" />Categories</Button>
+            <Button variant="outline" className="mobile-interactive mobile-pressable rounded-2xl bg-white" onClick={() => navigate('/mobile/raw-material-audit')}><SlidersHorizontal className="mr-2 h-4 w-4" />Audit</Button>
+            <Button variant="outline" className="mobile-interactive mobile-pressable rounded-2xl bg-white" onClick={() => navigate('/mobile/categories')}><FolderTree className="mr-2 h-4 w-4" />Categories</Button>
           </div>
         </div>
-        {loading && !materials.length ? <MobileLoadingSkeleton count={4} /> : materials.length === 0 ? (
-          <MobileEmptyState icon={Package} title="No materials found" action="Add Material" onAction={() => setAddOpen(true)} />
+        {loading && !materials.length ? <MobileLoadingSkeleton count={4} title="Loading materials..." subtitle="Preparing stock, guidance, and cleanup status." /> : loadError ? (
+          <MobileStatePanel
+            tone="error"
+            title="Couldn’t load materials"
+            description={loadError}
+            action="Try again"
+            onAction={loadMaterials}
+          />
+        ) : materials.length === 0 ? (
+          <MobileEmptyState
+            icon={Package}
+            title={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active' ? 'No matching materials' : 'No materials yet'}
+            description={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active'
+              ? 'Try another keyword or clear the current material filters.'
+              : 'Add your first material to start building stock, guidance, and costing data.'}
+            action={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active' ? 'Clear filters' : 'Add Material'}
+            onAction={debouncedQuery || referenceFilter !== 'all' || cleanupFilter !== 'active'
+              ? () => {
+                setQuery('');
+                setReferenceFilter('all');
+                setCleanupFilter('active');
+              }
+              : () => setAddOpen(true)}
+          />
         ) : (
           <>
             <div className="space-y-2">
@@ -528,7 +568,7 @@ const MobileRawMaterialsPage = () => {
                 <RawMaterialCardMobile
                   key={material.id}
                   material={material}
-                  onOpen={() => navigate(`/mobile/raw-material/${material.id}`)}
+                  onOpen={() => navigate(`/mobile/raw-material/${material.id}`, { state: getMobileFromState(location) })}
                   onAddToFormula={() => activeBriefId ? handleToggleBriefMaterial(material) : openStockEditor(material)}
                   onArchive={() => handleToggleArchiveMaterial(material)}
                   onDelete={() => setDeleteTarget(material)}
@@ -677,9 +717,9 @@ const MobileRawMaterialsPage = () => {
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} className="h-10 rounded-xl bg-white text-xs" placeholder="https://..." /></div>
           <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">{guidanceSummary.slice(0, 3).join(' · ')}</div> : null}
-          {guidanceState === 'error' ? <div className="rounded-xl bg-rose-50 p-2 text-xs font-semibold text-rose-700">Unable to import guidance.</div> : null}
-          {guidanceState === 'success' ? <div className="rounded-xl bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">Guidance imported and material insights updated.</div> : null}
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 3).join(' · ')} /> : null}
+          {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Check the URL and try again." /> : null}
+          {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Material guidance is ready to use." /> : null}
         </div>
       </MobileBottomSheet>
     </MobileAuthenticatedLayout>

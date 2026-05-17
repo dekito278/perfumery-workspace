@@ -23,7 +23,7 @@ const MobileFloatingActionButton = () => {
         type="button"
         size="icon"
         onClick={() => setOpen(true)}
-        className="mobile-fab h-14 w-14 rounded-full bg-[#f59e0b] text-white shadow-2xl shadow-amber-300/50 hover:bg-[#d97706]"
+        className="mobile-fab mobile-interactive mobile-add-action mobile-pressable h-14 w-14 rounded-full bg-[#f59e0b] text-white shadow-2xl shadow-amber-300/50 hover:bg-[#d97706]"
         aria-label="Open quick actions"
       >
         <Plus className="h-6 w-6" />
@@ -44,7 +44,7 @@ const MobileFloatingActionButton = () => {
                   setOpen(false);
                   navigate(action.path);
                 }}
-                className="mobile-card flex items-center gap-3 p-3 text-left"
+                className="mobile-card mobile-interactive mobile-pressable flex items-center gap-3 p-3 text-left"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
                   <Icon className="h-5 w-5" />

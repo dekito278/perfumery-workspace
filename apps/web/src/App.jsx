@@ -1,6 +1,7 @@
 
-import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
+import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
@@ -9,6 +10,8 @@ import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
+import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
+import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
 
 const HomePage = lazy(() => import('@/pages/HomePage.jsx'));
 const CatalogPage = lazy(() => import('@/pages/CatalogPage.jsx'));
@@ -128,6 +131,102 @@ const MobileBrowserRedirect = () => {
   return <Navigate to={`${mobilePath}${search}${hash}`} replace />;
 };
 
+const mobileTabOrder = ['/mobile/dashboard', '/mobile/catalog'];
+const mobileDetailPatterns = [
+  /^\/mobile\/products\/[^/]+$/,
+  /^\/mobile\/studio\/orders\/[^/]+$/,
+  /^\/mobile\/briefs\/[^/]+$/,
+  /^\/mobile\/raw-material\/[^/]+$/,
+  /^\/mobile\/formulas\/[^/]+$/,
+];
+
+const getMobileRouteMeta = (pathname) => {
+  const isMobile = pathname.startsWith('/mobile/');
+  const isTab = mobileTabOrder.includes(pathname);
+  const isDetail = mobileDetailPatterns.some((pattern) => pattern.test(pathname));
+
+  return {
+    isMobile,
+    isTab,
+    isDetail,
+    depth: pathname.split('/').filter(Boolean).length,
+    tabIndex: mobileTabOrder.indexOf(pathname),
+  };
+};
+
+const pageVariants = {
+  push: {
+    initial: { opacity: 0.96, x: 28 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0.94, x: -18 },
+  },
+  pop: {
+    initial: { opacity: 0.98, x: -18 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0.94, x: 28 },
+  },
+  tabForward: {
+    initial: { opacity: 0.98, x: 14 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0.98, x: -10 },
+  },
+  tabBackward: {
+    initial: { opacity: 0.98, x: -14 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0.98, x: 10 },
+  },
+  fade: {
+    initial: { opacity: 0.98, y: 4 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0.98, y: -4 },
+  },
+};
+
+const MobileRouteTransition = ({ children }) => {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const shouldReduceMotion = useReducedMotion();
+  const previousMetaRef = useRef(getMobileRouteMeta(location.pathname));
+  const currentMeta = getMobileRouteMeta(location.pathname);
+  const previousMeta = previousMetaRef.current;
+
+  let transitionKind = 'fade';
+
+  if (currentMeta.isMobile && previousMeta.isMobile) {
+    if (navigationType === 'POP' && previousMeta.isDetail) {
+      transitionKind = 'pop';
+    } else if (!previousMeta.isDetail && currentMeta.isDetail) {
+      transitionKind = 'push';
+    } else if (previousMeta.isDetail && !currentMeta.isDetail) {
+      transitionKind = 'pop';
+    } else if (previousMeta.isTab && currentMeta.isTab) {
+      transitionKind = currentMeta.tabIndex >= previousMeta.tabIndex ? 'tabForward' : 'tabBackward';
+    }
+  }
+
+  useEffect(() => {
+    previousMetaRef.current = currentMeta;
+  }, [currentMeta.depth, currentMeta.isDetail, currentMeta.isMobile, currentMeta.isTab, currentMeta.tabIndex]);
+
+  if (!currentMeta.isMobile) {
+    return children;
+  }
+
+  const variant = pageVariants[transitionKind];
+
+  return (
+    <motion.div
+      key={location.pathname}
+      className="mobile-route-transition"
+      initial={shouldReduceMotion ? false : variant.initial}
+      animate={shouldReduceMotion ? { opacity: 1, x: 0, y: 0 } : variant.animate}
+      transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {cloneElement(children, { location })}
+    </motion.div>
+  );
+};
+
 function AppRoutes() {
   return (
     <Router>
@@ -135,6 +234,7 @@ function AppRoutes() {
       <ScrollRevealEffects />
       <MobileBrowserRedirect />
       <Suspense fallback={<RouteFallback />}>
+      <MobileRouteTransition>
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/home" element={<HomePage />} />
@@ -494,8 +594,11 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
       </Routes>
+      </MobileRouteTransition>
       </Suspense>
-      <PwaInstallPrompt />
+        <PwaInstallPrompt />
+        <PwaUpdatePrompt />
+        <PwaOfflineBanner />
       <Toaster />
     </Router>
   );
