@@ -224,14 +224,14 @@ const CreateFormulaPage = () => {
     setQuickCreateIntent({ name: nextName, rowIndex });
   };
 
-  const handleConfirmQuickCreateMaterial = async () => {
+  const handleConfirmQuickCreateMaterial = async (details = {}) => {
     const nextName = normalizeQuickMaterialName(quickCreateIntent?.name);
     if (!nextName) return;
     const rowIndex = Number.isFinite(quickCreateIntent?.rowIndex) ? quickCreateIntent.rowIndex : 0;
 
     setQuickCreateLoading(true);
     try {
-      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
+      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName, details));
       setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
       updateItem(rowIndex, createdMaterial.id, createdMaterial);
       setActiveRowIndex(rowIndex);

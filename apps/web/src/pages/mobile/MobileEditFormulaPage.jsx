@@ -143,13 +143,13 @@ const MobileEditFormulaPage = () => {
     setQuickCreateIntent({ name: nextName });
   };
 
-  const handleConfirmQuickCreateMaterial = async () => {
+  const handleConfirmQuickCreateMaterial = async (details = {}) => {
     const nextName = normalizeQuickMaterialName(quickCreateIntent?.name);
     if (!nextName) return;
 
     setQuickCreateLoading(true);
     try {
-      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
+      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName, details));
       setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
       addMaterial(createdMaterial);
       setQuickCreateIntent(null);
