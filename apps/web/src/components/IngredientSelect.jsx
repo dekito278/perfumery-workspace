@@ -137,34 +137,6 @@ const IngredientSelect = ({
     return ingredients.find((ingredient) => ingredient.name.trim().toLowerCase() === normalizedTerm) || null;
   };
 
-  const findCommittedMatch = (rawValue = searchTerm) => {
-    const normalizedTerm = normalizeSearchValue(rawValue);
-    const exactMatch = findExactMatch(rawValue);
-    if (exactMatch) {
-      return exactMatch;
-    }
-
-    if (showSuggestions && filteredIngredients.length === 1) {
-      return filteredIngredients[0];
-    }
-
-    if (normalizedTerm.length >= 5) {
-      const scoredMatches = ingredients
-        .map((ingredient) => ({
-          ingredient,
-          score: scoreIngredientMatch(ingredient.name, normalizedTerm),
-        }))
-        .filter((entry) => Number.isFinite(entry.score))
-        .sort((left, right) => right.score - left.score || left.ingredient.name.localeCompare(right.ingredient.name));
-
-      if (scoredMatches[0]?.score >= 1000) {
-        return scoredMatches[0].ingredient;
-      }
-    }
-
-    return null;
-  };
-
   const filteredIngredients = useMemo(() => {
     if (!showSuggestions) {
       return [];
@@ -236,7 +208,7 @@ const IngredientSelect = ({
       }
 
       setOpen(false);
-      const committedMatch = findCommittedMatch();
+      const committedMatch = findExactMatch();
       if (committedMatch) {
         if (committedMatch.id !== value) {
           onChange(committedMatch.id);
@@ -275,7 +247,7 @@ const IngredientSelect = ({
   };
 
   const commitExactMatch = () => {
-    const committedMatch = findCommittedMatch();
+    const committedMatch = findExactMatch();
     if (committedMatch && committedMatch.id !== value) {
       onChange(committedMatch.id);
       setSearchTerm(committedMatch.name);
@@ -339,13 +311,6 @@ const IngredientSelect = ({
           const nextValue = event.target.value;
           setSearchTerm(nextValue);
           setOpen(showSuggestions && Boolean(nextValue.trim()));
-
-          if (normalizeSearchValue(nextValue).length >= 5) {
-            const autoMatch = findCommittedMatch(nextValue);
-            if (autoMatch && autoMatch.id !== value) {
-              onChange(autoMatch.id);
-            }
-          }
         }}
         onFocus={() => {
           onActivate?.();
