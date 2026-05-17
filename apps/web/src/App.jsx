@@ -62,6 +62,7 @@ const MobileBriefsPage = lazy(() => import('@/pages/mobile/MobileBriefsPage.jsx'
 const MobileBriefEditorPage = lazy(() => import('@/pages/mobile/MobileBriefEditorPage.jsx'));
 const MobileBriefDetailPage = lazy(() => import('@/pages/mobile/MobileBriefDetailPage.jsx'));
 const MobileRawMaterialsPage = lazy(() => import('@/pages/mobile/MobileRawMaterialsPage.jsx'));
+const MobileRawMaterialEditorPage = lazy(() => import('@/pages/mobile/MobileRawMaterialEditorPage.jsx'));
 const MobileRawMaterialDetailPage = lazy(() => import('@/pages/mobile/MobileRawMaterialDetailPage.jsx'));
 const MobileRawMaterialAuditPage = lazy(() => import('@/pages/mobile/MobileRawMaterialAuditPage.jsx'));
 const MobileCategoriesPage = lazy(() => import('@/pages/mobile/MobileCategoriesPage.jsx'));
@@ -361,6 +362,11 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
+        <Route path="/mobile/raw-materials/new" element={
+          <ProtectedRoute>
+            <MobileRawMaterialEditorPage />
+          </ProtectedRoute>
+        } />
         <Route path="/mobile/raw-materials" element={
           <ProtectedRoute>
             <MobileRawMaterialsPage />

@@ -153,7 +153,7 @@ const MobileRawMaterialsPage = () => {
   const briefId = searchParams.get('briefId') || '';
   const activeBriefId = UUID_PATTERN.test(briefId) ? briefId : '';
   const initialAction = searchParams.get('action') || '';
-  const { fetchMaterialsPage, addMaterial, updateMaterial, deleteMaterial } = useRawMaterials();
+  const { fetchMaterialsPage, updateMaterial, deleteMaterial } = useRawMaterials();
   const { getBriefs } = useBriefs();
   const { deleteBriefMaterialShortlistItem, getBriefMaterialShortlist, upsertBriefMaterialShortlist } = useBriefMaterialShortlists();
   const loadTokenRef = useRef(0);
@@ -170,12 +170,10 @@ const MobileRawMaterialsPage = () => {
   const [referenceFilter, setReferenceFilter] = useState('all');
   const [cleanupFilter, setCleanupFilter] = useState('active');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
-  const [addOpen, setAddOpen] = useState(initialAction === 'add');
   const [guidanceTarget, setGuidanceTarget] = useState(null);
   const [guidanceState, setGuidanceState] = useState('empty');
   const [guidanceForm, setGuidanceForm] = useState({ url: '', sourceType: 'perfumersworld' });
   const [guidanceSummary, setGuidanceSummary] = useState([]);
-  const [creating, setCreating] = useState(false);
   const [stockTarget, setStockTarget] = useState(null);
   const [stockSaving, setStockSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -187,20 +185,13 @@ const MobileRawMaterialsPage = () => {
     low_stock_threshold: '',
     cost_per_unit: '',
   });
-  const createEmptyMaterialForm = () => ({
-    name: '',
-    category: '',
-    cas_number: '',
-    vendor: '',
-    type: 'material',
-    unit: 'g',
-    stock_quantity: '',
-    minimum_stock: '',
-    low_stock_threshold: '',
-    data_status: 'active',
-  });
-  const [newMaterial, setNewMaterial] = useState(createEmptyMaterialForm);
   const shortlistMaterialIds = useMemo(() => new Set(shortlistItems.map((item) => item.raw_material_id).filter(Boolean)), [shortlistItems]);
+
+  useEffect(() => {
+    if (initialAction === 'add') {
+      navigate('/mobile/raw-materials/new', { replace: true, state: getMobileFromState(location) });
+    }
+  }, [initialAction, location, navigate]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setDebouncedQuery(query), 300);
@@ -433,32 +424,6 @@ const MobileRawMaterialsPage = () => {
     }
   };
 
-  const handleCreateMaterial = async () => {
-    if (!newMaterial.name.trim()) {
-      toast.error('Material name is required');
-      return;
-    }
-    setCreating(true);
-    try {
-      await addMaterial({
-        ...newMaterial,
-        stock_quantity: Number(newMaterial.stock_quantity || 0),
-        minimum_stock: Number(newMaterial.minimum_stock || 0),
-        low_stock_threshold: newMaterial.low_stock_threshold === '' ? null : Number(newMaterial.low_stock_threshold || 0),
-        cost_per_unit: 0,
-      });
-      triggerMobileHaptic('success');
-      toast.success('Material added');
-      setAddOpen(false);
-      setNewMaterial(createEmptyMaterialForm());
-      await loadMaterials();
-    } catch (error) {
-      toast.error(error.message || 'Failed to add material');
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const handleToggleBriefMaterial = async (material) => {
     if (!activeBriefId || !material?.id) {
       if (material?.id) {
@@ -498,7 +463,7 @@ const MobileRawMaterialsPage = () => {
         <MobileTopBar
           title="Materials"
           subtitle={activeBriefId ? (briefContext?.title || 'Brief picker') : undefined}
-          action={<Button type="button" size="icon" onClick={() => setAddOpen(true)} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" onClick={() => navigate('/mobile/raw-materials/new', { state: getMobileFromState(location) })} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         {activeBriefId ? (
           <section className="mobile-soft-card p-3">
@@ -559,7 +524,7 @@ const MobileRawMaterialsPage = () => {
                 setReferenceFilter('all');
                 setCleanupFilter('active');
               }
-              : () => setAddOpen(true)}
+              : () => navigate('/mobile/raw-materials/new', { state: getMobileFromState(location) })}
           />
         ) : (
           <>
@@ -584,62 +549,6 @@ const MobileRawMaterialsPage = () => {
           </>
         )}
       </main>
-      <MobileBottomSheet
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        title="Add Material"
-        footer={<Button type="button" onClick={handleCreateMaterial} disabled={creating} className="h-12 w-full rounded-2xl">{creating ? 'Saving...' : 'Save Material'}</Button>}
-      >
-        <div className="grid gap-4 pb-2">
-          {[
-            ['name', 'Material name'],
-            ['cas_number', 'CAS number'],
-            ['category', 'Category'],
-            ['vendor', 'Supplier'],
-          ].map(([field, label]) => (
-            <div key={field} className="space-y-2">
-              <Label>{label}</Label>
-              <Input value={newMaterial[field]} onChange={(event) => setNewMaterial((current) => ({ ...current, [field]: event.target.value }))} className="rounded-2xl bg-white" />
-            </div>
-          ))}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Stock on hand</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.001"
-                value={newMaterial.stock_quantity}
-                onChange={(event) => setNewMaterial((current) => ({ ...current, stock_quantity: event.target.value }))}
-                className="rounded-2xl bg-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Minimum stock</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.001"
-                value={newMaterial.minimum_stock}
-                onChange={(event) => setNewMaterial((current) => ({ ...current, minimum_stock: event.target.value }))}
-                className="rounded-2xl bg-white"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Low stock alert</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.001"
-              value={newMaterial.low_stock_threshold}
-              onChange={(event) => setNewMaterial((current) => ({ ...current, low_stock_threshold: event.target.value }))}
-              className="rounded-2xl bg-white"
-              placeholder="Optional"
-            />
-          </div>
-        </div>
-      </MobileBottomSheet>
       <DeleteConfirmationDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
