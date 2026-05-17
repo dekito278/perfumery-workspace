@@ -44,12 +44,11 @@ export const isMobileBrowser = () => {
   const userAgent = window.navigator?.userAgent || '';
   const hasMobileUserAgent = MOBILE_USER_AGENT_PATTERN.test(userAgent);
   const hasCoarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
-  const hasMobileWidth = window.matchMedia?.('(max-width: 767px)').matches;
   const hasTabletWidth = window.matchMedia?.('(max-width: 1024px)').matches;
-  const hasPortraitAppViewport = window.matchMedia?.('(orientation: portrait) and (max-width: 900px)').matches;
   const isStandaloneApp = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const hasCompactTouchViewport = Boolean(hasCoarsePointer && hasTabletWidth);
 
-  return hasMobileUserAgent || isStandaloneApp || hasMobileWidth || (hasCoarsePointer && hasTabletWidth) || hasPortraitAppViewport;
+  return Boolean(hasMobileUserAgent || isStandaloneApp || hasCompactTouchViewport);
 };
 
 export const toMobilePath = (pathname) => {

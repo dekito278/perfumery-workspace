@@ -106,8 +106,7 @@ const MobileBrowserRedirect = () => {
   useEffect(() => {
     const refreshMobileRoute = () => setMobileRouteTick((current) => current + 1);
     const standaloneMediaQuery = window.matchMedia?.('(display-mode: standalone)');
-    window.addEventListener('resize', refreshMobileRoute);
-    window.addEventListener('orientationchange', refreshMobileRoute);
+
     if (standaloneMediaQuery?.addEventListener) {
       standaloneMediaQuery.addEventListener('change', refreshMobileRoute);
     } else if (standaloneMediaQuery?.addListener) {
@@ -115,8 +114,6 @@ const MobileBrowserRedirect = () => {
     }
 
     return () => {
-      window.removeEventListener('resize', refreshMobileRoute);
-      window.removeEventListener('orientationchange', refreshMobileRoute);
       if (standaloneMediaQuery?.removeEventListener) {
         standaloneMediaQuery.removeEventListener('change', refreshMobileRoute);
       } else if (standaloneMediaQuery?.removeListener) {
