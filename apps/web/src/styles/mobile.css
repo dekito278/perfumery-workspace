@@ -106,6 +106,12 @@
   z-index: 1;
 }
 
+.mobile-app.mobile-keyboard-active .mobile-action-bar--keyboard-stay {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(calc(-1 * var(--mobile-keyboard-offset, 0px)));
+}
+
 .mobile-app * {
   letter-spacing: 0;
 }
@@ -230,6 +236,28 @@
   max-width: 448px;
   margin: 0 auto;
   overflow-wrap: anywhere;
+}
+
+.mobile-bespoke-page {
+  padding-bottom: 92px;
+}
+
+.mobile-checkout-page {
+  padding-bottom: 128px;
+}
+
+.mobile-bespoke-wizard {
+  display: flex;
+  min-height: min(560px, calc(100dvh - 192px));
+  flex-direction: column;
+}
+
+.mobile-bespoke-wizard-body {
+  flex: 1 1 auto;
+}
+
+.mobile-app.mobile-keyboard-active .mobile-bespoke-wizard {
+  min-height: 0;
 }
 
 .mobile-route-transition {
@@ -819,6 +847,23 @@
   margin-top: 12px;
 }
 
+.mobile-action-bar {
+  --mobile-action-bar-spacer-height: 118px;
+}
+
+.mobile-action-bar-surface {
+  box-shadow: 0 18px 40px -24px rgba(38, 61, 39, 0.42);
+}
+
+.mobile-action-bar-spacer {
+  height: var(--mobile-action-bar-spacer-height, 118px);
+  flex: 0 0 auto;
+}
+
+.mobile-app.mobile-keyboard-active .mobile-action-bar-spacer {
+  height: 18px;
+}
+
 .mobile-fixed-action {
   position: fixed;
   left: 14px;
@@ -873,19 +918,9 @@
     max-height var(--mobile-motion-slow) var(--mobile-ease-emphasized);
 }
 
-.mobile-bottom-sheet-fullscreen {
-  height: var(--mobile-bottom-sheet-available-height, calc(100dvh - env(safe-area-inset-top, 0px) - 10px));
-  max-height: var(--mobile-bottom-sheet-available-height, calc(100dvh - env(safe-area-inset-top, 0px) - 10px));
-}
-
 .mobile-bottom-sheet-keyboard-active {
   max-height: var(--mobile-bottom-sheet-available-height, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
   padding-bottom: 0;
-}
-
-.mobile-bottom-sheet-fullscreen.mobile-bottom-sheet-keyboard-active {
-  height: var(--mobile-bottom-sheet-available-height, calc(100dvh - env(safe-area-inset-top, 0px) - 4px));
-  max-height: var(--mobile-bottom-sheet-available-height, calc(100dvh - env(safe-area-inset-top, 0px) - 4px));
 }
 
 .mobile-bottom-sheet-keyboard-active .mobile-card,

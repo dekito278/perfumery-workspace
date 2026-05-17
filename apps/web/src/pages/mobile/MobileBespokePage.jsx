@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, ClipboardList, CreditCard, MessageCircle, Send, Sparkles, WandSparkles } from 'lucide-react';
+import { CheckCircle2, ClipboardList, CreditCard, MessageCircle, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import {
   bespokeOccasionOptions,
 } from '@/data/storefront.js';
@@ -115,7 +115,6 @@ const MobileBespokePage = () => {
   const capDesignOptions = useMemo(() => bespokeSettings.capDesigns.filter((option) => option.enabled), [bespokeSettings.capDesigns]);
   const labelDesignOptions = useMemo(() => bespokeSettings.labelDesigns.filter((option) => option.enabled), [bespokeSettings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => bespokeSettings.exoticMaterials.filter((option) => option.enabled), [bespokeSettings.exoticMaterials]);
-  const [wizardOpen, setWizardOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -733,7 +732,6 @@ const MobileBespokePage = () => {
           reference: referenceProduct?.name || '',
           createdAt: new Date().toISOString(),
         });
-        setWizardOpen(false);
         toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
         navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
@@ -786,7 +784,6 @@ const MobileBespokePage = () => {
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),
       });
-      setWizardOpen(false);
       toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
       navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
@@ -809,7 +806,7 @@ const MobileBespokePage = () => {
         <title>Bespoke Perfume - Solivagant</title>
         <meta name="description" content="Create a custom perfume request with aroma, bottle size, cap design, exotic materials, and payment preference." />
       </Helmet>
-      <main className="mobile-page space-y-4">
+      <main className="mobile-page mobile-bespoke-page space-y-4">
         <section className="mobile-soft-card p-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
             <Sparkles className="h-3.5 w-3.5" />
@@ -827,10 +824,27 @@ const MobileBespokePage = () => {
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
             <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${completion}%` }} />
           </div>
-          <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => setWizardOpen(true)}>
-            Start custom wizard
-            <Send className="h-4 w-4" />
-          </Button>
+        </section>
+
+        <section className="mobile-bespoke-wizard mobile-card overflow-hidden">
+          <header className="border-b border-[#263d27]/10 bg-white px-4 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#263d27]">Step {step + 1} of {steps.length}</p>
+                <h2 className="mt-1 text-lg font-bold text-[#0b130c]">{activeStep.title}</h2>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{activeStep.description}</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold text-[#263d27]">{completion}%</span>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#eef2e8]">
+              <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+            </div>
+          </header>
+
+          <div className="mobile-bespoke-wizard-body p-4">
+            {activeStep.render()}
+          </div>
+
         </section>
 
         <section className="mobile-card p-4">
@@ -888,36 +902,28 @@ const MobileBespokePage = () => {
           </section>
         ) : null}
 
-        <MobileBottomSheet
-          open={wizardOpen}
-          onOpenChange={setWizardOpen}
-          title={activeStep.title}
-          description={`Step ${step + 1} of ${steps.length}. ${activeStep.description}`}
-          variant="fullscreen"
-          hideFooterOnInputFocus={false}
-          footer={(
-            <div className="grid grid-cols-2 gap-2">
-              <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
-                Back
-              </Button>
-              {step === steps.length - 1 ? (
-                <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
-                  {saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang')}
-                  {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
-                </Button>
-              ) : (
-                <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
-              )}
-            </div>
-          )}
+        <StickyBottomActionBar
+          fixed
+          reserveSpace
+          aria-label="Bespoke request actions"
+          className="mobile-bespoke-action-bar"
+          contentClassName="rounded-[24px] border-[#263d27]/10 bg-white/95"
         >
-          <div>
-            <div className="mb-4 h-2 overflow-hidden rounded-full bg-white">
-              <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
-            </div>
-            {activeStep.render()}
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
+              Back
+            </Button>
+            {step === steps.length - 1 ? (
+              <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
+                {saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang')}
+                {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
+              </Button>
+            ) : (
+              <Button type="button" className="rounded-2xl" onClick={nextStep}>Next</Button>
+            )}
           </div>
-        </MobileBottomSheet>
+        </StickyBottomActionBar>
+
       </main>
     </MobileCommerceLayout>
   );

@@ -8,6 +8,13 @@ const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="
 const MIN_KEYBOARD_SHEET_HEIGHT = 260;
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
+/**
+ * MobileBottomSheet is for short, interruptible side tasks only:
+ * confirmation, option picking, quick edits, or compact forms.
+ *
+ * Long-running primary flows belong on dedicated routes so they can use the
+ * page scroller and avoid nested-scroll / keyboard conflicts on mobile.
+ */
 const MobileBottomSheet = ({
   open,
   onOpenChange,
@@ -16,7 +23,6 @@ const MobileBottomSheet = ({
   children,
   footer,
   hideFooterOnInputFocus = true,
-  variant = 'sheet',
 }) => {
   const contentRef = useRef(null);
   const touchStartRef = useRef(null);
@@ -90,7 +96,7 @@ const MobileBottomSheet = ({
       content.style.removeProperty('--mobile-bottom-sheet-available-height');
       content.style.removeProperty('--mobile-bottom-sheet-keyboard-offset');
     };
-  }, [inputFocused, open, variant]);
+  }, [inputFocused, open]);
 
   const handleTouchStart = (event) => {
     const touch = event.touches?.[0];
@@ -147,7 +153,6 @@ const MobileBottomSheet = ({
         ref={contentRef}
         className={cn(
           'mobile-bottom-sheet-content border-[#e5e7eb]',
-          variant === 'fullscreen' && 'mobile-bottom-sheet-fullscreen',
           inputFocused && 'mobile-bottom-sheet-keyboard-active'
         )}
         onTouchStart={handleTouchStart}

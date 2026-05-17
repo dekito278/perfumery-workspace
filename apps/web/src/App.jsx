@@ -50,6 +50,7 @@ const MobileCommerceTabsPage = lazy(() => import('@/pages/mobile/MobileCommerceT
 const MobileProductDetailPage = lazy(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
 const MobileBespokePage = lazy(() => import('@/pages/mobile/MobileBespokePage.jsx'));
 const MobileCartPage = lazy(() => import('@/pages/mobile/MobileCartPage.jsx'));
+const MobileCheckoutPage = lazy(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
 const MobileProductManagementPage = lazy(() => import('@/pages/mobile/MobileProductManagementPage.jsx'));
 const MobileBespokeSettingsPage = lazy(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
 const MobileOrdersPage = lazy(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
@@ -71,6 +72,7 @@ const MobileFormulaDetailPage = lazy(() => import('@/pages/mobile/MobileFormulaD
 const MobileBatchesPage = lazy(() => import('@/pages/mobile/MobileBatchesPage.jsx'));
 const MobileProductionCostingPage = lazy(() => import('@/pages/mobile/MobileProductionCostingPage.jsx'));
 const MobileValidationPage = lazy(() => import('@/pages/mobile/MobileValidationPage.jsx'));
+const MobileValidationEditorPage = lazy(() => import('@/pages/mobile/MobileValidationEditorPage.jsx'));
 
 const RouteFallback = () => (
   <div className="grid min-h-screen place-items-center bg-[#f7f8f2] px-4 text-center">
@@ -263,6 +265,7 @@ function AppRoutes() {
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
         <Route path="/mobile/cart" element={<MobileCartPage />} />
+        <Route path="/mobile/checkout" element={<MobileCheckoutPage />} />
 
         <Route path="/mobile/payment" element={<PaymentPage />} />
 
@@ -427,6 +430,16 @@ function AppRoutes() {
         <Route path="/mobile/production-costing" element={
           <ProtectedRoute>
             <MobileProductionCostingPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/validation/new" element={
+          <ProtectedRoute>
+            <MobileValidationEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/validation/:id/edit" element={
+          <ProtectedRoute>
+            <MobileValidationEditorPage />
           </ProtectedRoute>
         } />
         <Route path="/mobile/validation" element={

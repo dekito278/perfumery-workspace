@@ -5,6 +5,7 @@ import { Edit3, ImageOff, ImagePlus, PackagePlus, Plus, Save, Tags, Trash2 } fro
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -130,6 +131,26 @@ const ProductListCard = ({ onDelete, onEdit, onOpenBatch, product }) => {
   );
 };
 
+const ProductFormSection = ({ children, eyebrow, title, description, action }) => (
+  <section className="mobile-card p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        {eyebrow ? <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">{eyebrow}</div> : null}
+        <h2 className="mt-0.5 text-base font-bold text-[#1f2937]">{title}</h2>
+        {description ? <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{description}</p> : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+    <div className="mt-4 grid gap-3">
+      {children}
+    </div>
+  </section>
+);
+
+const ProductInputLabel = ({ children }) => (
+  <label className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8b949e]">{children}</label>
+);
+
 const MobileProductManagementPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -150,6 +171,9 @@ const MobileProductManagementPage = () => {
   const editProductId = searchParams.get('edit') || '';
   const linkedFormulaId = getProductFormulaId(form);
   const batchDetails = getProductBatchDetails(form);
+  const totalVariantStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+  const primaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
+  const requiredReady = Boolean(form.name.trim() && form.category.trim() && form.notes.trim());
 
   useEffect(() => {
     if (!editProductId) return;
@@ -318,12 +342,40 @@ const MobileProductManagementPage = () => {
         </section>
 
         {activeView === 'new' ? (
-        <form onSubmit={handleSubmit} className="mobile-card p-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-[#1f2937]">{form.id ? 'Edit product' : 'Add product'}</h2>
-            <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white px-3 text-xs" onClick={resetForm}>New</Button>
-          </div>
-          <div className="mt-3 grid gap-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <section className="mobile-soft-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">{form.id ? 'Editing product' : 'New product'}</div>
+                <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{form.name || 'Build catalog item'}</h1>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                  Isi bagian penting dulu, lalu lengkapi visual dan cerita produk sebelum tampil di katalog.
+                </p>
+              </div>
+              <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs" onClick={resetForm}>New</Button>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl bg-white px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Price</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#263d27]">{formatRupiah(primaryVariantPrice)}</div>
+              </div>
+              <div className="rounded-2xl bg-white px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stock</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#263d27]">{totalVariantStock || Number(form.stock || 0)}</div>
+              </div>
+              <div className="rounded-2xl bg-white px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Status</div>
+                <div className={`mt-1 truncate text-xs font-bold ${form.catalogVisible ? 'text-emerald-700' : 'text-amber-700'}`}>{form.catalogVisible ? 'Live' : 'Draft'}</div>
+              </div>
+            </div>
+          </section>
+
+          {(linkedFormulaId || batchDetails.batchKey) ? (
+          <ProductFormSection
+            eyebrow="Source"
+            title="Studio batch source"
+            description="Produk ini berasal dari batch/formula studio. Gunakan konteks ini sebelum mengubah stok atau harga."
+          >
             {linkedFormulaId ? (
               <button
                 type="button"
@@ -390,27 +442,57 @@ const MobileProductManagementPage = () => {
                 </div>
               </div>
             ) : null}
-            <input value={form.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Product name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-            <div className="grid grid-cols-2 gap-2">
+          </ProductFormSection>
+          ) : null}
+
+          <ProductFormSection
+            eyebrow="Essentials"
+            title="Identity"
+            description="Nama, kategori, dan ringkasan adalah field wajib untuk menyimpan produk."
+          >
+            <div className="grid gap-1.5">
+              <ProductInputLabel>Product name</ProductInputLabel>
+              <input value={form.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Product name" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </div>
+            <div className="grid gap-1.5">
+              <ProductInputLabel>Category</ProductInputLabel>
               <select value={form.category} onChange={(event) => updateField('category', event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300">
                 <option value="">Category</option>
                 {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
                 {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
               </select>
-              <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-              <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} placeholder="Harga coret" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-              <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-              <input value={form.size} onChange={(event) => updateField('size', event.target.value)} placeholder="30 ml" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             </div>
-            <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-sm font-bold text-[#1f2937]">Varian ukuran</h3>
-                  <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Ukuran, harga, harga coret, stok.</p>
-                </div>
-                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-1 px-3 text-xs" onClick={addVariant}><Plus className="h-4 w-4" />Add</Button>
+            <div className="grid gap-1.5">
+              <ProductInputLabel>Notes summary</ProductInputLabel>
+              <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Short catalog summary" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            </div>
+          </ProductFormSection>
+
+          <ProductFormSection
+            eyebrow="Commercial"
+            title="Variants, price, and stock"
+            description="Varian pertama dipakai sebagai harga utama di katalog. Total stok dihitung dari semua varian."
+            action={<Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-1 px-3 text-xs" onClick={addVariant}><Plus className="h-4 w-4" />Add</Button>}
+          >
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
+              <div className="grid gap-1.5">
+                <ProductInputLabel>Base price</ProductInputLabel>
+                <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
               </div>
-              <div className="mt-3 grid gap-2">
+              <div className="grid gap-1.5">
+                <ProductInputLabel>Compare at</ProductInputLabel>
+                <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} placeholder="Harga coret" className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              </div>
+              <div className="grid gap-1.5">
+                <ProductInputLabel>Base stock</ProductInputLabel>
+                <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              </div>
+              <div className="grid gap-1.5">
+                <ProductInputLabel>Base size</ProductInputLabel>
+                <input value={form.size} onChange={(event) => updateField('size', event.target.value)} placeholder="30 ml" className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+              </div>
+            </div>
+            <div className="grid gap-2">
                 {(form.variants || []).map((variant, index) => (
                   <div key={variant.id || index} className="grid grid-cols-2 gap-2 rounded-2xl border bg-white p-2">
                     <input value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)} placeholder="30 ml" className="h-10 rounded-xl border px-2 text-xs font-semibold outline-none focus:border-amber-300" />
@@ -422,9 +504,14 @@ const MobileProductManagementPage = () => {
                     </div>
                   </div>
                 ))}
-              </div>
             </div>
-            <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Notes summary" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+          </ProductFormSection>
+
+          <ProductFormSection
+            eyebrow="Media"
+            title="Product visuals"
+            description="Preview gambar utama, upload WebP ringan, atau paste URL gambar satu per baris."
+          >
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="h-40" />
               <textarea value={(form.images || []).join('\n')} onChange={(event) => updateImagesFromText(event.target.value)} placeholder="Product image URLs, one per line" rows={4} className="mt-3 w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
@@ -449,10 +536,24 @@ const MobileProductManagementPage = () => {
                 Upload otomatis dikompres ke WebP ringan sekitar 250 KB per gambar.
               </p>
             </div>
+          </ProductFormSection>
+
+          <ProductFormSection
+            eyebrow="Story"
+            title="Scent profile and description"
+            description="Gunakan koma untuk memisahkan notes. Deskripsi dipakai sebagai copy katalog."
+          >
             <input value={form.topNotes || ''} onChange={(event) => updateField('topNotes', event.target.value)} placeholder="Top notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.heartNotes || ''} onChange={(event) => updateField('heartNotes', event.target.value)} placeholder="Heart notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.baseNotes || ''} onChange={(event) => updateField('baseNotes', event.target.value)} placeholder="Base notes, comma separated" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Description" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
+          </ProductFormSection>
+
+          <ProductFormSection
+            eyebrow="Publishing"
+            title="Catalog visibility"
+            description="Draft tetap tersimpan di studio tetapi tidak muncul di shop customer."
+          >
             <label className="flex items-center gap-3 rounded-2xl bg-amber-50 px-3 py-3 text-xs font-bold text-amber-800">
               <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
               Featured on home
@@ -464,8 +565,17 @@ const MobileProductManagementPage = () => {
                 <span className="mt-0.5 block text-[10px] font-semibold text-emerald-700/75">Matikan untuk draft: bisa edit foto, deskripsi, notes, dan harga dulu tanpa tampil di shop.</span>
               </span>
             </label>
-            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Saving...' : 'Save product'}</Button>
-          </div>
+          </ProductFormSection>
+
+          <StickyBottomActionBar fixed reserveSpace aria-label="Product form actions">
+            <div className="grid grid-cols-[auto_1fr] gap-2">
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={resetForm}>New</Button>
+              <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingProduct || !requiredReady}>
+                <Save className="h-4 w-4" />
+                {savingProduct ? 'Saving...' : requiredReady ? 'Save product' : 'Lengkapi wajib'}
+              </Button>
+            </div>
+          </StickyBottomActionBar>
         </form>
         ) : null}
 

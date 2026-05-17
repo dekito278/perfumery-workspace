@@ -7,6 +7,7 @@ import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
@@ -76,6 +77,22 @@ const CostLine = ({ label, quantity, total, unit }) => (
   </div>
 );
 
+const TaskSection = ({ action, children, eyebrow, title, description }) => (
+  <section className="mobile-card overflow-hidden">
+    <div className="flex items-start justify-between gap-3 border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
+      <div className="min-w-0">
+        {eyebrow ? <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">{eyebrow}</div> : null}
+        <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">{title}</h2>
+        {description ? <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{description}</p> : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+    <div className="p-4">
+      {children}
+    </div>
+  </section>
+);
+
 const FieldInput = ({ label, onChange, suffix, value }) => (
   <div className="min-w-0 space-y-1.5">
     <Label className="text-[10px] font-bold uppercase text-[#6b7280]">{label}</Label>
@@ -128,6 +145,10 @@ const MobileProductionCostingPage = () => {
   } = useProductionCostPage();
 
   const retailFeePercent = Number(retailScenarios[0]?.feePercent || 0);
+  const activeExportLabel = activeTab === 'retail' ? 'Export costing' : 'Export quote';
+  const activePrintLabel = activeTab === 'retail' ? 'Print costing' : 'Print quote';
+  const activeExport = activeTab === 'retail' ? handleExportPdf : handleExportQuotationPdf;
+  const activePrint = activeTab === 'retail' ? handlePrint : handlePrintQuotation;
   const retailRecommendations = [
     {
       label: 'Healthy direct',
@@ -184,16 +205,25 @@ const MobileProductionCostingPage = () => {
           />
         ) : (
           <>
-            <section className="mobile-soft-card space-y-3 p-4">
-              <div className="grid grid-cols-2 gap-2">
-                <MoneyTile label="Retail COGS" value={formatPrice(retailComputed.costPerBottle)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
-                <MoneyTile label="Bulk / L" value={formatCurrency(bulkComputed.allInBulkCogsPerLiter)} helper={`${formatQuantity(bulkComputed.concentration, 1)}% strength`} tone="emerald" />
-                <MoneyTile label="Best retail" value={formatPrice(retailRecommendations[0]?.price || retailChampion?.salePrice || 0)} helper="60% direct margin" />
-                <MoneyTile label="Best bulk" value={formatPrice(bulkChampion?.sellPrice || 0)} helper={bulkChampion ? `${formatQuantity(bulkChampion.margin, 1)}% margin` : 'No quote'} />
+            <section className="mobile-soft-card p-4">
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">Costing task</div>
+              <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">
+                {activeTab === 'retail' ? 'Set bottle price from actual COGS.' : 'Build a bulk quotation.'}
+              </h1>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                Pilih formula dan solvent, isi parameter produksi, lalu gunakan hasilnya untuk keputusan harga yang bisa diexport.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <MoneyTile label={activeTab === 'retail' ? 'COGS / bottle' : 'Bulk COGS / L'} value={activeTab === 'retail' ? formatPrice(retailComputed.costPerBottle) : formatCurrency(bulkComputed.allInBulkCogsPerLiter)} helper={activeTab === 'retail' ? `${retailComputed.bottleCount} bottles` : `${formatQuantity(bulkComputed.concentration, 1)}% strength`} tone="amber" />
+                <MoneyTile label={activeTab === 'retail' ? 'Suggested direct' : 'Best quote'} value={activeTab === 'retail' ? formatPrice(retailRecommendations[0]?.price || retailChampion?.salePrice || 0) : formatPrice(bulkChampion?.sellPrice || 0)} helper={activeTab === 'retail' ? '60% margin' : (bulkChampion ? `${formatQuantity(bulkChampion.margin, 1)}% margin` : 'No quote')} tone="emerald" />
               </div>
             </section>
 
-            <section className="mobile-card space-y-3 p-4">
+            <TaskSection
+              eyebrow="Step 1"
+              title="Choose production context"
+              description="Mulai dari formula dan solvent agar semua perhitungan punya sumber yang jelas."
+            >
               <div className="grid gap-3">
                 <div className="min-w-0 space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-[#6b7280]">Formula</Label>
@@ -226,22 +256,25 @@ const MobileProductionCostingPage = () => {
                   </Select>
                 </div>
               </div>
-              <MobileSegmentedControl options={modeOptions} value={activeTab} onChange={setActiveTab} className="mobile-compact-tabs" />
-            </section>
+              <div className="mt-4">
+                <MobileSegmentedControl options={modeOptions} value={activeTab} onChange={setActiveTab} className="mobile-compact-tabs" />
+              </div>
+              <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] px-3 py-2 text-xs font-semibold text-[#6b7280]">
+                {selectedFormula?.name ? (
+                  <span><strong className="text-[#1f2937]">{selectedFormula.name}</strong> siap dihitung sebagai {activeTab === 'retail' ? 'produk botol retail' : 'bulk/brand quote'}.</span>
+                ) : (
+                  <span>Pilih formula untuk mulai menghitung.</span>
+                )}
+              </div>
+            </TaskSection>
 
             {activeTab === 'retail' ? (
               <>
-                <section className="mobile-card space-y-3 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-sm font-bold text-[#1f2937]">Bottle costing</h2>
-                      <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">{selectedFormula?.name || 'Formula'}</p>
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button type="button" size="icon" variant="outline" onClick={handlePrint} className="h-10 w-10 rounded-xl bg-white" aria-label="Print production costing"><Printer className="h-4 w-4" /></Button>
-                      <Button type="button" size="icon" onClick={handleExportPdf} className="h-10 w-10 rounded-xl bg-amber-500 text-white" aria-label="Export production costing PDF"><Download className="h-4 w-4" /></Button>
-                    </div>
-                  </div>
+                <TaskSection
+                  eyebrow="Step 2"
+                  title="Bottle production inputs"
+                  description="Isi volume batch, ukuran botol, konsentrasi formula, dan loss produksi."
+                >
                   <div className="grid grid-cols-2 gap-2">
                     <FieldInput label="Batch volume" value={retailInputs.totalBatchVolume} suffix="ml" onChange={(value) => updateRetailInput('totalBatchVolume', value)} />
                     <FieldInput label="Bottle size" value={retailInputs.bottleSize} suffix="ml" onChange={(value) => updateRetailInput('bottleSize', value)} />
@@ -256,13 +289,13 @@ const MobileProductionCostingPage = () => {
                     <MoneyTile label="Packaging" value={formatPrice(retailComputed.totalPackagingCost + retailComputed.totalBatchOverhead)} helper={`${formatPrice(retailComputed.perBottlePackagingCost)} / bottle`} />
                     <MoneyTile label="Actual COGS" value={formatPrice(retailComputed.costPerBottle)} helper="all-in per bottle" tone="amber" />
                   </div>
-                </section>
+                </TaskSection>
 
-                <section className="mobile-card overflow-hidden">
-                  <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
-                    <h2 className="text-sm font-bold text-[#1f2937]">Actual COGS breakdown</h2>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Material, solvent, bottle, sticker, box, labor, and overhead.</p>
-                  </div>
+                <TaskSection
+                  eyebrow="Step 3"
+                  title="Actual COGS breakdown"
+                  description="Periksa komponen biaya sebelum mengambil keputusan harga."
+                >
                   <div className="px-4 py-1">
                     <CostLine label="Formula concentrate" quantity={`${formatQuantity(retailComputed.formulaVolumeNeeded, 1)} ml`} total={retailComputed.formulaMaterialCost} />
                     <CostLine label="Solvent" quantity={`${formatQuantity(retailComputed.solventVolumeNeeded, 1)} ml`} total={retailComputed.solventMaterialCost} />
@@ -292,13 +325,13 @@ const MobileProductionCostingPage = () => {
                     <MoneyTile label="Total batch cost" value={formatPrice(retailComputed.totalProductionCost)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
                     <MoneyTile label="COGS / bottle" value={formatPrice(retailComputed.costPerBottle)} helper={`${formatCurrency(retailComputed.cogsPerMl)} / ml`} tone="emerald" />
                   </div>
-                </section>
+                </TaskSection>
 
-                <section className="mobile-card overflow-hidden">
-                  <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
-                    <h2 className="text-sm font-bold text-[#1f2937]">Rekomendasi harga jual</h2>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Otomatis dari actual COGS per bottle.</p>
-                  </div>
+                <TaskSection
+                  eyebrow="Decision"
+                  title="Recommended selling price"
+                  description="Otomatis dari actual COGS per bottle."
+                >
                   <div className="grid gap-2 p-4">
                     {retailRecommendations.map((recommendation) => (
                       <div key={recommendation.label} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-[#ece8df] bg-[#f8f7f4] px-3 py-3">
@@ -310,13 +343,13 @@ const MobileProductionCostingPage = () => {
                       </div>
                     ))}
                   </div>
-                </section>
+                </TaskSection>
 
-                <section className="mobile-card overflow-hidden">
-                  <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
-                    <h2 className="text-sm font-bold text-[#1f2937]">Packaging and overhead</h2>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Isi komponen aktual: botol, cap, sprayer, stiker, box, labor, dan overhead.</p>
-                  </div>
+                <TaskSection
+                  eyebrow="Detail"
+                  title="Packaging and overhead"
+                  description="Isi komponen aktual: botol, cap, sprayer, stiker, box, labor, dan overhead."
+                >
                   <div className="grid grid-cols-2 gap-2 p-4">
                     {PACKAGING_FIELDS.map((field) => (
                       <FieldInput
@@ -328,13 +361,13 @@ const MobileProductionCostingPage = () => {
                       />
                     ))}
                   </div>
-                </section>
+                </TaskSection>
 
-                <section className="mobile-card overflow-hidden">
-                  <div className="border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
-                    <h2 className="text-sm font-bold text-[#1f2937]">Retail scenario</h2>
-                    <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">Set markup or margin and marketplace fee.</p>
-                  </div>
+                <TaskSection
+                  eyebrow="What-if"
+                  title="Retail scenario"
+                  description="Set markup or margin and marketplace fee."
+                >
                   <div className="space-y-3 p-4">
                     {retailScenarios.map((scenario) => {
                       const result = retailComputed.scenarioResults.find((item) => item.id === scenario.id);
@@ -355,37 +388,29 @@ const MobileProductionCostingPage = () => {
                       );
                     })}
                   </div>
-                </section>
+                </TaskSection>
               </>
             ) : (
               <>
-                <section className="mobile-card space-y-3 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-sm font-bold text-[#1f2937]">Bulk / brand costing</h2>
-                      <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">{selectedFormula?.name || 'Formula'}</p>
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button type="button" size="icon" variant="outline" onClick={handlePrintQuotation} className="h-10 w-10 rounded-xl bg-white" aria-label="Print brand quotation"><Printer className="h-4 w-4" /></Button>
-                      <Button type="button" size="icon" onClick={handleExportQuotationPdf} className="h-10 w-10 rounded-xl bg-amber-500 text-white" aria-label="Export quotation PDF"><Download className="h-4 w-4" /></Button>
-                    </div>
-                  </div>
+                <TaskSection
+                  eyebrow="Step 2"
+                  title="Bulk costing inputs"
+                  description="Tetapkan loss produksi, handling, dan overhead per liter sebelum membuat quote."
+                >
                   <div className="grid grid-cols-2 gap-2">
                     <FieldInput label="Bulk loss" value={bulkInputs.productionLossPercent} suffix="%" onChange={(value) => updateBulkInput('productionLossPercent', value)} />
                     <FieldInput label="Handling" value={bulkInputs.handlingCostPerLiter} suffix="/L" onChange={(value) => updateBulkInput('handlingCostPerLiter', value)} />
                     <FieldInput label="Overhead" value={bulkInputs.bulkOverheadCost} suffix="/L" onChange={(value) => updateBulkInput('bulkOverheadCost', value)} />
                     <MoneyTile label="Material COGS" value={formatCurrency(bulkComputed.materialCogsPerMl * 1000)} helper="per liter" tone="emerald" />
                   </div>
-                </section>
+                </TaskSection>
 
-                <section className="mobile-card overflow-hidden">
-                  <div className="flex items-center justify-between gap-3 border-b border-[#ece8df] bg-[#faf9f6] px-4 py-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-sm font-bold text-[#1f2937]">Quote scenarios</h2>
-                      <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">Volume-based brand pricing.</p>
-                    </div>
-                    <Button type="button" size="icon" onClick={addBulkScenario} className="h-10 w-10 shrink-0 rounded-xl bg-amber-500 text-white" aria-label="Add bulk quote"><Plus className="h-4 w-4" /></Button>
-                  </div>
+                <TaskSection
+                  eyebrow="Step 3"
+                  title="Quote scenarios"
+                  description="Buat beberapa volume quote untuk membandingkan margin dan total price."
+                  action={<Button type="button" size="icon" onClick={addBulkScenario} className="h-10 w-10 shrink-0 rounded-xl bg-amber-500 text-white" aria-label="Add bulk quote"><Plus className="h-4 w-4" /></Button>}
+                >
                   <div className="space-y-3 p-4">
                     {bulkScenarios.map((scenario) => {
                       const result = bulkComputed.rows.find((row) => row.id === scenario.id);
@@ -446,9 +471,21 @@ const MobileProductionCostingPage = () => {
                       );
                     })}
                   </div>
-                </section>
+                </TaskSection>
               </>
             )}
+            <StickyBottomActionBar fixed reserveSpace aria-label="Production costing actions">
+              <div className="grid grid-cols-[auto_1fr] gap-2">
+                <Button type="button" variant="outline" onClick={activePrint} className="h-12 rounded-2xl bg-white px-4 text-xs font-bold">
+                  <Printer className="mr-2 h-4 w-4" />
+                  {activePrintLabel}
+                </Button>
+                <Button type="button" onClick={activeExport} className="h-12 rounded-2xl gap-2 text-xs font-bold">
+                  <Download className="h-4 w-4" />
+                  {activeExportLabel}
+                </Button>
+              </div>
+            </StickyBottomActionBar>
           </>
         )}
       </main>

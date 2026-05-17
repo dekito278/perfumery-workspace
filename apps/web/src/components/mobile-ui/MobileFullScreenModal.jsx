@@ -8,6 +8,13 @@ const focusTargets = 'input, textarea, select, [contenteditable="true"], [role="
 const MIN_KEYBOARD_MODAL_HEIGHT = 260;
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
+/**
+ * MobileFullScreenModal is reserved for bounded subflows that should feel
+ * immersive but are still subordinate to the current route.
+ *
+ * If a flow is long, independently meaningful, or likely to collect many
+ * inputs, prefer a dedicated page route instead.
+ */
 const MobileFullScreenModal = ({ open, title, children, footer, onClose, hideFooterOnInputFocus = true }) => {
   const modalRef = useRef(null);
   const [inputFocused, setInputFocused] = useState(false);
