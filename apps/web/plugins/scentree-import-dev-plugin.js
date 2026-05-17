@@ -569,13 +569,14 @@ export default function scentreeImportDevPlugin() {
 			});
 
 			server.middlewares.use('/api/imports/perfumersworld', async (req, res, next) => {
-				if (req.method !== 'POST') {
+				if (!['GET', 'POST'].includes(req.method)) {
 					return next();
 				}
 
 				try {
-					const body = await readJsonBody(req);
-					const url = String(body?.url || '').trim();
+					const requestUrl = new URL(req.url || '/', 'http://localhost');
+					const body = req.method === 'POST' ? await readJsonBody(req) : {};
+					const url = String(body?.url || requestUrl.searchParams.get('url') || '').trim();
 					if (!url) {
 						return sendJson(res, 400, { message: 'URL is required' });
 					}

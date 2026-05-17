@@ -165,15 +165,16 @@ const importPerfumersWorldByUrl = async (url) => {
 module.exports = async (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
 
-	if (req.method !== 'POST') {
+	if (!['GET', 'POST'].includes(req.method)) {
 		res.statusCode = 405;
 		res.end(JSON.stringify({ message: 'Method not allowed' }));
 		return;
 	}
 
 	try {
-		const body = await readRequestBody(req);
-		const url = String(body?.url || '').trim();
+		const requestUrl = new URL(req.url || '/', 'http://localhost');
+		const body = req.method === 'POST' ? await readRequestBody(req) : {};
+		const url = String(body?.url || requestUrl.searchParams.get('url') || '').trim();
 		if (!url) {
 			res.statusCode = 400;
 			res.end(JSON.stringify({ message: 'URL is required' }));

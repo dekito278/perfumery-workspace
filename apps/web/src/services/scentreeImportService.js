@@ -19,6 +19,18 @@ const parseImportResponse = async (response, fallbackMessage) => {
 	return payload;
 };
 
+const importPerfumersWorldByGet = async (url) => {
+	const query = new URLSearchParams({ url });
+	const response = await fetch(`${API_BASE_URL}/imports/perfumersworld?${query.toString()}`, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+		},
+	});
+
+	return parseImportResponse(response, 'Failed to import PerfumersWorld data');
+};
+
 export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
 	const normalizedCode = String(workbookCode || '').trim().toUpperCase();
 	if (!normalizedCode) {
@@ -48,6 +60,10 @@ export const importPerfumersWorldByUrl = async (url) => {
 		},
 		body: JSON.stringify({ url }),
 	});
+
+	if (response.status === 405) {
+		return importPerfumersWorldByGet(url);
+	}
 
 	return parseImportResponse(response, 'Failed to import PerfumersWorld data');
 };
