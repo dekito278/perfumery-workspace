@@ -5,8 +5,10 @@ import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, External
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import {
@@ -53,6 +55,13 @@ const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
+const orderSections = [
+  { value: 'task', label: 'Task' },
+  { value: 'payment', label: 'Payment' },
+  { value: 'fulfillment', label: 'Ship' },
+  { value: 'production', label: 'Make' },
+  { value: 'history', label: 'History' },
+];
 
 const paymentStatusLabels = {
   unpaid: 'Belum dibayar',
@@ -99,6 +108,20 @@ const getPaymentLogTone = (status) => {
   if (status === 'ignored') return 'bg-amber-50 text-amber-700';
   if (['rejected', 'error'].includes(status)) return 'bg-rose-50 text-rose-700';
   return 'bg-stone-100 text-stone-600';
+};
+
+const getNextOrderTask = (order) => {
+  if (!order) return { label: 'Review order', helper: 'Open the order workspace.' };
+  if (order.paymentStatus !== 'paid') {
+    return { label: 'Resolve payment', helper: 'Check proof, DOKU status, or customer payment link.' };
+  }
+  if (!['shipped', 'delivered'].includes(order.shipmentStatus)) {
+    return { label: 'Prepare fulfillment', helper: 'Pack, add tracking, then mark as shipped.' };
+  }
+  if (order.status !== 'completed') {
+    return { label: 'Close the order', helper: 'Review timeline and update final status.' };
+  }
+  return { label: 'Order complete', helper: 'Everything important is already closed.' };
 };
 
 const parseNoteLines = (notes = '') => String(notes || '')
@@ -190,6 +213,7 @@ const MobileOrderDetailPage = () => {
   const [rejectProofNotes, setRejectProofNotes] = useState('');
   const [paymentLogs, setPaymentLogs] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [orderSection, setOrderSection] = useState('task');
   const [notificationEvent, setNotificationEvent] = useState('order_created');
   const [internalNotesDraft, setInternalNotesDraft] = useState('');
   const [shipmentDraft, setShipmentDraft] = useState({
@@ -266,6 +290,7 @@ const MobileOrderDetailPage = () => {
   const paymentProofStatus = order?.paymentProofStatus || 'missing';
   const paymentProofIsImage = String(order?.paymentProofContentType || '').startsWith('image/');
   const proofTimeline = useMemo(() => getProofTimeline(auditLogs), [auditLogs]);
+  const nextOrderTask = getNextOrderTask(order);
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
     : [
@@ -555,6 +580,50 @@ const MobileOrderDetailPage = () => {
     navigate(`/mobile/formulas/new?${buildOrderFormulaParams(order, bespokeItem)}`);
   };
 
+  const handleSectionPrimaryAction = () => {
+    if (orderSection === 'task') {
+      if (order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)) {
+        quickShipmentUpdate('packing');
+        return;
+      }
+      setOrderSection(order.paymentStatus === 'paid' ? 'fulfillment' : 'payment');
+      return;
+    }
+    if (orderSection === 'payment') {
+      if (hasPaymentProofPath && paymentProofStatus !== 'approved') {
+        reviewPaymentProof('approved');
+        return;
+      }
+      syncDokuStatus();
+      return;
+    }
+    if (orderSection === 'fulfillment') {
+      saveShipment();
+      return;
+    }
+    if (orderSection === 'production') {
+      saveProductionLinks();
+      return;
+    }
+    copyDraft();
+  };
+
+  const primaryActionLabel = {
+    task: order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) ? 'Start packing' : 'Open next task',
+    payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Approve proof' : 'Sync DOKU',
+    fulfillment: savingShipment ? 'Saving shipment...' : 'Save shipment',
+    production: savingProductionLinks ? 'Saving linkage...' : 'Save linkage',
+    history: 'Copy draft',
+  }[orderSection];
+
+  const primaryActionDisabled = (
+    (orderSection === 'payment' && syncingPayment)
+    || (orderSection === 'fulfillment' && savingShipment)
+    || (orderSection === 'production' && savingProductionLinks)
+    || (orderSection === 'task' && savingShipment)
+    || savingPaymentProof
+  );
+
   if (loading) {
     return (
       <MobileAuthenticatedLayout showFab={false}>
@@ -607,13 +676,13 @@ const MobileOrderDetailPage = () => {
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
             </StatusChip>
           </div>
-          <div className="mt-4 grid grid-cols-5 gap-1.5">
+          <div className="mt-4 grid gap-2">
             {statusSteps.map((step, index) => {
               const done = activeStep >= index;
               return (
-                <div key={step} className="min-w-0">
-                  <div className={`h-1.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-                  <div className={`mt-1 truncate text-[8px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>{statusLabels[step]}</div>
+                <div key={step} className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
+                  <div className={`truncate text-[10px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>{statusLabels[step]}</div>
                 </div>
               );
             })}
@@ -629,6 +698,22 @@ const MobileOrderDetailPage = () => {
           </div>
         </section>
 
+        <MobileSegmentedControl options={orderSections} value={orderSection} onChange={setOrderSection} className="mobile-compact-tabs" />
+
+        <section className="mobile-card p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+              <PackageCheck className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Next task</div>
+              <h2 className="mt-0.5 text-base font-bold text-[#0b130c]">{nextOrderTask.label}</h2>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{nextOrderTask.helper}</p>
+            </div>
+          </div>
+        </section>
+
+        {orderSection === 'task' ? <>
         <section className="mobile-card p-3">
           <div className="mb-3 text-[10px] font-bold uppercase text-[#263d27]">Aksi cepat</div>
           <div className="grid grid-cols-2 gap-2">
@@ -674,7 +759,9 @@ const MobileOrderDetailPage = () => {
             </div>
           ) : null}
         </section>
+        </> : null}
 
+        {orderSection === 'payment' ? <>
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <CreditCard className="h-4 w-4" />
@@ -880,7 +967,9 @@ const MobileOrderDetailPage = () => {
             Manual dulu: copy template, kirim WhatsApp, atau buka email draft. Format ini siap dipakai nanti untuk automation penuh.
           </p>
         </section>
+        </> : null}
 
+        {orderSection === 'fulfillment' ? <>
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
@@ -1015,8 +1104,9 @@ const MobileOrderDetailPage = () => {
             </article>
           ))}
         </section>
+        </> : null}
 
-        {bespoke ? (
+        {orderSection === 'production' && bespoke ? (
           <section className="mobile-card border border-[#263d27]/10 bg-[#eef2e8] p-4">
             <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
               <Sparkles className="h-4 w-4" />
@@ -1033,7 +1123,7 @@ const MobileOrderDetailPage = () => {
           </section>
         ) : null}
 
-        {bespoke ? (
+        {orderSection === 'production' && bespoke ? (
           <section className="mobile-card p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
@@ -1044,13 +1134,13 @@ const MobileOrderDetailPage = () => {
                 {bespokeProductionStatusLabels[bespokeProductionStatus] || bespokeProductionStatus}
               </span>
             </div>
-            <div className="grid grid-cols-6 gap-1">
+            <div className="grid gap-2">
               {bespokeProductionSteps.map((step, index) => {
                 const done = bespokeProductionStep >= index;
                 return (
-                  <div key={step} className="min-w-0">
-                    <div className={`h-1.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-                    <div className={`mt-1 truncate text-[7px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>
+                  <div key={step} className="flex items-center gap-2">
+                    <span className={`h-2.5 w-2.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
+                    <div className={`truncate text-[10px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>
                       {bespokeProductionStatusLabels[step]}
                     </div>
                   </div>
@@ -1078,7 +1168,7 @@ const MobileOrderDetailPage = () => {
           </section>
         ) : null}
 
-        <section className="mobile-card p-4">
+        {orderSection === 'production' ? <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <Sparkles className="h-4 w-4" />
             Production linkage
@@ -1140,9 +1230,9 @@ const MobileOrderDetailPage = () => {
           {order.productionLinks?.updatedAt ? (
             <p className="mt-2 text-[10px] font-semibold text-[#6b7280]">Updated {formatDate(order.productionLinks.updatedAt)}</p>
           ) : null}
-        </section>
+        </section> : null}
 
-        <section className="mobile-card p-4">
+        {orderSection === 'production' ? <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <NotebookPen className="h-4 w-4" />
             Internal notes
@@ -1158,8 +1248,9 @@ const MobileOrderDetailPage = () => {
             <Save className="h-4 w-4" />
             {savingNotes ? 'Saving...' : 'Save notes'}
           </Button>
-        </section>
+        </section> : null}
 
+        {orderSection === 'history' ? <>
         <section className="mobile-card p-4">
           <h2 className="text-base font-bold text-[#0b130c]">Status timeline</h2>
           <div className="mt-3 grid gap-3">
@@ -1196,15 +1287,36 @@ const MobileOrderDetailPage = () => {
             {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </section>
+        </> : null}
       </main>
-      <Dialog open={rejectProofOpen} onOpenChange={setRejectProofOpen}>
-        <DialogContent className="max-w-[calc(100vw-1.5rem)] rounded-[26px] p-5">
-          <DialogHeader>
-            <DialogTitle>Reject bukti transfer</DialogTitle>
-            <DialogDescription className="not-sr-only text-sm font-semibold leading-relaxed text-[#6b7280]">
-              Alasan ini akan tampil untuk customer dan order tetap pending.
-            </DialogDescription>
-          </DialogHeader>
+      <StickyBottomActionBar fixed reserveSpace aria-label="Order detail actions">
+        <div className="grid grid-cols-[auto_1fr] gap-2">
+          <Button type="button" variant="outline" className="rounded-2xl bg-white px-4" onClick={handleBack}>
+            Orders
+          </Button>
+          <Button type="button" className="rounded-2xl" onClick={handleSectionPrimaryAction} disabled={primaryActionDisabled}>
+            {primaryActionLabel}
+          </Button>
+        </div>
+      </StickyBottomActionBar>
+
+      <MobileBottomSheet
+        open={rejectProofOpen}
+        onOpenChange={setRejectProofOpen}
+        title="Reject bukti transfer"
+        description="Alasan ini akan tampil untuk customer dan order tetap pending."
+        footer={(
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white" onClick={() => setRejectProofOpen(false)} disabled={savingPaymentProof}>
+              Batal
+            </Button>
+            <Button type="button" className="h-11 rounded-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={submitRejectProof} disabled={savingPaymentProof || !rejectProofNotes.trim()}>
+              {savingPaymentProof ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-2 h-4 w-4" />}
+              Reject
+            </Button>
+          </div>
+        )}
+      >
           <div className="grid gap-2">
             <label htmlFor="mobile-reject-proof-notes" className="text-[10px] font-bold uppercase text-[#6b7280]">
               Alasan penolakan
@@ -1218,17 +1330,7 @@ const MobileOrderDetailPage = () => {
               placeholder="Contoh: Nominal transfer belum sesuai total order."
             />
           </div>
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => setRejectProofOpen(false)} disabled={savingPaymentProof}>
-              Batal
-            </Button>
-            <Button type="button" className="rounded-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={submitRejectProof} disabled={savingPaymentProof || !rejectProofNotes.trim()}>
-              {savingPaymentProof ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-2 h-4 w-4" />}
-              Reject
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </MobileBottomSheet>
     </MobileAuthenticatedLayout>
   );
 };
