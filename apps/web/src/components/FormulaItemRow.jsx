@@ -21,6 +21,7 @@ const FormulaItemRow = ({
   error,
   autoFocusMaterial = false,
   onAutoFocusHandled,
+  onCreateMissingMaterial,
 }) => {
   const allIngredients = rawMaterials.map((material) => ({
     ...material,
@@ -78,6 +79,7 @@ const FormulaItemRow = ({
                   ingredients={allIngredients}
                   autoFocus={autoFocusMaterial}
                   onAutoFocusHandled={onAutoFocusHandled}
+                  onCreateMissing={(name) => onCreateMissingMaterial?.({ name, rowIndex: index })}
                 />
               </div>
               <div className="space-y-1.5">

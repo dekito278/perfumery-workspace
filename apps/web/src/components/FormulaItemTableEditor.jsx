@@ -22,6 +22,7 @@ const FormulaItemTableEditor = ({
   getGuidanceStatus,
   onOpenGuidanceEditor,
   activeItemInsight,
+  onCreateMissingMaterial,
 }) => {
   const solventOptions = rawMaterials.filter((material) => material.type === 'solvent');
   const ingredientOptions = rawMaterials.map((material) => ({
@@ -218,6 +219,7 @@ const FormulaItemTableEditor = ({
                       onAutoFocusHandled={onAutoFocusHandled}
                       compact
                       onActivate={() => onActivateRow?.(index)}
+                      onCreateMissing={(name) => onCreateMissingMaterial?.({ name, rowIndex: index })}
                     />
                     {validationErrors[`item_${index}`] ? (
                       <div className="mt-1.5 text-[11px] text-destructive">{validationErrors[`item_${index}`]}</div>
@@ -338,6 +340,7 @@ const FormulaItemTableEditor = ({
                         onAutoFocusHandled={onAutoFocusHandled}
                         compact
                         onActivate={() => onActivateRow?.(index)}
+                        onCreateMissing={(name) => onCreateMissingMaterial?.({ name, rowIndex: index })}
                       />
                     </div>
                     {showGuidanceEditor ? (

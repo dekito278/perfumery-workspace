@@ -17,9 +17,10 @@ import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount, formatPercentage } from '@/utils/formatting.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
-import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
+import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   const { updateFormula, loading } = useFormulas();
@@ -116,18 +117,35 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     setValidationErrors(newErrors);
   };
 
-  const updateItem = (index, itemId) => {
+  const updateItem = (index, itemId, materialOverride = null) => {
     const updated = [...formulaItems];
     updated[index].item_id = itemId;
     updated[index].item_type = '';
     
-    const isRawMaterial = rawMaterials.some(m => m.id === itemId);
-    if (isRawMaterial) {
-      const material = rawMaterials.find(m => m.id === itemId);
+    const material = materialOverride || rawMaterials.find(m => m.id === itemId);
+    if (material) {
       updated[index].item_type = material.type === 'solvent' ? 'solvent' : 'raw_material';
     }
     
     setFormulaItems(ensureTrailingEmptyItem(updated));
+  };
+
+  const handleCreateMissingMaterial = async ({ name: materialName, rowIndex }) => {
+    const nextName = normalizeQuickMaterialName(materialName);
+    if (!nextName) return;
+
+    const confirmed = window.confirm(`Tambah "${nextName}" sebagai raw material baru?\n\nMaterial akan langsung dipilih di row ini. Data workbook bisa dilengkapi nanti.`);
+    if (!confirmed) return;
+
+    try {
+      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
+      setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
+      updateItem(rowIndex, createdMaterial.id, createdMaterial);
+      setFocusRowIndex(rowIndex);
+      toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to add raw material');
+    }
   };
 
   const handleCommitRow = (index) => {
@@ -430,6 +448,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
                     error={validationErrors[`item_${index}`]}
                     autoFocusMaterial={focusRowIndex === index}
                     onAutoFocusHandled={() => setFocusRowIndex(null)}
+                    onCreateMissingMaterial={handleCreateMissingMaterial}
                   />
                 ))}
               </div>

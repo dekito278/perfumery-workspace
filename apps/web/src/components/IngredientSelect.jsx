@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Check } from 'lucide-react';
+import { Check, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const normalizeSearchValue = (value) => String(value || '').trim().toLowerCase();
@@ -116,6 +116,8 @@ const IngredientSelect = ({
   compact = false,
   showSuggestions = true,
   onActivate,
+  onCreateMissing,
+  createMissingLabel = 'Tambah raw material baru',
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -124,6 +126,7 @@ const IngredientSelect = ({
   const wrapperRef = useRef(null);
 
   const selectedIngredient = ingredients.find((ing) => ing.id === value);
+  const trimmedSearchTerm = searchTerm.trim();
 
   const findExactMatch = (rawValue = searchTerm) => {
     const normalizedTerm = String(rawValue || '').trim().toLowerCase();
@@ -185,6 +188,12 @@ const IngredientSelect = ({
       .slice(0, getSuggestionLimit(normalizedTerm))
       .map((entry) => entry.ingredient);
   }, [ingredients, searchTerm]);
+
+  const exactSearchMatch = useMemo(
+    () => ingredients.some((ingredient) => normalizeSearchValue(ingredient.name) === normalizeSearchValue(searchTerm)),
+    [ingredients, searchTerm]
+  );
+  const canCreateMissing = Boolean(onCreateMissing && trimmedSearchTerm.length >= 2 && !exactSearchMatch);
 
   useEffect(() => {
     if (selectedIngredient && !open) {
@@ -253,6 +262,16 @@ const IngredientSelect = ({
     setOpen(false);
     const ingredient = ingredients.find((entry) => entry.id === ingredientId);
     setSearchTerm(ingredient?.name || '');
+  };
+
+  const handleCreateMissing = () => {
+    if (!canCreateMissing) {
+      return;
+    }
+
+    const nextName = trimmedSearchTerm;
+    setOpen(false);
+    onCreateMissing?.(nextName);
   };
 
   const commitExactMatch = () => {
@@ -350,7 +369,7 @@ const IngredientSelect = ({
         }`}>
           <div className="max-h-[238px] overflow-y-auto">
             {filteredIngredients.length === 0 ? (
-              <div className="px-3 py-5 text-center text-sm text-muted-foreground">
+              <div className="px-3 py-4 text-center text-sm text-muted-foreground">
                 No matching materials
               </div>
             ) : (
@@ -382,6 +401,23 @@ const IngredientSelect = ({
               ))
             )}
           </div>
+          {canCreateMissing ? (
+            <button
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handleCreateMissing}
+              className={cn(
+                'mt-1 flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3 py-2.5 text-left text-amber-950 transition-colors hover:bg-amber-100',
+                compact ? 'text-xs' : 'text-sm'
+              )}
+            >
+              <span className="min-w-0">
+                <span className="block font-semibold">{createMissingLabel}</span>
+                <span className="block truncate text-[11px] text-amber-800">"{trimmedSearchTerm}" akan dibuat sebagai raw material.</span>
+              </span>
+              <PlusCircle className="h-4 w-4 shrink-0" />
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

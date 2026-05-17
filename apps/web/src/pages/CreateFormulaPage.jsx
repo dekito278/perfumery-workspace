@@ -31,9 +31,10 @@ import { useIsMobile } from '@/hooks/use-mobile.jsx';
 import { calculateTotalGrams } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount } from '@/utils/formatting.js';
-import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
+import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { buildComposerItemsFromMaterialIds, buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
+import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
@@ -212,6 +213,29 @@ const CreateFormulaPage = () => {
       material.id === updatedMaterial.id ? updatedMaterial : material
     )));
     setGuidanceEditorMaterial(updatedMaterial);
+  };
+
+  const handleCreateMissingMaterial = async ({ name: materialName, rowIndex }) => {
+    const nextName = normalizeQuickMaterialName(materialName);
+    if (!nextName) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Tambah "${nextName}" sebagai raw material baru?\n\nMaterial akan langsung dipilih di row ini. CAS, workbook, impact, dan life bisa dilengkapi nanti dari guidance editor.`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName));
+      setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
+      updateItem(rowIndex, createdMaterial.id, createdMaterial);
+      setActiveRowIndex(rowIndex);
+      setFocusRowIndex(rowIndex);
+      toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to add raw material');
+    }
   };
 
   const validateForm = () => {
@@ -608,6 +632,7 @@ const CreateFormulaPage = () => {
                           getGuidanceStatus={getItemGuidanceStatus}
                           onOpenGuidanceEditor={handleOpenGuidanceEditor}
                           activeItemInsight={activeItemInsight}
+                          onCreateMissingMaterial={handleCreateMissingMaterial}
                         />
                         </div>
 
@@ -835,6 +860,7 @@ const CreateFormulaPage = () => {
                     getGuidanceStatus={getItemGuidanceStatus}
                     onOpenGuidanceEditor={handleOpenGuidanceEditor}
                     activeItemInsight={activeItemInsight}
+                    onCreateMissingMaterial={handleCreateMissingMaterial}
                   />
                 </div>
 

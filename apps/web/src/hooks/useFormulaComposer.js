@@ -182,8 +182,8 @@ export const useFormulaComposer = ({
     setValidationErrors({});
   }, []);
 
-  const buildItemWithMaterial = (baseItem, itemId) => {
-    const material = rawMaterials.find((row) => row.id === itemId);
+  const buildItemWithMaterial = (baseItem, itemId, materialOverride = null) => {
+    const material = materialOverride || rawMaterials.find((row) => row.id === itemId);
 
     return {
       ...baseItem,
@@ -211,7 +211,7 @@ export const useFormulaComposer = ({
     });
   };
 
-  const updateItem = (index, itemId) => {
+  const updateItem = (index, itemId, materialOverride = null) => {
     setFormulaItems((currentItems) => {
       const updated = [...currentItems];
       const previousItem = updated[index] || createEmptyFormulaItem();
@@ -221,7 +221,7 @@ export const useFormulaComposer = ({
         && !previousItem.dilution_percent
         && !previousItem.dilution_solvent_id;
 
-      updated[index] = buildItemWithMaterial(previousItem, itemId);
+      updated[index] = buildItemWithMaterial(previousItem, itemId, materialOverride);
       const nextItems = wasComposerRow
         ? normalizeFormulaItems(updated)
         : ensureFormulaComposerRow(updated);
