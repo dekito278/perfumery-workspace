@@ -1,7 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, PackagePlus, Search, WandSparkles } from 'lucide-react';
+import { ArrowUpDown, PackagePlus, Search, SlidersHorizontal, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -135,6 +135,8 @@ export const MobileCatalogContent = ({ active = true }) => {
   const virtualStartIndex = virtualStartRow * MOBILE_CATALOG_COLUMNS;
   const virtualEndIndex = virtualEndRow * MOBILE_CATALOG_COLUMNS;
   const virtualProducts = useMemo(() => filteredProducts.slice(virtualStartIndex, virtualEndIndex), [filteredProducts, virtualEndIndex, virtualStartIndex]);
+  const activeSortLabel = catalogSortOptions.find((option) => option.value === sort)?.label || 'Featured';
+  const activeFilterCount = [segment !== 'all', category !== 'All', Boolean(deferredQuery.trim())].filter(Boolean).length;
   const firstVisibleProductImage = String(filteredProducts[0]?.images?.[0] || filteredProducts[0]?.imageUrl || '').trim();
   const firstVisibleProductPreload = getOptimizedProductImageUrl(firstVisibleProductImage, 720);
   const virtualPaddingTop = virtualStartRow * virtualRowHeight;
@@ -339,22 +341,38 @@ export const MobileCatalogContent = ({ active = true }) => {
         ) : null}
 
         {hasCatalogProducts ? (
-        <section className="mobile-card p-2.5">
-          <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase text-[#6b7280]">
-            <ArrowUpDown className="h-3.5 w-3.5" />
-            Sort
+        <section className="mobile-card p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-[#6b7280]">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Browse mode
+              </div>
+              <div className="mt-1 text-sm font-bold text-[#0b130c]">{filteredProducts.length} perfume shown</div>
+              <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">
+                {activeFilterCount ? `${activeFilterCount} filter active · sorted by ${activeSortLabel}` : `Sorted by ${activeSortLabel}`}
+              </p>
+            </div>
+            {activeFilterCount ? (
+              <Button type="button" variant="outline" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })} className="h-9 shrink-0 rounded-xl bg-white px-3 text-[11px] font-bold">
+                Reset
+              </Button>
+            ) : null}
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 mobile-segment-scroll" aria-label="Sort catalog">
+            <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#f7f8f2] px-3 text-[10px] font-bold uppercase text-[#6b7280]">
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              Sort
+            </span>
             {catalogSortOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => updateFilters({ sort: option.value })}
-                style={{ minHeight: 34 }}
                 className={cn(
-                  'h-[34px] rounded-xl border px-1.5 text-[10px] font-bold leading-tight',
+                  'h-9 shrink-0 rounded-xl border px-3 text-[11px] font-bold transition',
                   sort === option.value
-                    ? 'border-[#263d27] bg-[#263d27] text-white'
+                    ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
                 )}
               >
@@ -364,16 +382,20 @@ export const MobileCatalogContent = ({ active = true }) => {
           </div>
         </section>
         ) : showCatalogSkeleton ? (
-        <section className="mobile-card p-2.5" aria-hidden="true">
-          <div className="mb-2 flex items-center gap-1.5">
-            <div className="mobile-catalog-skeleton h-3.5 w-3.5 rounded-full" />
-            <div className="mobile-catalog-skeleton h-3 w-10 rounded-full" />
+        <section className="mobile-card p-3" aria-hidden="true">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="mobile-catalog-skeleton h-3 w-24 rounded-full" />
+              <div className="mobile-catalog-skeleton mt-2 h-4 w-32 rounded-full" />
+              <div className="mobile-catalog-skeleton mt-2 h-3 w-44 rounded-full" />
+            </div>
+            <div className="mobile-catalog-skeleton h-9 w-16 rounded-xl" />
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            <div className="mobile-catalog-skeleton h-[34px] rounded-xl" />
-            <div className="mobile-catalog-skeleton h-[34px] rounded-xl" />
-            <div className="mobile-catalog-skeleton h-[34px] rounded-xl" />
-            <div className="mobile-catalog-skeleton h-[34px] rounded-xl" />
+          <div className="mt-3 flex gap-2 overflow-hidden pb-1">
+            <div className="mobile-catalog-skeleton h-9 w-16 shrink-0 rounded-xl" />
+            <div className="mobile-catalog-skeleton h-9 w-20 shrink-0 rounded-xl" />
+            <div className="mobile-catalog-skeleton h-9 w-24 shrink-0 rounded-xl" />
+            <div className="mobile-catalog-skeleton h-9 w-20 shrink-0 rounded-xl" />
           </div>
         </section>
         ) : null}
