@@ -16,7 +16,6 @@ import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
-import { Textarea } from '@/components/ui/textarea.jsx';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { getRawMaterialById } from '@/services/rawMaterialsService.js';
 import { formatNullable, formatPercentage, formatStatus } from '@/utils/formatting.js';
@@ -44,35 +43,11 @@ const MobileRawMaterialDetailPage = () => {
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editSaving, setEditSaving] = useState(false);
   const [guidanceOpen, setGuidanceOpen] = useState(false);
   const [guidanceState, setGuidanceState] = useState('empty');
   const [guidanceForm, setGuidanceForm] = useState({ url: '', sourceType: 'perfumersworld' });
   const [guidanceSummary, setGuidanceSummary] = useState([]);
   const [deleting, setDeleting] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    type: 'material',
-    category: '',
-    unit: 'g',
-    vendor: '',
-    cas_number: '',
-    workbook_code: '',
-    stock_quantity: '',
-    minimum_stock: '',
-    low_stock_threshold: '',
-    data_status: 'active',
-    review_notes: '',
-    cost_per_unit: '',
-    ifra_limit: '',
-    reference_impact: '',
-    reference_life_hours: '',
-    reference_use_level_typical_percent: '',
-    reference_use_level_max_percent: '',
-    notes: '',
-  });
-
   useEffect(() => {
     let active = true;
     const loadMaterial = async () => {
@@ -104,79 +79,6 @@ const MobileRawMaterialDetailPage = () => {
     }
   };
 
-  const openEditSheet = () => {
-    if (!material) return;
-    const resolvedValues = getResolvedGuidanceValues(material);
-    setEditForm({
-      name: material.name || '',
-      type: material.type || 'material',
-      category: material.category || '',
-      unit: material.unit || 'g',
-      vendor: material.vendor || '',
-      cas_number: resolvedValues.cas_number || material.cas_number || '',
-      workbook_code: resolvedValues.workbook_code || material.workbook_code || '',
-      stock_quantity: material.stock_quantity ?? '',
-      minimum_stock: material.minimum_stock ?? '',
-      low_stock_threshold: material.low_stock_threshold ?? '',
-      data_status: material.data_status || 'active',
-      review_notes: material.review_notes || '',
-      cost_per_unit: material.cost_per_unit ?? '',
-      ifra_limit: resolvedValues.ifra_limit ?? material.ifra_limit ?? '',
-      reference_impact: resolvedValues.reference_impact ?? material.reference_impact ?? '',
-      reference_life_hours: resolvedValues.reference_life_hours ?? material.reference_life_hours ?? '',
-      reference_use_level_typical_percent: resolvedValues.reference_use_level_typical_percent ?? material.reference_use_level_typical_percent ?? '',
-      reference_use_level_max_percent: resolvedValues.reference_use_level_max_percent ?? material.reference_use_level_max_percent ?? '',
-      notes: material.notes || '',
-    });
-    setEditOpen(true);
-  };
-
-  const toNullableNumber = (value) => {
-    if (value === '' || value === null || value === undefined) return null;
-    const numericValue = Number(value);
-    return Number.isFinite(numericValue) ? numericValue : null;
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editForm.name.trim()) {
-      toast.error('Material name is required');
-      return;
-    }
-
-    setEditSaving(true);
-    try {
-      const updated = await updateMaterial(material.id, {
-        ...material,
-        name: editForm.name.trim(),
-        type: editForm.type || 'material',
-        category: editForm.category.trim() || null,
-        unit: editForm.unit.trim() || 'g',
-        vendor: editForm.vendor.trim() || null,
-        cas_number: editForm.cas_number.trim() || null,
-        workbook_code: editForm.workbook_code.trim() || null,
-        stock_quantity: toNullableNumber(editForm.stock_quantity) || 0,
-        minimum_stock: toNullableNumber(editForm.minimum_stock) || 0,
-        low_stock_threshold: toNullableNumber(editForm.low_stock_threshold),
-        data_status: editForm.data_status || 'active',
-        review_notes: editForm.review_notes.trim() || null,
-        cost_per_unit: toNullableNumber(editForm.cost_per_unit) || 0,
-        ifra_limit: toNullableNumber(editForm.ifra_limit),
-        reference_impact: toNullableNumber(editForm.reference_impact),
-        reference_life_hours: toNullableNumber(editForm.reference_life_hours),
-        reference_use_level_typical_percent: toNullableNumber(editForm.reference_use_level_typical_percent),
-        reference_use_level_max_percent: toNullableNumber(editForm.reference_use_level_max_percent),
-        notes: editForm.notes.trim() || null,
-      });
-      const [enrichedUpdated] = await enrichMaterialsWithGuidance([updated]);
-      setMaterial(enrichedUpdated || updated);
-      setEditOpen(false);
-      toast.success('Material updated');
-    } catch (error) {
-      toast.error(error.message || 'Failed to update material');
-    } finally {
-      setEditSaving(false);
-    }
-  };
 
   if (loading || !material) {
     return <MobileAuthenticatedLayout><MobileLoadingState eyebrow="Material" title="Loading material..." subtitle="Preparing guidance and reference data." /></MobileAuthenticatedLayout>;
@@ -254,7 +156,7 @@ const MobileRawMaterialDetailPage = () => {
             </Button>
           )}
           secondary={[
-            <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={openEditSheet}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
+            <Button key="edit" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => navigate(`/mobile/raw-material/${material.id}/edit`)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>,
             <Button key="import" variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs" onClick={() => setGuidanceOpen(true)}><Link2 className="mr-1 h-4 w-4" />Import</Button>,
           ]}
           destructive={<Button variant="outline" className="mobile-interactive mobile-delete-action h-11 rounded-2xl border-rose-200 bg-rose-50 text-xs text-rose-700" onClick={() => setDeleteOpen(true)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
@@ -292,63 +194,6 @@ const MobileRawMaterialDetailPage = () => {
         {material.notes ? <section className="mobile-card mobile-compact-card p-3"><h2 className="text-sm font-bold">Notes</h2><p className="mt-2 whitespace-pre-wrap text-xs text-[#6b7280]">{material.notes}</p></section> : null}
       </main>
       <DeleteConfirmationDialog open={deleteOpen} onOpenChange={setDeleteOpen} itemName={material.name} onConfirm={handleDelete} loading={deleting} />
-      <MobileBottomSheet
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        title="Edit Material"
-        description={material.name}
-        footer={<Button type="button" onClick={handleSaveEdit} disabled={editSaving} className="h-11 w-full rounded-2xl text-xs">{editSaving ? 'Saving material...' : 'Save Changes'}</Button>}
-      >
-        <div className="grid gap-3 pb-2">
-          {[
-            ['name', 'Material name'],
-            ['category', 'Category'],
-            ['vendor', 'Supplier'],
-            ['cas_number', 'CAS number'],
-            ['workbook_code', 'Workbook code'],
-            ['unit', 'Unit'],
-            ['stock_quantity', 'Stock on hand'],
-            ['minimum_stock', 'Minimum stock'],
-            ['low_stock_threshold', 'Low alert'],
-            ['data_status', 'Cleanup status'],
-            ['review_notes', 'Review note'],
-            ['cost_per_unit', 'Unit price'],
-            ['ifra_limit', 'IFRA limit %'],
-            ['reference_impact', 'Impact'],
-            ['reference_life_hours', 'Life hours'],
-            ['reference_use_level_typical_percent', 'Typical use %'],
-            ['reference_use_level_max_percent', 'Max use %'],
-          ].map(([field, label]) => (
-            <div key={field} className="space-y-1">
-              <Label className="text-xs">{label}</Label>
-              <Input
-                value={editForm[field]}
-                onChange={(event) => setEditForm((current) => ({ ...current, [field]: event.target.value }))}
-                className="h-10 rounded-xl bg-white text-xs"
-              />
-            </div>
-          ))}
-          <div className="space-y-1">
-            <Label className="text-xs">Type</Label>
-            <MobileSegmentedControl
-              options={[
-                { value: 'material', label: 'Material' },
-                { value: 'solvent', label: 'Solvent' },
-              ]}
-              value={editForm.type}
-              onChange={(type) => setEditForm((current) => ({ ...current, type }))}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Notes</Label>
-            <Textarea
-              value={editForm.notes}
-              onChange={(event) => setEditForm((current) => ({ ...current, notes: event.target.value }))}
-              className="min-h-[90px] rounded-xl bg-white text-xs"
-            />
-          </div>
-        </div>
-      </MobileBottomSheet>
       <MobileBottomSheet
         open={guidanceOpen}
         onOpenChange={setGuidanceOpen}

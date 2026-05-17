@@ -387,6 +387,11 @@ function AppRoutes() {
             <MobileRawMaterialAuditPage />
           </ProtectedRoute>
         } />
+        <Route path="/mobile/raw-material/:id/edit" element={
+          <ProtectedRoute>
+            <MobileRawMaterialEditorPage />
+          </ProtectedRoute>
+        } />
         <Route path="/mobile/raw-material/:id" element={
           <ProtectedRoute>
             <MobileRawMaterialDetailPage />
