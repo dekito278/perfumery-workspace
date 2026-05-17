@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ClipboardList, FileUp, WandSparkles } from 'lucide-react';
+import { ClipboardList, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
-import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import MobileFormField from '@/components/mobile-ui/MobileFormField.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
@@ -72,19 +71,18 @@ const MobileCreateFormulaPage = () => {
   const { getBriefs, updateBrief } = useBriefs();
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [metadataOpen, setMetadataOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(false);
   const [briefContext, setBriefContext] = useState(null);
   const [orderContext, setOrderContext] = useState(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [category, setCategory] = useState('perfume');
+  const [category] = useState('perfume');
   const [version, setVersion] = useState('');
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([]);
   const [seededCount, setSeededCount] = useState(0);
   const itemsRef = useRef(items);
+  const metadataRef = useRef(null);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -175,15 +173,17 @@ const MobileCreateFormulaPage = () => {
     toast.success('Material added to composition');
   };
 
+  const scrollToMetadata = () => metadataRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   const validate = () => {
     if (!name.trim()) {
       toast.error('Formula name is required');
-      setMetadataOpen(true);
+      scrollToMetadata();
       return false;
     }
     if (!code.trim()) {
       toast.error('Formula code is required');
-      setMetadataOpen(true);
+      scrollToMetadata();
       return false;
     }
     if (!items.length || totalGrams <= 0) {
@@ -277,6 +277,48 @@ const MobileCreateFormulaPage = () => {
                 </p>
               </section>
             ) : null}
+            <section ref={metadataRef} className="mobile-card scroll-mt-24 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-bold uppercase text-amber-700">Formula setup</div>
+                  <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">Metadata utama</h2>
+                  <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Isi identity formula dulu, lalu lanjut susun composition.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => navigate('/mobile/formulas?action=import')} className="h-10 shrink-0 rounded-2xl bg-white text-xs font-bold">
+                  <FileUp className="mr-1 h-4 w-4" />
+                  Import
+                </Button>
+              </div>
+              <div className="mt-3 grid gap-3">
+                <MobileFormField id="mobile-formula-name" label="Formula name" helper="Nama yang akan terlihat di daftar formula.">
+                  <Input id="mobile-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
+                </MobileFormField>
+                <div data-mobile-field className="mobile-form-field space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="mobile-formula-code" className="text-xs">Formula code</Label>
+                    <button type="button" onClick={() => setCode(buildFormulaCode(name || briefContext?.title))} className="text-[11px] font-bold text-amber-700">Generate</button>
+                  </div>
+                  <Input id="mobile-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
+                  <p className="mobile-form-helper text-xs font-medium text-[#6b7280]">Gunakan kode singkat yang mudah dicari.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <MobileFormField id="mobile-formula-version" label="Version" helper="Contoh: v1 atau pilot.">
+                    <Input id="mobile-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
+                  </MobileFormField>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Category</Label>
+                    <div className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-bold text-[#1f2937]">{FORMULA_CATEGORIES.find((option) => option.value === category)?.label || category}</div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} />
+                </div>
+                <MobileFormField id="mobile-formula-notes" label="Notes" helper="Catatan opsional untuk revisi atau arah evaluasi.">
+                  <Textarea id="mobile-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" />
+                </MobileFormField>
+              </div>
+            </section>
             {!canCreate ? (
               <section className="mobile-card p-3">
                 <div className="text-[10px] font-bold uppercase text-amber-700">Setup checklist</div>
@@ -287,16 +329,6 @@ const MobileCreateFormulaPage = () => {
                 </div>
               </section>
             ) : null}
-            <div className="grid grid-cols-2 gap-2">
-              <Button type="button" variant="outline" onClick={() => setMetadataOpen(true)} className="h-10 rounded-2xl bg-white text-xs font-bold">
-                <WandSparkles className="mr-1 h-4 w-4" />
-                Metadata
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/mobile/formulas?action=import')} className="h-10 rounded-2xl bg-white text-xs font-bold">
-                <FileUp className="mr-1 h-4 w-4" />
-                Import PDF
-              </Button>
-            </div>
             <MobileFormulaComposerWorkspace
               mode="create"
               metadata={{ name, code, category, version, status, notes }}
@@ -305,7 +337,7 @@ const MobileCreateFormulaPage = () => {
               onUpdateItem={updateItem}
               onRemoveItem={removeItem}
               onAddMaterial={addMaterial}
-              onOpenMetadata={() => setMetadataOpen(true)}
+              onOpenMetadata={scrollToMetadata}
               onSave={handleSubmit}
               saveLabel="Create"
               saving={loading}
@@ -314,38 +346,6 @@ const MobileCreateFormulaPage = () => {
           </>
         )}
       </main>
-      <MobileBottomSheet open={metadataOpen} onOpenChange={setMetadataOpen} title="Formula Metadata" footer={<Button className="h-10 w-full rounded-xl text-xs" onClick={() => setMetadataOpen(false)}>Save Metadata</Button>}>
-        <div className="grid gap-3 pb-2">
-          <MobileFormField id="mobile-formula-name" label="Formula name" helper="Nama yang akan terlihat di daftar formula.">
-            <Input id="mobile-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
-          </MobileFormField>
-          <div data-mobile-field className="mobile-form-field space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="mobile-formula-code" className="text-xs">Formula code</Label>
-              <button type="button" onClick={() => setCode(buildFormulaCode(name || briefContext?.title))} className="text-[11px] font-bold text-amber-700">Generate</button>
-            </div>
-            <Input id="mobile-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
-            <p className="mobile-form-helper text-xs font-medium text-[#6b7280]">Gunakan kode singkat yang mudah dicari.</p>
-          </div>
-          <div className="space-y-1"><Label className="text-xs">Category</Label><button type="button" onClick={() => setCategoryOpen(true)} className="mobile-card w-full p-3 text-left text-xs font-bold">{category}</button></div>
-          <MobileFormField id="mobile-formula-version" label="Version" helper="Contoh: v1, pilot, atau revisi berikutnya.">
-            <Input id="mobile-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
-          </MobileFormField>
-          <div className="space-y-1"><Label className="text-xs">Status</Label><MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} /></div>
-          <MobileFormField id="mobile-formula-notes" label="Notes" helper="Catatan opsional untuk revisi atau arah evaluasi.">
-            <Textarea id="mobile-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" />
-          </MobileFormField>
-        </div>
-      </MobileBottomSheet>
-      <MobileBottomSheet open={categoryOpen} onOpenChange={setCategoryOpen} title="Formula Category">
-        <div className="grid gap-2 pb-2">
-          {FORMULA_CATEGORIES.map((option) => (
-            <button key={option.value} type="button" onClick={() => { setCategory(option.value); setCategoryOpen(false); }} className="mobile-card w-full p-3 text-left text-sm font-bold">
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </MobileBottomSheet>
     </MobileAuthenticatedLayout>
   );
 };

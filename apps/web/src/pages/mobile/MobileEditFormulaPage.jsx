@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
@@ -6,10 +6,10 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
-import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
+import MobileFormField from '@/components/mobile-ui/MobileFormField.jsx';
 import MobileFormulaComposerWorkspace from '@/components/mobile/MobileFormulaComposerWorkspace.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
-import { FORMULA_STATUSES } from '@/utils/constants.js';
+import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
@@ -59,7 +59,6 @@ const MobileEditFormulaPage = () => {
   const { getFormulaItems } = useFormulaItems();
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [metadataOpen, setMetadataOpen] = useState(false);
   const [formula, setFormula] = useState(null);
   const [originalItems, setOriginalItems] = useState([]);
   const [name, setName] = useState('');
@@ -71,6 +70,7 @@ const MobileEditFormulaPage = () => {
   const [items, setItems] = useState([]);
   const [seededCount, setSeededCount] = useState(0);
   const [composerOverlayOpen, setComposerOverlayOpen] = useState(false);
+  const metadataRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -120,7 +120,7 @@ const MobileEditFormulaPage = () => {
   const rawMaterialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount), 0), [items]);
   const itemsWithInsights = useMemo(() => enrichCompositionItems(items, totalGrams, rawMaterialsById), [items, rawMaterialsById, totalGrams]);
-  const unsaved = useMemo(() => JSON.stringify(items) !== JSON.stringify(originalItems) || name !== (formula?.name || '') || code !== (formula?.code || '') || notes !== (formula?.notes || ''), [code, formula, items, name, notes, originalItems]);
+  const unsaved = useMemo(() => JSON.stringify(items) !== JSON.stringify(originalItems) || name !== (formula?.name || '') || code !== (formula?.code || '') || category !== (formula?.category || 'perfume') || version !== (formula?.version || '') || status !== (formula?.status || 'draft') || notes !== (formula?.notes || ''), [category, code, formula, items, name, notes, originalItems, status, version]);
 
   const updateItem = (rowKey, field, value) => setItems((current) => current.map((item) => item.row_key === rowKey ? { ...item, [field]: value } : item));
   const removeItem = (rowKey) => setItems((current) => current.filter((item) => item.row_key !== rowKey));
@@ -133,10 +133,12 @@ const MobileEditFormulaPage = () => {
     toast.success('Material added to composition');
   };
 
+  const scrollToMetadata = () => metadataRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   const handleSubmit = async () => {
     if (!name.trim() || !code.trim()) {
       toast.error('Name and code are required');
-      setMetadataOpen(true);
+      scrollToMetadata();
       return;
     }
     if (!items.length || totalGrams <= 0) {
@@ -180,6 +182,37 @@ const MobileEditFormulaPage = () => {
             </p>
           </section>
         ) : null}
+        <section ref={metadataRef} className="mobile-card scroll-mt-24 p-3">
+          <div>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Formula setup</div>
+            <h2 className="mt-0.5 text-sm font-bold text-[#1f2937]">Metadata utama</h2>
+            <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">Edit identity dan status langsung di flow, tanpa membuka sheet tambahan.</p>
+          </div>
+          <div className="mt-3 grid gap-3">
+            <MobileFormField id="mobile-edit-formula-name" label="Formula name" helper="Nama yang tampil di daftar formula.">
+              <Input id="mobile-edit-formula-name" value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
+            </MobileFormField>
+            <div className="grid grid-cols-2 gap-2">
+              <MobileFormField id="mobile-edit-formula-code" label="Formula code" helper="Kode singkat untuk pencarian.">
+                <Input id="mobile-edit-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
+              </MobileFormField>
+              <MobileFormField id="mobile-edit-formula-version" label="Version" helper="Contoh: v2 atau pilot.">
+                <Input id="mobile-edit-formula-version" value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" />
+              </MobileFormField>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Category</Label>
+              <div className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-bold text-[#1f2937]">{FORMULA_CATEGORIES.find((option) => option.value === category)?.label || category}</div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} />
+            </div>
+            <MobileFormField id="mobile-edit-formula-notes" label="Notes" helper="Catatan revisi, evaluasi, atau arahan batch.">
+              <Textarea id="mobile-edit-formula-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" />
+            </MobileFormField>
+          </div>
+        </section>
         <MobileFormulaComposerWorkspace
           mode="edit"
           metadata={{ name, code, category, version, status, notes }}
@@ -188,7 +221,7 @@ const MobileEditFormulaPage = () => {
           onUpdateItem={updateItem}
           onRemoveItem={removeItem}
           onAddMaterial={addMaterial}
-          onOpenMetadata={() => setMetadataOpen(true)}
+          onOpenMetadata={scrollToMetadata}
           onSave={handleSubmit}
           saveLabel="Save"
           saving={loading}
@@ -196,22 +229,13 @@ const MobileEditFormulaPage = () => {
           showActionBar={false}
           onOverlayOpenChange={setComposerOverlayOpen}
         />
-        {!metadataOpen && !composerOverlayOpen ? <StickyBottomActionBar fixed>
+        {!composerOverlayOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula editor actions">
           <div className="grid grid-cols-2 items-stretch gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white text-sm font-bold" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Cancel</Button>
             <Button className="h-12 rounded-2xl text-sm font-bold" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Saving...' : 'Save Revision'}</Button>
           </div>
         </StickyBottomActionBar> : null}
       </main>
-      <MobileBottomSheet open={metadataOpen} onOpenChange={setMetadataOpen} title="Formula Metadata" footer={<Button className="h-10 w-full rounded-xl text-xs" onClick={() => setMetadataOpen(false)}>Save Metadata</Button>}>
-        <div className="grid gap-3 pb-2">
-          <div className="space-y-1"><Label className="text-xs">Formula name</Label><Input value={name} onChange={(event) => setName(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>
-          <div className="space-y-1"><Label className="text-xs">Formula code</Label><Input value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>
-          <div className="space-y-1"><Label className="text-xs">Version</Label><Input value={version} onChange={(event) => setVersion(event.target.value)} className="h-10 rounded-xl bg-white text-xs" /></div>
-          <div className="space-y-1"><Label className="text-xs">Status</Label><MobileSegmentedControl options={FORMULA_STATUSES} value={status} onChange={setStatus} /></div>
-          <div className="space-y-1"><Label className="text-xs">Notes</Label><Textarea value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-[90px] rounded-xl bg-white text-xs" /></div>
-        </div>
-      </MobileBottomSheet>
     </MobileAuthenticatedLayout>
   );
 };

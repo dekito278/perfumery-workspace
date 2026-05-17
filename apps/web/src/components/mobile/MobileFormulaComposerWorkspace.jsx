@@ -682,7 +682,7 @@ const MobileFormulaComposerWorkspace = ({
             <PaginationOrLoadMore visibleCount={Math.min(compositionVisible, composition.length)} totalCount={composition.length} onLoadMore={() => setCompositionVisible((current) => current + COMPOSER_PAGE_SIZE)} />
           </section>
 
-          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar>
+          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula composer actions">
             <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-2">
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Formula<br /><span className="text-xs text-[#1f2937]">{formatPercent(insight.totalPercent)}</span></div>
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Actual<br /><span className="text-xs text-[#1f2937]">{formatGram(insight.totalActualActiveGrams)}</span></div>
