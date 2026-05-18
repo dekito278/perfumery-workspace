@@ -135,11 +135,15 @@ export const buildCheckoutDraft = ({
   paymentMethod = 'Manual confirmation',
   shippingSummary = '',
   shippingFee = 0,
+  voucherCode = '',
+  voucherDiscount = 0,
   notes,
   items,
 }) => {
   const { quantity, subtotal } = getCartSummary(items);
-  const total = subtotal + Number(shippingFee || 0);
+  const discount = Math.min(Number(voucherDiscount || 0), subtotal);
+  const discountedSubtotal = Math.max(subtotal - discount, 0);
+  const total = discountedSubtotal + Number(shippingFee || 0);
   const lines = items.map((item) => `- ${item.name} (${item.size}) x${item.quantity}: ${item.price}`);
   return [
     'Solivagant order draft',
@@ -157,6 +161,7 @@ export const buildCheckoutDraft = ({
     '',
     `Total items: ${quantity}`,
     `Subtotal: Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}`,
+    voucherCode && discount ? `Voucher ${voucherCode}: -Rp ${new Intl.NumberFormat('id-ID').format(discount)}` : '',
     shippingFee ? `Shipping fee: Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee))}` : '',
     `Total: Rp ${new Intl.NumberFormat('id-ID').format(total)}`,
     notes ? `Notes: ${notes}` : 'Notes: -',

@@ -19,6 +19,7 @@ import {
   PackageCheck,
   Calculator,
   Tags,
+  BadgePercent,
   Truck,
   UsersRound,
 } from 'lucide-react';
@@ -82,6 +83,7 @@ const AppShell = ({ children }) => {
       items: [
         { path: '/studio/products', label: 'Products', icon: PackagePlus },
         { path: '/studio/product-categories', label: 'Categories', icon: Tags },
+        { path: '/studio/vouchers', label: 'Vouchers', icon: BadgePercent },
         { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customers', icon: UsersRound },
         { path: '/studio/shipments', label: 'Fulfillment', icon: Truck },

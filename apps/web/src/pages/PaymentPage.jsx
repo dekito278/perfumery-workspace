@@ -10,6 +10,7 @@ import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, up
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
+import { getOrderShippingFee, getOrderSubtotalAfterVoucher, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -91,6 +92,8 @@ const buildManualTransferFromOrder = (order) => ({
   paymentProofUploadedAt: order.paymentProofUploadedAt,
   paymentProofStatus: order.paymentProofStatus,
   paymentProofNotes: order.paymentProofNotes,
+  voucherSnapshot: getOrderVoucherSnapshot(order),
+  shippingFee: getOrderShippingFee(order),
   manualTransfer: {
     bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
@@ -118,8 +121,40 @@ const buildDokuSessionFromCheckout = (order, checkout) => ({
   paymentProofUploadedAt: order.paymentProofUploadedAt,
   paymentProofStatus: order.paymentProofStatus,
   paymentProofNotes: order.paymentProofNotes,
+  voucherSnapshot: getOrderVoucherSnapshot(order),
+  shippingFee: getOrderShippingFee(order),
   createdAt: order.createdAt || new Date().toISOString(),
 });
+
+const PaymentTotalBreakdown = ({ session, compact = false }) => {
+  const voucherSnapshot = getOrderVoucherSnapshot(session);
+  if (!voucherSnapshot) return null;
+
+  const subtotalAfterVoucher = getOrderSubtotalAfterVoucher(session);
+  const shippingFee = Number(session.shippingFee || 0);
+  return (
+    <div className={`mt-4 rounded-2xl border border-[#263d27]/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#263d27]`}>
+      <div className="flex justify-between gap-3">
+        <span>Subtotal setelah voucher</span>
+        <span>{formatTotal(subtotalAfterVoucher)}</span>
+      </div>
+      <div className="mt-2 flex justify-between gap-3">
+        <span>Voucher {voucherSnapshot.code}</span>
+        <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
+      </div>
+      {shippingFee ? (
+        <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+          <span>Ongkir</span>
+          <span>{formatTotal(shippingFee)}</span>
+        </div>
+      ) : null}
+      <div className="mt-3 flex justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-[#0b130c]">
+        <span>Total bayar</span>
+        <span>{formatTotal(session.amount)}</span>
+      </div>
+    </div>
+  );
+};
 
 const PaymentFrame = ({ session, compact = false }) => {
   const [frameStatus, setFrameStatus] = useState('loading');
@@ -198,6 +233,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             </div>
           ) : null}
         </div>
+        <PaymentTotalBreakdown session={session} compact={compact} />
         {customerCode ? (
           <div className={compact ? 'mt-4 rounded-2xl border border-[#263d27]/15 bg-white p-4' : 'mt-5 rounded-2xl border border-[#263d27]/15 bg-white p-5'}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -361,6 +397,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="mt-1">{formatTotal(session.amount)}</div>
           </div>
         </div>
+        <PaymentTotalBreakdown session={session} compact={compact} />
       </div>
 
       <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
@@ -605,6 +642,8 @@ const PaymentPageContent = ({ isMobile }) => {
           paymentProofUploadedAt: order.paymentProofUploadedAt,
           paymentProofStatus: order.paymentProofStatus,
           paymentProofNotes: order.paymentProofNotes,
+          voucherSnapshot: getOrderVoucherSnapshot(order),
+          shippingFee: getOrderShippingFee(order),
           createdAt: order.createdAt,
         };
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(restoredSession));

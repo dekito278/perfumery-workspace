@@ -1,3 +1,5 @@
+import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+
 const notificationEventLabels = {
   order_created: 'Order created',
   paid: 'Paid',
@@ -9,11 +11,17 @@ const notificationEventLabels = {
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
-const formatItemLines = (items = []) => (
-  items.length
-    ? items.map((item) => `- ${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity || 1}`).join('\n')
-    : '- Item order'
-);
+const formatItemLines = (order = {}) => {
+  const items = getOrderProductItems(order);
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  const itemLines = items.length
+    ? items.map((item) => `- ${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity || 1}`)
+    : ['- Item order'];
+  return [
+    ...itemLines,
+    voucherSnapshot ? `Voucher ${voucherSnapshot.code}: -${formatTotal(voucherSnapshot.discountAmount)}` : '',
+  ].filter(Boolean).join('\n');
+};
 
 const normalizePhone = (value = '') => String(value).replace(/[^0-9+]/g, '').replace(/^\+/, '');
 const isEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
@@ -42,7 +50,7 @@ const templates = {
     `Order Solivagant kamu sudah kami terima: ${order.orderNumber}.`,
     '',
     'Detail order:',
-    formatItemLines(order.items),
+    formatItemLines(order),
     `Total: ${formatTotal(order.subtotal)}`,
     `Status payment: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Customer code: ${order.customerCode}` : '',

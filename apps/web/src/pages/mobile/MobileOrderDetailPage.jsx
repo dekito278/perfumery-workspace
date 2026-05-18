@@ -38,6 +38,7 @@ import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
+import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -671,6 +672,7 @@ const MobileOrderDetailPage = () => {
               <div className="text-[10px] font-bold uppercase text-[#263d27]">Status saat ini</div>
               <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{statusLabels[order.status] || order.status}</h1>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} items / {formatTotal(order.subtotal)}</p>
+              {getOrderVoucherSnapshot(order) ? <p className="mt-1 text-xs font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}: hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</p> : null}
             </div>
             <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
@@ -1092,7 +1094,7 @@ const MobileOrderDetailPage = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-[#0b130c]">Item</h2>
-          {order.items.map((item) => (
+          {getOrderProductItems(order).map((item) => (
             <article key={`${order.orderNumber}-${item.slug || item.name}`} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -1103,6 +1105,17 @@ const MobileOrderDetailPage = () => {
               </div>
             </article>
           ))}
+          {getOrderVoucherSnapshot(order) ? (
+            <article className="mobile-card border border-[#263d27]/10 bg-[#eef2e8] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}</h3>
+                  <p className="mt-1 text-xs font-semibold text-[#51624b]">{getOrderVoucherSnapshot(order).discountType || 'discount'} {getOrderVoucherSnapshot(order).discountValue || ''}</p>
+                </div>
+                <div className="shrink-0 text-sm font-bold text-[#263d27]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div>
+              </div>
+            </article>
+          ) : null}
         </section>
         </> : null}
 

@@ -1,11 +1,12 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Minus, PackageCheck, Plus, ShoppingBag, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowRight, BadgePercent, Minus, PackageCheck, Plus, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 
@@ -14,6 +15,7 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem } = useCart();
+  const voucher = useAppliedVoucher(summary.subtotal);
   const products = useCatalogProducts();
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const getCartItemProduct = (item) => {
@@ -38,7 +40,10 @@ const MobileCartPage = () => {
           <div className="grid grid-cols-[minmax(0,1fr)_86px] gap-3">
             <div className="min-w-0">
               <div className="text-[10px] font-bold uppercase text-amber-700">{items.length ? 'Subtotal' : 'Keranjang'}</div>
-              <div className="mt-1 text-3xl font-bold leading-tight text-[#1f2937]">{items.length ? formatTotal(summary.subtotal) : 'Mulai belanja'}</div>
+              <div className="mt-1 text-3xl font-bold leading-tight text-[#1f2937]">{items.length ? formatTotal(voucher.subtotalAfterDiscount) : 'Mulai belanja'}</div>
+              {items.length && voucher.discountAmount ? (
+                <div className="mt-1 text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(voucher.discountAmount)}</div>
+              ) : null}
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
                 {items.length ? 'Cek item di sini, lalu lanjutkan untuk isi pengiriman dan pembayaran.' : 'Pilih parfum ready stock atau mulai request aroma custom.'}
               </p>
@@ -84,6 +89,41 @@ const MobileCartPage = () => {
             </div>
           )}
         </section>
+        {items.length ? (
+          <section className="mobile-card p-3">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                <BadgePercent className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-bold text-[#0b130c]">Voucher</h2>
+                <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">Masukkan kode promo sebelum lanjut checkout.</p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <input
+                value={voucher.inputCode}
+                onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                placeholder="Kode voucher"
+                className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase"
+              />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={voucher.applyVoucher}>Pakai</Button>
+            </div>
+            {voucher.appliedVoucher ? (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/14 bg-[#eef2e8] px-3 py-2">
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
+                  <div className="mt-0.5 text-[11px] font-semibold text-[#51624b]">Hemat {formatTotal(voucher.discountAmount)}</div>
+                </div>
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : voucher.message ? (
+              <p className="mt-2 rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
+            ) : null}
+          </section>
+        ) : null}
         <section className="grid gap-3">
           {items.map((item) => (
             <article key={item.slug} className="mobile-card p-3">

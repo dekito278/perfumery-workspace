@@ -1,11 +1,12 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { BadgePercent, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
@@ -55,11 +56,21 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
 const MobileCheckoutPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
-  const checkout = useCheckoutFlow({ items, summary, clearCart: clear, paymentPath: '/mobile/payment' });
+  const voucher = useAppliedVoucher(summary.subtotal);
+  const checkout = useCheckoutFlow({
+    items,
+    summary,
+    clearCart: clear,
+    paymentPath: '/mobile/payment',
+    voucherCode: voucher.appliedVoucher?.code || '',
+    voucherDiscount: voucher.discountAmount,
+    voucherDetails: voucher.appliedVoucher,
+    clearVoucher: voucher.removeVoucher,
+  });
   const {
     customerCode, customerName, contact, deliveryAddress, notes, saving, securityChallenge, securityAnswer, lookupLoading,
     repeatCustomer, repeatAddressMode, destinationSearch, destinationOptions, selectedDestination, shippingOptions, selectedCourier,
-    selectedShipping, shippingLoading, shippingError, shippingFee, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
+    selectedShipping, shippingLoading, shippingError, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
     canSubmitCheckout, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
     useCustomerNewAddress, searchDestinations, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
@@ -183,6 +194,39 @@ const MobileCheckoutPage = () => {
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
         </CheckoutSection>
         <CheckoutSection
+          step="V"
+          title="Voucher"
+          description="Kode promo akan memotong subtotal produk sebelum ongkir."
+          complete={Boolean(voucher.appliedVoucher)}
+          action={voucher.discountAmount ? <span className="shrink-0 text-xs font-bold text-[#263d27]">-{formatTotal(voucher.discountAmount)}</span> : null}
+        >
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <input
+                value={voucher.inputCode}
+                onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                placeholder="Kode voucher"
+                className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase"
+              />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold gap-1.5" onClick={voucher.applyVoucher}>
+                <BadgePercent className="h-4 w-4" />
+                Pakai
+              </Button>
+            </div>
+            {voucher.appliedVoucher ? (
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/14 bg-[#eef2e8] px-3 py-2">
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
+                  <div className="mt-0.5 text-[11px] font-semibold text-[#51624b]">Hemat {formatTotal(voucher.discountAmount)}</div>
+                </div>
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : voucher.message ? (
+              <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
+            ) : null}
+        </CheckoutSection>
+        <CheckoutSection
           step="5"
           title="Ringkasan"
           description="Cek produk dan total sebelum pesanan dibuat."
@@ -201,6 +245,12 @@ const MobileCheckoutPage = () => {
             ))}
             <div className="mobile-commerce-summary px-3 py-3 text-xs font-bold text-[#263d27]">
               <div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatTotal(summary.subtotal)}</span></div>
+              {discountAmount ? (
+                <div className="mt-2 flex justify-between gap-3 text-[#263d27]"><span>Voucher {voucher.appliedVoucher?.code}</span><span>-{formatTotal(discountAmount)}</span></div>
+              ) : null}
+              {discountAmount ? (
+                <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Subtotal setelah voucher</span><span>{formatTotal(discountedSubtotal)}</span></div>
+              ) : null}
               <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
               <div className="mt-3 border-t border-[#263d27]/10 pt-3 flex justify-between gap-3 text-sm text-[#0b130c]"><span>Total bayar</span><span>{formatTotal(totalDue)}</span></div>
             </div>

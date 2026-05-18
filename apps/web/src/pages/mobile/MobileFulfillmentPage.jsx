@@ -18,6 +18,7 @@ import {
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -115,7 +116,7 @@ const MobileFulfillmentPage = () => {
       order.contact,
       order.trackingNumber,
       order.courierName,
-      ...(order.items || []).map((item) => item.name),
+      ...getOrderProductItems(order).map((item) => item.name),
     ].some((value) => String(value || '').toLowerCase().includes(query)));
   }, [displayedOrders, searchTerm]);
   const shippedToday = useMemo(() => {
@@ -187,7 +188,7 @@ const MobileFulfillmentPage = () => {
       `Resi: ${draft.trackingNumber || order.trackingNumber || '-'}`,
       '',
       'Packing list:',
-      ...order.items.map((item) => `- ${item.name} x${item.quantity}${item.size ? ` / ${item.size}` : ''}`),
+      ...getOrderProductItems(order).map((item) => `- ${item.name} x${item.quantity}${item.size ? ` / ${item.size}` : ''}`),
       draft.packingNotes || order.packingNotes ? `\nCatatan: ${draft.packingNotes || order.packingNotes}` : '',
     ].filter(Boolean);
     await navigator.clipboard.writeText(lines.join('\n'));
@@ -338,12 +339,18 @@ const MobileFulfillmentPage = () => {
                 </div>
 
                 <div className="mt-3 grid gap-2">
-                  {order.items.map((item) => (
+                  {getOrderProductItems(order).map((item) => (
                     <div key={`${orderKey}-${item.slug || item.name}`} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f8f7f4] px-3 py-2">
                       <span className="min-w-0 truncate text-xs font-bold text-[#1f2937]">{item.name} x{item.quantity}</span>
                       <span className="shrink-0 text-[10px] font-bold text-amber-700">{item.size || item.price}</span>
                     </div>
                   ))}
+                  {getOrderVoucherSnapshot(order) ? (
+                    <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#eef2e8] px-3 py-2">
+                      <span className="min-w-0 truncate text-xs font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}</span>
+                      <span className="shrink-0 text-[10px] font-bold text-[#263d27]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</span>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="mt-3 grid gap-2">
@@ -394,6 +401,7 @@ const MobileFulfillmentPage = () => {
                   <div>
                     <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} items</div>
                     <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
+                    {getOrderVoucherSnapshot(order) ? <div className="text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div> : null}
                   </div>
                   <Button
                     type="button"

@@ -12,6 +12,11 @@ import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import {
+  applyVoucherToSubtotal,
+  clearAppliedVoucherCode,
+  recordVoucherUsageForOrder,
+} from '@/services/voucherService.js';
+import {
   describeShippingRate,
   getCheckoutShippingWeight,
   getShippingRates,
@@ -33,6 +38,28 @@ const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. 
 
 const hasValidPhoneContact = (value) => String(value || '').replace(/[^0-9]/g, '').length >= 8;
 
+const buildVoucherSnapshot = ({
+  voucher,
+  voucherCode,
+  discountAmount,
+  subtotalBeforeDiscount,
+  subtotalAfterDiscount,
+}) => {
+  const code = String(voucher?.code || voucherCode || '').trim().toUpperCase();
+  const finalDiscount = Math.max(Number(discountAmount || 0), 0);
+  if (!code || finalDiscount <= 0) return null;
+
+  return {
+    code,
+    discountType: voucher?.discountType || voucher?.discount_type || '',
+    discountValue: Number(voucher?.discountValue || voucher?.discount_value || 0),
+    discountAmount: finalDiscount,
+    subtotalBeforeDiscount: Math.max(Number(subtotalBeforeDiscount || 0), 0),
+    subtotalAfterDiscount: Math.max(Number(subtotalAfterDiscount || 0), 0),
+    appliedAt: new Date().toISOString(),
+  };
+};
+
 export const checkoutCourierOptions = [
   { courierCode: 'jnt', label: 'JnT' },
   { courierCode: 'jne', label: 'JNE' },
@@ -46,6 +73,10 @@ export const useCheckoutFlow = ({
   summary,
   clearCart,
   paymentPath = '/payment',
+  voucherCode = '',
+  voucherDiscount = 0,
+  voucherDetails = null,
+  clearVoucher,
 }) => {
   const navigate = useNavigate();
   const [customerCode, setCustomerCode] = useState('');
@@ -74,7 +105,9 @@ export const useCheckoutFlow = ({
   const paymentMethod = paymentMethodDetails.label;
   const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
   const shippingFee = Number(selectedShipping?.cost || 0);
-  const totalDue = Number(summary.subtotal || 0) + shippingFee;
+  const discountAmount = Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
+  const discountedSubtotal = Math.max(Number(summary.subtotal || 0) - discountAmount, 0);
+  const totalDue = discountedSubtotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
   const validPhoneContact = hasValidPhoneContact(contact);
@@ -97,9 +130,11 @@ export const useCheckoutFlow = ({
     paymentMethod,
     shippingSummary,
     shippingFee,
+    voucherCode,
+    voucherDiscount: discountAmount,
     notes,
     items,
-  }), [contact, customerCode, customerName, deliveryAddress, deliveryArea, items, notes, paymentMethod, shippingFee, shippingSummary]);
+  }), [contact, customerCode, customerName, deliveryAddress, deliveryArea, discountAmount, items, notes, paymentMethod, shippingFee, shippingSummary, voucherCode]);
 
   const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
     setSelectedDestination(null);
@@ -341,7 +376,10 @@ export const useCheckoutFlow = ({
   };
 
   const submitOrder = async ({ onSuccess } = {}) => {
-    if (!items.length) return;
+    if (!items.length) {
+      toast.error('Keranjang masih kosong');
+      return;
+    }
     if (!customerName.trim() || !deliveryAddress.trim()) {
       toast.error('Nama dan alamat pengiriman wajib diisi');
       return;
@@ -362,6 +400,22 @@ export const useCheckoutFlow = ({
     setSaving(true);
     let createdOrder = null;
     try {
+      const voucherValidation = voucherCode
+        ? applyVoucherToSubtotal({ code: voucherCode, subtotal: summary.subtotal })
+        : null;
+      if (voucherCode && !voucherValidation?.valid) {
+        throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan');
+      }
+      const checkoutDiscountAmount = voucherValidation?.discountAmount ?? discountAmount;
+      const checkoutDiscountedSubtotal = Math.max(Number(summary.subtotal || 0) - checkoutDiscountAmount, 0);
+      const checkoutTotalDue = checkoutDiscountedSubtotal + shippingFee;
+      const voucherSnapshot = buildVoucherSnapshot({
+        voucher: voucherValidation?.voucher || voucherDetails,
+        voucherCode,
+        discountAmount: checkoutDiscountAmount,
+        subtotalBeforeDiscount: summary.subtotal,
+        subtotalAfterDiscount: checkoutDiscountedSubtotal,
+      });
       const order = await createOrder({
         customerName,
         customerCode,
@@ -370,19 +424,27 @@ export const useCheckoutFlow = ({
         deliveryArea,
         notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, shippingSummary, notes }),
         items,
-        subtotal: totalDue,
+        subtotal: checkoutTotalDue,
         quantity: summary.quantity,
         checkoutDraft,
         paymentProvider: paymentMethodDetails.provider,
+        voucherSnapshot,
       });
       createdOrder = order;
+      if (voucherSnapshot?.code) {
+        recordVoucherUsageForOrder({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          voucherSnapshot,
+        });
+      }
       if (isManualPayment) {
         const manualPaymentResponse = {
           method: paymentMethodDetails.provider,
           bankName: paymentMethodDetails.bankName,
           accountNumber: paymentMethodDetails.accountNumber,
           accountName: paymentMethodDetails.accountName,
-          amount: totalDue,
+          amount: checkoutTotalDue,
         };
         await updateOrderPaymentStatus(order.id || order.orderNumber, {
           paymentStatus: 'pending',
@@ -401,15 +463,19 @@ export const useCheckoutFlow = ({
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || customerCode,
-          amount: totalDue,
+          amount: checkoutTotalDue,
           customerName,
           paymentStatus: 'pending',
           manualTransfer: manualPaymentResponse,
           shippingSummary,
           shippingFee,
+          voucherCode,
+          voucherDiscount: checkoutDiscountAmount,
+          voucherSnapshot,
           createdAt: new Date().toISOString(),
         }));
         clearCart();
+        (clearVoucher || clearAppliedVoucherCode)();
         setSubmittedOrder(order);
         toast.success(`Order ${order.orderNumber} saved. Upload bukti transfer wajib setelah transfer.`);
         onSuccess?.(order);
@@ -419,10 +485,10 @@ export const useCheckoutFlow = ({
 
       const checkout = await createDokuCheckout({
         order,
-        amount: totalDue,
+        amount: checkoutTotalDue,
         customerName,
         contact,
-        items,
+        items: order.items || items,
         callbackPath: paymentPath,
       });
       await updateOrderPaymentStatus(order.id || order.orderNumber, {
@@ -441,16 +507,20 @@ export const useCheckoutFlow = ({
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || customerCode,
-        amount: totalDue,
+        amount: checkoutTotalDue,
         customerName,
         paymentStatus: 'pending',
         paymentExpiresAt: checkout.paymentExpiresAt || '',
         paymentSessionId: checkout.paymentSessionId || '',
         shippingSummary,
         shippingFee,
+        voucherCode,
+        voucherDiscount: checkoutDiscountAmount,
+        voucherSnapshot,
         createdAt: new Date().toISOString(),
       }));
       clearCart();
+      (clearVoucher || clearAppliedVoucherCode)();
       setSubmittedOrder(order);
       toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
       onSuccess?.(order);
@@ -497,6 +567,8 @@ export const useCheckoutFlow = ({
     isManualPayment,
     validPhoneContact,
     shippingFee,
+    discountAmount,
+    discountedSubtotal,
     totalDue,
     shippingSummary,
     shippingWeight,

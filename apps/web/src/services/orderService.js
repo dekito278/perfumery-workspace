@@ -39,6 +39,7 @@ const localOnlyStatuses = {
 };
 
 const BESPOKE_SOURCE = 'bespoke_request';
+const VOUCHER_DISCOUNT_ITEM_TYPE = 'voucher_discount';
 const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
 export const PAYMENT_RESERVATION_TTL_HOURS = 24;
 const ACTIVE_RESERVATION_PAYMENT_STATUSES = ['unpaid', 'pending'];
@@ -216,6 +217,66 @@ const normalizeProductionLinks = (links) => (
     }
 );
 
+const formatOrderRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+
+const normalizeVoucherSnapshot = (input = {}) => {
+  const code = String(input.code || input.voucherCode || input.voucher_code || '').trim().toUpperCase();
+  const discountAmount = Math.max(Number(input.discountAmount || input.discount_amount || 0), 0);
+  if (!code || discountAmount <= 0) return null;
+
+  const subtotalBeforeDiscount = Math.max(Number(input.subtotalBeforeDiscount || input.subtotal_before_discount || 0), 0);
+  const subtotalAfterDiscount = Number.isFinite(Number(input.subtotalAfterDiscount || input.subtotal_after_discount))
+    ? Math.max(Number(input.subtotalAfterDiscount || input.subtotal_after_discount), 0)
+    : Math.max(subtotalBeforeDiscount - discountAmount, 0);
+
+  return {
+    code,
+    discountType: input.discountType || input.discount_type || '',
+    discountValue: Number(input.discountValue || input.discount_value || 0),
+    discountAmount,
+    subtotalBeforeDiscount,
+    subtotalAfterDiscount,
+    appliedAt: input.appliedAt || input.applied_at || new Date().toISOString(),
+  };
+};
+
+const createVoucherDiscountItem = (voucherSnapshot) => ({
+  id: `voucher-${voucherSnapshot.code}`,
+  slug: `voucher-${voucherSnapshot.code.toLowerCase()}`,
+  type: VOUCHER_DISCOUNT_ITEM_TYPE,
+  name: `Voucher ${voucherSnapshot.code}`,
+  category: 'Voucher',
+  size: '-',
+  price: `-${formatOrderRupiah(voucherSnapshot.discountAmount)}`,
+  priceNumber: -voucherSnapshot.discountAmount,
+  quantity: 1,
+  voucherCode: voucherSnapshot.code,
+  discountType: voucherSnapshot.discountType,
+  discountValue: voucherSnapshot.discountValue,
+  discountAmount: voucherSnapshot.discountAmount,
+  subtotalBeforeDiscount: voucherSnapshot.subtotalBeforeDiscount,
+  subtotalAfterDiscount: voucherSnapshot.subtotalAfterDiscount,
+  voucherSnapshot,
+});
+
+const extractVoucherSnapshot = (order = {}, items = []) => {
+  const voucherItem = items.find((item) => item.type === VOUCHER_DISCOUNT_ITEM_TYPE);
+  return normalizeVoucherSnapshot(
+    order.voucherSnapshot
+    || order.voucher_snapshot
+    || voucherItem?.voucherSnapshot
+    || voucherItem,
+  );
+};
+
+const withVoucherDiscountItem = (items = [], voucherSnapshotInput = null) => {
+  const productItems = (Array.isArray(items) ? items : [])
+    .filter((item) => item.type !== VOUCHER_DISCOUNT_ITEM_TYPE)
+    .map((item) => ({ ...item }));
+  const voucherSnapshot = normalizeVoucherSnapshot(voucherSnapshotInput);
+  return voucherSnapshot ? [...productItems, createVoucherDiscountItem(voucherSnapshot)] : productItems;
+};
+
 const appendBespokeProductionTimeline = (timeline, status, note = '') => [
   ...normalizeBespokeProductionTimeline(timeline),
   {
@@ -228,6 +289,7 @@ const appendBespokeProductionTimeline = (timeline, status, note = '') => [
 
 const normalizeOrder = (order) => {
   const items = Array.isArray(order.items) ? order.items : [];
+  const voucherSnapshot = extractVoucherSnapshot(order, items);
   const source = order.source || (items.some((item) => item.type === BESPOKE_SOURCE) ? BESPOKE_SOURCE : 'storefront');
 
   return {
@@ -242,6 +304,7 @@ const normalizeOrder = (order) => {
     contact: order.contact || '-',
     notes: order.notes || '',
     items,
+    voucherSnapshot,
     quantity: Number(order.quantity || 0),
     subtotal: Number(order.subtotal || 0),
     checkoutDraft: order.checkout_draft || order.checkoutDraft || '',
@@ -423,6 +486,7 @@ const buildOrderPayload = ({
   checkoutDraft,
   paymentProvider = 'manual',
   source = 'storefront',
+  voucherSnapshot,
 }) => ({
   order_number: createOrderNumber(),
   status: 'pending_payment',
@@ -431,7 +495,7 @@ const buildOrderPayload = ({
   customer_id: customerId || null,
   contact: contact?.trim() || '-',
   notes: notes?.trim() || '',
-  items: items.map((item) => ({ ...item })),
+  items: withVoucherDiscountItem(items, voucherSnapshot),
   quantity,
   subtotal,
   checkout_draft: checkoutDraft,
@@ -569,7 +633,7 @@ const toOrderDatabasePayload = (order) => ({
   customer_id: isUuid(order.customerId) ? order.customerId : null,
   contact: order.contact || '-',
   notes: order.notes || '',
-  items: Array.isArray(order.items) ? order.items : [],
+  items: withVoucherDiscountItem(order.items, order.voucherSnapshot),
   quantity: Number(order.quantity || 0),
   subtotal: Number(order.subtotal || 0),
   checkout_draft: order.checkoutDraft || '',

@@ -12,6 +12,13 @@ import {
   verifyCustomerPortalSecurity,
 } from '@/services/customerService.js';
 import { getShipmentStatusLabels } from '@/services/orderService.js';
+import {
+  getOrderProductItems,
+  getOrderProductsSubtotal,
+  getOrderShippingFee,
+  getOrderSubtotalAfterVoucher,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -54,7 +61,14 @@ const getItemLineTotal = (item) => {
   return formatTotal(numericPrice * quantity);
 };
 
-const InvoiceCard = ({ customer, order, isMobile }) => (
+const InvoiceCard = ({ customer, order, isMobile }) => {
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  const productItems = getOrderProductItems(order);
+  const productsSubtotal = getOrderProductsSubtotal(order);
+  const subtotalAfterVoucher = getOrderSubtotalAfterVoucher(order);
+  const shippingFee = getOrderShippingFee(order);
+
+  return (
   <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-[28px] border bg-white shadow-sm'} overflow-hidden`}>
     <div className="border-b border-[#e5e7eb] bg-[#050705] p-5 text-[#eef2e8] sm:p-7">
       <div className="flex items-start justify-between gap-4">
@@ -107,7 +121,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
           <span className="hidden text-right sm:block">Harga</span>
           <span className="text-right">Total</span>
         </div>
-        {order.items.map((item) => (
+        {productItems.map((item) => (
           <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
             <span className="min-w-0">
               <span className="block truncate font-bold text-[#0b130c]">{item.name}</span>
@@ -118,6 +132,17 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
             <span className="text-right font-bold text-amber-700">{getItemLineTotal(item)}</span>
           </div>
         ))}
+        {voucherSnapshot ? (
+          <div className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] bg-[#eef2e8] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
+            <span className="min-w-0">
+              <span className="block truncate font-bold text-[#263d27]">Voucher {voucherSnapshot.code}</span>
+              <span className="mt-0.5 block text-xs text-[#51624b]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
+            </span>
+            <span className="text-right text-[#263d27]">1</span>
+            <span className="hidden text-right text-[#263d27] sm:block">Diskon</span>
+            <span className="text-right font-bold text-[#263d27]">-{formatTotal(voucherSnapshot.discountAmount)}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
@@ -143,6 +168,28 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
             <span>Total item</span>
             <span>{order.quantity}</span>
           </div>
+          {voucherSnapshot ? (
+            <>
+              <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3 text-sm font-semibold text-[#6b7280]">
+                <span>Subtotal produk</span>
+                <span>{formatTotal(productsSubtotal)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#263d27]">
+                <span>Voucher {voucherSnapshot.code}</span>
+                <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
+                <span>Subtotal setelah voucher</span>
+                <span>{formatTotal(subtotalAfterVoucher)}</span>
+              </div>
+              {shippingFee ? (
+                <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
+                  <span>Ongkir</span>
+                  <span>{formatTotal(shippingFee)}</span>
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
             <span className="text-sm font-bold uppercase text-[#263d27]">Total bayar</span>
             <span className="text-xl font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</span>
@@ -151,7 +198,8 @@ const InvoiceCard = ({ customer, order, isMobile }) => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 const CustomerInvoicePage = () => {
   const { orderNumber } = useParams();

@@ -263,6 +263,8 @@ const findVariantForOrderItem = (product = {}, item = {}) => {
   )) || variants[0] || null;
 };
 
+const isStockOrderItem = (item = {}) => !['bespoke_request', 'voucher_discount'].includes(item.type);
+
 const createInventoryEvent = (product = {}, item = {}) => {
   const batchDetails = getProductBatchDetails(product);
 
@@ -295,7 +297,7 @@ const createInventoryRestoreEvent = (event = {}) => ({
 });
 
 export const validateOrderStock = async (items = []) => {
-  const stockItems = items.filter((item) => item.type !== 'bespoke_request');
+  const stockItems = items.filter(isStockOrderItem);
   if (!stockItems.length) return { ok: true, issues: [] };
 
   const editableProducts = await getEditableProducts();
@@ -714,7 +716,7 @@ export const deductInventoryForOrder = async (order) => {
     return [];
   }
 
-  const stockItems = order.items.filter((item) => item.type !== 'bespoke_request');
+  const stockItems = order.items.filter(isStockOrderItem);
   if (!stockItems.length) return [];
 
   try {

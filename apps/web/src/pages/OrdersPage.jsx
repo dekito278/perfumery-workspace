@@ -18,6 +18,13 @@ import {
   isBespokeOrder,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import {
+  getOrderProductItems,
+  getOrderProductsSubtotal,
+  getOrderShippingFee,
+  getOrderSubtotalAfterVoucher,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -64,6 +71,21 @@ const paymentProofToneByStatus = {
   submitted: 'info',
   approved: 'success',
   rejected: 'danger',
+};
+
+const OrderVoucherSummary = ({ order }) => {
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  if (!voucherSnapshot) return null;
+  const shippingFee = getOrderShippingFee(order);
+
+  return (
+    <div className="mt-2 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
+      <div className="flex justify-between gap-3"><span>Subtotal produk</span><span>{formatTotal(getOrderProductsSubtotal(order))}</span></div>
+      <div className="mt-1 flex justify-between gap-3"><span>Voucher {voucherSnapshot.code}</span><span>-{formatTotal(voucherSnapshot.discountAmount)}</span></div>
+      <div className="mt-1 flex justify-between gap-3 text-muted-foreground"><span>Subtotal setelah voucher</span><span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span></div>
+      {shippingFee ? <div className="mt-1 flex justify-between gap-3 text-muted-foreground"><span>Ongkir</span><span>{formatTotal(shippingFee)}</span></div> : null}
+    </div>
+  );
 };
 
 const bespokeDetailRows = (item) => [
@@ -267,12 +289,13 @@ const OrdersPage = () => {
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}{order.customerCode ? ` / ${order.customerCode}` : ''}</p>
                     <div className="mt-3 grid gap-2">
-                      {order.items.map((item) => (
+                      {getOrderProductItems(order).map((item) => (
                         <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
                           <span>{item.name} x{item.quantity}</span>
                           <span className="text-amber-700">{item.price}</span>
                         </div>
                       ))}
+                      <OrderVoucherSummary order={order} />
                     </div>
                     {bespoke ? (
                       <div className="mt-3 grid gap-2 rounded-2xl border border-[#263d27]/10 bg-white p-3 sm:grid-cols-2">
@@ -348,6 +371,7 @@ const OrdersPage = () => {
                     <div className="rounded-2xl border bg-white p-3 text-right">
                       <div className="text-xs font-bold uppercase text-muted-foreground">{order.quantity} items</div>
                       <div className="text-xl font-bold">{formatTotal(order.subtotal)}</div>
+                      {getOrderVoucherSnapshot(order) ? <div className="mt-1 text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div> : null}
                     </div>
                     <div className="rounded-2xl border bg-white p-3">
                       <div className="text-xs font-bold uppercase text-muted-foreground">Payment admin</div>

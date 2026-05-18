@@ -21,6 +21,13 @@ import {
 } from '@/services/orderService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment } from '@/services/cartService.js';
+import {
+  getOrderProductItems,
+  getOrderProductsSubtotal,
+  getOrderShippingFee,
+  getOrderSubtotalAfterVoucher,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -192,14 +199,44 @@ const OrderTimeline = ({ order, compact = false }) => {
   );
 };
 
+const VoucherSummary = ({ order, compact = false }) => {
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  if (!voucherSnapshot) return null;
+
+  const shippingFee = getOrderShippingFee(order);
+  return (
+    <div className={`mt-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#263d27]`}>
+      <div className="flex justify-between gap-3">
+        <span>Subtotal produk</span>
+        <span>{formatTotal(getOrderProductsSubtotal(order))}</span>
+      </div>
+      <div className="mt-2 flex justify-between gap-3">
+        <span>Voucher {voucherSnapshot.code}</span>
+        <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
+      </div>
+      <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+        <span>Subtotal setelah voucher</span>
+        <span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span>
+      </div>
+      {shippingFee ? (
+        <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+          <span>Ongkir</span>
+          <span>{formatTotal(shippingFee)}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 const OrderItems = ({ order, compact = false }) => (
   <div className="grid gap-2">
-    {order.items.map((item) => (
+    {getOrderProductItems(order).map((item) => (
       <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`flex items-center justify-between gap-2 rounded-2xl bg-white font-semibold ${compact ? 'border border-[#e5e7eb] px-3 py-2 text-xs' : 'px-3 py-2 text-sm'}`}>
         <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
         <span className="shrink-0 text-amber-700">{item.price || '-'}</span>
       </div>
     ))}
+    <VoucherSummary order={order} compact={compact} />
   </div>
 );
 

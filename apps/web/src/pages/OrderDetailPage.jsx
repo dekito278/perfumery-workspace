@@ -54,6 +54,13 @@ import {
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
+import {
+  getOrderProductItems,
+  getOrderProductsSubtotal,
+  getOrderShippingFee,
+  getOrderSubtotalAfterVoucher,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -662,9 +669,20 @@ const OrderDetailPage = () => {
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Customer</span><strong>{order.customerName}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Shipment</span><strong>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Admin logs</span><strong>{auditLogs.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total bayar</span><strong>{formatTotal(order.subtotal)}</strong></div>
           </div>
         </section>
+
+        {getOrderVoucherSnapshot(order) ? (
+          <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4 text-sm font-bold text-[#263d27] shadow-sm">
+            <div className="grid gap-2 sm:grid-cols-4">
+              <div><span className="block text-[10px] uppercase text-[#6b7280]">Subtotal produk</span>{formatTotal(getOrderProductsSubtotal(order))}</div>
+              <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {getOrderVoucherSnapshot(order).code}</span>-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div>
+              <div><span className="block text-[10px] uppercase text-[#6b7280]">Setelah voucher</span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</div>
+              <div><span className="block text-[10px] uppercase text-[#6b7280]">Ongkir / total</span>{getOrderShippingFee(order) ? `${formatTotal(getOrderShippingFee(order))} / ` : ''}{formatTotal(order.subtotal)}</div>
+            </div>
+          </section>
+        ) : null}
 
         <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -887,7 +905,7 @@ const OrderDetailPage = () => {
                 Items
               </div>
               <div className="overflow-hidden rounded-2xl border">
-                {order.items.map((item) => (
+                {getOrderProductItems(order).map((item) => (
                   <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_80px_120px] gap-3 border-b bg-white px-4 py-3 text-sm font-semibold last:border-b-0">
                     <span className="min-w-0">
                       <span className="block truncate font-bold">{item.name}</span>
@@ -897,6 +915,16 @@ const OrderDetailPage = () => {
                     <span className="text-right font-bold text-amber-700">{item.price || formatTotal(item.priceNumber)}</span>
                   </div>
                 ))}
+                {getOrderVoucherSnapshot(order) ? (
+                  <div className="grid grid-cols-[1fr_80px_120px] gap-3 border-b bg-[#eef2e8] px-4 py-3 text-sm font-semibold last:border-b-0">
+                    <span className="min-w-0">
+                      <span className="block truncate font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}</span>
+                      <span className="text-xs text-[#51624b]">{getOrderVoucherSnapshot(order).discountType || 'discount'} {getOrderVoucherSnapshot(order).discountValue || ''}</span>
+                    </span>
+                    <span className="text-right">-</span>
+                    <span className="text-right font-bold text-[#263d27]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</span>
+                  </div>
+                ) : null}
               </div>
             </section>
           </div>

@@ -20,6 +20,7 @@ import {
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -131,7 +132,7 @@ const MobileOrdersPage = () => {
       order.contact,
       order.trackingNumber,
       order.courierName,
-      ...(order.items || []).map((item) => item.name),
+      ...getOrderProductItems(order).map((item) => item.name),
     ].some((value) => String(value || '').toLowerCase().includes(query));
   }), [orderFilter, orders, searchTerm]);
 
@@ -307,12 +308,18 @@ const MobileOrdersPage = () => {
               </div>
               {order.persistence === 'local' ? <div className="mt-2 w-fit rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Draft lokal</div> : null}
               <div className="mt-3 space-y-2">
-                {order.items.map((item) => (
+                {getOrderProductItems(order).map((item) => (
                   <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f8f7f4] px-3 py-2 text-xs font-semibold text-[#1f2937]">
                     <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
                     <span className="shrink-0 text-amber-700">{item.price}</span>
                   </div>
                 ))}
+                {getOrderVoucherSnapshot(order) ? (
+                  <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
+                    <span className="min-w-0 truncate">Voucher {getOrderVoucherSnapshot(order).code}</span>
+                    <span className="shrink-0">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</span>
+                  </div>
+                ) : null}
               </div>
               <div className="mt-3 rounded-2xl bg-[#f8f7f4] p-3">
                 <div className="text-[10px] font-bold uppercase text-[#6b7280]">Aksi berikutnya</div>
@@ -376,6 +383,7 @@ const MobileOrdersPage = () => {
                 <div>
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} item</div>
                   <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
+                  {getOrderVoucherSnapshot(order) ? <div className="text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div> : null}
                 </div>
                 <select value={order.status} onChange={(event) => updateStatus(order.id || order.orderNumber, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

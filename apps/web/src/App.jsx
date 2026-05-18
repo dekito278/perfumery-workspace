@@ -27,6 +27,7 @@ const AuthenticatorSetupPage = lazy(() => import('@/pages/AuthenticatorSetupPage
 const DashboardPage = lazy(() => import('@/pages/DashboardPage.jsx'));
 const ProductManagementPage = lazy(() => import('@/pages/ProductManagementPage.jsx'));
 const ProductCategoriesPage = lazy(() => import('@/pages/ProductCategoriesPage.jsx'));
+const VoucherManagementPage = lazy(() => import('@/pages/VoucherManagementPage.jsx'));
 const OrdersPage = lazy(() => import('@/pages/OrdersPage.jsx'));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage.jsx'));
 const CustomersPage = lazy(() => import('@/pages/CustomersPage.jsx'));
@@ -499,6 +500,12 @@ function AppRoutes() {
         <Route path="/studio/product-categories" element={
           <ProtectedRoute>
             <ProductCategoriesPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/vouchers" element={
+          <ProtectedRoute>
+            <VoucherManagementPage />
           </ProtectedRoute>
         } />
 
