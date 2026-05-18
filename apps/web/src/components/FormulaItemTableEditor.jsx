@@ -23,6 +23,7 @@ const FormulaItemTableEditor = ({
   onOpenGuidanceEditor,
   activeItemInsight,
   onCreateMissingMaterial,
+  needsGuidanceMaterialId,
 }) => {
   const solventOptions = rawMaterials.filter((material) => material.type === 'solvent');
   const ingredientOptions = rawMaterials.map((material) => ({
@@ -138,6 +139,7 @@ const FormulaItemTableEditor = ({
             const guidanceStatus = getGuidanceStatus?.(item);
             const showGuidanceEditor = Boolean(item.item_id);
             const hasGuidanceWarning = Boolean(guidanceStatus?.hasWarning);
+            const showNeedsGuidanceNudge = Boolean(item.item_id && item.item_id === needsGuidanceMaterialId && hasGuidanceWarning);
 
             return (
               <div
@@ -224,6 +226,20 @@ const FormulaItemTableEditor = ({
                     {validationErrors[`item_${index}`] ? (
                       <div className="mt-1.5 text-[11px] text-destructive">{validationErrors[`item_${index}`]}</div>
                     ) : null}
+                    {showNeedsGuidanceNudge ? (
+                      <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>Needs guidance: CAS, impact, life, atau workbook belum lengkap.</span>
+                          <button
+                            type="button"
+                            onClick={() => onOpenGuidanceEditor?.(item)}
+                            className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-amber-800 shadow-sm"
+                          >
+                            Lengkapi guidance
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -308,6 +324,7 @@ const FormulaItemTableEditor = ({
             const guidanceStatus = getGuidanceStatus?.(item);
             const showGuidanceEditor = Boolean(item.item_id);
             const hasGuidanceWarning = Boolean(guidanceStatus?.hasWarning);
+            const showNeedsGuidanceNudge = Boolean(item.item_id && item.item_id === needsGuidanceMaterialId && hasGuidanceWarning);
 
             return (
               <div
@@ -367,6 +384,17 @@ const FormulaItemTableEditor = ({
                   </div>
                   {validationErrors[`item_${index}`] ? (
                     <div className="mt-1 truncate text-[10px] text-destructive">{validationErrors[`item_${index}`]}</div>
+                  ) : null}
+                  {showNeedsGuidanceNudge ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenGuidanceEditor?.(item)}
+                      className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-100"
+                      title="Lengkapi guidance tanpa keluar dari formula"
+                    >
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Needs guidance · Lengkapi guidance</span>
+                    </button>
                   ) : null}
                 </div>
 

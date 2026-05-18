@@ -161,6 +161,7 @@ const EditFormulaPage = () => {
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
+  const [needsGuidanceMaterialId, setNeedsGuidanceMaterialId] = useState('');
   const [linkedBrief, setLinkedBrief] = useState(null);
   const [linkedProject, setLinkedProject] = useState(null);
   const [projectUnavailable, setProjectUnavailable] = useState(false);
@@ -479,6 +480,9 @@ const EditFormulaPage = () => {
       material.id === updatedMaterial.id ? updatedMaterial : material
     )));
     setGuidanceEditorMaterial(updatedMaterial);
+    if (updatedMaterial?.id === needsGuidanceMaterialId) {
+      setNeedsGuidanceMaterialId('');
+    }
   };
 
   const handleCreateMissingMaterial = ({ name: materialName, rowIndex }) => {
@@ -509,10 +513,13 @@ const EditFormulaPage = () => {
     try {
       const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName, details));
       setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
-      updateItem(rowIndex, createdMaterial.id, createdMaterial);
-      setActiveRowIndex(rowIndex);
-      setFocusRowIndex(rowIndex);
-      setQuickCreateIntent(null);
+        updateItem(rowIndex, createdMaterial.id, createdMaterial);
+        setActiveRowIndex(rowIndex);
+        setFocusRowIndex(rowIndex);
+        if (!createdMaterial?._creationResolution) {
+          setNeedsGuidanceMaterialId(createdMaterial.id);
+        }
+        setQuickCreateIntent(null);
       toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
     } catch (error) {
       toast.error(error.message || 'Failed to add raw material');
@@ -1652,10 +1659,11 @@ const EditFormulaPage = () => {
                             onRemove={removeFormulaItem}
                             validationErrors={validationErrors}
                             getGuidanceStatus={getItemGuidanceStatus}
-                            onOpenGuidanceEditor={handleOpenGuidanceEditor}
-                            activeItemInsight={activeItemInsight}
-                            onCreateMissingMaterial={handleCreateMissingMaterial}
-                          />
+                              onOpenGuidanceEditor={handleOpenGuidanceEditor}
+                              activeItemInsight={activeItemInsight}
+                              onCreateMissingMaterial={handleCreateMissingMaterial}
+                              needsGuidanceMaterialId={needsGuidanceMaterialId}
+                            />
                         </div>
 
                         <div className="mt-4">
@@ -1879,10 +1887,11 @@ const EditFormulaPage = () => {
                         onRemove={removeFormulaItem}
                         validationErrors={validationErrors}
                         getGuidanceStatus={getItemGuidanceStatus}
-                        onOpenGuidanceEditor={handleOpenGuidanceEditor}
-                        activeItemInsight={activeItemInsight}
-                        onCreateMissingMaterial={handleCreateMissingMaterial}
-                      />
+                          onOpenGuidanceEditor={handleOpenGuidanceEditor}
+                          activeItemInsight={activeItemInsight}
+                          onCreateMissingMaterial={handleCreateMissingMaterial}
+                          needsGuidanceMaterialId={needsGuidanceMaterialId}
+                        />
                     </div>
 
                     <div className="mt-4">

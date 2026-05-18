@@ -12,6 +12,7 @@ import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 import MobileFormField from '@/components/mobile-ui/MobileFormField.jsx';
 import MobileFormulaComposerWorkspace from '@/components/mobile/MobileFormulaComposerWorkspace.jsx';
 import FormulaMaterialQuickCreateDialog from '@/components/FormulaMaterialQuickCreateDialog.jsx';
+import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
@@ -21,7 +22,7 @@ import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
-import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
+import { enrichMaterialsWithGuidance, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
@@ -75,6 +76,9 @@ const MobileEditFormulaPage = () => {
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
   const [focusMaterialId, setFocusMaterialId] = useState('');
+  const [needsGuidanceMaterialId, setNeedsGuidanceMaterialId] = useState('');
+  const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
+  const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const metadataRef = useRef(null);
 
   useEffect(() => {
@@ -165,11 +169,34 @@ const MobileEditFormulaPage = () => {
       const createdMaterial = await createRawMaterial(buildQuickRawMaterialPayload(nextName, details));
       setRawMaterials((current) => upsertMaterialOption(current, createdMaterial));
       addMaterial(createdMaterial);
+      if (!createdMaterial?._creationResolution) {
+        setNeedsGuidanceMaterialId(createdMaterial.id);
+      }
       setQuickCreateIntent(null);
     } catch (error) {
       toast.error(error.message || 'Failed to add raw material');
     } finally {
       setQuickCreateLoading(false);
+    }
+  };
+
+  const handleOpenGuidanceEditor = (item) => {
+    const material = rawMaterialsById.get(item?.item_id) || item?.material || item;
+    if (!material?.id) return;
+    setGuidanceEditorMaterial({
+      ...material,
+      guidance_resolved_values: getResolvedGuidanceValues(material),
+    });
+    setGuidanceEditorOpen(true);
+  };
+
+  const handleGuidanceSaved = (updatedMaterial) => {
+    setRawMaterials((current) => current.map((material) => (
+      material.id === updatedMaterial.id ? updatedMaterial : material
+    )));
+    setGuidanceEditorMaterial(updatedMaterial);
+    if (updatedMaterial?.id === needsGuidanceMaterialId) {
+      setNeedsGuidanceMaterialId('');
     }
   };
 
@@ -262,7 +289,9 @@ const MobileEditFormulaPage = () => {
           onRemoveItem={removeItem}
           onAddMaterial={addMaterial}
           onCreateMissingMaterial={handleCreateMissingMaterial}
+          onOpenGuidanceEditor={handleOpenGuidanceEditor}
           focusMaterialId={focusMaterialId}
+          needsGuidanceMaterialId={needsGuidanceMaterialId}
           onOpenMetadata={scrollToMetadata}
           onSave={handleSubmit}
           saveLabel="Save"
@@ -282,7 +311,14 @@ const MobileEditFormulaPage = () => {
           onSelectExisting={handleSelectQuickCreateExistingMaterial}
           onConfirm={handleConfirmQuickCreateMaterial}
         />
-        {!composerOverlayOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula editor actions">
+        <RawMaterialGuidanceQuickEditDialog
+          open={guidanceEditorOpen}
+          onOpenChange={setGuidanceEditorOpen}
+          material={guidanceEditorMaterial}
+          guidanceStatus={null}
+          onSaved={handleGuidanceSaved}
+        />
+        {!composerOverlayOpen && !guidanceEditorOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula editor actions">
           <div className="grid grid-cols-2 items-stretch gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white text-sm font-bold" onClick={() => navigate(`/mobile/formulas/${id}`)}><X className="mr-1 h-4 w-4" />Cancel</Button>
             <Button className="h-12 rounded-2xl text-sm font-bold" onClick={handleSubmit} disabled={loading || !unsaved}>{loading ? 'Saving...' : 'Save Revision'}</Button>

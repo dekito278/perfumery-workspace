@@ -437,7 +437,9 @@ const MobileFormulaComposerWorkspace = ({
   onRemoveItem,
   onAddMaterial,
   onCreateMissingMaterial,
+  onOpenGuidanceEditor,
   focusMaterialId,
+  needsGuidanceMaterialId,
   onOpenMetadata,
   onSave,
   saveLabel,
@@ -773,6 +775,8 @@ const MobileFormulaComposerWorkspace = ({
                   : guidanceStatus.tone === 'partial'
                     ? 'border-amber-200 bg-amber-50 text-amber-800'
                     : 'border-rose-200 bg-rose-50 text-rose-700';
+                const showGuidanceCta = Boolean(onOpenGuidanceEditor && guidanceStatus.missing.length);
+                const guidanceCtaLabel = item.item_id === needsGuidanceMaterialId ? 'Lengkapi guidance' : 'Edit guidance';
                 return (
                   <article
                     key={item.row_key}
@@ -843,10 +847,19 @@ const MobileFormulaComposerWorkspace = ({
                       <div className={`mt-2 rounded-2xl border px-3 py-2 ${guidanceBadgeClass}`}>
                         <div className="flex items-start gap-2">
                           {guidanceStatus.tone === 'success' ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-black">{guidanceStatus.label}</p>
                             <p className="mt-0.5 text-[11px] font-semibold leading-snug">{guidanceStatus.description}</p>
                           </div>
+                          {showGuidanceCta ? (
+                            <button
+                              type="button"
+                              onClick={() => onOpenGuidanceEditor(item)}
+                              className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black shadow-sm"
+                            >
+                              {guidanceCtaLabel}
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     </div>

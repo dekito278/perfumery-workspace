@@ -72,6 +72,7 @@ const CreateFormulaPage = () => {
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
+  const [needsGuidanceMaterialId, setNeedsGuidanceMaterialId] = useState('');
   const [briefContext, setBriefContext] = useState(null);
   const [projectContext, setProjectContext] = useState(null);
   const [projectStageItems, setProjectStageItems] = useState([]);
@@ -216,6 +217,9 @@ const CreateFormulaPage = () => {
       material.id === updatedMaterial.id ? updatedMaterial : material
     )));
     setGuidanceEditorMaterial(updatedMaterial);
+    if (updatedMaterial?.id === needsGuidanceMaterialId) {
+      setNeedsGuidanceMaterialId('');
+    }
   };
 
   const handleCreateMissingMaterial = ({ name: materialName, rowIndex }) => {
@@ -249,6 +253,9 @@ const CreateFormulaPage = () => {
       updateItem(rowIndex, createdMaterial.id, createdMaterial);
       setActiveRowIndex(rowIndex);
       setFocusRowIndex(rowIndex);
+      if (!createdMaterial?._creationResolution) {
+        setNeedsGuidanceMaterialId(createdMaterial.id);
+      }
       setQuickCreateIntent(null);
       toast.success(createdMaterial?._creationResolution ? `Using existing material: ${createdMaterial.name}` : `Raw material added: ${createdMaterial.name}`);
     } catch (error) {
@@ -650,10 +657,11 @@ const CreateFormulaPage = () => {
                             onRemove={removeFormulaItem}
                           validationErrors={validationErrors}
                           getGuidanceStatus={getItemGuidanceStatus}
-                          onOpenGuidanceEditor={handleOpenGuidanceEditor}
-                          activeItemInsight={activeItemInsight}
-                          onCreateMissingMaterial={handleCreateMissingMaterial}
-                        />
+                            onOpenGuidanceEditor={handleOpenGuidanceEditor}
+                            activeItemInsight={activeItemInsight}
+                            onCreateMissingMaterial={handleCreateMissingMaterial}
+                            needsGuidanceMaterialId={needsGuidanceMaterialId}
+                          />
                         </div>
 
                         <div className="mt-4">
@@ -881,6 +889,7 @@ const CreateFormulaPage = () => {
                     onOpenGuidanceEditor={handleOpenGuidanceEditor}
                     activeItemInsight={activeItemInsight}
                     onCreateMissingMaterial={handleCreateMissingMaterial}
+                    needsGuidanceMaterialId={needsGuidanceMaterialId}
                   />
                 </div>
 
