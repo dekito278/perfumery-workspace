@@ -28,6 +28,7 @@ import {
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
+import { getDiscountedCartLines } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -228,17 +229,45 @@ const VoucherSummary = ({ order, compact = false }) => {
   );
 };
 
-const OrderItems = ({ order, compact = false }) => (
-  <div className="grid gap-2">
-    {getOrderProductItems(order).map((item) => (
-      <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`flex items-center justify-between gap-2 rounded-2xl bg-white font-semibold ${compact ? 'border border-[#e5e7eb] px-3 py-2 text-xs' : 'px-3 py-2 text-sm'}`}>
-        <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
-        <span className="shrink-0 text-amber-700">{item.price || '-'}</span>
-      </div>
-    ))}
-    <VoucherSummary order={order} compact={compact} />
-  </div>
-);
+const OrderItems = ({ order, compact = false }) => {
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  const discountedLines = getDiscountedCartLines(
+    getOrderProductItems(order),
+    voucherSnapshot?.discountAmount || 0
+  );
+
+  return (
+    <div className="grid gap-2">
+      {discountedLines.map((line) => {
+        const item = line.item;
+        const hasDiscount = line.discount > 0;
+
+        return (
+          <div key={`${order.orderNumber}-${item.slug || item.name}`} className={`rounded-2xl bg-white font-semibold ${compact ? 'border border-[#e5e7eb] px-3 py-2 text-xs' : 'px-3 py-2 text-sm'}`}>
+            <div className="flex items-start justify-between gap-2">
+              <span className="min-w-0 truncate">{item.name} x{item.quantity}</span>
+              <span className="shrink-0 text-right text-amber-700">
+                {hasDiscount ? (
+                  <>
+                    <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                    <span className="block">{formatTotal(line.discountedTotal)}</span>
+                  </>
+                ) : item.price || formatTotal(line.originalTotal)}
+              </span>
+            </div>
+            {hasDiscount ? (
+              <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-[#263d27]">
+                <span>Setelah voucher: {formatTotal(line.discountedUnitPrice)} / item</span>
+                <span>-{formatTotal(line.discount)}</span>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+      <VoucherSummary order={order} compact={compact} />
+    </div>
+  );
+};
 
 const BespokeDetailPanel = ({ item, compact = false }) => {
   const rows = bespokeDetailRows(item);

@@ -19,6 +19,7 @@ import {
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
+import { getDiscountedCartLines } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -47,23 +48,10 @@ const ShipmentBadge = ({ status }) => (
   </StatusChip>
 );
 
-const getItemUnitPrice = (item) => {
-  const quantity = Number(item.quantity || 1);
-  const numericPrice = Number(item.priceNumber || 0);
-  if (!numericPrice) return item.price || '-';
-  return formatTotal(numericPrice);
-};
-
-const getItemLineTotal = (item) => {
-  const quantity = Number(item.quantity || 1);
-  const numericPrice = Number(item.priceNumber || 0);
-  if (!numericPrice) return item.price || '-';
-  return formatTotal(numericPrice * quantity);
-};
-
 const InvoiceCard = ({ customer, order, isMobile }) => {
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const productItems = getOrderProductItems(order);
+  const discountedLines = getDiscountedCartLines(productItems, voucherSnapshot?.discountAmount || 0);
   const productsSubtotal = getOrderProductsSubtotal(order);
   const subtotalAfterVoucher = getOrderSubtotalAfterVoucher(order);
   const shippingFee = getOrderShippingFee(order);
@@ -121,17 +109,37 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
           <span className="hidden text-right sm:block">Harga</span>
           <span className="text-right">Total</span>
         </div>
-        {productItems.map((item) => (
-          <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
-            <span className="min-w-0">
-              <span className="block truncate font-bold text-[#0b130c]">{item.name}</span>
-              {item.size ? <span className="mt-0.5 block text-xs text-[#6b7280]">{item.size}</span> : null}
-            </span>
-            <span className="text-right text-[#1f2937]">{item.quantity || 1}</span>
-            <span className="hidden text-right text-[#1f2937] sm:block">{getItemUnitPrice(item)}</span>
-            <span className="text-right font-bold text-amber-700">{getItemLineTotal(item)}</span>
-          </div>
-        ))}
+        {discountedLines.map((line) => {
+          const item = line.item;
+          const hasDiscount = line.discount > 0;
+
+          return (
+            <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
+              <span className="min-w-0">
+                <span className="block truncate font-bold text-[#0b130c]">{item.name}</span>
+                {item.size ? <span className="mt-0.5 block text-xs text-[#6b7280]">{item.size}</span> : null}
+                {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
+              </span>
+              <span className="text-right text-[#1f2937]">{item.quantity || 1}</span>
+              <span className="hidden text-right text-[#1f2937] sm:block">
+                {hasDiscount ? (
+                  <>
+                    <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(item.priceNumber)}</span>
+                    <span className="block">{formatTotal(line.discountedUnitPrice)}</span>
+                  </>
+                ) : item.price || formatTotal(item.priceNumber)}
+              </span>
+              <span className="text-right font-bold text-amber-700">
+                {hasDiscount ? (
+                  <>
+                    <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                    <span className="block">{formatTotal(line.discountedTotal)}</span>
+                  </>
+                ) : formatTotal(line.originalTotal)}
+              </span>
+            </div>
+          );
+        })}
         {voucherSnapshot ? (
           <div className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] bg-[#eef2e8] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
             <span className="min-w-0">
