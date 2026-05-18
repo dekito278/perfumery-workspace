@@ -64,7 +64,7 @@ const MobileCommerceLayout = ({ children }) => {
           Studio
         </Link>
       ) : null}
-      <nav className="mobile-bottom-nav grid grid-cols-5 gap-1 p-1.5" aria-label="Navigasi belanja mobile">
+      <nav className="mobile-bottom-nav mobile-commerce-bottom-nav grid grid-cols-5 gap-1 p-1.5" aria-label="Navigasi belanja mobile">
         {commerceNavItems.map((item) => {
           const Icon = item.icon;
           const activePaths = [item.path, ...(item.aliases || [])];

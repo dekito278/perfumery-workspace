@@ -139,14 +139,27 @@ const mobileDetailPatterns = [
   /^\/mobile\/raw-material\/[^/]+$/,
   /^\/mobile\/formulas\/[^/]+$/,
 ];
+const mobileCommercePatterns = [
+  /^\/mobile\/dashboard$/,
+  /^\/mobile\/catalog$/,
+  /^\/mobile\/products\/[^/]+$/,
+  /^\/mobile\/bespoke$/,
+  /^\/mobile\/cart$/,
+  /^\/mobile\/checkout$/,
+  /^\/mobile\/payment$/,
+  /^\/mobile\/customer$/,
+  /^\/mobile\/customer\/invoice\/[^/]+$/,
+];
 
 const getMobileRouteMeta = (pathname) => {
   const isMobile = pathname.startsWith('/mobile/');
   const isTab = mobileTabOrder.includes(pathname);
   const isDetail = mobileDetailPatterns.some((pattern) => pattern.test(pathname));
+  const isCommerce = mobileCommercePatterns.some((pattern) => pattern.test(pathname));
 
   return {
     isMobile,
+    isCommerce,
     isTab,
     isDetail,
     depth: pathname.split('/').filter(Boolean).length,
@@ -206,9 +219,9 @@ const MobileRouteTransition = ({ children }) => {
 
   useEffect(() => {
     previousMetaRef.current = currentMeta;
-  }, [currentMeta.depth, currentMeta.isDetail, currentMeta.isMobile, currentMeta.isTab, currentMeta.tabIndex]);
+  }, [currentMeta.depth, currentMeta.isCommerce, currentMeta.isDetail, currentMeta.isMobile, currentMeta.isTab, currentMeta.tabIndex]);
 
-  if (!currentMeta.isMobile) {
+  if (!currentMeta.isMobile || (currentMeta.isCommerce && previousMeta.isCommerce)) {
     return children;
   }
 

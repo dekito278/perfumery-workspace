@@ -516,6 +516,17 @@
   min-width: 0;
 }
 
+.mobile-commerce-bottom-nav,
+.mobile-commerce-bottom-nav a,
+.mobile-commerce-bottom-nav button {
+  transition: none !important;
+}
+
+.mobile-commerce-bottom-nav a:active,
+.mobile-commerce-bottom-nav button:active {
+  transform: none;
+}
+
 .mobile-studio-hero {
   min-width: 0;
   max-width: 100%;
