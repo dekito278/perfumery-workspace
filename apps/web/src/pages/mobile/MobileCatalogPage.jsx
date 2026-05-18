@@ -1,7 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, PackagePlus, Search, SlidersHorizontal, WandSparkles } from 'lucide-react';
+import { ArrowUpDown, PackagePlus, Search, SlidersHorizontal, Sparkles, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -21,25 +21,32 @@ import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const MOBILE_CATALOG_COLUMNS = 2;
-const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 330;
+const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 338;
 const MOBILE_CATALOG_OVERSCAN_ROWS = 3;
 const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 const shopTypeOptions = [
-  { name: 'All', filter: 'all' },
-  { name: 'Regular', filter: 'regular' },
-  { name: 'Limited', filter: 'limited' },
+  { name: 'Semua', filter: 'all' },
+  { name: 'Reguler', filter: 'regular' },
+  { name: 'Terbatas', filter: 'limited' },
 ];
 
 const catalogSkeletonItems = Array.from({ length: 6 }, (_, index) => `catalog-skeleton-${index}`);
+const getProductCategoryLabel = (product) => product?.category || 'Solivagant';
+const getProductStockLabel = (product) => (Number(product?.stock || 0) > 0 ? `${Number(product.stock)} pcs` : 'Habis');
+const getProductSizeLabels = (product) => {
+  const variantSizes = (product?.variants || []).map((variant) => variant?.size).filter(Boolean);
+  return (variantSizes.length ? variantSizes : [product?.size || '30 ml']).slice(0, 2);
+};
+const getProductPrimaryTag = (product) => getVisibleProductTags(product).find(Boolean) || (product?.featured ? 'Pilihan' : 'Aroma khas');
 
 const MobileCatalogCardSkeleton = () => (
-  <article className="mobile-card mobile-catalog-card min-w-0 overflow-hidden p-2" aria-hidden="true">
-    <div className="mobile-catalog-skeleton aspect-square rounded-xl" />
-    <div className="mt-2 flex h-[154px] flex-col">
+  <article className="mobile-card mobile-catalog-card mobile-commerce-product-card min-w-0 overflow-hidden p-2" aria-hidden="true">
+    <div className="mobile-catalog-skeleton aspect-[4/5] rounded-2xl" />
+    <div className="mt-2 flex h-[148px] flex-col">
       <div className="mobile-catalog-skeleton h-[13px] w-11/12 rounded-full" />
       <div className="mobile-catalog-skeleton mt-2 h-[13px] w-4/5 rounded-full" />
       <div className="mobile-catalog-skeleton mt-2 h-[11px] w-3/4 rounded-full" />
-      <div className="mt-3 grid h-8 grid-cols-[minmax(0,1fr)_64px] items-start gap-1.5">
+      <div className="mt-3 grid h-8 grid-cols-[minmax(0,1fr)_52px] items-start gap-1.5">
         <div className="mobile-catalog-skeleton h-4 rounded-full" />
         <div className="mobile-catalog-skeleton h-6 rounded-full" />
       </div>
@@ -135,8 +142,9 @@ export const MobileCatalogContent = ({ active = true }) => {
   const virtualStartIndex = virtualStartRow * MOBILE_CATALOG_COLUMNS;
   const virtualEndIndex = virtualEndRow * MOBILE_CATALOG_COLUMNS;
   const virtualProducts = useMemo(() => filteredProducts.slice(virtualStartIndex, virtualEndIndex), [filteredProducts, virtualEndIndex, virtualStartIndex]);
-  const activeSortLabel = catalogSortOptions.find((option) => option.value === sort)?.label || 'Featured';
+  const activeSortLabel = catalogSortOptions.find((option) => option.value === sort)?.label || 'Rekomendasi';
   const activeFilterCount = [segment !== 'all', category !== 'All', Boolean(deferredQuery.trim())].filter(Boolean).length;
+  const activeSegmentLabel = shopTypeOptions.find((option) => option.filter === segment)?.name || 'Semua';
   const firstVisibleProductImage = String(filteredProducts[0]?.images?.[0] || filteredProducts[0]?.imageUrl || '').trim();
   const firstVisibleProductPreload = getOptimizedProductImageUrl(firstVisibleProductImage, 720);
   const virtualPaddingTop = virtualStartRow * virtualRowHeight;
@@ -254,36 +262,48 @@ export const MobileCatalogContent = ({ active = true }) => {
     <>
       {active ? (
       <Helmet>
-        <title>Catalog - Solivagant</title>
+        <title>Katalog - Solivagant</title>
         <meta name="description" content="Browse Solivagant products by category, price, and scent profile." />
         {firstVisibleProductPreload ? <link rel="preload" as="image" href={firstVisibleProductPreload} /> : null}
       </Helmet>
       ) : null}
-      <main className="mobile-page space-y-4">
+      <main className="mobile-page">
         <section className="mobile-sticky-search">
-          <div className="mobile-card p-2">
-          <label className="flex h-12 items-center gap-2 rounded-2xl bg-[#f7f8f2] px-3">
+          <div className="mobile-card overflow-hidden p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-amber-700">
+                <Sparkles className="h-3.5 w-3.5" />
+                Belanja
+              </div>
+              <h1 className="mt-0.5 text-lg font-bold leading-tight text-[#0b130c]">Cari parfum</h1>
+            </div>
+            <span className="mobile-commerce-chip shrink-0 px-2.5 py-1 text-[10px] uppercase">
+              {filteredProducts.length} item
+            </span>
+          </div>
+          <label className="mobile-commerce-control mt-3 flex h-12 items-center gap-2 bg-[#f7f8f2] px-3">
             <Search className="h-4 w-4 text-[#8b949e]" />
             <input
               type="search"
               value={query}
               onChange={(event) => updateFilters({ query: event.target.value })}
-              placeholder="Search by notes, mood, product"
+              placeholder="Cari notes, mood, produk"
               className="min-h-0 flex-1 bg-transparent text-sm font-semibold text-[#0b130c] outline-none placeholder:text-[#9ca3af]"
             />
           </label>
           {hasCatalogProducts ? (
-            <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f7f8f2] p-1">
+            <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1">
               {shopTypeOptions.map((item) => (
                 <button
                   key={item.filter}
                   type="button"
                   onClick={() => updateFilters({ segment: item.filter })}
-                  style={{ minHeight: 36 }}
+                  style={{ minHeight: 38 }}
                   className={cn(
-                    'h-9 rounded-xl px-2 py-1 text-[11px] font-bold leading-tight transition',
+                    'h-[38px] rounded-[12px] px-2 py-1 text-[11px] font-bold leading-tight transition',
                     segment === item.filter
-                      ? 'bg-white text-[#263d27] shadow-sm'
+                      ? 'bg-[#263d27] text-white shadow-sm'
                       : 'text-[#7a8377]'
                   )}
                 >
@@ -292,10 +312,10 @@ export const MobileCatalogContent = ({ active = true }) => {
               ))}
             </div>
           ) : showCatalogSkeleton ? (
-            <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-2xl bg-[#f7f8f2] p-1" aria-hidden="true">
-              <div className="mobile-catalog-skeleton h-9 rounded-xl" />
-              <div className="mobile-catalog-skeleton h-9 rounded-xl" />
-              <div className="mobile-catalog-skeleton h-9 rounded-xl" />
+            <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1" aria-hidden="true">
+              <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
+              <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
+              <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
             </div>
           ) : null}
           </div>
@@ -303,26 +323,28 @@ export const MobileCatalogContent = ({ active = true }) => {
 
         {hasCatalogProducts && scentFamilies.length ? (
         <section className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-bold uppercase text-[#6b7280]">Shop family</h2>
-            <span className="text-[10px] font-bold uppercase text-[#9ca3af]">{filteredProducts.length} shown</span>
+          <div className="flex items-center justify-between gap-3 px-1">
+            <div className="text-[10px] font-bold uppercase text-[#6b7280]">Aroma</div>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Geser</div>
           </div>
-          <div className="mobile-segment-scroll flex gap-5 overflow-x-auto pb-2 pl-1 pr-4">
+          <div className="mobile-shop-filter-frame">
+          <div className="mobile-shop-filter-rail mobile-segment-scroll flex gap-2 overflow-x-auto" aria-label="Filter aroma katalog">
             {['All', ...scentFamilies.map((item) => item.name)].map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => updateFilters({ category: item })}
                 className={cn(
-                  'relative h-8 shrink-0 px-0 text-sm font-bold transition',
+                  'mobile-shop-filter-chip shrink-0 rounded-full border px-3 text-xs font-bold transition',
                   category === item
-                    ? 'text-[#263d27] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-[#263d27]'
-                    : 'text-[#7a8377]'
+                    ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm'
+                    : 'border-[#263d27]/10 bg-white text-[#667264]'
                 )}
               >
-                {item}
+                  {item === 'All' ? 'Semua' : item}
               </button>
             ))}
+          </div>
           </div>
         </section>
         ) : showCatalogSkeleton ? (
@@ -342,16 +364,13 @@ export const MobileCatalogContent = ({ active = true }) => {
 
         {hasCatalogProducts ? (
         <section className="mobile-card p-3">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-[#6b7280]">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                Browse mode
+                Filter & urutkan
               </div>
-              <div className="mt-1 text-sm font-bold text-[#0b130c]">{filteredProducts.length} perfume shown</div>
-              <p className="mt-0.5 text-[11px] font-semibold text-[#6b7280]">
-                {activeFilterCount ? `${activeFilterCount} filter active · sorted by ${activeSortLabel}` : `Sorted by ${activeSortLabel}`}
-              </p>
+              <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{activeSegmentLabel} {category !== 'All' ? `/ ${category}` : ''} / {activeSortLabel}</div>
             </div>
             {activeFilterCount ? (
               <Button type="button" variant="outline" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })} className="h-9 shrink-0 rounded-xl bg-white px-3 text-[11px] font-bold">
@@ -359,10 +378,11 @@ export const MobileCatalogContent = ({ active = true }) => {
               </Button>
             ) : null}
           </div>
-          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 mobile-segment-scroll" aria-label="Sort catalog">
-            <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#f7f8f2] px-3 text-[10px] font-bold uppercase text-[#6b7280]">
+          <div className="mt-3 mobile-shop-filter-frame">
+          <div className="mobile-shop-filter-rail mobile-segment-scroll flex items-center gap-2 overflow-x-auto" aria-label="Urutkan katalog">
+            <span className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#f7f8f2] px-3 text-[10px] font-bold uppercase text-[#6b7280]">
               <ArrowUpDown className="h-3.5 w-3.5" />
-              Sort
+              Urutkan
             </span>
             {catalogSortOptions.map((option) => (
               <button
@@ -370,7 +390,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                 type="button"
                 onClick={() => updateFilters({ sort: option.value })}
                 className={cn(
-                  'h-9 shrink-0 rounded-xl border px-3 text-[11px] font-bold transition',
+                  'mobile-shop-filter-chip shrink-0 rounded-[12px] border px-3 text-[11px] font-bold transition',
                   sort === option.value
                     ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm'
                     : 'border-[#e5e7eb] bg-white text-[#6b7280]'
@@ -379,6 +399,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                 {option.label}
               </button>
             ))}
+          </div>
           </div>
         </section>
         ) : showCatalogSkeleton ? (
@@ -409,50 +430,55 @@ export const MobileCatalogContent = ({ active = true }) => {
           {!showCatalogSkeleton && filteredProducts.length ? (
             <>
               <div aria-hidden="true" style={{ height: virtualPaddingTop }} />
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 {virtualProducts.map((product, index) => {
                   const absoluteIndex = virtualStartIndex + index;
 
                   return (
-                    <article key={product.id} className="mobile-card mobile-catalog-card min-w-0 overflow-hidden p-2">
+                    <article key={product.id} className="mobile-card mobile-catalog-card mobile-commerce-product-card min-w-0 overflow-hidden p-2">
                       <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location) })} className="block w-full text-left">
-                        <ProductVisual
-                          product={product}
-                          className="aspect-square rounded-xl mobile-catalog-visual"
-                          bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]"
-                          label={false}
-                          priority={absoluteIndex === 0}
-                          sizes="(max-width: 448px) 44vw, 198px"
-                        />
-                        <div className="mt-2 flex h-[154px] flex-col">
-                          <div className="h-[64px] min-w-0">
-                            <h3 className="mobile-line-clamp-2 min-h-[34px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
-                            <p className="mobile-line-clamp-2 mt-1 min-h-[29px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes}</p>
+                        <div className="relative">
+                          <ProductVisual
+                            product={product}
+                            className="aspect-[4/5] rounded-2xl mobile-catalog-visual"
+                            bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]"
+                            label={false}
+                            priority={absoluteIndex === 0}
+                            sizes="(max-width: 448px) 44vw, 198px"
+                          />
+                          <div className="mobile-commerce-chip absolute left-2 top-2 max-w-[calc(100%-16px)] truncate bg-white/90 px-2 py-1 text-[9px] uppercase shadow-sm">
+                            {getProductCategoryLabel(product)}
                           </div>
-                          <div className="mt-2 grid h-8 grid-cols-[minmax(0,1fr)_64px] items-start gap-1.5">
+                          <div className="absolute bottom-2 left-2 max-w-[calc(100%-16px)] truncate rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white shadow-sm">
+                            {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex h-[148px] flex-col">
+                          <div className="h-[58px] min-w-0">
+                            <h3 className="mobile-line-clamp-2 min-h-[32px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
+                            <p className="mobile-line-clamp-2 mt-1 min-h-[24px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
+                          </div>
+                          <div className="mt-2 grid h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
                             <div className="min-w-0">
                               <div className={cn('h-3 text-[10px] font-bold leading-3 text-[#9ca3af] line-through', product.compareAtPriceNumber > product.priceNumber ? '' : 'invisible')}>
                                 {product.compareAtPriceNumber > product.priceNumber ? formatRupiah(product.compareAtPriceNumber) : 'Rp 0'}
                               </div>
-                              <div className="truncate text-xs font-bold text-[#0b130c]">{product.price}</div>
+                              <div className="truncate text-sm font-bold text-[#0b130c]">{product.price}</div>
                             </div>
-                            <div className={cn('grid h-6 w-16 place-items-center rounded-full px-2 text-center text-[9px] font-bold leading-tight', getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'text-[#8b949e]')}>
-                              {product.stock > 0 ? `${product.stock} tersisa` : 'Habis'}
+                            <div className={cn('grid h-6 w-[58px] place-items-center rounded-full px-1.5 text-center text-[9px] font-bold leading-tight', getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'bg-[#f7f8f2] text-[#6b7280]')}>
+                              {getProductStockLabel(product)}
                             </div>
                           </div>
                           <div className="mt-auto pt-2">
-                            <div className="flex h-[22px] flex-wrap gap-1 overflow-hidden">
-                              {product.variants.slice(0, 2).map((variant) => (
-                                <span key={variant.id || variant.size} className="max-w-full truncate rounded-full bg-[#eef2e8] px-2 py-1 text-[9px] font-bold text-[#263d27]">{variant.size}</span>
+                            <div className="flex h-[24px] flex-wrap gap-1 overflow-hidden">
+                              {getProductSizeLabels(product).map((size) => (
+                                <span key={size} className="mobile-commerce-chip max-w-full truncate px-2 py-1 text-[9px]">{size}</span>
                               ))}
                             </div>
-                            <div className={cn('mt-1.5 h-3 text-[10px] font-bold uppercase leading-3 text-rose-700', getProductLowStock(product) ? '' : 'invisible')}>Mau habis</div>
                             <div className="mt-1.5 flex h-[21px] flex-wrap gap-1 overflow-hidden">
-                              {getVisibleProductTags(product).slice(0, 1).map((tag) => (
-                                <span key={tag} className="max-w-full truncate rounded-full bg-[#f3f4f6] px-2 py-1 text-[9px] font-bold uppercase text-[#6b7280]">
-                                  {tag}
-                                </span>
-                              ))}
+                              <span className="mobile-commerce-muted-chip max-w-full truncate px-2 py-1 text-[9px] uppercase">
+                                {getProductPrimaryTag(product)}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -485,7 +511,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                     ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
                     : hasCatalogProducts
                     ? 'Coba kategori atau kata kunci aroma lain.'
-                    : 'Produk public akan tampil setelah ditambahkan dari Studio. Customer tetap bisa mulai dari bespoke request.'}
+                    : 'Produk publik akan tampil setelah ditambahkan dari Studio. Pembeli tetap bisa mulai dari request custom.'}
                 </p>
               </div>
               {!catalogLoading ? (
@@ -501,7 +527,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                   </Button>
                 )}
                 <Button variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/bespoke')}>
-                  Bespoke
+                  Custom
                   <WandSparkles className="h-4 w-4" />
                 </Button>
               </div>

@@ -14,7 +14,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const NoteColumn = ({ title, notes }) => (
-  <div className="rounded-2xl bg-[#f7f8f2] p-3">
+  <div className="mobile-commerce-panel bg-[#f7f8f2] p-3">
     <div className="text-[10px] font-bold uppercase text-[#8b949e]">{title}</div>
     <div className="mt-2 space-y-1">
       {notes.map((note) => (
@@ -88,7 +88,7 @@ const MobileProductDetailPage = () => {
         <title>{product.name} - Solivagant</title>
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
       </Helmet>
-      <main className="mobile-page space-y-4">
+      <main className="mobile-page">
         <MobileTopBar
           title={product.name}
           subtitle={product.category}
@@ -97,7 +97,7 @@ const MobileProductDetailPage = () => {
           action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
         />
 
-        <ProductGallery product={product} visualClassName="aspect-square rounded-[24px]" compact priority />
+        <ProductGallery product={product} visualClassName="aspect-square rounded-[18px]" compact priority />
 
         <section className="mobile-card p-4">
           <div className="flex items-start justify-between gap-3">
@@ -111,14 +111,14 @@ const MobileProductDetailPage = () => {
               <div className="text-[10px] font-bold uppercase text-[#8b949e]">{selectedSize}</div>
             </div>
           </div>
-          <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
+          <div className="mobile-commerce-panel mt-4 bg-[#fbfaf7]">
             <label className="text-[10px] font-bold uppercase text-[#6b7280]" htmlFor="mobile-product-variant">Ukuran</label>
             <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
               <select
                 id="mobile-product-variant"
                 value={selectedVariantKey}
                 onChange={(event) => setSelectedVariantId(event.target.value)}
-                className="h-12 min-w-0 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-bold text-[#0b130c] outline-none focus:border-[#263d27]"
+                className="mobile-commerce-control h-12 min-w-0 px-3 text-sm font-bold text-[#0b130c]"
               >
                 {product.variants.map((variant) => {
                   const variantKey = variant.id || variant.size;
@@ -130,13 +130,13 @@ const MobileProductDetailPage = () => {
                   );
                 })}
               </select>
-              <div className="rounded-2xl bg-white px-3 py-2 text-right">
+              <div className="mobile-commerce-panel border-0 bg-white px-3 py-2 text-right">
                 <div className="text-sm font-bold text-[#263d27]">{selectedStock}</div>
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stok</div>
               </div>
             </div>
-            <div className={`mt-3 rounded-2xl px-3 py-2 text-xs font-bold ${soldOut ? 'bg-rose-50 text-rose-700' : lowStock ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
-              {soldOut ? 'Varian ini sedang habis.' : lowStock ? `Stok varian ini mau habis, tinggal ${selectedStock}.` : 'Stok tersedia, siap masuk cart.'}
+            <div className={`mt-3 rounded-[14px] px-3 py-2 text-xs font-bold ${soldOut ? 'bg-rose-50 text-rose-700' : lowStock ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
+              {soldOut ? 'Varian ini sedang habis.' : lowStock ? `Stok varian ini mau habis, tinggal ${selectedStock}.` : 'Stok tersedia, siap masuk keranjang.'}
             </div>
             <Button className="mt-3 h-12 w-full rounded-2xl gap-2" onClick={addSelectedVariant} disabled={selectedStock <= 0}>
               Masukkan keranjang
@@ -152,12 +152,12 @@ const MobileProductDetailPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#263d27]" />
-            <h2 className="text-base font-bold text-[#0b130c]">Notes aroma</h2>
+            <h2 className="text-base font-bold text-[#0b130c]">Catatan aroma</h2>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <NoteColumn title="Top" notes={product.topNotes} />
-            <NoteColumn title="Heart" notes={product.heartNotes} />
-            <NoteColumn title="Base" notes={product.baseNotes} />
+            <NoteColumn title="Pembuka" notes={product.topNotes} />
+            <NoteColumn title="Tengah" notes={product.heartNotes} />
+            <NoteColumn title="Dasar" notes={product.baseNotes} />
           </div>
         </section>
 
@@ -169,7 +169,7 @@ const MobileProductDetailPage = () => {
         <section className="mobile-card border border-[#263d27]/15 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[#eef2e8] text-[#263d27]">
                 <PackageCheck className="h-4 w-4" />
               </span>
               <div className="min-w-0">
@@ -188,24 +188,24 @@ const MobileProductDetailPage = () => {
         open={cartPromptOpen}
         onOpenChange={setCartPromptOpen}
         title="Produk masuk keranjang"
-        description="Swipe turun untuk menutup, atau lanjut checkout."
+        description="Geser turun untuk menutup, atau lanjut ke checkout."
         footer={(
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white" onClick={() => setCartPromptOpen(false)}>
               Lanjut belanja
             </Button>
             <Button className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/cart')}>
-              Checkout
+              Lanjut bayar
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}
       >
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#263d27] text-white">
+        <div className="grid h-11 w-11 place-items-center rounded-[14px] bg-[#263d27] text-white">
           <ShoppingBag className="h-5 w-5" />
         </div>
         {lastAddedItem ? (
-            <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-white p-3">
+            <div className="mobile-commerce-panel mt-4">
               <div className="text-sm font-bold text-[#0b130c]">{lastAddedItem.name}</div>
               <div className="mt-1 flex items-center justify-between text-xs font-bold text-[#6b7280]">
                 <span>{lastAddedItem.size}</span>

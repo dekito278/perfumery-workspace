@@ -23,17 +23,17 @@ export const storefrontCategories = [
 
 export const storefrontSegments = [
   {
-    name: 'Regular perfume',
+    name: 'Parfum reguler',
     description: 'Produk ready stock yang bisa dibeli kapan saja selama stok tersedia.',
     filter: 'regular',
   },
   {
-    name: 'Limited perfume',
+    name: 'Parfum terbatas',
     description: 'Drop kecil, seasonal, atau batch khusus dengan jumlah terbatas.',
     filter: 'limited',
   },
   {
-    name: 'Bespoke service',
+    name: 'Layanan custom',
     description: 'Custom perfume berbasis cerita, preferensi aroma, dan konsultasi personal.',
     filter: 'bespoke',
   },
@@ -228,36 +228,36 @@ export const featuredProducts = [
 ];
 
 export const storefrontStats = [
-  { value: String(featuredProducts.length), label: 'Scents' },
-  { value: '4', label: 'Core families' },
-  { value: '1:1', label: 'Bespoke consult' },
+  { value: String(featuredProducts.length), label: 'Aroma' },
+  { value: '4', label: 'Famili aroma' },
+  { value: '1:1', label: 'Konsultasi custom' },
 ];
 
 export const catalogSortOptions = [
-  { value: 'featured', label: 'Featured' },
-  { value: 'price-low', label: 'Price low' },
-  { value: 'price-high', label: 'Price high' },
-  { value: 'name', label: 'Name' },
+  { value: 'featured', label: 'Rekomendasi' },
+  { value: 'price-low', label: 'Harga terendah' },
+  { value: 'price-high', label: 'Harga tertinggi' },
+  { value: 'name', label: 'Nama A-Z' },
 ];
 
 export const getProductBySlug = (slug) => featuredProducts.find((product) => product.slug === slug);
 
 export const bespokeMoodOptions = [
-  'Clean and fresh',
-  'Soft floral',
-  'Warm woody',
-  'Sweet gourmand',
-  'Dark and sensual',
-  'Professional daily',
+  'Bersih dan segar',
+  'Floral lembut',
+  'Woody hangat',
+  'Gourmand manis',
+  'Gelap dan sensual',
+  'Harian profesional',
 ];
 
 export const bespokeOccasionOptions = [
-  'Daily wear',
-  'Office',
-  'Date night',
-  'Wedding or event',
-  'Gift',
-  'Signature scent',
+  'Harian',
+  'Kantor',
+  'Malam spesial',
+  'Pernikahan / acara',
+  'Hadiah',
+  'Aroma khas',
 ];
 
 export const bespokeBottleSizeOptions = [
