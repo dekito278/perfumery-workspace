@@ -393,6 +393,7 @@ const MobileFormulaComposerWorkspace = ({
   onRemoveItem,
   onAddMaterial,
   onCreateMissingMaterial,
+  focusMaterialId,
   onOpenMetadata,
   onSave,
   saveLabel,
@@ -415,6 +416,8 @@ const MobileFormulaComposerWorkspace = ({
   const [guidanceSources, setGuidanceSources] = useState([]);
   const [guidanceForm, setGuidanceForm] = useState({ url: '', sourceType: 'perfumersworld' });
   const [guidanceSummary, setGuidanceSummary] = useState([]);
+  const pendingFocusMaterialIdRef = useRef('');
+  const handledFocusKeyRef = useRef('');
   const [finderScrollRef, finderScrollHandlers] = useHorizontalDragScroll();
   const compositionBoardRef = useRef(null);
 
@@ -467,7 +470,32 @@ const MobileFormulaComposerWorkspace = ({
     setCompositionVisible((current) => Math.max(COMPOSER_PAGE_SIZE, Math.min(current, Math.max(composition.length, COMPOSER_PAGE_SIZE))));
   }, [composition.length]);
 
+  useEffect(() => {
+    const targetMaterialId = focusMaterialId || pendingFocusMaterialIdRef.current;
+    if (!targetMaterialId || !composition.length) return;
+
+    const targetIndex = composition.findIndex((item) => item.item_id === targetMaterialId);
+    if (targetIndex < 0) return;
+
+    const targetItem = composition[targetIndex];
+    const focusKey = `${targetMaterialId}:${targetItem.row_key}`;
+    if (handledFocusKeyRef.current === focusKey && !pendingFocusMaterialIdRef.current) return;
+
+    handledFocusKeyRef.current = focusKey;
+    pendingFocusMaterialIdRef.current = '';
+    setTab('composition');
+    setExpandedRow(targetItem.row_key);
+    setCompositionVisible((current) => Math.max(current, targetIndex + 1, COMPOSER_PAGE_SIZE));
+
+    window.setTimeout(() => {
+      const targetElement = document.querySelector(`[data-mobile-composition-row="${targetItem.row_key}"]`);
+      targetElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetElement?.querySelector?.('input')?.focus?.({ preventScroll: true });
+    }, 80);
+  }, [composition, focusMaterialId]);
+
   const handleAddMaterial = (material) => {
+    pendingFocusMaterialIdRef.current = material?.id || '';
     onAddMaterial(material);
     setFinderQuery('');
     setTab('composition');
@@ -624,19 +652,54 @@ const MobileFormulaComposerWorkspace = ({
                   <MaterialSuggestion material={material} onAdd={handleAddMaterial} />
                 </div>
               )) : (
-                <div className="w-full rounded-2xl border border-dashed border-[#d8d5cf] bg-[#faf9f6] p-3 text-xs font-semibold text-[#6b7280]">
-                  <p>No matching material. Try a broader name or create it as a new raw material.</p>
-                  {canQuickCreateFinderMaterial ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onCreateMissingMaterial({ name: normalizedFinderQuery })}
-                      className="mt-3 h-9 rounded-xl border-amber-200 bg-white px-3 text-xs font-bold text-amber-800"
-                    >
-                      <PlusCircle className="mr-1.5 h-4 w-4" />
-                      Tambah raw material baru
-                    </Button>
-                  ) : null}
+                <div className="w-full rounded-[22px] border border-dashed border-amber-200 bg-[linear-gradient(180deg,#fff8e7_0%,#fffdf8_100%)] p-3 text-left shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+                      <PlusCircle className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">Material not found</p>
+                      <h3 className="mt-1 text-sm font-bold text-[#1f2937]">
+                        {normalizedFinderQuery ? `"${normalizedFinderQuery}" belum ada di library` : 'Cari material atau buat baru'}
+                      </h3>
+                      <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                        Pilih existing dari library, buat raw material baru, atau ubah kata pencarian.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    {canQuickCreateFinderMaterial ? (
+                      <Button
+                        type="button"
+                        onClick={() => onCreateMissingMaterial({ name: normalizedFinderQuery })}
+                        className="h-10 rounded-2xl text-xs font-bold"
+                      >
+                        <PlusCircle className="mr-1.5 h-4 w-4" />
+                        Tambah "{normalizedFinderQuery}"
+                      </Button>
+                    ) : null}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setMaterialQuery(normalizedFinderQuery);
+                          setTab('materials');
+                        }}
+                        className="h-9 rounded-xl bg-white text-xs font-bold"
+                      >
+                        Buka Library
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setFinderQuery('')}
+                        className="h-9 rounded-xl bg-white text-xs font-bold"
+                      >
+                        Clear Search
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -654,7 +717,7 @@ const MobileFormulaComposerWorkspace = ({
                 const dilutionTone = item.dilutionLabel === 'Set dilution' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#374151]';
                 const hasSyncIssue = !item.hasGuidanceData || item.dilutionLabel === 'Set dilution';
                 return (
-                  <article key={item.row_key} className="rounded-2xl border border-[#e5e7eb] bg-white">
+                  <article key={item.row_key} data-mobile-composition-row={item.row_key} className="rounded-2xl border border-[#e5e7eb] bg-white">
                     <div className="p-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="min-w-0 flex-1 text-left">

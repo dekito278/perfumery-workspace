@@ -74,6 +74,7 @@ const MobileEditFormulaPage = () => {
   const [composerOverlayOpen, setComposerOverlayOpen] = useState(false);
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
+  const [focusMaterialId, setFocusMaterialId] = useState('');
   const metadataRef = useRef(null);
 
   useEffect(() => {
@@ -131,10 +132,13 @@ const MobileEditFormulaPage = () => {
   const addMaterial = (material) => {
     if (items.some((item) => item.item_id === material.id)) {
       toast.info('Material already in composition');
-      return;
+      setFocusMaterialId(material.id);
+      return false;
     }
     setItems((current) => [createItem(material), ...current]);
+    setFocusMaterialId(material.id);
     toast.success('Material added to composition');
+    return true;
   };
 
   const handleCreateMissingMaterial = ({ name: materialName }) => {
@@ -249,6 +253,7 @@ const MobileEditFormulaPage = () => {
           onRemoveItem={removeItem}
           onAddMaterial={addMaterial}
           onCreateMissingMaterial={handleCreateMissingMaterial}
+          focusMaterialId={focusMaterialId}
           onOpenMetadata={scrollToMetadata}
           onSave={handleSubmit}
           saveLabel="Save"

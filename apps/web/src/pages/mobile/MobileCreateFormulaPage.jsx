@@ -85,6 +85,7 @@ const MobileCreateFormulaPage = () => {
   const [seededCount, setSeededCount] = useState(0);
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
+  const [focusMaterialId, setFocusMaterialId] = useState('');
   const itemsRef = useRef(items);
   const metadataRef = useRef(null);
 
@@ -168,13 +169,16 @@ const MobileCreateFormulaPage = () => {
   const addMaterial = (material) => {
     if (itemsRef.current.some((item) => item.item_id === material.id)) {
       toast.info('Material already in composition');
-      return;
+      setFocusMaterialId(material.id);
+      return false;
     }
 
     const nextItems = [createItem(material), ...itemsRef.current];
     itemsRef.current = nextItems;
     setItems(nextItems);
+    setFocusMaterialId(material.id);
     toast.success('Material added to composition');
+    return true;
   };
 
   const handleCreateMissingMaterial = ({ name: materialName }) => {
@@ -365,6 +369,7 @@ const MobileCreateFormulaPage = () => {
               onRemoveItem={removeItem}
               onAddMaterial={addMaterial}
               onCreateMissingMaterial={handleCreateMissingMaterial}
+              focusMaterialId={focusMaterialId}
               onOpenMetadata={scrollToMetadata}
               onSave={handleSubmit}
               saveLabel="Create"
