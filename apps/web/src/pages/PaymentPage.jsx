@@ -10,7 +10,7 @@ import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, up
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
-import { getOrderShippingFee, getOrderSubtotalAfterVoucher, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import { getOrderProductsSubtotal, getOrderShippingFee, getOrderSubtotalAfterVoucher, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -135,12 +135,16 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   return (
     <div className={`mt-4 rounded-2xl border border-[#263d27]/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#263d27]`}>
       <div className="flex justify-between gap-3">
-        <span>Subtotal setelah voucher</span>
-        <span>{formatTotal(subtotalAfterVoucher)}</span>
+        <span>Subtotal produk</span>
+        <span>{formatTotal(getOrderProductsSubtotal(session))}</span>
       </div>
       <div className="mt-2 flex justify-between gap-3">
         <span>Voucher {voucherSnapshot.code}</span>
         <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
+      </div>
+      <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+        <span>Subtotal setelah voucher</span>
+        <span>{formatTotal(subtotalAfterVoucher)}</span>
       </div>
       {shippingFee ? (
         <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">

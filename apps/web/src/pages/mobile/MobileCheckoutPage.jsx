@@ -10,7 +10,7 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
-import { getDiscountedCartLineMap } from '@/utils/cartVoucherPricing.js';
+import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTERAJA', jne: 'JNE' };
@@ -57,8 +57,8 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
 const MobileCheckoutPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
-  const voucher = useAppliedVoucher(summary.subtotal);
-  const discountedLineMap = getDiscountedCartLineMap(items, voucher.discountAmount);
+  const voucher = useAppliedVoucher(summary.subtotal, items);
+  const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const checkout = useCheckoutFlow({
     items,
     summary,

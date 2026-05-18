@@ -39,6 +39,7 @@ import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -654,6 +655,9 @@ const MobileOrderDetailPage = () => {
     );
   }
 
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
+
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>{order.orderNumber} - Solivagant</title></Helmet>
@@ -672,7 +676,7 @@ const MobileOrderDetailPage = () => {
               <div className="text-[10px] font-bold uppercase text-[#263d27]">Status saat ini</div>
               <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{statusLabels[order.status] || order.status}</h1>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} items / {formatTotal(order.subtotal)}</p>
-              {getOrderVoucherSnapshot(order) ? <p className="mt-1 text-xs font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}: hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</p> : null}
+              {voucherSnapshot ? <p className="mt-1 text-xs font-bold text-[#263d27]">Voucher {voucherSnapshot.code}: hemat {formatTotal(voucherSnapshot.discountAmount)}</p> : null}
             </div>
             <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
@@ -1094,25 +1098,37 @@ const MobileOrderDetailPage = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-[#0b130c]">Item</h2>
-          {getOrderProductItems(order).map((item) => (
+          {discountedItemLines.map((line) => {
+            const item = line.item;
+            const hasDiscount = line.discount > 0;
+            return (
             <article key={`${order.orderNumber}-${item.slug || item.name}`} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="text-sm font-bold text-[#0b130c]">{item.name}</h3>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">Qty {item.quantity} / {item.size || '-'}</p>
+                  {hasDiscount ? <p className="mt-1 text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</p> : null}
                 </div>
-                <div className="shrink-0 text-sm font-bold text-amber-700">{item.price || formatTotal(item.priceNumber)}</div>
+                <div className="shrink-0 text-right text-sm font-bold text-amber-700">
+                  {hasDiscount ? (
+                    <>
+                      <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                      <span className="block">{formatTotal(line.discountedTotal)}</span>
+                    </>
+                  ) : item.price || formatTotal(line.originalTotal)}
+                </div>
               </div>
             </article>
-          ))}
-          {getOrderVoucherSnapshot(order) ? (
+            );
+          })}
+          {voucherSnapshot ? (
             <article className="mobile-card border border-[#263d27]/10 bg-[#eef2e8] p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}</h3>
-                  <p className="mt-1 text-xs font-semibold text-[#51624b]">{getOrderVoucherSnapshot(order).discountType || 'discount'} {getOrderVoucherSnapshot(order).discountValue || ''}</p>
+                  <h3 className="text-sm font-bold text-[#263d27]">Voucher {voucherSnapshot.code}</h3>
+                  <p className="mt-1 text-xs font-semibold text-[#51624b]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</p>
                 </div>
-                <div className="shrink-0 text-sm font-bold text-[#263d27]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div>
+                <div className="shrink-0 text-sm font-bold text-[#263d27]">-{formatTotal(voucherSnapshot.discountAmount)}</div>
               </div>
             </article>
           ) : null}

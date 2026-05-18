@@ -12,7 +12,7 @@ import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import {
-  applyVoucherToSubtotal,
+  applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
   recordVoucherUsageForOrder,
 } from '@/services/voucherService.js';
@@ -44,6 +44,8 @@ const buildVoucherSnapshot = ({
   discountAmount,
   subtotalBeforeDiscount,
   subtotalAfterDiscount,
+  eligibleSubtotal,
+  eligibleQuantity,
 }) => {
   const code = String(voucher?.code || voucherCode || '').trim().toUpperCase();
   const finalDiscount = Math.max(Number(discountAmount || 0), 0);
@@ -56,6 +58,12 @@ const buildVoucherSnapshot = ({
     discountAmount: finalDiscount,
     subtotalBeforeDiscount: Math.max(Number(subtotalBeforeDiscount || 0), 0),
     subtotalAfterDiscount: Math.max(Number(subtotalAfterDiscount || 0), 0),
+    eligibleSubtotal: Math.max(Number(eligibleSubtotal || 0), 0),
+    eligibleQuantity: Math.max(Number(eligibleQuantity || 0), 0),
+    minimumOrder: Number(voucher?.minimumOrder || voucher?.minimum_order || 0),
+    minimumQuantity: Number(voucher?.minimumQuantity || voucher?.minimum_quantity || 0),
+    eligibleProductSlugs: voucher?.eligibleProductSlugs || voucher?.eligible_product_slugs || [],
+    eligibleCategories: voucher?.eligibleCategories || voucher?.eligible_categories || [],
     appliedAt: new Date().toISOString(),
   };
 };
@@ -121,21 +129,6 @@ export const useCheckoutFlow = ({
     && selectedShipping
     && !saving
   );
-  const checkoutDraft = useMemo(() => buildCheckoutDraft({
-    customerCode,
-    customerName,
-    contact,
-    deliveryAddress,
-    deliveryArea,
-    paymentMethod,
-    shippingSummary,
-    shippingFee,
-    voucherCode,
-    voucherDiscount: discountAmount,
-    notes,
-    items,
-  }), [contact, customerCode, customerName, deliveryAddress, deliveryArea, discountAmount, items, notes, paymentMethod, shippingFee, shippingSummary, voucherCode]);
-
   const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
     setSelectedDestination(null);
     setSelectedShipping(null);
@@ -401,7 +394,7 @@ export const useCheckoutFlow = ({
     let createdOrder = null;
     try {
       const voucherValidation = voucherCode
-        ? applyVoucherToSubtotal({ code: voucherCode, subtotal: summary.subtotal })
+        ? await applyVoucherToSubtotalAsync({ code: voucherCode, subtotal: summary.subtotal, items })
         : null;
       if (voucherCode && !voucherValidation?.valid) {
         throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan');
@@ -409,12 +402,28 @@ export const useCheckoutFlow = ({
       const checkoutDiscountAmount = voucherValidation?.discountAmount ?? discountAmount;
       const checkoutDiscountedSubtotal = Math.max(Number(summary.subtotal || 0) - checkoutDiscountAmount, 0);
       const checkoutTotalDue = checkoutDiscountedSubtotal + shippingFee;
+      const finalCheckoutDraft = buildCheckoutDraft({
+        customerCode,
+        customerName,
+        contact,
+        deliveryAddress,
+        deliveryArea,
+        paymentMethod,
+        shippingSummary,
+        shippingFee,
+        voucherCode,
+        voucherDiscount: checkoutDiscountAmount,
+        notes,
+        items,
+      });
       const voucherSnapshot = buildVoucherSnapshot({
         voucher: voucherValidation?.voucher || voucherDetails,
         voucherCode,
         discountAmount: checkoutDiscountAmount,
         subtotalBeforeDiscount: summary.subtotal,
         subtotalAfterDiscount: checkoutDiscountedSubtotal,
+        eligibleSubtotal: voucherValidation?.eligibleSubtotal,
+        eligibleQuantity: voucherValidation?.eligibleQuantity,
       });
       const order = await createOrder({
         customerName,
@@ -426,18 +435,11 @@ export const useCheckoutFlow = ({
         items,
         subtotal: checkoutTotalDue,
         quantity: summary.quantity,
-        checkoutDraft,
+        checkoutDraft: finalCheckoutDraft,
         paymentProvider: paymentMethodDetails.provider,
         voucherSnapshot,
       });
       createdOrder = order;
-      if (voucherSnapshot?.code) {
-        recordVoucherUsageForOrder({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          voucherSnapshot,
-        });
-      }
       if (isManualPayment) {
         const manualPaymentResponse = {
           method: paymentMethodDetails.provider,
@@ -457,6 +459,14 @@ export const useCheckoutFlow = ({
           status: 'pending_payment',
           audit: false,
         });
+        if (voucherSnapshot?.code) {
+          await recordVoucherUsageForOrder({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            voucherSnapshot,
+            items,
+          });
+        }
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
           paymentType: paymentMethodDetails.provider,
           paymentProvider: paymentMethodDetails.provider,
@@ -502,6 +512,14 @@ export const useCheckoutFlow = ({
         status: 'pending_payment',
         audit: false,
       });
+      if (voucherSnapshot?.code) {
+        await recordVoucherUsageForOrder({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          voucherSnapshot,
+          items,
+        });
+      }
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentUrl: checkout.paymentUrl,
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,

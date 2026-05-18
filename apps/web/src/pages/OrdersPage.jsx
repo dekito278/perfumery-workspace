@@ -25,6 +25,7 @@ import {
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
+import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -268,6 +269,8 @@ const OrdersPage = () => {
               const bespoke = isBespokeOrder(order);
               const bespokeItem = getBespokeItem(order);
               const reservationExpiresAt = getOrderReservationExpiresAt(order);
+              const voucherSnapshot = getOrderVoucherSnapshot(order);
+              const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
 
               return (
               <article key={order.id} className="rounded-2xl border bg-[#fbfaf7] p-4">
@@ -289,12 +292,26 @@ const OrdersPage = () => {
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)} / {order.customerName} / {order.contact}{order.customerCode ? ` / ${order.customerCode}` : ''}</p>
                     <div className="mt-3 grid gap-2">
-                      {getOrderProductItems(order).map((item) => (
+                      {discountedItemLines.map((line) => {
+                        const item = line.item;
+                        const hasDiscount = line.discount > 0;
+                        return (
                         <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
-                          <span>{item.name} x{item.quantity}</span>
-                          <span className="text-amber-700">{item.price}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate">{item.name} x{item.quantity}</span>
+                            {hasDiscount ? <span className="mt-0.5 block text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
+                          </span>
+                          <span className="shrink-0 text-right text-amber-700">
+                            {hasDiscount ? (
+                              <>
+                                <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                                <span className="block">{formatTotal(line.discountedTotal)}</span>
+                              </>
+                            ) : item.price || formatTotal(line.originalTotal)}
+                          </span>
                         </div>
-                      ))}
+                        );
+                      })}
                       <OrderVoucherSummary order={order} />
                     </div>
                     {bespoke ? (
@@ -371,7 +388,7 @@ const OrdersPage = () => {
                     <div className="rounded-2xl border bg-white p-3 text-right">
                       <div className="text-xs font-bold uppercase text-muted-foreground">{order.quantity} items</div>
                       <div className="text-xl font-bold">{formatTotal(order.subtotal)}</div>
-                      {getOrderVoucherSnapshot(order) ? <div className="mt-1 text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div> : null}
+                      {voucherSnapshot ? <div className="mt-1 text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
                     </div>
                     <div className="rounded-2xl border bg-white p-3">
                       <div className="text-xs font-bold uppercase text-muted-foreground">Payment admin</div>

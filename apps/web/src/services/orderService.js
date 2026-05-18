@@ -236,6 +236,12 @@ const normalizeVoucherSnapshot = (input = {}) => {
     discountAmount,
     subtotalBeforeDiscount,
     subtotalAfterDiscount,
+    eligibleSubtotal: Math.max(Number(input.eligibleSubtotal || input.eligible_subtotal || 0), 0),
+    eligibleQuantity: Math.max(Number(input.eligibleQuantity || input.eligible_quantity || 0), 0),
+    minimumOrder: Math.max(Number(input.minimumOrder || input.minimum_order || 0), 0),
+    minimumQuantity: Math.max(Number(input.minimumQuantity || input.minimum_quantity || 0), 0),
+    eligibleProductSlugs: input.eligibleProductSlugs || input.eligible_product_slugs || [],
+    eligibleCategories: input.eligibleCategories || input.eligible_categories || [],
     appliedAt: input.appliedAt || input.applied_at || new Date().toISOString(),
   };
 };
@@ -256,6 +262,12 @@ const createVoucherDiscountItem = (voucherSnapshot) => ({
   discountAmount: voucherSnapshot.discountAmount,
   subtotalBeforeDiscount: voucherSnapshot.subtotalBeforeDiscount,
   subtotalAfterDiscount: voucherSnapshot.subtotalAfterDiscount,
+  eligibleSubtotal: voucherSnapshot.eligibleSubtotal,
+  eligibleQuantity: voucherSnapshot.eligibleQuantity,
+  minimumOrder: voucherSnapshot.minimumOrder,
+  minimumQuantity: voucherSnapshot.minimumQuantity,
+  eligibleProductSlugs: voucherSnapshot.eligibleProductSlugs,
+  eligibleCategories: voucherSnapshot.eligibleCategories,
   voucherSnapshot,
 });
 

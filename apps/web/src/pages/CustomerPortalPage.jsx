@@ -28,7 +28,7 @@ import {
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
-import { getDiscountedCartLines } from '@/utils/cartVoucherPricing.js';
+import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -231,9 +231,9 @@ const VoucherSummary = ({ order, compact = false }) => {
 
 const OrderItems = ({ order, compact = false }) => {
   const voucherSnapshot = getOrderVoucherSnapshot(order);
-  const discountedLines = getDiscountedCartLines(
+  const discountedLines = getDiscountedVoucherCartLines(
     getOrderProductItems(order),
-    voucherSnapshot?.discountAmount || 0
+    voucherSnapshot || {}
   );
 
   return (

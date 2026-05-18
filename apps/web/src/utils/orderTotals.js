@@ -29,6 +29,12 @@ export const getOrderVoucherSnapshot = (order = {}) => {
     discountAmount,
     subtotalBeforeDiscount: Math.max(parseNumber(source.subtotalBeforeDiscount || source.subtotal_before_discount), 0),
     subtotalAfterDiscount: Math.max(parseNumber(source.subtotalAfterDiscount || source.subtotal_after_discount), 0),
+    eligibleSubtotal: Math.max(parseNumber(source.eligibleSubtotal || source.eligible_subtotal), 0),
+    eligibleQuantity: Math.max(parseNumber(source.eligibleQuantity || source.eligible_quantity), 0),
+    minimumOrder: Math.max(parseNumber(source.minimumOrder || source.minimum_order), 0),
+    minimumQuantity: Math.max(parseNumber(source.minimumQuantity || source.minimum_quantity), 0),
+    eligibleProductSlugs: source.eligibleProductSlugs || source.eligible_product_slugs || [],
+    eligibleCategories: source.eligibleCategories || source.eligible_categories || [],
   };
 };
 

@@ -1,18 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { BadgePercent, CalendarDays, CheckCircle2, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { BadgePercent, CalendarDays, CheckCircle2, Copy, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import { getOrders } from '@/services/orderService.js';
 import {
   deleteVoucher,
+  getVoucherUsageRecords,
   getVouchers,
+  migrateLocalVouchersToSupabase,
   normalizeVoucherCode,
   saveVoucher,
   VOUCHER_DISCOUNT_TYPES,
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
+import { buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
 
 const emptyDraft = {
   id: '',
@@ -20,15 +24,21 @@ const emptyDraft = {
   discountType: VOUCHER_DISCOUNT_TYPES.PERCENT,
   discountValue: '',
   minimumOrder: '',
+  minimumQuantity: '',
   expiresAt: '',
   active: true,
   usageLimitTotal: '',
+  eligibleProductSlugs: '',
+  eligibleCategories: '',
 };
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
   ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(value))
   : 'Tanpa expiry');
+const formatDateTime = (value) => (value
+  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  : '-');
 
 const getVoucherStatus = (voucher) => {
   if (!voucher.active) return { label: 'Nonaktif', className: 'bg-stone-100 text-stone-700' };
@@ -51,17 +61,47 @@ const toDraft = (voucher) => ({
   discountType: voucher?.discountType || VOUCHER_DISCOUNT_TYPES.PERCENT,
   discountValue: voucher?.discountValue || '',
   minimumOrder: voucher?.minimumOrder || '',
+  minimumQuantity: voucher?.minimumQuantity || '',
   expiresAt: voucher?.expiresAt || '',
   active: voucher?.active !== false,
   usageLimitTotal: voucher?.usageLimitTotal || '',
+  eligibleProductSlugs: (voucher?.eligibleProductSlugs || []).join(', '),
+  eligibleCategories: (voucher?.eligibleCategories || []).join(', '),
 });
+
+const getVoucherRestrictionLabel = (voucher) => {
+  const products = voucher.eligibleProductSlugs || [];
+  const categories = voucher.eligibleCategories || [];
+  if (!products.length && !categories.length) return 'Semua produk';
+  return [
+    products.length ? `${products.length} produk` : '',
+    categories.length ? `${categories.length} kategori` : '',
+  ].filter(Boolean).join(' / ');
+};
 
 const VoucherManagementPage = () => {
   const [vouchers, setVouchers] = useState([]);
+  const [usageRecords, setUsageRecords] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [draft, setDraft] = useState(emptyDraft);
   const [searchTerm, setSearchTerm] = useState('');
+  const [usageSearchTerm, setUsageSearchTerm] = useState('');
 
-  const loadVouchers = () => setVouchers(getVouchers());
+  const loadVouchers = async () => {
+    try {
+      await migrateLocalVouchersToSupabase();
+      const [nextVouchers, nextUsageRecords, nextOrders] = await Promise.all([
+        getVouchers(),
+        getVoucherUsageRecords(),
+        getOrders({ sweepExpiredReservations: false }),
+      ]);
+      setVouchers(nextVouchers);
+      setUsageRecords(nextUsageRecords);
+      setOrders(nextOrders);
+    } catch (error) {
+      toast.error(error.message || 'Gagal memuat voucher');
+    }
+  };
 
   useEffect(() => {
     loadVouchers();
@@ -85,6 +125,27 @@ const VoucherManagementPage = () => {
     ].some((value) => String(value || '').toLowerCase().includes(query)));
   }, [searchTerm, vouchers]);
 
+  const usageReport = useMemo(() => (
+    buildVoucherUsageReport(usageRecords, orders)
+  ), [orders, usageRecords]);
+
+  const filteredUsageReport = useMemo(() => {
+    const query = usageSearchTerm.trim().toLowerCase();
+    if (!query) return usageReport;
+    return usageReport.filter((entry) => [
+      entry.voucherCode,
+      entry.orderNumber,
+      entry.customerName,
+      entry.customerCode,
+      entry.contact,
+    ].some((value) => String(value || '').toLowerCase().includes(query)));
+  }, [usageReport, usageSearchTerm]);
+
+  const usageStats = useMemo(() => ({
+    count: usageReport.length,
+    discountTotal: usageReport.reduce((sum, entry) => sum + Number(entry.discountAmount || 0), 0),
+  }), [usageReport]);
+
   const updateDraft = (field, value) => {
     setDraft((current) => ({
       ...current,
@@ -94,14 +155,17 @@ const VoucherManagementPage = () => {
 
   const resetDraft = () => setDraft(emptyDraft);
 
-  const submitVoucher = (event) => {
+  const submitVoucher = async (event) => {
     event.preventDefault();
     try {
-      const savedVoucher = saveVoucher({
+      const savedVoucher = await saveVoucher({
         ...draft,
         discountValue: Number(draft.discountValue || 0),
         minimumOrder: Number(draft.minimumOrder || 0),
+        minimumQuantity: Number(draft.minimumQuantity || 0),
         usageLimitTotal: Number(draft.usageLimitTotal || 0),
+        eligibleProductSlugs: draft.eligibleProductSlugs,
+        eligibleCategories: draft.eligibleCategories,
       });
       setDraft(toDraft(savedVoucher));
       toast.success(`Voucher ${savedVoucher.code} tersimpan`);
@@ -115,17 +179,34 @@ const VoucherManagementPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toggleVoucher = (voucher) => {
-    const savedVoucher = saveVoucher({ ...voucher, active: !voucher.active });
-    toast.success(`${savedVoucher.code} ${savedVoucher.active ? 'diaktifkan' : 'dinonaktifkan'}`);
+  const copyVoucherCode = async (voucher) => {
+    try {
+      await navigator.clipboard.writeText(voucher.code);
+      toast.success(`Kode ${voucher.code} disalin`);
+    } catch (error) {
+      toast.error('Gagal menyalin kode voucher');
+    }
   };
 
-  const removeVoucher = (voucher) => {
-    deleteVoucher(voucher.id || voucher.code);
-    if (draft.id === voucher.id || draft.code === voucher.code) {
-      resetDraft();
+  const toggleVoucher = async (voucher) => {
+    try {
+      const savedVoucher = await saveVoucher({ ...voucher, active: !voucher.active });
+      toast.success(`${savedVoucher.code} ${savedVoucher.active ? 'diaktifkan' : 'dinonaktifkan'}`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal mengubah status voucher');
     }
-    toast.success(`Voucher ${voucher.code} dihapus`);
+  };
+
+  const removeVoucher = async (voucher) => {
+    try {
+      await deleteVoucher(voucher.id || voucher.code);
+      if (draft.id === voucher.id || draft.code === voucher.code) {
+        resetDraft();
+      }
+      toast.success(`Voucher ${voucher.code} dihapus`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus voucher');
+    }
   };
 
   return (
@@ -143,7 +224,7 @@ const VoucherManagementPage = () => {
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Voucher manager</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Kelola kode voucher sederhana untuk mobile cart dan checkout. Voucher disimpan lokal dulu mengikuti tahap awal fitur.
+              Kelola kode voucher untuk cart dan checkout. Voucher tersimpan di Supabase sehingga berlaku di semua device.
             </p>
           </div>
           <div className="dashboard-hero-panel">
@@ -217,6 +298,21 @@ const VoucherManagementPage = () => {
                   />
                 </label>
                 <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  Minimum quantity
+                  <input
+                    value={draft.minimumQuantity}
+                    onChange={(event) => updateDraft('minimumQuantity', event.target.value)}
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0 = tanpa minimum"
+                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
                   Usage limit total
                   <input
                     value={draft.usageLimitTotal}
@@ -248,6 +344,32 @@ const VoucherManagementPage = () => {
                   {draft.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
                   {draft.active ? 'Aktif' : 'Nonaktif'}
                 </button>
+              </div>
+
+              <div className="grid gap-3">
+                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  Produk tertentu
+                  <textarea
+                    value={draft.eligibleProductSlugs}
+                    onChange={(event) => updateDraft('eligibleProductSlugs', event.target.value)}
+                    placeholder="slug produk, pisahkan dengan koma. Kosong = semua produk"
+                    rows={2}
+                    className="rounded-2xl border bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                  Kategori tertentu
+                  <textarea
+                    value={draft.eligibleCategories}
+                    onChange={(event) => updateDraft('eligibleCategories', event.target.value)}
+                    placeholder="nama kategori, pisahkan dengan koma. Kosong = semua kategori"
+                    rows={2}
+                    className="rounded-2xl border bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300"
+                  />
+                </label>
+                <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                  Jika produk atau kategori diisi, voucher hanya memotong subtotal dan menghitung quantity item yang cocok.
+                </p>
               </div>
             </div>
 
@@ -304,6 +426,10 @@ const VoucherManagementPage = () => {
                             {voucher.minimumOrder ? formatTotal(voucher.minimumOrder) : 'Tanpa minimum'}
                           </div>
                           <div className="rounded-2xl bg-white px-3 py-2">
+                            <span className="block text-[10px] font-bold uppercase text-muted-foreground">Minimum quantity</span>
+                            {voucher.minimumQuantity ? `${voucher.minimumQuantity} item` : 'Tanpa minimum'}
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Expiry</span>
                             <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDate(voucher.expiresAt)}</span>
                           </div>
@@ -311,9 +437,17 @@ const VoucherManagementPage = () => {
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Usage</span>
                             {limitLabel}
                           </div>
+                          <div className="rounded-2xl bg-white px-3 py-2 sm:col-span-2">
+                            <span className="block text-[10px] font-bold uppercase text-muted-foreground">Berlaku untuk</span>
+                            {getVoucherRestrictionLabel(voucher)}
+                          </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 xl:w-72">
+                      <div className="grid grid-cols-4 gap-2 xl:w-96">
+                        <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => copyVoucherCode(voucher)}>
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </Button>
                         <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => editVoucher(voucher)}>
                           <Edit3 className="h-4 w-4" />
                           Edit
@@ -340,6 +474,70 @@ const VoucherManagementPage = () => {
             </div>
           </section>
         </div>
+
+        <section className="mt-6 rounded-2xl border bg-white/90 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold">Laporan penggunaan voucher</h2>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                Kode, order, customer, nominal diskon, dan waktu voucher dipakai.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="rounded-2xl bg-[#f7f8f2] px-4 py-2 text-xs font-bold text-[#263d27]">
+                {usageStats.count} penggunaan / {formatTotal(usageStats.discountTotal)}
+              </div>
+              <label className="relative block sm:w-72">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={usageSearchTerm}
+                  onChange={(event) => setUsageSearchTerm(event.target.value)}
+                  placeholder="Cari kode, order, customer"
+                  className="h-11 w-full rounded-2xl border bg-white pl-10 pr-3 text-sm font-semibold outline-none focus:border-amber-300"
+                />
+              </label>
+            </div>
+          </div>
+
+          {filteredUsageReport.length ? (
+            <div className="mt-5 overflow-hidden rounded-2xl border">
+              <table className="min-w-full divide-y text-sm">
+                <thead className="bg-[#f7f8f2] text-left text-[11px] font-bold uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Kode</th>
+                    <th className="px-4 py-3">Order</th>
+                    <th className="px-4 py-3">Customer</th>
+                    <th className="px-4 py-3 text-right">Nominal diskon</th>
+                    <th className="px-4 py-3">Waktu dipakai</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y bg-white">
+                  {filteredUsageReport.map((entry) => (
+                    <tr key={entry.id || `${entry.voucherCode}-${entry.orderNumber}-${entry.usedAt}`}>
+                      <td className="px-4 py-3 font-bold tracking-[0.08em] text-[#0b130c]">{entry.voucherCode}</td>
+                      <td className="px-4 py-3 font-semibold text-[#263d27]">{entry.orderNumber || '-'}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-[#263d27]">{entry.customerName || '-'}</div>
+                        {entry.customerCode ? <div className="text-xs font-semibold text-muted-foreground">{entry.customerCode}</div> : null}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-[#263d27]">
+                        {entry.discountAmount ? formatTotal(entry.discountAmount) : '-'}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-muted-foreground">{formatDateTime(entry.usedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <StateBlock
+              className="mt-5"
+              icon={CheckCircle2}
+              title={usageReport.length ? 'Riwayat tidak ditemukan' : 'Belum ada penggunaan voucher'}
+              description={usageReport.length ? 'Ubah pencarian untuk melihat penggunaan lain.' : 'Riwayat akan muncul setelah order memakai voucher.'}
+            />
+          )}
+        </section>
       </div>
     </AuthenticatedLayout>
   );

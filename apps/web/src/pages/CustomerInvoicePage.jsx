@@ -19,7 +19,7 @@ import {
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
-import { getDiscountedCartLines } from '@/utils/cartVoucherPricing.js';
+import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -51,7 +51,9 @@ const ShipmentBadge = ({ status }) => (
 const InvoiceCard = ({ customer, order, isMobile }) => {
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const productItems = getOrderProductItems(order);
-  const discountedLines = getDiscountedCartLines(productItems, voucherSnapshot?.discountAmount || 0);
+  const discountedLines = voucherSnapshot
+    ? getDiscountedVoucherCartLines(productItems, voucherSnapshot)
+    : getDiscountedVoucherCartLines(productItems);
   const productsSubtotal = getOrderProductsSubtotal(order);
   const subtotalAfterVoucher = getOrderSubtotalAfterVoucher(order);
   const shippingFee = getOrderShippingFee(order);

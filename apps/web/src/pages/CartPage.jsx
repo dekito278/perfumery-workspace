@@ -1,12 +1,14 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
+import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 
@@ -31,6 +33,8 @@ const CheckoutSectionTitle = ({ step, title, description }) => (
 const CartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
+  const voucher = useAppliedVoucher(summary.subtotal, items);
+  const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const {
     customerCode,
     customerName,
@@ -53,6 +57,8 @@ const CartPage = () => {
     shippingLoading,
     shippingError,
     shippingFee,
+    discountAmount,
+    discountedSubtotal,
     totalDue,
     selectedPaymentMethod,
     isManualPayment,
@@ -82,6 +88,10 @@ const CartPage = () => {
     summary,
     clearCart: clear,
     paymentPath: '/payment',
+    voucherCode: voucher.appliedVoucher?.code || '',
+    voucherDiscount: voucher.discountAmount,
+    voucherDetails: voucher.appliedVoucher,
+    clearVoucher: voucher.removeVoucher,
   });
 
   const decreaseQuantity = (item) => {
@@ -117,7 +127,7 @@ const CartPage = () => {
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
                       <CheckCircle2 className="h-5 w-5" />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-xs font-bold uppercase text-[#263d27]">Order diterima</div>
                       <h2 className="mt-1 text-2xl font-bold">{submittedOrder.orderNumber}</h2>
                       <p className="mt-2 max-w-xl text-sm font-semibold leading-relaxed text-muted-foreground">
@@ -148,15 +158,36 @@ const CartPage = () => {
               </div>
             </div>
             <div className="mt-6 grid gap-3">
-              {items.map((item) => (
+              {items.map((item) => {
+                const discountedLine = discountedLineMap.get(item.slug);
+                const hasLineDiscount = Boolean(discountedLine?.discount);
+                const lineTotal = Number(item.priceNumber || 0) * Number(item.quantity || 0);
+
+                return (
                 <article key={item.slug} className="rounded-2xl border bg-white p-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0">
                       <h2 className="text-lg font-bold">{item.name}</h2>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">{item.notes}</p>
+                      {hasLineDiscount ? (
+                        <p className="mt-1 text-xs font-bold text-[#263d27]">
+                          Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs font-bold uppercase text-[#263d27]">{item.price} · {item.size}</p>
                     </div>
-                    <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Hapus ${item.name}`}><Trash2 className="h-4 w-4" /></Button>
+                    <div className="flex shrink-0 items-start gap-3">
+                      <div className="text-right">
+                        {hasLineDiscount ? (
+                          <div className="text-xs font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
+                        ) : null}
+                        <div className="text-base font-bold text-[#263d27]">{formatTotal(discountedLine?.discountedTotal ?? lineTotal)}</div>
+                        {hasLineDiscount ? (
+                          <div className="mt-0.5 text-xs font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
+                        ) : null}
+                      </div>
+                      <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)} aria-label={`Hapus ${item.name}`}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
                     <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
@@ -165,7 +196,8 @@ const CartPage = () => {
                     {item.maxStock > 0 ? <span className="text-xs font-bold text-muted-foreground">stok {item.maxStock}</span> : null}
                   </div>
                 </article>
-              ))}
+                );
+              })}
               {!items.length ? (
                 <StateBlock
                   icon={ShoppingBag}
@@ -313,6 +345,34 @@ const CartPage = () => {
                   </div>
                 </section>
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                  <CheckoutSectionTitle step="V" title="Voucher" description="Kode promo akan memotong subtotal produk sebelum ongkir." />
+                  <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                    <input
+                      value={voucher.inputCode}
+                      onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                      placeholder="Kode voucher"
+                      className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]"
+                    />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold gap-2" onClick={voucher.applyVoucher}>
+                      <BadgePercent className="h-4 w-4" />
+                      Pakai
+                    </Button>
+                  </div>
+                  {voucher.appliedVoucher ? (
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/14 bg-[#eef2e8] px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
+                        <div className="mt-0.5 text-xs font-semibold text-[#51624b]">Hemat {formatTotal(voucher.discountAmount)}</div>
+                      </div>
+                      <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : voucher.message ? (
+                    <p className="mt-2 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">{voucher.message}</p>
+                  ) : null}
+                </section>
+                <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
                   <CheckoutSectionTitle step="4" title="Pembayaran & catatan" description="Pilih metode bayar, lalu tambahkan catatan jika perlu." />
                   <div className="mt-3 grid gap-3">
                     <div className="grid gap-2">
@@ -341,11 +401,59 @@ const CartPage = () => {
                   </div>
                 </section>
               </div>
+              <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-bold text-[#0b130c]">Ringkasan produk</h3>
+                  <span className="text-xs font-bold text-amber-700">{summary.quantity} item</span>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {items.map((item) => {
+                    const discountedLine = discountedLineMap.get(item.slug);
+                    const hasLineDiscount = Boolean(discountedLine?.discount);
+                    const lineTotal = Number(item.priceNumber || 0) * Number(item.quantity || 0);
+
+                    return (
+                      <div key={`${item.slug}-checkout`} className="rounded-2xl border border-[#263d27]/10 bg-white px-3 py-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold text-[#0b130c]">{item.name}</div>
+                            <div className="mt-0.5 text-[11px] font-bold uppercase text-amber-700">{item.size} / x{item.quantity}</div>
+                            {hasLineDiscount ? (
+                              <div className="mt-1 text-[11px] font-bold text-[#263d27]">Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item</div>
+                            ) : null}
+                          </div>
+                          <div className="shrink-0 text-right">
+                            {hasLineDiscount ? (
+                              <div className="text-[11px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
+                            ) : null}
+                            <div className="text-sm font-bold text-[#263d27]">{formatTotal(discountedLine?.discountedTotal ?? lineTotal)}</div>
+                            {hasLineDiscount ? (
+                              <div className="mt-0.5 text-[10px] font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="mt-4 rounded-2xl bg-[#f7f8f2] p-4">
                 <div className="flex items-center justify-between text-sm font-bold">
                   <span>Subtotal</span>
                   <span>{formatTotal(summary.subtotal)}</span>
                 </div>
+                {discountAmount ? (
+                  <div className="mt-2 flex items-center justify-between text-sm font-bold text-[#263d27]">
+                    <span>Voucher {voucher.appliedVoucher?.code}</span>
+                    <span>-{formatTotal(discountAmount)}</span>
+                  </div>
+                ) : null}
+                {discountAmount ? (
+                  <div className="mt-2 flex items-center justify-between text-sm font-bold text-muted-foreground">
+                    <span>Subtotal setelah voucher</span>
+                    <span>{formatTotal(discountedSubtotal)}</span>
+                  </div>
+                ) : null}
                 <div className="mt-2 flex items-center justify-between text-sm font-bold">
                   <span>Ongkir</span>
                   <span>{shippingFee ? formatTotal(shippingFee) : '-'}</span>

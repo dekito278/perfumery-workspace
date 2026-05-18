@@ -1,19 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { BadgePercent, CalendarDays, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { BadgePercent, CalendarDays, Copy, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { getOrders } from '@/services/orderService.js';
 import {
   deleteVoucher,
+  getVoucherUsageRecords,
   getVouchers,
+  migrateLocalVouchersToSupabase,
   normalizeVoucherCode,
   saveVoucher,
   VOUCHER_DISCOUNT_TYPES,
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
+import { buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
 
 const emptyDraft = {
   id: '',
@@ -21,30 +25,44 @@ const emptyDraft = {
   discountType: VOUCHER_DISCOUNT_TYPES.PERCENT,
   discountValue: '',
   minimumOrder: '',
+  minimumQuantity: '',
   expiresAt: '',
   active: true,
   usageLimitTotal: '',
+  eligibleProductSlugs: '',
+  eligibleCategories: '',
 };
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
   ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(value))
   : 'Tanpa expiry');
+const formatDateTime = (value) => (value
+  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  : '-');
 
 const getVoucherStatus = (voucher) => {
-  if (!voucher.active) return { label: 'Nonaktif', className: 'bg-stone-100 text-stone-700' };
+  if (!voucher.active) return { key: 'inactive', label: 'Nonaktif', className: 'bg-stone-100 text-stone-700' };
   const expiryValue = String(voucher.expiresAt || '').trim();
   const expiryTime = expiryValue
     ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(expiryValue) ? `${expiryValue}T23:59:59.999` : expiryValue).getTime()
     : null;
   if (expiryTime && expiryTime < Date.now()) {
-    return { label: 'Expired', className: 'bg-rose-50 text-rose-700' };
+    return { key: 'expired', label: 'Expired', className: 'bg-rose-50 text-rose-700' };
   }
   if (voucher.usageLimitTotal > 0 && voucher.usageCount >= voucher.usageLimitTotal) {
-    return { label: 'Limit habis', className: 'bg-amber-50 text-amber-800' };
+    return { key: 'limit_reached', label: 'Limit habis', className: 'bg-amber-50 text-amber-800' };
   }
-  return { label: 'Aktif', className: 'bg-emerald-50 text-emerald-700' };
+  return { key: 'active', label: 'Aktif', className: 'bg-emerald-50 text-emerald-700' };
 };
+
+const voucherStatusFilters = [
+  { key: 'all', label: 'Semua' },
+  { key: 'active', label: 'Aktif' },
+  { key: 'expired', label: 'Expired' },
+  { key: 'limit_reached', label: 'Limit habis' },
+  { key: 'inactive', label: 'Nonaktif' },
+];
 
 const toDraft = (voucher) => ({
   id: voucher?.id || '',
@@ -52,10 +70,23 @@ const toDraft = (voucher) => ({
   discountType: voucher?.discountType || VOUCHER_DISCOUNT_TYPES.PERCENT,
   discountValue: voucher?.discountValue || '',
   minimumOrder: voucher?.minimumOrder || '',
+  minimumQuantity: voucher?.minimumQuantity || '',
   expiresAt: voucher?.expiresAt || '',
   active: voucher?.active !== false,
   usageLimitTotal: voucher?.usageLimitTotal || '',
+  eligibleProductSlugs: (voucher?.eligibleProductSlugs || []).join(', '),
+  eligibleCategories: (voucher?.eligibleCategories || []).join(', '),
 });
+
+const getVoucherRestrictionLabel = (voucher) => {
+  const products = voucher.eligibleProductSlugs || [];
+  const categories = voucher.eligibleCategories || [];
+  if (!products.length && !categories.length) return 'Semua produk';
+  return [
+    products.length ? `${products.length} produk` : '',
+    categories.length ? `${categories.length} kategori` : '',
+  ].filter(Boolean).join(' / ');
+};
 
 const StatChip = ({ label, value, tone = 'amber' }) => {
   const tones = {
@@ -74,10 +105,28 @@ const StatChip = ({ label, value, tone = 'amber' }) => {
 
 const MobileVoucherManagementPage = () => {
   const [vouchers, setVouchers] = useState([]);
+  const [usageRecords, setUsageRecords] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [draft, setDraft] = useState(emptyDraft);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [usageSearchTerm, setUsageSearchTerm] = useState('');
 
-  const loadVouchers = () => setVouchers(getVouchers());
+  const loadVouchers = async () => {
+    try {
+      await migrateLocalVouchersToSupabase();
+      const [nextVouchers, nextUsageRecords, nextOrders] = await Promise.all([
+        getVouchers(),
+        getVoucherUsageRecords(),
+        getOrders({ sweepExpiredReservations: false }),
+      ]);
+      setVouchers(nextVouchers);
+      setUsageRecords(nextUsageRecords);
+      setOrders(nextOrders);
+    } catch (error) {
+      toast.error(error.message || 'Gagal memuat voucher');
+    }
+  };
 
   useEffect(() => {
     loadVouchers();
@@ -91,15 +140,51 @@ const MobileVoucherManagementPage = () => {
     limited: vouchers.filter((voucher) => Number(voucher.usageLimitTotal || 0) > 0).length,
   }), [vouchers]);
 
+  const statusCounts = useMemo(() => (
+    vouchers.reduce((counts, voucher) => {
+      const status = getVoucherStatus(voucher);
+      return {
+        ...counts,
+        [status.key]: (counts[status.key] || 0) + 1,
+      };
+    }, { all: vouchers.length, active: 0, expired: 0, limit_reached: 0, inactive: 0 })
+  ), [vouchers]);
+
   const filteredVouchers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return vouchers;
-    return vouchers.filter((voucher) => [
-      voucher.code,
-      voucher.discountType,
-      voucher.active ? 'aktif' : 'nonaktif',
+    return vouchers.filter((voucher) => {
+      const status = getVoucherStatus(voucher);
+      const matchesStatus = statusFilter === 'all' || status.key === statusFilter;
+      const matchesQuery = !query || [
+        voucher.code,
+        voucher.discountType,
+        status.label,
+        voucher.active ? 'aktif' : 'nonaktif',
+      ].some((value) => String(value || '').toLowerCase().includes(query));
+      return matchesStatus && matchesQuery;
+    });
+  }, [searchTerm, statusFilter, vouchers]);
+
+  const usageReport = useMemo(() => (
+    buildVoucherUsageReport(usageRecords, orders)
+  ), [orders, usageRecords]);
+
+  const filteredUsageReport = useMemo(() => {
+    const query = usageSearchTerm.trim().toLowerCase();
+    if (!query) return usageReport;
+    return usageReport.filter((entry) => [
+      entry.voucherCode,
+      entry.orderNumber,
+      entry.customerName,
+      entry.customerCode,
+      entry.contact,
     ].some((value) => String(value || '').toLowerCase().includes(query)));
-  }, [searchTerm, vouchers]);
+  }, [usageReport, usageSearchTerm]);
+
+  const usageStats = useMemo(() => ({
+    count: usageReport.length,
+    discountTotal: usageReport.reduce((sum, entry) => sum + Number(entry.discountAmount || 0), 0),
+  }), [usageReport]);
 
   const updateDraft = (field, value) => {
     setDraft((current) => ({
@@ -110,14 +195,17 @@ const MobileVoucherManagementPage = () => {
 
   const resetDraft = () => setDraft(emptyDraft);
 
-  const submitVoucher = (event) => {
+  const submitVoucher = async (event) => {
     event.preventDefault();
     try {
-      const savedVoucher = saveVoucher({
+      const savedVoucher = await saveVoucher({
         ...draft,
         discountValue: Number(draft.discountValue || 0),
         minimumOrder: Number(draft.minimumOrder || 0),
+        minimumQuantity: Number(draft.minimumQuantity || 0),
         usageLimitTotal: Number(draft.usageLimitTotal || 0),
+        eligibleProductSlugs: draft.eligibleProductSlugs,
+        eligibleCategories: draft.eligibleCategories,
       });
       setDraft(toDraft(savedVoucher));
       toast.success(`Voucher ${savedVoucher.code} tersimpan`);
@@ -131,17 +219,34 @@ const MobileVoucherManagementPage = () => {
     document.querySelector('[data-mobile-primary-scroller="true"]')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toggleVoucher = (voucher) => {
-    const savedVoucher = saveVoucher({ ...voucher, active: !voucher.active });
-    toast.success(`${savedVoucher.code} ${savedVoucher.active ? 'diaktifkan' : 'dinonaktifkan'}`);
+  const copyVoucherCode = async (voucher) => {
+    try {
+      await navigator.clipboard.writeText(voucher.code);
+      toast.success(`Kode ${voucher.code} disalin`);
+    } catch (error) {
+      toast.error('Gagal menyalin kode voucher');
+    }
   };
 
-  const removeVoucher = (voucher) => {
-    deleteVoucher(voucher.id || voucher.code);
-    if (draft.id === voucher.id || draft.code === voucher.code) {
-      resetDraft();
+  const toggleVoucher = async (voucher) => {
+    try {
+      const savedVoucher = await saveVoucher({ ...voucher, active: !voucher.active });
+      toast.success(`${savedVoucher.code} ${savedVoucher.active ? 'diaktifkan' : 'dinonaktifkan'}`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal mengubah status voucher');
     }
-    toast.success(`Voucher ${voucher.code} dihapus`);
+  };
+
+  const removeVoucher = async (voucher) => {
+    try {
+      await deleteVoucher(voucher.id || voucher.code);
+      if (draft.id === voucher.id || draft.code === voucher.code) {
+        resetDraft();
+      }
+      toast.success(`Voucher ${voucher.code} dihapus`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus voucher');
+    }
   };
 
   return (
@@ -174,6 +279,7 @@ const MobileVoucherManagementPage = () => {
             <StatChip label="Total" value={stats.total} />
             <StatChip label="Aktif" value={stats.active} tone="emerald" />
             <StatChip label="Pakai limit" value={stats.limited} tone="blue" />
+            <StatChip label="Terpakai" value={usageStats.count} tone="emerald" />
           </div>
         </section>
 
@@ -181,7 +287,7 @@ const MobileVoucherManagementPage = () => {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-base font-bold">{draft.id ? 'Edit voucher' : 'Buat voucher'}</h2>
-              <p className="mt-0.5 text-xs font-semibold text-[#6b7280]">Voucher tersimpan lokal dan langsung dipakai checkout.</p>
+              <p className="mt-0.5 text-xs font-semibold text-[#6b7280]">Voucher tersimpan di Supabase dan langsung dipakai checkout.</p>
             </div>
             <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-2xl bg-white" onClick={resetDraft} aria-label="Buat voucher baru">
               <Plus className="h-4 w-4" />
@@ -233,6 +339,19 @@ const MobileVoucherManagementPage = () => {
             />
           </label>
 
+          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+            Minimum quantity
+            <input
+              value={draft.minimumQuantity}
+              onChange={(event) => updateDraft('minimumQuantity', event.target.value)}
+              type="number"
+              min="0"
+              step="1"
+              placeholder="0 = tanpa minimum"
+              className="mobile-form-control"
+            />
+          </label>
+
           <div className="grid grid-cols-2 gap-3">
             <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
               Expiry
@@ -261,6 +380,28 @@ const MobileVoucherManagementPage = () => {
             {draft.active ? 'Aktif' : 'Nonaktif'}
           </button>
 
+          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+            Produk tertentu
+            <textarea
+              value={draft.eligibleProductSlugs}
+              onChange={(event) => updateDraft('eligibleProductSlugs', event.target.value)}
+              placeholder="slug produk, pisahkan koma. Kosong = semua"
+              rows={2}
+              className="mobile-form-control min-h-[76px] py-3"
+            />
+          </label>
+
+          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+            Kategori tertentu
+            <textarea
+              value={draft.eligibleCategories}
+              onChange={(event) => updateDraft('eligibleCategories', event.target.value)}
+              placeholder="nama kategori, pisahkan koma. Kosong = semua"
+              rows={2}
+              className="mobile-form-control min-h-[76px] py-3"
+            />
+          </label>
+
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <Button type="submit" className="h-12 rounded-2xl gap-2">
               <Save className="h-4 w-4" />
@@ -273,7 +414,7 @@ const MobileVoucherManagementPage = () => {
         </form>
 
         <section className="space-y-3">
-          <div className="mobile-card p-3">
+          <div className="mobile-card space-y-3 p-3">
             <label className="flex h-11 items-center gap-2 rounded-2xl border bg-white px-3">
               <Search className="h-4 w-4 text-[#8b949e]" />
               <input
@@ -283,6 +424,21 @@ const MobileVoucherManagementPage = () => {
                 className="min-h-0 flex-1 bg-transparent text-sm font-semibold outline-none"
               />
             </label>
+            <div className="mobile-horizontal-scroll flex gap-2 overflow-x-auto pb-1">
+              {voucherStatusFilters.map((filter) => {
+                const selected = statusFilter === filter.key;
+                return (
+                  <button
+                    key={filter.key}
+                    type="button"
+                    onClick={() => setStatusFilter(filter.key)}
+                    className={`min-h-10 shrink-0 rounded-2xl border px-3 text-xs font-bold ${selected ? 'border-[#263d27] bg-[#263d27] text-white' : 'border-[#e5e7eb] bg-white text-[#263d27]'}`}
+                  >
+                    {filter.label} ({statusCounts[filter.key] || 0})
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {filteredVouchers.map((voucher) => {
@@ -301,6 +457,9 @@ const MobileVoucherManagementPage = () => {
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => copyVoucherCode(voucher)} aria-label={`Copy kode voucher ${voucher.code}`}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
                     <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => editVoucher(voucher)} aria-label={`Edit voucher ${voucher.code}`}>
                       <Edit3 className="h-4 w-4" />
                     </Button>
@@ -323,12 +482,20 @@ const MobileVoucherManagementPage = () => {
                     {voucher.minimumOrder ? formatTotal(voucher.minimumOrder) : 'Tanpa minimum'}
                   </div>
                   <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                    <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Qty minimum</span>
+                    {voucher.minimumQuantity ? `${voucher.minimumQuantity} item` : 'Tanpa minimum'}
+                  </div>
+                  <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Expiry</span>
                     <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDate(voucher.expiresAt)}</span>
                   </div>
                   <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Usage</span>
                     {limitLabel}
+                  </div>
+                  <div className="col-span-2 rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                    <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Berlaku untuk</span>
+                    {getVoucherRestrictionLabel(voucher)}
                   </div>
                 </div>
               </article>
@@ -340,7 +507,68 @@ const MobileVoucherManagementPage = () => {
               tone="empty"
               icon={BadgePercent}
               title={vouchers.length ? 'Voucher tidak ditemukan' : 'Belum ada voucher'}
-              description={vouchers.length ? 'Ubah pencarian untuk melihat voucher lain.' : 'Buat voucher pertama dari form di atas.'}
+              description={vouchers.length ? 'Ubah pencarian atau filter status untuk melihat voucher lain.' : 'Buat voucher pertama dari form di atas.'}
+            />
+          ) : null}
+        </section>
+
+        <section className="space-y-3">
+          <div className="mobile-card space-y-3 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[#0b130c]">Laporan penggunaan</h2>
+                <p className="mt-1 text-xs font-semibold text-[#6b7280]">Kode, order, customer, diskon, dan waktu dipakai.</p>
+              </div>
+              <div className="shrink-0 rounded-2xl bg-emerald-50 px-3 py-2 text-right text-xs font-bold text-emerald-800">
+                <div>{usageStats.count}x</div>
+                <div className="mt-0.5 text-[10px]">{formatTotal(usageStats.discountTotal)}</div>
+              </div>
+            </div>
+            <label className="flex h-11 items-center gap-2 rounded-2xl border bg-white px-3">
+              <Search className="h-4 w-4 text-[#8b949e]" />
+              <input
+                value={usageSearchTerm}
+                onChange={(event) => setUsageSearchTerm(event.target.value)}
+                placeholder="Cari kode, order, customer"
+                className="min-h-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+              />
+            </label>
+          </div>
+
+          {filteredUsageReport.map((entry) => (
+            <article key={entry.id || `${entry.voucherCode}-${entry.orderNumber}-${entry.usedAt}`} className="mobile-card space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-bold tracking-[0.08em] text-[#0b130c]">{entry.voucherCode}</h3>
+                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">{entry.orderNumber || '-'}</p>
+                </div>
+                <div className="shrink-0 rounded-2xl bg-[#f7f8f2] px-3 py-2 text-right text-xs font-bold text-[#263d27]">
+                  {entry.discountAmount ? formatTotal(entry.discountAmount) : '-'}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#263d27]">
+                <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Customer</span>
+                  <span className="block truncate">{entry.customerName || '-'}</span>
+                </div>
+                <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Kode customer</span>
+                  <span className="block truncate">{entry.customerCode || '-'}</span>
+                </div>
+                <div className="col-span-2 rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Waktu dipakai</span>
+                  {formatDateTime(entry.usedAt)}
+                </div>
+              </div>
+            </article>
+          ))}
+
+          {!filteredUsageReport.length ? (
+            <MobileStatePanel
+              tone="empty"
+              icon={BadgePercent}
+              title={usageReport.length ? 'Riwayat tidak ditemukan' : 'Belum ada penggunaan voucher'}
+              description={usageReport.length ? 'Ubah pencarian untuk melihat penggunaan lain.' : 'Riwayat akan muncul setelah order memakai voucher.'}
             />
           ) : null}
         </section>

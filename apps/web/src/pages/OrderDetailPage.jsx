@@ -61,6 +61,7 @@ import {
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
+import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -598,6 +599,9 @@ const OrderDetailPage = () => {
     );
   }
 
+  const voucherSnapshot = getOrderVoucherSnapshot(order);
+  const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
+
   return (
     <AuthenticatedLayout>
       <Helmet>
@@ -673,11 +677,11 @@ const OrderDetailPage = () => {
           </div>
         </section>
 
-        {getOrderVoucherSnapshot(order) ? (
+        {voucherSnapshot ? (
           <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4 text-sm font-bold text-[#263d27] shadow-sm">
             <div className="grid gap-2 sm:grid-cols-4">
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Subtotal produk</span>{formatTotal(getOrderProductsSubtotal(order))}</div>
-              <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {getOrderVoucherSnapshot(order).code}</span>-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div>
+              <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {voucherSnapshot.code}</span>-{formatTotal(voucherSnapshot.discountAmount)}</div>
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Setelah voucher</span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</div>
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Ongkir / total</span>{getOrderShippingFee(order) ? `${formatTotal(getOrderShippingFee(order))} / ` : ''}{formatTotal(order.subtotal)}</div>
             </div>
@@ -905,24 +909,36 @@ const OrderDetailPage = () => {
                 Items
               </div>
               <div className="overflow-hidden rounded-2xl border">
-                {getOrderProductItems(order).map((item) => (
+                {discountedItemLines.map((line) => {
+                  const item = line.item;
+                  const hasDiscount = line.discount > 0;
+                  return (
                   <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_80px_120px] gap-3 border-b bg-white px-4 py-3 text-sm font-semibold last:border-b-0">
                     <span className="min-w-0">
                       <span className="block truncate font-bold">{item.name}</span>
                       {item.size ? <span className="text-xs text-muted-foreground">{item.size}</span> : null}
+                      {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
                     </span>
                     <span className="text-right">x{item.quantity || 1}</span>
-                    <span className="text-right font-bold text-amber-700">{item.price || formatTotal(item.priceNumber)}</span>
+                    <span className="text-right font-bold text-amber-700">
+                      {hasDiscount ? (
+                        <>
+                          <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                          <span className="block">{formatTotal(line.discountedTotal)}</span>
+                        </>
+                      ) : item.price || formatTotal(line.originalTotal)}
+                    </span>
                   </div>
-                ))}
-                {getOrderVoucherSnapshot(order) ? (
+                  );
+                })}
+                {voucherSnapshot ? (
                   <div className="grid grid-cols-[1fr_80px_120px] gap-3 border-b bg-[#eef2e8] px-4 py-3 text-sm font-semibold last:border-b-0">
                     <span className="min-w-0">
-                      <span className="block truncate font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}</span>
-                      <span className="text-xs text-[#51624b]">{getOrderVoucherSnapshot(order).discountType || 'discount'} {getOrderVoucherSnapshot(order).discountValue || ''}</span>
+                      <span className="block truncate font-bold text-[#263d27]">Voucher {voucherSnapshot.code}</span>
+                      <span className="text-xs text-[#51624b]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
                     </span>
                     <span className="text-right">-</span>
-                    <span className="text-right font-bold text-[#263d27]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</span>
+                    <span className="text-right font-bold text-[#263d27]">-{formatTotal(voucherSnapshot.discountAmount)}</span>
                   </div>
                 ) : null}
               </div>

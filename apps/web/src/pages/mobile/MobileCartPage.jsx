@@ -9,15 +9,15 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { getDiscountedCartLineMap } from '@/utils/cartVoucherPricing.js';
+import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem } = useCart();
-  const voucher = useAppliedVoucher(summary.subtotal);
-  const discountedLineMap = getDiscountedCartLineMap(items, voucher.discountAmount);
+  const voucher = useAppliedVoucher(summary.subtotal, items);
+  const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const products = useCatalogProducts();
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const getCartItemProduct = (item) => {
