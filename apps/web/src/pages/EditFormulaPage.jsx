@@ -69,7 +69,7 @@ import {
 } from '@/utils/materialCompositionProfile.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 import { readPersistedRecommendationLearning, writePersistedRecommendationLearning } from '@/utils/recommendationLearningStorage.js';
-import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 import { createBriefAiInterpretation, getLatestBriefAiInterpretation } from '@/services/briefAiInterpretationsService.js';
 import { requestBriefAiIntent } from '@/services/briefAiIntentService.js';
 
@@ -485,6 +485,19 @@ const EditFormulaPage = () => {
     const nextName = normalizeQuickMaterialName(materialName);
     if (!nextName) return;
     setQuickCreateIntent({ name: nextName, rowIndex });
+  };
+
+  const quickCreateDuplicateCandidates = getQuickMaterialDuplicateCandidates(rawMaterials, quickCreateIntent?.name);
+
+  const handleSelectQuickCreateExistingMaterial = (material) => {
+    if (!material?.id) return;
+    const rowIndex = Number.isFinite(quickCreateIntent?.rowIndex) ? quickCreateIntent.rowIndex : 0;
+    setRawMaterials((current) => upsertMaterialOption(current, material));
+    updateItem(rowIndex, material.id, material);
+    setActiveRowIndex(rowIndex);
+    setFocusRowIndex(rowIndex);
+    setQuickCreateIntent(null);
+    toast.success(`Using existing material: ${material.name}`);
   };
 
   const handleConfirmQuickCreateMaterial = async (details = {}) => {
@@ -1904,10 +1917,12 @@ const EditFormulaPage = () => {
         <FormulaMaterialQuickCreateDialog
         open={Boolean(quickCreateIntent)}
         materialName={quickCreateIntent?.name || ''}
+        duplicateCandidates={quickCreateDuplicateCandidates}
         loading={quickCreateLoading}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setQuickCreateIntent(null);
         }}
+        onSelectExisting={handleSelectQuickCreateExistingMaterial}
         onConfirm={handleConfirmQuickCreateMaterial}
       />
 

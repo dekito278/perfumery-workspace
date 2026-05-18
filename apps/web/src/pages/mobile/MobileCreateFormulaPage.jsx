@@ -23,7 +23,7 @@ import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
 import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
-import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const createItem = (material, gramAmount = '1') => ({
   row_key: `${material.id}-${Date.now()}`,
@@ -185,6 +185,15 @@ const MobileCreateFormulaPage = () => {
     const nextName = normalizeQuickMaterialName(materialName);
     if (!nextName) return;
     setQuickCreateIntent({ name: nextName });
+  };
+
+  const quickCreateDuplicateCandidates = getQuickMaterialDuplicateCandidates(rawMaterials, quickCreateIntent?.name);
+
+  const handleSelectQuickCreateExistingMaterial = (material) => {
+    if (!material?.id) return;
+    setRawMaterials((current) => upsertMaterialOption(current, material));
+    addMaterial(material);
+    setQuickCreateIntent(null);
   };
 
   const handleConfirmQuickCreateMaterial = async (details = {}) => {
@@ -379,11 +388,14 @@ const MobileCreateFormulaPage = () => {
             <FormulaMaterialQuickCreateDialog
               open={Boolean(quickCreateIntent)}
               materialName={quickCreateIntent?.name || ''}
+              duplicateCandidates={quickCreateDuplicateCandidates}
               loading={quickCreateLoading}
               onOpenChange={(nextOpen) => {
                 if (!nextOpen) setQuickCreateIntent(null);
               }}
-              onConfirm={handleConfirmQuickCreateMaterial}
+              onSelectExisting={handleSelectQuickCreateExistingMaterial}
+              onSelectExisting={handleSelectQuickCreateExistingMaterial}
+          onConfirm={handleConfirmQuickCreateMaterial}
             />
           </>
         )}

@@ -21,7 +21,7 @@ import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterial
 import { getReferenceLinksByRawMaterialIds } from '@/services/materialReferenceService.js';
 import FormulaWorkbookSimulationPanel from '@/components/FormulaWorkbookSimulationPanel.jsx';
 import FormulaMaterialQuickCreateDialog from '@/components/FormulaMaterialQuickCreateDialog.jsx';
-import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   const { updateFormula, loading } = useFormulas();
@@ -137,6 +137,18 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     const nextName = normalizeQuickMaterialName(materialName);
     if (!nextName) return;
     setQuickCreateIntent({ name: nextName, rowIndex });
+  };
+
+  const quickCreateDuplicateCandidates = getQuickMaterialDuplicateCandidates(rawMaterials, quickCreateIntent?.name);
+
+  const handleSelectQuickCreateExistingMaterial = (material) => {
+    if (!material?.id) return;
+    const rowIndex = Number.isFinite(quickCreateIntent?.rowIndex) ? quickCreateIntent.rowIndex : 0;
+    setRawMaterials((current) => upsertMaterialOption(current, material));
+    updateItem(rowIndex, material.id, material);
+    setFocusRowIndex(rowIndex);
+    setQuickCreateIntent(null);
+    toast.success(`Using existing material: ${material.name}`);
   };
 
   const handleConfirmQuickCreateMaterial = async (details = {}) => {
@@ -536,10 +548,12 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
       <FormulaMaterialQuickCreateDialog
         open={Boolean(quickCreateIntent)}
         materialName={quickCreateIntent?.name || ''}
+        duplicateCandidates={quickCreateDuplicateCandidates}
         loading={quickCreateLoading}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setQuickCreateIntent(null);
         }}
+        onSelectExisting={handleSelectQuickCreateExistingMaterial}
         onConfirm={handleConfirmQuickCreateMaterial}
       />
       </DialogContent>

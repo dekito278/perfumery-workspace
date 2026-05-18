@@ -15,11 +15,14 @@ import { Input } from '@/components/ui/input.jsx';
 const FormulaMaterialQuickCreateDialog = ({
   open,
   materialName,
+  duplicateCandidates = [],
   loading = false,
   onOpenChange,
+  onSelectExisting,
   onConfirm,
 }) => {
   const name = String(materialName || '').trim();
+  const hasDuplicateCandidates = duplicateCandidates.length > 0;
   const [details, setDetails] = useState({
     category: '',
     cas_number: '',
@@ -44,7 +47,7 @@ const FormulaMaterialQuickCreateDialog = ({
     <AlertDialog open={open} onOpenChange={(nextOpen) => {
       if (!loading) onOpenChange?.(nextOpen);
     }}>
-      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-[420px] rounded-[26px] border-[#e6deca] bg-[#fffdf8] p-0 shadow-2xl">
+      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-[520px] rounded-[26px] border-[#e6deca] bg-[#fffdf8] p-0 shadow-2xl">
         <div className="border-b border-[#efe5d3] bg-[linear-gradient(180deg,#fff8e7_0%,#fffdf8_100%)] px-5 py-4">
           <AlertDialogHeader className="space-y-2 text-left">
             <div className="flex items-center gap-2">
@@ -67,6 +70,42 @@ const FormulaMaterialQuickCreateDialog = ({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a5a]">Material name</p>
             <p className="mt-1 break-words text-base font-bold text-[#1f2937]">{name || '-'}</p>
           </div>
+          {hasDuplicateCandidates ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                <div>
+                  <p className="text-xs font-bold text-amber-900">Ada material yang mirip</p>
+                  <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-amber-800">
+                    Pilih existing kalau ini sebenarnya material yang sama, atau lanjut buat baru kalau memang beda.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {duplicateCandidates.map((material) => (
+                  <button
+                    key={material.id}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => onSelectExisting?.(material)}
+                    className="rounded-2xl border border-amber-200 bg-white p-3 text-left transition-colors hover:bg-amber-100 disabled:opacity-60"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-[#1f2937]">{material.name}</p>
+                        <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">
+                          {[material.cas_number ? `CAS ${material.cas_number}` : '', material.workbook_code ? `Workbook ${material.workbook_code}` : '', material.category || 'No category'].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">
+                        Pilih
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-[#e6deca] bg-white p-3">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -131,7 +170,7 @@ const FormulaMaterialQuickCreateDialog = ({
               onConfirm?.(details);
             }}
           >
-            {loading ? 'Membuat...' : 'Tambah & pilih'}
+            {loading ? 'Membuat...' : hasDuplicateCandidates ? 'Buat baru & pilih' : 'Tambah & pilih'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -24,7 +24,7 @@ import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
-import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const createItem = (material, gramAmount = '1', item = {}) => ({
   row_key: `${material.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -147,6 +147,15 @@ const MobileEditFormulaPage = () => {
     setQuickCreateIntent({ name: nextName });
   };
 
+  const quickCreateDuplicateCandidates = getQuickMaterialDuplicateCandidates(rawMaterials, quickCreateIntent?.name);
+
+  const handleSelectQuickCreateExistingMaterial = (material) => {
+    if (!material?.id) return;
+    setRawMaterials((current) => upsertMaterialOption(current, material));
+    addMaterial(material);
+    setQuickCreateIntent(null);
+  };
+
   const handleConfirmQuickCreateMaterial = async (details = {}) => {
     const nextName = normalizeQuickMaterialName(quickCreateIntent?.name);
     if (!nextName) return;
@@ -265,10 +274,12 @@ const MobileEditFormulaPage = () => {
         <FormulaMaterialQuickCreateDialog
           open={Boolean(quickCreateIntent)}
           materialName={quickCreateIntent?.name || ''}
+          duplicateCandidates={quickCreateDuplicateCandidates}
           loading={quickCreateLoading}
           onOpenChange={(nextOpen) => {
             if (!nextOpen) setQuickCreateIntent(null);
           }}
+          onSelectExisting={handleSelectQuickCreateExistingMaterial}
           onConfirm={handleConfirmQuickCreateMaterial}
         />
         {!composerOverlayOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula editor actions">

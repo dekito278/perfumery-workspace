@@ -35,7 +35,7 @@ import { formatGramAmount } from '@/utils/formatting.js';
 import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { buildComposerItemsFromMaterialIds, buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
-import { buildQuickRawMaterialPayload, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
@@ -222,6 +222,19 @@ const CreateFormulaPage = () => {
     const nextName = normalizeQuickMaterialName(materialName);
     if (!nextName) return;
     setQuickCreateIntent({ name: nextName, rowIndex });
+  };
+
+  const quickCreateDuplicateCandidates = getQuickMaterialDuplicateCandidates(rawMaterials, quickCreateIntent?.name);
+
+  const handleSelectQuickCreateExistingMaterial = (material) => {
+    if (!material?.id) return;
+    const rowIndex = Number.isFinite(quickCreateIntent?.rowIndex) ? quickCreateIntent.rowIndex : 0;
+    setRawMaterials((current) => upsertMaterialOption(current, material));
+    updateItem(rowIndex, material.id, material);
+    setActiveRowIndex(rowIndex);
+    setFocusRowIndex(rowIndex);
+    setQuickCreateIntent(null);
+    toast.success(`Using existing material: ${material.name}`);
   };
 
   const handleConfirmQuickCreateMaterial = async (details = {}) => {
@@ -903,10 +916,12 @@ const CreateFormulaPage = () => {
         <FormulaMaterialQuickCreateDialog
         open={Boolean(quickCreateIntent)}
         materialName={quickCreateIntent?.name || ''}
+        duplicateCandidates={quickCreateDuplicateCandidates}
         loading={quickCreateLoading}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setQuickCreateIntent(null);
         }}
+        onSelectExisting={handleSelectQuickCreateExistingMaterial}
         onConfirm={handleConfirmQuickCreateMaterial}
       />
 
