@@ -10,6 +10,7 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
+import { getDiscountedCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTERAJA', jne: 'JNE' };
@@ -57,6 +58,7 @@ const MobileCheckoutPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const voucher = useAppliedVoucher(summary.subtotal);
+  const discountedLineMap = getDiscountedCartLineMap(items, voucher.discountAmount);
   const checkout = useCheckoutFlow({
     items,
     summary,
@@ -233,16 +235,40 @@ const MobileCheckoutPage = () => {
           complete={Boolean(paymentComplete && items.length)}
           action={<span className="shrink-0 text-xs font-bold text-amber-700">{summary.quantity} item</span>}
         >
-            {items.map((item) => (
+            {items.map((item) => {
+              const discountedLine = discountedLineMap.get(item.slug);
+              const hasLineDiscount = Boolean(discountedLine?.discount);
+
+              return (
               <div key={item.slug} className="mobile-commerce-panel bg-[#f8f7f4] p-3">
-                <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-sm font-bold">{item.name}</h3><p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p></div><p className="text-xs font-bold">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p></div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold">{item.name}</h3>
+                    <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p>
+                    {hasLineDiscount ? (
+                      <p className="mt-1 text-[11px] font-bold text-[#263d27]">
+                        Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    {hasLineDiscount ? (
+                      <div className="text-[11px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
+                    ) : null}
+                    <p className="text-xs font-bold text-[#263d27]">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
+                    {hasLineDiscount ? (
+                      <div className="mt-0.5 text-[10px] font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
+                    ) : null}
+                  </div>
+                </div>
                 <div className="mt-3 inline-flex items-center rounded-[14px] border border-[#263d27]/10 bg-white p-1">
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
             <div className="mobile-commerce-summary px-3 py-3 text-xs font-bold text-[#263d27]">
               <div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatTotal(summary.subtotal)}</span></div>
               {discountAmount ? (

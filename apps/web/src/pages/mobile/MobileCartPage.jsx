@@ -9,6 +9,7 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { getDiscountedCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 
@@ -16,6 +17,7 @@ const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem } = useCart();
   const voucher = useAppliedVoucher(summary.subtotal);
+  const discountedLineMap = getDiscountedCartLineMap(items, voucher.discountAmount);
   const products = useCatalogProducts();
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const getCartItemProduct = (item) => {
@@ -70,7 +72,12 @@ const MobileCartPage = () => {
                     <ProductVisual product={product} className="h-10 w-10 shrink-0 rounded-[12px]" label={false} sizes="40px" />
                     <div className="min-w-0"><p className="truncate text-xs font-bold">{item.name}</p><p className="mt-0.5 text-[10px] font-bold uppercase text-[#8b949e]">{item.size} / x{item.quantity}</p></div>
                   </div>
-                  <span className="shrink-0 text-xs font-bold text-[#263d27]">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</span>
+                  <div className="shrink-0 text-right">
+                    {discountedLineMap.get(item.slug)?.discount ? (
+                      <div className="text-[10px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLineMap.get(item.slug).originalTotal)}</div>
+                    ) : null}
+                    <div className="text-xs font-bold text-[#263d27]">{formatTotal(discountedLineMap.get(item.slug)?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -125,7 +132,11 @@ const MobileCartPage = () => {
           </section>
         ) : null}
         <section className="grid gap-3">
-          {items.map((item) => (
+          {items.map((item) => {
+            const discountedLine = discountedLineMap.get(item.slug);
+            const hasLineDiscount = Boolean(discountedLine?.discount);
+
+            return (
             <article key={item.slug} className="mobile-card p-3">
               <div className="grid grid-cols-[76px_minmax(0,1fr)_42px] items-start gap-3">
                 <ProductVisual product={getCartItemProduct(item)} className="h-[76px] rounded-[16px]" label={false} sizes="76px" />
@@ -133,6 +144,11 @@ const MobileCartPage = () => {
                   <h2 className="mobile-line-clamp-2 text-sm font-bold leading-tight">{item.name}</h2>
                   <p className="mt-1 mobile-line-clamp-2 text-xs font-semibold leading-snug text-[#6b7280]">{item.notes}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.price} / {item.size}</p>
+                  {hasLineDiscount ? (
+                    <p className="mt-1 text-[11px] font-bold text-[#263d27]">
+                      Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
+                    </p>
+                  ) : null}
                 </div>
                 <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-[14px] border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
               </div>
@@ -142,10 +158,19 @@ const MobileCartPage = () => {
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
-                <span className="text-sm font-bold text-[#263d27]">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</span>
+                <div className="text-right">
+                  {hasLineDiscount ? (
+                    <div className="text-[11px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
+                  ) : null}
+                  <div className="text-sm font-bold text-[#263d27]">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
+                  {hasLineDiscount ? (
+                    <div className="mt-0.5 text-[10px] font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
+                  ) : null}
+                </div>
               </div>
             </article>
-          ))}
+            );
+          })}
           {!items.length ? <StateBlock className="mobile-card" icon={ShoppingBag} title="Keranjang kosong" description="Pilih parfum dari katalog untuk mulai belanja." action="Buka katalog" onAction={() => navigate('/mobile/catalog')} /> : null}
         </section>
         {items.length ? (
