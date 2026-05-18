@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   BarChart3,
   CheckCircle2,
   Droplets,
@@ -304,6 +305,49 @@ const getMaterialImpactLabel = (material = {}) => {
   return 'Low impact';
 };
 
+const getGuidanceMissingLabels = (item = {}) => {
+  const material = item.material || {};
+  const resolved = getResolvedGuidanceValues(material);
+  const impact = Number(item.impactValue);
+  const life = Number(item.lifetimeValue);
+  const missing = [];
+
+  if (!material.cas_number && !resolved.cas_number) missing.push('CAS');
+  if (!Number.isFinite(impact) || impact <= 0) missing.push('impact');
+  if (!Number.isFinite(life) || life <= 0) missing.push('life');
+  if (!resolved.workbook_code && !material.workbook_code) missing.push('workbook');
+
+  return missing;
+};
+
+const getGuidanceStatus = (item = {}) => {
+  const missing = getGuidanceMissingLabels(item);
+  if (!missing.length) {
+    return {
+      tone: 'success',
+      label: 'Guidance complete',
+      description: 'CAS, impact, life, workbook ready',
+      missing,
+    };
+  }
+
+  if (missing.length >= 3) {
+    return {
+      tone: 'warning',
+      label: 'Needs guidance',
+      description: `Missing ${missing.join(', ')}`,
+      missing,
+    };
+  }
+
+  return {
+    tone: 'partial',
+    label: 'Partial guidance',
+    description: `Missing ${missing.join(', ')}`,
+    missing,
+  };
+};
+
 const useHorizontalDragScroll = () => {
   const ref = useRef(null);
   const drag = useRef({ active: false, x: 0, left: 0, moved: false });
@@ -418,6 +462,7 @@ const MobileFormulaComposerWorkspace = ({
   const [guidanceSummary, setGuidanceSummary] = useState([]);
   const pendingFocusMaterialIdRef = useRef('');
   const handledFocusKeyRef = useRef('');
+  const [highlightedRowKey, setHighlightedRowKey] = useState('');
   const [finderScrollRef, finderScrollHandlers] = useHorizontalDragScroll();
   const compositionBoardRef = useRef(null);
 
@@ -485,6 +530,7 @@ const MobileFormulaComposerWorkspace = ({
     pendingFocusMaterialIdRef.current = '';
     setTab('composition');
     setExpandedRow(targetItem.row_key);
+    setHighlightedRowKey(targetItem.row_key);
     setCompositionVisible((current) => Math.max(current, targetIndex + 1, COMPOSER_PAGE_SIZE));
 
     window.setTimeout(() => {
@@ -492,6 +538,10 @@ const MobileFormulaComposerWorkspace = ({
       targetElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetElement?.querySelector?.('input')?.focus?.({ preventScroll: true });
     }, 80);
+
+    window.setTimeout(() => {
+      setHighlightedRowKey((current) => (current === targetItem.row_key ? '' : current));
+    }, 2600);
   }, [composition, focusMaterialId]);
 
   const handleAddMaterial = (material) => {
@@ -715,28 +765,89 @@ const MobileFormulaComposerWorkspace = ({
               {visibleComposition.length ? visibleComposition.map((item) => {
                 const open = expandedRow === item.row_key;
                 const dilutionTone = item.dilutionLabel === 'Set dilution' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-[#e5e7eb] bg-white text-[#374151]';
-                const hasSyncIssue = !item.hasGuidanceData || item.dilutionLabel === 'Set dilution';
+                const guidanceStatus = getGuidanceStatus(item);
+                const hasSyncIssue = guidanceStatus.missing.length > 0 || item.dilutionLabel === 'Set dilution';
+                const isHighlighted = highlightedRowKey === item.row_key;
+                const guidanceBadgeClass = guidanceStatus.tone === 'success'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : guidanceStatus.tone === 'partial'
+                    ? 'border-amber-200 bg-amber-50 text-amber-800'
+                    : 'border-rose-200 bg-rose-50 text-rose-700';
                 return (
-                  <article key={item.row_key} data-mobile-composition-row={item.row_key} className="rounded-2xl border border-[#e5e7eb] bg-white">
-                    <div className="p-2.5">
+                  <article
+                    key={item.row_key}
+                    data-mobile-composition-row={item.row_key}
+                    className={`scroll-mt-28 rounded-[22px] border bg-white transition-all duration-500 ${isHighlighted ? 'border-emerald-300 shadow-[0_0_0_3px_rgba(16,185,129,0.16),0_16px_34px_rgba(15,23,42,0.10)]' : 'border-[#e5e7eb] shadow-sm'}`}
+                  >
+                    <div className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="min-w-0 flex-1 text-left">
-                          <h3 className="truncate text-sm font-bold text-[#1f2937]">{item.materialName}</h3>
+                          <div className="flex items-center gap-1.5">
+                            {isHighlighted ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">New</span> : null}
+                            <span className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a744d]">{item.category}</span>
+                          </div>
+                          <h3 className="mt-1 truncate text-base font-black leading-tight text-[#1f2937]">{item.materialName}</h3>
+                          <p className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">
+                            {item.material?.cas_number ? `CAS ${item.material.cas_number}` : 'CAS belum ada'} · {item.role || 'modifier'}
+                          </p>
                         </button>
                         <div className="flex items-center gap-1">
-                          {hasSyncIssue ? <span className="h-2.5 w-2.5 rounded-full bg-amber-500" aria-label="Guidance needs sync" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+                          {hasSyncIssue ? <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="Guidance needs sync" /> : <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                           <button type="button" onClick={() => setExpandedRow(open ? '' : item.row_key)} className="rounded-lg p-1 text-[#6b7280]"><MoreHorizontal className="h-4 w-4" /></button>
                         </div>
                       </div>
-                      <div className="mt-2 grid grid-cols-[1fr_1fr_1fr_auto] gap-1.5">
-                        <Input value={item.gram_amount} inputMode="decimal" onChange={(event) => onUpdateItem(item.row_key, 'gram_amount', normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} className="h-8 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold" aria-label={`${item.materialName} gram`} />
-                        <Input value={compactValue(item.formulaPercent)} inputMode="decimal" onChange={(event) => setFormulaPercent(item, normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))} className="h-8 rounded-xl bg-[#f8f7f4] px-2 text-xs font-bold" aria-label={`${item.materialName} formula percent`} />
-                        <div className="rounded-xl bg-[#f8f7f4] px-2 py-1 text-[10px] font-bold text-[#6b7280]">
-                          Actual<br /><span className="text-[11px] text-[#1f2937]">{formatPercent(item.actualActivePercent)}</span>
+
+                      <div className="mt-3 grid grid-cols-[minmax(0,1.25fr)_minmax(88px,0.75fr)] gap-2">
+                        <label className="min-w-0 rounded-2xl border border-[#e5dfd2] bg-[#fffdf8] p-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a744d]">Amount</span>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Input
+                              value={item.gram_amount}
+                              inputMode="decimal"
+                              enterKeyHint="next"
+                              onFocus={(event) => event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                              onChange={(event) => onUpdateItem(item.row_key, 'gram_amount', normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))}
+                              className="h-11 min-w-0 rounded-xl bg-white px-3 text-base font-black"
+                              aria-label={`${item.materialName} gram`}
+                            />
+                            <span className="shrink-0 text-xs font-black text-[#6b7280]">g</span>
+                          </div>
+                        </label>
+                        <label className="min-w-0 rounded-2xl border border-[#e5dfd2] bg-[#f8f7f4] p-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a9099]">Formula</span>
+                          <div className="mt-1 flex items-center gap-1">
+                            <Input
+                              value={compactValue(item.formulaPercent)}
+                              inputMode="decimal"
+                              onFocus={(event) => event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                              onChange={(event) => setFormulaPercent(item, normalizeLocalizedDecimalInput(event.target.value, { autoDecimalAfterLeadingZero: true }))}
+                              className="h-11 min-w-0 rounded-xl bg-white px-2 text-sm font-black"
+                              aria-label={`${item.materialName} formula percent`}
+                            />
+                            <span className="shrink-0 text-xs font-black text-[#6b7280]">%</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                        <div className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-[10px] font-bold text-[#6b7280]">
+                          Actual active
+                          <div className="mt-0.5 text-sm font-black text-[#1f2937]">{formatGram(item.actualActiveGram)} · {formatPercent(item.actualActivePercent)}</div>
                         </div>
-                        <button type="button" onClick={() => openDilutionSheet(item)} className={`min-w-[78px] rounded-xl border px-2 py-1 text-[10px] font-bold ${dilutionTone}`}>
-                          {item.dilutionLabel || getDilutionLabel(item)}
+                        <button type="button" onClick={() => openDilutionSheet(item)} className={`min-w-[102px] rounded-2xl border px-3 py-2 text-left text-[10px] font-black ${dilutionTone}`}>
+                          Dilution
+                          <span className="mt-0.5 block text-xs">{item.dilutionLabel || getDilutionLabel(item)}</span>
                         </button>
+                      </div>
+
+                      <div className={`mt-2 rounded-2xl border px-3 py-2 ${guidanceBadgeClass}`}>
+                        <div className="flex items-start gap-2">
+                          {guidanceStatus.tone === 'success' ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                          <div className="min-w-0">
+                            <p className="text-xs font-black">{guidanceStatus.label}</p>
+                            <p className="mt-0.5 text-[11px] font-semibold leading-snug">{guidanceStatus.description}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     {open ? (
