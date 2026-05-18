@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { MobileCatalogContent } from '@/pages/mobile/MobileCatalogPage.jsx';
 import { MobileStorefrontContent } from '@/pages/mobile/MobileStorefrontPage.jsx';
+import { scheduleMobileCommerceScrollReset } from '@/utils/mobileCommerceScroll.js';
 
 const MobileCommerceTabsPage = () => {
   const location = useLocation();
   const isCatalogActive = location.pathname === '/mobile/catalog';
   const isHomeActive = location.pathname === '/mobile/dashboard';
+
+  useLayoutEffect(() => {
+    return scheduleMobileCommerceScrollReset();
+  }, [location.pathname]);
 
   return (
     <MobileCommerceLayout>

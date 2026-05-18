@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
+import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -378,6 +378,7 @@ const MobileDashboardPage = () => {
                 <WorkflowTile icon={PackageOpen} label="Fulfillment" helper="Packing & shipping" tone="emerald" to="/mobile/studio/fulfillment" />
                 <WorkflowTile icon={UsersRound} label="Customers" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
                 <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Bottle, cap, label" tone="rose" to="/mobile/studio/bespoke" />
+                <WorkflowTile icon={BadgePercent} label="Vouchers" helper="Kode promo checkout" tone="amber" to="/mobile/studio/vouchers" />
               </div>
             </section>
 

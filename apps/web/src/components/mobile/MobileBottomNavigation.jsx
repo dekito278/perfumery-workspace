@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Beaker,
+  BadgePercent,
   ClipboardCheck,
   ClipboardList,
   Calculator,
@@ -24,13 +25,14 @@ const navGroups = [
     label: 'E-commerce',
     icon: ShoppingBag,
     description: 'Produk, order, customer, bespoke, dan tampilan home.',
-    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/studio/fulfillment', '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/dashboard', '/mobile/catalog', '/mobile/cart', '/mobile/bespoke', '/mobile/products'],
+    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/studio/fulfillment', '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/studio/vouchers', '/mobile/dashboard', '/mobile/catalog', '/mobile/cart', '/mobile/bespoke', '/mobile/products'],
     items: [
       { path: '/mobile/studio/products', label: 'Products', helper: 'Manage catalog products', icon: PackagePlus },
       { path: '/mobile/studio/orders', label: 'Orders', helper: 'Order queue from checkout', icon: PackageCheck },
       { path: '/mobile/studio/fulfillment', label: 'Fulfillment', helper: 'Packing and shipping', icon: PackageOpen },
       { path: '/mobile/studio/customers', label: 'Customers', helper: 'Customer code lookup', icon: UsersRound },
       { path: '/mobile/studio/bespoke', label: 'Bespoke', helper: 'Bottle, cap, label', icon: WandSparkles },
+      { path: '/mobile/studio/vouchers', label: 'Vouchers', helper: 'Promo codes', icon: BadgePercent },
       { path: '/mobile/dashboard', label: 'Storefront', helper: 'Customer home preview', icon: Store },
     ],
   },

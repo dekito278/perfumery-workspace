@@ -54,6 +54,7 @@ const MobileCartPage = lazy(() => import('@/pages/mobile/MobileCartPage.jsx'));
 const MobileCheckoutPage = lazy(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
 const MobileProductManagementPage = lazy(() => import('@/pages/mobile/MobileProductManagementPage.jsx'));
 const MobileBespokeSettingsPage = lazy(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
+const MobileVoucherManagementPage = lazy(() => import('@/pages/mobile/MobileVoucherManagementPage.jsx'));
 const MobileOrdersPage = lazy(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
 const MobileOrderDetailPage = lazy(() => import('@/pages/mobile/MobileOrderDetailPage.jsx'));
 const MobileFulfillmentPage = lazy(() => import('@/pages/mobile/MobileFulfillmentPage.jsx'));
@@ -310,6 +311,12 @@ function AppRoutes() {
         <Route path="/mobile/studio/bespoke" element={
           <ProtectedRoute>
             <MobileBespokeSettingsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/vouchers" element={
+          <ProtectedRoute>
+            <MobileVoucherManagementPage />
           </ProtectedRoute>
         } />
 
