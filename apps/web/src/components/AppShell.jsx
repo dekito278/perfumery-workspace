@@ -19,6 +19,7 @@ import {
   PackagePlus,
   PackageCheck,
   Calculator,
+  KeyRound,
   Tags,
   BadgePercent,
   Truck,
@@ -76,6 +77,7 @@ const AppShell = ({ children }) => {
         { path: '/batches', label: 'Batches', icon: PackageCheck },
         { path: '/validation', label: 'Validation', icon: NotebookPen },
         { path: '/production-costing', label: 'Biaya Produksi', icon: Calculator },
+        { path: '/authenticator', label: 'Authenticator', icon: KeyRound },
       ],
     },
     {

@@ -38,6 +38,7 @@ const SetupContent = ({ mobile = false }) => {
     disableAuthenticator,
     enrollAuthenticator,
     listAuthenticatorFactors,
+    updatePassword,
     verifyAuthenticatorEnrollment,
   } = useAuth();
   const [factor, setFactor] = useState(null);
@@ -45,9 +46,12 @@ const SetupContent = ({ mobile = false }) => {
   const [challengeId, setChallengeId] = useState('');
   const [code, setCode] = useState('');
   const [disableConfirm, setDisableConfirm] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [loadingFactors, setLoadingFactors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [disabling, setDisabling] = useState('');
 
   const loadFactors = async () => {
@@ -128,6 +132,32 @@ const SetupContent = ({ mobile = false }) => {
       toast.error(error.message || 'Failed to disable authenticator');
     } finally {
       setDisabling('');
+    }
+  };
+
+  const handlePasswordChange = async (event) => {
+    event.preventDefault();
+
+    if (newPassword.length < 8) {
+      toast.error('Password minimal 8 karakter');
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      toast.error('Konfirmasi password belum sama');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await updatePassword(newPassword);
+      setNewPassword('');
+      setNewPasswordConfirm('');
+      toast.success('Password berhasil diubah');
+    } catch (error) {
+      toast.error(error.message || 'Gagal mengubah password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -239,6 +269,59 @@ const SetupContent = ({ mobile = false }) => {
             </Button>
           </form>
         )}
+      </section>
+
+      <section className={setupSectionClassName}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase text-[#263d27]">Password</div>
+            <h2 className="mt-1 text-base font-bold text-[#1f2937]">Ubah password login</h2>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+              Ganti password account studio dari aplikasi. Setelah berhasil, gunakan password baru untuk login berikutnya.
+            </p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+            <KeyRound className="h-4 w-4" />
+          </span>
+        </div>
+
+        <form onSubmit={handlePasswordChange} className="mt-4 grid gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="new-password">Password baru</Label>
+            <Input
+              id="new-password"
+              type="password"
+              minLength={8}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              placeholder="Minimal 8 karakter"
+              autoComplete="new-password"
+              className="h-12 rounded-2xl bg-white"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-password-confirm">Konfirmasi password baru</Label>
+            <Input
+              id="new-password-confirm"
+              type="password"
+              minLength={8}
+              value={newPasswordConfirm}
+              onChange={(event) => setNewPasswordConfirm(event.target.value)}
+              placeholder="Ulangi password baru"
+              autoComplete="new-password"
+              className="h-12 rounded-2xl bg-white"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={changingPassword || newPassword.length < 8 || newPassword !== newPasswordConfirm}
+            className="h-12 w-full rounded-2xl bg-[#263d27] text-white hover:bg-[#1f3020]"
+          >
+            {changingPassword ? 'Saving...' : 'Ubah password'}
+          </Button>
+        </form>
       </section>
 
       <section className={setupSectionClassName}>
