@@ -9,6 +9,7 @@ import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.js
 import { Button } from '@/components/ui/button.jsx';
 import { useCustomers } from '@/hooks/useCustomers.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const formatDate = (value) => (
   value
@@ -22,8 +23,8 @@ const MobileCustomersPage = () => {
   const visibleCustomers = customers.slice(0, visibleCount);
 
   const copyCode = async (customer) => {
-    await navigator.clipboard.writeText(customer.customerCode);
-    toast.success(`${customer.customerCode} copied`);
+    const copied = await copyTextToClipboard(customer.customerCode);
+    copied ? toast.success(`${customer.customerCode} copied`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
   };
 
   return (

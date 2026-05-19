@@ -23,6 +23,7 @@ import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 const MOBILE_CATALOG_COLUMNS = 2;
 const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 338;
 const MOBILE_CATALOG_OVERSCAN_ROWS = 3;
+const MOBILE_CATALOG_VIRTUALIZE_AFTER = 40;
 const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 const shopTypeOptions = [
   { name: 'Semua', filter: 'all' },
@@ -136,19 +137,22 @@ export const MobileCatalogContent = ({ active = true }) => {
 
     return sortProducts(matchingProducts, sort);
   }, [category, deferredQuery, products, segment, sort]);
+  const shouldVirtualizeCatalog = filteredProducts.length > MOBILE_CATALOG_VIRTUALIZE_AFTER;
   const totalVirtualRows = Math.ceil(filteredProducts.length / MOBILE_CATALOG_COLUMNS);
-  const virtualStartRow = Math.min(virtualRows.start, Math.max(totalVirtualRows - 1, 0));
-  const virtualEndRow = Math.min(Math.max(virtualRows.end, virtualStartRow + 1), totalVirtualRows);
+  const virtualStartRow = shouldVirtualizeCatalog ? Math.min(virtualRows.start, Math.max(totalVirtualRows - 1, 0)) : 0;
+  const virtualEndRow = shouldVirtualizeCatalog ? Math.min(Math.max(virtualRows.end, virtualStartRow + 1), totalVirtualRows) : totalVirtualRows;
   const virtualStartIndex = virtualStartRow * MOBILE_CATALOG_COLUMNS;
   const virtualEndIndex = virtualEndRow * MOBILE_CATALOG_COLUMNS;
-  const virtualProducts = useMemo(() => filteredProducts.slice(virtualStartIndex, virtualEndIndex), [filteredProducts, virtualEndIndex, virtualStartIndex]);
+  const virtualProducts = useMemo(() => (
+    shouldVirtualizeCatalog ? filteredProducts.slice(virtualStartIndex, virtualEndIndex) : filteredProducts
+  ), [filteredProducts, shouldVirtualizeCatalog, virtualEndIndex, virtualStartIndex]);
   const activeSortLabel = catalogSortOptions.find((option) => option.value === sort)?.label || 'Rekomendasi';
   const activeFilterCount = [segment !== 'all', category !== 'All', Boolean(deferredQuery.trim())].filter(Boolean).length;
   const activeSegmentLabel = shopTypeOptions.find((option) => option.filter === segment)?.name || 'Semua';
   const firstVisibleProductImage = String(filteredProducts[0]?.images?.[0] || filteredProducts[0]?.imageUrl || '').trim();
   const firstVisibleProductPreload = getOptimizedProductImageUrl(firstVisibleProductImage, 720);
-  const virtualPaddingTop = virtualStartRow * virtualRowHeight;
-  const virtualPaddingBottom = Math.max(totalVirtualRows - virtualEndRow, 0) * virtualRowHeight;
+  const virtualPaddingTop = shouldVirtualizeCatalog ? virtualStartRow * virtualRowHeight : 0;
+  const virtualPaddingBottom = shouldVirtualizeCatalog ? Math.max(totalVirtualRows - virtualEndRow, 0) * virtualRowHeight : 0;
 
   useMobileRenderSectionMonitor({
     active,
@@ -161,6 +165,14 @@ export const MobileCatalogContent = ({ active = true }) => {
 
   const syncVirtualRows = useCallback(() => {
     if (!active) return;
+    if (!shouldVirtualizeCatalog) {
+      setVirtualRows((current) => (
+        current.start === 0 && current.end === totalVirtualRows
+          ? current
+          : { start: 0, end: totalVirtualRows }
+      ));
+      return;
+    }
 
     const list = virtualListRef.current;
     if (!list || !filteredProducts.length) {
@@ -183,7 +195,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         ? current
         : { start: firstRow, end: Math.max(lastRow, firstRow + 1) }
     ));
-  }, [active, filteredProducts.length, totalVirtualRows, virtualRowHeight]);
+  }, [active, filteredProducts.length, shouldVirtualizeCatalog, totalVirtualRows, virtualRowHeight]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -191,7 +203,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     setVirtualRows({ start: 0, end: 8 });
     requestAnimationFrame(syncVirtualRows);
     return undefined;
-  }, [active, category, deferredQuery, segment, sort, syncVirtualRows]);
+  }, [active, category, deferredQuery, segment, shouldVirtualizeCatalog, sort, syncVirtualRows]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -216,7 +228,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     }
 
     return () => resizeObserver?.disconnect();
-  }, [active, virtualProducts.length]);
+  }, [active, shouldVirtualizeCatalog, virtualProducts.length]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -372,6 +384,7 @@ export const MobileCatalogContent = ({ active = true }) => {
               </div>
               <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{activeSegmentLabel} {category !== 'All' ? `/ ${category}` : ''} / {activeSortLabel}</div>
             </div>
+            <div className="shrink-0 text-[10px] font-bold uppercase text-amber-700">Geser</div>
             {activeFilterCount ? (
               <Button type="button" variant="outline" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })} className="h-9 shrink-0 rounded-xl bg-white px-3 text-[11px] font-bold">
                 Reset

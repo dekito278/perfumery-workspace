@@ -22,6 +22,7 @@ import {
   getShippingRates,
   searchShippingDestinations,
 } from '@/services/shippingService.js';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -394,8 +395,8 @@ export const useCheckoutFlow = ({
 
   const copyCustomerCode = async () => {
     if (!submittedOrder?.customerCode) return;
-    await navigator.clipboard.writeText(submittedOrder.customerCode);
-    toast.success(`${submittedOrder.customerCode} copied`);
+    const copied = await copyTextToClipboard(submittedOrder.customerCode);
+    copied ? toast.success(`${submittedOrder.customerCode} copied`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
   };
 
   const submitOrder = async ({ onSuccess } = {}) => {

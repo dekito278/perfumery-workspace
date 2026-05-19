@@ -135,6 +135,13 @@
   min-height: 44px;
 }
 
+.mobile-app input,
+.mobile-app textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
 .mobile-form-control {
   width: 100%;
   min-height: 48px;

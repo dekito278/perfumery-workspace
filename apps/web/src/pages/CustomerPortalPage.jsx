@@ -29,6 +29,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -497,8 +498,8 @@ const CustomerPortalPage = () => {
 
   const copyCode = async () => {
     if (!portal?.customer?.customerCode) return;
-    await navigator.clipboard.writeText(portal.customer.customerCode);
-    toast.success(`${portal.customer.customerCode} disalin`);
+    const copied = await copyTextToClipboard(portal.customer.customerCode);
+    copied ? toast.success(`${portal.customer.customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
   };
 
   const unlockPortal = async (event) => {

@@ -10,6 +10,7 @@ import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, up
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { getOrderProductsSubtotal, getOrderShippingFee, getOrderSubtotalAfterVoucher, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
@@ -198,8 +199,8 @@ const PaymentFrame = ({ session, compact = false }) => {
   const expiresAtLabel = formatDateTime(session.paymentExpiresAt);
   const copyCustomerCode = async () => {
     if (!customerCode) return;
-    await navigator.clipboard.writeText(customerCode);
-    toast.success(`${customerCode} disalin`);
+    const copied = await copyTextToClipboard(customerCode);
+    copied ? toast.success(`${customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
   };
 
   return (
@@ -243,7 +244,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Kode customer</div>
-                <div className={compact ? 'mt-1 text-2xl font-bold tracking-[0.12em] text-[#263d27]' : 'mt-1 text-3xl font-bold tracking-[0.16em] text-[#263d27]'}>
+                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-[#263d27]' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-[#263d27]'}>
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
@@ -329,8 +330,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
 
   const copyValue = async (label, value) => {
     if (!value) return;
-    await navigator.clipboard.writeText(String(value));
-    toast.success(`${label} disalin`);
+    const copied = await copyTextToClipboard(String(value));
+    copied ? toast.success(`${label} disalin`) : toast.error(`${label} belum bisa disalin. Tekan lama teks lalu salin manual.`);
   };
 
   const chooseProofFile = (event) => {
@@ -387,21 +388,25 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <CreditCard className="h-5 w-5" />
           </span>
         </div>
-        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-[#263d27]' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
-            <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
-          </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
-            <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
-          </div>
-          <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Total transfer</div>
-            <div className="mt-1">{formatTotal(session.amount)}</div>
-          </div>
-        </div>
-        <PaymentTotalBreakdown session={session} compact={compact} />
+        {!compact ? (
+          <>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+                <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
+              </div>
+              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+                <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+              </div>
+              <div className="rounded-2xl bg-white/80 px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f7d61]">Total transfer</div>
+                <div className="mt-1">{formatTotal(session.amount)}</div>
+              </div>
+            </div>
+            <PaymentTotalBreakdown session={session} compact={compact} />
+          </>
+        ) : null}
       </div>
 
       <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
@@ -456,6 +461,23 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             </div>
           ) : null}
         </div>
+
+        {compact ? (
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Ringkasan order</div>
+            <div className="mt-3 grid gap-2 text-xs font-bold text-[#263d27]">
+              <div className="rounded-2xl bg-[#eef2e8] px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+                <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
+              </div>
+              <div className="rounded-2xl bg-[#eef2e8] px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+                <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
+              </div>
+            </div>
+            <PaymentTotalBreakdown session={session} compact />
+          </div>
+        ) : null}
 
         <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
           <div className="flex items-start gap-3">

@@ -207,6 +207,21 @@ const MobileBespokePage = () => {
     toast.success(`${customer.customerCode} loaded`);
   };
 
+  const pasteCustomerCode = async () => {
+    try {
+      const clipboardText = await navigator.clipboard?.readText?.();
+      const nextCode = String(clipboardText || '').trim().toUpperCase();
+      if (!nextCode) {
+        toast.error('Clipboard kosong. Tekan lama kolom kode untuk tempel manual.');
+        return;
+      }
+      updateField('customerCode', nextCode);
+      toast.success('Kode customer ditempel');
+    } catch (error) {
+      toast.error('Tempel otomatis belum diizinkan browser. Tekan lama kolom kode lalu pilih Tempel.');
+    }
+  };
+
   const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
     setSelectedDestination(null);
     setSelectedShipping(null);
@@ -484,13 +499,14 @@ const MobileBespokePage = () => {
       description: 'Isi seperti checkout biasa. Pembeli lama bisa dicek pakai kode.',
       render: () => (
         <div className="grid gap-2">
-          <div className="grid grid-cols-[1fr_auto] gap-2">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-2">
             <input
               value={form.customerCode}
               onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())}
               placeholder="Kode customer, contoh SOLI09232"
               className="h-12 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold uppercase outline-none focus:border-[#263d27]"
             />
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={pasteCustomerCode}>Tempel</Button>
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>Cek</Button>
           </div>
           <p className="rounded-2xl bg-white px-3 py-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
@@ -774,8 +790,9 @@ const MobileBespokePage = () => {
       render: () => (
         <div className="grid gap-3">
           <div className="grid gap-2">
-            <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} placeholder="Kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={pasteCustomerCode}>Tempel</Button>
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>Cek</Button>
             </div>
             <input value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
