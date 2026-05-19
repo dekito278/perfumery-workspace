@@ -4,8 +4,11 @@ import { BadgePercent, CalendarDays, Copy, Edit3, Plus, Save, Search, ToggleLeft
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import MobileAccordion from '@/components/mobile-ui/MobileAccordion.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
+import VoucherRealtimePreview from '@/components/vouchers/VoucherRealtimePreview.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getOrders } from '@/services/orderService.js';
 import {
   deleteVoucher,
@@ -17,7 +20,8 @@ import {
   VOUCHER_DISCOUNT_TYPES,
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
-import { buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
+import { buildVoucherPreview } from '@/utils/voucherPreview.js';
+import { buildVoucherAnalytics, buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
 
 const emptyDraft = {
   id: '',
@@ -111,6 +115,7 @@ const MobileVoucherManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [usageSearchTerm, setUsageSearchTerm] = useState('');
+  const products = useCatalogProducts({ editableOnly: true });
 
   const loadVouchers = async () => {
     try {
@@ -185,6 +190,8 @@ const MobileVoucherManagementPage = () => {
     count: usageReport.length,
     discountTotal: usageReport.reduce((sum, entry) => sum + Number(entry.discountAmount || 0), 0),
   }), [usageReport]);
+  const voucherAnalytics = useMemo(() => buildVoucherAnalytics(usageReport), [usageReport]);
+  const voucherPreview = useMemo(() => buildVoucherPreview(draft, products), [draft, products]);
 
   const updateDraft = (field, value) => {
     setDraft((current) => ({
@@ -294,113 +301,125 @@ const MobileVoucherManagementPage = () => {
             </Button>
           </div>
 
-          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-            Kode voucher
-            <input
-              value={draft.code}
-              onChange={(event) => updateDraft('code', event.target.value)}
-              placeholder="SOLI10"
-              className="mobile-form-control uppercase tracking-[0.08em]"
-            />
-          </label>
+          <MobileAccordion title="Aturan voucher" meta="Kode, diskon, minimum, expiry, limit, dan status." defaultOpen>
+            <div className="grid gap-3">
+              <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                Kode voucher
+                <input
+                  value={draft.code}
+                  onChange={(event) => updateDraft('code', event.target.value)}
+                  placeholder="SOLI10"
+                  className="mobile-form-control uppercase tracking-[0.08em]"
+                />
+              </label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-              Tipe
-              <select value={draft.discountType} onChange={(event) => updateDraft('discountType', event.target.value)} className="mobile-form-control">
-                <option value={VOUCHER_DISCOUNT_TYPES.PERCENT}>Percent</option>
-                <option value={VOUCHER_DISCOUNT_TYPES.FIXED}>Fixed</option>
-              </select>
-            </label>
-            <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-              Nilai
-              <input
-                value={draft.discountValue}
-                onChange={(event) => updateDraft('discountValue', event.target.value)}
-                type="number"
-                min="0"
-                step="1"
-                placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
-                className="mobile-form-control"
-              />
-            </label>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                  Tipe
+                  <select value={draft.discountType} onChange={(event) => updateDraft('discountType', event.target.value)} className="mobile-form-control">
+                    <option value={VOUCHER_DISCOUNT_TYPES.PERCENT}>Percent</option>
+                    <option value={VOUCHER_DISCOUNT_TYPES.FIXED}>Fixed</option>
+                  </select>
+                </label>
+                <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                  Nilai
+                  <input
+                    value={draft.discountValue}
+                    onChange={(event) => updateDraft('discountValue', event.target.value)}
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
+                    className="mobile-form-control"
+                  />
+                </label>
+              </div>
 
-          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-            Minimum order
-            <input
-              value={draft.minimumOrder}
-              onChange={(event) => updateDraft('minimumOrder', event.target.value)}
-              type="number"
-              min="0"
-              step="1000"
-              placeholder="0"
-              className="mobile-form-control"
-            />
-          </label>
+              <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                Minimum order
+                <input
+                  value={draft.minimumOrder}
+                  onChange={(event) => updateDraft('minimumOrder', event.target.value)}
+                  type="number"
+                  min="0"
+                  step="1000"
+                  placeholder="0"
+                  className="mobile-form-control"
+                />
+              </label>
 
-          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-            Minimum quantity
-            <input
-              value={draft.minimumQuantity}
-              onChange={(event) => updateDraft('minimumQuantity', event.target.value)}
-              type="number"
-              min="0"
-              step="1"
-              placeholder="0 = tanpa minimum"
-              className="mobile-form-control"
-            />
-          </label>
+              <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                Minimum quantity
+                <input
+                  value={draft.minimumQuantity}
+                  onChange={(event) => updateDraft('minimumQuantity', event.target.value)}
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0 = tanpa minimum"
+                  className="mobile-form-control"
+                />
+              </label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-              Expiry
-              <input value={draft.expiresAt} onChange={(event) => updateDraft('expiresAt', event.target.value)} type="date" className="mobile-form-control" />
-            </label>
-            <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-              Limit
-              <input
-                value={draft.usageLimitTotal}
-                onChange={(event) => updateDraft('usageLimitTotal', event.target.value)}
-                type="number"
-                min="0"
-                step="1"
-                placeholder="0"
-                className="mobile-form-control"
-              />
-            </label>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                  Expiry
+                  <input value={draft.expiresAt} onChange={(event) => updateDraft('expiresAt', event.target.value)} type="date" className="mobile-form-control" />
+                </label>
+                <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                  Limit
+                  <input
+                    value={draft.usageLimitTotal}
+                    onChange={(event) => updateDraft('usageLimitTotal', event.target.value)}
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    className="mobile-form-control"
+                  />
+                </label>
+              </div>
 
-          <button
-            type="button"
-            onClick={() => updateDraft('active', !draft.active)}
-            className={`flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold ${draft.active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-stone-50 text-stone-700'}`}
-          >
-            {draft.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-            {draft.active ? 'Aktif' : 'Nonaktif'}
-          </button>
+              <button
+                type="button"
+                onClick={() => updateDraft('active', !draft.active)}
+                className={`flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold ${draft.active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-stone-50 text-stone-700'}`}
+              >
+                {draft.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
+                {draft.active ? 'Aktif' : 'Nonaktif'}
+              </button>
+            </div>
+          </MobileAccordion>
 
-          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-            Produk tertentu
-            <textarea
-              value={draft.eligibleProductSlugs}
-              onChange={(event) => updateDraft('eligibleProductSlugs', event.target.value)}
-              placeholder="slug produk, pisahkan koma. Kosong = semua"
-              rows={2}
-              className="mobile-form-control min-h-[76px] py-3"
-            />
-          </label>
+          <MobileAccordion title="Produk eligible" meta="Batasi voucher ke slug produk atau kategori tertentu.">
+            <div className="grid gap-3">
+              <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                Produk tertentu
+                <textarea
+                  value={draft.eligibleProductSlugs}
+                  onChange={(event) => updateDraft('eligibleProductSlugs', event.target.value)}
+                  placeholder="slug produk, pisahkan koma. Kosong = semua"
+                  rows={2}
+                  className="mobile-form-control min-h-[76px] py-3"
+                />
+              </label>
 
-          <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
-            Kategori tertentu
-            <textarea
-              value={draft.eligibleCategories}
-              onChange={(event) => updateDraft('eligibleCategories', event.target.value)}
-              placeholder="nama kategori, pisahkan koma. Kosong = semua"
-              rows={2}
-              className="mobile-form-control min-h-[76px] py-3"
-            />
-          </label>
+              <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                Kategori tertentu
+                <textarea
+                  value={draft.eligibleCategories}
+                  onChange={(event) => updateDraft('eligibleCategories', event.target.value)}
+                  placeholder="nama kategori, pisahkan koma. Kosong = semua"
+                  rows={2}
+                  className="mobile-form-control min-h-[76px] py-3"
+                />
+              </label>
+            </div>
+          </MobileAccordion>
+
+          <MobileAccordion title="Preview real-time" meta="Cek aturan berlaku, produk eligible, minimum, dan estimasi diskon.">
+            <VoucherRealtimePreview preview={voucherPreview} />
+          </MobileAccordion>
 
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <Button type="submit" className="h-12 rounded-2xl gap-2">
@@ -412,6 +431,62 @@ const MobileVoucherManagementPage = () => {
             </Button>
           </div>
         </form>
+
+        <section className="mobile-card space-y-4 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-[#0b130c]">Analytics voucher</h2>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Penggunaan, revenue, top voucher, dan top customer.</p>
+            </div>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+              <BadgePercent className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-[#8b949e]">Penggunaan</div>
+              <div className="mt-1 text-lg font-bold text-[#0b130c]">{voucherAnalytics.totalUsage}</div>
+            </div>
+            <div className="rounded-2xl bg-amber-50 px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Diskon</div>
+              <div className="mt-1 text-sm font-bold text-amber-800">{formatTotal(voucherAnalytics.totalDiscount)}</div>
+            </div>
+            <div className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e5e7eb]">
+              <div className="text-[10px] font-bold uppercase text-[#8b949e]">Sebelum diskon</div>
+              <div className="mt-1 text-sm font-bold text-[#0b130c]">{formatTotal(voucherAnalytics.revenueBeforeDiscount)}</div>
+            </div>
+            <div className="rounded-2xl bg-[#eef2e8] px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">Sesudah diskon</div>
+              <div className="mt-1 text-sm font-bold text-[#263d27]">{formatTotal(voucherAnalytics.revenueAfterDiscount)}</div>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Top voucher</div>
+              <div className="mt-2 grid gap-2">
+                {voucherAnalytics.topVouchers.slice(0, 3).map((item, index) => (
+                  <div key={item.key} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f7f8f2] px-3 py-2 text-xs font-bold">
+                    <span className="min-w-0 truncate">#{index + 1} {item.label}</span>
+                    <span className="shrink-0 text-[#263d27]">{item.count}x</span>
+                  </div>
+                ))}
+                {!voucherAnalytics.topVouchers.length ? <p className="text-xs font-semibold text-[#6b7280]">Belum ada voucher terpakai.</p> : null}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Top customer</div>
+              <div className="mt-2 grid gap-2">
+                {voucherAnalytics.topCustomers.slice(0, 3).map((item, index) => (
+                  <div key={item.key} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f7f8f2] px-3 py-2 text-xs font-bold">
+                    <span className="min-w-0 truncate">#{index + 1} {item.label}</span>
+                    <span className="shrink-0 text-[#263d27]">{item.count}x</span>
+                  </div>
+                ))}
+                {!voucherAnalytics.topCustomers.length ? <p className="text-xs font-semibold text-[#6b7280]">Belum ada customer memakai voucher.</p> : null}
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="space-y-3">
           <div className="mobile-card space-y-3 p-3">

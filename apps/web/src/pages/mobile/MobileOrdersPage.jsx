@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clipboard, CreditCard, Eye, FileCheck2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
+import { AlertTriangle, Clipboard, CreditCard, Download, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Checkbox } from '@/components/ui/checkbox.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useOrders } from '@/hooks/useOrders.js';
@@ -22,6 +23,7 @@ import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -71,9 +73,9 @@ const getPaymentSummary = (orders) => ({
 const orderFilterOptions = [
   { value: 'active', label: 'Aktif' },
   { value: 'proof_review', label: 'Bukti' },
-  { value: 'paid', label: 'Paid' },
+  { value: 'paid', label: 'Sudah bayar' },
   { value: 'packing', label: 'Packing' },
-  { value: 'shipped', label: 'Shipped' },
+  { value: 'shipped', label: 'Dikirim' },
   { value: 'follow_up', label: 'Follow-up' },
   { value: 'bespoke', label: 'Bespoke' },
 ];
@@ -91,6 +93,12 @@ const paymentProofToneByStatus = {
   approved: 'success',
   rejected: 'danger',
 };
+
+const canExportShippingLabel = (order) => Boolean(
+  order
+    && order.paymentStatus === 'paid'
+    && !['cancelled'].includes(order.status)
+);
 
 const getQuickAction = (order) => {
   if (order.paymentProofStatus === 'submitted') return 'Cek bukti transfer';
@@ -110,6 +118,8 @@ const MobileOrdersPage = () => {
     return orderFilterOptions.some((option) => option.value === filter) ? filter : 'active';
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [bulkSaving, setBulkSaving] = useState(false);
   const products = useCatalogProducts({ editableOnly: true });
   const paymentSummary = getPaymentSummary(orders);
   const lowStockProducts = products.filter(getProductLowStock);
@@ -136,6 +146,10 @@ const MobileOrdersPage = () => {
       ...getOrderProductItems(order).map((item) => item.name),
     ].some((value) => String(value || '').toLowerCase().includes(query));
   }), [orderFilter, orders, searchTerm]);
+  const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
+  const selectedFilteredOrders = useMemo(() => filteredOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber)), [filteredOrders, selectedOrderSet]);
+  const selectedPrintableOrders = useMemo(() => selectedFilteredOrders.filter(canExportShippingLabel), [selectedFilteredOrders]);
+  const allFilteredSelected = filteredOrders.length > 0 && filteredOrders.every((order) => selectedOrderSet.has(order.id || order.orderNumber));
 
   const submitScannerSearch = (event) => {
     event.preventDefault();
@@ -159,6 +173,79 @@ const MobileOrdersPage = () => {
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
     toast.success(`${order.orderNumber} disalin`);
+  };
+
+  const toggleOrderSelection = (order, checked) => {
+    const key = order.id || order.orderNumber;
+    setSelectedOrders((current) => (
+      checked ? Array.from(new Set([...current, key])) : current.filter((value) => value !== key)
+    ));
+  };
+
+  const toggleFilteredSelection = (checked) => {
+    const visibleKeys = filteredOrders.map((order) => order.id || order.orderNumber);
+    setSelectedOrders((current) => {
+      const visibleSet = new Set(visibleKeys);
+      if (!checked) return current.filter((key) => !visibleSet.has(key));
+      return Array.from(new Set([...current, ...visibleKeys]));
+    });
+  };
+
+  const bulkMarkPaid = async () => {
+    if (!selectedFilteredOrders.length) {
+      toast.error('Pilih order dulu untuk mark paid');
+      return;
+    }
+    setBulkSaving(true);
+    try {
+      await Promise.all(selectedFilteredOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      toast.success(`${selectedFilteredOrders.length} order ditandai paid`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal mark paid massal');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const bulkPrintResi = async () => {
+    const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
+    const printedCount = exportShippingLabelsPdf(selectedFilteredOrders);
+    if (!printedCount) {
+      toast.error('Pilih order paid untuk print resi');
+      return;
+    }
+    toast.success(`${printedCount} resi PDF siap`);
+  };
+
+  const bulkWhatsAppFollowUp = async () => {
+    if (!selectedFilteredOrders.length) {
+      toast.error('Pilih order dulu untuk follow-up WA');
+      return;
+    }
+    const messages = selectedFilteredOrders.map((order) => {
+      const eventKey = order.shipmentStatus === 'shipped'
+        ? 'shipped'
+        : order.paymentStatus === 'paid'
+          ? 'paid'
+          : 'order_created';
+      return { order, message: buildNotificationMessage(order, eventKey) };
+    }).filter((entry) => entry.message);
+    if (!messages.length) {
+      toast.error('Tidak ada template WA untuk order terpilih');
+      return;
+    }
+    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+  };
+
+  const bulkExportCsv = () => {
+    if (!selectedFilteredOrders.length) {
+      toast.error('Pilih order dulu untuk export CSV');
+      return;
+    }
+    exportOrdersCsv(selectedFilteredOrders, 'mobile_orders_selected.csv');
+    toast.success(`${selectedFilteredOrders.length} order diekspor CSV`);
   };
 
   const openQuickFollowUp = (order) => {
@@ -186,7 +273,7 @@ const MobileOrdersPage = () => {
 
         <section className="mobile-soft-card grid grid-cols-2 gap-3 p-4">
           <div>
-            <div className="text-[10px] font-bold uppercase text-amber-700">Draft revenue</div>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Estimasi revenue</div>
             <div className="mt-1 text-lg font-bold text-[#1f2937]">{formatTotal(summary.revenue)}</div>
           </div>
           <div>
@@ -201,7 +288,7 @@ const MobileOrdersPage = () => {
               <CreditCard className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-[10px] font-bold uppercase text-[#263d27]">DOKU payment flow</div>
+              <div className="text-[10px] font-bold uppercase text-[#263d27]">Flow pembayaran DOKU</div>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                 Checkout reserve stok sekali untuk mencegah oversell. Jika payment gagal, expired, refunded, atau order dibatalkan, stok dikembalikan otomatis.
               </p>
@@ -214,11 +301,11 @@ const MobileOrdersPage = () => {
             </div>
             <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-center">
               <div className="text-sm font-bold text-emerald-700">{paymentSummary.paid}</div>
-              <div className="text-[9px] font-bold uppercase text-emerald-700">Paid</div>
+              <div className="text-[9px] font-bold uppercase text-emerald-700">Dibayar</div>
             </div>
             <div className="rounded-2xl bg-rose-50 px-3 py-2 text-center">
               <div className="text-sm font-bold text-rose-700">{paymentSummary.attention}</div>
-              <div className="text-[9px] font-bold uppercase text-rose-700">Issue</div>
+              <div className="text-[9px] font-bold uppercase text-rose-700">Masalah</div>
             </div>
           </div>
           <MobileFilterChips
@@ -240,8 +327,33 @@ const MobileOrdersPage = () => {
             <ScanLine className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-700" />
           </form>
           <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
-            {filteredOrders.length} order tampil. Scanner hardware bisa kirim Enter untuk langsung buka match tunggal.
+            {filteredOrders.length} order tampil. Scanner hardware bisa kirim Enter untuk langsung buka hasil tunggal.
           </p>
+          <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-[#263d27]">
+              <Checkbox checked={allFilteredSelected} onCheckedChange={(checked) => toggleFilteredSelection(Boolean(checked))} />
+              Pilih semua yang tampil
+            </label>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button type="button" className="h-11 rounded-2xl gap-1 text-xs" onClick={bulkMarkPaid} disabled={bulkSaving || !selectedFilteredOrders.length}>
+                {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                Mark paid
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkPrintResi} disabled={!selectedPrintableOrders.length}>
+                <Download className="h-4 w-4" />
+                Print resi
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkWhatsAppFollowUp} disabled={!selectedFilteredOrders.length}>
+                <MessageCircle className="h-4 w-4" />
+                WA follow-up
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkExportCsv} disabled={!selectedFilteredOrders.length}>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
+            <p className="mt-2 text-[10px] font-bold uppercase text-[#6b7280]">{selectedFilteredOrders.length} dipilih / {selectedPrintableOrders.length} siap print</p>
+          </div>
         </section>
 
         {lowStockProducts.length ? (
@@ -284,11 +396,14 @@ const MobileOrdersPage = () => {
             return (
             <article key={order.id} className="mobile-card mobile-list-card p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="flex min-w-0 gap-2">
+                  <Checkbox checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} className="mt-0.5 shrink-0" />
+                  <div className="min-w-0">
                   <h2 className="truncate text-sm font-bold text-[#1f2937]">{order.orderNumber}</h2>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
                   {order.customerCode ? <p className="mt-1 text-[10px] font-bold uppercase text-[#263d27]">{order.customerCode}</p> : null}
+                  </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {bespoke ? <StatusChip size="sm" tone="primary">Bespoke</StatusChip> : null}
@@ -358,7 +473,7 @@ const MobileOrdersPage = () => {
               <div className="mt-3 rounded-2xl border border-[#e5e7eb] bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Payment admin</div>
+                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Admin pembayaran</div>
                     <p className="mt-1 text-xs font-semibold text-[#1f2937]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</p>
                   </div>
                   {order.paymentStatus !== 'paid' ? (

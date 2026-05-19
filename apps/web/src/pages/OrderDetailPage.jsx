@@ -75,18 +75,18 @@ const notificationEventLabels = getNotificationEventLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 
 const paymentStatusLabels = {
-  unpaid: 'Unpaid',
-  pending: 'Pending payment',
-  paid: 'Paid',
-  failed: 'Failed',
+  unpaid: 'Belum dibayar',
+  pending: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
+  failed: 'Gagal',
   expired: 'Expired',
-  refunded: 'Refunded',
+  refunded: 'Refund',
 };
 const paymentProofStatusLabels = {
-  missing: 'No proof uploaded',
-  submitted: 'Proof submitted',
-  approved: 'Proof approved',
-  rejected: 'Proof rejected',
+  missing: 'Belum upload bukti',
+  submitted: 'Bukti terkirim',
+  approved: 'Bukti disetujui',
+  rejected: 'Bukti ditolak',
 };
 const paymentProofToneByStatus = {
   missing: 'warning',
@@ -96,15 +96,15 @@ const paymentProofToneByStatus = {
 };
 
 const auditActionLabels = {
-  order_status_updated: 'Order status',
-  payment_status_updated: 'Payment status',
-  payment_proof_uploaded: 'Proof uploaded',
-  payment_proof_approved: 'Proof approved',
-  payment_proof_rejected: 'Proof rejected',
-  payment_proof_reviewed: 'Proof reviewed',
+  order_status_updated: 'Status order',
+  payment_status_updated: 'Status pembayaran',
+  payment_proof_uploaded: 'Bukti diupload',
+  payment_proof_approved: 'Bukti disetujui',
+  payment_proof_rejected: 'Bukti ditolak',
+  payment_proof_reviewed: 'Bukti direview',
   shipment_updated: 'Fulfillment / resi',
-  order_cancelled: 'Cancel order',
-  order_deleted: 'Delete order',
+  order_cancelled: 'Order dibatalkan',
+  order_deleted: 'Order dihapus',
 };
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -312,7 +312,7 @@ const OrderDetailPage = () => {
       } catch (error) {
         if (!cancelled) {
           setPaymentProofPreviewUrl('');
-          toast.error(error.message || 'Failed to open payment proof');
+          toast.error(error.message || 'Gagal membuka bukti pembayaran');
         }
       } finally {
         if (!cancelled) setLoadingPaymentProof(false);
@@ -349,7 +349,7 @@ const OrderDetailPage = () => {
       setInternalNotesDraft(nextOrder?.internalNotes || '');
       setShipmentFromOrder(nextOrder);
     } catch (error) {
-      toast.error(error.message || 'Failed to load order detail');
+      toast.error(error.message || 'Gagal memuat detail order');
       setOrder(null);
       setPaymentLogs([]);
       setAuditLogs([]);
@@ -382,9 +382,9 @@ const OrderDetailPage = () => {
   const copyText = async (text, label) => {
     try {
       await navigator.clipboard.writeText(text || '');
-      toast.success(`${label} copied`);
+      toast.success(`${label} disalin`);
     } catch (error) {
-      toast.error(error.message || `Failed to copy ${label}`);
+      toast.error(error.message || `Gagal menyalin ${label}`);
     }
   };
 
@@ -394,16 +394,16 @@ const OrderDetailPage = () => {
 
     try {
       await navigator.clipboard.writeText(message);
-      toast.success('Customer message copied', {
-        description: notificationEventLabels[eventKey] || 'Order update',
+      toast.success('Pesan customer disalin', {
+        description: notificationEventLabels[eventKey] || 'Update order',
         action: {
-          label: 'Open WA',
+          label: 'Buka WA',
           onClick: () => window.open(getWhatsAppNotificationUrl(nextOrder, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
-      toast.success('Customer message ready', {
-        description: 'Clipboard blocked. Open WhatsApp from the template panel.',
+      toast.success('Pesan customer siap', {
+        description: 'Clipboard diblokir. Buka WhatsApp dari panel template.',
       });
     }
   };
@@ -416,9 +416,9 @@ const OrderDetailPage = () => {
       if (['processing', 'shipped', 'completed'].includes(status)) {
         await prepareCustomerNotification(nextOrder || { ...order, status }, status);
       }
-      toast.success('Order status updated');
+      toast.success('Status order diperbarui');
     } catch (error) {
-      toast.error(error.message || 'Failed to update order status');
+      toast.error(error.message || 'Gagal memperbarui status order');
     } finally {
       setSavingStatus(false);
     }
@@ -436,9 +436,9 @@ const OrderDetailPage = () => {
       if (paymentStatus === 'paid') {
         await prepareCustomerNotification(nextOrder || { ...order, paymentStatus, status: 'paid' }, 'paid');
       }
-      toast.success('Payment status updated');
+      toast.success('Status pembayaran diperbarui');
     } catch (error) {
-      toast.error(error.message || 'Failed to update payment status');
+      toast.error(error.message || 'Gagal memperbarui status pembayaran');
     } finally {
       setSavingPayment(false);
     }
@@ -457,9 +457,9 @@ const OrderDetailPage = () => {
       if (shipmentDraft.shipmentStatus === 'shipped' || shipmentDraft.trackingNumber) {
         await prepareCustomerNotification(notificationOrder, 'shipped');
       }
-      toast.success('Shipment saved');
+      toast.success('Pengiriman tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Failed to save shipment');
+      toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
       setSavingShipment(false);
     }
@@ -470,9 +470,9 @@ const OrderDetailPage = () => {
     try {
       const nextOrder = await updateOrderInternalNotes(orderKey, internalNotesDraft);
       setOrder(nextOrder || order);
-      toast.success('Internal notes saved');
+      toast.success('Catatan internal tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Failed to save internal notes');
+      toast.error(error.message || 'Gagal menyimpan catatan internal');
     } finally {
       setSavingNotes(false);
     }
@@ -483,14 +483,14 @@ const OrderDetailPage = () => {
     try {
       const result = await refreshDokuPaymentStatus(order.orderNumber);
       await refreshOrder();
-      const label = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
+      const label = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'dicek';
       if (result.syncApplied) {
-        toast.success(`DOKU synced: ${label}`);
+        toast.success(`DOKU tersinkron: ${label}`);
       } else {
-        toast.warning(result.syncWarning || 'DOKU checked, but order was not updated');
+        toast.warning(result.syncWarning || 'DOKU sudah dicek, tapi order tidak berubah');
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to sync DOKU status');
+      toast.error(error.message || 'Gagal sinkron status DOKU');
     } finally {
       setSyncingPayment(false);
     }
@@ -498,7 +498,7 @@ const OrderDetailPage = () => {
 
   const openPaymentProof = async () => {
     if (!order?.paymentProofUrl) {
-      toast.error('Payment proof file is not available');
+      toast.error('File bukti pembayaran belum tersedia');
       return;
     }
 
@@ -508,13 +508,13 @@ const OrderDetailPage = () => {
         : await createPaymentProofSignedUrl(order.paymentProofUrl));
       window.open(signedUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      toast.error(error.message || 'Failed to open payment proof');
+      toast.error(error.message || 'Gagal membuka bukti pembayaran');
     }
   };
 
   const reviewPaymentProof = async (nextStatus, notes = '') => {
     if (!order?.paymentProofUrl) {
-      toast.error('Payment proof file is not available');
+      toast.error('File bukti pembayaran belum tersedia');
       return;
     }
 
@@ -537,10 +537,10 @@ const OrderDetailPage = () => {
         await prepareCustomerNotification(nextOrder || { ...order, paymentProofStatus: 'rejected', paymentProofNotes: notes }, 'payment_proof_rejected');
       }
       if (nextStatus === 'approved') {
-        toast.success('Bukti transfer approved');
+        toast.success('Bukti transfer disetujui');
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to review payment proof');
+      toast.error(error.message || 'Gagal mereview bukti pembayaran');
     } finally {
       setSavingPaymentProof(false);
     }
@@ -548,7 +548,7 @@ const OrderDetailPage = () => {
 
   const openRejectProofDialog = () => {
     if (!order?.paymentProofUrl) {
-      toast.error('Payment proof file is not available');
+      toast.error('File bukti pembayaran belum tersedia');
       return;
     }
     setRejectProofNotes(order.paymentProofNotes || '');
@@ -564,7 +564,7 @@ const OrderDetailPage = () => {
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
-    toast.success('Resi PDF prepared');
+    toast.success('Resi PDF siap');
   };
 
   const openWhatsApp = (message) => {
@@ -593,7 +593,7 @@ const OrderDetailPage = () => {
             <ArrowLeft className="h-4 w-4" />
             Orders
           </Button>
-          <StateBlock className="mt-5" title="Order not found" description={`Order ${orderId} tidak ditemukan.`} icon={PackageCheck} />
+          <StateBlock className="mt-5" title="Order tidak ditemukan" description={`Order ${orderId} tidak ditemukan.`} icon={PackageCheck} />
         </main>
       </AuthenticatedLayout>
     );
@@ -606,7 +606,7 @@ const OrderDetailPage = () => {
     <AuthenticatedLayout>
       <Helmet>
         <title>{order.orderNumber} - Solivagant Studio</title>
-        <meta name="description" content={`Operational order detail for ${order.orderNumber}.`} />
+        <meta name="description" content={`Detail operasional order ${order.orderNumber}.`} />
       </Helmet>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -617,7 +617,7 @@ const OrderDetailPage = () => {
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.print()}>
               <Printer className="h-4 w-4" />
-              Print invoice
+              Cetak invoice
             </Button>
             <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
               <Download className="h-4 w-4" />
@@ -630,7 +630,7 @@ const OrderDetailPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <PackageCheck className="h-4 w-4 text-primary" />
-              Operational order detail
+              Detail operasional order
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold sm:text-4xl">{order.orderNumber}</h1>
@@ -645,17 +645,17 @@ const OrderDetailPage = () => {
               </StatusChip>
             </div>
             <p className="mt-2 max-w-2xl text-base text-muted-foreground">
-              {formatDate(order.createdAt)} / {order.quantity} items / {formatTotal(order.subtotal)}
+              {formatDate(order.createdAt)} / {order.quantity} item / {formatTotal(order.subtotal)}
             </p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
               {order.inventoryDeducted ? (
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                  Stock reserved until {formatDate(reservationExpiresAt)}
+                  Stok reserved sampai {formatDate(reservationExpiresAt)}
                 </span>
               ) : ['expired', 'failed', 'refunded'].includes(order.paymentStatus) || order.status === 'cancelled' ? (
-                <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stock released</span>
+                <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stok dilepas</span>
               ) : (
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">Reservation TTL {PAYMENT_RESERVATION_TTL_HOURS}h</span>
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">Batas reserved {PAYMENT_RESERVATION_TTL_HOURS} jam</span>
               )}
             </div>
             <div className="mt-5 grid grid-cols-5 gap-2">
@@ -672,7 +672,7 @@ const OrderDetailPage = () => {
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Customer</span><strong>{order.customerName}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Shipment</span><strong>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Pengiriman</span><strong>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total bayar</span><strong>{formatTotal(order.subtotal)}</strong></div>
           </div>
         </section>
@@ -691,7 +691,7 @@ const OrderDetailPage = () => {
         <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <div className="text-xs font-bold uppercase text-[#263d27]">Action panel</div>
+              <div className="text-xs font-bold uppercase text-[#263d27]">Panel aksi</div>
               <p className="mt-1 text-sm font-semibold text-muted-foreground">
                 Jalur cepat untuk pekerjaan harian: konfirmasi payment, mulai packing, cetak resi, dan follow-up customer.
               </p>
@@ -699,11 +699,11 @@ const OrderDetailPage = () => {
             <div className="grid gap-2 sm:grid-cols-4">
               <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => updatePayment('paid')} disabled={savingPayment || order.paymentStatus === 'paid'}>
                 {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                Mark paid
+                Tandai paid
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => updateStatus('processing')} disabled={savingStatus || order.status === 'processing'}>
                 <PackageCheck className="h-4 w-4" />
-                Processing
+                Proses
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
                 <Download className="h-4 w-4" />
@@ -722,7 +722,7 @@ const OrderDetailPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <UserRound className="h-4 w-4" />
-                Customer & address
+                Customer & alamat
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-2xl bg-[#fbfaf7] p-4">
@@ -732,7 +732,7 @@ const OrderDetailPage = () => {
                   {order.customerCode ? <p className="mt-3 w-fit rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{order.customerCode}</p> : null}
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] p-4">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Delivery</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Pengiriman</div>
                   <p className="mt-1 text-sm font-semibold leading-relaxed text-[#1f2937]">{address || order.notes || '-'}</p>
                   {area ? <p className="mt-2 text-sm font-bold text-[#263d27]">{area}</p> : null}
                   {shipping ? <p className="mt-1 text-xs font-semibold text-muted-foreground">{shipping}</p> : null}
@@ -744,9 +744,9 @@ const OrderDetailPage = () => {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                   <FileCheck2 className="h-4 w-4" />
-                  Payment proof timeline
+                  Timeline bukti pembayaran
                 </div>
-                <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{proofTimeline.length} events</span>
+                <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{proofTimeline.length} event</span>
               </div>
               {proofTimeline.length ? (
                 <div className="grid gap-3">
@@ -756,14 +756,14 @@ const OrderDetailPage = () => {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-bold">{event.label}</span>
-                            <StatusChip tone={paymentProofToneByStatus[event.status] || 'warning'}>{paymentProofStatusLabels[event.status] || event.status || 'Proof event'}</StatusChip>
+                            <StatusChip tone={paymentProofToneByStatus[event.status] || 'warning'}>{paymentProofStatusLabels[event.status] || event.status || 'Event bukti'}</StatusChip>
                           </div>
                           <div className="mt-1 text-xs font-semibold text-muted-foreground">{formatDate(event.at)} / {event.actor}</div>
                         </div>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">Attempt {event.attempt}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">Percobaan {event.attempt}</span>
                       </div>
                       <div className="mt-3 grid gap-2 text-xs font-semibold text-muted-foreground">
-                        {event.previousStatus ? <div>Previous: <span className="text-[#1f2937]">{paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span></div> : null}
+                        {event.previousStatus ? <div>Sebelumnya: <span className="text-[#1f2937]">{paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span></div> : null}
                         {event.fileName ? <div>File: <span className="text-[#1f2937]">{event.fileName}</span></div> : null}
                         {event.filePath ? <div className="break-all">Path: <span className="text-[#1f2937]">{event.filePath}</span></div> : null}
                         {event.notes ? <div className="rounded-xl bg-white px-3 py-2 text-rose-700">Catatan: {event.notes}</div> : null}
@@ -787,7 +787,7 @@ const OrderDetailPage = () => {
                 {order.paymentUrl ? (
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(order.paymentUrl, '_blank', 'noopener,noreferrer')}>
                     <ExternalLink className="h-4 w-4" />
-                    Open payment
+                    Buka pembayaran
                   </Button>
                 ) : null}
               </div>
@@ -797,11 +797,11 @@ const OrderDetailPage = () => {
                   <div className="mt-1 text-lg font-bold">{order.paymentProvider || 'manual'}</div>
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] p-4">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Reference</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Referensi</div>
                   <div className="mt-1 truncate text-lg font-bold">{order.paymentReference || '-'}</div>
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] p-4">
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Expires</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Expired</div>
                   <div className="mt-1 text-lg font-bold">{formatDate(reservationExpiresAt || order.paymentExpiresAt)}</div>
                   <p className="mt-1 text-xs font-semibold text-muted-foreground">Fallback TTL {PAYMENT_RESERVATION_TTL_HOURS} jam dari checkout jika DOKU tidak memberi expiry.</p>
                 </div>
@@ -812,12 +812,12 @@ const OrderDetailPage = () => {
                 </select>
                 <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => updatePayment('paid')} disabled={savingPayment || order.paymentStatus === 'paid'}>
                   {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  Mark paid
+                  Tandai paid
                 </Button>
                 {order.paymentProvider === 'doku' ? (
                   <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={syncDokuStatus} disabled={syncingPayment}>
                     {syncingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    Sync DOKU
+                    Sinkron DOKU
                   </Button>
                 ) : null}
               </div>
@@ -841,9 +841,9 @@ const OrderDetailPage = () => {
                       </div>
                     ) : null}
                     <div className="mt-2 grid gap-1 text-xs font-semibold text-muted-foreground">
-                      <span>Uploaded: {formatDate(order.paymentProofUploadedAt)}</span>
-                      <span>Type: {order.paymentProofContentType || '-'}</span>
-                      {order.paymentProofNotes ? <span>Notes: {order.paymentProofNotes}</span> : null}
+                      <span>Diupload: {formatDate(order.paymentProofUploadedAt)}</span>
+                      <span>Tipe: {order.paymentProofContentType || '-'}</span>
+                      {order.paymentProofNotes ? <span>Catatan: {order.paymentProofNotes}</span> : null}
                     </div>
                   </div>
                   <Button type="button" variant="outline" className="h-11 shrink-0 rounded-2xl bg-white gap-2" onClick={openPaymentProof} disabled={!hasPaymentProofPath || loadingPaymentProof}>
@@ -854,11 +854,11 @@ const OrderDetailPage = () => {
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => reviewPaymentProof('approved')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'approved'}>
                     {savingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                    Approve bukti
+                    Setujui bukti
                   </Button>
                   <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-rose-700" onClick={openRejectProofDialog} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'rejected'}>
                     <AlertCircle className="h-4 w-4" />
-                    Reject bukti
+                    Tolak bukti
                   </Button>
                 </div>
                 {paymentProofPreviewUrl && paymentProofIsImage ? (
@@ -878,7 +878,7 @@ const OrderDetailPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <Truck className="h-4 w-4" />
-                Shipment & fulfillment
+                Pengiriman & fulfillment
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <select value={shipmentDraft.shipmentStatus} onChange={(event) => setShipmentDraft((current) => ({ ...current, shipmentStatus: event.target.value }))} className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
@@ -886,13 +886,13 @@ const OrderDetailPage = () => {
                 </select>
                 <input value={shipmentDraft.courierName} onChange={(event) => setShipmentDraft((current) => ({ ...current, courierName: event.target.value }))} placeholder="Kurir, contoh: JNE / J&T" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 <input value={shipmentDraft.trackingNumber} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingNumber: event.target.value }))} placeholder="Nomor resi" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                <input value={shipmentDraft.trackingUrl} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="Tracking URL" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                <input value={shipmentDraft.trackingUrl} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="URL tracking" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Shipped at
+                  Tanggal kirim
                   <input type="datetime-local" value={shipmentDraft.shippedAt} onChange={(event) => setShipmentDraft((current) => ({ ...current, shippedAt: event.target.value }))} className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </label>
                 <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Delivered at
+                  Tanggal diterima
                   <input type="datetime-local" value={shipmentDraft.deliveredAt} onChange={(event) => setShipmentDraft((current) => ({ ...current, deliveredAt: event.target.value }))} className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 </label>
               </div>
@@ -906,7 +906,7 @@ const OrderDetailPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <PackageCheck className="h-4 w-4" />
-                Items
+                Item
               </div>
               <div className="overflow-hidden rounded-2xl border">
                 {discountedItemLines.map((line) => {
@@ -949,27 +949,27 @@ const OrderDetailPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <Clipboard className="h-4 w-4" />
-                Quick actions
+                Aksi cepat
               </div>
               <div className="grid gap-2">
                 <select value={order.status} onChange={(event) => updateStatus(event.target.value)} disabled={savingStatus} className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(order.checkoutDraft || order.notes, 'Order draft')}>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(order.checkoutDraft || order.notes, 'Draft order')}>
                   <Copy className="h-4 w-4" />
-                  Copy order draft
+                  Salin draft order
                 </Button>
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate(`/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode || '')}`)} disabled={!order.customerCode}>
                   <FileText className="h-4 w-4" />
-                  Customer invoice
+                  Invoice customer
                 </Button>
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(paymentReminderMessage, 'Payment reminder')} disabled={!order.paymentUrl}>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyText(paymentReminderMessage, 'Reminder pembayaran')} disabled={!order.paymentUrl}>
                   <CreditCard className="h-4 w-4" />
-                  Copy payment link
+                  Salin link bayar
                 </Button>
                 <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => openWhatsApp(paymentReminderMessage)} disabled={!order.paymentUrl}>
                   <MessageCircle className="h-4 w-4" />
-                  WA payment link
+                  WA link bayar
                 </Button>
               </div>
             </section>
@@ -977,7 +977,7 @@ const OrderDetailPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <MessageCircle className="h-4 w-4" />
-                Customer template
+                Template customer
               </div>
               <select value={notificationEvent} onChange={(event) => setNotificationEvent(event.target.value)} className="h-11 w-full rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
                 {Object.entries(notificationEventLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -986,7 +986,7 @@ const OrderDetailPage = () => {
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white text-xs" onClick={() => copyText(notificationMessage, 'Template')}>
                   <Copy className="h-4 w-4" />
-                  Copy
+                  Salin
                 </Button>
                 <Button type="button" className="h-10 rounded-2xl text-xs" onClick={() => openWhatsApp(notificationMessage)}>
                   <MessageCircle className="h-4 w-4" />
@@ -1002,12 +1002,12 @@ const OrderDetailPage = () => {
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <NotebookPen className="h-4 w-4" />
-                Internal notes
+                Catatan internal
               </div>
               <textarea value={internalNotesDraft} onChange={(event) => setInternalNotesDraft(event.target.value)} rows={5} placeholder="Catatan internal untuk packing, follow-up, atau produksi..." className="w-full rounded-2xl border bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
               <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={saveInternalNotes} disabled={savingNotes}>
                 {savingNotes ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save notes
+                Simpan catatan
               </Button>
             </section>
           </aside>
@@ -1018,9 +1018,9 @@ const OrderDetailPage = () => {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <ShieldCheck className="h-4 w-4" />
-                Admin audit log
+                Log audit admin
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{auditLogs.length} logs</span>
+              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{auditLogs.length} log</span>
             </div>
             <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_150px_150px]">
               <input
@@ -1057,7 +1057,7 @@ const OrderDetailPage = () => {
                         <div className="min-w-0">
                           <div className="text-sm font-bold">{auditActionLabels[log.action] || log.action}</div>
                           <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                            {formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'System'}
+                            {formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'Sistem'}
                           </div>
                         </div>
                         <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{log.actorEmail || 'system'}</span>
@@ -1070,8 +1070,8 @@ const OrderDetailPage = () => {
                             <div key={change.key} className={`rounded-2xl border bg-white px-3 py-2 ${importantChange ? 'border-amber-200 ring-1 ring-amber-100' : 'border-[#263d27]/10'}`}>
                               <div className={`text-[10px] font-bold uppercase ${importantChange ? 'text-amber-800' : 'text-[#263d27]'}`}>{change.label}</div>
                               <div className="mt-1 grid gap-2 text-xs font-semibold text-muted-foreground sm:grid-cols-2">
-                                <span className="min-w-0 rounded-xl bg-[#f8f7f4] px-2 py-1">Before: <span className="text-[#1f2937]">{change.before}</span></span>
-                                <span className="min-w-0 rounded-xl bg-[#eef2e8] px-2 py-1">After: <span className="text-[#1f2937]">{change.after}</span></span>
+                                <span className="min-w-0 rounded-xl bg-[#f8f7f4] px-2 py-1">Sebelum: <span className="text-[#1f2937]">{change.before}</span></span>
+                                <span className="min-w-0 rounded-xl bg-[#eef2e8] px-2 py-1">Sesudah: <span className="text-[#1f2937]">{change.after}</span></span>
                               </div>
                             </div>
                             );
@@ -1097,9 +1097,9 @@ const OrderDetailPage = () => {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <History className="h-4 w-4" />
-                Fulfillment log
+                Log fulfillment
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{timeline.length} events</span>
+              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{timeline.length} event</span>
             </div>
             <div className="grid gap-3">
               {timeline.map((entry, index) => (
@@ -1128,9 +1128,9 @@ const OrderDetailPage = () => {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
                 <CreditCard className="h-4 w-4" />
-                Payment log
+                Log pembayaran
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{paymentLogs.length} logs</span>
+              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{paymentLogs.length} log</span>
             </div>
             {paymentLogs.length ? (
               <div className="grid gap-3">
@@ -1156,7 +1156,7 @@ const OrderDetailPage = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-5 text-sm font-semibold leading-relaxed text-muted-foreground">
-                Belum ada callback DOKU untuk order ini. Kalau customer sudah bayar tapi status belum berubah, gunakan Sync DOKU atau cek webhook.
+                Belum ada callback DOKU untuk order ini. Kalau customer sudah bayar tapi status belum berubah, gunakan Sinkron DOKU atau cek webhook.
               </div>
             )}
           </section>
@@ -1165,7 +1165,7 @@ const OrderDetailPage = () => {
       <Dialog open={rejectProofOpen} onOpenChange={setRejectProofOpen}>
         <DialogContent className="max-w-xl rounded-[24px] p-6">
           <DialogHeader>
-            <DialogTitle>Reject bukti transfer</DialogTitle>
+            <DialogTitle>Tolak bukti transfer</DialogTitle>
             <DialogDescription className="not-sr-only text-sm text-muted-foreground">
               Tulis alasan yang jelas untuk customer. Alasan ini akan tampil di halaman payment dan lacak order.
             </DialogDescription>
@@ -1183,7 +1183,7 @@ const OrderDetailPage = () => {
               placeholder="Contoh: Nominal transfer belum sesuai total order. Mohon upload ulang bukti transfer yang benar."
             />
             <p className="text-xs font-semibold leading-relaxed text-muted-foreground">
-              Order tetap pending. Customer bisa upload ulang bukti transfer setelah reject.
+              Order tetap pending. Customer bisa upload ulang bukti transfer setelah ditolak.
             </p>
           </div>
           <DialogFooter className="gap-2">
@@ -1192,7 +1192,7 @@ const OrderDetailPage = () => {
             </Button>
             <Button type="button" className="rounded-2xl bg-rose-700 text-white hover:bg-rose-800" onClick={submitRejectProof} disabled={savingPaymentProof || !rejectProofNotes.trim()}>
               {savingPaymentProof ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-2 h-4 w-4" />}
-              Reject bukti
+              Tolak bukti
             </Button>
           </DialogFooter>
         </DialogContent>

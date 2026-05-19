@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
+import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Checkbox } from '@/components/ui/checkbox.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
@@ -26,6 +27,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -43,28 +45,28 @@ const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const paymentStatusLabels = {
-  unpaid: 'Unpaid',
-  pending: 'Pending payment',
-  paid: 'Paid',
-  failed: 'Failed',
+  unpaid: 'Belum dibayar',
+  pending: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
+  failed: 'Gagal',
   expired: 'Expired',
-  refunded: 'Refunded',
+  refunded: 'Refund',
 };
 
 const orderFilterLabels = {
-  all: 'All',
-  proof_review: 'Proof review',
-  payment: 'Needs payment',
-  packing: 'Ready packing',
-  shipped: 'Shipped',
+  all: 'Semua',
+  proof_review: 'Review bukti',
+  payment: 'Perlu dibayar',
+  packing: 'Siap packing',
+  shipped: 'Dikirim',
   bespoke: 'Bespoke',
 };
 
 const paymentProofStatusLabels = {
-  missing: 'No proof',
-  submitted: 'Proof submitted',
-  approved: 'Proof approved',
-  rejected: 'Proof rejected',
+  missing: 'Belum ada bukti',
+  submitted: 'Bukti terkirim',
+  approved: 'Bukti disetujui',
+  rejected: 'Bukti ditolak',
 };
 
 const paymentProofToneByStatus = {
@@ -108,6 +110,8 @@ const OrdersPage = () => {
   const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [syncingOrder, setSyncingOrder] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [bulkSaving, setBulkSaving] = useState(false);
   const [orderFilter, setOrderFilter] = useState(() => {
     const filter = new URLSearchParams(location.search).get('filter');
     return orderFilterLabels[filter] ? filter : 'all';
@@ -143,10 +147,19 @@ const OrdersPage = () => {
     shipped: orders.filter((order) => ['shipped', 'delivered'].includes(order.shipmentStatus)).length,
     bespoke: orders.filter(isBespokeOrder).length,
   };
+  const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
+  const selectedVisibleOrders = visibleOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber));
+  const selectedPrintableOrders = selectedVisibleOrders.filter(canExportShippingLabel);
+  const visibleOrderKeys = visibleOrders.map((order) => order.id || order.orderNumber);
+  const allVisibleSelected = visibleOrderKeys.length > 0 && visibleOrderKeys.every((key) => selectedOrderSet.has(key));
+
+  useEffect(() => {
+    setSelectedOrders((current) => current.filter((key) => orders.some((order) => (order.id || order.orderNumber) === key)));
+  }, [orders]);
 
   const copyOrder = async (order) => {
     await navigator.clipboard.writeText(order.checkoutDraft);
-    toast.success(`${order.orderNumber} copied`);
+    toast.success(`${order.orderNumber} disalin`);
   };
 
   const prepareCustomerNotification = async (order, eventKey) => {
@@ -155,14 +168,14 @@ const OrdersPage = () => {
 
     try {
       await navigator.clipboard.writeText(message);
-      toast.success(`${order.orderNumber} customer message copied`, {
+      toast.success(`Pesan customer ${order.orderNumber} disalin`, {
         action: {
           label: 'Open WA',
           onClick: () => window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
-      toast.success(`${order.orderNumber} customer message ready`);
+      toast.success(`Pesan customer ${order.orderNumber} siap`);
     }
   };
 
@@ -180,6 +193,81 @@ const OrdersPage = () => {
     }
   };
 
+  const toggleOrderSelection = (order, checked) => {
+    const key = order.id || order.orderNumber;
+    setSelectedOrders((current) => (
+      checked ? Array.from(new Set([...current, key])) : current.filter((value) => value !== key)
+    ));
+  };
+
+  const toggleVisibleSelection = (checked) => {
+    setSelectedOrders((current) => {
+      const visibleSet = new Set(visibleOrderKeys);
+      if (!checked) return current.filter((key) => !visibleSet.has(key));
+      return Array.from(new Set([...current, ...visibleOrderKeys]));
+    });
+  };
+
+  const bulkMarkPaid = async () => {
+    if (!selectedVisibleOrders.length) {
+      toast.error('Pilih order dulu untuk mark paid');
+      return;
+    }
+    setBulkSaving(true);
+    try {
+      await Promise.all(selectedVisibleOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      toast.success(`${selectedVisibleOrders.length} order ditandai paid`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal mark paid massal');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const bulkPrintResi = async () => {
+    const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
+    const printedCount = exportShippingLabelsPdf(selectedVisibleOrders);
+    if (!printedCount) {
+      toast.error('Pilih order paid untuk cetak resi');
+      return;
+    }
+    toast.success(`${printedCount} resi PDF siap`);
+  };
+
+  const bulkWhatsAppFollowUp = async () => {
+    if (!selectedVisibleOrders.length) {
+      toast.error('Pilih order dulu untuk follow-up WA');
+      return;
+    }
+    const messages = selectedVisibleOrders.map((order) => {
+      const eventKey = order.shipmentStatus === 'shipped'
+        ? 'shipped'
+        : order.paymentStatus === 'paid'
+          ? 'paid'
+          : 'order_created';
+      return {
+        order,
+        message: buildNotificationMessage(order, eventKey),
+      };
+    }).filter((entry) => entry.message);
+    if (!messages.length) {
+      toast.error('Tidak ada template WA untuk order terpilih');
+      return;
+    }
+    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+  };
+
+  const bulkExportCsv = () => {
+    if (!selectedVisibleOrders.length) {
+      toast.error('Pilih order dulu untuk export CSV');
+      return;
+    }
+    exportOrdersCsv(selectedVisibleOrders, 'orders_selected.csv');
+    toast.success(`${selectedVisibleOrders.length} order diekspor CSV`);
+  };
+
   const syncDokuStatus = async (order) => {
     if (!order?.orderNumber) return;
 
@@ -189,12 +277,12 @@ const OrdersPage = () => {
       await reload();
       const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
       if (result.syncApplied) {
-        toast.success(`${order.orderNumber} DOKU synced: ${statusLabel}`);
+        toast.success(`${order.orderNumber} DOKU tersinkron: ${statusLabel}`);
       } else {
         toast.warning(result.syncWarning || `${order.orderNumber} DOKU checked, but order was not updated`);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to sync DOKU status');
+      toast.error(error.message || 'Gagal sinkron status DOKU');
     } finally {
       setSyncingOrder('');
     }
@@ -221,24 +309,24 @@ const OrdersPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <PackageCheck className="h-4 w-4 text-primary" />
-              Storefront orders
+              Order toko
             </div>
-            <h1 className="text-3xl font-bold sm:text-4xl">Order queue</h1>
+            <h1 className="text-3xl font-bold sm:text-4xl">Antrean order</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
               Pesanan dari cart dan request bespoke masuk ke sini agar bisa dicek, dikonfirmasi, disiapkan, lalu ditandai selesai.
             </p>
           </div>
           <div className="dashboard-hero-panel">
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total orders</span><strong>{summary.total}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Active</span><strong>{summary.active}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Revenue draft</span><strong>{formatTotal(summary.revenue)}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total order</span><strong>{summary.total}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Aktif</span><strong>{summary.active}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Estimasi revenue</span><strong>{formatTotal(summary.revenue)}</strong></div>
           </div>
         </div>
 
         <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-bold">Orders</h2>
-            <span className="text-sm font-bold text-amber-700">{summary.completed} completed</span>
+            <span className="text-sm font-bold text-amber-700">{summary.completed} selesai</span>
           </div>
           <div className="mt-4 grid gap-3 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4 lg:grid-cols-[1fr_auto]">
             <label className="relative block">
@@ -264,6 +352,33 @@ const OrdersPage = () => {
               ))}
             </div>
           </div>
+          <div className="mt-4 grid gap-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4 lg:grid-cols-[auto_1fr] lg:items-center">
+            <label className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-sm font-bold">
+              <Checkbox checked={allVisibleSelected} onCheckedChange={(checked) => toggleVisibleSelection(Boolean(checked))} />
+              Pilih tampilan
+            </label>
+            <div className="grid gap-2 sm:grid-cols-4">
+              <Button type="button" className="h-11 rounded-2xl gap-2" onClick={bulkMarkPaid} disabled={bulkSaving || !selectedVisibleOrders.length}>
+                {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                Mark paid
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkPrintResi} disabled={!selectedPrintableOrders.length}>
+                <Download className="h-4 w-4" />
+                Print resi
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkWhatsAppFollowUp} disabled={!selectedVisibleOrders.length}>
+                <MessageCircle className="h-4 w-4" />
+                WA follow-up
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkExportCsv} disabled={!selectedVisibleOrders.length}>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
+            <p className="text-xs font-bold text-muted-foreground lg:col-span-2">
+              {selectedVisibleOrders.length} order dipilih, {selectedPrintableOrders.length} siap print resi.
+            </p>
+          </div>
           <div className="mt-5 grid gap-4">
             {visibleOrders.map((order) => {
               const bespoke = isBespokeOrder(order);
@@ -278,6 +393,7 @@ const OrdersPage = () => {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-bold">{order.orderNumber}</h3>
+                      <Checkbox checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                       {bespoke ? <StatusChip className="border-[#263d27]/20 bg-[#eef2e8] text-[#263d27]">Bespoke</StatusChip> : null}
                       {bespoke ? <StatusChip className="border-[#263d27]/10 bg-[#f7f8f2] text-[#263d27]">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
                       <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
@@ -345,7 +461,7 @@ const OrdersPage = () => {
                       {order.paymentResponse && Object.keys(order.paymentResponse).length ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-muted-foreground">
                           <ReceiptText className="h-3.5 w-3.5" />
-                          Checkout response saved
+                          Respons checkout tersimpan
                         </span>
                       ) : null}
                       {order.paymentProofStatus === 'submitted' ? (
@@ -366,10 +482,10 @@ const OrdersPage = () => {
                       ) : null}
                       {order.inventoryDeducted ? (
                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                          Stock reserved{reservationExpiresAt ? ` until ${formatDate(reservationExpiresAt)}` : ''}
+                          Stok reserved{reservationExpiresAt ? ` sampai ${formatDate(reservationExpiresAt)}` : ''}
                         </span>
                       ) : ['expired', 'failed', 'refunded'].includes(order.paymentStatus) || order.status === 'cancelled' ? (
-                        <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stock released</span>
+                        <span className="rounded-full bg-stone-100 px-3 py-1 text-stone-600">Stok dilepas</span>
                       ) : null}
                       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <button
@@ -391,14 +507,14 @@ const OrdersPage = () => {
                       {voucherSnapshot ? <div className="mt-1 text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
                     </div>
                     <div className="rounded-2xl border bg-white p-3">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Payment admin</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">Admin pembayaran</div>
                       <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                         <select value={order.paymentStatus} onChange={(event) => updatePaymentAndNotify(order, event.target.value)} className="h-10 rounded-2xl border bg-[#fbfaf7] px-3 text-xs font-bold outline-none focus:border-amber-300">
                           {Object.entries(paymentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
                         {order.paymentStatus !== 'paid' ? (
                           <Button type="button" size="sm" className="h-10 rounded-2xl px-3 text-xs" onClick={() => updatePaymentAndNotify(order, 'paid')}>
-                            Mark paid
+                            Tandai paid
                           </Button>
                         ) : null}
                       </div>
@@ -408,9 +524,9 @@ const OrdersPage = () => {
                     </select>
                     <div className="grid grid-cols-2 gap-2">
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => navigate(`/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
-                      <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Copy</Button>
+                      <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}><Download className="h-4 w-4" />Resi PDF</Button>
-                      <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Delete</Button>
+                      <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
                     </div>
                   </div>
                 </div>
@@ -418,7 +534,7 @@ const OrdersPage = () => {
               );
             })}
             {!visibleOrders.length && !loading ? (
-              <StateBlock title="No matching orders" description="Ubah pencarian atau filter untuk melihat order lain." icon={PackageCheck} />
+              <StateBlock title="Order tidak ditemukan" description="Ubah pencarian atau filter untuk melihat order lain." icon={PackageCheck} />
             ) : null}
             {loading && !orders.length ? (
               <StateBlock title="Memuat order" description="Mengambil order terbaru dari storefront." tone="loading" />

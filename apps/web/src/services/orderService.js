@@ -7,20 +7,20 @@ export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1
 export const ORDER_SYNC_QUEUE_STORAGE_KEY = 'dekito.storefront.orderSyncQueue.v1';
 
 const orderStatusLabels = {
-  draft: 'Draft',
-  pending_payment: 'Pending payment',
-  paid: 'Paid',
-  processing: 'Processing',
-  shipped: 'Shipped',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
+  draft: 'Draf',
+  pending_payment: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
+  processing: 'Diproses',
+  shipped: 'Dikirim',
+  completed: 'Selesai',
+  cancelled: 'Dibatalkan',
 };
 
 const shipmentStatusLabels = {
-  not_ready: 'Not ready',
-  packing: 'Packing',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
+  not_ready: 'Belum siap',
+  packing: 'Dikemas',
+  shipped: 'Dikirim',
+  delivered: 'Terkirim',
 };
 
 const bespokeProductionStatusLabels = {
@@ -28,8 +28,8 @@ const bespokeProductionStatusLabels = {
   formula: 'Formula',
   sample: 'Sample',
   approval: 'Approval',
-  production: 'Production',
-  ready: 'Ready',
+  production: 'Produksi',
+  ready: 'Siap',
 };
 
 const localOnlyStatuses = {
@@ -141,7 +141,7 @@ const normalizeTimeline = (timeline) => (
   Array.isArray(timeline)
     ? timeline.map((entry) => ({
       status: entry.status || 'pending_payment',
-      label: entry.label || orderStatusLabels[entry.status] || entry.status || 'Pending payment',
+      label: entry.label || orderStatusLabels[entry.status] || entry.status || 'Menunggu bayar',
       note: entry.note || '',
       at: entry.at || entry.created_at || new Date().toISOString(),
     })).filter((entry) => entry.status)
@@ -1402,7 +1402,7 @@ export const updateOrderShipment = async (orderId, shipmentData = {}) => {
     ...(shipmentStatus === 'delivered' ? { status: 'completed' } : {}),
   };
   const statusTimeline = ['shipped', 'delivered'].includes(shipmentStatus)
-    ? appendStatusTimeline(currentOrder?.statusTimeline, patch.status, `${shipmentStatusLabels[shipmentStatus]} from fulfillment`)
+    ? appendStatusTimeline(currentOrder?.statusTimeline, patch.status, `${shipmentStatusLabels[shipmentStatus]} dari fulfillment`)
     : currentOrder?.statusTimeline || [];
   const payload = {
     ...patch,

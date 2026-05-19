@@ -94,6 +94,7 @@ const MobileCheckoutPage = () => {
     { label: 'Kontak', complete: contactComplete },
     { label: 'Alamat', complete: addressComplete },
     { label: 'Ongkir', complete: shippingComplete },
+    { label: 'Voucher', complete: shippingComplete },
     { label: 'Pembayaran', complete: paymentComplete },
     { label: 'Ringkasan', complete: Boolean(paymentComplete && items.length) },
   ];
@@ -128,6 +129,14 @@ const MobileCheckoutPage = () => {
             <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</div><div className="mt-1 text-2xl font-bold text-[#263d27]">{formatTotal(totalDue)}</div></div>
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>Edit keranjang</Button>
           </div>
+          {discountAmount ? (
+            <div className="mt-3 rounded-2xl border border-[#263d27]/12 bg-white/82 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-xs font-bold text-[#263d27]">
+                <span className="min-w-0 truncate">Voucher {voucher.appliedVoucher?.code}</span>
+                <span className="shrink-0">Hemat {formatTotal(discountAmount)}</span>
+              </div>
+            </div>
+          ) : null}
         </section>
         <CheckoutProgress steps={checkoutSteps} />
         <section className="mobile-commerce-panel px-3 py-2">
@@ -188,15 +197,6 @@ const MobileCheckoutPage = () => {
         </CheckoutSection>
         <CheckoutSection
           step="4"
-          title="Pembayaran"
-          description="Pilih metode pembayaran dan tambahkan catatan bila perlu."
-          complete={paymentComplete}
-        >
-            {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => setSelectedPaymentMethod(method.id)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
-            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
-        </CheckoutSection>
-        <CheckoutSection
-          step="V"
           title="Voucher"
           description="Kode promo akan memotong subtotal produk sebelum ongkir."
           complete={Boolean(voucher.appliedVoucher)}
@@ -230,6 +230,15 @@ const MobileCheckoutPage = () => {
         </CheckoutSection>
         <CheckoutSection
           step="5"
+          title="Pembayaran"
+          description="Pilih metode pembayaran dan tambahkan catatan bila perlu."
+          complete={paymentComplete}
+        >
+            {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => setSelectedPaymentMethod(method.id)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
+            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+        </CheckoutSection>
+        <CheckoutSection
+          step="6"
           title="Ringkasan"
           description="Cek produk dan total sebelum pesanan dibuat."
           complete={Boolean(paymentComplete && items.length)}
@@ -272,7 +281,13 @@ const MobileCheckoutPage = () => {
             <div className="mobile-commerce-summary px-3 py-3 text-xs font-bold text-[#263d27]">
               <div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatTotal(summary.subtotal)}</span></div>
               {discountAmount ? (
-                <div className="mt-2 flex justify-between gap-3 text-[#263d27]"><span>Voucher {voucher.appliedVoucher?.code}</span><span>-{formatTotal(discountAmount)}</span></div>
+                <div className="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                  <div className="flex justify-between gap-3 text-emerald-800">
+                    <span className="min-w-0 truncate">Diskon voucher {voucher.appliedVoucher?.code}</span>
+                    <span className="shrink-0">-{formatTotal(discountAmount)}</span>
+                  </div>
+                  <div className="mt-1 text-[10px] font-bold uppercase text-emerald-700">Dipakai sebelum ongkir</div>
+                </div>
               ) : null}
               {discountAmount ? (
                 <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Subtotal setelah voucher</span><span>{formatTotal(discountedSubtotal)}</span></div>
@@ -293,6 +308,7 @@ const MobileCheckoutPage = () => {
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</p>
                 <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(totalDue)}</p>
+                {discountAmount ? <p className="truncate text-[10px] font-bold text-emerald-700">Voucher -{formatTotal(discountAmount)}</p> : null}
               </div>
               <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={() => submitOrder()} disabled={saving}>
                 <CreditCard className="h-4 w-4" />

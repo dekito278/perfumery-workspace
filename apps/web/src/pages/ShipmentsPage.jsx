@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Eye, Loader2, PackageCheck, Save, Search, Truck } from 'lucide-react';
+import { ArrowLeft, CreditCard, Download, Eye, Loader2, MessageCircle, PackageCheck, Save, Search, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -11,6 +11,7 @@ import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/compo
 import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -41,7 +42,7 @@ const buildShipmentDraft = (order = {}) => ({
 
 const ShipmentsPage = () => {
   const navigate = useNavigate();
-  const { orders, summary, loading, reload } = useOrders();
+  const { orders, summary, loading, reload, updatePaymentStatus } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingOrder, setSavingOrder] = useState('');
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -205,7 +206,7 @@ const ShipmentsPage = () => {
       await reload();
       toast.success(`${selectedShipmentOrders.length} pengiriman diperbarui`);
     } catch (error) {
-      toast.error(error.message || 'Bulk update shipment gagal');
+      toast.error(error.message || 'Update massal pengiriman gagal');
     } finally {
       setBulkSaving(false);
     }
@@ -231,11 +232,54 @@ const ShipmentsPage = () => {
     toast.success(`${printedCount} resi PDF siap`);
   };
 
+  const bulkMarkPaid = async () => {
+    if (!selectedShipmentOrders.length) {
+      toast.error('Pilih order dulu untuk mark paid');
+      return;
+    }
+    setBulkSaving(true);
+    try {
+      await Promise.all(selectedShipmentOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      toast.success(`${selectedShipmentOrders.length} order ditandai paid`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal mark paid massal');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const bulkWhatsAppFollowUp = async () => {
+    if (!selectedShipmentOrders.length) {
+      toast.error('Pilih order dulu untuk follow-up WA');
+      return;
+    }
+    const messages = selectedShipmentOrders.map((order) => {
+      const message = buildNotificationMessage(order, order.shipmentStatus === 'shipped' || order.trackingNumber ? 'shipped' : 'processing');
+      return { order, message };
+    }).filter((entry) => entry.message);
+    if (!messages.length) {
+      toast.error('Tidak ada template WA untuk order terpilih');
+      return;
+    }
+    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+  };
+
+  const bulkExportCsv = () => {
+    if (!selectedShipmentOrders.length) {
+      toast.error('Pilih order dulu untuk export CSV');
+      return;
+    }
+    exportOrdersCsv(selectedShipmentOrders, 'fulfillment_selected.csv');
+    toast.success(`${selectedShipmentOrders.length} order diekspor CSV`);
+  };
+
   return (
     <AuthenticatedLayout>
       <Helmet>
         <title>Pengiriman - Solivagant</title>
-        <meta name="description" content="Manage shipment fulfillment for Solivagant orders." />
+        <meta name="description" content="Kelola fulfillment pengiriman order Solivagant." />
       </Helmet>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -323,7 +367,7 @@ const ShipmentsPage = () => {
                 <input
                   value={bulkDraft.courierName}
                   onChange={(event) => setBulkDraft((current) => ({ ...current, courierName: event.target.value }))}
-                  placeholder="Bulk kurir, contoh: JNE / J&T"
+                  placeholder="Kurir massal, contoh: JNE / J&T"
                   className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
                 />
                 <select
@@ -334,7 +378,11 @@ const ShipmentsPage = () => {
                   {Object.entries(shipmentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkMarkPaid} disabled={bulkSaving || !selectedShipmentOrders.length}>
+                  <CreditCard className="h-4 w-4" />
+                  Mark paid
+                </Button>
                 <Button type="button" className="h-11 rounded-2xl gap-2" onClick={bulkUpdateShipments} disabled={bulkSaving || !selectedShipmentOrders.length}>
                   {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Update massal
@@ -343,10 +391,18 @@ const ShipmentsPage = () => {
                   <Download className="h-4 w-4" />
                   Cetak resi
                 </Button>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkWhatsAppFollowUp} disabled={!selectedShipmentOrders.length}>
+                  <MessageCircle className="h-4 w-4" />
+                  WA follow-up
+                </Button>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkExportCsv} disabled={!selectedShipmentOrders.length}>
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
             </div>
             <p className="text-xs font-bold text-muted-foreground">
-              {filteredShipmentOrders.length} tampil / {shipmentOrders.length} shipment, {selectedShipmentOrders.length} dipilih, {selectedPrintableOrders.length} siap cetak.
+              {filteredShipmentOrders.length} tampil / {shipmentOrders.length} pengiriman, {selectedShipmentOrders.length} dipilih, {selectedPrintableOrders.length} siap cetak.
             </p>
           </div>
 
@@ -414,7 +470,7 @@ const ShipmentsPage = () => {
                       <input
                         value={draft.trackingUrl}
                         onChange={(event) => updateDraft(order, 'trackingUrl', event.target.value)}
-                        placeholder="Tracking URL opsional"
+                        placeholder="URL tracking opsional"
                         className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
                       />
                       <textarea
@@ -448,15 +504,15 @@ const ShipmentsPage = () => {
               <StateBlock
                 className="bg-[#fbfaf7]"
                 icon={Truck}
-                title="Shipment tidak ditemukan"
-                description="Ubah pencarian atau filter untuk melihat shipment lain."
+                title="Pengiriman tidak ditemukan"
+                description="Ubah pencarian atau filter untuk melihat pengiriman lain."
               />
             ) : null}
             {loading && !shipmentOrders.length ? (
               <StateBlock
                 className="bg-[#fbfaf7]"
                 tone="loading"
-                title="Memuat shipment"
+                title="Memuat pengiriman"
                 description="Sebentar, data pengiriman sedang disiapkan."
               />
             ) : null}

@@ -31,7 +31,7 @@ const paymentStatusLabels = {
   paid: 'Pembayaran diterima',
   failed: 'Pembayaran gagal',
   expired: 'Pembayaran expired',
-  refunded: 'Refunded',
+  refunded: 'Refund',
 };
 
 const paymentStatusTone = {
@@ -62,7 +62,7 @@ const paymentStatusTone = {
   },
   refunded: {
     className: 'border-slate-200 bg-slate-50 text-slate-700',
-    title: 'Pembayaran refunded',
+    title: 'Pembayaran refund',
     description: 'Status refund sudah tercatat di order.',
   },
 };
@@ -199,7 +199,7 @@ const PaymentFrame = ({ session, compact = false }) => {
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     await navigator.clipboard.writeText(customerCode);
-    toast.success(`${customerCode} copied`);
+    toast.success(`${customerCode} disalin`);
   };
 
   return (
@@ -207,7 +207,7 @@ const PaymentFrame = ({ session, compact = false }) => {
       <div className={compact ? 'border-b border-[#263d27]/10 bg-[#eef2e8] p-4' : 'border-b border-[#263d27]/10 bg-[#eef2e8] p-5'}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Secure checkout</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Checkout aman</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
               Order tersimpan. Selesaikan pembayaran di panel ini tanpa meninggalkan nuansa Solivagant.
@@ -252,7 +252,7 @@ const PaymentFrame = ({ session, compact = false }) => {
               </div>
               <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-[#f7f8f2] gap-2" onClick={copyCustomerCode}>
                 <Copy className="h-4 w-4" />
-                Copy kode
+                Salin kode
               </Button>
             </div>
           </div>
@@ -330,7 +330,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   const copyValue = async (label, value) => {
     if (!value) return;
     await navigator.clipboard.writeText(String(value));
-    toast.success(`${label} copied`);
+    toast.success(`${label} disalin`);
   };
 
   const chooseProofFile = (event) => {
@@ -438,11 +438,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
             <li>2. Upload bukti transfer lewat form di bawah. Ini wajib untuk pembayaran manual.</li>
-            <li>3. Admin akan cek bukti transfer dan update status payment setelah valid.</li>
+            <li>3. Admin akan cek bukti transfer dan memperbarui status pembayaran setelah valid.</li>
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
-            Copy total transfer
+            Salin total transfer
           </Button>
           {customerCode && hasSubmittedProof ? (
             <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">

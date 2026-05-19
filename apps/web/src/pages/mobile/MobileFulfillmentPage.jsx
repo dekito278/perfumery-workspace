@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, Clipboard, Download, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
+import { ArrowRight, Clipboard, CreditCard, Download, Loader2, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Checkbox } from '@/components/ui/checkbox.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import {
@@ -19,6 +20,7 @@ import {
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -79,9 +81,11 @@ const FulfillmentMetric = ({ label, value, tone = 'amber' }) => {
 const MobileFulfillmentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orders, loading, reload } = useOrders();
+  const { orders, loading, reload, updatePaymentStatus } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingId, setSavingId] = useState('');
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [bulkSaving, setBulkSaving] = useState(false);
   const [queueFilter, setQueueFilter] = useState('paid');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -123,6 +127,10 @@ const MobileFulfillmentPage = () => {
     const today = new Date().toDateString();
     return orders.filter((order) => order.shipmentStatus === 'shipped' && order.shippedAt && new Date(order.shippedAt).toDateString() === today);
   }, [orders]);
+  const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
+  const selectedSearchedOrders = useMemo(() => searchedOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber)), [searchedOrders, selectedOrderSet]);
+  const selectedPrintableOrders = useMemo(() => selectedSearchedOrders.filter(canExportShippingLabel), [selectedSearchedOrders]);
+  const allSearchedSelected = searchedOrders.length > 0 && searchedOrders.every((order) => selectedOrderSet.has(order.id || order.orderNumber));
 
   const findScannedOrder = (query) => {
     const normalizedQuery = String(query || '').trim().toLowerCase();
@@ -158,6 +166,38 @@ const MobileFulfillmentPage = () => {
         [field]: value,
       },
     }));
+  };
+
+  const toggleOrderSelection = (order, checked) => {
+    const key = order.id || order.orderNumber;
+    setSelectedOrders((current) => (
+      checked ? Array.from(new Set([...current, key])) : current.filter((value) => value !== key)
+    ));
+  };
+
+  const toggleSearchedSelection = (checked) => {
+    const visibleKeys = searchedOrders.map((order) => order.id || order.orderNumber);
+    setSelectedOrders((current) => {
+      const visibleSet = new Set(visibleKeys);
+      if (!checked) return current.filter((key) => !visibleSet.has(key));
+      return Array.from(new Set([...current, ...visibleKeys]));
+    });
+  };
+
+  const bulkMarkPaid = async () => {
+    if (!selectedSearchedOrders.length) {
+      toast.error('Pilih order dulu untuk mark paid');
+      return;
+    }
+    setBulkSaving(true);
+    try {
+      await Promise.all(selectedSearchedOrders.map((order) => updatePaymentStatus(order.id || order.orderNumber, 'paid')));
+      toast.success(`${selectedSearchedOrders.length} order ditandai paid`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal mark paid massal');
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const saveShipment = async (order, shipmentStatus, overrides = {}) => {
@@ -219,6 +259,52 @@ const MobileFulfillmentPage = () => {
     toast.success('Resi PDF siap');
   };
 
+  const bulkPrintResi = async () => {
+    const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
+    const printedCount = exportShippingLabelsPdf(selectedSearchedOrders);
+    if (!printedCount) {
+      toast.error('Pilih order paid untuk print resi');
+      return;
+    }
+    toast.success(`${printedCount} resi PDF siap`);
+  };
+
+  const bulkWhatsAppFollowUp = async () => {
+    if (!selectedSearchedOrders.length) {
+      toast.error('Pilih order dulu untuk follow-up WA');
+      return;
+    }
+    const messages = selectedSearchedOrders.map((order) => {
+      const draft = drafts[order.id || order.orderNumber] || {};
+      const notificationOrder = {
+        ...order,
+        courierName: draft.courierName || order.courierName,
+        trackingNumber: draft.trackingNumber || order.trackingNumber,
+        trackingUrl: draft.trackingUrl || order.trackingUrl,
+        packingNotes: draft.packingNotes || order.packingNotes,
+        shipmentStatus: draft.shipmentStatus || order.shipmentStatus,
+      };
+      const eventKey = notificationOrder.trackingNumber || notificationOrder.shipmentStatus === 'shipped' ? 'shipped' : 'processing';
+      return { order: notificationOrder, message: buildNotificationMessage(notificationOrder, eventKey) };
+    }).filter((entry) => entry.message);
+    if (!messages.length) {
+      toast.error('Tidak ada template WA untuk order terpilih');
+      return;
+    }
+    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+  };
+
+  const bulkExportCsv = () => {
+    if (!selectedSearchedOrders.length) {
+      toast.error('Pilih order dulu untuk export CSV');
+      return;
+    }
+    exportOrdersCsv(selectedSearchedOrders, 'mobile_fulfillment_selected.csv');
+    toast.success(`${selectedSearchedOrders.length} order diekspor CSV`);
+  };
+
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>Fulfillment - Solivagant</title></Helmet>
@@ -272,6 +358,31 @@ const MobileFulfillmentPage = () => {
           <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
             {searchedOrders.length} order tampil. Scan barcode/resi atau ketik nama customer untuk lompat cepat.
           </p>
+          <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-white/78 p-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-[#263d27]">
+              <Checkbox checked={allSearchedSelected} onCheckedChange={(checked) => toggleSearchedSelection(Boolean(checked))} />
+              Pilih semua yang tampil
+            </label>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button type="button" className="h-11 rounded-2xl gap-1 text-xs" onClick={bulkMarkPaid} disabled={bulkSaving || !selectedSearchedOrders.length}>
+                {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                Mark paid
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkPrintResi} disabled={!selectedPrintableOrders.length}>
+                <Download className="h-4 w-4" />
+                Print resi
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkWhatsAppFollowUp} disabled={!selectedSearchedOrders.length}>
+                <MessageCircle className="h-4 w-4" />
+                WA follow-up
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkExportCsv} disabled={!selectedSearchedOrders.length}>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
+            <p className="mt-2 text-[10px] font-bold uppercase text-[#6b7280]">{selectedSearchedOrders.length} dipilih / {selectedPrintableOrders.length} siap print</p>
+          </div>
         </section>
 
         {blockedPaidOrders.length ? (
@@ -320,10 +431,13 @@ const MobileFulfillmentPage = () => {
             return (
               <article key={orderKey} className="mobile-card mobile-list-card p-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 gap-2">
+                    <Checkbox checked={selectedOrderSet.has(orderKey)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} className="mt-0.5 shrink-0" />
+                    <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-[#0b130c]">{order.orderNumber}</h3>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
                     <p className="mt-1 text-[10px] font-bold uppercase text-[#9ca3af]">{formatDate(order.createdAt)}</p>
+                    </div>
                   </div>
                   <StatusChip size="xs" tone={blocked ? 'warning' : getShipmentStatusTone(order.shipmentStatus)}>
                     {blocked ? bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief'] : shipmentStatusLabels[order.shipmentStatus] || 'Ready'}

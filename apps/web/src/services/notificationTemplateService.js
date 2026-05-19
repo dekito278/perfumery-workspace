@@ -1,12 +1,12 @@
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 
 const notificationEventLabels = {
-  order_created: 'Order created',
-  paid: 'Paid',
-  payment_proof_rejected: 'Payment proof rejected',
-  processing: 'Processing',
-  shipped: 'Shipped',
-  completed: 'Completed',
+  order_created: 'Order dibuat',
+  paid: 'Pembayaran diterima',
+  payment_proof_rejected: 'Bukti transfer ditolak',
+  processing: 'Order diproses',
+  shipped: 'Order dikirim',
+  completed: 'Order selesai',
 };
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -52,8 +52,8 @@ const templates = {
     'Detail order:',
     formatItemLines(order),
     `Total: ${formatTotal(order.subtotal)}`,
-    `Status payment: ${order.paymentStatus || '-'}`,
-    order.customerCode ? `Customer code: ${order.customerCode}` : '',
+    `Status pembayaran: ${order.paymentStatus || '-'}`,
+    order.customerCode ? `Kode customer: ${order.customerCode}` : '',
     getInvoiceUrl(order) ? `Invoice: ${getInvoiceUrl(order)}` : '',
     '',
     'Kami akan update lagi setelah pembayaran terkonfirmasi. Terima kasih.',
@@ -78,7 +78,7 @@ const templates = {
     getManualPaymentUploadUrl(order),
     '',
     `Total order: ${formatTotal(order.subtotal)}`,
-    order.customerCode ? `Customer code: ${order.customerCode}` : '',
+    order.customerCode ? `Kode customer: ${order.customerCode}` : '',
     '',
     'Status order tetap pending sampai bukti transfer baru kami cek. Terima kasih.',
   ],
@@ -123,7 +123,7 @@ export const buildNotificationMessage = (order, eventKey) => (
 );
 
 export const buildNotificationSubject = (order, eventKey) => {
-  const label = notificationEventLabels[eventKey] || 'Order update';
+  const label = notificationEventLabels[eventKey] || 'Update order';
   return `Solivagant ${label} - ${order?.orderNumber || 'Order'}`;
 };
 

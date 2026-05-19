@@ -271,7 +271,7 @@ const MobileOrderDetailPage = () => {
       setOrder(null);
       setPaymentLogs([]);
       setAuditLogs([]);
-      toast.error(error.message || 'Failed to load order detail');
+      toast.error(error.message || 'Gagal memuat detail order');
     } finally {
       setLoading(false);
     }
@@ -296,7 +296,7 @@ const MobileOrderDetailPage = () => {
   const timeline = order?.statusTimeline?.length
     ? order.statusTimeline
     : [
-      { status: 'pending_payment', label: statusLabels.pending_payment, note: 'Order created', at: order?.createdAt },
+      { status: 'pending_payment', label: statusLabels.pending_payment, note: 'Order dibuat', at: order?.createdAt },
       ...(activeStep >= 1 ? statusSteps.slice(1, activeStep + 1).map((status) => ({ status, label: statusLabels[status], note: '', at: order?.updatedAt })) : []),
     ];
 
@@ -338,9 +338,9 @@ const MobileOrderDetailPage = () => {
       const nextOrder = nextOrders.find((item) => item.id === order.id || item.orderNumber === order.orderNumber) || await getOrderById(orderId);
       setOrder(nextOrder);
       setPaymentLogs(await getOrderPaymentLogs(orderKey));
-      toast.success('Order status updated');
+      toast.success('Status order diperbarui');
     } catch (error) {
-      toast.error(error.message || 'Failed to update order status');
+      toast.error(error.message || 'Gagal memperbarui status order');
     }
   };
 
@@ -349,9 +349,9 @@ const MobileOrderDetailPage = () => {
     try {
       const nextOrder = await updateOrderInternalNotes(order.id || order.orderNumber, internalNotesDraft);
       setOrder(nextOrder || order);
-      toast.success('Internal notes saved');
+      toast.success('Catatan internal tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Failed to save internal notes');
+      toast.error(error.message || 'Gagal menyimpan catatan internal');
     } finally {
       setSavingNotes(false);
     }
@@ -367,7 +367,7 @@ const MobileOrderDetailPage = () => {
       });
       setOrder(nextOrder || order);
       setShipmentFromOrder(nextOrder || order);
-      toast.success('Shipment saved');
+      toast.success('Pengiriman tersimpan');
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
@@ -387,9 +387,9 @@ const MobileOrderDetailPage = () => {
       });
       setOrder(nextOrder || order);
       setShipmentFromOrder(nextOrder || order);
-      toast.success(shipmentStatus === 'shipped' ? 'Order marked shipped' : 'Order moved to packing');
+      toast.success(shipmentStatus === 'shipped' ? 'Order ditandai dikirim' : 'Order masuk packing');
     } catch (error) {
-      toast.error(error.message || 'Failed to update shipment');
+      toast.error(error.message || 'Gagal memperbarui pengiriman');
     } finally {
       setSavingShipment(false);
     }
@@ -400,9 +400,9 @@ const MobileOrderDetailPage = () => {
     try {
       const nextOrder = await updateOrderBespokeProductionStatus(order.id || order.orderNumber, productionStatus);
       setOrder(nextOrder || order);
-      toast.success('Bespoke workflow updated');
+      toast.success('Workflow bespoke diperbarui');
     } catch (error) {
-      toast.error(error.message || 'Failed to update bespoke workflow');
+      toast.error(error.message || 'Gagal memperbarui workflow bespoke');
     } finally {
       setSavingBespokeProduction(false);
     }
@@ -414,9 +414,9 @@ const MobileOrderDetailPage = () => {
       const nextOrder = await updateOrderProductionLinks(order.id || order.orderNumber, productionLinksDraft);
       setOrder(nextOrder || order);
       setProductionLinksFromOrder(nextOrder || order);
-      toast.success('Production linkage saved');
+      toast.success('Link produksi tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Failed to save production linkage');
+      toast.error(error.message || 'Gagal menyimpan link produksi');
     } finally {
       setSavingProductionLinks(false);
     }
@@ -431,14 +431,14 @@ const MobileOrderDetailPage = () => {
       const nextOrder = await getOrderById(order.id || order.orderNumber);
       setOrder(nextOrder || order);
       setPaymentLogs(await getOrderPaymentLogs(order.id || order.orderNumber));
-      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'checked';
+      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'dicek';
       if (result.syncApplied) {
-        toast.success(`DOKU synced: ${statusLabel}`);
+        toast.success(`DOKU tersinkron: ${statusLabel}`);
       } else {
-        toast.warning(result.syncWarning || 'DOKU checked, but order was not updated');
+        toast.warning(result.syncWarning || 'DOKU sudah dicek, tapi order tidak berubah');
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to sync DOKU status');
+      toast.error(error.message || 'Gagal sinkron status DOKU');
     } finally {
       setSyncingPayment(false);
     }
@@ -488,14 +488,14 @@ const MobileOrderDetailPage = () => {
           await navigator.clipboard.writeText(message);
           toast.success('Template WA reject disalin', {
             action: {
-              label: 'Open WA',
+              label: 'Buka WA',
               onClick: () => window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
             },
           });
         } catch {
           toast.success('Template WA reject siap', {
             action: {
-              label: 'Open WA',
+              label: 'Buka WA',
               onClick: () => window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
             },
           });
@@ -529,15 +529,15 @@ const MobileOrderDetailPage = () => {
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
-    toast.success('Resi PDF prepared');
+    toast.success('Resi PDF siap');
   };
 
   const copyDraft = async () => {
     try {
       await navigator.clipboard.writeText(order?.checkoutDraft || order?.notes || '');
-      toast.success('Order draft copied');
+      toast.success('Draft order disalin');
     } catch (error) {
-      toast.error(error.message || 'Failed to copy order draft');
+      toast.error(error.message || 'Gagal menyalin draft order');
     }
   };
 
@@ -549,9 +549,9 @@ const MobileOrderDetailPage = () => {
   const copyNotification = async () => {
     try {
       await navigator.clipboard.writeText(notificationMessage);
-      toast.success('Notification copied');
+      toast.success('Notifikasi disalin');
     } catch (error) {
-      toast.error(error.message || 'Failed to copy notification');
+      toast.error(error.message || 'Gagal menyalin notifikasi');
     }
   };
 
@@ -611,11 +611,11 @@ const MobileOrderDetailPage = () => {
   };
 
   const primaryActionLabel = {
-    task: order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) ? 'Start packing' : 'Open next task',
-    payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Approve proof' : 'Sync DOKU',
-    fulfillment: savingShipment ? 'Saving shipment...' : 'Save shipment',
-    production: savingProductionLinks ? 'Saving linkage...' : 'Save linkage',
-    history: 'Copy draft',
+    task: order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) ? 'Mulai packing' : 'Buka tugas berikutnya',
+    payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Setujui bukti' : 'Sinkron DOKU',
+    fulfillment: savingShipment ? 'Menyimpan pengiriman...' : 'Simpan pengiriman',
+    production: savingProductionLinks ? 'Menyimpan link...' : 'Simpan link',
+    history: 'Salin draft',
   }[orderSection];
 
   const primaryActionDisabled = (
@@ -645,7 +645,7 @@ const MobileOrderDetailPage = () => {
     return (
       <MobileAuthenticatedLayout showFab={false}>
         <main className="mobile-page space-y-4">
-          <MobileTopBar title="Order tidak ditemukan" subtitle="Studio orders" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
+          <MobileTopBar title="Order tidak ditemukan" subtitle="Order Studio" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
           <Button type="button" className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/studio/orders')}>
             <ArrowLeft className="h-4 w-4" />
             Kembali ke order
@@ -675,7 +675,7 @@ const MobileOrderDetailPage = () => {
             <div className="min-w-0">
               <div className="text-[10px] font-bold uppercase text-[#263d27]">Status saat ini</div>
               <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{statusLabels[order.status] || order.status}</h1>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} items / {formatTotal(order.subtotal)}</p>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} item / {formatTotal(order.subtotal)}</p>
               {voucherSnapshot ? <p className="mt-1 text-xs font-bold text-[#263d27]">Voucher {voucherSnapshot.code}: hemat {formatTotal(voucherSnapshot.discountAmount)}</p> : null}
             </div>
             <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
@@ -712,7 +712,7 @@ const MobileOrderDetailPage = () => {
               <PackageCheck className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Next task</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">Tugas berikutnya</div>
               <h2 className="mt-0.5 text-base font-bold text-[#0b130c]">{nextOrderTask.label}</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{nextOrderTask.helper}</p>
             </div>
@@ -729,7 +729,7 @@ const MobileOrderDetailPage = () => {
             </Button>
             <Button type="button" variant="outline" className="h-14 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => quickShipmentUpdate('packing')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
               <PackageCheck className="h-4 w-4" />
-              Packed
+              Packing
             </Button>
             <Button type="button" className="h-14 rounded-2xl gap-2 text-xs font-bold" onClick={openSmartWhatsAppNotification}>
               <MessageCircle className="h-4 w-4" />
@@ -771,7 +771,7 @@ const MobileOrderDetailPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <CreditCard className="h-4 w-4" />
-            Payment
+            Pembayaran
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-[#f8f7f4] p-3">
@@ -779,7 +779,7 @@ const MobileOrderDetailPage = () => {
               <div className="mt-1 text-sm font-bold text-[#0b130c]">{order.paymentProvider || 'manual'}</div>
             </div>
             <div className="rounded-2xl bg-[#f8f7f4] p-3">
-              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Reference</div>
+              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Referensi</div>
               <div className="mt-1 truncate text-sm font-bold text-[#0b130c]">{order.paymentReference || '-'}</div>
             </div>
           </div>
@@ -826,16 +826,16 @@ const MobileOrderDetailPage = () => {
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button type="button" className="h-10 rounded-2xl gap-2 text-xs" onClick={() => reviewPaymentProof('approved')} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'approved'}>
                 {savingPaymentProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
-                Approve
+                Setujui
               </Button>
               <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs text-rose-700" onClick={openRejectProofDialog} disabled={!hasPaymentProofPath || savingPaymentProof || paymentProofStatus === 'rejected'}>
                 <AlertCircle className="h-4 w-4" />
-                Reject
+                Tolak
               </Button>
             </div>
             <div className="mt-2 grid gap-1 text-[10px] font-semibold text-[#6b7280]">
               <span>Dikirim: {formatDate(order.paymentProofUploadedAt)}</span>
-              <span>Type: {order.paymentProofContentType || '-'}</span>
+              <span>Tipe: {order.paymentProofContentType || '-'}</span>
               {order.paymentProofNotes ? <span>Catatan: {order.paymentProofNotes}</span> : null}
             </div>
             {paymentProofPreviewUrl && paymentProofIsImage ? (
@@ -883,12 +883,12 @@ const MobileOrderDetailPage = () => {
                       <div className="mt-1 text-[10px] font-semibold text-[#6b7280]">{formatDate(event.at)} / {event.actor}</div>
                     </div>
                     <StatusChip size="sm" tone={paymentProofToneByStatus[event.status] || 'warning'}>
-                      {paymentProofStatusLabels[event.status] || event.status || `Attempt ${event.attempt}`}
+                      {paymentProofStatusLabels[event.status] || event.status || `Percobaan ${event.attempt}`}
                     </StatusChip>
                   </div>
                   <div className="mt-2 grid gap-1 text-[10px] font-semibold text-[#6b7280]">
-                    <span>Attempt: {event.attempt}</span>
-                    {event.previousStatus ? <span>Previous: {paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span> : null}
+                    <span>Percobaan: {event.attempt}</span>
+                    {event.previousStatus ? <span>Sebelumnya: {paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span> : null}
                     {event.fileName ? <span>File: {event.fileName}</span> : null}
                     {event.filePath ? <span className="break-all">Path: {event.filePath}</span> : null}
                     {event.notes ? <span className="rounded-xl bg-white px-2 py-1 text-rose-700">Catatan: {event.notes}</span> : null}
@@ -940,7 +940,7 @@ const MobileOrderDetailPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <MessageCircle className="h-4 w-4" />
-            Notification templates
+            Template notifikasi
           </div>
           <select
             value={notificationEvent}
@@ -958,7 +958,7 @@ const MobileOrderDetailPage = () => {
           <div className="mt-3 grid grid-cols-3 gap-2">
             <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={copyNotification}>
               <Copy className="h-4 w-4" />
-              Copy
+              Salin
             </Button>
             <Button type="button" className="h-11 rounded-2xl gap-1 text-xs" onClick={openWhatsAppNotification}>
               <MessageCircle className="h-4 w-4" />
@@ -970,7 +970,7 @@ const MobileOrderDetailPage = () => {
             </Button>
           </div>
           <p className="mt-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-            Manual dulu: copy template, kirim WhatsApp, atau buka email draft. Format ini siap dipakai nanti untuk automation penuh.
+            Manual dulu: salin template, kirim WhatsApp, atau buka draft email. Format ini siap dipakai nanti untuk automation penuh.
           </p>
         </section>
         </> : null}
@@ -983,7 +983,7 @@ const MobileOrderDetailPage = () => {
               Log payment DOKU
             </div>
             <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
-              {paymentLogs.length} logs
+              {paymentLogs.length} log
             </span>
           </div>
           {paymentLogs.length ? (
@@ -1020,7 +1020,7 @@ const MobileOrderDetailPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <Truck className="h-4 w-4" />
-            Shipment / Resi
+            Pengiriman / Resi
           </div>
           <div className="grid gap-2">
             <select
@@ -1055,7 +1055,7 @@ const MobileOrderDetailPage = () => {
             <input
               value={shipmentDraft.trackingUrl}
               onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingUrl: event.target.value }))}
-              placeholder="Tracking link opsional"
+              placeholder="Link tracking opsional"
               className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300"
             />
             <div className="grid grid-cols-2 gap-2">
@@ -1157,7 +1157,7 @@ const MobileOrderDetailPage = () => {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
                 <Sparkles className="h-4 w-4" />
-                Bespoke production
+            Produksi bespoke
               </div>
               <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
                 {bespokeProductionStatusLabels[bespokeProductionStatus] || bespokeProductionStatus}
@@ -1200,13 +1200,13 @@ const MobileOrderDetailPage = () => {
         {orderSection === 'production' ? <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <Sparkles className="h-4 w-4" />
-            Production linkage
+            Link produksi
           </div>
           {bespoke ? (
             <div className="mb-3 grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={openFormulaHandoff}>
                 <FlaskConical className="h-4 w-4" />
-                {order.productionLinks?.formulaId ? 'New formula' : 'Create formula'}
+                {order.productionLinks?.formulaId ? 'Formula baru' : 'Buat formula'}
               </Button>
               <Button
                 type="button"
@@ -1216,16 +1216,16 @@ const MobileOrderDetailPage = () => {
                 disabled={!order.productionLinks?.formulaId}
               >
                 <Factory className="h-4 w-4" />
-                Open batch
+                Buka batch
               </Button>
             </div>
           ) : null}
           {order.productionLinks?.formulaId ? (
             <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-              <div className="text-[10px] font-bold uppercase text-emerald-700">Formula linked</div>
+              <div className="text-[10px] font-bold uppercase text-emerald-700">Formula terhubung</div>
               <div className="mt-1 text-sm font-bold text-[#1f2937]">{order.productionLinks.formulaName || order.productionLinks.formulaCode || order.productionLinks.formulaId}</div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <Button type="button" size="sm" className="h-9 rounded-xl text-xs" onClick={() => navigate(`/mobile/formulas/${order.productionLinks.formulaId}`)}>Open formula</Button>
+                <Button type="button" size="sm" className="h-9 rounded-xl text-xs" onClick={() => navigate(`/mobile/formulas/${order.productionLinks.formulaId}`)}>Buka formula</Button>
                 <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl bg-white text-xs" onClick={() => navigate(`/mobile/batches?formulaId=${encodeURIComponent(order.productionLinks.formulaId)}`)}>Batch</Button>
               </div>
             </div>
@@ -1234,7 +1234,7 @@ const MobileOrderDetailPage = () => {
             <input
               value={productionLinksDraft.batchReference}
               onChange={(event) => setProductionLinksDraft((current) => ({ ...current, batchReference: event.target.value }))}
-              placeholder="Batch / formula reference"
+              placeholder="Referensi batch / formula"
               className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300"
             />
             <textarea
@@ -1253,18 +1253,18 @@ const MobileOrderDetailPage = () => {
             />
             <Button type="button" className="h-11 rounded-2xl gap-2" onClick={saveProductionLinks} disabled={savingProductionLinks}>
               <Save className="h-4 w-4" />
-              {savingProductionLinks ? 'Saving...' : 'Save linkage'}
+              {savingProductionLinks ? 'Menyimpan...' : 'Simpan link'}
             </Button>
           </div>
           {order.productionLinks?.updatedAt ? (
-            <p className="mt-2 text-[10px] font-semibold text-[#6b7280]">Updated {formatDate(order.productionLinks.updatedAt)}</p>
+            <p className="mt-2 text-[10px] font-semibold text-[#6b7280]">Diperbarui {formatDate(order.productionLinks.updatedAt)}</p>
           ) : null}
         </section> : null}
 
         {orderSection === 'production' ? <section className="mobile-card p-4">
           <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
             <NotebookPen className="h-4 w-4" />
-            Internal notes
+            Catatan internal
           </div>
           <textarea
             value={internalNotesDraft}
@@ -1275,7 +1275,7 @@ const MobileOrderDetailPage = () => {
           />
           <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={saveInternalNotes} disabled={savingNotes}>
             <Save className="h-4 w-4" />
-            {savingNotes ? 'Saving...' : 'Save notes'}
+            {savingNotes ? 'Menyimpan...' : 'Simpan catatan'}
           </Button>
         </section> : null}
 
@@ -1306,7 +1306,7 @@ const MobileOrderDetailPage = () => {
           </Button>
           <Button type="button" className="h-11 rounded-2xl gap-2" onClick={copyDraft}>
             <Clipboard className="h-4 w-4" />
-            Copy draft
+            Salin draft
           </Button>
         </section>
 

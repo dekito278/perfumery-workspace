@@ -99,8 +99,8 @@ const MobileFormulasPage = () => {
       setLoading(false);
       loadPipeline(formulaRows || []);
     } catch (error) {
-      toast.error('Failed to load formulas');
-      setLoadError(error.message || 'Formulas could not be loaded right now.');
+      toast.error('Gagal memuat formula');
+      setLoadError(error.message || 'Formula belum bisa dimuat saat ini.');
       setLoading(false);
     }
   };
@@ -163,10 +163,10 @@ const MobileFormulasPage = () => {
     try {
       await duplicateFormula(formula.id);
       triggerMobileHaptic('success');
-      toast.success('Formula duplicated');
+      toast.success('Formula diduplikasi');
       await loadFormulas();
     } catch (error) {
-      toast.error('Failed to duplicate formula');
+      toast.error('Gagal menduplikasi formula');
     } finally {
       setDuplicatingId('');
     }
@@ -178,11 +178,11 @@ const MobileFormulasPage = () => {
     try {
       await deleteFormula(deleteTarget.id);
       triggerMobileHaptic('success');
-      toast.success('Formula deleted');
+      toast.success('Formula dihapus');
       setDeleteTarget(null);
       await loadFormulas();
     } catch (error) {
-      toast.error(error.message || 'Failed to delete formula');
+      toast.error(error.message || 'Gagal menghapus formula');
     } finally {
       setDeleting(false);
     }
@@ -197,34 +197,34 @@ const MobileFormulasPage = () => {
           action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
-          <MobileSearchBar value={query} onChange={setQuery} placeholder="Search formula, code, category..." disabled={loading} />
+          <MobileSearchBar value={query} onChange={setQuery} placeholder="Cari formula, kode, kategori..." disabled={loading} />
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
           <Button type="button" variant="outline" onClick={() => setImportOpen(true)} className="mobile-interactive mobile-pressable mt-2 h-11 w-full rounded-2xl bg-white">
             <FileUp className="mr-2 h-4 w-4" />
-            Import Formula PDF
+            Import PDF Formula
           </Button>
         </div>
-        {loading ? <MobileLoadingSkeleton count={4} title="Loading formulas..." subtitle="Preparing workbook summaries, validation, and batch readiness." /> : loadError ? (
+        {loading ? <MobileLoadingSkeleton count={4} title="Memuat formula..." subtitle="Menyiapkan ringkasan workbook, validasi, dan kesiapan batch." /> : loadError ? (
           <MobileStatePanel
             tone="error"
-            title="Couldn’t load formulas"
+            title="Formula gagal dimuat"
             description={loadError}
-            action="Try again"
+            action="Coba lagi"
             onAction={loadFormulas}
           />
         ) : formulas.length === 0 ? (
           <MobileEmptyState
             icon={Beaker}
-            title="No formulas yet"
-            description="Create a formula manually or import a workbook PDF to start batch costing, validation, and mobile workbook previews."
-            action="New Formula"
+            title="Belum ada formula"
+            description="Buat formula manual atau import PDF workbook untuk mulai costing batch, validasi, dan preview mobile."
+            action="Formula baru"
             onAction={() => navigate('/mobile/formulas/new')}
           />
         ) : filtered.length === 0 ? (
           <MobileEmptyState
-            title="No matching formulas"
-            description="No formula fits the current search and status combination."
-            action="Clear filters"
+            title="Formula tidak ditemukan"
+            description="Tidak ada formula yang cocok dengan pencarian dan status saat ini."
+            action="Reset filter"
             onAction={() => {
               setQuery('');
               setStatus('all');
@@ -253,14 +253,14 @@ const MobileFormulasPage = () => {
       </main>
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
       {importOpen ? (
-        <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Loading importer...</div>}>
+        <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Memuat importer...</div>}>
           <ImportFormulaPdfModal
             open={importOpen}
             onOpenChange={setImportOpen}
             onSuccess={(createdFormula) => {
               setImportOpen(false);
               triggerMobileHaptic('success');
-              toast.success('Formula imported');
+              toast.success('Formula diimport');
               navigate(createdFormula?.id ? `/mobile/formulas/${createdFormula.id}` : '/mobile/formulas');
             }}
           />

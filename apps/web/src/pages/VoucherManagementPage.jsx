@@ -3,8 +3,11 @@ import { Helmet } from 'react-helmet';
 import { BadgePercent, CalendarDays, CheckCircle2, Copy, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
+import VoucherRealtimePreview from '@/components/vouchers/VoucherRealtimePreview.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getOrders } from '@/services/orderService.js';
 import {
   deleteVoucher,
@@ -16,7 +19,8 @@ import {
   VOUCHER_DISCOUNT_TYPES,
   VOUCHER_UPDATED_EVENT,
 } from '@/services/voucherService.js';
-import { buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
+import { buildVoucherPreview } from '@/utils/voucherPreview.js';
+import { buildVoucherAnalytics, buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
 
 const emptyDraft = {
   id: '',
@@ -86,6 +90,7 @@ const VoucherManagementPage = () => {
   const [draft, setDraft] = useState(emptyDraft);
   const [searchTerm, setSearchTerm] = useState('');
   const [usageSearchTerm, setUsageSearchTerm] = useState('');
+  const products = useCatalogProducts({ editableOnly: true });
 
   const loadVouchers = async () => {
     try {
@@ -145,6 +150,8 @@ const VoucherManagementPage = () => {
     count: usageReport.length,
     discountTotal: usageReport.reduce((sum, entry) => sum + Number(entry.discountAmount || 0), 0),
   }), [usageReport]);
+  const voucherAnalytics = useMemo(() => buildVoucherAnalytics(usageReport), [usageReport]);
+  const voucherPreview = useMemo(() => buildVoucherPreview(draft, products), [draft, products]);
 
   const updateDraft = (field, value) => {
     setDraft((current) => ({
@@ -247,106 +254,111 @@ const VoucherManagementPage = () => {
               </Button>
             </div>
 
-            <div className="mt-5 grid gap-4">
-              <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                Kode voucher
-                <input
-                  value={draft.code}
-                  onChange={(event) => updateDraft('code', event.target.value)}
-                  placeholder="SOLI10"
-                  className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-amber-300"
-                />
-              </label>
+            <Tabs defaultValue="rules" className="mt-5">
+              <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-[#f7f8f2] p-1">
+                <TabsTrigger value="rules" className="rounded-xl text-xs font-bold">Aturan</TabsTrigger>
+                <TabsTrigger value="eligibility" className="rounded-xl text-xs font-bold">Eligibility</TabsTrigger>
+                <TabsTrigger value="preview" className="rounded-xl text-xs font-bold">Preview</TabsTrigger>
+              </TabsList>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <TabsContent value="rules" className="mt-5 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Tipe diskon
-                  <select
-                    value={draft.discountType}
-                    onChange={(event) => updateDraft('discountType', event.target.value)}
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                  Kode voucher
+                  <input
+                    value={draft.code}
+                    onChange={(event) => updateDraft('code', event.target.value)}
+                    placeholder="SOLI10"
+                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-amber-300"
+                  />
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Tipe diskon
+                    <select
+                      value={draft.discountType}
+                      onChange={(event) => updateDraft('discountType', event.target.value)}
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    >
+                      <option value={VOUCHER_DISCOUNT_TYPES.PERCENT}>Percent</option>
+                      <option value={VOUCHER_DISCOUNT_TYPES.FIXED}>Fixed</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Nilai diskon
+                    <input
+                      value={draft.discountValue}
+                      onChange={(event) => updateDraft('discountValue', event.target.value)}
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Minimum order
+                    <input
+                      value={draft.minimumOrder}
+                      onChange={(event) => updateDraft('minimumOrder', event.target.value)}
+                      type="number"
+                      min="0"
+                      step="1000"
+                      placeholder="0"
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Minimum quantity
+                    <input
+                      value={draft.minimumQuantity}
+                      onChange={(event) => updateDraft('minimumQuantity', event.target.value)}
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="0 = tanpa minimum"
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Usage limit total
+                    <input
+                      value={draft.usageLimitTotal}
+                      onChange={(event) => updateDraft('usageLimitTotal', event.target.value)}
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="0 = tanpa limit"
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Expiry date
+                    <input
+                      value={draft.expiresAt}
+                      onChange={(event) => updateDraft('expiresAt', event.target.value)}
+                      type="date"
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => updateDraft('active', !draft.active)}
+                    className={`flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold ${draft.active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-stone-50 text-stone-700'}`}
                   >
-                    <option value={VOUCHER_DISCOUNT_TYPES.PERCENT}>Percent</option>
-                    <option value={VOUCHER_DISCOUNT_TYPES.FIXED}>Fixed</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Nilai diskon
-                  <input
-                    value={draft.discountValue}
-                    onChange={(event) => updateDraft('discountValue', event.target.value)}
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
-                  />
-                </label>
-              </div>
+                    {draft.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
+                    {draft.active ? 'Aktif' : 'Nonaktif'}
+                  </button>
+                </div>
+              </TabsContent>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Minimum order
-                  <input
-                    value={draft.minimumOrder}
-                    onChange={(event) => updateDraft('minimumOrder', event.target.value)}
-                    type="number"
-                    min="0"
-                    step="1000"
-                    placeholder="0"
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
-                  />
-                </label>
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Minimum quantity
-                  <input
-                    value={draft.minimumQuantity}
-                    onChange={(event) => updateDraft('minimumQuantity', event.target.value)}
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="0 = tanpa minimum"
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Usage limit total
-                  <input
-                    value={draft.usageLimitTotal}
-                    onChange={(event) => updateDraft('usageLimitTotal', event.target.value)}
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="0 = tanpa limit"
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
-                  Expiry date
-                  <input
-                    value={draft.expiresAt}
-                    onChange={(event) => updateDraft('expiresAt', event.target.value)}
-                    type="date"
-                    className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => updateDraft('active', !draft.active)}
-                  className={`flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold ${draft.active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-stone-200 bg-stone-50 text-stone-700'}`}
-                >
-                  {draft.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-                  {draft.active ? 'Aktif' : 'Nonaktif'}
-                </button>
-              </div>
-
-              <div className="grid gap-3">
+              <TabsContent value="eligibility" className="mt-5 grid gap-3">
                 <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
                   Produk tertentu
                   <textarea
@@ -370,8 +382,12 @@ const VoucherManagementPage = () => {
                 <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
                   Jika produk atau kategori diisi, voucher hanya memotong subtotal dan menghitung quantity item yang cocok.
                 </p>
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="preview" className="mt-5">
+                <VoucherRealtimePreview preview={voucherPreview} />
+              </TabsContent>
+            </Tabs>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Button type="submit" className="h-12 rounded-2xl gap-2">
@@ -434,7 +450,7 @@ const VoucherManagementPage = () => {
                             <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDate(voucher.expiresAt)}</span>
                           </div>
                           <div className="rounded-2xl bg-white px-3 py-2">
-                            <span className="block text-[10px] font-bold uppercase text-muted-foreground">Usage</span>
+                            <span className="block text-[10px] font-bold uppercase text-muted-foreground">Pemakaian</span>
                             {limitLabel}
                           </div>
                           <div className="rounded-2xl bg-white px-3 py-2 sm:col-span-2">
@@ -446,7 +462,7 @@ const VoucherManagementPage = () => {
                       <div className="grid grid-cols-4 gap-2 xl:w-96">
                         <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => copyVoucherCode(voucher)}>
                           <Copy className="h-4 w-4" />
-                          Copy
+                          Salin
                         </Button>
                         <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => editVoucher(voucher)}>
                           <Edit3 className="h-4 w-4" />
@@ -474,6 +490,64 @@ const VoucherManagementPage = () => {
             </div>
           </section>
         </div>
+
+        <section className="mt-6 rounded-2xl border bg-white/90 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold">Analytics voucher</h2>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                Ringkasan performa penggunaan, revenue sebelum/sesudah diskon, top voucher, dan top customer.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#eef2e8] px-4 py-2 text-xs font-bold text-[#263d27]">
+              Diskon total {formatTotal(voucherAnalytics.totalDiscount)}
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Total penggunaan</div>
+              <div className="mt-1 text-3xl font-bold text-[#0b130c]">{voucherAnalytics.totalUsage}</div>
+            </div>
+            <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Revenue sebelum diskon</div>
+              <div className="mt-1 text-2xl font-bold text-[#0b130c]">{formatTotal(voucherAnalytics.revenueBeforeDiscount)}</div>
+            </div>
+            <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
+              <div className="text-xs font-bold uppercase text-muted-foreground">Revenue sesudah diskon</div>
+              <div className="mt-1 text-2xl font-bold text-[#263d27]">{formatTotal(voucherAnalytics.revenueAfterDiscount)}</div>
+            </div>
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+              <div className="text-xs font-bold uppercase text-amber-800">Selisih diskon</div>
+              <div className="mt-1 text-2xl font-bold text-amber-800">{formatTotal(voucherAnalytics.totalDiscount)}</div>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl border bg-[#fbfaf7] p-4">
+              <h3 className="text-base font-bold">Top voucher</h3>
+              <div className="mt-3 grid gap-2">
+                {voucherAnalytics.topVouchers.slice(0, 5).map((item, index) => (
+                  <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
+                    <span className="min-w-0 truncate"><span className="mr-2 text-muted-foreground">#{index + 1}</span>{item.label}</span>
+                    <span className="shrink-0 text-right text-[#263d27]">{item.count}x / {formatTotal(item.discountTotal)}</span>
+                  </div>
+                ))}
+                {!voucherAnalytics.topVouchers.length ? <p className="text-sm font-semibold text-muted-foreground">Belum ada voucher terpakai.</p> : null}
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-[#fbfaf7] p-4">
+              <h3 className="text-base font-bold">Top customer</h3>
+              <div className="mt-3 grid gap-2">
+                {voucherAnalytics.topCustomers.slice(0, 5).map((item, index) => (
+                  <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
+                    <span className="min-w-0 truncate"><span className="mr-2 text-muted-foreground">#{index + 1}</span>{item.label}</span>
+                    <span className="shrink-0 text-right text-[#263d27]">{item.count}x / {formatTotal(item.revenueAfterDiscount)}</span>
+                  </div>
+                ))}
+                {!voucherAnalytics.topCustomers.length ? <p className="text-sm font-semibold text-muted-foreground">Belum ada customer memakai voucher.</p> : null}
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="mt-6 rounded-2xl border bg-white/90 p-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

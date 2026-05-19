@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, FileCheck2, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, FileCheck2, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
@@ -21,6 +21,7 @@ import { formatStatus } from '@/utils/formatting.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
 import { checkDokuHealth, checkShippingHealth, getOpsHealthSnapshot, runOpsHealthRetry } from '@/services/opsHealthService.js';
 import { getAllOrderAuditLogs, isOrderReservationExpired } from '@/services/orderService.js';
+import { getVouchers } from '@/services/voucherService.js';
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -114,6 +115,7 @@ const DashboardPage = () => {
   const [briefs, setBriefs] = useState([]);
   const [validationLogs, setValidationLogs] = useState([]);
   const [orderAuditLogs, setOrderAuditLogs] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
   const [auditFilters, setAuditFilters] = useState({ admin: 'all', event: 'all', query: '' });
   const [pipelineSummary, setPipelineSummary] = useState({ shortlistCount: 0 });
   const [loading, setLoading] = useState(true);
@@ -133,9 +135,10 @@ const DashboardPage = () => {
         runWithRetry(() => getBriefs()),
         runWithRetry(() => getValidationLogs()),
         runWithRetry(() => getAllOrderAuditLogs()),
+        runWithRetry(() => getVouchers()),
       ]);
 
-      const [materialsResult, formulasResult, briefsResult, validationLogsResult, orderAuditLogsResult] = results;
+      const [materialsResult, formulasResult, briefsResult, validationLogsResult, orderAuditLogsResult, vouchersResult] = results;
       const failedRequests = results.filter((result) => result.status === 'rejected');
 
       setMaterials(materialsResult.status === 'fulfilled' ? materialsResult.value : []);
@@ -143,6 +146,7 @@ const DashboardPage = () => {
       setBriefs(briefsResult.status === 'fulfilled' ? briefsResult.value : []);
       setValidationLogs(validationLogsResult.status === 'fulfilled' ? validationLogsResult.value : []);
       setOrderAuditLogs(orderAuditLogsResult.status === 'fulfilled' ? orderAuditLogsResult.value : []);
+      setVouchers(vouchersResult.status === 'fulfilled' ? vouchersResult.value : []);
 
       const briefRows = briefsResult.status === 'fulfilled' ? briefsResult.value : [];
       const shortlistMap = await getBriefMaterialShortlistsByBriefIds(briefRows.map((brief) => brief.id));
@@ -235,6 +239,43 @@ const DashboardPage = () => {
       .filter((order) => order.agingHours >= 48)
       .sort((a, b) => b.agingHours - a.agingHours);
   }, [paidReadyOrders]);
+  const voucherIssues = useMemo(() => {
+    const now = Date.now();
+    return vouchers
+      .map((voucher) => {
+        const expired = voucher.expiresAt && new Date(voucher.expiresAt).getTime() < now;
+        const limitReached = Number(voucher.usageLimitTotal || 0) > 0 && Number(voucher.usageCount || 0) >= Number(voucher.usageLimitTotal || 0);
+        const inactive = voucher.active === false;
+        const reasons = [
+          inactive ? 'Nonaktif' : '',
+          expired ? 'Expired' : '',
+          limitReached ? 'Limit habis' : '',
+        ].filter(Boolean);
+        return { ...voucher, issueReasons: reasons };
+      })
+      .filter((voucher) => voucher.issueReasons.length)
+      .sort((a, b) => b.issueReasons.length - a.issueReasons.length || String(a.code).localeCompare(String(b.code)));
+  }, [vouchers]);
+  const syncIssueItems = useMemo(() => {
+    const queued = (opsHealth.syncQueue || []).map((item) => ({
+      id: item.id || item.orderNumber,
+      title: item.orderNumber || item.id || 'Sync item',
+      helper: item.reason || item.action || 'Perlu retry sync',
+      tone: item.severity === 'critical' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800',
+      onClick: () => navigate('/studio/orders'),
+    }));
+    const stalePending = (opsHealth.pendingPaymentOrders || [])
+      .filter((order) => order.paymentProvider === 'doku' && order.paymentStatus === 'pending')
+      .slice(0, 3)
+      .map((order) => ({
+        id: `pending-${order.id || order.orderNumber}`,
+        title: order.orderNumber,
+        helper: 'Pending DOKU, cek status terbaru',
+        tone: 'bg-amber-50 text-amber-800',
+        onClick: () => navigate(`/studio/orders/${order.id || order.orderNumber}`),
+      }));
+    return [...queued, ...stalePending];
+  }, [navigate, opsHealth.pendingPaymentOrders, opsHealth.syncQueue]);
   const auditAdmins = useMemo(() => (
     Array.from(new Set(orderAuditLogs.map((log) => log.actorEmail || log.actorName || 'system'))).filter(Boolean)
   ), [orderAuditLogs]);
@@ -296,42 +337,86 @@ const DashboardPage = () => {
       setHealthChecking('');
     }
   };
-  const todayPriorities = [
+  const actionCenterItems = [
     {
+      key: 'proof',
       icon: FileCheck2,
-      label: 'Proof review',
-      title: `${proofReviewOrders.length} bukti perlu dicek`,
-      helper: 'Approve/reject bukti transfer manual',
-      tone: 'bg-sky-50 text-sky-700 border-sky-100',
-      action: 'Review proof',
+      label: 'Payment proof review',
+      count: proofReviewOrders.length,
+      tone: 'border-sky-100 bg-sky-50 text-sky-700',
+      helper: 'Bukti transfer manual yang perlu approve/reject.',
+      action: 'Review bukti',
       onClick: () => navigate('/studio/orders?filter=proof_review'),
+      rows: proofReviewOrders.slice(0, 3).map((order) => ({
+        id: order.id || order.orderNumber,
+        title: order.orderNumber,
+        helper: `${order.customerName || 'Customer'} / ${formatTotal(order.subtotal)}`,
+        onClick: () => navigate(`/studio/orders/${order.id || order.orderNumber}`),
+      })),
+      empty: 'Tidak ada bukti transfer menunggu review.',
     },
     {
+      key: 'packing',
       icon: Truck,
-      label: 'Paid-ready',
-      title: `${paidReadyOrders.length} order siap packing`,
-      helper: 'Packing, input resi, lalu ship',
-      tone: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-      action: 'Open shipments',
+      label: 'Order siap packing',
+      count: paidReadyOrders.length,
+      tone: 'border-emerald-100 bg-emerald-50 text-emerald-700',
+      helper: 'Order paid yang belum shipped/delivered.',
+      action: 'Buka fulfillment',
       onClick: () => navigate('/studio/shipments'),
+      rows: paidReadyOrders.slice(0, 3).map((order) => ({
+        id: order.id || order.orderNumber,
+        title: order.orderNumber,
+        helper: `${order.customerName || 'Customer'} / ${order.quantity || 0} item`,
+        onClick: () => navigate(`/studio/orders/${order.id || order.orderNumber}`),
+      })),
+      empty: 'Belum ada order paid yang siap packing.',
     },
     {
-      icon: PackageCheck,
-      label: 'Follow-up',
-      title: `${paymentFollowUps.length} payment pending`,
-      helper: 'Sync DOKU atau kirim payment link',
-      tone: 'bg-amber-50 text-amber-800 border-amber-100',
-      action: 'Open orders',
-      onClick: () => navigate('/studio/orders'),
-    },
-    {
-      icon: AlertTriangle,
-      label: 'Low stock',
-      title: `${lowStockProducts.length} product hampir habis`,
-      helper: 'Cek varian, restock, atau hide dari storefront',
-      tone: 'bg-rose-50 text-rose-700 border-rose-100',
-      action: 'Open products',
+      key: 'stock',
+      icon: Package,
+      label: 'Stok rendah',
+      count: lowStockProducts.length,
+      tone: 'border-rose-100 bg-rose-50 text-rose-700',
+      helper: 'Produk di bawah threshold dan rawan oversell.',
+      action: 'Cek produk',
       onClick: () => navigate('/studio/products'),
+      rows: lowStockProducts.slice(0, 3).map((product) => ({
+        id: product.id || product.slug,
+        title: product.name,
+        helper: `${product.stock || 0} stok tersisa / ${product.category || 'Kategori'}`,
+        onClick: () => navigate('/studio/products'),
+      })),
+      empty: 'Tidak ada produk stok rendah.',
+    },
+    {
+      key: 'voucher',
+      icon: BadgePercent,
+      label: 'Voucher bermasalah',
+      count: voucherIssues.length,
+      tone: 'border-amber-100 bg-amber-50 text-amber-800',
+      helper: 'Voucher nonaktif, expired, atau limit habis.',
+      action: 'Kelola voucher',
+      onClick: () => navigate('/studio/vouchers'),
+      rows: voucherIssues.slice(0, 3).map((voucher) => ({
+        id: voucher.id || voucher.code,
+        title: voucher.code,
+        helper: voucher.issueReasons.join(', '),
+        onClick: () => navigate('/studio/vouchers'),
+      })),
+      empty: 'Tidak ada voucher bermasalah.',
+    },
+    {
+      key: 'sync',
+      icon: WifiOff,
+      label: 'Sync issue',
+      count: syncIssueItems.length,
+      tone: 'border-slate-200 bg-slate-50 text-slate-700',
+      helper: 'Local queue atau DOKU pending yang perlu dicek.',
+      action: 'Retry sync',
+      onClick: retryOpsHealth,
+      rows: syncIssueItems.slice(0, 3),
+      empty: 'Tidak ada sync issue terdeteksi.',
     },
   ];
   const recentFormulas = useMemo(
@@ -409,49 +494,83 @@ const DashboardPage = () => {
           <div className="dashboard-hero-copy">
             <div className="dashboard-hero-eyebrow">
               <Sparkles className="w-4 h-4 text-primary" />
-              Halo, {displayName}
+              Action center
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: '-0.02em' }}>
-              Solivagant siap dipakai.
+              Prioritas operasional hari ini.
             </h1>
             <p className="max-w-3xl text-base text-muted-foreground">
-              {formulas.length > 0
-                ? `${displayName}, sekarang ada ${formulasInProgress.length} formula yang sedang berjalan, ${activeBriefs.length} brief aktif, ${pipelineSummary.shortlistCount} shortlist entries, ${missingGuidanceMaterials.length} material yang masih butuh guidance, dan ${actionNeededLogs.length} validation note yang minta tindak lanjut.`
-                : `${displayName}, belum ada formula aktif. Mulai langsung dari formula mandiri, atau buat brief dulu kalau butuh arah project.`}
+              Halo {displayName}, dashboard Studio sekarang memusatkan pekerjaan yang perlu segera disentuh: bukti bayar, packing, stok rendah, voucher bermasalah, dan sync issue.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button onClick={() => navigate('/formulas/new')} className="h-11 rounded-2xl gap-2 px-5">
-                <Beaker className="w-4 h-4" />
-                New formula
+              <Button onClick={() => navigate('/studio/orders?filter=proof_review')} className="h-11 rounded-2xl gap-2 px-5">
+                <FileCheck2 className="w-4 h-4" />
+                Review bukti
                 <ArrowRight className="w-4 h-4" />
               </Button>
-              <Button variant="outline" onClick={() => navigate('/briefs')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
-                <ClipboardList className="w-4 h-4" />
-                Start from briefs
+              <Button variant="outline" onClick={() => navigate('/studio/shipments')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
+                <Truck className="w-4 h-4" />
+                Packing
               </Button>
-              <Button variant="outline" onClick={() => navigate('/formulas')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
-                Open formulas
+              <Button variant="outline" onClick={() => navigate('/studio/products')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
+                Cek stok
               </Button>
-              <Button variant="outline" onClick={() => navigate('/raw-materials')} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
-                Library maintenance
+              <Button variant="outline" onClick={retryOpsHealth} disabled={Boolean(healthChecking)} className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5">
+                <RefreshCw className={`w-4 h-4 ${healthChecking === 'retry' ? 'animate-spin' : ''}`} />
+                Retry sync
               </Button>
             </div>
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Formulas in progress</span>
-              <strong>{formulasInProgress.length}</strong>
+              <span className="dashboard-hero-stat-label">Payment proof</span>
+              <strong>{proofReviewOrders.length}</strong>
             </div>
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Active briefs</span>
-              <strong>{activeBriefs.length}</strong>
+              <span className="dashboard-hero-stat-label">Siap packing</span>
+              <strong>{paidReadyOrders.length}</strong>
             </div>
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Action-needed logs</span>
-              <strong>{actionNeededLogs.length}</strong>
+              <span className="dashboard-hero-stat-label">Issue total</span>
+              <strong>{lowStockProducts.length + voucherIssues.length + syncIssueItems.length}</strong>
             </div>
           </div>
         </div>
+
+        <DashboardSection title="Action center" subtitle="Urutan ini dibuat untuk kerja harian: cek bukti bayar, packing order paid, amankan stok, rapikan voucher, lalu bersihkan sync issue.">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+            {actionCenterItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <section key={item.key} className={`rounded-3xl border p-4 shadow-sm ${item.tone}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/85">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="rounded-2xl bg-white/85 px-3 py-1 text-xl font-bold text-[#0b130c]">{item.count}</span>
+                  </div>
+                  <h2 className="mt-4 text-base font-bold text-[#0b130c]">{item.label}</h2>
+                  <p className="mt-1 min-h-[40px] text-xs font-semibold leading-relaxed opacity-80">{item.helper}</p>
+                  <div className="mt-3 grid gap-2">
+                    {item.rows.map((row) => (
+                      <button key={row.id} type="button" onClick={row.onClick} className="rounded-2xl bg-white/85 px-3 py-2 text-left transition hover:bg-white">
+                        <div className="truncate text-xs font-bold text-[#0b130c]">{row.title}</div>
+                        <div className="mt-0.5 truncate text-[11px] font-semibold opacity-75">{row.helper}</div>
+                      </button>
+                    ))}
+                    {!item.rows.length ? (
+                      <div className="rounded-2xl bg-white/70 px-3 py-2 text-xs font-semibold opacity-75">{item.empty}</div>
+                    ) : null}
+                  </div>
+                  <Button type="button" variant="outline" className="mt-3 h-10 w-full rounded-2xl bg-white/90 text-xs font-bold" onClick={item.onClick} disabled={item.key === 'sync' && Boolean(healthChecking)}>
+                    {item.key === 'sync' && healthChecking === 'retry' ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                    {item.action}
+                  </Button>
+                </section>
+              );
+            })}
+          </div>
+        </DashboardSection>
 
         <DashboardSection title="Workspace areas" subtitle="Dashboard dibagi dua area besar: Studio untuk proses perfumery, E-commerce untuk toko dan order.">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -537,52 +656,6 @@ const DashboardPage = () => {
                 </Button>
               </div>
             </section>
-          </div>
-        </DashboardSection>
-
-        <DashboardSection title="Today priority" subtitle="Queue kerja harian yang paling perlu disentuh dulu.">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-            {todayPriorities.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.onClick}
-                  className={`rounded-3xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${item.tone}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/80">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold uppercase">{item.label}</span>
-                  </div>
-                  <h3 className="mt-4 text-xl font-bold text-[#0b130c]">{item.title}</h3>
-                  <p className="mt-2 text-sm font-semibold leading-relaxed opacity-80">{item.helper}</p>
-                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold">
-                    {item.action}
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <button type="button" onClick={() => navigate('/studio/orders')} className="rounded-2xl border bg-white p-4 text-left shadow-sm">
-              <div className="text-xs font-bold uppercase text-muted-foreground">Shipment follow-up</div>
-              <div className="mt-1 text-2xl font-bold">{shipmentFollowUps.length}</div>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">Paket shipped yang belum completed.</p>
-            </button>
-            <button type="button" onClick={() => navigate('/validation')} className="rounded-2xl border bg-white p-4 text-left shadow-sm">
-              <div className="text-xs font-bold uppercase text-muted-foreground">Validation follow-up</div>
-              <div className="mt-1 text-2xl font-bold">{actionNeededLogs.length}</div>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">Notes yang butuh action.</p>
-            </button>
-            <button type="button" onClick={() => navigate('/raw-materials')} className="rounded-2xl border bg-white p-4 text-left shadow-sm">
-              <div className="text-xs font-bold uppercase text-muted-foreground">Guidance gaps</div>
-              <div className="mt-1 text-2xl font-bold">{missingGuidanceMaterials.length}</div>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">Material yang perlu dilengkapi.</p>
-            </button>
           </div>
         </DashboardSection>
 

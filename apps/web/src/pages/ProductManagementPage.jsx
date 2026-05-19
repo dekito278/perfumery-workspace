@@ -5,6 +5,7 @@ import { AlertTriangle, Clock3, Edit3, ImagePlus, ImageOff, PackagePlus, Plus, R
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -154,7 +155,7 @@ const ProductManagementPage = () => {
       });
       toast.success(files.length > 1 ? 'Product images uploaded' : 'Product image uploaded');
     } catch (error) {
-      toast.error(error.message || 'Failed to upload product image');
+      toast.error(error.message || 'Gagal upload gambar produk');
     } finally {
       setUploadingImage(false);
       event.target.value = '';
@@ -187,7 +188,7 @@ const ProductManagementPage = () => {
         price: formatRupiah(form.priceNumber),
       });
       setForm(toEditableProduct(product));
-      toast.success(stockCorrection ? 'Product saved and stock correction logged' : 'Product saved to catalog');
+      toast.success(stockCorrection ? 'Produk tersimpan dan koreksi stok dicatat' : 'Produk tersimpan ke katalog');
     } finally {
       setSavingProduct(false);
     }
@@ -198,13 +199,13 @@ const ProductManagementPage = () => {
   const handleDelete = async (product) => {
     await deleteCustomProduct(product.id);
     if (form.id === product.id) resetForm();
-    toast.success('Product removed from custom catalog');
+    toast.success('Produk dihapus dari katalog custom');
   };
 
   const handleResetAll = async () => {
     await resetCustomProducts();
     resetForm();
-    toast.success('Custom products reset');
+    toast.success('Produk custom direset');
   };
 
   return (
@@ -233,51 +234,70 @@ const ProductManagementPage = () => {
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">All catalog products</span><strong>{products.length}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Seed products</span><strong>{featuredProducts.length}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Custom products</span><strong>{customProducts.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Produk seed</span><strong>{featuredProducts.length}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Produk custom</span><strong>{customProducts.length}</strong></div>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <form onSubmit={handleSubmit} className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-bold">{form.id ? 'Edit product' : 'Add product'}</h2>
-              <Button type="button" variant="outline" className="rounded-2xl" onClick={resetForm}>New</Button>
+              <div>
+                <h2 className="text-xl font-bold">{form.id ? 'Edit produk' : 'Tambah produk'}</h2>
+                <p className="mt-1 text-sm font-semibold text-muted-foreground">Form dibagi per bagian supaya edit produk tidak terasa panjang.</p>
+              </div>
+              <Button type="button" variant="outline" className="rounded-2xl" onClick={resetForm}>Baru</Button>
             </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="sm:col-span-2">
-                <span className="text-xs font-bold uppercase text-muted-foreground">Name</span>
-                <input value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Product name" />
-              </label>
-              <label>
-                <span className="text-xs font-bold uppercase text-muted-foreground">Category</span>
-                <select value={form.category} onChange={(event) => updateField('category', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300">
-                  <option value="">Select category</option>
-                  {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
-                  {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
-                </select>
-              </label>
-              <label>
-                <span className="text-xs font-bold uppercase text-muted-foreground">Price</span>
-                <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
-              </label>
-              <label>
-                <span className="text-xs font-bold uppercase text-muted-foreground">Harga coret</span>
-                <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
-              </label>
-              <label>
-                <span className="text-xs font-bold uppercase text-muted-foreground">Stock</span>
-                <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
-              </label>
-              <label>
-                <span className="text-xs font-bold uppercase text-muted-foreground">Restock threshold</span>
-                <input type="number" value={form.restockThreshold} onChange={(event) => updateField('restockThreshold', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
-              </label>
-              <label>
-                <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
-                <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
-              </label>
-              <div className="sm:col-span-2 rounded-2xl border bg-[#fbfaf7] p-4">
+
+            <Tabs defaultValue="utama" className="mt-5">
+              <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-[#f7f8f2] p-1 lg:grid-cols-4">
+                <TabsTrigger value="utama" className="rounded-xl text-xs font-bold">Utama</TabsTrigger>
+                <TabsTrigger value="commercial" className="rounded-xl text-xs font-bold">Harga & stok</TabsTrigger>
+                <TabsTrigger value="media" className="rounded-xl text-xs font-bold">Media</TabsTrigger>
+                <TabsTrigger value="story" className="rounded-xl text-xs font-bold">Aroma & publish</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="utama" className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label className="sm:col-span-2">
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Nama produk</span>
+                  <input value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Nama produk" />
+                </label>
+                <label>
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Kategori</span>
+                  <select value={form.category} onChange={(event) => updateField('category', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300">
+                    <option value="">Pilih kategori</option>
+                    {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
+                    {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
+                  </select>
+                </label>
+                <label>
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
+                  <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
+                </label>
+                <label className="sm:col-span-2">
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Ringkasan notes</span>
+                  <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
+                </label>
+              </TabsContent>
+
+              <TabsContent value="commercial" className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label>
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Harga</span>
+                  <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+                </label>
+                <label>
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Harga coret</span>
+                  <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+                </label>
+                <label>
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Stok</span>
+                  <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+                </label>
+                <label>
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Restock threshold</span>
+                  <input type="number" value={form.restockThreshold} onChange={(event) => updateField('restockThreshold', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+                </label>
+                <div className="sm:col-span-2 rounded-2xl border bg-[#fbfaf7] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-xs font-bold uppercase text-muted-foreground">Varian ukuran, harga, stok</div>
@@ -297,15 +317,14 @@ const ProductManagementPage = () => {
                   ))}
                 </div>
               </div>
-              <label className="sm:col-span-2">
-                <span className="text-xs font-bold uppercase text-muted-foreground">Notes summary</span>
-                <input value={form.notes} onChange={(event) => updateField('notes', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Rose, musk, sandalwood" />
-              </label>
-              <label className="sm:col-span-2">
-                <span className="text-xs font-bold uppercase text-muted-foreground">Catatan koreksi stok</span>
-                <input value={form.stockAdjustmentNote} onChange={(event) => updateField('stockAdjustmentNote', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Contoh: restock 20 botol dari batch Mei" />
-              </label>
-              <div className="sm:col-span-2 grid gap-4 rounded-2xl border bg-[#fbfaf7] p-4 sm:grid-cols-[0.9fr_1.1fr]">
+                <label className="sm:col-span-2">
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Catatan koreksi stok</span>
+                  <input value={form.stockAdjustmentNote} onChange={(event) => updateField('stockAdjustmentNote', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Contoh: restock 20 botol dari batch Mei" />
+                </label>
+              </TabsContent>
+
+              <TabsContent value="media" className="mt-5">
+                <div className="grid gap-4 rounded-2xl border bg-[#fbfaf7] p-4 sm:grid-cols-[0.9fr_1.1fr]">
                 <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="min-h-[220px]" />
                 <div className="grid content-start gap-3">
                   <label>
@@ -314,7 +333,7 @@ const ProductManagementPage = () => {
                   </label>
                   <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold">
                     <ImagePlus className="h-4 w-4" />
-                    {uploadingImage ? 'Uploading...' : 'Upload images'}
+                    {uploadingImage ? 'Mengupload...' : 'Upload gambar'}
                     <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
                   </label>
                   {(form.images || []).length ? (
@@ -334,28 +353,33 @@ const ProductManagementPage = () => {
                   </p>
                 </div>
               </div>
-              {[
-                ['topNotes', 'Top notes'],
-                ['heartNotes', 'Heart notes'],
-                ['baseNotes', 'Base notes'],
-                ['tags', 'Tags'],
-              ].map(([key, label]) => (
-                <label key={key}>
-                  <span className="text-xs font-bold uppercase text-muted-foreground">{label}</span>
-                  <input value={form[key] || ''} onChange={(event) => updateField(key, event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Comma separated" />
+              </TabsContent>
+
+              <TabsContent value="story" className="mt-5 grid gap-4 sm:grid-cols-2">
+                {[
+                  ['topNotes', 'Top notes'],
+                  ['heartNotes', 'Heart notes'],
+                  ['baseNotes', 'Base notes'],
+                  ['tags', 'Tags'],
+                ].map(([key, label]) => (
+                  <label key={key}>
+                    <span className="text-xs font-bold uppercase text-muted-foreground">{label}</span>
+                    <input value={form[key] || ''} onChange={(event) => updateField(key, event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Pisahkan dengan koma" />
+                  </label>
+                ))}
+                <label className="sm:col-span-2">
+                  <span className="text-xs font-bold uppercase text-muted-foreground">Deskripsi</span>
+                  <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} rows={3} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Deskripsi produk" />
                 </label>
-              ))}
-              <label className="sm:col-span-2">
-                <span className="text-xs font-bold uppercase text-muted-foreground">Description</span>
-                <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} rows={3} className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300" placeholder="Product description" />
-              </label>
-              <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
-                <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
-                Featured on home
-              </label>
-            </div>
+                <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+                  <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
+                  Featured di home
+                </label>
+              </TabsContent>
+            </Tabs>
+
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button type="submit" className="rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Saving...' : 'Save product'}</Button>
+              <Button type="submit" className="rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Menyimpan...' : 'Simpan produk'}</Button>
               <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={resetForm}><RotateCcw className="h-4 w-4" />Clear</Button>
             </div>
           </form>
@@ -449,7 +473,7 @@ const ProductManagementPage = () => {
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold">Daftar produk</h2>
-              {customProducts.length ? <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleResetAll}>Reset all</Button> : null}
+              {customProducts.length ? <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleResetAll}>Reset semua</Button> : null}
             </div>
             <div className="mt-5 grid gap-3">
               {customProducts.map((product) => (
@@ -472,14 +496,14 @@ const ProductManagementPage = () => {
                     </div>
                     <div className="flex shrink-0 gap-2">
                       <Button type="button" size="icon" variant="outline" className="rounded-2xl bg-white" onClick={() => handleEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>
-                      <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(product)} aria-label={`Delete ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" size="icon" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 </article>
               ))}
               {!customProducts.length ? (
                 <div className="rounded-2xl border border-dashed bg-[#fbfaf7] p-6 text-center">
-                  <h3 className="font-bold">No custom products yet</h3>
+                  <h3 className="font-bold">Belum ada produk custom</h3>
                   <p className="mt-1 text-sm font-medium text-muted-foreground">Add one from the form to publish it into the catalog.</p>
                 </div>
               ) : null}

@@ -30,7 +30,7 @@ const MobileCategoriesPage = () => {
         const rows = await runWithTimeout(getRawMaterialCategories(), fallbackCategories, 8000);
         if (active) setCategories(rows?.length ? rows : fallbackCategories);
       } catch (error) {
-        toast.error('Failed to load categories');
+        toast.error('Gagal memuat kategori');
         if (active) setCategories(fallbackCategories);
       } finally {
         if (active) setLoading(false);
@@ -45,7 +45,7 @@ const MobileCategoriesPage = () => {
       <Helmet><title>Mobile Categories - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Categories" onBack={() => navigate('/mobile/raw-materials')} action={<Tag className="h-6 w-6 text-amber-600" />} />
-        {loading ? <MobileLoadingState eyebrow="Materials" title="Loading categories..." subtitle="Preparing classification data." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
+        {loading ? <MobileLoadingState eyebrow="Material" title="Memuat kategori..." subtitle="Menyiapkan data klasifikasi." className="min-h-[calc(100dvh-260px)]" /> : categories.length === 0 ? (
           <MobileEmptyState icon={Tag} title="No categories yet" description="Categories will appear after the material library is available." />
         ) : (
           <div className="grid grid-cols-2 gap-3">

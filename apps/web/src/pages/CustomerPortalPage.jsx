@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, CreditCard, ExternalLink, FileCheck2, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
@@ -20,7 +20,7 @@ import {
   isBespokeOrder,
 } from '@/services/orderService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
-import { isManualTransferPayment } from '@/services/cartService.js';
+import { addCartItem, clearCart, isManualTransferPayment } from '@/services/cartService.js';
 import {
   getOrderProductItems,
   getOrderProductsSubtotal,
@@ -72,6 +72,11 @@ const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobi
 const canOpenPayment = (order) => Boolean(
   ['unpaid', 'pending'].includes(order?.paymentStatus)
   && (order?.paymentUrl || isManualTransferPayment(order?.paymentProvider))
+);
+const canUploadPaymentProof = (order) => Boolean(
+  isManualTransferPayment(order?.paymentProvider)
+  && order?.paymentStatus !== 'paid'
+  && !['submitted', 'approved'].includes(order?.paymentProofStatus || 'missing')
 );
 const canTrackShipment = (order) => Boolean(order?.trackingUrl && order?.trackingNumber);
 
@@ -372,7 +377,63 @@ const ShipmentPanel = ({ order, compact = false }) => {
   );
 };
 
+const SelfServiceActions = ({
+  compact = false,
+  isMobileRoute,
+  invoicePath,
+  onReorder,
+  onRefreshPayment,
+  order,
+  refreshing = false,
+}) => {
+  const paymentPath = buildPaymentPath({ isMobileRoute, order });
+  const canReorder = getOrderProductItems(order).length > 0;
+  const buttonClass = compact
+    ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
+    : 'inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold';
+  const outlineClass = `${buttonClass} border border-[#263d27]/15 bg-white text-[#263d27]`;
+  const primaryClass = `${buttonClass} bg-[#263d27] text-[#eef2e8]`;
+
+  return (
+    <div className={compact ? 'mt-3 grid gap-2' : 'mt-4 flex flex-wrap gap-2'}>
+      {canUploadPaymentProof(order) ? (
+        <Link to={paymentPath} className={primaryClass}>
+          <Upload className="h-4 w-4" />
+          Upload bukti
+        </Link>
+      ) : null}
+      {canOpenPayment(order) ? (
+        <Link to={paymentPath} className={primaryClass}>
+          <CreditCard className="h-4 w-4" />
+          Lanjut bayar
+        </Link>
+      ) : null}
+      <Link to={invoicePath(order.orderNumber)} className={outlineClass}>
+        <FileText className="h-4 w-4" />
+        Download invoice
+      </Link>
+      {canTrackShipment(order) ? (
+        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className={primaryClass}>
+          <ExternalLink className="h-4 w-4" />
+          Lacak resi
+        </a>
+      ) : null}
+      <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
+        <ShoppingBag className="h-4 w-4" />
+        Reorder
+      </button>
+      {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
+        <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
+          {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Cek pembayaran
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
 const CustomerPortalPage = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
@@ -437,13 +498,13 @@ const CustomerPortalPage = () => {
   const copyCode = async () => {
     if (!portal?.customer?.customerCode) return;
     await navigator.clipboard.writeText(portal.customer.customerCode);
-    toast.success(`${portal.customer.customerCode} copied`);
+    toast.success(`${portal.customer.customerCode} disalin`);
   };
 
   const unlockPortal = async (event) => {
     event.preventDefault();
     if (!securityAnswer.trim()) {
-      toast.error('Security answer is required');
+      toast.error('Jawaban keamanan wajib diisi');
       return;
     }
 
@@ -452,14 +513,14 @@ const CustomerPortalPage = () => {
     setSecurityLoading(false);
 
     if (!result) {
-      toast.error('Security answer is incorrect');
+      toast.error('Jawaban keamanan salah');
       return;
     }
 
     setPortal(result);
     setSecurityQuestion(result.customer.securityQuestion || '');
     setSecurityAnswer('');
-    toast.success('Customer dashboard unlocked');
+    toast.success('Dashboard customer terbuka');
   };
 
   const saveSecurity = async (event) => {
@@ -485,9 +546,9 @@ const CustomerPortalPage = () => {
       setNewSecurityAnswer('');
       setCurrentSecurityAnswer('');
       setSecurityFormOpen(false);
-      toast.success('Security question saved');
+      toast.success('Pertanyaan keamanan tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Failed to save security question');
+      toast.error(error.message || 'Gagal menyimpan pertanyaan keamanan');
     } finally {
       setSavingSecurity(false);
     }
@@ -502,22 +563,52 @@ const CustomerPortalPage = () => {
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
       const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'dicek';
       if (result.syncApplied) {
-        toast.success(`Payment ${statusLabel}`);
+        toast.success(`Pembayaran ${statusLabel}`);
       } else {
-        toast.warning('Payment checked, status belum berubah');
+        toast.warning('Pembayaran dicek, status belum berubah');
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to refresh payment');
+      toast.error(error.message || 'Gagal refresh pembayaran');
     } finally {
       setRefreshingPaymentOrder('');
     }
+  };
+
+  const reorderOrder = (order) => {
+    const productItems = getOrderProductItems(order);
+    if (!productItems.length) {
+      toast.error('Order ini belum punya item produk untuk reorder');
+      return;
+    }
+
+    clearCart();
+    productItems.forEach((item) => {
+      addCartItem({
+        id: item.productId || item.id || item.slug || item.name,
+        slug: item.productSlug || item.slug || item.productId || item.name,
+        cartSlug: item.slug || item.productSlug || item.productId || item.name,
+        productSlug: item.productSlug || item.slug,
+        variantId: item.variantId || '',
+        name: item.name,
+        price: item.price || formatTotal(item.priceNumber),
+        priceNumber: item.priceNumber
+          ? Number(item.priceNumber)
+          : Number(item.totalPrice || 0) / Math.max(Number(item.quantity || 1), 1),
+        size: item.size || '',
+        category: item.category || '',
+        notes: item.notes || '',
+        maxStock: Number(item.maxStock || item.stock || 0),
+      }, Math.max(Number(item.quantity || 1), 1));
+    });
+    toast.success(`${productItems.length} item dimasukkan ke keranjang`);
+    navigate(isMobileRoute ? '/mobile/cart' : '/cart');
   };
 
   if (isMobileRoute) {
     return (
       <MobileCommerceLayout>
         <Helmet>
-          <title>Customer Dashboard - Solivagant</title>
+          <title>Dashboard Customer - Solivagant</title>
           <meta name="description" content="Check Solivagant order progress with a customer code." />
         </Helmet>
         <main className="mobile-page space-y-4">
@@ -676,33 +767,18 @@ const CustomerPortalPage = () => {
                       <BespokeProductionPanel order={order} compact />
                       <PaymentProofPanel order={order} compact />
                       <ShipmentPanel order={order} compact />
-                      <Link to={invoicePath(order.orderNumber)} className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white text-xs font-bold text-[#263d27]">
-                        <FileText className="h-4 w-4" />
-                        Invoice
-                      </Link>
-                      {canOpenPayment(order) ? (
-                        <Link to={buildPaymentPath({ isMobileRoute, order })} className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
-                          <CreditCard className="h-4 w-4" />
-                          Lanjut bayar
-                        </Link>
-                      ) : null}
-                      {canTrackShipment(order) ? (
-                        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">
-                          <ExternalLink className="h-4 w-4" />
-                          Lacak resi
-                        </a>
-                      ) : null}
-                      {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-                        <button
-                          type="button"
-                          onClick={() => refreshPaymentStatus(order)}
-                          disabled={refreshingPaymentOrder === order.orderNumber}
-                          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white text-xs font-bold text-[#263d27] disabled:opacity-60"
-                        >
-                          {refreshingPaymentOrder === order.orderNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          Cek pembayaran
-                        </button>
-                      ) : null}
+                      <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-3">
+                        <div className="text-[10px] font-bold uppercase text-[#263d27]">Self-service</div>
+                        <SelfServiceActions
+                          compact
+                          isMobileRoute={isMobileRoute}
+                          invoicePath={invoicePath}
+                          onRefreshPayment={refreshPaymentStatus}
+                          onReorder={reorderOrder}
+                          order={order}
+                          refreshing={refreshingPaymentOrder === order.orderNumber}
+                        />
+                      </div>
                       <div className="mt-4">
                         <OrderTimeline order={order} compact />
                       </div>
@@ -920,33 +996,22 @@ const CustomerPortalPage = () => {
                             <BespokeProductionPanel order={order} />
                             <PaymentProofPanel order={order} />
                             <ShipmentPanel order={order} />
-                            <Link to={invoicePath(order.orderNumber)} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
-                              <FileText className="h-4 w-4" />
-                              Invoice
-                            </Link>
-                            {canOpenPayment(order) ? (
-                              <Link to={buildPaymentPath({ isMobileRoute, order })} className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
-                                <CreditCard className="h-4 w-4" />
-                                Lanjut bayar
-                              </Link>
-                            ) : null}
-                            {canTrackShipment(order) ? (
-                              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-[#eef2e8]">
-                                <ExternalLink className="h-4 w-4" />
-                                Lacak resi
-                              </a>
-                            ) : null}
-                            {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-                              <button
-                                type="button"
-                                onClick={() => refreshPaymentStatus(order)}
-                                disabled={refreshingPaymentOrder === order.orderNumber}
-                                className="ml-2 mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27] disabled:opacity-60"
-                              >
-                                {refreshingPaymentOrder === order.orderNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                Cek pembayaran
-                              </button>
-                            ) : null}
+                            <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <div className="text-xs font-bold uppercase text-[#263d27]">Self-service</div>
+                                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Kelola bukti bayar, invoice, tracking, dan reorder dari sini.</p>
+                                </div>
+                              </div>
+                              <SelfServiceActions
+                                isMobileRoute={isMobileRoute}
+                                invoicePath={invoicePath}
+                                onRefreshPayment={refreshPaymentStatus}
+                                onReorder={reorderOrder}
+                                order={order}
+                                refreshing={refreshingPaymentOrder === order.orderNumber}
+                              />
+                            </div>
                             <div className="mt-5">
                               <OrderTimeline order={order} />
                             </div>
