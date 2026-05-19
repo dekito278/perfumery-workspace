@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { BadgePercent, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
+import { BadgePercent, ChevronDown, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
@@ -202,9 +202,20 @@ const MobileCheckoutPage = () => {
           description="Ongkir dihitung otomatis setelah kurir dipilih."
           complete={shippingComplete}
         >
-            <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} className="mobile-commerce-control h-12 px-3 text-sm font-bold">
-              <option value="">Pilih kurir</option>{checkoutCourierOptions.map((courier) => <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>)}
-            </select>
+            <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase">
+                  {selectedCourier ? 'Kurir dipilih' : 'Dropdown kurir'}
+                </span>
+                <span className="mt-0.5 block truncate text-sm font-bold">
+                  {selectedCourier ? (courierLabels[selectedCourier] || selectedCourier.toUpperCase()) : 'Pilih kurir pengiriman'}
+                </span>
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0" />
+              <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
+                <option value="">Pilih kurir</option>{checkoutCourierOptions.map((courier) => <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>)}
+              </select>
+            </label>
             {shippingLoading ? (
               <p className="mobile-commerce-notice bg-[#f7f8f2] font-bold text-[#263d27]">
                 Mencari ongkir dari alamat pengiriman...

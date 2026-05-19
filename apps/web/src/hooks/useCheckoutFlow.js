@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -25,6 +25,28 @@ import {
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
+const CHECKOUT_DRAFT_STORAGE_KEY = 'dekito.storefront.checkoutDraft.v1';
+
+const readCheckoutDraft = () => {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const rawValue = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    return rawValue ? JSON.parse(rawValue) : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeCheckoutDraft = (draft) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+};
+
+const clearCheckoutDraft = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+};
 
 const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
   const message = String(error?.message || error || '').trim();
@@ -88,12 +110,13 @@ export const useCheckoutFlow = ({
   clearVoucher,
 }) => {
   const navigate = useNavigate();
-  const [customerCode, setCustomerCode] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [contact, setContact] = useState('');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [deliveryArea, setDeliveryArea] = useState('');
-  const [notes, setNotes] = useState('');
+  const savedDraft = useMemo(() => readCheckoutDraft(), []);
+  const [customerCode, setCustomerCode] = useState(savedDraft.customerCode || '');
+  const [customerName, setCustomerName] = useState(savedDraft.customerName || '');
+  const [contact, setContact] = useState(savedDraft.contact || '');
+  const [deliveryAddress, setDeliveryAddress] = useState(savedDraft.deliveryAddress || '');
+  const [deliveryArea, setDeliveryArea] = useState(savedDraft.deliveryArea || '');
+  const [notes, setNotes] = useState(savedDraft.notes || '');
   const [saving, setSaving] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState(null);
   const [securityChallenge, setSecurityChallenge] = useState(null);
@@ -101,13 +124,13 @@ export const useCheckoutFlow = ({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [repeatCustomer, setRepeatCustomer] = useState(null);
   const [repeatAddressMode, setRepeatAddressMode] = useState('new');
-  const [destinationSearch, setDestinationSearch] = useState('');
+  const [destinationSearch, setDestinationSearch] = useState(savedDraft.destinationSearch || savedDraft.deliveryArea || '');
   const [destinationOptions, setDestinationOptions] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [shippingOptions, setShippingOptions] = useState([]);
-  const [selectedCourier, setSelectedCourier] = useState('');
+  const [selectedCourier, setSelectedCourier] = useState(savedDraft.selectedCourier || '');
   const [selectedShipping, setSelectedShipping] = useState(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(MANUAL_TRANSFER_PAYMENT.id);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(savedDraft.selectedPaymentMethod || MANUAL_TRANSFER_PAYMENT.id);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
   const [shippingNotice, setShippingNotice] = useState('');
@@ -132,6 +155,30 @@ export const useCheckoutFlow = ({
     && selectedPaymentMethod
     && !saving
   );
+  useEffect(() => {
+    writeCheckoutDraft({
+      customerCode,
+      customerName,
+      contact,
+      deliveryAddress,
+      deliveryArea,
+      destinationSearch,
+      notes,
+      selectedCourier,
+      selectedPaymentMethod,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [
+    customerCode,
+    customerName,
+    contact,
+    deliveryAddress,
+    deliveryArea,
+    destinationSearch,
+    notes,
+    selectedCourier,
+    selectedPaymentMethod,
+  ]);
   const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
     setSelectedDestination(null);
     setSelectedShipping(null);
@@ -520,6 +567,7 @@ export const useCheckoutFlow = ({
           createdAt: new Date().toISOString(),
         }));
         clearCart();
+        clearCheckoutDraft();
         (clearVoucher || clearAppliedVoucherCode)();
         setSubmittedOrder(order);
         toast.success(`Order ${order.orderNumber} saved. Upload bukti transfer wajib setelah transfer.`);
@@ -573,6 +621,7 @@ export const useCheckoutFlow = ({
         createdAt: new Date().toISOString(),
       }));
       clearCart();
+      clearCheckoutDraft();
       (clearVoucher || clearAppliedVoucherCode)();
       setSubmittedOrder(order);
       toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);

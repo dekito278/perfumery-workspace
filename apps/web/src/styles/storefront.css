@@ -149,6 +149,40 @@
   box-shadow: 0 0 0 4px rgba(38, 61, 39, 0.08);
 }
 
+.mobile-commerce-courier-select {
+  position: relative;
+  display: flex;
+  min-height: 52px;
+  min-width: 0;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(146, 64, 14, 0.24);
+  border-radius: var(--buyer-radius-inner);
+  background: #fff7ed;
+  padding: 10px 12px;
+  color: #92400e;
+  box-shadow: 0 10px 24px -22px rgba(146, 64, 14, 0.46);
+}
+
+.mobile-commerce-courier-select.is-selected {
+  border-color: rgba(38, 61, 39, 0.44);
+  background: #263d27;
+  color: #fff;
+  box-shadow: 0 16px 32px -24px rgba(38, 61, 39, 0.66);
+}
+
+.mobile-commerce-courier-select select {
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+  width: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
 .mobile-commerce-chip,
 .mobile-commerce-muted-chip {
   display: inline-flex;

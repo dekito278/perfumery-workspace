@@ -410,6 +410,26 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
       </div>
 
       <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
+        {customerCode ? (
+          <div className={compact ? 'rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] p-4' : 'rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] p-5 lg:col-span-2'}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Kode customer</div>
+                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-[#263d27]' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-[#263d27]'}>
+                  {customerCode}
+                </div>
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+                  Salin dan simpan kode ini. Kode dipakai untuk cek order dan checkout berikutnya tanpa isi ulang data.
+                </p>
+              </div>
+              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-white gap-2" onClick={() => copyValue('Kode customer', customerCode)}>
+                <Copy className="h-4 w-4" />
+                Salin kode
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
           <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Rekening tujuan</div>
           <div className="mt-3 grid gap-3">
@@ -442,8 +462,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <div className="text-xs font-bold uppercase">Instruksi</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
-            <li>2. Upload bukti transfer lewat form di bawah. Ini wajib untuk pembayaran manual.</li>
-            <li>3. Admin akan cek bukti transfer dan memperbarui status pembayaran setelah valid.</li>
+            <li>2. Salin dan simpan kode customer untuk cek status order.</li>
+            <li>3. Upload bukti transfer lewat form di bawah. Ini wajib untuk pembayaran manual.</li>
+            <li>4. Admin akan cek bukti transfer dan memperbarui status pembayaran setelah valid.</li>
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
