@@ -3,7 +3,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/App';
 import '@/index.css';
+import '@/styles/studio.css';
 import '@/styles/mobile.css';
+import '@/styles/storefront.css';
+import '@/styles/print.css';
 import { applyStandaloneClass, installConnectivityEvents, installStaleShellRecovery, registerServiceWorker } from '@/utils/pwa.js';
 import { recordMobileRuntimeError } from '@/utils/mobileDiagnostics.js';
 

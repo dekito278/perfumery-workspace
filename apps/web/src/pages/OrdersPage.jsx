@@ -107,7 +107,7 @@ const bespokeDetailRows = (item) => [
 const OrdersPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, error: loadError, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [syncingOrder, setSyncingOrder] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -152,6 +152,14 @@ const OrdersPage = () => {
   const selectedPrintableOrders = selectedVisibleOrders.filter(canExportShippingLabel);
   const visibleOrderKeys = visibleOrders.map((order) => order.id || order.orderNumber);
   const allVisibleSelected = visibleOrderKeys.length > 0 && visibleOrderKeys.every((key) => selectedOrderSet.has(key));
+
+  const handleReload = async () => {
+    try {
+      await reload();
+    } catch (error) {
+      toast.error(error.message || 'Gagal memuat ulang order');
+    }
+  };
 
   useEffect(() => {
     setSelectedOrders((current) => current.filter((key) => orders.some((order) => (order.id || order.orderNumber) === key)));
@@ -326,8 +334,25 @@ const OrdersPage = () => {
         <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-bold">Orders</h2>
-            <span className="text-sm font-bold text-amber-700">{summary.completed} selesai</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-amber-700">{summary.completed} selesai</span>
+              <Button type="button" variant="outline" size="icon" onClick={handleReload} disabled={loading} className="h-10 w-10 rounded-2xl bg-white" aria-label="Refresh orders">
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
+          {loadError && orders.length > 0 ? (
+            <div className="mt-4">
+              <StateBlock
+                tone="error"
+                title="Orders data may be stale"
+                description={loadError}
+                action={loading ? '' : 'Retry orders'}
+                onAction={loading ? null : handleReload}
+                className="bg-rose-50/80 p-5"
+              />
+            </div>
+          ) : null}
           <div className="mt-4 grid gap-3 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4 lg:grid-cols-[1fr_auto]">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -380,7 +405,16 @@ const OrdersPage = () => {
             </p>
           </div>
           <div className="mt-5 grid gap-4">
-            {visibleOrders.map((order) => {
+            {loadError && !loading && !orders.length ? (
+              <StateBlock
+                title="Orders could not be loaded"
+                description={loadError}
+                tone="error"
+                action="Retry orders"
+                onAction={handleReload}
+              />
+            ) : null}
+            {!loadError ? visibleOrders.map((order) => {
               const bespoke = isBespokeOrder(order);
               const bespokeItem = getBespokeItem(order);
               const reservationExpiresAt = getOrderReservationExpiresAt(order);
@@ -532,8 +566,8 @@ const OrdersPage = () => {
                 </div>
               </article>
               );
-            })}
-            {!visibleOrders.length && !loading ? (
+            }) : null}
+            {!loadError && !visibleOrders.length && !loading ? (
               <StateBlock title="Order tidak ditemukan" description="Ubah pencarian atau filter untuk melihat order lain." icon={PackageCheck} />
             ) : null}
             {loading && !orders.length ? (

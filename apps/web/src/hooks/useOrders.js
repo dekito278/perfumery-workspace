@@ -12,15 +12,26 @@ import {
 export const useOrders = () => {
   const [orders, setOrders] = useState(getLocalOrders);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
     const syncOrders = async () => {
       setLoading(true);
-      const nextOrders = await getOrders();
-      if (isMounted) {
-        setOrders(nextOrders);
-        setLoading(false);
+      setError('');
+      try {
+        const nextOrders = await getOrders();
+        if (isMounted) {
+          setOrders(nextOrders);
+        }
+      } catch (syncError) {
+        if (isMounted) {
+          setError(syncError.message || 'Orders could not be loaded. Check the connection and retry.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -41,7 +52,19 @@ export const useOrders = () => {
     orders,
     summary,
     loading,
-    reload: async () => setOrders(await getOrders()),
+    error,
+    reload: async () => {
+      setLoading(true);
+      setError('');
+      try {
+        setOrders(await getOrders());
+      } catch (reloadError) {
+        setError(reloadError.message || 'Orders could not be loaded. Check the connection and retry.');
+        throw reloadError;
+      } finally {
+        setLoading(false);
+      }
+    },
     updateStatus: async (orderId, status) => setOrders(await updateOrderStatus(orderId, status)),
     updatePaymentStatus: async (orderId, paymentStatus) => {
       const nextOrderStatus = paymentStatus === 'paid'

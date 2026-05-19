@@ -374,7 +374,6 @@ const manualChunkGroups = [
 	['supabase-vendor', ['/node_modules/@supabase/']],
 	['radix-vendor', ['/node_modules/@radix-ui/']],
 	['motion-vendor', ['/node_modules/framer-motion/']],
-	['charts-vendor', ['/node_modules/recharts/', '/node_modules/d3-']],
 	['pdf-vendor', ['/node_modules/pdfjs-dist/', '/node_modules/jspdf/', '/node_modules/html2canvas/']],
 	['ui-vendor', ['/node_modules/lucide-react/', '/node_modules/sonner/', '/node_modules/date-fns/', '/node_modules/react-helmet/']],
 ];
@@ -390,7 +389,6 @@ const getManualChunk = (id) => {
 };
 
 const deferredPreloadChunks = [
-	'charts-vendor',
 	'pdf-vendor',
 ];
 

@@ -150,7 +150,7 @@ const JournalMarkdownContent = ({ content, mobile = false }) => {
   }
 
   return (
-    <div className={mobile ? 'space-y-5 text-[16px] font-medium leading-8 text-[#1f2937]' : 'mx-auto max-w-3xl space-y-7 text-[1.075rem] leading-9 text-[#1f2937]'}>
+    <div className={mobile ? 'max-w-full space-y-5 break-words text-[16px] font-medium leading-8 text-[#1f2937]' : 'mx-auto w-full max-w-3xl space-y-7 break-words text-[1.075rem] leading-9 text-[#1f2937]'}>
       {blocks.map((block, index) => {
         const key = `${block.type}-${index}-${block.text || block.items?.[0] || ''}`;
 

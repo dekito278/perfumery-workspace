@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils.js';
 
 const StickyBottomActionBar = ({
@@ -9,8 +10,8 @@ const StickyBottomActionBar = ({
   keyboardBehavior = 'hide',
   reserveSpace = false,
   'aria-label': ariaLabel = 'Mobile actions',
-}) => (
-  <>
+}) => {
+  const actionBar = (
     <div
       className={cn(
         'mobile-action-bar',
@@ -25,8 +26,14 @@ const StickyBottomActionBar = ({
         {children}
       </div>
     </div>
-    {fixed && reserveSpace ? <div className="mobile-action-bar-spacer" aria-hidden="true" /> : null}
-  </>
-);
+  );
+
+  return (
+    <>
+      {fixed && typeof document !== 'undefined' ? createPortal(actionBar, document.body) : actionBar}
+      {fixed && reserveSpace ? <div className="mobile-action-bar-spacer" aria-hidden="true" /> : null}
+    </>
+  );
+};
 
 export default StickyBottomActionBar;

@@ -17,6 +17,7 @@ import DashboardSummaryCard from '@/components/DashboardSummaryCard.jsx';
 import DashboardSection from '@/components/DashboardSection.jsx';
 import RecentActivityList from '@/components/RecentActivityList.jsx';
 import OperationalInsightCard from '@/components/OperationalInsightCard.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import { formatStatus } from '@/utils/formatting.js';
 import { getProductLowStock } from '@/services/productCatalogService.js';
 import { checkDokuHealth, checkShippingHealth, getOpsHealthSnapshot, runOpsHealthRetry } from '@/services/opsHealthService.js';
@@ -119,6 +120,7 @@ const DashboardPage = () => {
   const [auditFilters, setAuditFilters] = useState({ admin: 'all', event: 'all', query: '' });
   const [pipelineSummary, setPipelineSummary] = useState({ shortlistCount: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [healthChecking, setHealthChecking] = useState('');
   const [serviceHealth, setServiceHealth] = useState({
     doku: null,
@@ -128,6 +130,7 @@ const DashboardPage = () => {
 
   const loadDashboardData = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const results = await Promise.allSettled([
         runWithRetry(() => fetchMaterialsSummary()),
@@ -139,7 +142,10 @@ const DashboardPage = () => {
       ]);
 
       const [materialsResult, formulasResult, briefsResult, validationLogsResult, orderAuditLogsResult, vouchersResult] = results;
-      const failedRequests = results.filter((result) => result.status === 'rejected');
+      const loaderLabels = ['materials', 'formulas', 'briefs', 'validation logs', 'order audit logs', 'vouchers'];
+      const failedRequests = results
+        .map((result, index) => ({ result, label: loaderLabels[index] }))
+        .filter(({ result }) => result.status === 'rejected');
 
       setMaterials(materialsResult.status === 'fulfilled' ? materialsResult.value : []);
       setFormulas(formulasResult.status === 'fulfilled' ? formulasResult.value : []);
@@ -156,7 +162,12 @@ const DashboardPage = () => {
       });
 
       if (failedRequests.length) {
-        console.error('Dashboard data loaders failed:', failedRequests.map((result) => result.reason));
+        console.error('Dashboard data loaders failed:', failedRequests.map(({ result }) => result.reason));
+        setLoadError(
+          failedRequests.length === results.length
+            ? 'Dashboard data could not be loaded. Check the connection and retry.'
+            : `Some dashboard sections could not be loaded: ${failedRequests.map(({ label }) => label).join(', ')}.`
+        );
         toast.error(
           failedRequests.length === results.length
             ? 'Failed to load dashboard data'
@@ -164,6 +175,7 @@ const DashboardPage = () => {
         );
       }
     } catch (error) {
+      setLoadError(error.message || 'Dashboard data could not be loaded. Check the connection and retry.');
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -536,6 +548,19 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
+
+        {loadError ? (
+          <div className="mb-5">
+            <StateBlock
+              tone="error"
+              title={loading ? 'Retrying dashboard data' : 'Dashboard data needs attention'}
+              description={loadError}
+              action={loading ? '' : 'Retry dashboard'}
+              onAction={loading ? null : loadDashboardData}
+              className="bg-rose-50/80 p-5 text-left sm:text-center"
+            />
+          </div>
+        ) : null}
 
         <DashboardSection title="Action center" subtitle="Urutan ini dibuat untuk kerja harian: cek bukti bayar, packing order paid, amankan stok, rapikan voucher, lalu bersihkan sync issue.">
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">

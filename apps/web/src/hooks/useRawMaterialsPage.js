@@ -60,6 +60,9 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [summaryError, setSummaryError] = useState('');
+  const [shortlistError, setShortlistError] = useState('');
   const [briefContext, setBriefContext] = useState(null);
   const [shortlistItems, setShortlistItems] = useState([]);
   const [shortlistLoading, setShortlistLoading] = useState(false);
@@ -108,6 +111,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
 
   const loadMaterials = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const { items, total } = await fetchMaterialsPage({
         page: currentPage,
@@ -121,6 +125,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
       setTotalMaterials(total);
       await refreshReferenceStatusMap(items);
     } catch (error) {
+      setLoadError(error.message || 'Materials could not be loaded. Check the connection and retry.');
       toast.error('Failed to load materials');
     } finally {
       setLoading(false);
@@ -129,6 +134,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
 
   const loadSummary = useCallback(async () => {
     setSummaryLoading(true);
+    setSummaryError('');
     try {
       const [data, referenceSummary, auditRows] = await Promise.all([
         fetchMaterialsSummary(),
@@ -141,6 +147,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
       setIfraReferenceCount(referenceSummary.ifraReferenceCount || 0);
     } catch (error) {
       console.error('Failed to load raw material summary:', error);
+      setSummaryError(error.message || 'Material summary could not be loaded.');
       setSummaryMaterials([]);
       setAuditMaterials([]);
       setMatchedReferenceCount(0);
@@ -165,8 +172,17 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
       return;
     }
 
-    const shortlist = await getBriefMaterialShortlist(briefId);
-    setShortlistItems(shortlist);
+    setShortlistLoading(true);
+    setShortlistError('');
+    try {
+      const shortlist = await getBriefMaterialShortlist(briefId);
+      setShortlistItems(shortlist);
+    } catch (error) {
+      setShortlistError(error.message || 'Shortlist workspace could not be loaded.');
+      toast.error('Failed to load shortlist workspace');
+    } finally {
+      setShortlistLoading(false);
+    }
   }, [briefId, getBriefMaterialShortlist]);
 
   const refreshAll = useCallback(async () => {
@@ -187,6 +203,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
       }
 
       setShortlistLoading(true);
+      setShortlistError('');
       try {
         const [briefs, shortlist] = await Promise.all([
           getBriefs(),
@@ -195,6 +212,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
         setBriefContext(briefs.find((item) => item.id === briefId) || null);
         setShortlistItems(shortlist);
       } catch (error) {
+        setShortlistError(error.message || 'Shortlist workspace could not be loaded.');
         toast.error('Failed to load shortlist workspace');
       } finally {
         setShortlistLoading(false);
@@ -574,6 +592,9 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     categories,
     loading,
     summaryLoading,
+    loadError,
+    summaryError,
+    shortlistError,
     briefContext,
     shortlistItems,
     shortlistLoading,
@@ -642,6 +663,7 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     loadSummary,
     loadCategories,
     refreshAll,
+    refreshShortlist,
     refreshReferenceStatusMap,
     fetchMaterials,
   };

@@ -1,0 +1,131 @@
+/* Print-only layout rules for invoices, details, and exportable pages. */
+@media print {
+  @page {
+    margin: 1.2cm;
+    size: A4;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-break-before {
+    page-break-before: always;
+  }
+
+  .print-break-after {
+    page-break-after: always;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .print-text-sm {
+    font-size: 0.875rem !important;
+  }
+
+  .print-border {
+    border: 1px solid #000 !important;
+  }
+
+  main,
+  .detail-page-container,
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .detail-section {
+    border: 1px solid #d4d4d8 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .detail-page-container {
+    gap: 0.75rem !important;
+  }
+
+  .detail-section-title {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-md {
+    border-radius: 0 !important;
+  }
+
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    font-size: 11px !important;
+    table-layout: auto !important;
+  }
+
+  th,
+  td {
+    white-space: normal !important;
+    word-break: break-word !important;
+    padding: 0.45rem !important;
+    vertical-align: top !important;
+  }
+
+  .badge,
+  [data-slot='badge'] {
+    border: 1px solid #d4d4d8 !important;
+  }
+
+  button,
+  [role='dialog'],
+  .sonner-toaster,
+  .sticky,
+  nav,
+  header {
+    display: none !important;
+  }
+}

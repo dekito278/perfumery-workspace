@@ -13,6 +13,7 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
@@ -44,6 +45,7 @@ const JournalPage = () => {
   const [posts, setPosts] = useState([]);
   const [formulas, setFormulas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -51,6 +53,7 @@ const JournalPage = () => {
 
   const loadJournalPosts = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const [postRows, formulaRows] = await Promise.all([
         getJournalPosts(),
@@ -59,6 +62,7 @@ const JournalPage = () => {
       setPosts(postRows);
       setFormulas(formulaRows);
     } catch (error) {
+      setLoadError(error.message || 'Journal data could not be loaded. Check the connection and retry.');
       toast.error('Failed to load journal');
     } finally {
       setLoading(false);
@@ -318,10 +322,30 @@ const JournalPage = () => {
         </div>
 
         <div className="mt-6">
+          {loadError && posts.length > 0 ? (
+            <div className="mb-5">
+              <StateBlock
+                tone="error"
+                title="Journal data may be stale"
+                description={loadError}
+                action={loading ? '' : 'Retry journal'}
+                onAction={loading ? null : loadJournalPosts}
+                className="bg-rose-50/80 p-5"
+              />
+            </div>
+          ) : null}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>
+          ) : loadError && posts.length === 0 ? (
+            <StateBlock
+              tone="error"
+              title="Journal could not be loaded"
+              description={loadError}
+              action="Retry journal"
+              onAction={loadJournalPosts}
+            />
           ) : posts.length === 0 ? (
             <EmptyState
               icon={BookOpenText}

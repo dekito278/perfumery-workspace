@@ -163,7 +163,7 @@ const MobileJournalEditorPage = () => {
       {loading ? (
         <MobileLoadingSkeleton title="Opening editor" subtitle="Loading formulas and note details." />
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4 pb-5">
+        <form id="mobile-journal-editor-form" onSubmit={handleSubmit} className="space-y-4 pb-5">
           <section className="space-y-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
             <MobileFormField id="journal-title" label="Title">
               <Input
@@ -271,12 +271,12 @@ const MobileJournalEditorPage = () => {
             </MobileFormField>
           </section>
 
-          <StickyBottomActionBar fixed reserveSpace aria-label="Journal editor actions">
+          <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Journal editor actions">
             <div className="grid grid-cols-[0.8fr_1fr] gap-2">
               <Button type="button" variant="outline" onClick={handleBack} className="h-11 rounded-2xl bg-white">
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving} className="h-11 gap-2 rounded-2xl">
+              <Button type="submit" form="mobile-journal-editor-form" disabled={saving} className="h-11 gap-2 rounded-2xl">
                 <Save className="h-4 w-4" />
                 {saving ? 'Saving...' : 'Save'}
               </Button>

@@ -9,6 +9,7 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import AddRawMaterialModal from '@/components/AddRawMaterialModal.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
@@ -92,6 +93,31 @@ const RawMaterialsPage = () => {
           practicalMergeCandidateCount={page.practicalMergeCandidateCount}
         />
 
+        {page.summaryError || page.shortlistError ? (
+          <div className="mb-5 grid gap-3">
+            {page.summaryError ? (
+              <StateBlock
+                tone="error"
+                title="Material summary could not be refreshed"
+                description={page.summaryError}
+                action={page.summaryLoading ? '' : 'Retry summary'}
+                onAction={page.summaryLoading ? null : page.loadSummary}
+                className="bg-rose-50/80 p-5"
+              />
+            ) : null}
+            {page.shortlistError ? (
+              <StateBlock
+                tone="error"
+                title="Shortlist workspace could not be loaded"
+                description={page.shortlistError}
+                action={page.shortlistLoading ? '' : 'Retry shortlist'}
+                onAction={page.shortlistLoading ? null : page.refreshShortlist}
+                className="bg-rose-50/80 p-5"
+              />
+            ) : null}
+          </div>
+        ) : null}
+
         <RawMaterialsToolbar
           searchTerm={page.searchTerm}
           setSearchTerm={page.setSearchTerm}
@@ -110,11 +136,32 @@ const RawMaterialsPage = () => {
           referenceFilter={page.referenceFilter}
         />
 
+        {page.loadError && page.materials.length > 0 ? (
+          <div className="mb-5">
+            <StateBlock
+              tone="error"
+              title="Materials data may be stale"
+              description={page.loadError}
+              action={page.loading ? '' : 'Retry materials'}
+              onAction={page.loading ? null : page.loadMaterials}
+              className="bg-rose-50/80 p-5"
+            />
+          </div>
+        ) : null}
+
         {page.showInitialLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : !page.summaryLoading && page.summaryMaterials.length === 0 ? (
+        ) : page.loadError && page.materials.length === 0 ? (
+          <StateBlock
+            tone="error"
+            title="Materials could not be loaded"
+            description={page.loadError}
+            action="Retry materials"
+            onAction={page.loadMaterials}
+          />
+        ) : !page.summaryLoading && !page.summaryError && page.summaryMaterials.length === 0 ? (
           <EmptyState
             icon={Package}
             title="No materials yet"

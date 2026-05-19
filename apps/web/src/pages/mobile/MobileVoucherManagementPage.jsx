@@ -6,9 +6,11 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileAccordion from '@/components/mobile-ui/MobileAccordion.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
+import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import VoucherRealtimePreview from '@/components/vouchers/VoucherRealtimePreview.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 import { getOrders } from '@/services/orderService.js';
 import {
   deleteVoucher,
@@ -115,6 +117,8 @@ const MobileVoucherManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [usageSearchTerm, setUsageSearchTerm] = useState('');
+  const [voucherVisibleCount, setVoucherVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const [usageVisibleCount, setUsageVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const products = useCatalogProducts({ editableOnly: true });
 
   const loadVouchers = async () => {
@@ -169,6 +173,10 @@ const MobileVoucherManagementPage = () => {
       return matchesStatus && matchesQuery;
     });
   }, [searchTerm, statusFilter, vouchers]);
+  const visibleVouchers = useMemo(
+    () => filteredVouchers.slice(0, voucherVisibleCount),
+    [filteredVouchers, voucherVisibleCount]
+  );
 
   const usageReport = useMemo(() => (
     buildVoucherUsageReport(usageRecords, orders)
@@ -185,6 +193,18 @@ const MobileVoucherManagementPage = () => {
       entry.contact,
     ].some((value) => String(value || '').toLowerCase().includes(query)));
   }, [usageReport, usageSearchTerm]);
+  const visibleUsageReport = useMemo(
+    () => filteredUsageReport.slice(0, usageVisibleCount),
+    [filteredUsageReport, usageVisibleCount]
+  );
+
+  useEffect(() => {
+    setVoucherVisibleCount(MOBILE_PAGE_SIZE);
+  }, [searchTerm, statusFilter]);
+
+  useEffect(() => {
+    setUsageVisibleCount(MOBILE_PAGE_SIZE);
+  }, [usageSearchTerm]);
 
   const usageStats = useMemo(() => ({
     count: usageReport.length,
@@ -516,7 +536,7 @@ const MobileVoucherManagementPage = () => {
             </div>
           </div>
 
-          {filteredVouchers.map((voucher) => {
+          {visibleVouchers.map((voucher) => {
             const status = getVoucherStatus(voucher);
             const limitLabel = voucher.usageLimitTotal
               ? `${voucher.usageCount}/${voucher.usageLimitTotal} dipakai`
@@ -577,6 +597,14 @@ const MobileVoucherManagementPage = () => {
             );
           })}
 
+          {filteredVouchers.length ? (
+            <PaginationOrLoadMore
+              visibleCount={visibleVouchers.length}
+              totalCount={filteredVouchers.length}
+              onLoadMore={() => setVoucherVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
+            />
+          ) : null}
+
           {!filteredVouchers.length ? (
             <MobileStatePanel
               tone="empty"
@@ -610,7 +638,7 @@ const MobileVoucherManagementPage = () => {
             </label>
           </div>
 
-          {filteredUsageReport.map((entry) => (
+          {visibleUsageReport.map((entry) => (
             <article key={entry.id || `${entry.voucherCode}-${entry.orderNumber}-${entry.usedAt}`} className="mobile-card space-y-3 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -637,6 +665,14 @@ const MobileVoucherManagementPage = () => {
               </div>
             </article>
           ))}
+
+          {filteredUsageReport.length ? (
+            <PaginationOrLoadMore
+              visibleCount={visibleUsageReport.length}
+              totalCount={filteredUsageReport.length}
+              onLoadMore={() => setUsageVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
+            />
+          ) : null}
 
           {!filteredUsageReport.length ? (
             <MobileStatePanel

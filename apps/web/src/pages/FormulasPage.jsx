@@ -18,6 +18,7 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
 import { formatGramAmount, formatNullable } from '@/utils/formatting.js';
@@ -36,6 +37,7 @@ const FormulasPage = () => {
   const [formulaMetrics, setFormulaMetrics] = useState({});
   const [pipelineByFormulaId, setPipelineByFormulaId] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -47,6 +49,7 @@ const FormulasPage = () => {
 
   const loadFormulas = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const data = await getFormulas();
       setFormulas(data);
@@ -112,6 +115,7 @@ const FormulasPage = () => {
 
       setPipelineByFormulaId(nextPipelineByFormulaId);
     } catch (error) {
+      setLoadError(error.message || 'Formula data could not be loaded. Check the connection and retry.');
       toast.error('Failed to load formulas');
     } finally {
       setLoading(false);
@@ -401,10 +405,31 @@ const FormulasPage = () => {
           )}
         </div>
 
+        {loadError && formulas.length > 0 ? (
+          <div className="mb-5">
+            <StateBlock
+              tone="error"
+              title="Formula data may be stale"
+              description={loadError}
+              action={loading ? '' : 'Retry formulas'}
+              onAction={loading ? null : loadFormulas}
+              className="bg-rose-50/80 p-5"
+            />
+          </div>
+        ) : null}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           </div>
+        ) : loadError && formulas.length === 0 ? (
+          <StateBlock
+            tone="error"
+            title="Formulas could not be loaded"
+            description={loadError}
+            action="Retry formulas"
+            onAction={loadFormulas}
+          />
         ) : formulas.length === 0 ? (
           <EmptyState
             icon={Beaker}
