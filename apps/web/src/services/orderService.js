@@ -740,6 +740,8 @@ export const retryOrderSyncQueue = async () => {
 };
 
 const getReservationExpiryDate = (order = {}) => {
+  if (!order || typeof order !== 'object') return null;
+
   const explicitExpiry = order.paymentExpiresAt ? new Date(order.paymentExpiresAt) : null;
   if (explicitExpiry && Number.isFinite(explicitExpiry.getTime())) {
     return explicitExpiry;
