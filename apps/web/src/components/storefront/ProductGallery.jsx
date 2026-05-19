@@ -77,7 +77,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
               )}
               aria-label={`Select product image ${index + 1}`}
             >
-              <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" width="96" height="96" />
+              <img src={image} alt="" className="h-full w-full object-contain p-1" loading="lazy" decoding="async" width="96" height="96" />
             </button>
           ))}
         </div>

@@ -41,7 +41,7 @@ export const getOptimizedProductImageUrl = (imageUrl, width = 520) => {
     url.pathname = url.pathname.replace(PRODUCT_STORAGE_PUBLIC_PATH, PRODUCT_STORAGE_RENDER_PATH);
     url.searchParams.set('width', String(width));
     url.searchParams.set('quality', '76');
-    url.searchParams.set('resize', 'cover');
+    url.searchParams.set('resize', 'contain');
     return url.toString();
   } catch {
     return sourceUrl;

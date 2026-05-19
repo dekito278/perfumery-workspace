@@ -27,6 +27,7 @@ const ProductVisual = ({
   product,
   className = '',
   bottleClassName = '',
+  imageClassName = '',
   label = true,
   priority = false,
   sizes = '(max-width: 767px) 46vw, 320px',
@@ -68,7 +69,11 @@ const ProductVisual = ({
         <img
           src={optimizedImageUrl}
           alt={product?.name || 'Solivagant product'}
-          className={cn('absolute inset-0 h-full w-full object-cover transition-opacity duration-150', imageLoaded ? 'opacity-100' : 'opacity-0')}
+          className={cn(
+            'absolute inset-0 h-full w-full object-contain p-3 transition-opacity duration-150 sm:p-4',
+            imageLoaded ? 'opacity-100' : 'opacity-0',
+            imageClassName
+          )}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
           srcSet={imageSrcSet}
