@@ -127,6 +127,7 @@ export const useCheckoutFlow = ({
     && selectedCourier
     && selectedDestination
     && selectedShipping
+    && selectedPaymentMethod
     && !saving
   );
   const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
@@ -387,6 +388,10 @@ export const useCheckoutFlow = ({
     }
     if (!selectedShipping) {
       toast.error('Pilih ekspedisi dulu');
+      return;
+    }
+    if (!selectedPaymentMethod) {
+      toast.error('Pilih metode pembayaran dulu');
       return;
     }
 

@@ -220,6 +220,8 @@ const normalizeProductionLinks = (links) => (
 const formatOrderRupiah = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const normalizeVoucherSnapshot = (input = {}) => {
+  if (!input || typeof input !== 'object') return null;
+
   const code = String(input.code || input.voucherCode || input.voucher_code || '').trim().toUpperCase();
   const discountAmount = Math.max(Number(input.discountAmount || input.discount_amount || 0), 0);
   if (!code || discountAmount <= 0) return null;
@@ -1280,6 +1282,7 @@ export const createBespokeRequest = async (requestData) => {
     checkoutDraft: buildBespokeCheckoutDraft(normalizedRequest),
     paymentProvider: normalizedRequest.paymentProvider || 'manual',
     source: BESPOKE_SOURCE,
+    voucherSnapshot: null,
   });
 };
 

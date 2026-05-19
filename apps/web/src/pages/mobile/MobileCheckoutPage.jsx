@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { BadgePercent, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
@@ -56,6 +56,7 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
 
 const MobileCheckoutPage = () => {
   const navigate = useNavigate();
+  const summarySectionRef = useRef(null);
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
@@ -100,6 +101,9 @@ const MobileCheckoutPage = () => {
   ];
   const missingRequirements = checkoutRequirements.filter((item) => !item.complete);
   const primaryActionLabel = saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang');
+  const goToSummary = () => {
+    summarySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   if (!items.length) return (
     <MobileCommerceLayout>
@@ -236,14 +240,27 @@ const MobileCheckoutPage = () => {
         >
             {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => setSelectedPaymentMethod(method.id)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            {paymentComplete ? (
+              <Button type="button" className="h-12 rounded-2xl gap-2" onClick={goToSummary}>
+                <CreditCard className="h-4 w-4" />
+                Lanjut ke ringkasan
+              </Button>
+            ) : null}
         </CheckoutSection>
-        <CheckoutSection
-          step="6"
-          title="Ringkasan"
-          description="Cek produk dan total sebelum pesanan dibuat."
-          complete={Boolean(paymentComplete && items.length)}
-          action={<span className="shrink-0 text-xs font-bold text-amber-700">{summary.quantity} item</span>}
-        >
+        <div ref={summarySectionRef}>
+          <CheckoutSection
+            step="6"
+            title="Ringkasan"
+            description="Cek produk dan total sebelum pesanan dibuat."
+            complete={Boolean(paymentComplete && items.length)}
+            action={<span className="shrink-0 text-xs font-bold text-amber-700">{summary.quantity} item</span>}
+          >
+            {canSubmitCheckout ? (
+              <Button type="button" className="h-12 rounded-2xl gap-2" onClick={() => submitOrder()} disabled={saving}>
+                <CreditCard className="h-4 w-4" />
+                {primaryActionLabel}
+              </Button>
+            ) : null}
             {items.map((item) => {
               const discountedLine = discountedLineMap.get(item.slug);
               const hasLineDiscount = Boolean(discountedLine?.discount);
@@ -295,7 +312,8 @@ const MobileCheckoutPage = () => {
               <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
               <div className="mt-3 border-t border-[#263d27]/10 pt-3 flex justify-between gap-3 text-sm text-[#0b130c]"><span>Total bayar</span><span>{formatTotal(totalDue)}</span></div>
             </div>
-        </CheckoutSection>
+          </CheckoutSection>
+        </div>
         {canSubmitCheckout ? (
           <StickyBottomActionBar
             fixed
