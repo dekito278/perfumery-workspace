@@ -1,0 +1,216 @@
+{
+  "generated_at": "2026-05-19T20:26:04.190Z",
+  "base_url": "http://127.0.0.1:3000",
+  "output_dir": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-smoke-check-current",
+  "public_article_discovery": "fallback_missing_supabase_env",
+  "login": {
+    "attempted": false,
+    "authenticated": false,
+    "reason": "missing_credentials"
+  },
+  "total_steps": 9,
+  "passed_steps": 9,
+  "failed_steps": 0,
+  "skipped_protected_flows": [
+    "/dashboard",
+    "/raw-materials",
+    "/formulas",
+    "/journal",
+    "/mobile/journal"
+  ],
+  "total_console_errors": 0,
+  "total_page_errors": 0,
+  "reports": [
+    {
+      "id": "login",
+      "label": "Login page",
+      "auth": "public",
+      "route": "/login",
+      "targetUrl": "http://127.0.0.1:3000/login",
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "Login - Solivagant",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-smoke-check-current\\login.png",
+      "pageState": {
+        "overlay": false,
+        "rootChildCount": 2,
+        "textLength": 96,
+        "horizontalOverflow": false
+      },
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "mobile-dashboard",
+      "label": "Mobile dashboard",
+      "auth": "public",
+      "route": "/mobile/dashboard",
+      "targetUrl": "http://127.0.0.1:3000/mobile/dashboard",
+      "finalUrl": "http://127.0.0.1:3000/mobile/dashboard",
+      "title": "Solivagant - Beranda",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-smoke-check-current\\mobile-dashboard.png",
+      "pageState": {
+        "overlay": false,
+        "rootChildCount": 2,
+        "textLength": 1175,
+        "horizontalOverflow": false
+      },
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "public-article",
+      "label": "Public article",
+      "auth": "public",
+      "route": "/articles/smoke-public-article",
+      "targetUrl": "http://127.0.0.1:3000/articles/smoke-public-article",
+      "finalUrl": "http://127.0.0.1:3000/articles/smoke-public-article",
+      "title": "Journal Article - Solivagant",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-smoke-check-current\\public-article.png",
+      "pageState": {
+        "overlay": false,
+        "rootChildCount": 2,
+        "textLength": 135,
+        "horizontalOverflow": false
+      },
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "mobile-public-article",
+      "label": "Mobile public article",
+      "auth": "public",
+      "route": "/mobile/articles/smoke-public-article",
+      "targetUrl": "http://127.0.0.1:3000/mobile/articles/smoke-public-article",
+      "finalUrl": "http://127.0.0.1:3000/mobile/articles/smoke-public-article",
+      "title": "Journal Article - Solivagant",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": "C:\\webapp\\dekito-workspace-perfumery\\docs\\browser-smoke-check-current\\mobile-public-article.png",
+      "pageState": {
+        "overlay": false,
+        "rootChildCount": 2,
+        "textLength": 151,
+        "horizontalOverflow": false
+      },
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "redirect-dashboard",
+      "label": "Protected redirect /dashboard",
+      "auth": "protected-redirect",
+      "route": "/dashboard",
+      "targetUrl": "http://127.0.0.1:3000/dashboard",
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "screenshotPath": null,
+      "pageState": null,
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "redirect-raw-materials",
+      "label": "Protected redirect /raw-materials",
+      "auth": "protected-redirect",
+      "route": "/raw-materials",
+      "targetUrl": "http://127.0.0.1:3000/raw-materials",
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "screenshotPath": null,
+      "pageState": null,
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "redirect-formulas",
+      "label": "Protected redirect /formulas",
+      "auth": "protected-redirect",
+      "route": "/formulas",
+      "targetUrl": "http://127.0.0.1:3000/formulas",
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "screenshotPath": null,
+      "pageState": null,
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "redirect-journal",
+      "label": "Protected redirect /journal",
+      "auth": "protected-redirect",
+      "route": "/journal",
+      "targetUrl": "http://127.0.0.1:3000/journal",
+      "finalUrl": "http://127.0.0.1:3000/login",
+      "title": "",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "screenshotPath": null,
+      "pageState": null,
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "id": "redirect-mobile-journal",
+      "label": "Protected redirect /mobile/journal",
+      "auth": "protected-redirect",
+      "route": "/mobile/journal",
+      "targetUrl": "http://127.0.0.1:3000/mobile/journal",
+      "finalUrl": "http://127.0.0.1:3000/mobile/login",
+      "title": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotPath": null,
+      "pageState": null,
+      "consoleIssues": [],
+      "pageErrors": [],
+      "status": "passed",
+      "failures": []
+    }
+  ]
+}
