@@ -214,7 +214,7 @@ const HomePage = () => {
 
                   {hasProducts && heroProducts[0] ? (
                     <motion.div whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
-                      <ProductVisual product={heroProducts[0]} className="min-h-[178px] shadow-xl shadow-[#263d27]/10" />
+                      <ProductVisual product={heroProducts[0]} className="min-h-[178px] shadow-xl shadow-[#263d27]/10" imageFit="cover" />
                     </motion.div>
                   ) : (
                     <div className="grid min-h-[178px] content-between rounded-[28px] border border-[#263d27]/12 bg-white/78 p-5 shadow-sm shadow-[#263d27]/5">
@@ -357,7 +357,7 @@ const HomePage = () => {
                   transition={{ type: 'spring', stiffness: 260, damping: 24 }}
                   className="overflow-hidden rounded-2xl border border-[#263d27]/12 bg-white/88 p-3 shadow-sm shadow-[#263d27]/5"
                 >
-                  <ProductVisual product={product} className="min-h-[245px]" />
+                  <ProductVisual product={product} className="aspect-[4/3] min-h-[245px]" imageFit="cover" />
                   <div className="p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">

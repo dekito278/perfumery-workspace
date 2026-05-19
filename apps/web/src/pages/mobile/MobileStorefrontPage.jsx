@@ -115,7 +115,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
                 onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location) })}
                 className="mobile-commerce-panel min-w-0 p-2 text-left"
               >
-                <ProductVisual product={heroProduct} className="aspect-square rounded-xl" bottleClassName="left-4 top-4 h-14 w-7 rounded-[0.85rem]" label={false} priority sizes="126px" />
+                <ProductVisual product={heroProduct} className="aspect-square rounded-xl" bottleClassName="left-4 top-4 h-14 w-7 rounded-[0.85rem]" label={false} priority sizes="126px" imageFit="cover" />
                 <div className="mt-2">
                   <h2 className="truncate text-xs font-bold text-[#0b130c]">{heroProduct.name}</h2>
                   <p className="mt-0.5 truncate text-[10px] font-bold text-amber-700">{heroProduct.price}</p>
@@ -210,7 +210,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
             <article key={product.id} className="mobile-card mobile-commerce-product-card min-w-0 overflow-hidden p-2">
               <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location) })} className="block w-full text-left">
                 <div className="relative">
-                  <ProductVisual product={product} className="aspect-[4/5] rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 44vw, 198px" />
+                  <ProductVisual product={product} className="aspect-[4/5] rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 44vw, 198px" imageFit="cover" />
                   <div className="mobile-commerce-chip absolute left-2 top-2 max-w-[calc(100%-16px)] truncate bg-white/90 px-2 py-1 text-[9px] uppercase shadow-sm">
                     {getProductCategoryLabel(product)}
                   </div>

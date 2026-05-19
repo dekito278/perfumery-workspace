@@ -31,6 +31,7 @@ const ProductVisual = ({
   label = true,
   priority = false,
   sizes = '(max-width: 767px) 46vw, 320px',
+  imageFit = 'contain',
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -70,7 +71,8 @@ const ProductVisual = ({
           src={optimizedImageUrl}
           alt={product?.name || 'Solivagant product'}
           className={cn(
-            'absolute inset-0 h-full w-full object-contain p-3 transition-opacity duration-150 sm:p-4',
+            'absolute inset-0 h-full w-full transition-opacity duration-150',
+            imageFit === 'cover' ? 'object-cover p-0' : 'object-contain p-3 sm:p-4',
             imageLoaded ? 'opacity-100' : 'opacity-0',
             imageClassName
           )}

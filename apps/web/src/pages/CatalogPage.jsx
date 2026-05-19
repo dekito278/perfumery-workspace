@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, PackagePlus, Search, ShoppingBag, WandSparkles } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import ListPagination from '@/components/ListPagination.jsx';
 import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
@@ -13,6 +14,8 @@ import {
   getVisibleProductTags,
   isProductVisibleInStorefront,
 } from '@/services/productCatalogService.js';
+
+const CATALOG_PAGE_SIZE = 6;
 
 const sortProducts = (products, sort) => {
   const nextProducts = [...products];
@@ -28,6 +31,7 @@ const CatalogPage = () => {
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState('featured');
+  const [currentPage, setCurrentPage] = useState(1);
   const allCatalogProducts = useCatalogProducts();
   const catalogProducts = useMemo(() => allCatalogProducts.filter(isProductVisibleInStorefront), [allCatalogProducts]);
   const categories = useStorefrontCategories(catalogProducts);
@@ -45,6 +49,22 @@ const CatalogPage = () => {
       return matchesSegment && matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
     }), sort);
   }, [catalogProducts, category, query, segment, sort]);
+  const totalPages = Math.max(1, Math.ceil(products.length / CATALOG_PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const visibleProducts = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * CATALOG_PAGE_SIZE;
+    return products.slice(startIndex, startIndex + CATALOG_PAGE_SIZE);
+  }, [products, safeCurrentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, query, segment, sort]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <>
@@ -118,9 +138,9 @@ const CatalogPage = () => {
             </section>
           ) : null}
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {products.map((product) => (
+            {visibleProducts.map((product) => (
               <article key={product.id} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-[#263d27]/18 hover:shadow-xl hover:shadow-[#263d27]/8">
-                <ProductVisual product={product} />
+                <ProductVisual product={product} className="aspect-[4/3]" imageFit="cover" />
                 <div className="p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -147,6 +167,13 @@ const CatalogPage = () => {
               </article>
             ))}
           </div>
+          <ListPagination
+            currentPage={safeCurrentPage}
+            pageSize={CATALOG_PAGE_SIZE}
+            totalItems={products.length}
+            itemLabel="produk"
+            onPageChange={setCurrentPage}
+          />
           {!products.length ? (
             <div className="mt-8 overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-white text-center shadow-sm">
               <div className="bg-[#050705] px-6 py-10 text-[#eef2e8]">

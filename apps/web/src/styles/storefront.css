@@ -332,6 +332,9 @@
   position: relative;
   margin-left: -10px;
   margin-right: -10px;
+  max-width: calc(100% + 20px);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .mobile-shop-filter-frame::before,
@@ -356,13 +359,21 @@
 }
 
 .mobile-shop-filter-rail {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
   min-height: 56px;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding: 4px 48px 10px 10px;
   scroll-padding-left: 10px;
   scroll-padding-right: 48px;
+  scroll-snap-type: x proximity;
   scrollbar-width: thin;
   scrollbar-color: rgba(38, 61, 39, 0.34) rgba(38, 61, 39, 0.08);
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
 }
 
 .mobile-shop-filter-rail::-webkit-scrollbar {
@@ -383,6 +394,9 @@
 .mobile-shop-filter-chip {
   min-height: 44px;
   min-width: 58px;
+  scroll-snap-align: start;
+  touch-action: pan-x;
+  user-select: none;
 }
 
 /* mobile catalog reduced animation tuning */

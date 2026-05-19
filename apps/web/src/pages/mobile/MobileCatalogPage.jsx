@@ -1,7 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, PackagePlus, Search, SlidersHorizontal, Sparkles, WandSparkles } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, PackagePlus, Search, SlidersHorizontal, Sparkles, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -24,6 +24,7 @@ const MOBILE_CATALOG_COLUMNS = 2;
 const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 338;
 const MOBILE_CATALOG_OVERSCAN_ROWS = 3;
 const MOBILE_CATALOG_VIRTUALIZE_AFTER = 40;
+const MOBILE_CATALOG_PAGE_SIZE = 6;
 const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 const shopTypeOptions = [
   { name: 'Semua', filter: 'all' },
@@ -95,6 +96,7 @@ export const MobileCatalogContent = ({ active = true }) => {
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
+  const [currentPage, setCurrentPage] = useState(1);
   const virtualListRef = useRef(null);
   const [virtualRowHeight, setVirtualRowHeight] = useState(MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT);
   const [virtualRows, setVirtualRows] = useState({ start: 0, end: 8 });
@@ -137,19 +139,25 @@ export const MobileCatalogContent = ({ active = true }) => {
 
     return sortProducts(matchingProducts, sort);
   }, [category, deferredQuery, products, segment, sort]);
-  const shouldVirtualizeCatalog = filteredProducts.length > MOBILE_CATALOG_VIRTUALIZE_AFTER;
-  const totalVirtualRows = Math.ceil(filteredProducts.length / MOBILE_CATALOG_COLUMNS);
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / MOBILE_CATALOG_PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * MOBILE_CATALOG_PAGE_SIZE;
+    return filteredProducts.slice(startIndex, startIndex + MOBILE_CATALOG_PAGE_SIZE);
+  }, [filteredProducts, safeCurrentPage]);
+  const shouldVirtualizeCatalog = paginatedProducts.length > MOBILE_CATALOG_VIRTUALIZE_AFTER;
+  const totalVirtualRows = Math.ceil(paginatedProducts.length / MOBILE_CATALOG_COLUMNS);
   const virtualStartRow = shouldVirtualizeCatalog ? Math.min(virtualRows.start, Math.max(totalVirtualRows - 1, 0)) : 0;
   const virtualEndRow = shouldVirtualizeCatalog ? Math.min(Math.max(virtualRows.end, virtualStartRow + 1), totalVirtualRows) : totalVirtualRows;
   const virtualStartIndex = virtualStartRow * MOBILE_CATALOG_COLUMNS;
   const virtualEndIndex = virtualEndRow * MOBILE_CATALOG_COLUMNS;
   const virtualProducts = useMemo(() => (
-    shouldVirtualizeCatalog ? filteredProducts.slice(virtualStartIndex, virtualEndIndex) : filteredProducts
-  ), [filteredProducts, shouldVirtualizeCatalog, virtualEndIndex, virtualStartIndex]);
+    shouldVirtualizeCatalog ? paginatedProducts.slice(virtualStartIndex, virtualEndIndex) : paginatedProducts
+  ), [paginatedProducts, shouldVirtualizeCatalog, virtualEndIndex, virtualStartIndex]);
   const activeSortLabel = catalogSortOptions.find((option) => option.value === sort)?.label || 'Rekomendasi';
   const activeFilterCount = [segment !== 'all', category !== 'All', Boolean(deferredQuery.trim())].filter(Boolean).length;
   const activeSegmentLabel = shopTypeOptions.find((option) => option.filter === segment)?.name || 'Semua';
-  const firstVisibleProductImage = String(filteredProducts[0]?.images?.[0] || filteredProducts[0]?.imageUrl || '').trim();
+  const firstVisibleProductImage = String(paginatedProducts[0]?.images?.[0] || filteredProducts[0]?.images?.[0] || paginatedProducts[0]?.imageUrl || filteredProducts[0]?.imageUrl || '').trim();
   const firstVisibleProductPreload = getOptimizedProductImageUrl(firstVisibleProductImage, 720);
   const virtualPaddingTop = shouldVirtualizeCatalog ? virtualStartRow * virtualRowHeight : 0;
   const virtualPaddingBottom = shouldVirtualizeCatalog ? Math.max(totalVirtualRows - virtualEndRow, 0) * virtualRowHeight : 0;
@@ -162,6 +170,16 @@ export const MobileCatalogContent = ({ active = true }) => {
     expectedCount: products.length,
     reason: products.length ? 'filters-empty' : 'no-products',
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, deferredQuery, segment, sort]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const syncVirtualRows = useCallback(() => {
     if (!active) return;
@@ -261,6 +279,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     setSegment(updated.segment);
     setCategory(updated.category);
     setSort(updated.sort);
+    setCurrentPage(1);
 
     const params = new URLSearchParams();
     if (updated.q.trim()) params.set('q', updated.q.trim());
@@ -458,6 +477,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                             label={false}
                             priority={absoluteIndex === 0}
                             sizes="(max-width: 448px) 44vw, 198px"
+                            imageFit="cover"
                           />
                           <div className="mobile-commerce-chip absolute left-2 top-2 max-w-[calc(100%-16px)] truncate bg-white/90 px-2 py-1 text-[9px] uppercase shadow-sm">
                             {getProductCategoryLabel(product)}
@@ -501,6 +521,36 @@ export const MobileCatalogContent = ({ active = true }) => {
                 })}
               </div>
               <div aria-hidden="true" style={{ height: virtualPaddingBottom }} />
+              {filteredProducts.length > MOBILE_CATALOG_PAGE_SIZE ? (
+                <div className="mobile-card mt-3 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                      disabled={safeCurrentPage === 1}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#263d27]/12 bg-white text-[#263d27] disabled:opacity-40"
+                      aria-label="Produk sebelumnya"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="min-w-0 text-center">
+                      <div className="text-[10px] font-bold uppercase text-[#6b7280]">
+                        {((safeCurrentPage - 1) * MOBILE_CATALOG_PAGE_SIZE) + 1}-{Math.min(safeCurrentPage * MOBILE_CATALOG_PAGE_SIZE, filteredProducts.length)} dari {filteredProducts.length}
+                      </div>
+                      <div className="mt-0.5 text-xs font-bold text-[#0b130c]">Halaman {safeCurrentPage} / {totalPages}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                      disabled={safeCurrentPage === totalPages}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#263d27]/12 bg-white text-[#263d27] disabled:opacity-40"
+                      aria-label="Produk berikutnya"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </>
           ) : null}
           {!showCatalogSkeleton && !filteredProducts.length ? (

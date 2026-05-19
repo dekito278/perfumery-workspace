@@ -560,6 +560,8 @@ const MobileOrderDetailPage = () => {
   };
 
   const openSmartWhatsAppNotification = () => {
+    if (!order) return;
+
     const eventKey = order.shipmentStatus === 'shipped' || shipmentDraft.trackingNumber
       ? 'shipped'
       : order.paymentStatus === 'paid'
@@ -575,14 +577,20 @@ const MobileOrderDetailPage = () => {
   };
 
   const openEmailNotification = () => {
+    if (!order) return;
+
     window.location.href = getEmailNotificationUrl(order, notificationEvent, notificationMessage);
   };
 
   const openFormulaHandoff = () => {
+    if (!order) return;
+
     navigate(`/mobile/formulas/new?${buildOrderFormulaParams(order, bespokeItem)}`);
   };
 
   const handleSectionPrimaryAction = () => {
+    if (!order) return;
+
     if (orderSection === 'task') {
       if (order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)) {
         quickShipmentUpdate('packing');
@@ -610,8 +618,9 @@ const MobileOrderDetailPage = () => {
     copyDraft();
   };
 
+  const canStartPacking = order?.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order?.shipmentStatus);
   const primaryActionLabel = {
-    task: order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) ? 'Mulai packing' : 'Buka tugas berikutnya',
+    task: canStartPacking ? 'Mulai packing' : 'Buka tugas berikutnya',
     payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Setujui bukti' : 'Sinkron DOKU',
     fulfillment: savingShipment ? 'Menyimpan pengiriman...' : 'Simpan pengiriman',
     production: savingProductionLinks ? 'Menyimpan link...' : 'Simpan link',
@@ -623,6 +632,7 @@ const MobileOrderDetailPage = () => {
     || (orderSection === 'fulfillment' && savingShipment)
     || (orderSection === 'production' && savingProductionLinks)
     || (orderSection === 'task' && savingShipment)
+    || !order
     || savingPaymentProof
   );
 
