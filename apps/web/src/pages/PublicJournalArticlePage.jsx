@@ -61,7 +61,7 @@ const toAbsoluteUrl = (value, origin) => {
   return origin ? `${origin}${path}` : path;
 };
 
-const PublicJournalArticlePage = () => {
+const PublicJournalArticlePage = ({ mobile = false }) => {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -168,42 +168,54 @@ const PublicJournalArticlePage = () => {
         {jsonLd ? <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> : null}
       </Helmet>
 
-      <main className="min-h-screen bg-[#f7f8f2] text-[#111827]">
-        <header className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="flex items-center gap-3">
-              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-11 w-32 rounded-xl object-contain" />
+      <main className={`${mobile ? 'mobile-app min-h-screen overflow-x-hidden bg-[#f7f8f2] px-3 pb-8 pt-[calc(env(safe-area-inset-top,0px)+10px)] text-[#111827]' : 'min-h-screen bg-[#f7f8f2] text-[#111827]'}`}>
+        <header className={mobile ? 'mx-auto mb-4 flex w-full max-w-[448px] items-center justify-between gap-3 rounded-[22px] border border-[#d8d5ca] bg-white/90 px-3 py-2.5 shadow-sm' : 'border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]'}>
+          <div className={mobile ? 'flex min-w-0 flex-1 items-center gap-3' : 'mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8'}>
+            <Link to={mobile ? '/mobile/dashboard' : '/home'} className="flex min-w-0 items-center gap-3">
+              {mobile ? (
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-[#eef2e8]">
+                  <ArrowLeft className="h-4 w-4" />
+                </span>
+              ) : (
+                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-11 w-32 rounded-xl object-contain" />
+              )}
+              {mobile ? (
+                <span className="min-w-0">
+                  <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</span>
+                  <span className="block truncate text-sm font-extrabold text-[#263d27]">Article</span>
+                </span>
+              ) : null}
             </Link>
-            <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">
+            <Link to={mobile ? '/mobile/catalog' : '/catalog'} className={mobile ? 'shrink-0 rounded-2xl border border-[#d8d5ca] bg-[#f7f8f2] px-3 py-2 text-xs font-bold text-[#263d27]' : 'rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]'}>
               Catalog
             </Link>
           </div>
         </header>
 
         {loading ? (
-          <section className="grid min-h-[60vh] place-items-center px-4 text-center">
+          <section className={`${mobile ? 'mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/80 px-4 text-center' : 'grid min-h-[60vh] place-items-center px-4 text-center'}`}>
             <div>
               <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
               <p className="mt-4 text-sm font-bold text-[#263d27]">Loading article...</p>
             </div>
           </section>
         ) : failed ? (
-          <section className="mx-auto grid min-h-[60vh] max-w-2xl place-items-center px-4 py-16 text-center sm:px-6">
+          <section className={`${mobile ? 'mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/85 px-4 py-12 text-center shadow-sm' : 'mx-auto grid min-h-[60vh] max-w-2xl place-items-center px-4 py-16 text-center sm:px-6'}`}>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</p>
               <h1 className="mt-3 text-3xl font-bold text-[#111827]">Article not available</h1>
               <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
                 Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
               </p>
-              <Link to="/home" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
+              <Link to={mobile ? '/mobile/dashboard' : '/home'} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
                 <ArrowLeft className="h-4 w-4" />
                 Back to Solivagant
               </Link>
             </div>
           </section>
         ) : (
-          <article className="mx-auto box-border w-full max-w-6xl overflow-hidden px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-            <header className="border-b border-[#d8d5ca] pb-8 sm:pb-10">
+          <article className={mobile ? 'mx-auto box-border w-full max-w-[448px] overflow-hidden pb-8' : 'mx-auto box-border w-full max-w-6xl overflow-hidden px-4 py-8 sm:px-6 sm:py-12 lg:px-8'}>
+            <header className={mobile ? 'rounded-[28px] border border-[#d8d5ca] bg-white/90 p-4 shadow-sm' : 'border-b border-[#d8d5ca] pb-8 sm:pb-10'}>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className={`rounded-full text-xs ${getJournalCategoryBadgeClassName(post.category)}`}>
                   {getJournalCategoryLabel(post.category)}
@@ -213,17 +225,17 @@ const PublicJournalArticlePage = () => {
                 </Badge>
               </div>
 
-              <h1 className="mt-5 max-w-4xl text-4xl font-bold leading-tight text-[#111827] sm:text-6xl">
+              <h1 className={mobile ? 'mt-4 text-[2rem] font-black leading-[1.05] text-[#111827]' : 'mt-5 max-w-4xl text-4xl font-bold leading-tight text-[#111827] sm:text-6xl'}>
                 {post.title}
               </h1>
 
               {post.excerpt ? (
-                <p className="mt-5 max-w-3xl text-base font-medium leading-8 text-[#5f665e] sm:text-xl">
+                <p className={mobile ? 'mt-4 text-sm font-semibold leading-7 text-[#5f665e]' : 'mt-5 max-w-3xl text-base font-medium leading-8 text-[#5f665e] sm:text-xl'}>
                   {post.excerpt}
                 </p>
               ) : null}
 
-              <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold text-[#6b7280]">
+              <div className={mobile ? 'mt-5 grid gap-2 text-xs font-bold text-[#6b7280]' : 'mt-6 flex flex-wrap gap-3 text-sm font-semibold text-[#6b7280]'}>
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
                   <CalendarDays className="h-4 w-4 text-[#263d27]" />
                   {formatDate(post.published_at || post.updated || post.created)}
@@ -247,13 +259,13 @@ const PublicJournalArticlePage = () => {
 
             <JournalCoverFrame
               post={post}
-              className="mt-8 rounded-[28px] border-[#d8d5ca]"
-              imageClassName="aspect-[16/8]"
+              className={mobile ? 'mt-4 rounded-[26px] border-[#d8d5ca]' : 'mt-8 rounded-[28px] border-[#d8d5ca]'}
+              imageClassName={mobile ? 'aspect-[4/3]' : 'aspect-[16/8]'}
               eager
             />
 
-            <div className="mt-9 grid w-full max-w-full gap-8 pb-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-              <section className="box-border w-full min-w-0 max-w-full rounded-[28px] bg-white/60 px-4 py-6 ring-1 ring-[#d8d5ca]/70 sm:px-8 sm:py-9 lg:bg-transparent lg:px-0 lg:py-0 lg:ring-0">
+            <div className={mobile ? 'mt-4 grid w-full max-w-full gap-4 pb-8' : 'mt-9 grid w-full max-w-full gap-8 pb-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start'}>
+              <section className={mobile ? 'box-border w-full min-w-0 max-w-full rounded-[26px] bg-white/90 px-4 py-5 shadow-sm ring-1 ring-[#d8d5ca]/70' : 'box-border w-full min-w-0 max-w-full rounded-[28px] bg-white/60 px-4 py-6 ring-1 ring-[#d8d5ca]/70 sm:px-8 sm:py-9 lg:bg-transparent lg:px-0 lg:py-0 lg:ring-0'}>
                 {post.content ? (
                   <JournalMarkdownContent content={post.content} />
                 ) : (
@@ -263,7 +275,7 @@ const PublicJournalArticlePage = () => {
                 )}
               </section>
 
-              <aside className="w-full min-w-0 max-w-full lg:sticky lg:top-6">
+              <aside className={mobile ? 'w-full min-w-0 max-w-full' : 'w-full min-w-0 max-w-full lg:sticky lg:top-6'}>
                 <div className="box-border w-full max-w-full overflow-hidden rounded-[24px] border border-[#d8d5ca] bg-white shadow-sm">
                   <div className="aspect-[1.91/1] overflow-hidden bg-[#f7f8f2]">
                     <img src={shareImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" width="1200" height="630" />

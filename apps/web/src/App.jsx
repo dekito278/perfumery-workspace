@@ -142,6 +142,7 @@ const MobileBrowserRedirect = () => {
 const mobileTabOrder = ['/mobile/dashboard', '/mobile/catalog'];
 const mobileDetailPatterns = [
   /^\/mobile\/products\/[^/]+$/,
+  /^\/mobile\/articles\/[^/]+$/,
   /^\/mobile\/studio\/orders\/[^/]+$/,
   /^\/mobile\/briefs\/[^/]+$/,
   /^\/mobile\/journal\/[^/]+$/,
@@ -152,6 +153,7 @@ const mobileCommercePatterns = [
   /^\/mobile\/dashboard$/,
   /^\/mobile\/catalog$/,
   /^\/mobile\/products\/[^/]+$/,
+  /^\/mobile\/articles\/[^/]+$/,
   /^\/mobile\/bespoke$/,
   /^\/mobile\/cart$/,
   /^\/mobile\/checkout$/,
@@ -256,6 +258,8 @@ function AppRoutes() {
         <Route path="/mobile/catalog" element={<MobileCommerceTabsPage />} />
 
         <Route path="/mobile/products/:slug" element={<MobileProductDetailPage />} />
+
+        <Route path="/mobile/articles/:slug" element={<PublicJournalArticlePage mobile />} />
 
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 

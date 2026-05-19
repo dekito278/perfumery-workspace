@@ -261,6 +261,9 @@ const main = async () => {
   ensureDirectoryExists(outputDir);
 
   const publicArticle = await discoverPublicArticleRoute(env, explicitPublicArticleRoute);
+  const mobilePublicArticleRoute = publicArticle.route.startsWith('/articles/')
+    ? publicArticle.route.replace(/^\/articles\//, '/mobile/articles/')
+    : `/mobile${publicArticle.route}`;
   const steps = [
     ...smokeSteps,
     {
@@ -268,6 +271,14 @@ const main = async () => {
       label: 'Public article',
       route: publicArticle.route,
       viewport: DESKTOP_VIEWPORT,
+      auth: 'public',
+      titlePattern: /journal|article|solivagant/i,
+    },
+    {
+      id: 'mobile-public-article',
+      label: 'Mobile public article',
+      route: mobilePublicArticleRoute,
+      viewport: MOBILE_VIEWPORT,
       auth: 'public',
       titlePattern: /journal|article|solivagant/i,
     },
