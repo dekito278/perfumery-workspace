@@ -32,7 +32,8 @@ const readCheckoutDraft = () => {
 
   try {
     const rawValue = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
-    return rawValue ? JSON.parse(rawValue) : {};
+    const parsedValue = rawValue ? JSON.parse(rawValue) : {};
+    return parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue) ? parsedValue : {};
   } catch {
     return {};
   }
