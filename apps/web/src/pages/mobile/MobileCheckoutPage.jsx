@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { BadgePercent, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
@@ -16,7 +16,8 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value
 const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTERAJA', jne: 'JNE' };
 
 const CheckoutProgress = ({ steps }) => {
-  const currentIndex = Math.max(steps.findIndex((step) => !step.complete), 0);
+  const firstIncompleteIndex = steps.findIndex((step) => !step.complete);
+  const currentIndex = firstIncompleteIndex === -1 ? steps.length - 1 : Math.max(firstIncompleteIndex, 0);
   const currentStep = steps[currentIndex] || steps[steps.length - 1];
   const completedCount = steps.filter((step) => step.complete).length;
   const progressPercent = Math.min(Math.max((completedCount / steps.length) * 100, 8), 100);
@@ -56,7 +57,9 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
 
 const MobileCheckoutPage = () => {
   const navigate = useNavigate();
+  const paymentSectionRef = useRef(null);
   const summarySectionRef = useRef(null);
+  const [showManualShippingArea, setShowManualShippingArea] = useState(false);
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
@@ -73,10 +76,10 @@ const MobileCheckoutPage = () => {
   const {
     customerCode, customerName, contact, deliveryAddress, notes, saving, securityChallenge, securityAnswer, lookupLoading,
     repeatCustomer, repeatAddressMode, destinationSearch, destinationOptions, selectedDestination, shippingOptions, selectedCourier,
-    selectedShipping, shippingLoading, shippingError, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
+    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
     canSubmitCheckout, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
-    useCustomerNewAddress, searchDestinations, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
+    useCustomerNewAddress, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
   } = checkout;
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const visibleShippingOptions = selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : [];
@@ -101,6 +104,20 @@ const MobileCheckoutPage = () => {
   ];
   const missingRequirements = checkoutRequirements.filter((item) => !item.complete);
   const primaryActionLabel = saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang');
+  const handleCourierChange = (courierCode) => {
+    chooseShippingCourier(courierCode);
+    if (!courierCode) return;
+    const searchText = destinationSearch.trim() || deliveryAddress.trim();
+    if (searchText.length >= 3) {
+      autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
+    } else {
+      setShowManualShippingArea(true);
+    }
+  };
+  const showShippingAreaFallback = showManualShippingArea || Boolean(shippingError) || Boolean(destinationSearch.trim()) || destinationOptions.length > 0;
+  const goToPayment = () => {
+    paymentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const goToSummary = () => {
     summarySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -156,12 +173,12 @@ const MobileCheckoutPage = () => {
         <CheckoutSection
           step="1"
           title="Kontak"
-          description="Data penerima dan kode customer kalau sudah pernah order."
+          description="Kode customer opsional untuk pembeli lama. Pembeli baru langsung isi nama dan nomor."
           complete={contactComplete}
         >
             <div className="grid grid-cols-[1fr_auto] gap-2">
-              <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Cek'}</Button>
+              <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional: kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : 'Cek kode'}</Button>
             </div>
             {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Jawaban keamanan" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>Verifikasi</Button></div> : null}
             <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
@@ -183,20 +200,81 @@ const MobileCheckoutPage = () => {
         </CheckoutSection>
         <CheckoutSection
           step="3"
-          title="Ongkir"
-          description="Cari area tujuan, pilih kurir, lalu pilih layanan ongkir."
+          title="Pilih kurir"
+          description="Ongkir dihitung otomatis setelah kurir dipilih."
           complete={shippingComplete}
         >
-            <div className="grid grid-cols-[1fr_auto] gap-2">
-              <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota tujuan" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations}>Cari</Button>
-            </div>
-            <select value={selectedCourier} onChange={(event) => chooseShippingCourier(event.target.value)} className="mobile-commerce-control h-12 px-3 text-sm font-bold">
+            <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} className="mobile-commerce-control h-12 px-3 text-sm font-bold">
               <option value="">Pilih kurir</option>{checkoutCourierOptions.map((courier) => <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>)}
             </select>
-            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white" onClick={autoCalculateShipping} disabled={shippingLoading || !selectedCourier}>Cari layanan ongkir</Button>
+            {shippingLoading ? (
+              <p className="mobile-commerce-notice bg-[#f7f8f2] font-bold text-[#263d27]">
+                Mencari ongkir dari alamat pengiriman...
+              </p>
+            ) : null}
+            {!showShippingAreaFallback ? (
+              <button type="button" onClick={() => setShowManualShippingArea(true)} className="w-fit text-left text-xs font-bold text-[#263d27] underline underline-offset-4">
+                Pilih area manual
+              </button>
+            ) : (
+              <div className="mobile-commerce-panel bg-white p-3">
+                <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+                <p className="mobile-commerce-notice mt-2">
+                  Pakai ini hanya kalau alamat lengkap belum menemukan area ongkir yang tepat.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-2 h-10 rounded-2xl bg-white text-xs font-bold"
+                  onClick={() => autoCalculateShipping({ searchText: destinationSearch.trim() || deliveryAddress.trim(), autoSelectBest: true })}
+                  disabled={shippingLoading || !selectedCourier || (!deliveryAddress.trim() && destinationSearch.trim().length < 3)}
+                >
+                  Hitung ulang
+                </Button>
+              </div>
+            )}
+            {selectedDestination ? (
+              <p className="mobile-commerce-notice bg-[#eef2e8] font-bold text-[#263d27]">
+                Area ongkir: {selectedDestination.label}
+              </p>
+            ) : null}
+            {shippingNotice ? <p className="mobile-commerce-notice bg-[#eef2e8] font-bold text-[#263d27]">{shippingNotice}</p> : null}
             {destinationOptions.map((destination) => <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="mobile-commerce-choice px-3 py-2 text-xs font-bold">{destination.label}</button>)}
-            {visibleShippingOptions.map((rate) => <button key={`${rate.courierCode}-${rate.service}`} type="button" onClick={() => setSelectedShipping(rate)} className="mobile-commerce-choice px-3 py-3"><div className="flex justify-between text-sm font-bold"><span>{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span><span>{formatTotal(rate.cost)}</span></div></button>)}
+            {visibleShippingOptions.map((rate) => {
+              const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
+              return (
+                <button
+                  key={`${rate.courierCode}-${rate.service}`}
+                  type="button"
+                  onClick={() => setSelectedShipping(rate)}
+                  className={`mobile-commerce-choice px-3 py-3 ${active ? 'is-active' : ''}`}
+                >
+                  <div className="flex justify-between gap-3 text-sm font-bold">
+                    <span className="min-w-0">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
+                    <span className="shrink-0">{formatTotal(rate.cost)}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
+                    {active ? <span className="shrink-0 rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                  </div>
+                </button>
+              );
+            })}
+            {selectedShipping ? (
+              <div className="mobile-commerce-panel border-[#263d27]/24 bg-[#eef2e8] p-3">
+                <div className="text-[10px] font-bold uppercase text-[#263d27]">Ongkir paling hemat dipilih</div>
+                <p className="mt-1 text-xs font-bold text-[#1f2937]">
+                  {courierLabels[selectedShipping.courierCode] || selectedShipping.courierName} {selectedShipping.serviceLabel || selectedShipping.service} · {formatTotal(selectedShipping.cost)}
+                </p>
+                <Button type="button" className="mt-3 h-11 w-full rounded-2xl" onClick={goToPayment}>
+                  Lanjut pilih pembayaran
+                </Button>
+              </div>
+            ) : visibleShippingOptions.length ? (
+              <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">
+                Pilih salah satu layanan ongkir. Setelah itu kamu akan lanjut ke pembayaran.
+              </p>
+            ) : null}
             {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}
         </CheckoutSection>
         <CheckoutSection
@@ -232,12 +310,13 @@ const MobileCheckoutPage = () => {
               <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
             ) : null}
         </CheckoutSection>
-        <CheckoutSection
-          step="5"
-          title="Pembayaran"
-          description="Pilih metode pembayaran dan tambahkan catatan bila perlu."
-          complete={paymentComplete}
-        >
+        <div ref={paymentSectionRef}>
+          <CheckoutSection
+            step="5"
+            title="Pembayaran"
+            description={shippingComplete ? 'Ongkir sudah masuk total. Pilih metode pembayaran.' : 'Lengkapi ongkir dulu supaya total bayar final.'}
+            complete={paymentComplete}
+          >
             {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => setSelectedPaymentMethod(method.id)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
             {paymentComplete ? (
@@ -246,7 +325,8 @@ const MobileCheckoutPage = () => {
                 Lanjut ke ringkasan
               </Button>
             ) : null}
-        </CheckoutSection>
+          </CheckoutSection>
+        </div>
         <div ref={summarySectionRef}>
           <CheckoutSection
             step="6"

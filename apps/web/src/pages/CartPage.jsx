@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
@@ -32,6 +32,8 @@ const CheckoutSectionTitle = ({ step, title, description }) => (
 
 const CartPage = () => {
   const navigate = useNavigate();
+  const paymentSectionRef = useRef(null);
+  const [showManualShippingArea, setShowManualShippingArea] = useState(false);
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
@@ -56,6 +58,7 @@ const CartPage = () => {
     selectedShipping,
     shippingLoading,
     shippingError,
+    shippingNotice,
     shippingFee,
     discountAmount,
     discountedSubtotal,
@@ -76,7 +79,6 @@ const CartPage = () => {
     updateDestinationSearch,
     useCustomerLastAddress,
     useCustomerNewAddress,
-    searchDestinations,
     autoCalculateShipping,
     loadShippingRates,
     lookupCustomer,
@@ -105,6 +107,31 @@ const CartPage = () => {
   const visibleShippingOptions = selectedCourier
     ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier)
     : [];
+  const contactComplete = Boolean(customerName.trim() && validPhoneContact);
+  const addressComplete = Boolean(contactComplete && deliveryAddress.trim());
+  const shippingComplete = Boolean(addressComplete && selectedDestination && selectedCourier && selectedShipping);
+  const missingCheckoutItems = [
+    !customerName.trim() ? 'nama penerima' : '',
+    !validPhoneContact ? 'nomor WhatsApp' : '',
+    !deliveryAddress.trim() ? 'alamat lengkap' : '',
+    !selectedDestination ? 'pilihan kurir' : '',
+    !selectedShipping ? 'ongkir' : '',
+    !selectedPaymentMethod ? 'metode bayar' : '',
+  ].filter(Boolean);
+  const scrollToPayment = () => {
+    paymentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const handleCourierChange = (courierCode) => {
+    chooseShippingCourier(courierCode);
+    if (!courierCode) return;
+    const searchText = destinationSearch.trim() || deliveryAddress.trim();
+    if (searchText.length >= 3) {
+      autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
+    } else {
+      setShowManualShippingArea(true);
+    }
+  };
+  const showShippingAreaFallback = showManualShippingArea || Boolean(shippingError) || Boolean(destinationSearch.trim()) || destinationOptions.length > 0;
 
   return (
     <>
@@ -213,15 +240,32 @@ const CartPage = () => {
           {items.length ? (
             <aside className="rounded-2xl border bg-white p-5 shadow-sm">
               <h2 className="text-xl font-bold">Checkout</h2>
+              <div className={`mt-4 rounded-2xl border px-4 py-3 ${canSubmitCheckout ? 'border-[#263d27]/20 bg-[#eef2e8]' : 'border-amber-200 bg-amber-50'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className={`text-xs font-bold uppercase ${canSubmitCheckout ? 'text-[#263d27]' : 'text-amber-800'}`}>
+                      {canSubmitCheckout ? 'Siap dibuat' : 'Belum selesai'}
+                    </div>
+                    <p className="mt-1 text-sm font-semibold leading-relaxed text-[#0b130c]">
+                      {canSubmitCheckout
+                        ? 'Semua data checkout sudah lengkap. Cek ringkasan lalu buat order.'
+                        : `Lengkapi ${missingCheckoutItems.join(', ')}.`}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase ${canSubmitCheckout ? 'bg-[#263d27] text-white' : 'bg-white text-amber-800'}`}>
+                    {canSubmitCheckout ? 'Ready' : `${missingCheckoutItems.length} kurang`}
+                  </span>
+                </div>
+              </div>
               <div className="mt-4 grid gap-4">
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
-                  <CheckoutSectionTitle step="1" title="Customer" description="Masuk sebagai repeat customer atau isi data baru." />
+                  <CheckoutSectionTitle step="1" title="Customer" description="Kode customer hanya untuk pembeli lama. Pembeli baru bisa langsung isi kontak." />
                   <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Kode customer, contoh SOLI09232" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
-                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading}>{lookupLoading ? '...' : 'Cek'}</Button>
+                    <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional: kode customer lama" className="h-12 rounded-2xl border px-4 text-sm font-semibold uppercase outline-none focus:border-[#263d27]" />
+                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : 'Cek kode'}</Button>
                   </div>
                   <p className="mt-2 rounded-2xl bg-white px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
-                    Customer baru bisa kosongkan kode. Setelah checkout, Solivagant akan membuat kode unik untuk order berikutnya.
+                    Belum punya kode? Lewati kolom ini. Setelah checkout selesai, Solivagant akan membuat kode customer untuk order berikutnya.
                   </p>
                 </section>
                 {securityChallenge ? (
@@ -279,25 +323,13 @@ const CartPage = () => {
                   </div>
                 </section>
                 <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
-                  <CheckoutSectionTitle step="3" title="Hitung ongkir" description="Cari kecamatan/kota untuk tarif kurir. Ini bukan pengganti alamat lengkap." />
+                  <CheckoutSectionTitle step="3" title="Pilih kurir" description="Setelah kurir dipilih, ongkir dihitung otomatis dari alamat lengkap." />
                   <div className="mt-3 grid gap-3">
-                <div className="grid gap-2">
-                  <div className="text-xs font-bold uppercase text-[#263d27]">Kecamatan / kota tujuan</div>
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
-                    <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
-                      Cari area
-                    </Button>
-                  </div>
-                  <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
-                    Isi alamat lengkap di atas untuk kurir. Kolom ini hanya untuk menemukan tarif ongkir RajaOngkir.
-                  </p>
-                </div>
                 <div className="grid gap-2">
                   <div className="text-xs font-bold uppercase text-[#263d27]">Pilih ekspedisi</div>
                   <select
                     value={selectedCourier}
-                    onChange={(event) => chooseShippingCourier(event.target.value)}
+                    onChange={(event) => handleCourierChange(event.target.value)}
                     className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold text-[#0b130c] outline-none focus:border-[#263d27]"
                   >
                     <option value="">Pilih kurir</option>
@@ -306,17 +338,39 @@ const CartPage = () => {
                     ))}
                   </select>
                 </div>
-                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-sm font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
-                  {shippingLoading ? 'Menghitung ongkir...' : selectedDestination ? 'Tampilkan layanan ongkir' : 'Cari area ongkir'}
-                </Button>
+                {shippingLoading ? (
+                  <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-bold text-[#263d27]">
+                    Mencari ongkir dari alamat pengiriman...
+                  </p>
+                ) : null}
+                {!showShippingAreaFallback ? (
+                  <button type="button" onClick={() => setShowManualShippingArea(true)} className="w-fit text-left text-xs font-bold text-[#263d27] underline underline-offset-4">
+                    Pilih area manual
+                  </button>
+                ) : (
+                  <div className="grid gap-2 rounded-2xl border border-[#263d27]/10 bg-white p-3">
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Area manual kalau alamat belum ketemu</div>
+                    <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 rounded-2xl bg-white px-4 text-xs font-bold"
+                      onClick={() => autoCalculateShipping({ searchText: destinationSearch.trim() || deliveryAddress.trim(), autoSelectBest: true })}
+                      disabled={shippingLoading || (!deliveryAddress.trim() && destinationSearch.trim().length < 3) || !selectedCourier}
+                    >
+                      Hitung ulang
+                    </Button>
+                  </div>
+                )}
                 {selectedDestination ? (
                   <p className="rounded-2xl bg-[#eef2e8] px-4 py-3 text-xs font-bold text-[#263d27]">
                     Area ongkir: {selectedDestination.label}
                   </p>
                 ) : null}
+                {shippingNotice ? <p className="rounded-2xl bg-[#eef2e8] px-4 py-3 text-xs font-bold text-[#263d27]">{shippingNotice}</p> : null}
                 {destinationOptions.length ? (
                   <div className="grid gap-2">
-                    <div className="text-xs font-bold uppercase text-[#263d27]">Pilih area tujuan</div>
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Bukan area ini? Pilih koreksi</div>
                     {destinationOptions.map((destination) => (
                       <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] px-4 py-3 text-left text-sm font-bold text-[#263d27]">
                         {destination.label}
@@ -333,13 +387,29 @@ const CartPage = () => {
                         <button key={`${rate.courierCode}-${rate.service}-${rate.cost}`} type="button" onClick={() => setSelectedShipping(rate)} className={`rounded-2xl border px-4 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}>
                           <div className="flex items-center justify-between gap-3">
                             <span className="text-sm font-bold">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
-                            <span className="text-sm font-bold text-[#263d27]">{formatTotal(rate.cost)}</span>
+                            <span className="shrink-0 text-sm font-bold text-[#263d27]">{formatTotal(rate.cost)}</span>
                           </div>
+                          {active ? <div className="mt-2 inline-flex rounded-full bg-[#263d27] px-2.5 py-1 text-[10px] font-bold uppercase text-white">Dipilih</div> : null}
                           <p className="mt-1 text-xs font-semibold text-muted-foreground">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
                         </button>
                       );
                     })}
                   </div>
+                ) : null}
+                {selectedShipping ? (
+                  <div className="rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] p-4">
+                    <div className="text-xs font-bold uppercase text-[#263d27]">Ongkir paling hemat dipilih</div>
+                    <p className="mt-1 text-sm font-bold text-[#0b130c]">
+                      {courierLabels[selectedShipping.courierCode] || selectedShipping.courierName} {selectedShipping.serviceLabel || selectedShipping.service} · {formatTotal(selectedShipping.cost)}
+                    </p>
+                    <Button type="button" className="mt-3 h-11 w-full rounded-2xl" onClick={scrollToPayment}>
+                      Lanjut pilih pembayaran
+                    </Button>
+                  </div>
+                ) : visibleShippingOptions.length ? (
+                  <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+                    Pilih salah satu layanan ongkir dulu. Setelah dipilih, total bayar dan tombol lanjut akan aktif.
+                  </p>
                 ) : null}
                 {shippingError ? <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">{shippingError}</p> : null}
                   </div>
@@ -372,8 +442,17 @@ const CartPage = () => {
                     <p className="mt-2 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">{voucher.message}</p>
                   ) : null}
                 </section>
-                <section className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+                <section ref={paymentSectionRef} className={`rounded-2xl border p-4 ${shippingComplete ? 'border-[#263d27]/20 bg-[#eef2e8]' : 'border-[#263d27]/10 bg-[#fbfaf7]'}`}>
                   <CheckoutSectionTitle step="4" title="Pembayaran & catatan" description="Pilih metode bayar, lalu tambahkan catatan jika perlu." />
+                  {!shippingComplete ? (
+                    <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-xs font-bold text-amber-800">
+                      Pembayaran bisa dipilih sekarang, tapi order baru bisa dibuat setelah alamat dan ongkir lengkap.
+                    </p>
+                  ) : (
+                    <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-xs font-bold text-[#263d27]">
+                      Ongkir sudah masuk ke total. Pilih metode bayar, lalu buat order.
+                    </p>
+                  )}
                   <div className="mt-3 grid gap-3">
                     <div className="grid gap-2">
                       {checkoutPaymentMethods.map((method) => {

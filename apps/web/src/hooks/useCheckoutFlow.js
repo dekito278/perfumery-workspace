@@ -109,6 +109,7 @@ export const useCheckoutFlow = ({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(MANUAL_TRANSFER_PAYMENT.id);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
+  const [shippingNotice, setShippingNotice] = useState('');
   const paymentMethodDetails = getCheckoutPaymentMethod(selectedPaymentMethod);
   const paymentMethod = paymentMethodDetails.label;
   const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
@@ -136,6 +137,7 @@ export const useCheckoutFlow = ({
     setShippingOptions([]);
     setDestinationOptions([]);
     setShippingError('');
+    setShippingNotice('');
     if (!keepCourier) {
       setSelectedCourier('');
     }
@@ -208,6 +210,7 @@ export const useCheckoutFlow = ({
 
     setShippingLoading(true);
     setShippingError('');
+    setShippingNotice('');
     setSelectedDestination(null);
     setSelectedShipping(null);
     setShippingOptions([]);
@@ -216,6 +219,8 @@ export const useCheckoutFlow = ({
       setDestinationOptions(destinations);
       if (!destinations.length) {
         setShippingError('Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+      } else {
+        setShippingNotice('Pilih area yang paling mendekati alamat pengiriman.');
       }
     } catch (error) {
       setShippingError(getFriendlyShippingError(error));
@@ -224,27 +229,33 @@ export const useCheckoutFlow = ({
     }
   };
 
-  const loadShippingRates = async (destination) => {
+  const loadShippingRates = async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
     setSelectedDestination(destination);
     setDeliveryArea(destination.label);
     setDestinationSearch(destination.label);
     setDestinationOptions([]);
     setSelectedShipping(null);
     setShippingOptions([]);
-    if (!selectedCourier) {
+    if (!courierCode) {
       setShippingError('Pilih ekspedisi dulu untuk melihat layanan ongkir.');
       return;
     }
     setShippingLoading(true);
     setShippingError('');
+    setShippingNotice('');
     try {
       const rates = await getShippingRates({
         destinationId: destination.id,
         weight: shippingWeight,
-        couriers: selectedCourier ? [selectedCourier] : undefined,
+        couriers: [courierCode],
       });
-      setShippingOptions(rates);
-      if (!rates.length) {
+      const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
+      setShippingOptions(sortedRates);
+      if (autoSelectCheapest && sortedRates.length) {
+        setSelectedShipping(sortedRates[0]);
+        setShippingNotice(`Kami pilihkan ongkir paling hemat dari alamat: ${destination.label}. Kamu tetap bisa ganti layanan.`);
+      }
+      if (!sortedRates.length) {
         setShippingError('Belum ada ongkir untuk area ini');
       }
     } catch (error) {
@@ -254,19 +265,24 @@ export const useCheckoutFlow = ({
     }
   };
 
-  const autoCalculateShipping = async () => {
-    const search = destinationSearch.trim();
+  const autoCalculateShipping = async ({
+    courierCode = selectedCourier,
+    searchText = '',
+    autoSelectBest = false,
+  } = {}) => {
+    const search = String(searchText || destinationSearch || deliveryArea || deliveryAddress || '').trim();
     if (search.length < 3) {
-      toast.error('Isi area ongkir dulu, contoh: Jakarta Selatan');
+      toast.error('Isi alamat lengkap atau area tujuan dulu');
       return;
     }
-    if (!selectedCourier) {
+    if (!courierCode) {
       toast.error('Pilih ekspedisi dulu');
       return;
     }
 
     setShippingLoading(true);
     setShippingError('');
+    setShippingNotice('');
     setDestinationOptions([]);
     setSelectedShipping(null);
     setShippingOptions([]);
@@ -276,12 +292,16 @@ export const useCheckoutFlow = ({
         const rates = await getShippingRates({
           destinationId: selectedDestination.id,
           weight: shippingWeight,
-          couriers: [selectedCourier],
+          couriers: [courierCode],
         });
 
         if (rates.length) {
           const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
           setShippingOptions(sortedRates);
+          if (autoSelectBest) {
+            setSelectedShipping(sortedRates[0]);
+            setShippingNotice(`Kami pilihkan ongkir paling hemat dari alamat: ${selectedDestination.label}. Kamu tetap bisa ganti layanan.`);
+          }
           return;
         }
 
@@ -291,10 +311,18 @@ export const useCheckoutFlow = ({
 
       setSelectedDestination(null);
       const destinations = await searchShippingDestinations(search);
+      if (autoSelectBest && destinations.length) {
+        await loadShippingRates(destinations[0], { courierCode, autoSelectCheapest: true });
+        setDestinationOptions(destinations.slice(1));
+        return;
+      }
+
       setDestinationOptions(destinations);
-      setShippingError(destinations.length
-        ? 'Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.'
-        : 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+      if (destinations.length) {
+        setShippingNotice('Pilih area tujuan yang paling sesuai, lalu ongkir akan dihitung.');
+      } else {
+        setShippingError('Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+      }
     } catch (error) {
       setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.'));
     } finally {
@@ -339,6 +367,7 @@ export const useCheckoutFlow = ({
     setSelectedShipping(null);
     setShippingOptions([]);
     setShippingError('');
+    setShippingNotice('');
   };
 
   const chooseShippingRate = (rate) => {
@@ -586,6 +615,7 @@ export const useCheckoutFlow = ({
     paymentMethodDetails,
     shippingLoading,
     shippingError,
+    shippingNotice,
     paymentMethod,
     isManualPayment,
     validPhoneContact,
