@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Beaker,
   BadgePercent,
+  BookOpenText,
   ClipboardCheck,
   ClipboardList,
   Calculator,
@@ -41,10 +42,11 @@ const navGroups = [
     label: 'Studio',
     icon: Beaker,
     description: 'Brief, formula, material, dan workspace validasi.',
-    paths: ['/mobile/studio', '/mobile/briefs', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation'],
+    paths: ['/mobile/studio', '/mobile/briefs', '/mobile/journal', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation'],
     items: [
       { path: '/mobile/studio', label: 'Dasbor', helper: 'Ringkasan Studio', icon: LayoutDashboard },
       { path: '/mobile/briefs', label: 'Briefs', helper: 'Arah client/proyek', icon: ClipboardList },
+      { path: '/mobile/journal', label: 'Journal', helper: 'Artikel, accord, ide', icon: BookOpenText },
       { path: '/mobile/formulas', label: 'Formulas', helper: 'Composer dan daftar formula', icon: Beaker },
       { path: '/mobile/batches', label: 'Batches', helper: 'Produksi dan stok draft', icon: Calculator },
       { path: '/mobile/raw-materials', label: 'Material', helper: 'Library raw material', icon: LibraryBig },

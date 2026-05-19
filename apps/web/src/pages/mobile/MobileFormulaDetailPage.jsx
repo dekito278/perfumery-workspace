@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Calculator, Copy, Download, Pencil, Trash2 } from 'lucide-react';
+import { BookOpenText, Calculator, Copy, Download, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -17,6 +17,7 @@ import { CompactWorkbookPreview } from '@/components/mobile/MobileFormulaCompose
 import { Button } from '@/components/ui/button.jsx';
 import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { updateFormulaStatus } from '@/services/formulasSupabaseService.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
@@ -78,6 +79,8 @@ const MobileFormulaDetailPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const { deleteFormula, duplicateFormula } = useFormulas();
+  const { getJournalPosts } = useJournalPosts();
+  const [linkedJournalPosts, setLinkedJournalPosts] = useState([]);
   const detail = useFormulaDetailPage(id);
   const {
     formula,
@@ -123,6 +126,29 @@ const MobileFormulaDetailPage = () => {
     if (!weakestAxis?.label) return [];
     return [`Improve ${String(weakestAxis.label).toLowerCase()} (${Math.round(Number(weakestAxis.value) || 0)}).`];
   }, [workbookSimulation]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLinkedJournalPosts = async () => {
+      try {
+        const posts = await getJournalPosts();
+        if (active) {
+          setLinkedJournalPosts(posts.filter((post) => post.related_formula_id === id));
+        }
+      } catch (error) {
+        if (active) {
+          setLinkedJournalPosts([]);
+        }
+      }
+    };
+
+    loadLinkedJournalPosts();
+
+    return () => {
+      active = false;
+    };
+  }, [getJournalPosts, id]);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -188,7 +214,31 @@ const MobileFormulaDetailPage = () => {
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
               <Button className="mobile-interactive mobile-pressable h-11 rounded-2xl text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Ready Batch</Button>
+              <Button variant="outline" className="mobile-interactive mobile-pressable col-span-2 h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => navigate(`/mobile/journal/new?formulaId=${id}`)}><BookOpenText className="mr-1 h-4 w-4" />Write linked Journal note</Button>
             </div>
+            <section className="mobile-card p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-bold text-[#1f2937]">Journal links</h2>
+                <span className="text-[11px] font-bold text-[#9ca3af]">{linkedJournalPosts.length}</span>
+              </div>
+              {linkedJournalPosts.length ? (
+                <div className="mt-3 space-y-2">
+                  {linkedJournalPosts.slice(0, 3).map((post) => (
+                    <button
+                      key={post.id}
+                      type="button"
+                      onClick={() => navigate(`/mobile/journal/${post.id}`)}
+                      className="block w-full rounded-xl border border-[#ece8df] bg-white p-3 text-left"
+                    >
+                      <div className="line-clamp-1 text-xs font-bold text-[#1f2937]">{post.title || 'Untitled note'}</div>
+                      <div className="mt-1 text-[11px] font-semibold capitalize text-[#6b7280]">{post.status || 'draft'}</div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Belum ada catatan Journal yang terhubung ke formula ini.</p>
+              )}
+            </section>
           </section>
         ) : null}
         {tab === 'composition' ? (

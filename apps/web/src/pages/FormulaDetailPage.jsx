@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Pencil, Printer, Trash2 } from 'lucide-react';
+import { BookOpenText, Pencil, Printer, Trash2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import FormulaDetailOverviewTab from '@/components/formulas/FormulaDetailOvervie
 import FormulaDetailWorkbookTab from '@/components/formulas/FormulaDetailWorkbookTab.jsx';
 import FormulaEvaluationPanel from '@/components/FormulaEvaluationPanel.jsx';
 import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
+import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { PACE_PRIORITY_QUERY_KEY } from '@/utils/pacePriority.js';
@@ -64,6 +65,31 @@ const FormulaDetailPage = () => {
     workbookBoardStats,
     workbookSimulation,
   } = useFormulaDetailPage(id);
+  const { getJournalPosts } = useJournalPosts();
+  const [linkedJournalPosts, setLinkedJournalPosts] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLinkedJournalPosts = async () => {
+      try {
+        const posts = await getJournalPosts();
+        if (active) {
+          setLinkedJournalPosts(posts.filter((post) => post.related_formula_id === id));
+        }
+      } catch (error) {
+        if (active) {
+          setLinkedJournalPosts([]);
+        }
+      }
+    };
+
+    loadLinkedJournalPosts();
+
+    return () => {
+      active = false;
+    };
+  }, [getJournalPosts, id]);
 
   if (loading) {
     return (
@@ -136,6 +162,14 @@ const FormulaDetailPage = () => {
               <Button variant="outline" onClick={handlePrint} className="gap-2 h-9">
                 <Printer className="w-4 h-4" />
                 Print
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/journal/new?formulaId=${id}`)}
+                className="gap-2 h-9"
+              >
+                <BookOpenText className="w-4 h-4" />
+                Journal note
               </Button>
               <Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)} className="gap-2 h-9">
                 <Trash2 className="w-4 h-4" />
@@ -280,6 +314,50 @@ const FormulaDetailPage = () => {
                   ) : null}
                 </div>
               ) : null}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Journal links">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Catatan Journal bisa dikaitkan ke formula ini untuk menyimpan pengalaman, revisi accord, dan observasi pemakaian.
+                </div>
+                <Button variant="outline" className="rounded-xl gap-2" onClick={() => navigate(`/journal/new?formulaId=${id}`)}>
+                  <BookOpenText className="h-4 w-4" />
+                  New linked note
+                </Button>
+              </div>
+
+              {linkedJournalPosts.length ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {linkedJournalPosts.map((post) => (
+                    <button
+                      key={post.id}
+                      type="button"
+                      onClick={() => navigate(`/journal/${post.id}`)}
+                      className="rounded-xl border bg-card p-4 text-left transition hover:border-primary/40 hover:bg-muted/20"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm font-semibold">{post.title || 'Untitled note'}</div>
+                        <Badge variant="outline" className="capitalize text-[10px]">
+                          {post.status || 'draft'}
+                        </Badge>
+                      </div>
+                      {post.excerpt ? (
+                        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{post.excerpt}</p>
+                      ) : null}
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        Updated {formatDate(post.updated || post.created)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                  Belum ada Journal note yang terhubung ke formula ini.
+                </div>
+              )}
             </div>
           </DetailSection>
 

@@ -7,6 +7,7 @@ import {
   Menu,
   Home,
   Beaker,
+  BookOpenText,
   LogOut,
   ChevronsLeft,
   ChevronsRight,
@@ -69,6 +70,7 @@ const AppShell = ({ children }) => {
       items: [
         { path: '/studio', label: 'Dasbor', icon: Home, aliases: ['/dashboard'] },
         { path: '/briefs', label: 'Briefs', icon: ClipboardList },
+        { path: '/journal', label: 'Journal', icon: BookOpenText },
         { path: '/raw-materials', label: 'Material', icon: LibraryBig },
         { path: '/formulas', label: 'Formulas', icon: Beaker },
         { path: '/batches', label: 'Batches', icon: PackageCheck },

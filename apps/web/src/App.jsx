@@ -33,6 +33,9 @@ const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage.jsx'));
 const CustomersPage = lazy(() => import('@/pages/CustomersPage.jsx'));
 const ShipmentsPage = lazy(() => import('@/pages/ShipmentsPage.jsx'));
 const BriefsPage = lazy(() => import('@/pages/BriefsPage.jsx'));
+const JournalPage = lazy(() => import('@/pages/JournalPage.jsx'));
+const JournalEditorPage = lazy(() => import('@/pages/JournalEditorPage.jsx'));
+const JournalDetailPage = lazy(() => import('@/pages/JournalDetailPage.jsx'));
 const BriefEditorPage = lazy(() => import('@/pages/BriefEditorPage.jsx'));
 const BriefDetailPage = lazy(() => import('@/pages/BriefDetailPage.jsx'));
 const RawMaterialsPage = lazy(() => import('@/pages/RawMaterialsPage.jsx'));
@@ -63,6 +66,9 @@ const MobileDashboardPage = lazy(() => import('@/pages/mobile/MobileDashboardPag
 const MobileBriefsPage = lazy(() => import('@/pages/mobile/MobileBriefsPage.jsx'));
 const MobileBriefEditorPage = lazy(() => import('@/pages/mobile/MobileBriefEditorPage.jsx'));
 const MobileBriefDetailPage = lazy(() => import('@/pages/mobile/MobileBriefDetailPage.jsx'));
+const MobileJournalPage = lazy(() => import('@/pages/mobile/MobileJournalPage.jsx'));
+const MobileJournalEditorPage = lazy(() => import('@/pages/mobile/MobileJournalEditorPage.jsx'));
+const MobileJournalDetailPage = lazy(() => import('@/pages/mobile/MobileJournalDetailPage.jsx'));
 const MobileRawMaterialsPage = lazy(() => import('@/pages/mobile/MobileRawMaterialsPage.jsx'));
 const MobileRawMaterialEditorPage = lazy(() => import('@/pages/mobile/MobileRawMaterialEditorPage.jsx'));
 const MobileRawMaterialDetailPage = lazy(() => import('@/pages/mobile/MobileRawMaterialDetailPage.jsx'));
@@ -138,6 +144,7 @@ const mobileDetailPatterns = [
   /^\/mobile\/products\/[^/]+$/,
   /^\/mobile\/studio\/orders\/[^/]+$/,
   /^\/mobile\/briefs\/[^/]+$/,
+  /^\/mobile\/journal\/[^/]+$/,
   /^\/mobile\/raw-material\/[^/]+$/,
   /^\/mobile\/formulas\/[^/]+$/,
 ];
@@ -380,6 +387,32 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
+        <Route path="/mobile/journal" element={
+          <ProtectedRoute>
+            <MobileJournalPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/studio/journal" element={
+          <ProtectedRoute>
+            <Navigate to="/mobile/journal" replace />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/journal/new" element={
+          <ProtectedRoute>
+            <MobileJournalEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/journal/:id/edit" element={
+          <ProtectedRoute>
+            <MobileJournalEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mobile/journal/:id" element={
+          <ProtectedRoute>
+            <MobileJournalDetailPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/mobile/raw-materials/new" element={
           <ProtectedRoute>
             <MobileRawMaterialEditorPage />
@@ -549,6 +582,26 @@ function AppRoutes() {
         <Route path="/briefs" element={
           <ProtectedRoute>
             <BriefsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/journal" element={
+          <ProtectedRoute>
+            <JournalPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/journal/new" element={
+          <ProtectedRoute>
+            <JournalEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/journal/:id/edit" element={
+          <ProtectedRoute>
+            <JournalEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/journal/:id" element={
+          <ProtectedRoute>
+            <JournalDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/briefs/new" element={
