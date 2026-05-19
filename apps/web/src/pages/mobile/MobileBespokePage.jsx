@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, ClipboardList, CreditCard, MessageCircle, Sparkles, WandSparkles } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ClipboardList, CreditCard, MessageCircle, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -25,6 +25,29 @@ import {
 import { formatRupiah } from '@/services/productCatalogService.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
+const BESPOKE_DRAFT_STORAGE_KEY = 'dekito.storefront.bespokeDraft.v1';
+
+const readBespokeDraft = () => {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const rawValue = window.localStorage.getItem(BESPOKE_DRAFT_STORAGE_KEY);
+    const parsedValue = rawValue ? JSON.parse(rawValue) : {};
+    return parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue) ? parsedValue : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeBespokeDraft = (draft) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(BESPOKE_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+};
+
+const clearBespokeDraft = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(BESPOKE_DRAFT_STORAGE_KEY);
+};
 
 const checkoutCourierOptions = [
   { courierCode: 'jnt', label: 'JnT' },
@@ -113,15 +136,17 @@ const MobileBespokePage = () => {
   const capDesignOptions = useMemo(() => bespokeSettings.capDesigns.filter((option) => option.enabled), [bespokeSettings.capDesigns]);
   const labelDesignOptions = useMemo(() => bespokeSettings.labelDesigns.filter((option) => option.enabled), [bespokeSettings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => bespokeSettings.exoticMaterials.filter((option) => option.enabled), [bespokeSettings.exoticMaterials]);
-  const [step, setStep] = useState(0);
+  const savedDraft = useMemo(() => readBespokeDraft(), []);
+  const savedForm = savedDraft.form && typeof savedDraft.form === 'object' && !Array.isArray(savedDraft.form) ? savedDraft.form : {};
+  const [step, setStep] = useState(Number.isInteger(savedDraft.step) ? Math.min(Math.max(savedDraft.step, 0), 4) : 0);
   const [submittedRequest, setSubmittedRequest] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [destinationSearch, setDestinationSearch] = useState('');
+  const [destinationSearch, setDestinationSearch] = useState(savedDraft.destinationSearch || savedForm.deliveryArea || '');
   const [destinationOptions, setDestinationOptions] = useState([]);
-  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [selectedDestination, setSelectedDestination] = useState(savedDraft.selectedDestination || null);
   const [shippingOptions, setShippingOptions] = useState([]);
-  const [selectedCourier, setSelectedCourier] = useState('');
-  const [selectedShipping, setSelectedShipping] = useState(null);
+  const [selectedCourier, setSelectedCourier] = useState(savedDraft.selectedCourier || '');
+  const [selectedShipping, setSelectedShipping] = useState(savedDraft.selectedShipping || null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
   const [form, setForm] = useState({
@@ -137,6 +162,7 @@ const MobileBespokePage = () => {
     customerName: '',
     contact: '',
     deliveryAddress: '',
+    ...savedForm,
   });
 
   useEffect(() => {
@@ -159,6 +185,18 @@ const MobileBespokePage = () => {
       return Object.keys(nextForm).some((key) => nextForm[key] !== current[key]) ? nextForm : current;
     });
   }, [bottleSizeOptions, bottleTypeOptions, capDesignOptions, labelDesignOptions, exoticMaterialOptions]);
+
+  useEffect(() => {
+    writeBespokeDraft({
+      form,
+      destinationSearch,
+      selectedCourier,
+      selectedDestination,
+      selectedShipping,
+      step,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [destinationSearch, form, selectedCourier, selectedDestination, selectedShipping, step]);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const selectedSize = bottleSizeOptions.find((option) => option.value === form.size) || bottleSizeOptions[0];
@@ -270,13 +308,13 @@ const MobileBespokePage = () => {
     }
   };
 
-  const loadShippingRates = async (destination) => {
+  const loadShippingRates = async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
     setSelectedDestination(destination);
     setDestinationSearch(destination.label);
     setDestinationOptions([]);
     setSelectedShipping(null);
     setShippingOptions([]);
-    if (!selectedCourier) {
+    if (!courierCode) {
       setShippingError('Pilih ekspedisi dulu untuk melihat layanan ongkir.');
       return;
     }
@@ -287,10 +325,14 @@ const MobileBespokePage = () => {
       const rates = await getShippingRates({
         destinationId: destination.id,
         weight: shippingWeight,
-        couriers: [selectedCourier],
+        couriers: [courierCode],
       });
-      setShippingOptions(rates);
-      if (!rates.length) {
+      const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
+      setShippingOptions(sortedRates);
+      if (autoSelectCheapest && sortedRates.length) {
+        setSelectedShipping(sortedRates[0]);
+      }
+      if (!sortedRates.length) {
         setShippingError('Belum ada ongkir untuk area ini');
       }
     } catch (error) {
@@ -300,13 +342,17 @@ const MobileBespokePage = () => {
     }
   };
 
-  const autoCalculateShipping = async () => {
-    const search = destinationSearch.trim();
+  const autoCalculateShipping = async ({
+    courierCode = selectedCourier,
+    searchText = '',
+    autoSelectBest = false,
+  } = {}) => {
+    const search = String(searchText || destinationSearch || form.deliveryAddress || '').trim();
     if (search.length < 3) {
       toast.error('Isi area ongkir dulu, contoh: Jakarta Selatan');
       return;
     }
-    if (!selectedCourier) {
+    if (!courierCode) {
       toast.error('Pilih ekspedisi dulu');
       return;
     }
@@ -322,10 +368,13 @@ const MobileBespokePage = () => {
         const rates = await getShippingRates({
           destinationId: selectedDestination.id,
           weight: shippingWeight,
-          couriers: [selectedCourier],
+          couriers: [courierCode],
         });
         const sortedRates = [...rates].sort((first, second) => Number(first.cost || 0) - Number(second.cost || 0));
         setShippingOptions(sortedRates);
+        if (autoSelectBest && sortedRates.length) {
+          setSelectedShipping(sortedRates[0]);
+        }
         if (!sortedRates.length) {
           setShippingError('Area ditemukan, tapi ongkir belum tersedia untuk kurir ini. Pilih area lain atau kurir lain.');
         }
@@ -334,6 +383,12 @@ const MobileBespokePage = () => {
 
       setSelectedDestination(null);
       const destinations = await searchShippingDestinations(search);
+      if (autoSelectBest && destinations.length) {
+        await loadShippingRates(destinations[0], { courierCode, autoSelectCheapest: true });
+        setDestinationOptions(destinations.slice(1));
+        setShippingError('');
+        return;
+      }
       setDestinationOptions(destinations);
       setShippingError(destinations.length
         ? 'Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.'
@@ -342,6 +397,15 @@ const MobileBespokePage = () => {
       setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.'));
     } finally {
       setShippingLoading(false);
+    }
+  };
+
+  const handleCourierChange = (courierCode) => {
+    chooseShippingCourier(courierCode);
+    if (!courierCode) return;
+    const searchText = destinationSearch.trim() || form.deliveryAddress.trim();
+    if (searchText.length >= 3) {
+      autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
     }
   };
 
@@ -786,7 +850,7 @@ const MobileBespokePage = () => {
       key: 'delivery',
       title: 'Kontak & ongkir',
       shortLabel: 'Ongkir',
-      description: 'Isi data penerima, cari area, lalu pilih layanan ongkir.',
+      description: 'Isi penerima seperti checkout produk, lalu pilih kurir dan layanan ongkir.',
       render: () => (
         <div className="grid gap-3">
           <div className="grid gap-2">
@@ -804,12 +868,23 @@ const MobileBespokePage = () => {
               <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota tujuan" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>Cari</Button>
             </div>
-            <select value={selectedCourier} onChange={(event) => chooseShippingCourier(event.target.value)} className="mobile-commerce-control h-12 px-3 text-sm font-bold text-[#1f2937]">
-              <option value="">Pilih kurir</option>
-              {checkoutCourierOptions.map((courier) => (
-                <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
-              ))}
-            </select>
+            <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase">
+                  {selectedCourier ? 'Kurir dipilih' : 'Dropdown kurir'}
+                </span>
+                <span className="mt-0.5 block truncate text-sm font-bold">
+                  {selectedCourier ? (courierLabels[selectedCourier] || selectedCourier.toUpperCase()) : 'Pilih kurir pengiriman'}
+                </span>
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0" />
+              <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
+                <option value="">Pilih kurir</option>
+                {checkoutCourierOptions.map((courier) => (
+                  <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+                ))}
+              </select>
+            </label>
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
               {shippingLoading ? 'Menghitung...' : selectedDestination ? 'Tampilkan ongkir' : 'Cari ongkir'}
             </Button>
@@ -958,6 +1033,7 @@ const MobileBespokePage = () => {
           createdAt: new Date().toISOString(),
         });
         toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+        clearBespokeDraft();
         navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
       }
@@ -1010,6 +1086,7 @@ const MobileBespokePage = () => {
         createdAt: new Date().toISOString(),
       });
       toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+      clearBespokeDraft();
       navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
       if (createdOrder) {
