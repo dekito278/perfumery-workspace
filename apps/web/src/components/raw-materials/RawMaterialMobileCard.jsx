@@ -20,7 +20,7 @@ const RawMaterialMobileCard = ({
   onView,
   referenceStatusMap,
 }) => (
-  <div className="rounded-[22px] border border-white/80 bg-white/90 p-4 shadow-sm">
+  <div className="mobile-card mobile-list-card p-4">
     <div className="flex items-start justify-between gap-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <Checkbox
@@ -41,11 +41,11 @@ const RawMaterialMobileCard = ({
       </Badge>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-2xl bg-muted/45 px-3 py-2">
+      <div className="rounded-xl bg-muted/45 px-3 py-2">
         <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Category</div>
         <div className="mt-1 text-sm">{row.category || 'Uncategorized'}</div>
       </div>
-      <div className="rounded-2xl bg-muted/45 px-3 py-2">
+      <div className="rounded-xl bg-muted/45 px-3 py-2">
         <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Price</div>
         <div className="mt-1 text-sm">{formatPricePerUnit(row.cost_per_unit, row.unit)}</div>
       </div>

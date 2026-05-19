@@ -7,24 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
+import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { getJournalCategoryLabel } from '@/services/journalPostsSupabaseService.js';
+import {
+  getJournalCategoryBadgeClassName,
+  getJournalCategoryLabel,
+  getJournalStatusBadgeClassName,
+} from '@/services/journalPostsSupabaseService.js';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
-
-const getStatusVariant = (status) => {
-  if (status === 'published') return 'default';
-  return 'secondary';
-};
-
-const categoryBadgeClassNames = {
-  formula_accord: 'border-amber-200 bg-amber-50 text-amber-800',
-  experience: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  material_note: 'border-sky-200 bg-sky-50 text-sky-800',
-  process: 'border-violet-200 bg-violet-50 text-violet-800',
-  product_idea: 'border-rose-200 bg-rose-50 text-rose-800',
-};
 
 const getReadingMinutes = (content) => {
   const wordCount = String(content || '').trim().split(/\s+/).filter(Boolean).length;
@@ -95,10 +88,11 @@ const JournalDetailPage = () => {
   };
 
   const handleCopyLink = async () => {
-    const url = `${window.location.origin}/journal/${post.slug || post.id}`;
+    const path = post.status === 'published' && post.slug ? `/articles/${post.slug}` : `/journal/${post.id}`;
+    const url = `${window.location.origin}${path}`;
 
     try {
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
       toast.success('Journal link copied');
     } catch (error) {
       toast.error('Failed to copy link');
@@ -157,10 +151,10 @@ const JournalDetailPage = () => {
           <article className="mx-auto max-w-5xl">
             <header className="border-b pb-8 sm:pb-10">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className={`rounded-full text-xs ${categoryBadgeClassNames[post.category] || ''}`}>
+                <Badge variant="outline" className={`rounded-full text-xs ${getJournalCategoryBadgeClassName(post.category)}`}>
                   {getJournalCategoryLabel(post.category)}
                 </Badge>
-                <Badge variant={getStatusVariant(post.status)} className="rounded-full text-xs">
+                <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName(post.status)}`}>
                   {formatStatus(post.status || 'draft')}
                 </Badge>
               </div>
@@ -175,16 +169,12 @@ const JournalDetailPage = () => {
                 </p>
               ) : null}
 
-              {post.cover_image_url ? (
-                <div className="mt-7 overflow-hidden rounded-[26px] border bg-muted">
-                  <img
-                    src={post.cover_image_url}
-                    alt=""
-                    className="aspect-[16/7] w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ) : null}
+              <JournalCoverFrame
+                post={post}
+                className="mt-7 rounded-[26px]"
+                imageClassName="aspect-[16/7]"
+                eager
+              />
 
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-3 py-1.5">
@@ -218,7 +208,7 @@ const JournalDetailPage = () => {
               ) : null}
             </header>
 
-            <section className="mt-8">
+            <section className="mt-10 pb-12">
               {post.content ? (
                 <JournalMarkdownContent content={post.content} />
               ) : (

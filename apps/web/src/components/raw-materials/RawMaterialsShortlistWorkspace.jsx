@@ -16,7 +16,7 @@ const RawMaterialsShortlistWorkspace = ({
   openFormulaWizard,
   navigateToBriefBoard,
 }) => (
-  <div className="mb-6 rounded-[26px] border bg-[linear-gradient(180deg,rgba(255,250,243,0.95)_0%,rgba(250,244,234,0.92)_100%)] p-5 shadow-sm">
+  <div className="mb-6 rounded-2xl border bg-[linear-gradient(180deg,rgba(255,250,243,0.95)_0%,rgba(250,244,234,0.92)_100%)] p-5 shadow-sm">
     <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
       <div className="max-w-3xl">
         <div className="flex items-center gap-2 text-sm font-semibold">
@@ -29,7 +29,7 @@ const RawMaterialsShortlistWorkspace = ({
             : 'You are working in shortlist mode for a brief. Pick candidates from the table, save them, then move directly into formula composition.'}
         </p>
         {briefContext?.mood_story ? (
-          <div className="mt-3 rounded-[18px] border bg-white/75 px-4 py-3 text-sm text-muted-foreground">
+          <div className="mt-3 rounded-xl border bg-white/75 px-4 py-3 text-sm text-muted-foreground">
             <strong className="text-foreground">Brief mood:</strong> {briefContext.mood_story}
           </div>
         ) : null}
@@ -38,13 +38,13 @@ const RawMaterialsShortlistWorkspace = ({
       <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
-          className="rounded-2xl"
+          className="rounded-xl"
           onClick={navigateToBriefBoard}
         >
           Open brief board
         </Button>
         <Button
-          className="rounded-2xl gap-2"
+          className="rounded-xl gap-2"
           onClick={() => openFormulaWizard(selectedMaterialIds.length ? selectedMaterialIds : shortlistMaterialIds)}
         >
           Continue to formula
@@ -54,7 +54,7 @@ const RawMaterialsShortlistWorkspace = ({
     </div>
 
     <div className="mt-4 grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="rounded-[22px] border bg-white/80 p-4">
+      <div className="rounded-xl border bg-white/80 p-4">
         <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current selection</div>
         <div className="mt-2 text-2xl font-bold">{selectedMaterialIds.length}</div>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -64,7 +64,7 @@ const RawMaterialsShortlistWorkspace = ({
           <Button
             type="button"
             variant="secondary"
-            className="rounded-2xl"
+            className="rounded-xl"
             disabled={!selectedMaterialIds.length}
             onClick={handleSaveSelectionToShortlist}
           >
@@ -73,7 +73,7 @@ const RawMaterialsShortlistWorkspace = ({
           <Button
             type="button"
             variant="outline"
-            className="rounded-2xl"
+            className="rounded-xl"
             disabled={!selectedMaterialIds.length}
             onClick={() => openFormulaWizard(selectedMaterialIds)}
           >
@@ -82,7 +82,7 @@ const RawMaterialsShortlistWorkspace = ({
         </div>
       </div>
 
-      <div className="rounded-[22px] border bg-white/80 p-4">
+      <div className="rounded-xl border bg-white/80 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Saved shortlist</div>
@@ -91,7 +91,7 @@ const RawMaterialsShortlistWorkspace = ({
           <Button
             type="button"
             variant="outline"
-            className="rounded-2xl"
+            className="rounded-xl"
             disabled={!shortlistItems.length}
             onClick={() => openFormulaWizard(shortlistMaterialIds)}
           >
@@ -102,7 +102,7 @@ const RawMaterialsShortlistWorkspace = ({
           {shortlistLoading ? (
             <div className="text-sm text-muted-foreground">Loading shortlist...</div>
           ) : shortlistItems.length ? shortlistItems.slice(0, 6).map((item) => (
-            <div key={item.id} className="grid gap-3 rounded-[18px] border bg-background/75 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_150px_auto] lg:items-center">
+            <div key={item.id} className="grid gap-3 rounded-xl border bg-background/75 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_150px_auto] lg:items-center">
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">{item.expand?.raw_material_id?.name || 'Unknown material'}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
@@ -131,7 +131,7 @@ const RawMaterialsShortlistWorkspace = ({
               </Button>
             </div>
           )) : (
-            <div className="rounded-[18px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
               No saved shortlist yet. Pick materials from the table and save them here first.
             </div>
           )}

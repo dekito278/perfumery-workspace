@@ -1,9 +1,0 @@
-[
-  {
-    "status": "failed",
-    "candidate_id": "missing-import-3-1",
-    "master_id": "b5271771-b156-46d4-a297-61affd1916b2",
-    "duplicate_id": "00ad8297-3af7-49a1-a341-ef4643ddd866",
-    "error": "Could not find the table 'public.accord_items' in the schema cache"
-  }
-]

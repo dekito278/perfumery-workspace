@@ -1,6 +1,5 @@
 
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
@@ -36,6 +35,7 @@ const BriefsPage = lazy(() => import('@/pages/BriefsPage.jsx'));
 const JournalPage = lazy(() => import('@/pages/JournalPage.jsx'));
 const JournalEditorPage = lazy(() => import('@/pages/JournalEditorPage.jsx'));
 const JournalDetailPage = lazy(() => import('@/pages/JournalDetailPage.jsx'));
+const PublicJournalArticlePage = lazy(() => import('@/pages/PublicJournalArticlePage.jsx'));
 const BriefEditorPage = lazy(() => import('@/pages/BriefEditorPage.jsx'));
 const BriefDetailPage = lazy(() => import('@/pages/BriefDetailPage.jsx'));
 const RawMaterialsPage = lazy(() => import('@/pages/RawMaterialsPage.jsx'));
@@ -176,38 +176,17 @@ const getMobileRouteMeta = (pathname) => {
   };
 };
 
-const pageVariants = {
-  push: {
-    initial: { opacity: 0.96, x: 28 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0.94, x: -18 },
-  },
-  pop: {
-    initial: { opacity: 0.98, x: -18 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0.94, x: 28 },
-  },
-  tabForward: {
-    initial: { opacity: 0.98, x: 14 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0.98, x: -10 },
-  },
-  tabBackward: {
-    initial: { opacity: 0.98, x: -14 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0.98, x: 10 },
-  },
-  fade: {
-    initial: { opacity: 0.98, y: 4 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0.98, y: -4 },
-  },
+const pageTransitionClassNames = {
+  push: 'mobile-route-transition-push',
+  pop: 'mobile-route-transition-pop',
+  tabForward: 'mobile-route-transition-tab-forward',
+  tabBackward: 'mobile-route-transition-tab-backward',
+  fade: 'mobile-route-transition-fade',
 };
 
 const MobileRouteTransition = ({ children }) => {
   const location = useLocation();
   const navigationType = useNavigationType();
-  const shouldReduceMotion = useReducedMotion();
   const previousMetaRef = useRef(getMobileRouteMeta(location.pathname));
   const currentMeta = getMobileRouteMeta(location.pathname);
   const previousMeta = previousMetaRef.current;
@@ -234,18 +213,13 @@ const MobileRouteTransition = ({ children }) => {
     return children;
   }
 
-  const variant = pageVariants[transitionKind];
-
   return (
-    <motion.div
+    <div
       key={location.pathname}
-      className="mobile-route-transition"
-      initial={shouldReduceMotion ? false : variant.initial}
-      animate={shouldReduceMotion ? { opacity: 1, x: 0, y: 0 } : variant.animate}
-      transition={{ duration: shouldReduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+      className={`mobile-route-transition ${pageTransitionClassNames[transitionKind] || pageTransitionClassNames.fade}`}
     >
       {cloneElement(children, { location })}
-    </motion.div>
+    </div>
   );
 };
 
@@ -262,6 +236,7 @@ function AppRoutes() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/products/:slug" element={<ProductDetailPage />} />
+        <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/payment" element={<PaymentPage />} />

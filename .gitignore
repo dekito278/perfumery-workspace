@@ -16,6 +16,7 @@ yarn-error.log*
 pnpm-debug.log*
 vite-*.log
 .codex-dev-server.*.log
+.codex-temp/
 backups/
 
 docs/browser-qa-*/

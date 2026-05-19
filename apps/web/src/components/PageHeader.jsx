@@ -32,7 +32,7 @@ const PageHeader = ({
             <Button
               type="button"
               onClick={onAction}
-              className="h-11 w-full gap-2 rounded-2xl px-5 shadow-[0_16px_35px_-20px_hsl(var(--primary)/0.8)] sm:w-auto"
+              className="h-11 w-full gap-2 rounded-xl px-5 shadow-[0_16px_35px_-20px_hsl(var(--primary)/0.8)] sm:w-auto"
             >
               {ActionIcon && <ActionIcon className="w-4 h-4" />}
               {action}
@@ -43,7 +43,7 @@ const PageHeader = ({
               type="button"
               variant="outline"
               onClick={onSecondaryAction}
-              className="h-11 w-full gap-2 rounded-2xl border-white/70 bg-white/75 px-5 sm:w-auto"
+              className="h-11 w-full gap-2 rounded-xl border-white/70 bg-white/75 px-5 sm:w-auto"
             >
               {SecondaryActionIcon && <SecondaryActionIcon className="w-4 h-4" />}
               {secondaryAction}

@@ -35,13 +35,13 @@ const RawMaterialsToolbar = ({
         />
       </div>
       <div className="flex items-end">
-        <Button onClick={onRefresh} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-2xl">
+        <Button onClick={onRefresh} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-xl">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
     </div>
 
-    <div className="mt-3 rounded-[24px] border border-white/70 bg-white/55 p-3">
+    <div className="mt-3 rounded-xl border border-white/70 bg-white/55 p-3">
       <FilterBar
         filters={filters}
         onFilterChange={onFilterChange}
@@ -52,19 +52,19 @@ const RawMaterialsToolbar = ({
     </div>
 
     {selectedMaterialIds.length > 0 ? (
-      <div className="mt-3 flex flex-col gap-3 rounded-[24px] border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-3 flex flex-col gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold">{selectedMaterialIds.length} material selected on this page</p>
           <p className="text-sm text-muted-foreground">Use bulk delete to clean up duplicate or unused materials faster.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={clearSelection} className="rounded-2xl">
+          <Button variant="outline" onClick={clearSelection} className="rounded-xl">
             Clear selection
           </Button>
           <Button
             variant="destructive"
             onClick={handleBulkDelete}
-            className="gap-2 rounded-2xl"
+            className="gap-2 rounded-xl"
           >
             <Trash2 className="h-4 w-4" />
             Delete selected

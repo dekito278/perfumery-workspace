@@ -9,10 +9,16 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
+import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { getJournalCategoryLabel } from '@/services/journalPostsSupabaseService.js';
+import {
+  getJournalCategoryBadgeClassName,
+  getJournalCategoryLabel,
+  getJournalStatusBadgeClassName,
+} from '@/services/journalPostsSupabaseService.js';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const formatDate = (value) => {
   if (!value) {
@@ -24,14 +30,6 @@ const formatDate = (value) => {
     month: 'long',
     year: 'numeric',
   }).format(new Date(value));
-};
-
-const categoryBadgeClassNames = {
-  formula_accord: 'border-amber-200 bg-amber-50 text-amber-800',
-  experience: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  material_note: 'border-sky-200 bg-sky-50 text-sky-800',
-  process: 'border-violet-200 bg-violet-50 text-violet-800',
-  product_idea: 'border-rose-200 bg-rose-50 text-rose-800',
 };
 
 const getReadingMinutes = (content) => {
@@ -84,10 +82,11 @@ const MobileJournalDetailPage = () => {
   const articleTitle = post?.seo_title || post?.title;
 
   const handleCopyLink = async () => {
-    const url = `${window.location.origin}/journal/${post.slug || post.id}`;
+    const path = post.status === 'published' && post.slug ? `/articles/${post.slug}` : `/journal/${post.id}`;
+    const url = `${window.location.origin}${path}`;
 
     try {
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
       toast.success('Journal link copied');
     } catch (error) {
       toast.error('Failed to copy link');
@@ -147,10 +146,10 @@ const MobileJournalDetailPage = () => {
         <article className="space-y-4 pb-6">
           <header className="border-b border-[#e5e7eb] pb-5">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className={`rounded-full ${categoryBadgeClassNames[post.category] || ''}`}>
+              <Badge variant="outline" className={`rounded-full ${getJournalCategoryBadgeClassName(post.category)}`}>
                 {getJournalCategoryLabel(post.category)}
               </Badge>
-              <Badge variant="outline" className="rounded-full capitalize">
+              <Badge variant="outline" className={`rounded-full capitalize ${getJournalStatusBadgeClassName(post.status)}`}>
                 {post.status}
               </Badge>
             </div>
@@ -165,16 +164,13 @@ const MobileJournalDetailPage = () => {
               </p>
             ) : null}
 
-            {post.cover_image_url ? (
-              <div className="mt-4 overflow-hidden rounded-2xl border border-[#e5e7eb] bg-[#f3f4f6]">
-                <img
-                  src={post.cover_image_url}
-                  alt=""
-                  className="aspect-[16/9] w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-            ) : null}
+            <JournalCoverFrame
+              post={post}
+              className="mt-4 rounded-2xl border-[#e5e7eb]"
+              imageClassName="aspect-[16/9]"
+              compact
+              eager
+            />
 
             <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold text-[#6b7280]">
               <span className="inline-flex items-center gap-1 rounded-full border border-[#e5e7eb] bg-white px-2.5 py-1">
@@ -210,7 +206,7 @@ const MobileJournalDetailPage = () => {
             ) : null}
           </header>
 
-          <section className="py-1">
+          <section className="py-2 pb-8">
             {post.content ? (
               <JournalMarkdownContent content={post.content} mobile />
             ) : (

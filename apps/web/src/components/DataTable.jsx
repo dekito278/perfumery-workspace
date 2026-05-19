@@ -34,7 +34,7 @@ const DataTable = ({
     return (
       <div className="space-y-3">
         {data.length === 0 ? (
-          <div className="table-container px-4 py-12 text-center text-muted-foreground">
+          <div className="mobile-card px-4 py-12 text-center text-sm font-medium text-muted-foreground">
             {emptyMessage}
           </div>
         ) : (

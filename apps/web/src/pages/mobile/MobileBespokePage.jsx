@@ -1133,7 +1133,7 @@ const MobileBespokePage = () => {
           reserveSpace
           aria-label="Aksi request custom"
           className="mobile-bespoke-action-bar"
-          contentClassName="rounded-[24px] border-[#263d27]/10 bg-white/95"
+          contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
         >
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>

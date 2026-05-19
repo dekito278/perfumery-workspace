@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Clipboard, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
+import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCustomers } from '@/hooks/useCustomers.js';
+import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
 const formatDate = (value) => (
   value
@@ -16,6 +18,8 @@ const formatDate = (value) => (
 
 const MobileCustomersPage = () => {
   const { customers, summary, loading } = useCustomers();
+  const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const visibleCustomers = customers.slice(0, visibleCount);
 
   const copyCode = async (customer) => {
     await navigator.clipboard.writeText(customer.customerCode);
@@ -47,7 +51,7 @@ const MobileCustomersPage = () => {
         </section>
 
         <section className="space-y-3">
-          {customers.map((customer) => (
+          {visibleCustomers.map((customer) => (
             <article key={customer.id || customer.customerCode} className="mobile-card mobile-list-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -72,6 +76,12 @@ const MobileCustomersPage = () => {
               </Button>
             </article>
           ))}
+          <PaginationOrLoadMore
+            visibleCount={visibleCustomers.length}
+            totalCount={customers.length}
+            loading={loading}
+            onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
+          />
           {!customers.length && !loading ? (
             <MobileStatePanel
               icon={UsersRound}

@@ -512,7 +512,7 @@
   .page-header-card {
     border: 1px solid rgba(255,255,255,0.8);
     background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.72));
-    border-radius: 1.6rem;
+    border-radius: 1rem;
     padding: 1.35rem;
     box-shadow: 0 22px 58px -48px rgba(24, 47, 27, 0.32);
   }
@@ -566,7 +566,7 @@
   /* Tables */
   .table-container {
     position: relative;
-    border-radius: 1.35rem;
+    border-radius: 1rem;
     border: 1px solid rgba(255,255,255,0.82);
     background:
       linear-gradient(180deg, rgba(255,255,255,0.94), rgba(252,248,241,0.82));
@@ -663,11 +663,11 @@
   }
 
   .table-container tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 1.2rem;
+    border-bottom-left-radius: 0.875rem;
   }
 
   .table-container tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 1.2rem;
+    border-bottom-right-radius: 0.875rem;
   }
 
   .table-action-head {
@@ -722,7 +722,7 @@
   .form-control {
     min-height: 2.75rem;
     width: 100%;
-    border-radius: 1rem;
+    border-radius: 0.875rem;
     border: 1px solid hsl(var(--border));
     background: rgba(255, 255, 255, 0.96);
     padding: 0.7rem 0.9rem;
@@ -777,7 +777,7 @@
     justify-content: center;
     text-align: center;
     padding: var(--spacing-2xl) var(--spacing-md);
-    min-height: 18rem;
+    min-height: 17rem;
   }
   
   .empty-state-icon {
@@ -981,7 +981,7 @@
   }
 
   .list-summary-card {
-    border-radius: 1.25rem;
+    border-radius: 1rem;
     border: 1px solid rgba(255,255,255,0.82);
     background: rgba(255,255,255,0.84);
     padding: 1.05rem 1.1rem;
@@ -1013,7 +1013,7 @@
   }
 
   .list-toolbar-panel {
-    border-radius: 1.25rem;
+    border-radius: 1rem;
     border: 1px solid rgba(255,255,255,0.82);
     background: rgba(255,255,255,0.78);
     padding: 1.05rem;
@@ -1021,7 +1021,7 @@
   }
 
   .list-subtle-panel {
-    border-radius: 1.25rem;
+    border-radius: 1rem;
     border: 1px solid hsl(var(--border));
     background: hsl(var(--muted) / 0.4);
     padding: 0.9rem 1rem;

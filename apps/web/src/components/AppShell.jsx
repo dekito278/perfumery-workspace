@@ -182,7 +182,7 @@ const AppShell = ({ children }) => {
             <div className={`flex items-center ${desktopSidebarCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>
               <Link to="/studio" className="app-brand">
               <span className="app-brand-icon">
-                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
+                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" loading="eager" decoding="async" width="44" height="44" />
               </span>
               {!desktopSidebarCollapsed && (
                 <span>
@@ -241,7 +241,7 @@ const AppShell = ({ children }) => {
                   <div className="flex h-full flex-col p-5">
                     <Link to="/studio" className="app-brand" onClick={() => setMobileMenuOpen(false)}>
                       <span className="app-brand-icon">
-                        <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
+                        <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" loading="eager" decoding="async" width="44" height="44" />
                       </span>
                       <span>
                         <span className="app-brand-title">Solivagant</span>
@@ -268,7 +268,7 @@ const AppShell = ({ children }) => {
 
               <Link to="/studio" className="min-w-0 flex items-center gap-2 lg:hidden">
                 <span className="app-brand-icon h-10 w-10">
-                  <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" />
+                  <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-full w-full rounded-[inherit] object-cover" loading="eager" decoding="async" width="40" height="40" />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold leading-none">Solivagant</span>

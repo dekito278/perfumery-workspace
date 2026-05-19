@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { BookOpenText, CalendarDays, FileText, Plus, Timer } from 'lucide-react';
@@ -13,12 +13,15 @@ import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
+import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import {
   JOURNAL_CATEGORIES,
   JOURNAL_STATUSES,
+  getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { filterByText, getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
 
@@ -32,14 +35,6 @@ const formatDate = (value) => {
     month: 'short',
     year: 'numeric',
   }).format(new Date(value));
-};
-
-const categoryBadgeClassNames = {
-  formula_accord: 'border-amber-200 bg-amber-50 text-amber-800',
-  experience: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  material_note: 'border-sky-200 bg-sky-50 text-sky-800',
-  process: 'border-violet-200 bg-violet-50 text-violet-800',
-  product_idea: 'border-rose-200 bg-rose-50 text-rose-800',
 };
 
 const getPreviewText = (post) => String(post.excerpt || post.content || 'No preview yet.')
@@ -62,33 +57,35 @@ const MobileJournalPage = () => {
   const [status, setStatus] = useState('all');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
 
+  const loadJournal = useCallback(async (isActive = () => true) => {
+    try {
+      const [postRows, formulaRows] = await Promise.all([
+        getJournalPosts(),
+        getFormulas(),
+      ]);
+
+      if (!isActive()) {
+        return;
+      }
+
+      setPosts(postRows);
+      setFormulas(formulaRows);
+    } catch (err) {
+      if (isActive()) {
+        toast.error('Failed to load journal');
+      }
+    }
+  }, [getFormulas, getJournalPosts]);
+
   useEffect(() => {
     let active = true;
 
-    const loadJournal = async () => {
-      try {
-        const [postRows, formulaRows] = await Promise.all([
-          getJournalPosts(),
-          getFormulas(),
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        setPosts(postRows);
-        setFormulas(formulaRows);
-      } catch (err) {
-        toast.error('Failed to load journal');
-      }
-    };
-
-    loadJournal();
+    loadJournal(() => active);
 
     return () => {
       active = false;
     };
-  }, [getFormulas, getJournalPosts]);
+  }, [loadJournal]);
 
   useEffect(() => {
     setVisibleCount(MOBILE_PAGE_SIZE);
@@ -187,7 +184,7 @@ const MobileJournalPage = () => {
             title="Journal unavailable"
             description={error}
             action="Try again"
-            onAction={() => window.location.reload()}
+            onAction={() => loadJournal()}
           />
         ) : visiblePosts.length ? (
           <div className="space-y-3">
@@ -197,25 +194,35 @@ const MobileJournalPage = () => {
               return (
                 <article
                   key={post.id}
-                  className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm"
+                  className="mobile-card mobile-list-card p-4"
                 >
                   <button
                     type="button"
                     onClick={() => navigate(`/mobile/journal/${post.id}`)}
                     className="block w-full text-left"
                   >
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`rounded-full text-[10px] ${categoryBadgeClassNames[post.category] || ''}`}>
-                        {getJournalCategoryLabel(post.category)}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-full text-[10px] capitalize">
-                        {post.status}
-                      </Badge>
+                    <div className="grid grid-cols-[76px_1fr] gap-3">
+                      <JournalCoverFrame
+                        post={post}
+                        className="h-[76px] rounded-xl border-[#e5e7eb]"
+                        imageClassName="h-full"
+                        compact
+                      />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant="outline" className={`rounded-full text-[10px] ${getJournalCategoryBadgeClassName(post.category)}`}>
+                            {getJournalCategoryLabel(post.category)}
+                          </Badge>
+                          <Badge variant="outline" className={`rounded-full text-[10px] capitalize ${getJournalStatusBadgeClassName(post.status)}`}>
+                            {post.status}
+                          </Badge>
+                        </div>
+                        <h2 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-[#111827]">
+                          {post.title || 'Untitled note'}
+                        </h2>
+                      </div>
                     </div>
-                    <h2 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-[#111827]">
-                      {post.title || 'Untitled note'}
-                    </h2>
-                    <p className="mt-2 line-clamp-3 text-sm font-medium leading-relaxed text-[#6b7280]">
+                    <p className="mt-3 line-clamp-3 text-sm font-medium leading-relaxed text-[#6b7280]">
                       {preview}
                     </p>
                   </button>

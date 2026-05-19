@@ -13,29 +13,19 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
+import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import {
   JOURNAL_CATEGORIES,
   JOURNAL_STATUSES,
+  getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
 
 const pageSize = 8;
-
-const categoryBadgeClassNames = {
-  formula_accord: 'border-amber-200 bg-amber-50 text-amber-800',
-  experience: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  material_note: 'border-sky-200 bg-sky-50 text-sky-800',
-  process: 'border-violet-200 bg-violet-50 text-violet-800',
-  product_idea: 'border-rose-200 bg-rose-50 text-rose-800',
-};
-
-const getStatusVariant = (status) => {
-  if (status === 'published') return 'default';
-  return 'secondary';
-};
 
 const getPreviewText = (post) => {
   const source = post.excerpt || post.content || '';
@@ -169,7 +159,7 @@ const JournalPage = () => {
       key: 'category',
       label: 'Category',
       render: (post) => (
-        <Badge variant="outline" className={`rounded-full text-xs ${categoryBadgeClassNames[post.category] || ''}`}>
+        <Badge variant="outline" className={`rounded-full text-xs ${getJournalCategoryBadgeClassName(post.category)}`}>
           {getJournalCategoryLabel(post.category)}
         </Badge>
       ),
@@ -178,7 +168,7 @@ const JournalPage = () => {
       key: 'status',
       label: 'Status',
       render: (post) => (
-        <Badge variant={getStatusVariant(post.status)} className="text-xs">
+        <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName(post.status)}`}>
           {formatStatus(post.status || 'draft')}
         </Badge>
       ),
@@ -254,16 +244,16 @@ const JournalPage = () => {
           onAction={() => navigate('/journal/new')}
         />
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-[24px] border bg-white/85 p-4 shadow-sm">
+        <div className="list-summary-grid mt-5 md:grid-cols-3">
+          <div className="list-summary-card">
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Total notes</div>
             <div className="mt-2 text-2xl font-bold">{summary.total}</div>
           </div>
-          <div className="rounded-[24px] border bg-white/85 p-4 shadow-sm">
+          <div className="list-summary-card">
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Drafts</div>
             <div className="mt-2 text-2xl font-bold">{summary.drafts}</div>
           </div>
-          <div className="rounded-[24px] border bg-white/85 p-4 shadow-sm">
+          <div className="list-summary-card">
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Published</div>
             <div className="mt-2 text-2xl font-bold">{summary.published}</div>
           </div>
@@ -350,8 +340,14 @@ const JournalPage = () => {
                 data={paginatedPosts}
                 onEdit={(post) => navigate(`/journal/${post.id}/edit`)}
                 mobileCard={(post) => (
-                  <div className="rounded-[22px] border border-white/80 bg-white/95 p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
+                  <div className="mobile-card mobile-list-card p-4">
+                    <div className="grid grid-cols-[88px_1fr] gap-3 sm:grid-cols-[96px_1fr_auto]">
+                      <JournalCoverFrame
+                        post={post}
+                        className="h-24 rounded-xl border-white/80"
+                        imageClassName="h-full"
+                        compact
+                      />
                       <div className="min-w-0">
                         <button
                           type="button"
@@ -361,10 +357,10 @@ const JournalPage = () => {
                           {post.title}
                         </button>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <Badge variant="outline" className={`rounded-full text-[10px] ${categoryBadgeClassNames[post.category] || ''}`}>
+                          <Badge variant="outline" className={`rounded-full text-[10px] ${getJournalCategoryBadgeClassName(post.category)}`}>
                             {getJournalCategoryLabel(post.category)}
                           </Badge>
-                          <Badge variant={getStatusVariant(post.status)} className="text-[10px]">
+                          <Badge variant="outline" className={`rounded-full text-[10px] ${getJournalStatusBadgeClassName(post.status)}`}>
                             {formatStatus(post.status || 'draft')}
                           </Badge>
                         </div>
@@ -372,7 +368,7 @@ const JournalPage = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-9 rounded-xl"
+                        className="col-span-2 h-9 rounded-xl sm:col-span-1"
                         onClick={() => navigate(`/journal/${post.id}/edit`)}
                       >
                         Edit

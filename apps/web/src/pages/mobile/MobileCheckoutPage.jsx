@@ -302,7 +302,7 @@ const MobileCheckoutPage = () => {
             reserveSpace
             aria-label="Aksi pembayaran"
             className="mobile-checkout-action-bar"
-            contentClassName="rounded-[24px] border-[#263d27]/10 bg-white/95"
+            contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
           >
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="min-w-0">

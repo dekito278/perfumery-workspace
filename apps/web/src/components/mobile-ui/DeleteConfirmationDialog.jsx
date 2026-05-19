@@ -12,7 +12,7 @@ import {
 
 const DeleteConfirmationDialog = ({ open, onOpenChange, itemName, onConfirm, loading = false }) => (
   <AlertDialog open={open} onOpenChange={onOpenChange}>
-    <AlertDialogContent className="max-w-[340px] rounded-[26px]">
+    <AlertDialogContent className="max-w-[340px] rounded-2xl">
       <AlertDialogHeader>
         <AlertDialogTitle>Delete this item?</AlertDialogTitle>
         <AlertDialogDescription>
@@ -20,12 +20,12 @@ const DeleteConfirmationDialog = ({ open, onOpenChange, itemName, onConfirm, loa
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
         <AlertDialogAction
           onClick={onConfirm}
           disabled={loading}
           data-haptic="warning"
-          className="rounded-2xl bg-[#ef4444] text-white hover:bg-[#dc2626]"
+          className="rounded-xl bg-[#ef4444] text-white hover:bg-[#dc2626]"
         >
           {loading ? 'Deleting...' : 'Delete'}
         </AlertDialogAction>

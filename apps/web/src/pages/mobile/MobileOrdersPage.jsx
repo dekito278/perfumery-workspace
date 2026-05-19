@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clipboard, CreditCard, Download, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
+import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -24,6 +25,7 @@ import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -118,11 +120,14 @@ const MobileOrdersPage = () => {
     return orderFilterOptions.some((option) => option.value === filter) ? filter : 'active';
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkSaving, setBulkSaving] = useState(false);
   const products = useCatalogProducts({ editableOnly: true });
   const paymentSummary = getPaymentSummary(orders);
   const lowStockProducts = products.filter(getProductLowStock);
+  const lowStockPreview = lowStockProducts.slice(0, 8);
   const filteredOrders = useMemo(() => orders.filter((order) => {
     if (orderFilter === 'proof_review') return order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status);
     if (orderFilter === 'paid') return order.paymentStatus === 'paid' && !['completed', 'cancelled'].includes(order.status);
@@ -134,7 +139,7 @@ const MobileOrdersPage = () => {
     if (orderFilter === 'bespoke') return isBespokeOrder(order);
     return !['completed', 'cancelled'].includes(order.status);
   }).filter((order) => {
-    const query = searchTerm.trim().toLowerCase();
+    const query = deferredSearchTerm.trim().toLowerCase();
     if (!query) return true;
     return [
       order.orderNumber,
@@ -145,11 +150,16 @@ const MobileOrdersPage = () => {
       order.courierName,
       ...getOrderProductItems(order).map((item) => item.name),
     ].some((value) => String(value || '').toLowerCase().includes(query));
-  }), [orderFilter, orders, searchTerm]);
+  }), [deferredSearchTerm, orderFilter, orders]);
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedFilteredOrders = useMemo(() => filteredOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber)), [filteredOrders, selectedOrderSet]);
   const selectedPrintableOrders = useMemo(() => selectedFilteredOrders.filter(canExportShippingLabel), [selectedFilteredOrders]);
   const allFilteredSelected = filteredOrders.length > 0 && filteredOrders.every((order) => selectedOrderSet.has(order.id || order.orderNumber));
+
+  useEffect(() => {
+    setVisibleCount(MOBILE_PAGE_SIZE);
+  }, [deferredSearchTerm, orderFilter]);
 
   const submitScannerSearch = (event) => {
     event.preventDefault();
@@ -370,7 +380,7 @@ const MobileOrdersPage = () => {
               </div>
             </div>
             <div className="mt-3 flex snap-x gap-2 overflow-x-auto pb-1">
-              {lowStockProducts.map((product) => (
+              {lowStockPreview.map((product) => (
                 <button
                   key={product.id || product.slug}
                   type="button"
@@ -386,7 +396,7 @@ const MobileOrdersPage = () => {
         ) : null}
 
         <section className="space-y-3">
-          {filteredOrders.map((order) => {
+          {visibleOrders.map((order) => {
             const bespoke = isBespokeOrder(order);
             const bespokeItem = getBespokeItem(order);
             const packingReady = order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus);
@@ -534,6 +544,12 @@ const MobileOrdersPage = () => {
             </article>
             );
           })}
+          <PaginationOrLoadMore
+            visibleCount={visibleOrders.length}
+            totalCount={filteredOrders.length}
+            loading={loading}
+            onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
+          />
           {!filteredOrders.length && !loading ? (
             <MobileStatePanel
               icon={PackageCheck}

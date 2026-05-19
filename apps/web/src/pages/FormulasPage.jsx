@@ -353,11 +353,11 @@ const FormulasPage = () => {
         />
 
         <div className="mb-6 flex flex-wrap gap-2">
-          <Button variant="outline" className="rounded-2xl" onClick={() => navigate('/briefs')}>
+          <Button variant="outline" className="rounded-xl bg-white/80" onClick={() => navigate('/briefs')}>
             <ClipboardList className="mr-2 h-4 w-4" />
             Brief workspace
           </Button>
-          <Button variant="outline" className="rounded-2xl" onClick={() => setImportModalOpen(true)}>
+          <Button variant="outline" className="rounded-xl bg-white/80" onClick={() => setImportModalOpen(true)}>
             <FileUp className="mr-2 h-4 w-4" />
             Import PDF
           </Button>
@@ -383,7 +383,7 @@ const FormulasPage = () => {
             </div>
           </div>
 
-          <div className="mt-3 rounded-[24px] border border-white/70 bg-white/55 p-3">
+          <div className="mt-3 rounded-xl border border-white/70 bg-white/55 p-3">
             <FilterBar
               filters={filters}
               onFilterChange={handleFilterChange}

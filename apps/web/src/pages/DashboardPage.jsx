@@ -542,7 +542,7 @@ const DashboardPage = () => {
             {actionCenterItems.map((item) => {
               const Icon = item.icon;
               return (
-                <section key={item.key} className={`rounded-3xl border p-4 shadow-sm ${item.tone}`}>
+                <section key={item.key} className={`rounded-2xl border p-4 shadow-sm ${item.tone}`}>
                   <div className="flex items-start justify-between gap-3">
                     <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/85">
                       <Icon className="h-5 w-5" />
@@ -574,7 +574,7 @@ const DashboardPage = () => {
 
         <DashboardSection title="Workspace areas" subtitle="Dashboard dibagi dua area besar: Studio untuk proses perfumery, E-commerce untuk toko dan order.">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <section className="rounded-3xl border border-white/70 bg-white/86 p-5 shadow-sm">
+            <section className="rounded-2xl border border-white/70 bg-white/86 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase text-amber-700">
@@ -620,7 +620,7 @@ const DashboardPage = () => {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-white/70 bg-white/86 p-5 shadow-sm">
+            <section className="rounded-2xl border border-white/70 bg-white/86 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase text-blue-700">
@@ -775,7 +775,7 @@ const DashboardPage = () => {
 
         <DashboardSection title="Production health" subtitle="Payment, shipping, dan local fallback dibuat terlihat supaya order kritis tidak diam-diam tersimpan lokal.">
           <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-            <section className={`rounded-3xl border p-5 shadow-sm ${opsHealth.hasCriticalIssues ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50'}`}>
+            <section className={`rounded-2xl border p-5 shadow-sm ${opsHealth.hasCriticalIssues ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50'}`}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
                   <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${opsHealth.hasCriticalIssues ? 'bg-white text-rose-700' : 'bg-white text-emerald-700'}`}>
@@ -835,7 +835,7 @@ const DashboardPage = () => {
               ) : null}
             </section>
 
-            <section className="rounded-3xl border bg-white/90 p-5 shadow-sm">
+            <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-bold uppercase text-muted-foreground">External services</div>

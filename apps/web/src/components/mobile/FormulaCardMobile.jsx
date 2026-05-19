@@ -14,15 +14,15 @@ const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicat
       <MobileStatusBadge status={formula.status || 'draft'} className="h-5 px-2 text-[10px]" />
     </div>
     <div className="mt-3 grid grid-cols-3 gap-2">
-      <div className="rounded-xl bg-amber-50 p-2">
+      <div className="rounded-lg bg-amber-50 p-2">
         <div className="text-[10px] font-bold uppercase text-amber-700">Impact</div>
         <div className="mt-0.5 truncate text-xs font-bold text-[#1f2937]">{metrics?.impactDisplay ?? '-'}</div>
       </div>
-      <div className="rounded-xl bg-blue-50 p-2">
+      <div className="rounded-lg bg-blue-50 p-2">
         <div className="text-[10px] font-bold uppercase text-blue-700">Life</div>
         <div className="mt-0.5 text-xs font-bold text-[#1f2937]">{metrics?.lifetimeDisplay ?? '-'}</div>
       </div>
-      <div className="rounded-xl bg-slate-50 p-2">
+      <div className="rounded-lg bg-slate-50 p-2">
         <div className="text-[10px] font-bold uppercase text-slate-600">Total</div>
         <div className="mt-0.5 text-xs font-bold text-[#1f2937]">{metrics ? formatGramAmount(metrics.totalGrams) : '-'}</div>
       </div>

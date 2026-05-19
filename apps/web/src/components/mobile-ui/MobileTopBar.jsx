@@ -20,7 +20,7 @@ const MobileTopBar = ({
         size="icon"
         onClick={onBack}
         aria-label={backLabel}
-        className="mobile-interactive mobile-pressable h-10 w-10 shrink-0 rounded-2xl border-[#e5e7eb] bg-white"
+        className="mobile-interactive mobile-pressable h-10 w-10 shrink-0 rounded-xl border-[#e5e7eb] bg-white"
       >
         <ChevronLeft className="h-5 w-5" />
       </Button>

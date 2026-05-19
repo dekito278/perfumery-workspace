@@ -19,6 +19,8 @@ class AppErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
+    this.resetBoundary = this.resetBoundary.bind(this);
+    this.clearDiagnostics = this.clearDiagnostics.bind(this);
   }
 
   static getDerivedStateFromError(error) {
@@ -40,6 +42,15 @@ class AppErrorBoundary extends React.Component {
     console.error('Unhandled application error:', error, errorInfo);
   }
 
+  resetBoundary() {
+    this.setState({ error: null });
+  }
+
+  clearDiagnostics() {
+    clearMobileRuntimeErrors();
+    this.setState({ error: null });
+  }
+
   render() {
     if (this.state.error) {
       const latestMobileError = getLatestMobileRuntimeError();
@@ -51,13 +62,13 @@ class AppErrorBoundary extends React.Component {
           <div className="w-full max-w-xl rounded-2xl border bg-card p-6 shadow-sm">
             <h1 className="text-xl font-semibold">App failed to render</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              There was a runtime error in the frontend. Refresh the page once. If it still happens, the error details are shown below.
+              There was a runtime error in the frontend. Try rendering the page again. If it still happens, the error details are shown below.
             </p>
             {showMobileHints && (
               <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                 <p className="font-medium">Mobile app recovery</p>
                 <p className="mt-1">
-                  Kalau ini terjadi di iOS/Android, buka ulang app setelah refresh agar bundle terbaru dan cache service worker ikut diperbarui.
+                  Kalau ini terjadi di iOS/Android, coba lagi dari panel ini dulu. Jika masih berulang, buka ulang app untuk mengambil bundle terbaru.
                 </p>
                 {missingCapabilities.length > 0 && (
                   <p className="mt-2 text-xs">
@@ -78,17 +89,14 @@ class AppErrorBoundary extends React.Component {
               <button
                 type="button"
                 className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
-                onClick={() => window.location.reload()}
+                onClick={this.resetBoundary}
               >
-                Refresh app
+                Try again
               </button>
               <button
                 type="button"
                 className="inline-flex h-10 items-center rounded-lg border px-4 text-sm font-medium"
-                onClick={() => {
-                  clearMobileRuntimeErrors();
-                  window.location.reload();
-                }}
+                onClick={this.clearDiagnostics}
               >
                 Clear diagnostics
               </button>

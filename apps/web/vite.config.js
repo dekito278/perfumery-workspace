@@ -368,6 +368,35 @@ const loadLocalApiEnv = () => {
 	}
 };
 
+const manualChunkGroups = [
+	['react-vendor', ['/node_modules/react/', '/node_modules/react-dom/', '/node_modules/scheduler/']],
+	['router-vendor', ['/node_modules/react-router/', '/node_modules/react-router-dom/']],
+	['supabase-vendor', ['/node_modules/@supabase/']],
+	['radix-vendor', ['/node_modules/@radix-ui/']],
+	['motion-vendor', ['/node_modules/framer-motion/']],
+	['charts-vendor', ['/node_modules/recharts/', '/node_modules/d3-']],
+	['pdf-vendor', ['/node_modules/pdfjs-dist/', '/node_modules/jspdf/', '/node_modules/html2canvas/']],
+	['ui-vendor', ['/node_modules/lucide-react/', '/node_modules/sonner/', '/node_modules/date-fns/', '/node_modules/react-helmet/']],
+];
+
+const getManualChunk = (id) => {
+	const normalizedId = id.replace(/\\/g, '/');
+	if (!normalizedId.includes('/node_modules/')) {
+		return undefined;
+	}
+
+	const matchingGroup = manualChunkGroups.find(([, patterns]) => patterns.some((pattern) => normalizedId.includes(pattern)));
+	return matchingGroup?.[0] || 'vendor';
+};
+
+const deferredPreloadChunks = [
+	'charts-vendor',
+	'pdf-vendor',
+];
+
+const shouldPreloadDependency = (dependency) =>
+	!deferredPreloadChunks.some((chunkName) => dependency.includes(chunkName));
+
 export default defineConfig({
 	define: {
 		'import.meta.env.VITE_APP_BUILD_ID': JSON.stringify(appBuildId),
@@ -399,6 +428,9 @@ export default defineConfig({
 	},
 	build: {
 		outDir: 'dist',
+		modulePreload: {
+			resolveDependencies: (_filename, dependencies) => dependencies.filter(shouldPreloadDependency),
+		},
 		sourcemap: false,
 		minify: 'terser',
 		terserOptions: {
@@ -416,7 +448,10 @@ export default defineConfig({
 				'@babel/traverse',
 				'@babel/generator',
 				'@babel/types'
-			]
+			],
+			output: {
+				manualChunks: getManualChunk,
+			}
 		}
 	}
 });

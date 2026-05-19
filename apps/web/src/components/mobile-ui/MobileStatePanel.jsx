@@ -55,7 +55,7 @@ const MobileStatePanel = ({
       role={tone === 'error' ? 'alert' : tone === 'loading' ? 'status' : undefined}
       aria-live={tone === 'loading' ? 'polite' : tone === 'error' ? 'assertive' : undefined}
     >
-      <span className={cn('grid h-12 w-12 place-items-center rounded-2xl', iconClasses[tone] || iconClasses.empty)}>
+      <span className={cn('grid h-12 w-12 place-items-center rounded-xl', iconClasses[tone] || iconClasses.empty)}>
         <Icon className={cn('h-5 w-5', loading && 'animate-spin')} aria-hidden="true" />
       </span>
       {eyebrow ? <p className="mt-3 text-[10px] font-bold uppercase">{eyebrow}</p> : null}
@@ -65,12 +65,12 @@ const MobileStatePanel = ({
       {(action && onAction) || (secondaryAction && onSecondaryAction) ? (
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           {secondaryAction && onSecondaryAction ? (
-            <Button type="button" variant="outline" onClick={onSecondaryAction} className="mobile-interactive mobile-pressable h-10 rounded-2xl bg-white px-4 text-xs">
+            <Button type="button" variant="outline" onClick={onSecondaryAction} className="mobile-interactive mobile-pressable h-10 rounded-xl bg-white px-4 text-xs">
               {secondaryAction}
             </Button>
           ) : null}
           {action && onAction ? (
-            <Button type="button" onClick={onAction} className="mobile-interactive mobile-pressable h-10 rounded-2xl px-4 text-xs">
+            <Button type="button" onClick={onAction} className="mobile-interactive mobile-pressable h-10 rounded-xl px-4 text-xs">
               {action}
             </Button>
           ) : null}
