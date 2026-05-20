@@ -5,6 +5,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Copy, CreditCard, ExternalLink, F
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, updateOrderPaymentStatus } from '@/services/orderService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -31,7 +32,7 @@ const paymentStatusLabels = {
   pending: 'Menunggu pembayaran',
   paid: 'Pembayaran diterima',
   failed: 'Pembayaran gagal',
-  expired: 'Pembayaran expired',
+  expired: 'Link kedaluwarsa',
   refunded: 'Refund',
 };
 
@@ -500,7 +501,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+        <div id="mobile-payment-proof-section" className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
           <div className="flex items-start gap-3">
             <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${hasSubmittedProof ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
               {hasSubmittedProof ? <FileCheck2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
@@ -540,6 +541,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <label className="block">
               <span className="sr-only">Upload bukti transfer</span>
               <input
+                id="mobile-payment-proof-input"
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={chooseProofFile}
@@ -594,6 +596,24 @@ const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }
           Refresh
         </button>
       ) : null}
+    </div>
+  </section>
+);
+
+const MobilePaymentSkeleton = () => (
+  <section className="mobile-card overflow-hidden p-0" aria-busy="true">
+    <div className="border-b border-[#263d27]/10 bg-[#eef2e8] p-4">
+      <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
+      <div className="mobile-catalog-skeleton mt-3 h-7 w-56 rounded-full" />
+      <div className="mt-4 grid gap-2">
+        <div className="mobile-catalog-skeleton h-14 rounded-2xl" />
+        <div className="mobile-catalog-skeleton h-14 rounded-2xl" />
+      </div>
+    </div>
+    <div className="grid gap-3 p-4">
+      <div className="mobile-catalog-skeleton h-28 rounded-2xl" />
+      <div className="mobile-catalog-skeleton h-40 rounded-2xl" />
+      <div className="mobile-catalog-skeleton h-12 rounded-2xl" />
     </div>
   </section>
 );
@@ -725,6 +745,18 @@ const PaymentPageContent = ({ isMobile }) => {
   }, [orderNumber, paymentReturn]);
 
   const refreshPaymentSession = () => loadPaymentSession({ syncStatus: Boolean(orderNumber) });
+  const sessionIsManual = isManualTransferPayment(session?.paymentProvider || session?.paymentType);
+  const openPrimaryPaymentAction = () => {
+    if (!session) return;
+    if (sessionIsManual) {
+      document.getElementById('mobile-payment-proof-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      window.setTimeout(() => document.getElementById('mobile-payment-proof-input')?.click(), 280);
+      return;
+    }
+    if (session.paymentUrl) {
+      window.open(session.paymentUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   if (isMobile) {
     return (
@@ -732,7 +764,7 @@ const PaymentPageContent = ({ isMobile }) => {
         <Helmet>
           <title>Payment - Solivagant</title>
         </Helmet>
-        <main className="mobile-page space-y-4">
+        <main className="mobile-page mobile-payment-page space-y-4">
           <MobileTopBar
             title="Pembayaran"
             subtitle={session?.orderNumber || orderNumber || 'Solivagant checkout'}
@@ -740,9 +772,30 @@ const PaymentPageContent = ({ isMobile }) => {
             onBack={() => navigate('/mobile/cart')}
             action={<CreditCard className="h-5 w-5 text-amber-700" />}
           />
-          {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
+          {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
           ) : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          {session ? (
+            <StickyBottomActionBar
+              fixed
+              reserveSpace
+              aria-label="Aksi pembayaran"
+              className="mobile-payment-action-bar"
+              contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? 'Transfer manual' : 'DOKU payment'}</p>
+                  <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(session.amount)}</p>
+                  <p className="truncate text-[10px] font-bold text-amber-700">{paymentStatusLabels[session.paymentStatus || 'pending'] || 'Menunggu pembayaran'}</p>
+                </div>
+                <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={openPrimaryPaymentAction}>
+                  {sessionIsManual ? <Upload className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />}
+                  {sessionIsManual ? 'Upload bukti' : 'Bayar DOKU'}
+                </Button>
+              </div>
+            </StickyBottomActionBar>
+          ) : null}
         </main>
       </MobileCommerceLayout>
     );

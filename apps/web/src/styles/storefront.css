@@ -216,6 +216,44 @@
   line-height: 1.45;
 }
 
+.mobile-commerce-search {
+  transition: transform var(--mobile-motion-base) var(--mobile-ease-emphasized);
+}
+
+.mobile-commerce-search .mobile-card {
+  transition: padding var(--mobile-motion-base) var(--mobile-ease-emphasized), box-shadow var(--mobile-motion-base) var(--mobile-ease-emphasized);
+}
+
+.mobile-commerce-search label,
+.mobile-commerce-search h1,
+.mobile-commerce-search-segments {
+  transition: margin var(--mobile-motion-base) var(--mobile-ease-emphasized), opacity var(--mobile-motion-base) var(--mobile-ease-emphasized), max-height var(--mobile-motion-base) var(--mobile-ease-emphasized);
+}
+
+.mobile-commerce-search.is-compact .mobile-card {
+  padding: 8px 10px;
+  box-shadow: 0 12px 28px -24px rgba(24, 47, 27, 0.46);
+}
+
+.mobile-commerce-search.is-compact h1 {
+  margin-top: 0;
+  font-size: 0.92rem;
+  line-height: 1.18;
+}
+
+.mobile-commerce-search.is-compact label {
+  height: 42px;
+  margin-top: 8px;
+}
+
+.mobile-commerce-search.is-compact .mobile-commerce-search-segments {
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .mobile-commerce-product-card {
   border-radius: var(--buyer-radius-card);
   box-shadow: var(--buyer-shadow-card);
@@ -239,6 +277,22 @@
 
 .mobile-commerce-app .mobile-bottom-nav a {
   min-width: 0;
+}
+
+.mobile-commerce-app .mobile-bottom-nav a[aria-current="page"] {
+  box-shadow: inset 0 0 0 1px rgba(38, 61, 39, 0.16), 0 10px 22px -18px rgba(38, 61, 39, 0.5);
+}
+
+.mobile-commerce-app .mobile-bottom-nav a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: #263d27;
+  transform: translateX(-50%);
 }
 
 .mobile-commerce-bottom-nav,

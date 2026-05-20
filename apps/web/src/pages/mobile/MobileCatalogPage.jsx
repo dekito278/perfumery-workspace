@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpDown, ChevronLeft, ChevronRight, PackagePlus, Search, SlidersHorizontal, Sparkles, WandSparkles } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { catalogSortOptions } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -96,7 +97,10 @@ export const MobileCatalogContent = ({ active = true }) => {
   const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [sort, setSort] = useState(searchParams.get('sort') || 'featured');
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [searchCompact, setSearchCompact] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const searchSectionRef = useRef(null);
   const virtualListRef = useRef(null);
   const [virtualRowHeight, setVirtualRowHeight] = useState(MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT);
   const [virtualRows, setVirtualRows] = useState({ start: 0, end: 8 });
@@ -268,6 +272,35 @@ export const MobileCatalogContent = ({ active = true }) => {
     };
   }, [active, syncVirtualRows]);
 
+  useEffect(() => {
+    if (!active) return undefined;
+
+    const searchSection = searchSectionRef.current;
+    const scrollParent = getScrollParent(searchSection) || window;
+    let frameId = 0;
+    const getScrollTop = () => (
+      scrollParent === window
+        ? window.scrollY || document.documentElement.scrollTop || 0
+        : scrollParent.scrollTop || 0
+    );
+    const updateCompactState = () => {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        setSearchCompact(getScrollTop() > 88);
+      });
+    };
+
+    updateCompactState();
+    scrollParent.addEventListener('scroll', updateCompactState, { passive: true });
+    window.addEventListener('resize', updateCompactState);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      scrollParent.removeEventListener('scroll', updateCompactState);
+      window.removeEventListener('resize', updateCompactState);
+    };
+  }, [active]);
+
   const updateFilters = (next) => {
     const updated = {
       q: next.query ?? query,
@@ -299,7 +332,7 @@ export const MobileCatalogContent = ({ active = true }) => {
       </Helmet>
       ) : null}
       <main className="mobile-page">
-        <section className="mobile-sticky-search">
+        <section ref={searchSectionRef} className={cn('mobile-sticky-search mobile-commerce-search', searchCompact && 'is-compact')}>
           <div className="mobile-card overflow-hidden p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -309,9 +342,17 @@ export const MobileCatalogContent = ({ active = true }) => {
               </div>
               <h1 className="mt-0.5 text-lg font-bold leading-tight text-[#0b130c]">Cari parfum</h1>
             </div>
-            <span className="mobile-commerce-chip shrink-0 px-2.5 py-1 text-[10px] uppercase">
-              {filteredProducts.length} item
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="mobile-commerce-chip px-2.5 py-1 text-[10px] uppercase">
+                {filteredProducts.length} item
+              </span>
+              {hasCatalogProducts ? (
+                <Button type="button" variant="outline" className="h-9 rounded-xl bg-white px-3 text-[11px] font-bold gap-1.5" onClick={() => setFilterSheetOpen(true)}>
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Filter
+                </Button>
+              ) : null}
+            </div>
           </div>
           <label className="mobile-commerce-control mt-3 flex h-12 items-center gap-2 bg-[#f7f8f2] px-3">
             <Search className="h-4 w-4 text-[#8b949e]" />
@@ -324,7 +365,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             />
           </label>
           {hasCatalogProducts ? (
-            <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1">
+            <div className="mobile-commerce-search-segments mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1">
               {shopTypeOptions.map((item) => (
                 <button
                   key={item.filter}
@@ -343,7 +384,7 @@ export const MobileCatalogContent = ({ active = true }) => {
               ))}
             </div>
           ) : showCatalogSkeleton ? (
-            <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1" aria-hidden="true">
+            <div className="mobile-commerce-search-segments mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1" aria-hidden="true">
               <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
               <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
               <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
@@ -351,6 +392,81 @@ export const MobileCatalogContent = ({ active = true }) => {
           ) : null}
           </div>
         </section>
+        <MobileBottomSheet
+          open={filterSheetOpen}
+          onOpenChange={setFilterSheetOpen}
+          title="Filter belanja"
+          description="Pilih tipe koleksi, aroma, dan urutan produk."
+          footer={(
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })}>
+                Reset
+              </Button>
+              <Button type="button" className="h-12 rounded-2xl" onClick={() => setFilterSheetOpen(false)}>
+                Terapkan
+              </Button>
+            </div>
+          )}
+        >
+          <div className="grid gap-4">
+            <section>
+              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Koleksi</div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {shopTypeOptions.map((item) => (
+                  <button
+                    key={item.filter}
+                    type="button"
+                    onClick={() => updateFilters({ segment: item.filter })}
+                    className={cn(
+                      'h-11 rounded-2xl border px-2 text-xs font-bold',
+                      segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white' : 'border-[#263d27]/10 bg-white text-[#667264]'
+                    )}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            </section>
+            {scentFamilies.length ? (
+              <section>
+                <div className="text-[10px] font-bold uppercase text-[#6b7280]">Aroma</div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {['All', ...scentFamilies.map((item) => item.name)].map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => updateFilters({ category: item })}
+                      className={cn(
+                        'min-h-11 rounded-2xl border px-3 py-2 text-left text-xs font-bold',
+                        category === item ? 'border-[#263d27] bg-[#263d27] text-white' : 'border-[#263d27]/10 bg-white text-[#667264]'
+                      )}
+                    >
+                      {item === 'All' ? 'Semua aroma' : item}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            <section>
+              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Urutkan</div>
+              <div className="mt-2 grid gap-2">
+                {catalogSortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => updateFilters({ sort: option.value })}
+                    className={cn(
+                      'min-h-11 rounded-2xl border px-3 py-2 text-left text-xs font-bold',
+                      sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white' : 'border-[#263d27]/10 bg-white text-[#667264]'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        </MobileBottomSheet>
 
         {hasCatalogProducts && scentFamilies.length ? (
         <section className="space-y-2">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { BadgePercent, ChevronDown, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
+import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
@@ -118,6 +119,12 @@ const MobileCheckoutPage = () => {
   const showShippingServiceChoices = Boolean(visibleShippingOptions.length && (!selectedShipping || showManualShippingArea));
   const recalculateShipping = () => {
     autoCalculateShipping({ searchText: destinationSearch.trim() || deliveryAddress.trim(), autoSelectBest: true });
+  };
+  const choosePaymentMethod = (method) => {
+    if (method.id !== selectedPaymentMethod) {
+      toast.success(`${method.label} dipilih`);
+    }
+    setSelectedPaymentMethod(method.id);
   };
 
   if (!items.length) return (
@@ -351,7 +358,7 @@ const MobileCheckoutPage = () => {
             description={shippingComplete ? 'Ongkir sudah masuk total. Pilih metode pembayaran.' : 'Lengkapi ongkir dulu supaya total bayar final.'}
             complete={paymentComplete}
           >
-            {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => setSelectedPaymentMethod(method.id)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
+            {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => choosePaymentMethod(method)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </CheckoutSection>
         </div>
@@ -416,27 +423,27 @@ const MobileCheckoutPage = () => {
             </div>
           </CheckoutSection>
         </div>
-        {canSubmitCheckout ? (
-          <StickyBottomActionBar
-            fixed
-            reserveSpace
-            aria-label="Aksi pembayaran"
-            className="mobile-checkout-action-bar"
-            contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
-          >
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</p>
-                <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(totalDue)}</p>
-                {discountAmount ? <p className="truncate text-[10px] font-bold text-emerald-700">Voucher -{formatTotal(discountAmount)}</p> : null}
-              </div>
-              <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={() => submitOrder()} disabled={saving}>
-                <CreditCard className="h-4 w-4" />
-                {primaryActionLabel}
-              </Button>
+        <StickyBottomActionBar
+          fixed
+          reserveSpace
+          aria-label="Aksi pembayaran"
+          className="mobile-checkout-action-bar"
+          contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+        >
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase text-[#8b949e]">{canSubmitCheckout ? 'Total bayar' : 'Lengkapi dulu'}</p>
+              <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(totalDue)}</p>
+              <p className={`truncate text-[10px] font-bold ${canSubmitCheckout ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {canSubmitCheckout ? (discountAmount ? `Voucher -${formatTotal(discountAmount)}` : 'Siap dibayar') : missingRequirements.map((item) => item.label).join(', ')}
+              </p>
             </div>
-          </StickyBottomActionBar>
-        ) : null}
+            <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={() => submitOrder()} disabled={saving || !canSubmitCheckout}>
+              <CreditCard className="h-4 w-4" />
+              {primaryActionLabel}
+            </Button>
+          </div>
+        </StickyBottomActionBar>
       </main>
     </MobileCommerceLayout>
   );

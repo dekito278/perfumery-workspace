@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, CreditCard, ExternalLink, FileCheck2, FileText, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
+import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
   getCustomerPortalByCode,
   setCustomerPortalSecurity,
@@ -74,6 +75,7 @@ const progressSteps = [
 ];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
+const CUSTOMER_CODE_LAST_STORAGE_KEY = 'dekito.storefront.customerCode.last.v1';
 const DOKU_PAYMENT_TTL_MINUTES = 60;
 const isDokuPayment = (order) => order?.paymentProvider === 'doku';
 const isPayableOrder = (order) => ['unpaid', 'pending'].includes(order?.paymentStatus);
@@ -104,6 +106,24 @@ const canUploadPaymentProof = (order) => Boolean(
   && !['submitted', 'approved'].includes(order?.paymentProofStatus || 'missing')
 );
 const canTrackShipment = (order) => Boolean(order?.trackingUrl && order?.trackingNumber);
+const readLastCustomerCode = () => {
+  if (typeof window === 'undefined') return '';
+
+  try {
+    return String(window.localStorage.getItem(CUSTOMER_CODE_LAST_STORAGE_KEY) || '').toUpperCase();
+  } catch {
+    return '';
+  }
+};
+const writeLastCustomerCode = (code) => {
+  if (typeof window === 'undefined' || !code) return;
+
+  try {
+    window.localStorage.setItem(CUSTOMER_CODE_LAST_STORAGE_KEY, String(code).toUpperCase());
+  } catch {
+    // Storage can be blocked in private browsing; the portal still works normally.
+  }
+};
 
 const getActiveStep = (status) => {
   if (status === 'cancelled') return -1;
@@ -148,6 +168,120 @@ const PaymentProofBadge = ({ status }) => (
   <StatusChip icon={status === 'missing' ? Upload : FileCheck2} tone={paymentProofToneByStatus[status] || 'warning'}>
     {paymentProofStatusLabels[status] || status || paymentProofStatusLabels.missing}
   </StatusChip>
+);
+
+const getPaymentExperienceState = (order) => {
+  if (!order) return null;
+  if (order.status === 'cancelled') {
+    return {
+      label: 'Dibatalkan otomatis',
+      title: 'Order dibatalkan',
+      description: 'Order ini sudah tidak aktif. Gunakan Reorder untuk membuat pembayaran baru dari data order yang sama.',
+      className: 'border-slate-200 bg-slate-50 text-slate-800',
+      iconClassName: 'bg-white text-slate-600',
+      action: 'Reorder',
+    };
+  }
+  if (order.paymentStatus === 'paid') {
+    return {
+      label: 'Sudah dibayar',
+      title: 'Pembayaran diterima',
+      description: 'Order sudah masuk proses berikutnya. Pantau produksi atau pengiriman dari timeline.',
+      className: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+      iconClassName: 'bg-white text-emerald-700',
+      action: '',
+    };
+  }
+  if (isManualTransferPayment(order.paymentProvider)) {
+    const proofStatus = order.paymentProofStatus || 'missing';
+    if (['submitted', 'approved'].includes(proofStatus)) {
+      return {
+        label: 'Menunggu verifikasi',
+        title: 'Bukti transfer terkirim',
+        description: 'Admin sedang mengecek bukti pembayaran. Status akan berubah setelah valid.',
+        className: 'border-sky-200 bg-sky-50 text-sky-900',
+        iconClassName: 'bg-white text-sky-700',
+        action: 'Lihat bukti',
+      };
+    }
+    return {
+      label: 'Belum bayar manual',
+      title: 'Upload bukti transfer',
+      description: 'Transfer ke rekening yang tersedia, lalu upload bukti agar order bisa diverifikasi.',
+      className: 'border-amber-200 bg-amber-50 text-amber-950',
+      iconClassName: 'bg-white text-amber-700',
+      action: 'Upload bukti',
+    };
+  }
+  if (isDokuPaymentExpired(order) || order.paymentStatus === 'expired') {
+    return {
+      label: 'DOKU expired',
+      title: 'Link pembayaran kedaluwarsa',
+      description: 'Link DOKU hanya aktif sekitar 1 jam. Buat link baru untuk melanjutkan pembayaran.',
+      className: 'border-rose-200 bg-rose-50 text-rose-900',
+      iconClassName: 'bg-white text-rose-700',
+      action: 'Buat link baru',
+    };
+  }
+  return {
+    label: 'Belum bayar',
+    title: 'Menunggu pembayaran',
+    description: 'Order sudah dibuat. Selesaikan pembayaran agar pesanan bisa diproses.',
+    className: 'border-amber-200 bg-amber-50 text-amber-950',
+    iconClassName: 'bg-white text-amber-700',
+    action: 'Bayar sekarang',
+  };
+};
+
+const PaymentExperiencePanel = ({ compact = false, order }) => {
+  const state = getPaymentExperienceState(order);
+  if (!state) return null;
+
+  return (
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border ${state.className}`}>
+      <div className="flex items-start gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${state.iconClassName}`}>
+          <CreditCard className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase">{state.label}</span>
+            {state.action ? <span className="text-[10px] font-bold uppercase opacity-75">{state.action}</span> : null}
+          </div>
+          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-2 font-bold text-[#0b130c]`}>{state.title}</h4>
+          <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{state.description}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MobileCustomerPortalSkeleton = () => (
+  <>
+    <section className="mobile-card p-4" aria-busy="true">
+      <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
+      <div className="mobile-catalog-skeleton mt-3 h-7 w-48 rounded-full" />
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mobile-catalog-skeleton h-16 rounded-2xl" />
+        <div className="mobile-catalog-skeleton h-16 rounded-2xl" />
+        <div className="mobile-catalog-skeleton h-16 rounded-2xl" />
+      </div>
+    </section>
+    <section className="space-y-3">
+      <div className="mobile-catalog-skeleton h-5 w-32 rounded-full" />
+      <article className="mobile-card overflow-hidden p-0">
+        <div className="border-b border-[#e5e7eb] bg-white p-4">
+          <div className="mobile-catalog-skeleton h-5 w-36 rounded-full" />
+          <div className="mobile-catalog-skeleton mt-2 h-3 w-24 rounded-full" />
+        </div>
+        <div className="grid gap-3 p-4">
+          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
+          <div className="mobile-catalog-skeleton h-28 rounded-2xl" />
+          <div className="mobile-catalog-skeleton h-12 rounded-2xl" />
+        </div>
+      </article>
+    </section>
+  </>
 );
 
 const PaymentProofPanel = ({ order, compact = false }) => {
@@ -620,7 +754,10 @@ const ReorderPaymentPanel = ({
                 <button
                   key={method.id}
                   type="button"
-                  onClick={() => setSelectedPaymentMethod(method.id)}
+                  onClick={() => {
+                    if (!active) toast.success(`${method.label} dipilih`);
+                    setSelectedPaymentMethod(method.id);
+                  }}
                   className={`rounded-2xl border px-3 py-3 text-left ${active ? 'border-[#263d27] bg-white text-[#0b130c]' : 'border-[#263d27]/10 bg-white/70 text-[#6b7280]'}`}
                 >
                   <div className="text-sm font-bold">{method.label}</div>
@@ -669,6 +806,7 @@ const CustomerPortalPage = () => {
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
   const [reorderDraft, setReorderDraft] = useState(null);
   const [submittingReorder, setSubmittingReorder] = useState('');
+  const [lastCustomerCode, setLastCustomerCode] = useState(() => readLastCustomerCode());
 
   const latestOrder = portal?.orders?.[0];
   const isMobileRoute = location.pathname.startsWith('/mobile');
@@ -699,6 +837,8 @@ const CustomerPortalPage = () => {
     setSecurityQuestion(result.customer.securityQuestion || '');
     setSecurityFormOpen(false);
     setCustomerCode(result.customer.customerCode);
+    setLastCustomerCode(result.customer.customerCode);
+    writeLastCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
     if (!silent) toast.success(`${result.customer.customerCode} loaded`);
   };
@@ -713,6 +853,35 @@ const CustomerPortalPage = () => {
   const loadPortal = async (event) => {
     event?.preventDefault();
     await loadPortalForCode(customerCode);
+  };
+
+  const pasteCustomerCode = async () => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
+      toast.error('Browser belum mengizinkan tempel otomatis');
+      return;
+    }
+
+    try {
+      const pastedCode = (await navigator.clipboard.readText()).trim().toUpperCase();
+      if (!pastedCode) {
+        toast.warning('Clipboard kosong');
+        return;
+      }
+      setCustomerCode(pastedCode);
+      toast.success('Kode ditempel');
+    } catch {
+      toast.error('Kode belum bisa ditempel otomatis');
+    }
+  };
+
+  const checkLastCustomerCode = async () => {
+    const code = lastCustomerCode || readLastCustomerCode();
+    if (!code) {
+      toast.warning('Belum ada kode terakhir di perangkat ini');
+      return;
+    }
+    setCustomerCode(code);
+    await loadPortalForCode(code);
   };
 
   const copyCode = async () => {
@@ -1075,13 +1244,30 @@ const CustomerPortalPage = () => {
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
+                  <ClipboardPaste className="h-4 w-4" />
+                  Tempel kode
+                </Button>
+                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                  <History className="h-4 w-4" />
+                  Cek terakhir
+                </Button>
+              </div>
+              {lastCustomerCode ? (
+                <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-[#263d27] underline underline-offset-4">
+                  Terakhir dipakai: {lastCustomerCode}
+                </button>
+              ) : null}
               <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
                 Kode ini diberikan setelah checkout pertama.
               </p>
             </form>
           </section>
 
-          {portal?.requiresSecurity ? (
+          {loading ? (
+            <MobileCustomerPortalSkeleton />
+          ) : portal?.requiresSecurity ? (
             <section className="mobile-card p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
@@ -1200,6 +1386,7 @@ const CustomerPortalPage = () => {
                       </div>
                       <BespokeDetailPanel item={bespokeItem} compact />
                       <BespokeProductionPanel order={order} compact />
+                      <PaymentExperiencePanel order={order} compact />
                       <PaymentTaskPanel
                         compact
                         isMobileRoute={isMobileRoute}
@@ -1221,7 +1408,7 @@ const CustomerPortalPage = () => {
                           refreshing={refreshingPaymentOrder === order.orderNumber}
                         />
                       </div>
-                      {reorderDraft?.order?.orderNumber === order.orderNumber ? (
+                      {!isMobileRoute && reorderDraft?.order?.orderNumber === order.orderNumber ? (
                         <ReorderPaymentPanel
                           compact
                           draft={reorderDraft}
@@ -1257,6 +1444,24 @@ const CustomerPortalPage = () => {
             </section>
           )}
         </main>
+        {isMobileRoute ? (
+          <MobileBottomSheet
+            open={Boolean(reorderDraft)}
+            onOpenChange={(open) => {
+              if (!open && !submittingReorder) setReorderDraft(null);
+            }}
+            title="Reorder"
+            description="Ringkasan order lama dan pilihan pembayaran baru."
+          >
+            <ReorderPaymentPanel
+              compact
+              draft={reorderDraft}
+              onCancel={() => setReorderDraft(null)}
+              onSubmit={createReorderPayment}
+              submitting={Boolean(submittingReorder)}
+            />
+          </MobileBottomSheet>
+        ) : null}
       </MobileCommerceLayout>
     );
   }
@@ -1445,6 +1650,7 @@ const CustomerPortalPage = () => {
                             <OrderItems order={order} />
                             {bespoke ? <BespokeDetailPanel item={bespokeItem} /> : null}
                             <BespokeProductionPanel order={order} />
+                            <PaymentExperiencePanel order={order} />
                             <PaymentTaskPanel
                               isMobileRoute={isMobileRoute}
                               onRenewDokuPayment={renewDokuPayment}
@@ -1469,7 +1675,7 @@ const CustomerPortalPage = () => {
                                 refreshing={refreshingPaymentOrder === order.orderNumber}
                               />
                             </div>
-                            {reorderDraft?.order?.orderNumber === order.orderNumber ? (
+                            {!isMobileRoute && reorderDraft?.order?.orderNumber === order.orderNumber ? (
                               <ReorderPaymentPanel
                                 draft={reorderDraft}
                                 onCancel={() => setReorderDraft(null)}

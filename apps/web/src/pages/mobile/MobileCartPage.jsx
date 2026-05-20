@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, BadgePercent, Minus, PackageCheck, Plus, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -33,11 +35,14 @@ const MobileCartPage = () => {
     };
   };
   const featuredCartItems = items.slice(0, 3).map((item) => ({ item, product: getCartItemProduct(item) }));
+  const recommendedProducts = !items.length
+    ? products.filter(isProductVisibleInStorefront).slice(0, 4)
+    : [];
 
   return (
     <MobileCommerceLayout>
       <Helmet><title>Keranjang - Solivagant</title></Helmet>
-      <main className="mobile-page">
+      <main className="mobile-page mobile-cart-page">
         <section className="mobile-soft-card p-4">
           <div className="grid grid-cols-[minmax(0,1fr)_86px] gap-3">
             <div className="min-w-0">
@@ -171,7 +176,52 @@ const MobileCartPage = () => {
             </article>
             );
           })}
-          {!items.length ? <StateBlock className="mobile-card" icon={ShoppingBag} title="Keranjang kosong" description="Pilih parfum dari katalog untuk mulai belanja." action="Buka katalog" onAction={() => navigate('/mobile/catalog')} /> : null}
+          {!items.length ? (
+            <section className="mobile-card p-4">
+              <StateBlock
+                className="border-0 bg-transparent p-0"
+                icon={ShoppingBag}
+                title="Keranjang kosong"
+                description="Pilih parfum ready stock, mulai custom, atau lihat rekomendasi kecil di bawah."
+                action="Buka katalog"
+                onAction={() => navigate('/mobile/catalog')}
+              />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/bespoke')}>
+                  <Sparkles className="h-4 w-4" />
+                  Mulai custom
+                </Button>
+                <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
+                  <ShoppingBag className="h-4 w-4" />
+                  Buka katalog
+                </Button>
+              </div>
+              {recommendedProducts.length ? (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-bold text-[#0b130c]">Rekomendasi cepat</h2>
+                    <span className="text-[10px] font-bold uppercase text-amber-700">Ready stock</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {recommendedProducts.map((product) => (
+                      <button
+                        key={product.id || product.slug}
+                        type="button"
+                        onClick={() => navigate(`/mobile/products/${product.slug}`)}
+                        className="mobile-commerce-choice min-w-0 p-2 text-left"
+                      >
+                        <ProductVisual product={product} className="h-24 rounded-[14px]" label={false} sizes="44vw" />
+                        <div className="mt-2 min-w-0">
+                          <div className="mobile-line-clamp-2 text-xs font-bold leading-tight text-[#0b130c]">{product.name}</div>
+                          <div className="mt-1 truncate text-[11px] font-bold text-[#263d27]">{product.price}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
         </section>
         {items.length ? (
           <section className="grid grid-cols-2 gap-2">
@@ -186,6 +236,27 @@ const MobileCartPage = () => {
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Brief <ArrowRight className="h-3 w-3" /></span>
             </button>
           </section>
+        ) : null}
+        {items.length ? (
+          <StickyBottomActionBar
+            fixed
+            reserveSpace
+            aria-label="Aksi keranjang"
+            className="mobile-cart-action-bar"
+            contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+          >
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase text-[#8b949e]">{summary.quantity} item</p>
+                <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(voucher.subtotalAfterDiscount)}</p>
+                {voucher.discountAmount ? <p className="truncate text-[10px] font-bold text-emerald-700">Hemat {formatTotal(voucher.discountAmount)}</p> : null}
+              </div>
+              <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={() => navigate('/mobile/checkout')}>
+                <PackageCheck className="h-4 w-4" />
+                Lanjut bayar
+              </Button>
+            </div>
+          </StickyBottomActionBar>
         ) : null}
       </main>
     </MobileCommerceLayout>

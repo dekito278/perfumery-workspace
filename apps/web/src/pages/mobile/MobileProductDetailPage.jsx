@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
@@ -24,6 +25,29 @@ const NoteColumn = ({ title, notes }) => (
   </div>
 );
 
+const MobileProductDetailSkeleton = () => (
+  <MobileCommerceLayout>
+    <main className="mobile-page">
+      <div className="mobile-card h-12 animate-pulse bg-white" />
+      <div className="mobile-catalog-skeleton aspect-square rounded-[18px]" />
+      <section className="mobile-card p-4" aria-busy="true">
+        <div className="mobile-catalog-skeleton h-7 w-3/4 rounded-full" />
+        <div className="mobile-catalog-skeleton mt-3 h-4 w-full rounded-full" />
+        <div className="mobile-catalog-skeleton mt-2 h-4 w-5/6 rounded-full" />
+        <div className="mobile-catalog-skeleton mt-5 h-24 rounded-2xl" />
+      </section>
+      <section className="mobile-card p-4">
+        <div className="mobile-catalog-skeleton h-5 w-36 rounded-full" />
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
+          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
+          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
+        </div>
+      </section>
+    </main>
+  </MobileCommerceLayout>
+);
+
 const MobileProductDetailPage = () => {
   const navigate = useNavigate();
   const handleBack = useMobileBackNavigation('/mobile/catalog');
@@ -40,13 +64,7 @@ const MobileProductDetailPage = () => {
   }, [product, selectedVariantId]);
 
   if (!product && products.loading) {
-    return (
-      <MobileCommerceLayout>
-        <main className="mobile-page grid min-h-[70vh] place-items-center text-xs font-bold text-[#6b7280]">
-          Memuat produk...
-        </main>
-      </MobileCommerceLayout>
-    );
+    return <MobileProductDetailSkeleton />;
   }
 
   if (!product) {
@@ -79,6 +97,7 @@ const MobileProductDetailPage = () => {
       size: selectedSize,
       price: formatRupiah(selectedPrice),
     });
+    toast.success(`${product.name} masuk keranjang`);
     setCartPromptOpen(true);
   };
 
@@ -88,7 +107,7 @@ const MobileProductDetailPage = () => {
         <title>{product.name} - Solivagant</title>
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
       </Helmet>
-      <main className="mobile-page">
+      <main className="mobile-page mobile-product-detail-page">
         <MobileTopBar
           title={product.name}
           subtitle={product.category}
@@ -183,6 +202,27 @@ const MobileProductDetailPage = () => {
             </Button>
           </div>
         </section>
+        <StickyBottomActionBar
+          fixed
+          reserveSpace
+          aria-label="Aksi produk"
+          className="mobile-product-action-bar"
+          contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+        >
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase text-[#8b949e]">{selectedSize}</p>
+              <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatRupiah(selectedPrice)}</p>
+              <p className={`truncate text-[10px] font-bold ${soldOut ? 'text-rose-700' : lowStock ? 'text-amber-700' : 'text-emerald-700'}`}>
+                {soldOut ? 'Stok habis' : lowStock ? `Sisa ${selectedStock}` : 'Siap masuk keranjang'}
+              </p>
+            </div>
+            <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={addSelectedVariant} disabled={soldOut}>
+              <ShoppingBag className="h-4 w-4" />
+              Tambah
+            </Button>
+          </div>
+        </StickyBottomActionBar>
       </main>
       <MobileBottomSheet
         open={cartPromptOpen}
