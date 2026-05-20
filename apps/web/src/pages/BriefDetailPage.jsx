@@ -9,6 +9,7 @@ import DetailMetadata from '@/components/DetailMetadata.jsx';
 import DetailPageHeader from '@/components/DetailPageHeader.jsx';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
 import DetailSection from '@/components/DetailSection.jsx';
+import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useBriefDetailPage } from '@/hooks/useBriefDetailPage.js';
@@ -17,9 +18,12 @@ import { getStageLabel } from '@/utils/briefProjectWizard.js';
 
 const LoadingState = () => (
   <DetailPageLayout>
-    <div className="flex items-center justify-center py-12">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-    </div>
+    <StudioLoadingState
+      variant="detail"
+      eyebrow="Loading brief"
+      title="Preparing composition project"
+      description="Mengambil brief, stage board, shortlist, dan formula terkait."
+    />
   </DetailPageLayout>
 );
 

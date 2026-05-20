@@ -9,6 +9,7 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
+import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import AddRawMaterialModal from '@/components/AddRawMaterialModal.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
@@ -150,9 +151,11 @@ const RawMaterialsPage = () => {
         ) : null}
 
         {page.showInitialLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
+          <StudioLoadingState
+            eyebrow="Loading materials"
+            title="Preparing material library"
+            description="Mengambil stok, guidance workbook, dan status cleanup material."
+          />
         ) : page.loadError && page.materials.length === 0 ? (
           <StateBlock
             tone="error"

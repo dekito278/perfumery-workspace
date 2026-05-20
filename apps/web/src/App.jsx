@@ -7,6 +7,8 @@ import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
+import StudioLoadingState from '@/components/StudioLoadingState.jsx';
+import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
@@ -83,14 +85,52 @@ const MobileProductionCostingPage = lazy(() => import('@/pages/mobile/MobileProd
 const MobileValidationPage = lazy(() => import('@/pages/mobile/MobileValidationPage.jsx'));
 const MobileValidationEditorPage = lazy(() => import('@/pages/mobile/MobileValidationEditorPage.jsx'));
 
-const RouteFallback = () => (
-  <div className="grid min-h-screen place-items-center bg-[#f7f8f2] px-4 text-center">
-    <div>
-      <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
-      <p className="mt-4 text-sm font-bold text-[#263d27]">Loading...</p>
-    </div>
-  </div>
+const desktopProtectedRoutePrefixes = [
+  '/studio',
+  '/dashboard',
+  '/authenticator',
+  '/briefs',
+  '/journal',
+  '/raw-materials',
+  '/raw-material',
+  '/raw-material-audit',
+  '/categories',
+  '/formulas',
+  '/batches',
+  '/production-costing',
+  '/validation',
+];
+
+const isDesktopProtectedRoute = (pathname) => (
+  !pathname.startsWith('/mobile')
+  && desktopProtectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 );
+
+const RouteFallback = () => {
+  const { pathname } = useLocation();
+
+  if (isDesktopProtectedRoute(pathname)) {
+    return (
+      <AuthenticatedLayout>
+        <div className="page-container">
+          <StudioLoadingState
+            title="Preparing desktop workspace"
+            description="Menyiapkan shell, data, dan halaman studio supaya transisi tidak kosong."
+          />
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
+
+  return (
+    <div className="grid min-h-screen place-items-center bg-[#f7f8f2] px-4 text-center">
+      <div>
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
+        <p className="mt-4 text-sm font-bold text-[#263d27]">Loading...</p>
+      </div>
+    </div>
+  );
+};
 
 const RootRedirect = () => {
   const { initialLoading } = useAuth();

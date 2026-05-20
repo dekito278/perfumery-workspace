@@ -13,6 +13,7 @@ import DetailSection from '@/components/DetailSection.jsx';
 import DetailField from '@/components/DetailField.jsx';
 import DetailFieldGroup from '@/components/DetailFieldGroup.jsx';
 import DetailMetadata from '@/components/DetailMetadata.jsx';
+import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import EditRawMaterialModal from '@/components/EditRawMaterialModal.jsx';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import ManualReferenceMatchModal from '@/components/ManualReferenceMatchModal.jsx';
@@ -213,8 +214,12 @@ const RawMaterialDetailPage = () => {
   if (loading) {
     return (
       <DetailPageLayout>
-        <Skeleton className="h-12 w-64 mb-8" />
-        <Skeleton className="h-64 w-full" />
+        <StudioLoadingState
+          variant="detail"
+          eyebrow="Loading material"
+          title="Preparing material detail"
+          description="Mengambil profil bahan, status stock, dan reference guidance."
+        />
       </DetailPageLayout>
     );
   }

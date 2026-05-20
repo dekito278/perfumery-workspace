@@ -4,7 +4,6 @@ import { BookOpenText, Pencil, Printer, Trash2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import DetailMetadata from '@/components/DetailMetadata.jsx';
@@ -12,6 +11,7 @@ import DetailPageHeader from '@/components/DetailPageHeader.jsx';
 import DetailPageLayout from '@/components/DetailPageLayout.jsx';
 import DetailSection from '@/components/DetailSection.jsx';
 import ExportFormulaButton from '@/components/ExportFormulaButton.jsx';
+import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import FormulaDetailCompositionTab from '@/components/formulas/FormulaDetailCompositionTab.jsx';
 import FormulaDetailOverviewTab from '@/components/formulas/FormulaDetailOverviewTab.jsx';
 import FormulaDetailWorkbookTab from '@/components/formulas/FormulaDetailWorkbookTab.jsx';
@@ -94,8 +94,12 @@ const FormulaDetailPage = () => {
   if (loading) {
     return (
       <DetailPageLayout>
-        <Skeleton className="h-12 w-64 mb-8" />
-        <Skeleton className="h-64 w-full" />
+        <StudioLoadingState
+          variant="detail"
+          eyebrow="Loading formula"
+          title="Preparing formula detail"
+          description="Mengambil komposisi, workbook simulation, advisory, dan validation history."
+        />
       </DetailPageLayout>
     );
   }

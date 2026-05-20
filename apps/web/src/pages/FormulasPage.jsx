@@ -18,6 +18,7 @@ import DataTable from '@/components/DataTable.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import NoResultsState from '@/components/NoResultsState.jsx';
+import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import DeleteFormulaModal from '@/components/DeleteFormulaModal.jsx';
 import { calculateTotalAmount } from '@/utils/calculateTotalAmount.js';
@@ -419,9 +420,11 @@ const FormulasPage = () => {
         ) : null}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
+          <StudioLoadingState
+            eyebrow="Loading formulas"
+            title="Preparing formula library"
+            description="Mengambil formula, metric komposisi, brief link, dan validation log."
+          />
         ) : loadError && formulas.length === 0 ? (
           <StateBlock
             tone="error"
