@@ -1,3 +1,5 @@
+import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
 
 export const MANUAL_TRANSFER_PAYMENT = {
@@ -38,8 +40,7 @@ export const getCheckoutPaymentMethod = (methodId) => (
 
 export const isManualTransferPayment = (provider) => provider === MANUAL_TRANSFER_PAYMENT.provider || provider === 'manual';
 
-export const getStorefrontWhatsAppNumber = () => String(import.meta.env.VITE_STOREFRONT_WHATSAPP_NUMBER || '')
-  .replace(/[^0-9]/g, '');
+export const getStorefrontWhatsAppNumber = () => normalizeWhatsAppPhoneNumber(import.meta.env.VITE_STOREFRONT_WHATSAPP_NUMBER || '');
 
 const readCart = () => {
   if (typeof window === 'undefined') return [];
@@ -170,6 +171,7 @@ export const buildCheckoutDraft = ({
 
 export const buildWhatsAppCheckoutUrl = (message, phoneNumber = getStorefrontWhatsAppNumber()) => {
   const text = encodeURIComponent(message);
-  return phoneNumber ? `https://wa.me/${phoneNumber}?text=${text}` : `https://wa.me/?text=${text}`;
+  const normalizedPhone = normalizeWhatsAppPhoneNumber(phoneNumber);
+  return normalizedPhone ? `https://wa.me/${normalizedPhone}?text=${text}` : `https://wa.me/?text=${text}`;
 };
 

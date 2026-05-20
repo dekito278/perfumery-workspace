@@ -1,4 +1,5 @@
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
 
 const notificationEventLabels = {
   order_created: 'Order dibuat',
@@ -23,7 +24,6 @@ const formatItemLines = (order = {}) => {
   ].filter(Boolean).join('\n');
 };
 
-const normalizePhone = (value = '') => String(value).replace(/[^0-9+]/g, '').replace(/^\+/, '');
 const isEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 
 const getCustomerDashboardUrl = (order) => {
@@ -128,7 +128,7 @@ export const buildNotificationSubject = (order, eventKey) => {
 };
 
 export const getWhatsAppNotificationUrl = (order, message) => {
-  const phone = normalizePhone(order?.contact);
+  const phone = normalizeWhatsAppPhoneNumber(order?.contact);
   const text = encodeURIComponent(message || '');
   return phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
 };

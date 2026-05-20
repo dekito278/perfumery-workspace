@@ -56,7 +56,12 @@ const contactToCustomer = (contact = '') => {
   if (trimmedContact.includes('@')) {
     return { email: trimmedContact };
   }
-  return { phone: trimmedContact.replace(/[^0-9+]/g, '') };
+  let phone = trimmedContact.replace(/[^0-9]/g, '');
+  if (phone.startsWith('00')) phone = phone.slice(2);
+  if (phone.startsWith('0')) phone = `62${phone.slice(1)}`;
+  if (phone.startsWith('8')) phone = `62${phone}`;
+  if (phone.startsWith('620')) phone = `62${phone.slice(3)}`;
+  return { phone };
 };
 
 const normalizeCallbackPath = (value) => {

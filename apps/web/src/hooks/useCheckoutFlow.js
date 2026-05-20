@@ -23,6 +23,7 @@ import {
   searchShippingDestinations,
 } from '@/services/shippingService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { hasValidWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 const CHECKOUT_DRAFT_STORAGE_KEY = 'dekito.storefront.checkoutDraft.v1';
@@ -59,8 +60,6 @@ const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. 
   }
   return fallback;
 };
-
-const hasValidPhoneContact = (value) => String(value || '').replace(/[^0-9]/g, '').length >= 8;
 
 const buildVoucherSnapshot = ({
   voucher,
@@ -144,7 +143,7 @@ export const useCheckoutFlow = ({
   const totalDue = discountedSubtotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
-  const validPhoneContact = hasValidPhoneContact(contact);
+  const validPhoneContact = hasValidWhatsAppPhoneNumber(contact);
   const canSubmitCheckout = Boolean(
     items.length
     && customerName.trim()
