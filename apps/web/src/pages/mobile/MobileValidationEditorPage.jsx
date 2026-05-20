@@ -310,7 +310,7 @@ const MobileValidationEditorPage = () => {
       </main>
 
       {!loading && !loadError ? (
-        <StickyBottomActionBar fixed reserveSpace aria-label="Validation form actions">
+        <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Validation form actions">
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleSecondaryAction} disabled={saving}>
               {step === 0 ? 'Cancel' : 'Back'}

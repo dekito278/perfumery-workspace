@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
 
-const ValidationCardMobile = ({ log, formula, onDelete, onEdit, onOpen }) => (
+const ValidationCardMobile = ({ canOpen = true, log, formula, onDelete, onEdit, onOpen }) => (
   <article className="mobile-card mobile-compact-card mobile-list-card p-3">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
@@ -27,7 +27,7 @@ const ValidationCardMobile = ({ log, formula, onDelete, onEdit, onOpen }) => (
         <Button type="button" variant="outline" size="icon" onClick={onDelete} className="h-9 w-9 rounded-xl bg-white text-rose-600" aria-label="Delete validation log">
           <Trash2 className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="outline" size="icon" onClick={onOpen} className="h-9 w-9 rounded-xl bg-white" aria-label="Open formula">
+        <Button type="button" variant="outline" size="icon" onClick={onOpen} disabled={!canOpen} className="h-9 w-9 rounded-xl bg-white disabled:opacity-45" aria-label={canOpen ? 'Open formula' : 'Formula belum terhubung'}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>

@@ -9,7 +9,7 @@ const actions = [
   { label: 'New Formula', path: '/mobile/formulas/new', icon: FlaskConical },
   { label: 'Batch Calculator', path: '/mobile/batches', icon: Calculator },
   { label: 'Production Costing', path: '/mobile/production-costing', icon: Calculator },
-  { label: 'Add Material', path: '/mobile/raw-materials?action=add', icon: Plus },
+  { label: 'Add Material', path: '/mobile/raw-materials/new', icon: Plus },
   { label: 'Import Formula PDF', path: '/mobile/formulas?action=import', icon: FileUp },
 ];
 

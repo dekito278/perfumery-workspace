@@ -542,6 +542,15 @@ const writeStoredProducts = (products) => {
   window.dispatchEvent(new CustomEvent('dekito:products-updated'));
 };
 
+const mergeLocalFallbackProducts = (products = []) => {
+  const remoteKeys = new Set(products.flatMap((product) => [product.id, product.slug].filter(Boolean)));
+  const localFallbackProducts = readStoredProducts()
+    .filter((product) => String(product.id || '').startsWith('custom-'))
+    .filter((product) => !remoteKeys.has(product.id) && !remoteKeys.has(product.slug));
+
+  return localFallbackProducts.length ? [...localFallbackProducts, ...products] : products;
+};
+
 const cacheLastValidProducts = (products) => {
   if (typeof window === 'undefined' || !Array.isArray(products) || products.length === 0) return;
   window.localStorage.setItem(PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY, JSON.stringify({
@@ -599,7 +608,7 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
       throw error;
     }
 
-    const products = (data || []).map(fromDatabaseRow);
+    const products = mergeLocalFallbackProducts((data || []).map(fromDatabaseRow));
     cacheFetchedProducts(products);
     fetchMonitor.finish('success', { count: products.length });
     return products;

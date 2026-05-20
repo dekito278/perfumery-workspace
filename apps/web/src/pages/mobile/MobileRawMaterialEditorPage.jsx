@@ -315,7 +315,7 @@ const MobileRawMaterialEditorPage = () => {
           </div>
         </section>
       </main>
-      <StickyBottomActionBar fixed reserveSpace aria-label="Material editor actions">
+      <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Material editor actions">
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={goBack} disabled={saving}>Cancel</Button>
           <Button type="button" className="h-12 rounded-2xl text-xs font-bold" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : isEditing ? 'Save changes' : 'Save material'}</Button>

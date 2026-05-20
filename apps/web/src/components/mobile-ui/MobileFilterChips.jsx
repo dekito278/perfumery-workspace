@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils.js';
 
 const MobileFilterChips = ({ options = [], value, onChange, className }) => (
-  <div className={cn('mobile-filter-chip-wrap flex flex-wrap gap-1.5 py-1', className)}>
+  <div className={cn('mobile-filter-chip-wrap mobile-segment-scroll flex flex-nowrap gap-1.5 overflow-x-auto py-1', className)}>
     {options.map((option) => {
       const active = value === option.value;
       return (

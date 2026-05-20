@@ -207,7 +207,7 @@ const MobileBriefEditorPage = () => {
             ) : null}
           </section>
         )}
-        <StickyBottomActionBar fixed reserveSpace aria-label="Brief editor actions">
+        <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Brief editor actions">
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" onClick={goBack} className="rounded-2xl bg-white">{currentIndex === 0 ? 'Cancel' : 'Back'}</Button>
             {step === 'review' ? (

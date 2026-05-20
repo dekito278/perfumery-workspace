@@ -118,7 +118,7 @@ const MobileRawMaterialAuditPage = () => {
                         {row.duplicate ? <div>Duplicate: {row.duplicate.name}</div> : null}
                         {row.materials?.length ? <div>{row.materials.length} materials share this CAS/group.</div> : null}
                         {material?.cas_number ? <div>CAS {material.cas_number}</div> : <div>CAS missing</div>}
-                        <button type="button" onClick={() => material?.id && navigate(`/mobile/raw-material/${material.id}`)} className="mt-2 h-11 rounded-2xl bg-amber-500 px-4 text-sm font-bold text-white">
+                        <button type="button" onClick={() => navigate(`/mobile/raw-material/${material.id}`)} disabled={!material?.id} className="mt-2 h-11 rounded-2xl bg-amber-500 px-4 text-sm font-bold text-white disabled:bg-[#e5e7eb] disabled:text-[#9ca3af]">
                           Open material
                         </button>
                       </div>

@@ -340,7 +340,7 @@ const MobileProductManagementPage = () => {
         </section>
 
         {activeView === 'new' ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="mobile-product-form" onSubmit={handleSubmit} className="space-y-4">
           <section className="mobile-soft-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -566,10 +566,10 @@ const MobileProductManagementPage = () => {
             </label>
           </ProductFormSection>
 
-          <StickyBottomActionBar fixed reserveSpace aria-label="Aksi form produk">
+          <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Aksi form produk">
             <div className="grid grid-cols-[auto_1fr] gap-2">
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={resetForm}>Baru</Button>
-              <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingProduct || !requiredReady}>
+              <Button type="submit" form="mobile-product-form" className="h-12 rounded-2xl gap-2" disabled={savingProduct || !requiredReady}>
                 <Save className="h-4 w-4" />
                 {savingProduct ? 'Menyimpan...' : requiredReady ? 'Simpan produk' : 'Lengkapi wajib'}
               </Button>

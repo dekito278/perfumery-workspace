@@ -172,9 +172,10 @@ const MobileValidationPage = () => {
                   key={log.id}
                   log={log}
                   formula={formulasById.get(log.formula_id)}
+                  canOpen={Boolean(log.formula_id)}
                   onDelete={() => setDeleteTarget(log)}
                   onEdit={() => openEditLog(log)}
-                  onOpen={() => log.formula_id && navigate(`/mobile/formulas/${log.formula_id}`, { state: editorState })}
+                  onOpen={() => navigate(`/mobile/formulas/${log.formula_id}`, { state: editorState })}
                 />
               ))}
             </div>
