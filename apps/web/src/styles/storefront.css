@@ -76,11 +76,15 @@
   display: grid;
   gap: 12px;
   min-width: 0;
-  padding-bottom: 280px;
+  padding-bottom: 24px;
 }
 
 .mobile-commerce-app .mobile-checkout-page {
   padding-bottom: 248px;
+}
+
+.mobile-commerce-app .mobile-bespoke-page {
+  padding-bottom: 24px;
 }
 
 .mobile-commerce-app .mobile-page > * {
@@ -226,9 +230,11 @@
 }
 
 .mobile-commerce-app .mobile-bottom-nav {
+  position: fixed;
   border-color: var(--buyer-border);
   border-radius: var(--buyer-radius-card) var(--buyer-radius-card) 0 0;
   box-shadow: 0 -14px 34px -28px rgba(24, 47, 27, 0.5);
+  transform: translateZ(0);
 }
 
 .mobile-commerce-app .mobile-bottom-nav a {

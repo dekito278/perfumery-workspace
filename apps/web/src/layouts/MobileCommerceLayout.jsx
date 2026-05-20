@@ -9,7 +9,6 @@ import { useMobileKeyboardState } from '@/hooks/useMobileKeyboardState.js';
 import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js';
 import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
-import { resetMobileCommerceScroll } from '@/utils/mobileCommerceScroll.js';
 
 const commerceNavItems = [
   { path: '/mobile/dashboard', label: 'Beranda', icon: Home },
@@ -19,11 +18,11 @@ const commerceNavItems = [
   { path: '/mobile/customer', label: 'Cek Order', icon: ClipboardCheck },
 ];
 
-const resetScrollOnCommerceTabTap = (path) => {
-  if (path !== '/mobile/dashboard' && path !== '/mobile/catalog') return;
-  resetMobileCommerceScroll();
-  window.requestAnimationFrame(resetMobileCommerceScroll);
-};
+const preserveScrollOnCommerceTabTap = (path) => (
+  path === '/mobile/dashboard' || path === '/mobile/catalog'
+    ? { restoreScroll: true }
+    : undefined
+);
 
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
@@ -81,7 +80,7 @@ const MobileCommerceLayout = ({ children }) => {
             <Link
               key={item.path}
               to={item.path}
-              onClick={() => resetScrollOnCommerceTabTap(item.path)}
+              state={preserveScrollOnCommerceTabTap(item.path)}
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative flex h-[52px] flex-col items-center justify-center gap-0.5 rounded-[14px] text-[9.5px] font-bold transition',
