@@ -18,9 +18,10 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
+  updateOrderPaymentStatus,
 } from '@/services/orderService.js';
-import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
-import { addCartItem, clearCart, isManualTransferPayment } from '@/services/cartService.js';
+import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
+import { addCartItem, clearCart, isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import {
   getOrderProductItems,
   getOrderProductsSubtotal,
@@ -70,9 +71,29 @@ const progressSteps = [
 ];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
+const DOKU_PAYMENT_TTL_MINUTES = 60;
+const isDokuPayment = (order) => order?.paymentProvider === 'doku';
+const isPayableOrder = (order) => ['unpaid', 'pending'].includes(order?.paymentStatus);
+const getDokuExpiryDate = (order) => {
+  const explicitExpiry = order?.paymentExpiresAt ? new Date(order.paymentExpiresAt) : null;
+  if (explicitExpiry && Number.isFinite(explicitExpiry.getTime())) return explicitExpiry;
+
+  const createdAt = order?.createdAt ? new Date(order.createdAt) : null;
+  if (createdAt && Number.isFinite(createdAt.getTime())) {
+    return new Date(createdAt.getTime() + (DOKU_PAYMENT_TTL_MINUTES * 60 * 1000));
+  }
+
+  return null;
+};
+const isDokuPaymentExpired = (order, now = new Date()) => {
+  if (!isDokuPayment(order) || !isPayableOrder(order)) return false;
+  const expiresAt = getDokuExpiryDate(order);
+  return Boolean(expiresAt && expiresAt.getTime() <= now.getTime());
+};
 const canOpenPayment = (order) => Boolean(
-  ['unpaid', 'pending'].includes(order?.paymentStatus)
+  isPayableOrder(order)
   && (order?.paymentUrl || isManualTransferPayment(order?.paymentProvider))
+  && !isDokuPaymentExpired(order)
 );
 const canUploadPaymentProof = (order) => Boolean(
   isManualTransferPayment(order?.paymentProvider)
@@ -165,6 +186,101 @@ const PaymentProofPanel = ({ order, compact = false }) => {
               Catatan admin: {order.paymentProofNotes}
             </div>
           ) : null}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PaymentTaskPanel = ({
+  compact = false,
+  isMobileRoute,
+  onRenewDokuPayment,
+  order,
+  renewing = false,
+}) => {
+  if (!order || !isPayableOrder(order)) return null;
+
+  const paymentPath = buildPaymentPath({ isMobileRoute, order });
+  const manualPayment = isManualTransferPayment(order.paymentProvider);
+  const dokuPayment = isDokuPayment(order);
+  const dokuExpired = isDokuPaymentExpired(order);
+  const expiresAt = getDokuExpiryDate(order);
+  const transfer = {
+    bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
+    accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
+    accountName: order.paymentResponse?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+  };
+
+  const title = manualPayment
+    ? 'Transfer manual belum selesai'
+    : dokuExpired
+      ? 'Link DOKU sudah lewat 1 jam'
+      : 'Pembayaran DOKU menunggu';
+  const description = manualPayment
+    ? 'Transfer ke rekening ini, lalu upload bukti dari tombol di bawah.'
+    : dokuExpired
+      ? 'Buat link baru supaya pembayaran bisa langsung dilanjutkan.'
+      : 'Buka link pembayaran untuk menyelesaikan order.';
+
+  return (
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-amber-200 bg-amber-50 text-amber-950`}>
+      <div className="flex items-start gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-white text-amber-700">
+          <CreditCard className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">Payment task</div>
+          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#0b130c]`}>{title}</h4>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">{description}</p>
+
+          <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
+            <div className="rounded-2xl bg-white/85 px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Order</div>
+              <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{order.orderNumber}</div>
+            </div>
+            <div className="rounded-2xl bg-white/85 px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-amber-700">Total bayar</div>
+              <div className="mt-1 text-sm font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</div>
+            </div>
+            {dokuPayment ? (
+              <div className="rounded-2xl bg-white/85 px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-amber-700">Batas link</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{expiresAt ? formatDate(expiresAt) : 'Sekitar 1 jam'}</div>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-white/85 px-3 py-2">
+                <div className="text-[10px] font-bold uppercase text-amber-700">Rekening</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{transfer.bankName} {transfer.accountNumber}</div>
+                <div className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">A/N {transfer.accountName}</div>
+              </div>
+            )}
+          </div>
+
+          <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
+            {manualPayment ? (
+              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
+                <Upload className="h-4 w-4" />
+                Upload bukti bayar
+              </Link>
+            ) : dokuExpired ? (
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8] disabled:opacity-60">
+                {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Buat link baru
+              </button>
+            ) : (
+              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
+                <CreditCard className="h-4 w-4" />
+                Bayar sekarang
+              </Link>
+            )}
+            {dokuPayment && order.paymentUrl && !dokuExpired ? (
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27] disabled:opacity-60">
+                {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Refresh link
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -389,6 +505,7 @@ const SelfServiceActions = ({
 }) => {
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
   const canReorder = getOrderProductItems(order).length > 0;
+  const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
     : 'inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold';
@@ -403,7 +520,7 @@ const SelfServiceActions = ({
           Upload bukti
         </Link>
       ) : null}
-      {canOpenPayment(order) ? (
+      {showOpenPayment ? (
         <Link to={paymentPath} className={primaryClass}>
           <CreditCard className="h-4 w-4" />
           Lanjut bayar
@@ -570,6 +687,40 @@ const CustomerPortalPage = () => {
       }
     } catch (error) {
       toast.error(error.message || 'Gagal refresh pembayaran');
+    } finally {
+      setRefreshingPaymentOrder('');
+    }
+  };
+
+  const renewDokuPayment = async (order) => {
+    if (!order?.orderNumber) return;
+
+    setRefreshingPaymentOrder(order.orderNumber);
+    try {
+      const checkout = await createDokuCheckout({
+        order,
+        amount: order.subtotal,
+        customerName: order.customerName,
+        contact: order.contact,
+        items: order.items || [],
+        callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
+      });
+      await updateOrderPaymentStatus(order.id || order.orderNumber, {
+        paymentStatus: 'pending',
+        paymentProvider: 'doku',
+        paymentReference: checkout.requestId || '',
+        paymentUrl: checkout.paymentUrl,
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
+        paymentResponse: checkout.dokuResponse || {},
+        status: 'pending_payment',
+        audit: false,
+      });
+      await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
+      toast.success('Link DOKU baru siap dipakai');
+      navigate(buildPaymentPath({ isMobileRoute, order: { ...order, paymentProvider: 'doku' } }));
+    } catch (error) {
+      toast.error(error.message || 'Gagal membuat link DOKU baru');
     } finally {
       setRefreshingPaymentOrder('');
     }
@@ -766,6 +917,13 @@ const CustomerPortalPage = () => {
                       </div>
                       <BespokeDetailPanel item={bespokeItem} compact />
                       <BespokeProductionPanel order={order} compact />
+                      <PaymentTaskPanel
+                        compact
+                        isMobileRoute={isMobileRoute}
+                        onRenewDokuPayment={renewDokuPayment}
+                        order={order}
+                        renewing={refreshingPaymentOrder === order.orderNumber}
+                      />
                       <PaymentProofPanel order={order} compact />
                       <ShipmentPanel order={order} compact />
                       <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-3">
@@ -995,6 +1153,12 @@ const CustomerPortalPage = () => {
                             <OrderItems order={order} />
                             {bespoke ? <BespokeDetailPanel item={bespokeItem} /> : null}
                             <BespokeProductionPanel order={order} />
+                            <PaymentTaskPanel
+                              isMobileRoute={isMobileRoute}
+                              onRenewDokuPayment={renewDokuPayment}
+                              order={order}
+                              renewing={refreshingPaymentOrder === order.orderNumber}
+                            />
                             <PaymentProofPanel order={order} />
                             <ShipmentPanel order={order} />
                             <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
