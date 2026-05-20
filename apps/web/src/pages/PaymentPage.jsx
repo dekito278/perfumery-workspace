@@ -54,8 +54,8 @@ const paymentStatusTone = {
   },
   expired: {
     className: 'border-rose-200 bg-rose-50 text-rose-800',
-    title: 'Sesi pembayaran expired',
-    description: 'Gunakan track order untuk cek status terbaru atau ulangi checkout jika perlu.',
+    title: 'Link pembayaran kedaluwarsa',
+    description: 'Cek order untuk melihat status terbaru atau buat pembayaran baru jika perlu.',
   },
   failed: {
     className: 'border-rose-200 bg-rose-50 text-rose-800',
@@ -249,7 +249,7 @@ const PaymentFrame = ({ session, compact = false }) => {
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-                  Simpan kode ini untuk cek order dan checkout berikutnya tanpa isi ulang data.
+                  Simpan kode ini untuk cek order dan belanja berikutnya tanpa isi ulang data.
                 </p>
               </div>
               <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-[#f7f8f2] gap-2" onClick={copyCustomerCode}>
@@ -420,7 +420,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-                  Salin dan simpan kode ini. Kode dipakai untuk cek order dan checkout berikutnya tanpa isi ulang data.
+                  Salin dan simpan kode ini. Kode dipakai untuk cek order dan belanja berikutnya tanpa isi ulang data.
                 </p>
               </div>
               <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-white gap-2" onClick={() => copyValue('Kode customer', customerCode)}>
@@ -464,7 +464,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
             <li>2. Salin dan simpan kode customer untuk cek status order.</li>
-            <li>3. Upload bukti transfer lewat form di bawah. Ini wajib untuk pembayaran manual.</li>
+            <li>3. Upload bukti transfer lewat form di bawah. Ini wajib untuk transfer manual.</li>
             <li>4. Admin akan cek bukti transfer dan memperbarui status pembayaran setelah valid.</li>
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
@@ -558,7 +558,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             ) : null}
             <Button type="button" className="h-11 rounded-2xl gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
               {uploadingProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {hasSubmittedProof ? 'Upload ulang bukti' : 'Upload bukti transfer wajib'}
+              {hasSubmittedProof ? 'Upload ulang bukti' : 'Upload bukti transfer'}
             </Button>
             <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
               Format JPG, PNG, WebP, atau PDF. Maksimal 5 MB.
@@ -785,7 +785,7 @@ const PaymentPageContent = ({ isMobile }) => {
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? 'Transfer manual' : 'DOKU payment'}</p>
+                  <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? 'Transfer manual' : 'Pembayaran DOKU'}</p>
                   <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(session.amount)}</p>
                   <p className="truncate text-[10px] font-bold text-amber-700">{paymentStatusLabels[session.paymentStatus || 'pending'] || 'Menunggu pembayaran'}</p>
                 </div>

@@ -22,7 +22,7 @@ import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const MOBILE_CATALOG_COLUMNS = 2;
-const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 338;
+const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 316;
 const MOBILE_CATALOG_OVERSCAN_ROWS = 3;
 const MOBILE_CATALOG_VIRTUALIZE_AFTER = 40;
 const MOBILE_CATALOG_PAGE_SIZE = 6;
@@ -45,7 +45,7 @@ const getProductPrimaryTag = (product) => getVisibleProductTags(product).find(Bo
 const MobileCatalogCardSkeleton = () => (
   <article className="mobile-card mobile-catalog-card mobile-commerce-product-card min-w-0 overflow-hidden p-2" aria-hidden="true">
     <div className="mobile-catalog-skeleton aspect-[4/5] rounded-2xl" />
-    <div className="mt-2 flex h-[148px] flex-col">
+    <div className="mt-2 flex h-[132px] flex-col">
       <div className="mobile-catalog-skeleton h-[13px] w-11/12 rounded-full" />
       <div className="mobile-catalog-skeleton mt-2 h-[13px] w-4/5 rounded-full" />
       <div className="mobile-catalog-skeleton mt-2 h-[11px] w-3/4 rounded-full" />
@@ -347,7 +347,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                 {filteredProducts.length} item
               </span>
               {hasCatalogProducts ? (
-                <Button type="button" variant="outline" className="h-9 rounded-xl bg-white px-3 text-[11px] font-bold gap-1.5" onClick={() => setFilterSheetOpen(true)}>
+                <Button type="button" variant="outline" className="h-11 rounded-xl bg-white px-3 text-[11px] font-bold gap-1.5" onClick={() => setFilterSheetOpen(true)}>
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   Filter
                 </Button>
@@ -371,9 +371,9 @@ export const MobileCatalogContent = ({ active = true }) => {
                   key={item.filter}
                   type="button"
                   onClick={() => updateFilters({ segment: item.filter })}
-                  style={{ minHeight: 38 }}
+                  style={{ minHeight: 44 }}
                   className={cn(
-                    'h-[38px] rounded-[12px] px-2 py-1 text-[11px] font-bold leading-tight transition',
+                    'h-11 rounded-[12px] px-2 py-1 text-[11px] font-bold leading-tight transition',
                     segment === item.filter
                       ? 'bg-[#263d27] text-white shadow-sm'
                       : 'text-[#7a8377]'
@@ -385,9 +385,9 @@ export const MobileCatalogContent = ({ active = true }) => {
             </div>
           ) : showCatalogSkeleton ? (
             <div className="mobile-commerce-search-segments mt-3 grid grid-cols-3 gap-1.5 rounded-[14px] bg-[#f7f8f2] p-1" aria-hidden="true">
-              <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
-              <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
-              <div className="mobile-catalog-skeleton h-[38px] rounded-[12px]" />
+              <div className="mobile-catalog-skeleton h-11 rounded-[12px]" />
+              <div className="mobile-catalog-skeleton h-11 rounded-[12px]" />
+              <div className="mobile-catalog-skeleton h-11 rounded-[12px]" />
             </div>
           ) : null}
           </div>
@@ -521,7 +521,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             </div>
             <div className="shrink-0 text-[10px] font-bold uppercase text-amber-700">Geser</div>
             {activeFilterCount ? (
-              <Button type="button" variant="outline" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })} className="h-9 shrink-0 rounded-xl bg-white px-3 text-[11px] font-bold">
+              <Button type="button" variant="outline" onClick={() => updateFilters({ query: '', segment: 'all', category: 'All', sort: 'featured' })} className="h-11 shrink-0 rounded-xl bg-white px-3 text-[11px] font-bold">
                 Reset
               </Button>
             ) : null}
@@ -602,10 +602,10 @@ export const MobileCatalogContent = ({ active = true }) => {
                             {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
                           </div>
                         </div>
-                        <div className="mt-2 flex h-[148px] flex-col">
-                          <div className="h-[58px] min-w-0">
-                            <h3 className="mobile-line-clamp-2 min-h-[32px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
-                            <p className="mobile-line-clamp-2 mt-1 min-h-[24px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
+                        <div className="mt-2 flex h-[132px] flex-col">
+                          <div className="h-[52px] min-w-0">
+                            <h3 className="mobile-line-clamp-2 min-h-[30px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
+                            <p className="mobile-line-clamp-1 mt-1 min-h-[16px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
                           </div>
                           <div className="mt-2 grid h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
                             <div className="min-w-0">
@@ -644,7 +644,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                       type="button"
                       onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                       disabled={safeCurrentPage === 1}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#263d27]/12 bg-white text-[#263d27] disabled:opacity-40"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#263d27]/12 bg-white text-[#263d27] disabled:opacity-40"
                       aria-label="Produk sebelumnya"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -659,7 +659,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                       type="button"
                       onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                       disabled={safeCurrentPage === totalPages}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#263d27]/12 bg-white text-[#263d27] disabled:opacity-40"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#263d27]/12 bg-white text-[#263d27] disabled:opacity-40"
                       aria-label="Produk berikutnya"
                     >
                       <ChevronRight className="h-4 w-4" />

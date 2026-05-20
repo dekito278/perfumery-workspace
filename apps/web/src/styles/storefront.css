@@ -5,11 +5,11 @@
 }
 
 .mobile-checkout-page {
-  padding-bottom: 248px;
+  padding-bottom: 24px;
 }
 
 .mobile-checkout-action-bar {
-  --mobile-action-bar-spacer-height: 96px;
+  --mobile-action-bar-spacer-height: 108px;
 }
 
 .mobile-bespoke-wizard {
@@ -80,15 +80,25 @@
 }
 
 .mobile-commerce-app .mobile-checkout-page {
-  padding-bottom: 248px;
+  padding-bottom: 24px;
 }
 
 .mobile-commerce-app .mobile-bespoke-page {
   padding-bottom: 24px;
 }
 
+.mobile-commerce-app .mobile-page:has(.mobile-action-bar-spacer) {
+  padding-bottom: 0;
+}
+
 .mobile-commerce-app .mobile-page > * {
   min-width: 0;
+}
+
+.mobile-commerce-app button,
+.mobile-commerce-app a {
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .mobile-commerce-app .mobile-card,
@@ -121,6 +131,7 @@
 }
 
 .mobile-commerce-choice {
+  min-height: 44px;
   padding: 12px;
   text-align: left;
   transition:
@@ -139,6 +150,7 @@
 }
 
 .mobile-commerce-control {
+  min-height: 44px;
   background: #fff;
   outline: none;
   transition:
@@ -190,6 +202,7 @@
 .mobile-commerce-chip,
 .mobile-commerce-muted-chip {
   display: inline-flex;
+  min-height: 22px;
   min-width: 0;
   align-items: center;
   justify-content: center;
@@ -276,6 +289,7 @@
 }
 
 .mobile-commerce-app .mobile-bottom-nav a {
+  min-height: 52px;
   min-width: 0;
 }
 
@@ -314,7 +328,7 @@
 
 .mobile-family-link {
   position: relative;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0;
   color: #263d27;
   font-size: 0.94rem;
@@ -344,7 +358,7 @@
 /* mobile catalog cards and skeletons */
 .mobile-catalog-card {
   content-visibility: auto;
-  contain-intrinsic-size: 330px 178px;
+  contain-intrinsic-size: 316px 178px;
   height: 100%;
 }
 
@@ -457,6 +471,11 @@
   scroll-snap-align: start;
   touch-action: pan-x;
   user-select: none;
+}
+
+.mobile-commerce-app .mobile-segment-scroll button,
+.mobile-commerce-app .mobile-shop-filter-rail button {
+  min-height: 44px;
 }
 
 /* mobile catalog reduced animation tuning */

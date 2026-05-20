@@ -102,7 +102,7 @@ const MobileCheckoutPage = () => {
     { label: 'Ringkasan', complete: Boolean(paymentComplete && items.length) },
   ];
   const missingRequirements = checkoutRequirements.filter((item) => !item.complete);
-  const primaryActionLabel = saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang');
+  const primaryActionLabel = saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan' : 'Bayar sekarang');
   const handleCourierChange = (courierCode) => {
     chooseShippingCourier(courierCode);
     if (!courierCode) return;
@@ -242,7 +242,7 @@ const MobileCheckoutPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="mt-2 h-10 rounded-2xl bg-white text-xs font-bold"
+                  className="mt-2 h-11 rounded-2xl bg-white text-xs font-bold"
                   onClick={recalculateShipping}
                   disabled={shippingLoading || !selectedCourier || (!deliveryAddress.trim() && destinationSearch.trim().length < 3)}
                 >
@@ -297,13 +297,13 @@ const MobileCheckoutPage = () => {
                   <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase text-[#263d27]">Auto</span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white text-xs font-bold" onClick={() => setShowManualShippingArea(true)}>
+                  <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => setShowManualShippingArea(true)}>
                     Edit manual
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 rounded-2xl bg-white text-xs font-bold"
+                    className="h-11 rounded-2xl bg-white text-xs font-bold"
                     onClick={recalculateShipping}
                     disabled={shippingLoading || !selectedCourier || (!deliveryAddress.trim() && destinationSearch.trim().length < 3)}
                   >

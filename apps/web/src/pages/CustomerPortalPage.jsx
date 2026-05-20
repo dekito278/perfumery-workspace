@@ -220,7 +220,7 @@ const getPaymentExperienceState = (order) => {
       description: 'Link DOKU hanya aktif sekitar 1 jam. Buat link baru untuk melanjutkan pembayaran.',
       className: 'border-rose-200 bg-rose-50 text-rose-900',
       iconClassName: 'bg-white text-rose-700',
-      action: 'Buat link baru',
+      action: 'Buat link DOKU baru',
     };
   }
   return {
@@ -357,7 +357,7 @@ const PaymentTaskPanel = ({
   const description = manualPayment
     ? 'Transfer ke rekening ini, lalu upload bukti dari tombol di bawah.'
     : dokuExpired
-      ? 'Buat link baru supaya pembayaran bisa langsung dilanjutkan.'
+      ? 'Buat link DOKU baru supaya pembayaran bisa langsung dilanjutkan.'
       : 'Buka link pembayaran untuk menyelesaikan order.';
 
   return (
@@ -367,7 +367,7 @@ const PaymentTaskPanel = ({
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">Payment task</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">Aksi pembayaran</div>
           <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#0b130c]`}>{title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">{description}</p>
 
@@ -398,12 +398,12 @@ const PaymentTaskPanel = ({
             {manualPayment ? (
               <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
                 <Upload className="h-4 w-4" />
-                Upload bukti bayar
+                Upload bukti transfer
               </Link>
             ) : dokuExpired ? (
               <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8] disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Buat link baru
+                Buat link DOKU baru
               </button>
             ) : (
               <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
@@ -414,7 +414,7 @@ const PaymentTaskPanel = ({
             {dokuPayment && order.paymentUrl && !dokuExpired ? (
               <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27] disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Refresh link
+                Perbarui link
               </button>
             ) : null}
           </div>
@@ -708,8 +708,8 @@ const ReorderPaymentPanel = ({
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#263d27]">Reorder payment</div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#0b130c]`}>Pilih metode pembayaran</h4>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#263d27]">Reorder</div>
+          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#0b130c]`}>Pilih pembayaran</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-[#51624b]">
             Item, alamat, dan ongkir mengikuti order lama. Pilih Manual atau DOKU untuk membuat order baru.
           </p>
@@ -775,7 +775,7 @@ const ReorderPaymentPanel = ({
           <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
             <button type="button" onClick={() => onSubmit(draft.order, selectedPaymentMethod)} disabled={submitting || draft.checkingVoucher} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8] disabled:opacity-60">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-              {isManual ? 'Buat order manual' : 'Buat link DOKU'}
+              {isManual ? 'Pakai transfer manual' : 'Buat link DOKU'}
             </button>
             <button type="button" onClick={onCancel} disabled={submitting} className="flex h-11 items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27] disabled:opacity-60">
               Batal
@@ -1227,7 +1227,7 @@ const CustomerPortalPage = () => {
                 </div>
                 <h1 className="mt-3 text-2xl font-bold leading-tight">Cek progress pesanan.</h1>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
-                  Status payment, proses produksi, dan pengiriman dalam satu tempat.
+                  Status pembayaran, proses produksi, dan pengiriman dalam satu tempat.
                 </p>
               </div>
             </div>
@@ -1245,11 +1245,11 @@ const CustomerPortalPage = () => {
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
                   <ClipboardPaste className="h-4 w-4" />
                   Tempel kode
                 </Button>
-                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
                   <History className="h-4 w-4" />
                   Cek terakhir
                 </Button>
@@ -1489,7 +1489,7 @@ const CustomerPortalPage = () => {
               </div>
               <h1 className="mt-5 text-4xl font-bold leading-tight sm:text-5xl">Cek order dengan kode unik.</h1>
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
-                Lihat status payment, proses produksi, pengiriman, dan detail bespoke tanpa perlu akun terpisah.
+                Lihat status pembayaran, proses produksi, pengiriman, dan detail custom tanpa perlu akun terpisah.
               </p>
             </div>
 

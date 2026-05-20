@@ -100,11 +100,11 @@ export const MobileStorefrontContent = ({ active = true }) => {
                 Pilih aroma ready stock, custom aroma, atau cek progress order.
               </p>
               <div className="mt-3 flex gap-2">
-                <Button className="h-10 rounded-2xl px-3 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
+                <Button className="h-11 rounded-2xl px-3 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
                   <ShoppingBag className="h-4 w-4" />
                   Belanja
                 </Button>
-                <Button variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs" onClick={() => navigate('/mobile/bespoke')}>
+                <Button variant="outline" className="h-11 rounded-2xl bg-white px-3 text-xs" onClick={() => navigate('/mobile/bespoke')}>
                   Custom
                 </Button>
               </div>
@@ -200,7 +200,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               <p className="text-[10px] font-bold uppercase text-amber-700">Belanja sekarang</p>
               <h2 className="text-base font-bold leading-tight">Produk pilihan</h2>
             </div>
-            <Button variant="ghost" className="h-8 px-2 text-xs gap-1" onClick={() => navigate('/mobile/catalog')}>
+            <Button variant="ghost" className="h-11 px-2 text-xs gap-1" onClick={() => navigate('/mobile/catalog')}>
               Lihat semua
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
@@ -218,10 +218,10 @@ export const MobileStorefrontContent = ({ active = true }) => {
                     {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
                   </div>
                 </div>
-                <div className="mt-2 flex h-[148px] flex-col">
-                  <div className="h-[58px] min-w-0">
-                    <h3 className="mobile-line-clamp-2 min-h-[32px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
-                    <p className="mobile-line-clamp-2 mt-1 min-h-[24px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
+                <div className="mt-2 flex h-[132px] flex-col">
+                  <div className="h-[52px] min-w-0">
+                    <h3 className="mobile-line-clamp-2 min-h-[30px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
+                    <p className="mobile-line-clamp-1 mt-1 min-h-[16px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
                   </div>
                   <div className="mt-2 grid h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
                     <div className="min-w-0">
@@ -257,7 +257,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               <p className="text-[10px] font-bold uppercase text-amber-700">Shortcut custom</p>
               <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Buat aroma dari cerita kamu.</h2>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Isi brief singkat untuk mood, occasion, ukuran, dan budget.</p>
-              <Button className="mt-3 h-10 rounded-2xl gap-2 px-3 text-xs" onClick={() => navigate('/mobile/bespoke')}>
+              <Button className="mt-3 h-11 rounded-2xl gap-2 px-3 text-xs" onClick={() => navigate('/mobile/bespoke')}>
                 Mulai custom
                 <WandSparkles className="h-4 w-4" />
               </Button>
@@ -276,7 +276,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase text-amber-700">Cek order</p>
-              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Pantau payment, produksi, dan pengiriman.</h2>
+              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Pantau pembayaran dan pengiriman.</h2>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Masukkan kode customer untuk melihat progress order dan invoice.</p>
             </div>
           </div>
