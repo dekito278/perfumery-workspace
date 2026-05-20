@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Beaker, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag } from 'lucide-react';
+import { Beaker, BookOpenText, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useMobileCommercePrefetch } from '@/hooks/useMobileCommercePrefetch.js';
@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils.js';
 const commerceNavItems = [
   { path: '/mobile/dashboard', label: 'Beranda', icon: Home },
   { path: '/mobile/catalog', label: 'Belanja', icon: Search, aliases: ['/mobile/products'] },
+  { path: '/mobile/articles', label: 'Artikel', icon: BookOpenText },
   { path: '/mobile/bespoke', label: 'Custom', icon: MessageCircle },
   { path: '/mobile/cart', label: 'Keranjang', icon: ShoppingBag },
   { path: '/mobile/customer', label: 'Cek Order', icon: ClipboardCheck },
@@ -20,6 +21,7 @@ const commerceNavItems = [
 
 const preserveScrollOnCommerceTabTap = (path) => (
   path === '/mobile/dashboard' || path === '/mobile/catalog'
+    || path === '/mobile/articles'
     ? { restoreScroll: true }
     : undefined
 );
@@ -70,7 +72,7 @@ const MobileCommerceLayout = ({ children }) => {
           Studio
         </Link>
       ) : null}
-      <nav className="mobile-bottom-nav mobile-commerce-bottom-nav grid grid-cols-5 gap-1 p-1.5" aria-label="Navigasi belanja mobile">
+      <nav className="mobile-bottom-nav mobile-commerce-bottom-nav grid grid-cols-6 gap-1 p-1.5" aria-label="Navigasi belanja mobile">
         {commerceNavItems.map((item) => {
           const Icon = item.icon;
           const activePaths = [item.path, ...(item.aliases || [])];

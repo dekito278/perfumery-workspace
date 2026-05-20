@@ -139,7 +139,7 @@ const MobileBrowserRedirect = () => {
   return <Navigate to={`${mobilePath}${search}${hash}`} replace />;
 };
 
-const mobileTabOrder = ['/mobile/dashboard', '/mobile/catalog'];
+const mobileTabOrder = ['/mobile/dashboard', '/mobile/catalog', '/mobile/articles'];
 const mobileDetailPatterns = [
   /^\/mobile\/products\/[^/]+$/,
   /^\/mobile\/articles\/[^/]+$/,
@@ -152,6 +152,7 @@ const mobileDetailPatterns = [
 const mobileCommercePatterns = [
   /^\/mobile\/dashboard$/,
   /^\/mobile\/catalog$/,
+  /^\/mobile\/articles$/,
   /^\/mobile\/products\/[^/]+$/,
   /^\/mobile\/articles\/[^/]+$/,
   /^\/mobile\/bespoke$/,
@@ -256,6 +257,8 @@ function AppRoutes() {
         <Route path="/mobile/dashboard" element={<MobileCommerceTabsPage />} />
 
         <Route path="/mobile/catalog" element={<MobileCommerceTabsPage />} />
+
+        <Route path="/mobile/articles" element={<MobileCommerceTabsPage />} />
 
         <Route path="/mobile/products/:slug" element={<MobileProductDetailPage />} />
 

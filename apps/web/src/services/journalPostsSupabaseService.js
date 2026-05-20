@@ -130,6 +130,22 @@ export const getPublishedJournalPostBySlug = async (slug) => {
   return data ? toAppRecord(data) : null;
 };
 
+export const getPublishedJournalPosts = async () => {
+  const { data, error } = await supabase
+    .from('journal_posts')
+    .select('id, title, category, status, slug, excerpt, content, seo_title, cover_image_url, tags, published_at, created_at, updated_at')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching published journal posts:', error);
+    throw new Error(error.message || 'Failed to fetch published journal posts');
+  }
+
+  return (data || []).map(toAppRecord);
+};
+
 export const createJournalPost = async (postData) => {
   const userId = await getCurrentUserId();
   const { data, error } = await supabase

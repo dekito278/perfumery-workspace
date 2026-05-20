@@ -34,6 +34,7 @@ const navGroups = [
       { path: '/mobile/studio/customers', label: 'Customer', helper: 'Cari kode customer', icon: UsersRound },
       { path: '/mobile/studio/bespoke', label: 'Bespoke', helper: 'Botol, cap, label', icon: WandSparkles },
       { path: '/mobile/studio/vouchers', label: 'Vouchers', helper: 'Kode promo', icon: BadgePercent },
+      { path: '/mobile/journal', label: 'Journal', helper: 'Tulis dan publish artikel', icon: BookOpenText },
       { path: '/mobile/dashboard', label: 'Toko', helper: 'Preview home customer', icon: Store },
     ],
   },

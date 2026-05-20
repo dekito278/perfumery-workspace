@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
+  BookOpenText,
   ClipboardCheck,
   Gem,
   Leaf,
@@ -164,6 +165,23 @@ export const MobileStorefrontContent = ({ active = true }) => {
             <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Cek order</span>
             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Lacak <ArrowRight className="h-3 w-3" /></span>
           </button>
+        </section>
+
+        <section className="mobile-card p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
+              <BookOpenText className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase text-amber-700">Artikel</p>
+              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Baca cerita aroma dan proses studio.</h2>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Panduan singkat, catatan material, dan cerita di balik parfum Solivagant.</p>
+            </div>
+          </div>
+          <Button variant="outline" className="mt-4 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/articles')}>
+            Buka artikel
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </section>
 
         {!hasProducts ? (

@@ -154,7 +154,7 @@ const MobileJournalEditorPage = () => {
       </Helmet>
 
       <MobileTopBar
-        title={isEditMode ? 'Edit note' : 'New note'}
+        title={isEditMode ? 'Edit artikel' : 'Buat artikel'}
         subtitle="Journal editor"
         eyebrow="Writing"
         onBack={handleBack}
@@ -274,11 +274,11 @@ const MobileJournalEditorPage = () => {
           <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Journal editor actions">
             <div className="grid grid-cols-[0.8fr_1fr] gap-2">
               <Button type="button" variant="outline" onClick={handleBack} className="h-11 rounded-2xl bg-white">
-                Cancel
+                Batal
               </Button>
               <Button type="submit" form="mobile-journal-editor-form" disabled={saving} className="h-11 gap-2 rounded-2xl">
                 <Save className="h-4 w-4" />
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Menyimpan...' : 'Simpan'}
               </Button>
             </div>
           </StickyBottomActionBar>

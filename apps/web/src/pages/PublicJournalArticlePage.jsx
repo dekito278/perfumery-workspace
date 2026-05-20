@@ -171,7 +171,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
       <main className={`${mobile ? 'mobile-app min-h-screen overflow-x-hidden bg-[#f7f8f2] px-3 pb-8 pt-[calc(env(safe-area-inset-top,0px)+10px)] text-[#111827]' : 'min-h-screen bg-[#f7f8f2] text-[#111827]'}`}>
         <header className={mobile ? 'mx-auto mb-4 flex w-full max-w-[448px] items-center justify-between gap-3 rounded-[22px] border border-[#d8d5ca] bg-white/90 px-3 py-2.5 shadow-sm' : 'border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]'}>
           <div className={mobile ? 'flex min-w-0 flex-1 items-center gap-3' : 'mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8'}>
-            <Link to={mobile ? '/mobile/dashboard' : '/home'} className="flex min-w-0 items-center gap-3">
+            <Link to={mobile ? '/mobile/articles' : '/home'} className="flex min-w-0 items-center gap-3">
               {mobile ? (
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-[#eef2e8]">
                   <ArrowLeft className="h-4 w-4" />
@@ -187,7 +187,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
               ) : null}
             </Link>
             <Link to={mobile ? '/mobile/catalog' : '/catalog'} className={mobile ? 'shrink-0 rounded-2xl border border-[#d8d5ca] bg-[#f7f8f2] px-3 py-2 text-xs font-bold text-[#263d27]' : 'rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]'}>
-              Catalog
+              {mobile ? 'Belanja' : 'Catalog'}
             </Link>
           </div>
         </header>
@@ -207,9 +207,9 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
               <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
                 Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
               </p>
-              <Link to={mobile ? '/mobile/dashboard' : '/home'} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
+              <Link to={mobile ? '/mobile/articles' : '/home'} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
                 <ArrowLeft className="h-4 w-4" />
-                Back to Solivagant
+                {mobile ? 'Kembali ke artikel' : 'Back to Solivagant'}
               </Link>
             </div>
           </section>
@@ -267,7 +267,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
             <div className={mobile ? 'mt-4 grid w-full max-w-full gap-4 pb-8' : 'mt-9 grid w-full max-w-full gap-8 pb-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start'}>
               <section className={mobile ? 'box-border w-full min-w-0 max-w-full rounded-[26px] bg-white/90 px-4 py-5 shadow-sm ring-1 ring-[#d8d5ca]/70' : 'box-border w-full min-w-0 max-w-full rounded-[28px] bg-white/60 px-4 py-6 ring-1 ring-[#d8d5ca]/70 sm:px-8 sm:py-9 lg:bg-transparent lg:px-0 lg:py-0 lg:ring-0'}>
                 {post.content ? (
-                  <JournalMarkdownContent content={post.content} />
+                  <JournalMarkdownContent content={post.content} mobile={mobile} />
                 ) : (
                   <p className="mx-auto max-w-3xl rounded-2xl border border-dashed border-[#d8d5ca] bg-white/75 p-6 text-center text-sm font-medium text-[#6b7280]">
                     Artikel ini belum memiliki isi.

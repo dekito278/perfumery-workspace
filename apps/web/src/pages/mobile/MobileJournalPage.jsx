@@ -135,17 +135,17 @@ const MobileJournalPage = () => {
 
       <MobileTopBar
         title="Journal"
-        subtitle={`${posts.length} notes`}
+        subtitle={`${posts.length} artikel`}
         eyebrow="Studio"
         action={(
           <Button
             type="button"
             onClick={() => navigate('/mobile/journal/new')}
             className="mobile-interactive mobile-pressable h-10 gap-1 rounded-2xl px-3 text-xs font-bold"
-            aria-label="New journal note"
+            aria-label="Buat artikel"
           >
             <Plus className="h-4 w-4" />
-            New
+            Buat
           </Button>
         )}
       />
@@ -261,9 +261,9 @@ const MobileJournalPage = () => {
         ) : (
           <MobileEmptyState
             icon={query || category !== 'all' || status !== 'all' ? FileText : BookOpenText}
-            title={posts.length ? 'No notes found' : 'Start your journal'}
-            description={posts.length ? 'Try another keyword, category, or status.' : 'Mulai dari satu catatan kecil: accord, material, proses, pengalaman, atau ide produk dari HP.'}
-            action="New Journal"
+            title={posts.length ? 'Artikel tidak ditemukan' : 'Mulai tulis Journal'}
+            description={posts.length ? 'Coba kata kunci, kategori, atau status lain.' : 'Mulai dari satu catatan kecil: accord, material, proses, pengalaman, atau ide produk dari HP.'}
+            action="Buat artikel"
             onAction={() => navigate('/mobile/journal/new')}
           />
         )}

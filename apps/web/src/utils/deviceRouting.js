@@ -8,6 +8,7 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/home$/, '/mobile/dashboard'],
   [/^\/catalog$/, '/mobile/catalog'],
   [/^\/products\/([^/]+)$/, '/mobile/products/$1'],
+  [/^\/articles$/, '/mobile/articles'],
   [/^\/articles\/([^/]+)$/, '/mobile/articles/$1'],
   [/^\/bespoke$/, '/mobile/bespoke'],
   [/^\/cart$/, '/mobile/cart'],
