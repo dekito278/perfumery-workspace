@@ -4,6 +4,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
+import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -21,9 +22,11 @@ const ProductDetailPage = () => {
 
   if (!product && products.loading) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f7f8f2] text-sm font-bold text-muted-foreground">
-        Memuat produk...
-      </main>
+      <StorefrontLoadingState
+        mode="product"
+        title="Memuat produk"
+        description="Mengambil detail parfum, varian ukuran, foto, dan stok terbaru."
+      />
     );
   }
 

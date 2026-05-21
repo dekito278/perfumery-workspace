@@ -8,6 +8,7 @@ import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import StudioLoadingState from '@/components/StudioLoadingState.jsx';
+import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
@@ -106,6 +107,22 @@ const isDesktopProtectedRoute = (pathname) => (
   && desktopProtectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 );
 
+const storefrontRoutePrefixes = [
+  '/home',
+  '/catalog',
+  '/products',
+  '/articles',
+  '/bespoke',
+  '/cart',
+  '/payment',
+  '/customer',
+];
+
+const isStorefrontRoute = (pathname) => (
+  !pathname.startsWith('/mobile')
+  && storefrontRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+);
+
 const RouteFallback = () => {
   const { pathname } = useLocation();
 
@@ -119,6 +136,16 @@ const RouteFallback = () => {
           />
         </div>
       </AuthenticatedLayout>
+    );
+  }
+
+  if (isStorefrontRoute(pathname)) {
+    return (
+      <StorefrontLoadingState
+        title="Preparing storefront"
+        description="Menjaga header dan konten tetap terlihat saat halaman web berpindah."
+        mode={pathname.startsWith('/products/') ? 'product' : 'page'}
+      />
     );
   }
 
