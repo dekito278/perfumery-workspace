@@ -151,6 +151,7 @@ const MobileBespokePage = () => {
   const [shippingError, setShippingError] = useState('');
   const [form, setForm] = useState({
     customerCode: '',
+    perfumeName: '',
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0],
     size: bottleSizeOptions[0]?.value || '',
@@ -162,6 +163,7 @@ const MobileBespokePage = () => {
     customerName: '',
     contact: '',
     deliveryAddress: '',
+    preorderAcknowledged: false,
     ...savedForm,
   });
 
@@ -385,7 +387,7 @@ const MobileBespokePage = () => {
       const destinations = await searchShippingDestinations(search);
       if (autoSelectBest && destinations.length) {
         await loadShippingRates(destinations[0], { courierCode, autoSelectCheapest: true });
-        setDestinationOptions(destinations.slice(1));
+        setDestinationOptions([]);
         setShippingError('');
         return;
       }
@@ -720,11 +722,11 @@ const MobileBespokePage = () => {
             );
           })}
           <div className="rounded-2xl border border-[#263d27]/10 bg-white px-4 py-3 text-xs font-bold text-[#263d27]">
-            Total bayar: {formatRupiah(totalDue)}
+            Total bayar dikonfirmasi setelah brief
           </div>
         </div>
       ),
-      isComplete: () => Boolean(form.paymentMethod),
+      isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
   ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, visibleShippingOptions]);
 
@@ -733,9 +735,15 @@ const MobileBespokePage = () => {
       key: 'aroma',
       title: 'Brief aroma',
       shortLabel: 'Aroma',
-      description: 'Ceritakan arah aroma, lalu pilih momen pemakaian.',
+      description: 'Beri nama parfum, lalu ceritakan arah aroma dan momen pemakaian.',
       render: () => (
         <div className="grid gap-3">
+          <input
+            value={form.perfumeName}
+            onChange={(event) => updateField('perfumeName', event.target.value)}
+            placeholder="Nama parfum, contoh: After Rain"
+            className="mobile-commerce-control h-12 px-3 text-sm font-semibold text-[#0b130c]"
+          />
           <textarea
             value={form.scentDescription}
             onChange={(event) => updateField('scentDescription', event.target.value)}
@@ -772,7 +780,7 @@ const MobileBespokePage = () => {
           </div>
         </div>
       ),
-      isComplete: () => form.scentDescription.trim().length > 3 && Boolean(form.occasion),
+      isComplete: () => form.perfumeName.trim().length > 1 && form.scentDescription.trim().length > 3 && Boolean(form.occasion),
     },
     {
       key: 'package',
@@ -890,7 +898,7 @@ const MobileBespokePage = () => {
             </Button>
           </div>
           {selectedDestination ? <p className="rounded-2xl bg-[#eef2e8] px-3 py-2 text-[11px] font-bold text-[#263d27]">Area: {selectedDestination.label}</p> : null}
-          {destinationOptions.length ? (
+          {destinationOptions.length && !selectedDestination ? (
             <div className="grid gap-2">
               {destinationOptions.map((destination) => (
                 <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="mobile-commerce-choice px-3 py-2 text-xs font-bold text-[#263d27]">{destination.label}</button>
@@ -926,9 +934,10 @@ const MobileBespokePage = () => {
       render: () => (
         <div className="grid gap-3">
           <div className="mobile-commerce-summary p-4 text-xs font-bold text-[#263d27]">
-            <div className="flex justify-between gap-3"><span>Custom perfume</span><span>{formatRupiah(estimatedTotal)}</span></div>
+            <div className="flex justify-between gap-3"><span>Nama parfum</span><span>{form.perfumeName || '-'}</span></div>
+            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Custom perfume</span><span>Dikonfirmasi Studio</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
-            <div className="mt-3 flex justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-sm text-[#0b130c]"><span>Total bayar</span><span>{formatRupiah(totalDue)}</span></div>
+            <div className="mt-3 flex justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-sm text-[#0b130c]"><span>Total bayar</span><span>Dikonfirmasi setelah brief</span></div>
             <p className="mt-3 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{budgetSummary}</p>
           </div>
           {checkoutPaymentMethods.map((method) => {
@@ -944,9 +953,23 @@ const MobileBespokePage = () => {
               </button>
             );
           })}
+          <label className={cn('mobile-commerce-choice flex items-start gap-3 px-4 py-4', form.preorderAcknowledged ? 'is-active' : 'text-[#6b7280]')}>
+            <input
+              type="checkbox"
+              checked={Boolean(form.preorderAcknowledged)}
+              onChange={(event) => updateField('preorderAcknowledged', event.target.checked)}
+              className="mt-1 h-4 w-4 accent-[#263d27]"
+            />
+            <span>
+              <span className="block text-sm font-bold text-[#0b130c]">Konfirmasi pre-order</span>
+              <span className="mt-1 block text-[11px] font-semibold leading-relaxed">
+                Saya memahami bahwa bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
+              </span>
+            </span>
+          </label>
         </div>
       ),
-      isComplete: () => Boolean(form.paymentMethod),
+      isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
   ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, visibleShippingOptions]);
 
@@ -1118,6 +1141,9 @@ const MobileBespokePage = () => {
           <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
             Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat.
           </p>
+          <div className="mt-2 inline-flex rounded-full bg-[#263d27] px-2.5 py-1 text-[10px] font-bold uppercase text-white">
+            Pre-order / 7-14 hari
+          </div>
           {referenceProduct ? (
             <div className="mobile-commerce-panel mt-3 border-0 p-3 text-xs font-bold text-[#0b130c]">
               Referensi aroma: <span className="text-[#263d27]">{referenceProduct.name}</span>
@@ -1166,11 +1192,12 @@ const MobileBespokePage = () => {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-sm font-bold text-[#0b130c]">Brief ringkas</h2>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-[#263d27]">{form.perfumeName || 'Nama parfum belum diisi.'}</p>
                 <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{form.scentDescription || 'Aroma belum diisi.'}</p>
               </div>
               <div className="shrink-0 text-right">
-                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Total</div>
-                <div className="text-sm font-bold text-[#263d27]">{formatRupiah(totalDue)}</div>
+                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Pre-order</div>
+                <div className="text-sm font-bold text-[#263d27]">7-14 hari</div>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-[#6b7280]">
@@ -1193,12 +1220,13 @@ const MobileBespokePage = () => {
                   <p><strong className="text-[#0b130c]">Kode customer:</strong> {submittedRequest.customerCode || '-'}</p>
                   <p><strong className="text-[#0b130c]">Studio order:</strong> {submittedRequest.orderNumber}</p>
                   <p><strong className="text-[#0b130c]">Kontak:</strong> {submittedRequest.contact}</p>
+                  <p><strong className="text-[#0b130c]">Nama parfum:</strong> {submittedRequest.perfumeName || '-'}</p>
                   <p><strong className="text-[#0b130c]">Aroma:</strong> {submittedRequest.scentDescription}</p>
                   <p><strong className="text-[#0b130c]">Botol:</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
                   {submittedRequest.exoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {submittedRequest.exoticMaterial}</p> : null}
                   <p><strong className="text-[#0b130c]">Budget:</strong> {submittedRequest.budget}</p>
                   <p><strong className="text-[#0b130c]">Ongkir:</strong> {submittedRequest.shipping || '-'}</p>
-                  <p><strong className="text-[#0b130c]">Total bayar:</strong> {submittedRequest.totalDue || submittedRequest.budget}</p>
+                  <p><strong className="text-[#0b130c]">Pre-order:</strong> 7-14 hari setelah brief dikonfirmasi</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>
