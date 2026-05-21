@@ -321,6 +321,10 @@ function AppRoutes() {
           <Navigate to="/mobile/dashboard" replace />
         } />
 
+        <Route path="/mobile/home" element={
+          <Navigate to="/mobile/dashboard" replace />
+        } />
+
         <Route path="/mobile/dashboard" element={<MobileCommerceTabsPage />} />
 
         <Route path="/mobile/catalog" element={<MobileCommerceTabsPage />} />
