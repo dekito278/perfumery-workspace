@@ -238,6 +238,7 @@ const BespokePage = () => {
   const [shippingError, setShippingError] = useState('');
   const [form, setForm] = useState({
     customerCode: '',
+    perfumeName: '',
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0],
     size: bottleSizeOptions[0]?.value || '',
@@ -249,6 +250,7 @@ const BespokePage = () => {
     customerName: '',
     contact: '',
     deliveryAddress: '',
+    preorderAcknowledged: false,
     ...savedForm,
   });
 
@@ -495,10 +497,19 @@ const BespokePage = () => {
       key: 'aroma',
       shortLabel: 'Aroma',
       title: 'Brief aroma',
-      description: 'Ceritakan karakter scent dan momen pemakaian.',
-      isComplete: () => form.scentDescription.trim().length > 3 && Boolean(form.occasion),
+      description: 'Beri nama parfum, lalu ceritakan karakter scent dan momen pemakaian.',
+      isComplete: () => form.perfumeName.trim().length > 1 && form.scentDescription.trim().length > 3 && Boolean(form.occasion),
       render: () => (
         <div className="grid gap-5">
+          <label>
+            <span className="text-xs font-bold uppercase text-[#6b7280]">Nama parfum</span>
+            <input
+              value={form.perfumeName}
+              onChange={(event) => updateField('perfumeName', event.target.value)}
+              placeholder="Contoh: After Rain, Morning Letter, Kayu Senja"
+              className="mt-2 h-12 w-full rounded-2xl border border-[#263d27]/15 bg-white px-4 text-base font-semibold text-[#0b130c] outline-none focus:border-[#263d27]"
+            />
+          </label>
           <label>
             <span className="text-xs font-bold uppercase text-[#6b7280]">Cerita aroma</span>
             <textarea
@@ -751,7 +762,7 @@ const BespokePage = () => {
       shortLabel: 'Bayar',
       title: 'Review dan pembayaran',
       description: 'Cek total dan pilih metode pembayaran.',
-      isComplete: () => Boolean(form.paymentMethod),
+      isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
       render: () => (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="grid gap-3">
@@ -785,6 +796,24 @@ const BespokePage = () => {
                 </button>
               );
             })}
+            <label className={cn(
+              'flex items-start gap-3 rounded-3xl border px-5 py-4 text-left transition',
+              form.preorderAcknowledged ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'
+            )}
+            >
+              <input
+                type="checkbox"
+                checked={Boolean(form.preorderAcknowledged)}
+                onChange={(event) => updateField('preorderAcknowledged', event.target.checked)}
+                className="mt-1 h-4 w-4 accent-[#263d27]"
+              />
+              <span>
+                <span className="block text-sm font-bold text-[#0b130c]">Konfirmasi pre-order</span>
+                <span className="mt-1 block text-sm font-semibold leading-relaxed text-[#6b7280]">
+                  Saya memahami bahwa bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
+                </span>
+              </span>
+            </label>
           </div>
           <div className="rounded-3xl border border-[#263d27]/10 bg-white p-5">
             <div className="flex items-center gap-2 text-sm font-bold text-[#0b130c]">
@@ -792,6 +821,7 @@ const BespokePage = () => {
               Ringkasan
             </div>
             <div className="mt-4 grid gap-3">
+              <SummaryLine label="Nama parfum" value={form.perfumeName || '-'} />
               <SummaryLine label="Custom perfume" value="Dikonfirmasi Studio" />
               <SummaryLine label="Ongkir" value={shippingFee ? formatRupiah(shippingFee) : '-'} />
               <div className="border-t border-[#263d27]/10 pt-3">
@@ -830,7 +860,9 @@ const BespokePage = () => {
       const order = await createBespokeRequest({
         ...form,
         deliveryArea: selectedDestination?.label || destinationSearch,
+        perfumeName: form.perfumeName,
         preferredNotes: form.scentDescription,
+        preorderAcknowledged: form.preorderAcknowledged,
         budget: formatRupiah(estimatedTotal),
         itemPrice: estimatedTotal,
         estimatedTotal,
@@ -965,6 +997,9 @@ const BespokePage = () => {
               <p className="mt-4 text-sm font-semibold leading-relaxed text-[#6b7280]">
                 Flow desktop sekarang mengikuti pola mobile: brief, pilihan botol, pengiriman, lalu payment.
               </p>
+              <div className="mt-4 inline-flex items-center rounded-full bg-[#263d27] px-3 py-1 text-xs font-bold uppercase text-white">
+                Pre-order / 7-14 hari
+              </div>
               {referenceProduct ? (
                 <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4 text-sm font-bold">
                   Referensi aroma: <span className="text-[#263d27]">{referenceProduct.name}</span>
@@ -989,6 +1024,7 @@ const BespokePage = () => {
                 Live summary
               </div>
               <div className="mt-4 grid gap-3">
+                <SummaryLine label="Nama" value={form.perfumeName || '-'} />
                 <SummaryLine label="Aroma" value={form.scentDescription.trim() ? form.scentDescription.slice(0, 58) : '-'} />
                 <SummaryLine label="Occasion" value={form.occasion} />
                 <SummaryLine label="Package" value={budgetSummary} />

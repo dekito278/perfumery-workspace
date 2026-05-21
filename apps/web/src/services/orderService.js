@@ -527,6 +527,7 @@ const buildBespokeCheckoutDraft = ({
   contact,
   deliveryAddress,
   deliveryArea,
+  perfumeName,
   referenceProductName,
   mood,
   occasion,
@@ -544,6 +545,7 @@ const buildBespokeCheckoutDraft = ({
   shippingSummary,
   shippingFee,
   totalPrice,
+  preorderAcknowledged,
 }) => [
   'Solivagant Bespoke Request',
   customerCode ? formatLine('Customer code', customerCode) : '',
@@ -551,6 +553,7 @@ const buildBespokeCheckoutDraft = ({
   formatLine('Contact', contact),
   formatLine('Address', deliveryAddress),
   formatLine('Area', deliveryArea),
+  formatLine('Perfume name', perfumeName),
   formatLine('Reference scent', referenceProductName),
   formatLine('Mood', mood),
   formatLine('Occasion', occasion),
@@ -566,12 +569,14 @@ const buildBespokeCheckoutDraft = ({
   formatLine('Shipping', shippingSummary),
   shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
   totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
+  formatLine('Pre-order acknowledgement', preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
   formatLine('Payment rail', paymentProvider || 'manual'),
 ].filter((line) => line !== '').join('\n');
 
 const buildBespokeNotes = ({
   deliveryAddress,
   deliveryArea,
+  perfumeName,
   mood,
   occasion,
   budget,
@@ -588,9 +593,11 @@ const buildBespokeNotes = ({
   shippingFee,
   totalPrice,
   referenceProductName,
+  preorderAcknowledged,
 }) => [
   formatLine('Address', deliveryAddress),
   formatLine('Area', deliveryArea),
+  formatLine('Perfume name', perfumeName),
   formatLine('Mood', mood),
   formatLine('Occasion', occasion),
   formatLine('Budget', budget),
@@ -605,6 +612,7 @@ const buildBespokeNotes = ({
   formatLine('Shipping', shippingSummary),
   shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
   totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
+  formatLine('Pre-order acknowledgement', preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
   formatLine('Reference scent', referenceProductName),
 ].join('\n');
 
@@ -1245,18 +1253,20 @@ export const createBespokeRequest = async (requestData) => {
     customerName: requestData.customerName || requestData.name,
   };
   const aromaBrief = normalizedRequest.preferredNotes || normalizedRequest.scentDescription || normalizedRequest.mood || 'Custom aroma brief';
+  const perfumeName = String(normalizedRequest.perfumeName || '').trim();
   const totalPrice = Number(normalizedRequest.totalPrice || normalizedRequest.estimatedTotal || 0);
   const itemPrice = Number(normalizedRequest.itemPrice || normalizedRequest.estimatedTotal || totalPrice || 0);
   const item = {
     slug: 'bespoke-perfume-request',
     type: BESPOKE_SOURCE,
-    name: 'Bespoke perfume request',
+    name: perfumeName ? `Bespoke perfume: ${perfumeName}` : 'Bespoke perfume request',
     quantity: 1,
     price: itemPrice ? `Rp ${new Intl.NumberFormat('id-ID').format(itemPrice)}` : normalizedRequest.budget || 'Custom quote',
     priceNumber: itemPrice,
     size: normalizedRequest.size || '-',
     notes: aromaBrief,
     mood: normalizedRequest.mood || '',
+    perfumeName,
     occasion: normalizedRequest.occasion || '',
     budget: normalizedRequest.budget || '',
     totalPrice: itemPrice,
@@ -1267,6 +1277,7 @@ export const createBespokeRequest = async (requestData) => {
     capDesign: normalizedRequest.capDesign || '',
     labelDesign: normalizedRequest.labelDesign || '',
     exoticMaterial: normalizedRequest.exoticMaterial || '',
+    preorderAcknowledged: Boolean(normalizedRequest.preorderAcknowledged),
     referenceProductName: normalizedRequest.referenceProductName || '',
     referenceProductSlug: normalizedRequest.referenceProductSlug || '',
   };
