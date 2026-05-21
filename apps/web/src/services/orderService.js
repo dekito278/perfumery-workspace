@@ -546,6 +546,8 @@ const buildBespokeCheckoutDraft = ({
   shippingFee,
   totalPrice,
   preorderAcknowledged,
+  voucherCode,
+  voucherDiscount,
 }) => [
   'Solivagant Bespoke Request',
   customerCode ? formatLine('Customer code', customerCode) : '',
@@ -568,6 +570,8 @@ const buildBespokeCheckoutDraft = ({
   formatLine('Exotic material', exoticMaterial),
   formatLine('Shipping', shippingSummary),
   shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
+  voucherCode ? formatLine('Voucher', voucherCode) : '',
+  voucherDiscount ? formatLine('Voucher discount', `Rp ${new Intl.NumberFormat('id-ID').format(Number(voucherDiscount || 0))}`) : '',
   totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
   formatLine('Pre-order acknowledgement', preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
   formatLine('Payment rail', paymentProvider || 'manual'),
@@ -594,6 +598,8 @@ const buildBespokeNotes = ({
   totalPrice,
   referenceProductName,
   preorderAcknowledged,
+  voucherCode,
+  voucherDiscount,
 }) => [
   formatLine('Address', deliveryAddress),
   formatLine('Area', deliveryArea),
@@ -611,6 +617,8 @@ const buildBespokeNotes = ({
   formatLine('Exotic material', exoticMaterial),
   formatLine('Shipping', shippingSummary),
   shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
+  voucherCode ? formatLine('Voucher', voucherCode) : '',
+  voucherDiscount ? formatLine('Voucher discount', `Rp ${new Intl.NumberFormat('id-ID').format(Number(voucherDiscount || 0))}`) : '',
   totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
   formatLine('Pre-order acknowledgement', preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
   formatLine('Reference scent', referenceProductName),
@@ -1260,6 +1268,7 @@ export const createBespokeRequest = async (requestData) => {
     slug: 'bespoke-perfume-request',
     type: BESPOKE_SOURCE,
     name: perfumeName ? `Bespoke perfume: ${perfumeName}` : 'Bespoke perfume request',
+    category: 'Bespoke',
     quantity: 1,
     price: itemPrice ? `Rp ${new Intl.NumberFormat('id-ID').format(itemPrice)}` : normalizedRequest.budget || 'Custom quote',
     priceNumber: itemPrice,
@@ -1295,7 +1304,7 @@ export const createBespokeRequest = async (requestData) => {
     checkoutDraft: buildBespokeCheckoutDraft(normalizedRequest),
     paymentProvider: normalizedRequest.paymentProvider || 'manual',
     source: BESPOKE_SOURCE,
-    voucherSnapshot: null,
+    voucherSnapshot: normalizedRequest.voucherSnapshot || null,
   });
 };
 

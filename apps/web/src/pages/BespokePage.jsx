@@ -10,7 +10,9 @@ import {
   PackageCheck,
   Send,
   Sparkles,
+  Ticket,
   WandSparkles,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
@@ -20,6 +22,7 @@ import {
   bespokeOccasionOptions,
 } from '@/data/storefront.js';
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
+import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
 import { checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment } from '@/services/cartService.js';
@@ -28,11 +31,17 @@ import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { createBespokeRequest, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import {
+  recordVoucherUsageForOrder,
+  applyVoucherToSubtotalAsync,
+  clearAppliedVoucherCode,
+} from '@/services/voucherService.js';
+import {
   describeShippingRate,
   getCheckoutShippingWeight,
   getShippingRates,
   searchShippingDestinations,
 } from '@/services/shippingService.js';
+import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 const BESPOKE_DRAFT_STORAGE_KEY = 'dekito.storefront.bespokeDraft.v1';
@@ -307,8 +316,16 @@ const BespokePage = () => {
     + Number(selectedCap?.price || 0)
     + Number(selectedLabel?.price || 0)
     + Number(selectedExoticMaterial?.price || 0);
+  const bespokeVoucherItems = useMemo(() => [{
+    slug: 'bespoke-perfume-request',
+    productSlug: 'bespoke-perfume-request',
+    category: 'Bespoke',
+    name: 'Bespoke perfume request',
+    quantity: 1,
+    priceNumber: estimatedTotal,
+  }], [estimatedTotal]);
+  const voucher = useAppliedVoucher(estimatedTotal, bespokeVoucherItems);
   const shippingFee = Number(selectedShipping?.cost || 0);
-  const totalDue = estimatedTotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight([{ quantity: 1 }]), []);
   const visibleShippingOptions = selectedCourier
@@ -766,6 +783,36 @@ const BespokePage = () => {
       render: () => (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="grid gap-3">
+            <div className="rounded-3xl border border-[#263d27]/10 bg-white p-5">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#0b130c]">
+                <Ticket className="h-4 w-4 text-[#263d27]" />
+                Voucher
+              </div>
+              <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                <input
+                  value={voucher.inputCode}
+                  onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                  placeholder="Kode voucher"
+                  className="h-12 min-w-0 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold uppercase outline-none focus:border-[#263d27]"
+                />
+                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={voucher.applyVoucher} disabled={voucher.loading}>
+                  {voucher.loading ? 'Cek...' : 'Pakai'}
+                </Button>
+              </div>
+              {voucher.appliedVoucher ? (
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] px-4 py-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
+                    <div className="mt-0.5 text-xs font-semibold text-[#51624b]">Potongan voucher masuk ke nominal pembayaran tanpa menampilkan harga bespoke.</div>
+                  </div>
+                  <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : voucher.message ? (
+                <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">{voucher.message}</p>
+              ) : null}
+            </div>
             {checkoutPaymentMethods.map((method) => {
               const active = form.paymentMethod === method.id;
               return (
@@ -823,6 +870,7 @@ const BespokePage = () => {
             <div className="mt-4 grid gap-3">
               <SummaryLine label="Nama parfum" value={form.perfumeName || '-'} />
               <SummaryLine label="Custom perfume" value="Dikonfirmasi Studio" />
+              <SummaryLine label="Voucher" value={voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'} />
               <SummaryLine label="Ongkir" value={shippingFee ? formatRupiah(shippingFee) : '-'} />
               <div className="border-t border-[#263d27]/10 pt-3">
                 <SummaryLine label="Total bayar" value="Dikonfirmasi setelah brief" />
@@ -857,6 +905,24 @@ const BespokePage = () => {
     setSaving(true);
     let createdOrder = null;
     try {
+      const voucherValidation = voucher.appliedCode
+        ? await applyVoucherToSubtotalAsync({ code: voucher.appliedCode, subtotal: estimatedTotal, items: bespokeVoucherItems })
+        : null;
+      if (voucher.appliedCode && !voucherValidation?.valid) {
+        throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan');
+      }
+      const checkoutVoucherDiscount = voucherValidation?.discountAmount || 0;
+      const checkoutDiscountedEstimatedTotal = Math.max(estimatedTotal - checkoutVoucherDiscount, 0);
+      const checkoutTotalDue = checkoutDiscountedEstimatedTotal + shippingFee;
+      const voucherSnapshot = buildVoucherSnapshot({
+        voucher: voucherValidation?.voucher || voucher.appliedVoucher,
+        voucherCode: voucher.appliedCode,
+        discountAmount: checkoutVoucherDiscount,
+        subtotalBeforeDiscount: estimatedTotal,
+        subtotalAfterDiscount: checkoutDiscountedEstimatedTotal,
+        eligibleSubtotal: voucherValidation?.eligibleSubtotal,
+        eligibleQuantity: voucherValidation?.eligibleQuantity,
+      });
       const order = await createBespokeRequest({
         ...form,
         deliveryArea: selectedDestination?.label || destinationSearch,
@@ -868,8 +934,11 @@ const BespokePage = () => {
         estimatedTotal,
         shippingFee,
         shippingSummary,
-        totalPrice: totalDue,
+        totalPrice: checkoutTotalDue,
         paymentProvider: selectedPaymentMethod.provider,
+        voucherCode: voucherSnapshot?.code || '',
+        voucherDiscount: checkoutVoucherDiscount,
+        voucherSnapshot,
         referenceProductName: referenceProduct?.name || '',
         referenceProductSlug: referenceProduct?.slug || '',
       });
@@ -881,7 +950,7 @@ const BespokePage = () => {
           bankName: selectedPaymentMethod.bankName,
           accountNumber: selectedPaymentMethod.accountNumber,
           accountName: selectedPaymentMethod.accountName,
-          amount: totalDue,
+          amount: checkoutTotalDue,
         };
         await updateOrderPaymentStatus(order.id || order.orderNumber, {
           paymentStatus: 'pending',
@@ -900,23 +969,35 @@ const BespokePage = () => {
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || form.customerCode,
-          amount: totalDue,
+          amount: checkoutTotalDue,
           customerName: form.customerName,
           paymentStatus: 'pending',
           manualTransfer: manualPaymentResponse,
           shippingSummary,
           shippingFee,
+          voucherCode: voucherSnapshot?.code || '',
+          voucherDiscount: checkoutVoucherDiscount,
+          voucherSnapshot,
           createdAt: new Date().toISOString(),
         }));
+        if (voucherSnapshot?.code) {
+          await recordVoucherUsageForOrder({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            voucherSnapshot,
+            items: bespokeVoucherItems,
+          });
+        }
         toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
         clearBespokeDraft();
+        (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
         navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
       }
 
       const checkout = await createDokuCheckout({
         order,
-        amount: totalDue,
+        amount: checkoutTotalDue,
         customerName: form.customerName,
         contact: form.contact,
         items: order.items || [],
@@ -940,17 +1021,29 @@ const BespokePage = () => {
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
-        amount: totalDue,
+        amount: checkoutTotalDue,
         customerName: form.customerName,
         paymentStatus: 'pending',
         paymentExpiresAt: checkout.paymentExpiresAt || '',
         paymentSessionId: checkout.paymentSessionId || '',
         shippingSummary,
         shippingFee,
+        voucherCode: voucherSnapshot?.code || '',
+        voucherDiscount: checkoutVoucherDiscount,
+        voucherSnapshot,
         createdAt: new Date().toISOString(),
       }));
+      if (voucherSnapshot?.code) {
+        await recordVoucherUsageForOrder({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          voucherSnapshot,
+          items: bespokeVoucherItems,
+        });
+      }
       toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
       clearBespokeDraft();
+      (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
       navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
       if (createdOrder) {
