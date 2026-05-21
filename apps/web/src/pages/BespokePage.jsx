@@ -463,7 +463,7 @@ const BespokePage = () => {
       const destinations = await searchShippingDestinations(search);
       if (autoSelectBest && destinations.length) {
         await loadShippingRates(destinations[0], { courierCode, autoSelectCheapest: true });
-        setDestinationOptions(destinations.slice(1));
+        setDestinationOptions([]);
         setShippingError('');
         return;
       }
@@ -716,7 +716,7 @@ const BespokePage = () => {
               {shippingLoading ? 'Menghitung...' : selectedDestination ? 'Tampilkan ongkir' : 'Cari ongkir'}
             </Button>
             {selectedDestination ? <p className="rounded-2xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">Area: {selectedDestination.label}</p> : null}
-            {destinationOptions.length ? (
+            {destinationOptions.length && !selectedDestination ? (
               <div className="grid gap-2">
                 {destinationOptions.map((destination) => (
                   <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="rounded-2xl border border-[#263d27]/10 bg-white px-3 py-3 text-left text-xs font-bold text-[#263d27]">
