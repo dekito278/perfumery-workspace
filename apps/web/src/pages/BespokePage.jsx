@@ -552,7 +552,6 @@ const BespokePage = () => {
                     key={option.value}
                     active={form.size === option.value}
                     imageUrl={option.imageUrl}
-                    meta={Number(option.price || 0) ? formatRupiah(option.price) : ''}
                     onClick={() => updateField('size', option.value)}
                   >
                     {option.label}
@@ -569,7 +568,6 @@ const BespokePage = () => {
                     active={form.bottleType === option.value}
                     description={option.description}
                     imageUrl={option.imageUrl}
-                    meta={Number(option.price || 0) ? `+ ${formatRupiah(option.price)}` : ''}
                     onClick={() => updateField('bottleType', option.value)}
                   >
                     {option.label}
@@ -587,7 +585,6 @@ const BespokePage = () => {
                       active={form.capDesign === option.value}
                       description={option.description}
                       imageUrl={option.imageUrl}
-                      meta={Number(option.price || 0) ? `+ ${formatRupiah(option.price)}` : ''}
                       onClick={() => updateField('capDesign', option.value)}
                     >
                       {option.label}
@@ -604,7 +601,6 @@ const BespokePage = () => {
                       active={form.labelDesign === option.value}
                       description={option.description}
                       imageUrl={option.imageUrl}
-                      meta={Number(option.price || 0) ? `+ ${formatRupiah(option.price)}` : ''}
                       onClick={() => updateField('labelDesign', option.value)}
                     >
                       {option.label}
@@ -625,7 +621,6 @@ const BespokePage = () => {
                       key={option.value}
                       active={form.exoticMaterial === option.value}
                       imageUrl={option.imageUrl}
-                      meta={Number(option.price || 0) ? `+ ${formatRupiah(option.price)}` : ''}
                       onClick={() => updateField('exoticMaterial', option.value)}
                     >
                       {option.label}
@@ -797,10 +792,10 @@ const BespokePage = () => {
               Ringkasan
             </div>
             <div className="mt-4 grid gap-3">
-              <SummaryLine label="Custom perfume" value={formatRupiah(estimatedTotal)} />
+              <SummaryLine label="Custom perfume" value="Dikonfirmasi Studio" />
               <SummaryLine label="Ongkir" value={shippingFee ? formatRupiah(shippingFee) : '-'} />
               <div className="border-t border-[#263d27]/10 pt-3">
-                <SummaryLine label="Total bayar" value={formatRupiah(totalDue)} />
+                <SummaryLine label="Total bayar" value="Dikonfirmasi setelah brief" />
               </div>
               <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-[#6b7280]">{budgetSummary}</p>
             </div>
@@ -998,9 +993,6 @@ const BespokePage = () => {
                 <SummaryLine label="Occasion" value={form.occasion} />
                 <SummaryLine label="Package" value={budgetSummary} />
                 <SummaryLine label="Shipping" value={shippingSummary || '-'} />
-                <div className="border-t border-[#263d27]/10 pt-3">
-                  <SummaryLine label="Total" value={formatRupiah(totalDue)} />
-                </div>
               </div>
             </div>
           </aside>
