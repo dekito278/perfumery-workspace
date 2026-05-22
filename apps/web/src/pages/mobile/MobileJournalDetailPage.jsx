@@ -41,12 +41,13 @@ const getReadingMinutes = (content) => {
 const MobileJournalDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getJournalPostById, loading, error } = useJournalPosts();
+  const { getJournalPostById, updateJournalPost, loading, error } = useJournalPosts();
   const { getFormulas } = useFormulas();
   const [post, setPost] = useState(null);
   const [formulas, setFormulas] = useState([]);
   const [loadError, setLoadError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -104,6 +105,27 @@ const MobileJournalDetailPage = () => {
   };
 
   const handleRetry = () => setReloadKey((current) => current + 1);
+
+  const handlePublish = async () => {
+    if (!post?.id || publishing) {
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      const savedPost = await updateJournalPost(post.id, {
+        ...post,
+        status: 'published',
+        related_formula_id: post.related_formula_id || null,
+      });
+      setPost(savedPost);
+      toast.success('Artikel dipublish dan muncul di halaman Artikel');
+    } catch (err) {
+      toast.error(err.message || 'Artikel belum bisa dipublish');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <MobileAuthenticatedLayout>
@@ -238,12 +260,12 @@ const MobileJournalDetailPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate(publicPath)}
-                  disabled={!publicPath}
+                  onClick={() => (publicPath ? navigate(publicPath) : handlePublish())}
+                  disabled={publishing}
                   className="h-10 rounded-2xl bg-white text-xs font-bold"
                 >
                   {publicPath ? <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
-                  {publicPath ? 'Buka publik' : 'Publish dulu'}
+                  {publicPath ? 'Buka publik' : publishing ? 'Publish...' : 'Publish'}
                 </Button>
               </div>
               {publicUrl ? (

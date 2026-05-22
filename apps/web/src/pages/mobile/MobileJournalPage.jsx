@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenText, CalendarDays, ExternalLink, FileText, Plus, Timer } from 'lucide-react';
+import { BookOpenText, CalendarDays, ExternalLink, FileText, Plus, RefreshCw, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -50,7 +50,7 @@ const getReadingMinutes = (post) => {
 
 const MobileJournalPage = () => {
   const navigate = useNavigate();
-  const { getJournalPosts, loading, error } = useJournalPosts();
+  const { getJournalPosts, updateJournalPost, loading, error } = useJournalPosts();
   const { getFormulas } = useFormulas();
   const [posts, setPosts] = useState([]);
   const [formulas, setFormulas] = useState([]);
@@ -58,6 +58,7 @@ const MobileJournalPage = () => {
   const [category, setCategory] = useState('all');
   const [status, setStatus] = useState('all');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const [publishingId, setPublishingId] = useState('');
 
   const loadJournal = useCallback(async (isActive = () => true) => {
     try {
@@ -127,6 +128,27 @@ const MobileJournalPage = () => {
   }, [category, formulaById, posts, query, status]);
 
   const visiblePosts = getVisibleItems(filteredPosts, visibleCount);
+
+  const handlePublishPost = async (post) => {
+    if (!post?.id || publishingId) {
+      return;
+    }
+
+    setPublishingId(post.id);
+    try {
+      await updateJournalPost(post.id, {
+        ...post,
+        status: 'published',
+        related_formula_id: post.related_formula_id || null,
+      });
+      toast.success('Artikel dipublish dan muncul di halaman Artikel');
+      await loadJournal();
+    } catch (err) {
+      toast.error(err.message || 'Artikel belum bisa dipublish');
+    } finally {
+      setPublishingId('');
+    }
+  };
 
   const categoryOptions = [
     { value: 'all', label: 'All' },
@@ -277,12 +299,12 @@ const MobileJournalPage = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate(publicPath)}
-                      disabled={!publicPath}
+                      onClick={() => (publicPath ? navigate(publicPath) : handlePublishPost(post))}
+                      disabled={publishingId === post.id}
                       className="h-10 rounded-2xl bg-white text-xs font-bold"
                     >
-                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                      {publicPath ? 'Buka publik' : 'Draft'}
+                      {publicPath ? <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
+                      {publicPath ? 'Buka publik' : publishingId === post.id ? 'Publish...' : 'Publish'}
                     </Button>
                   </div>
                 </article>

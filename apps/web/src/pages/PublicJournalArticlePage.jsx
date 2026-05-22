@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays, Copy, ExternalLink, Share2, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
 import {
@@ -144,7 +145,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
     }
   };
 
-  return (
+  const page = (
     <>
       <Helmet>
         <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
@@ -168,7 +169,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
         {jsonLd ? <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> : null}
       </Helmet>
 
-      <main className={`${mobile ? 'mobile-app min-h-screen overflow-x-hidden bg-[#f7f8f2] px-3 pb-8 pt-[calc(env(safe-area-inset-top,0px)+10px)] text-[#111827]' : 'min-h-screen bg-[#f7f8f2] text-[#111827]'}`}>
+      <main className={`${mobile ? 'mobile-page pb-8 text-[#111827]' : 'min-h-screen bg-[#f7f8f2] text-[#111827]'}`}>
         <header className={mobile ? 'mx-auto mb-4 flex w-full max-w-[448px] items-center justify-between gap-3 rounded-[22px] border border-[#d8d5ca] bg-white/90 px-3 py-2.5 shadow-sm' : 'border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]'}>
           <div className={mobile ? 'flex min-w-0 flex-1 items-center gap-3' : 'mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8'}>
             <Link to={mobile ? '/mobile/articles' : '/home'} className="flex min-w-0 items-center gap-3">
@@ -313,6 +314,8 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
       </main>
     </>
   );
+
+  return mobile ? <MobileCommerceLayout>{page}</MobileCommerceLayout> : page;
 };
 
 export default PublicJournalArticlePage;

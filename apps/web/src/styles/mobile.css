@@ -260,9 +260,9 @@
 .mobile-route-transition {
   min-height: inherit;
   animation-duration: var(--mobile-motion-slow);
-  animation-fill-mode: both;
+  animation-fill-mode: none;
   animation-timing-function: var(--mobile-ease-emphasized);
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 .mobile-route-transition-push {
