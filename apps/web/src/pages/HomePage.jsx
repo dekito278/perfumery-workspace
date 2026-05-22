@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import {
   perfumerProfile,
   storefrontSegments,
@@ -39,9 +40,9 @@ const stagger = {
 };
 
 const featureNotes = [
-  { icon: Sparkles, label: 'Quiet Luxury', value: 'Polished signature scents' },
-  { icon: Leaf, label: 'Fine Notes', value: 'Woody, green, citrus, musk' },
-  { icon: Gem, label: 'Personal Fit', value: 'Daily wear to bespoke brief' },
+  { icon: Sparkles, label: 'Quiet luxury', value: 'Signature scent yang polished' },
+  { icon: Leaf, label: 'Notes halus', value: 'Woody, green, citrus, musk' },
+  { icon: Gem, label: 'Personal', value: 'Harian sampai brief custom' },
 ];
 
 const homeAssets = {
@@ -55,18 +56,18 @@ const homeAssets = {
 const atelierFrames = [
   {
     image: homeAssets.rawMaterialShelf,
-    label: 'Material library',
-    title: 'A palette of fine raw materials',
+    label: 'Library material',
+    title: 'Palet raw material pilihan',
   },
   {
     image: homeAssets.perfumerPipettes,
-    label: 'Precision',
-    title: 'Measured by hand, built by memory',
+    label: 'Presisi',
+    title: 'Ditakar manual, dibangun dari memori aroma',
   },
   {
     image: homeAssets.perfumerCylinder,
     label: 'Studio',
-    title: 'Personal scent work from the source',
+    title: 'Aroma personal dari sumbernya',
   },
 ];
 
@@ -80,35 +81,20 @@ const HomePage = () => {
   const hasProducts = products.length > 0;
   const heroProducts = [homeProducts[0] || products[0], homeProducts[1] || products[1], homeProducts[2] || products[2]].filter(Boolean);
   const storefrontStats = [
-    { value: String(products.length), label: 'Scents' },
-    { value: String(limitedProducts.length), label: 'Limited picks' },
-    { value: '1:1', label: 'Bespoke' },
+    { value: String(products.length), label: 'Parfum' },
+    { value: String(limitedProducts.length), label: 'Drop terbatas' },
+    { value: '1:1', label: 'Custom' },
   ];
 
   return (
     <>
       <Helmet>
-        <title>Solivagant - Signature and Bespoke Perfume</title>
-        <meta name="description" content="Solivagant storefront for signature perfume, limited categories, and bespoke perfume requests." />
+        <title>Solivagant - Parfum Signature dan Custom</title>
+        <meta name="description" content="Storefront Solivagant untuk parfum signature, koleksi terbatas, dan request parfum custom." />
       </Helmet>
 
       <main className="min-h-screen overflow-hidden bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="flex items-center gap-3">
-              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-11 w-32 rounded-xl object-contain" />
-              <span className="min-w-0">
-                <span className="sr-only">Solivagant Perfumery</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link to="/cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/8" aria-label="Open cart"><ShoppingBag className="h-4 w-4" /></Link>
-              <Link to="/catalog" className="inline-flex h-10 items-center rounded-2xl border border-white/15 bg-white/8 px-4 text-sm font-bold text-[#eef2e8]">
-                Catalog
-              </Link>
-            </div>
-          </div>
-        </section>
+        <StorefrontHeader />
 
         <section className="relative border-b border-[#263d27]/10">
           <div className="absolute inset-0 bg-[linear-gradient(135deg,#f8f7ef_0%,#edf2e8_48%,#f6efe3_100%)]" />
@@ -124,7 +110,7 @@ const HomePage = () => {
             >
               <motion.div variants={fadeUp} className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/18 bg-white/70 px-3 py-1 text-xs font-bold uppercase text-[#263d27] shadow-sm shadow-[#263d27]/5 backdrop-blur">
                 <UserRound className="h-4 w-4" />
-                {perfumerProfile.name} / Perfumer
+                {perfumerProfile.name} / Peracik parfum
               </motion.div>
               <motion.h1 variants={fadeUp} className="mt-6 max-w-3xl text-4xl font-bold leading-none text-[#081009] sm:text-5xl lg:text-6xl">
                 Signature perfume, made personal.
@@ -136,7 +122,7 @@ const HomePage = () => {
               <motion.div variants={fadeUp} className="mt-6 grid gap-4 rounded-[28px] border border-[#263d27]/12 bg-white/78 p-3 shadow-sm shadow-[#263d27]/5 backdrop-blur sm:grid-cols-[150px_1fr] sm:items-center">
                 <img src={homeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-64 w-full rounded-2xl object-cover object-[58%_34%] sm:h-44" />
                 <div className="p-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8d7a4f]">Meet the perfumer</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8d7a4f]">Kenal perfumer</p>
                   <h2 className="mt-2 text-2xl font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
                   <p className="mt-2 text-sm font-bold text-[#263d27]">{perfumerProfile.title}</p>
                   <p className="mt-3 text-sm font-semibold leading-relaxed text-[#667264]">{perfumerProfile.experienceSummary}</p>
@@ -161,11 +147,11 @@ const HomePage = () => {
 
               <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
                 <Link to="/catalog" className="group inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8] shadow-lg shadow-[#263d27]/20 transition hover:-translate-y-0.5 hover:bg-[#1c301d]">
-                  Shop products
+                  Belanja produk
                   <ShoppingBag className="h-4 w-4 transition group-hover:rotate-6" />
                 </Link>
                 <Link to="/bespoke" className="group inline-flex h-12 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white/80 px-5 text-sm font-bold text-[#0b130c] shadow-sm shadow-[#263d27]/5 transition hover:-translate-y-0.5 hover:bg-white">
-                  Bespoke perfume
+                  Request custom
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                 </Link>
               </motion.div>
@@ -188,7 +174,7 @@ const HomePage = () => {
             >
               <div className="absolute -left-4 top-10 hidden h-[78%] w-px bg-gradient-to-b from-transparent via-[#263d27]/35 to-transparent lg:block" />
               <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-[#263d27]/12 bg-[#050705] px-4 py-3 text-[#eef2e8] shadow-2xl shadow-[#263d27]/15">
-                <span className="text-xs font-bold uppercase tracking-[0.28em]">Inside the atelier</span>
+                <span className="text-xs font-bold uppercase tracking-[0.28em]">Di dalam studio</span>
                 <span className="h-px flex-1 bg-white/14" />
                 <span className="text-xs font-bold uppercase text-[#b7c6b1]">Solivagant</span>
               </div>
@@ -197,8 +183,8 @@ const HomePage = () => {
                   <img src={homeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.08),rgba(5,7,5,0.78))]" />
                   <figcaption className="absolute inset-x-0 bottom-0 p-5 text-[#eef2e8]">
-                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c6d5bf]">Raw material archive</p>
-                    <h2 className="mt-2 max-w-sm text-2xl font-bold leading-tight">Built from real materials, not generic moodboards.</h2>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c6d5bf]">Arsip raw material</p>
+                    <h2 className="mt-2 max-w-sm text-2xl font-bold leading-tight">Dibangun dari material nyata, bukan moodboard generik.</h2>
                   </figcaption>
                 </motion.figure>
 
@@ -207,8 +193,8 @@ const HomePage = () => {
                     <img src={homeAssets.rawMaterialShelf} alt="Solivagant raw material shelf" className="absolute inset-0 h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,5,0.72),rgba(5,7,5,0.1))]" />
                     <figcaption className="absolute bottom-0 left-0 max-w-[72%] p-5 text-[#eef2e8]">
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c6d5bf]">Material library</p>
-                      <h3 className="mt-2 text-xl font-bold leading-tight">Fine materials, clearly selected.</h3>
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c6d5bf]">Library material</p>
+                      <h3 className="mt-2 text-xl font-bold leading-tight">Material pilihan, diseleksi jelas.</h3>
                     </figcaption>
                   </motion.figure>
 
@@ -221,7 +207,7 @@ const HomePage = () => {
                       <WandSparkles className="h-6 w-6 text-[#263d27]" />
                       <div>
                         <h3 className="text-lg font-bold text-[#0b130c]">
-                          {productsLoading ? 'Memuat koleksi parfum.' : 'Bespoke atelier is open'}
+                          {productsLoading ? 'Memuat koleksi parfum.' : 'Atelier custom sudah dibuka'}
                         </h3>
                         <p className="mt-2 text-sm font-semibold leading-relaxed text-[#667264]">
                           {productsLoading ? 'Sebentar, koleksi sedang dimuat.' : 'Mulai dari brief personal sambil katalog produk disiapkan.'}
@@ -244,8 +230,8 @@ const HomePage = () => {
         >
           <motion.div variants={fadeUp} className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Atelier</div>
-              <h2 className="mt-2 text-3xl font-bold text-[#0b130c]">A studio you can see and feel</h2>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Studio</div>
+              <h2 className="mt-2 text-3xl font-bold text-[#0b130c]">Studio yang bisa kamu lihat dan rasakan</h2>
             </div>
           </motion.div>
           <div className="mt-7 grid gap-4 md:grid-cols-3">
@@ -272,11 +258,11 @@ const HomePage = () => {
           >
             <motion.div variants={fadeUp} className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Shop</div>
-                <h2 className="mt-2 text-3xl font-bold text-[#0b130c]">Choose your scent path</h2>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Belanja</div>
+                <h2 className="mt-2 text-3xl font-bold text-[#0b130c]">Pilih jalur aroma kamu</h2>
               </div>
               <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-[#263d27]">
-                View full catalog
+                Lihat katalog lengkap
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -313,8 +299,8 @@ const HomePage = () => {
           >
             <motion.div variants={fadeUp} className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Categories</div>
-                <h2 className="mt-2 text-3xl font-bold">Browse by scent family</h2>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Kategori</div>
+                <h2 className="mt-2 text-3xl font-bold">Jelajahi keluarga aroma</h2>
               </div>
             </motion.div>
             <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -344,8 +330,8 @@ const HomePage = () => {
           >
             <motion.div variants={fadeUp} className="flex items-end justify-between gap-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Featured</div>
-                <h2 className="mt-2 text-3xl font-bold">Featured perfumes</h2>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#263d27]">Pilihan</div>
+                <h2 className="mt-2 text-3xl font-bold">Parfum pilihan</h2>
               </div>
             </motion.div>
             <div className="mt-7 grid gap-5 md:grid-cols-3">
@@ -387,9 +373,9 @@ const HomePage = () => {
             <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.55 }}>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase text-[#b7c6b1]">
                 <WandSparkles className="h-4 w-4" />
-                Bespoke service
+                Layanan custom
               </div>
-              <h2 className="mt-5 max-w-md text-3xl font-bold sm:text-4xl">Custom perfume requests</h2>
+              <h2 className="mt-5 max-w-md text-3xl font-bold sm:text-4xl">Request parfum custom</h2>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 18 }}
@@ -399,15 +385,15 @@ const HomePage = () => {
               className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/20"
             >
               <p className="text-sm font-medium leading-relaxed text-white/78">
-                Share your favorite notes, mood, budget, and occasion. We will shape them into a personal scent brief.
+                Ceritakan notes favorit, mood, budget, dan momen pemakaian. Solivagant akan membentuknya menjadi brief aroma personal.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link to="/bespoke" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#eef2e8] px-5 text-sm font-bold text-[#0b130c] transition hover:-translate-y-0.5">
-                  Create custom brief
+                  Buat brief custom
                   <MessageCircle className="h-4 w-4" />
                 </Link>
                 <Link to="/catalog" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/15 px-5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10">
-                  Explore catalog
+                  Lihat katalog
                   <ShoppingBag className="h-4 w-4" />
                 </Link>
               </div>

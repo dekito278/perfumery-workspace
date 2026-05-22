@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -74,19 +75,12 @@ const ProductDetailPage = () => {
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
       </Helmet>
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to={previewMode ? previewBackTo : '/catalog'} className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
-              <ArrowLeft className="h-4 w-4" />
-              {previewMode ? 'Kembali ke editor' : 'Katalog'}
-            </Link>
-            {previewMode ? (
-              <span className="rounded-2xl border border-amber-200/40 bg-amber-300/15 px-4 py-2 text-sm font-bold text-amber-100">Preview draft</span>
-            ) : (
-              <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Keranjang</Link>
-            )}
-          </div>
-        </section>
+        <StorefrontHeader
+          backTo={previewMode ? previewBackTo : '/catalog'}
+          backLabel={previewMode ? 'Kembali ke editor' : 'Katalog'}
+          previewLabel={previewMode ? 'Preview draft' : undefined}
+          actions={previewMode ? [] : [{ to: '/cart', label: 'Keranjang' }]}
+        />
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
           <ProductGallery product={product} visualClassName="min-h-[520px] rounded-[28px]" priority />
           <div>

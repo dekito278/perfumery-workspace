@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, CheckCircle2, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, updateOrderPaymentStatus } from '@/services/orderService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -807,15 +808,7 @@ const PaymentPageContent = ({ isMobile }) => {
         <title>Payment - Solivagant</title>
       </Helmet>
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <button type="button" onClick={() => navigate('/cart')} className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
-              <ArrowLeft className="h-4 w-4" />
-              Keranjang
-            </button>
-            <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Beranda</Link>
-          </div>
-        </section>
+        <StorefrontHeader backLabel="Keranjang" onBack={() => navigate('/cart')} actions={[{ to: '/home', label: 'Beranda' }]} />
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} onProofSubmitted={setSession} />

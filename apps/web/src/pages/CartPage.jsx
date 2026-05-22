@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import { BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
@@ -139,12 +140,7 @@ const CartPage = () => {
         <title>Cart - Solivagant</title>
       </Helmet>
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]"><ArrowLeft className="h-4 w-4" />Katalog</Link>
-            <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Beranda</Link>
-          </div>
-        </section>
+        <StorefrontHeader backTo="/catalog" backLabel="Katalog" actions={[{ to: '/home', label: 'Beranda' }]} />
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.8fr] lg:px-8">
           <div>
             {submittedOrder ? (

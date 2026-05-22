@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
+import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
@@ -1212,8 +1213,8 @@ const CustomerPortalPage = () => {
     return (
       <MobileCommerceLayout>
         <Helmet>
-          <title>Dashboard Customer - Solivagant</title>
-          <meta name="description" content="Check Solivagant order progress with a customer code." />
+          <title>Cek Order - Solivagant</title>
+          <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
         </Helmet>
         <main className="mobile-page space-y-4">
           <section className="mobile-soft-card overflow-hidden">
@@ -1469,16 +1470,11 @@ const CustomerPortalPage = () => {
   return (
     <>
       <Helmet>
-        <title>Customer Dashboard - Solivagant</title>
-        <meta name="description" content="Check Solivagant order progress with a customer code." />
+        <title>Cek Order - Solivagant</title>
+        <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
       </Helmet>
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]"><ArrowLeft className="h-4 w-4" />Beranda</Link>
-            <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Katalog</Link>
-          </div>
-        </section>
+        <StorefrontHeader backTo="/home" backLabel="Beranda" actions={[{ to: '/catalog', label: 'Katalog' }]} />
 
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
           <div className="space-y-5">

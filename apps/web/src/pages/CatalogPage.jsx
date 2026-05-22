@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, PackagePlus, Search, ShoppingBag, WandSparkles } from 'lucide-react';
+import { ArrowRight, PackagePlus, Search, WandSparkles } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import ListPagination from '@/components/ListPagination.jsx';
 import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -73,17 +74,11 @@ const CatalogPage = () => {
         <meta name="description" content="Jelajahi katalog Solivagant berdasarkan aroma, harga, dan profil parfum." />
       </Helmet>
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="inline-flex items-center">
-              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-11 w-32 rounded-xl object-contain" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link to="/cart" className="grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/8" aria-label="Open cart"><ShoppingBag className="h-4 w-4" /></Link>
-              <Link to="/home" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Beranda</Link>
-            </div>
-          </div>
-        </section>
+        <StorefrontHeader actions={[
+          { to: '/cart', label: 'Keranjang', icon: 'cart', iconOnly: true },
+          { to: '/home', label: 'Beranda' },
+        ]}
+        />
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>

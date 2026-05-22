@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   CreditCard,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import {
   bespokeBottleSizeOptions,
   bespokeCapDesignOptions,
@@ -1083,18 +1083,14 @@ const BespokePage = () => {
         <meta name="description" content="Create a bespoke perfume request with aroma, bottle, shipping, and payment flow." />
       </Helmet>
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
-              <ArrowLeft className="h-4 w-4" />
-              Beranda
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Katalog</Link>
-              <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Keranjang</Link>
-            </div>
-          </div>
-        </section>
+        <StorefrontHeader
+          backTo="/home"
+          backLabel="Beranda"
+          actions={[
+            { to: '/catalog', label: 'Katalog' },
+            { to: '/cart', label: 'Keranjang' },
+          ]}
+        />
 
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
           <aside className="lg:sticky lg:top-8 lg:self-start">
@@ -1131,13 +1127,13 @@ const BespokePage = () => {
             <div className="mt-4 rounded-[28px] border border-[#263d27]/10 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 text-sm font-bold text-[#0b130c]">
                 <Sparkles className="h-4 w-4 text-[#263d27]" />
-                Live summary
+                Ringkasan
               </div>
               <div className="mt-4 grid gap-3">
                 <SummaryLine label="Nama" value={form.perfumeName || '-'} />
                 <SummaryLine label="Aroma" value={form.scentDescription.trim() ? form.scentDescription.slice(0, 58) : '-'} />
                 <SummaryLine label="Momen" value={form.occasion} />
-                <SummaryLine label="Package" value={budgetSummary} />
+                <SummaryLine label="Paket" value={budgetSummary} />
                 <SummaryLine label="Ongkir" value={shippingSummary || '-'} />
               </div>
             </div>
