@@ -236,12 +236,12 @@ export const MobileStorefrontContent = ({ active = true }) => {
                     {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
                   </div>
                 </div>
-                <div className="mt-2 flex h-[132px] flex-col">
-                  <div className="h-[52px] min-w-0">
+                <div className="mt-2 flex min-h-[148px] flex-col">
+                  <div className="min-h-[54px] min-w-0">
                     <h3 className="mobile-line-clamp-2 min-h-[30px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
                     <p className="mobile-line-clamp-1 mt-1 min-h-[16px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
                   </div>
-                  <div className="mt-2 grid h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
+                  <div className="mt-2 grid min-h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-bold text-[#0b130c]">{product.price}</div>
                     </div>
@@ -250,12 +250,12 @@ export const MobileStorefrontContent = ({ active = true }) => {
                     </div>
                   </div>
                   <div className="mt-auto pt-2">
-                    <div className="flex h-[24px] flex-wrap gap-1 overflow-hidden">
+                    <div className="flex min-h-[24px] flex-wrap gap-1 overflow-hidden">
                       {getProductSizeLabels(product).map((size) => (
                         <span key={size} className="mobile-commerce-chip max-w-full truncate px-2 py-1 text-[9px]">{size}</span>
                       ))}
                     </div>
-                    <div className="mt-1.5 flex h-[21px] flex-wrap gap-1 overflow-hidden">
+                    <div className="mt-1.5 flex min-h-[22px] flex-wrap gap-1 overflow-hidden">
                       <span className="mobile-commerce-muted-chip max-w-full truncate px-2 py-1 text-[9px] uppercase">
                         {getProductPrimaryTag(product)}
                       </span>

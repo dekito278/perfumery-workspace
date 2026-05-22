@@ -1483,7 +1483,7 @@ const CustomerPortalPage = () => {
                 <UserRound className="h-4 w-4" />
                 Portal customer
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-tight sm:text-5xl">Cek order dengan kode unik.</h1>
+              <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">Cek order dengan kode unik.</h1>
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
                 Lihat status pembayaran, proses produksi, pengiriman, dan detail custom tanpa perlu akun terpisah.
               </p>

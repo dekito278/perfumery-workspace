@@ -1099,7 +1099,7 @@ const BespokePage = () => {
                 <WandSparkles className="h-4 w-4" />
                 Brief custom
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-none lg:text-5xl">Request parfum custom</h1>
+              <h1 className="storefront-display-heading mt-5 text-4xl font-bold lg:text-5xl">Request parfum custom</h1>
               <p className="mt-4 text-sm font-semibold leading-relaxed text-[#6b7280]">
                 Cerita aroma, pilihan botol, delivery, dan payment dalam flow yang sama dengan aplikasi mobile.
               </p>

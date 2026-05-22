@@ -112,7 +112,7 @@ const HomePage = () => {
                 <UserRound className="h-4 w-4" />
                 {perfumerProfile.name} / Peracik parfum
               </motion.div>
-              <motion.h1 variants={fadeUp} className="mt-6 max-w-3xl text-4xl font-bold leading-none text-[#081009] sm:text-5xl lg:text-6xl">
+              <motion.h1 variants={fadeUp} className="storefront-display-heading mt-6 max-w-3xl text-4xl font-bold text-[#081009] sm:text-5xl lg:text-6xl">
                 Signature perfume, made personal.
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-[#4f5f50] sm:text-lg">

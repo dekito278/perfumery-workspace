@@ -1,4 +1,8 @@
 /* Storefront and mobile commerce-specific presentation. Loaded after mobile.css for scoped overrides. */
+.storefront-display-heading {
+  line-height: 1.15 !important;
+}
+
 /* bespoke and checkout mobile storefront shells */
 .mobile-bespoke-page {
   padding-bottom: 92px;
@@ -32,15 +36,16 @@
   align-items: center;
   justify-content: flex-start;
   max-width: 448px;
-  min-height: 64px;
+  min-height: 82px;
   margin: 0 auto 12px;
 }
 
-.mobile-commerce-brand {
+.mobile-commerce-app .mobile-commerce-brand {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
-  height: 64px;
+  height: 82px;
+  min-height: 82px;
   align-items: center;
   overflow: visible;
 }
@@ -366,7 +371,7 @@
 /* mobile catalog cards and skeletons */
 .mobile-catalog-card {
   content-visibility: auto;
-  contain-intrinsic-size: 316px 178px;
+  contain-intrinsic-size: 342px 178px;
   height: 100%;
 }
 
@@ -380,6 +385,12 @@
   height: 100%;
   flex-direction: column;
   min-height: 0;
+}
+
+.mobile-catalog-card .mobile-commerce-chip,
+.mobile-catalog-card .mobile-commerce-muted-chip {
+  max-width: 100%;
+  line-height: 1.15;
 }
 
 .mobile-catalog-visual {
@@ -458,6 +469,12 @@
   touch-action: pan-x;
 }
 
+.mobile-shop-sort-rail {
+  width: max-content;
+  min-width: 100%;
+  padding-right: 28px;
+}
+
 .mobile-shop-filter-rail::-webkit-scrollbar {
   display: block;
   height: 4px;
@@ -477,7 +494,7 @@
   min-height: 44px;
   min-width: 58px;
   scroll-snap-align: start;
-  touch-action: pan-x;
+  touch-action: manipulation;
   user-select: none;
 }
 

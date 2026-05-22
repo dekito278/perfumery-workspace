@@ -88,7 +88,7 @@ const ProductDetailPage = () => {
               <Sparkles className="h-4 w-4" />
               {product.category}
             </div>
-            <h1 className="mt-5 text-5xl font-bold leading-none">{product.name}</h1>
+            <h1 className="mt-5 text-5xl font-bold leading-tight">{product.name}</h1>
             <p className="mt-4 text-lg font-semibold text-muted-foreground">{product.notes}</p>
             {previewMode ? (
               <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">

@@ -22,7 +22,7 @@ import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
 const MOBILE_CATALOG_COLUMNS = 2;
-const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 316;
+const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 342;
 const MOBILE_CATALOG_OVERSCAN_ROWS = 3;
 const MOBILE_CATALOG_VIRTUALIZE_AFTER = 40;
 const MOBILE_CATALOG_PAGE_SIZE = 6;
@@ -45,7 +45,7 @@ const getProductPrimaryTag = (product) => getVisibleProductTags(product).find(Bo
 const MobileCatalogCardSkeleton = () => (
   <article className="mobile-card mobile-catalog-card mobile-commerce-product-card min-w-0 overflow-hidden p-2" aria-hidden="true">
     <div className="mobile-catalog-skeleton aspect-[4/5] rounded-2xl" />
-    <div className="mt-2 flex h-[132px] flex-col">
+    <div className="mt-2 flex min-h-[148px] flex-col">
       <div className="mobile-catalog-skeleton h-[13px] w-11/12 rounded-full" />
       <div className="mobile-catalog-skeleton mt-2 h-[13px] w-4/5 rounded-full" />
       <div className="mobile-catalog-skeleton mt-2 h-[11px] w-3/4 rounded-full" />
@@ -527,7 +527,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             ) : null}
           </div>
           <div className="mt-3 mobile-shop-filter-frame">
-          <div className="mobile-shop-filter-rail mobile-segment-scroll flex items-center gap-2 overflow-x-auto" aria-label="Urutkan katalog">
+          <div className="mobile-shop-filter-rail mobile-shop-sort-rail mobile-segment-scroll flex items-center gap-2 overflow-x-auto" aria-label="Urutkan katalog">
             <span className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#f7f8f2] px-3 text-[10px] font-bold uppercase text-[#6b7280]">
               <ArrowUpDown className="h-3.5 w-3.5" />
               Urutkan
@@ -602,12 +602,12 @@ export const MobileCatalogContent = ({ active = true }) => {
                             {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
                           </div>
                         </div>
-                        <div className="mt-2 flex h-[132px] flex-col">
-                          <div className="h-[52px] min-w-0">
+                        <div className="mt-2 flex min-h-[148px] flex-col">
+                          <div className="min-h-[54px] min-w-0">
                             <h3 className="mobile-line-clamp-2 min-h-[30px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
                             <p className="mobile-line-clamp-1 mt-1 min-h-[16px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
                           </div>
-                          <div className="mt-2 grid h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
+                          <div className="mt-2 grid min-h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
                             <div className="min-w-0">
                               <div className={cn('h-3 text-[10px] font-bold leading-3 text-[#9ca3af] line-through', product.compareAtPriceNumber > product.priceNumber ? '' : 'invisible')}>
                                 {product.compareAtPriceNumber > product.priceNumber ? formatRupiah(product.compareAtPriceNumber) : 'Rp 0'}
@@ -619,12 +619,12 @@ export const MobileCatalogContent = ({ active = true }) => {
                             </div>
                           </div>
                           <div className="mt-auto pt-2">
-                            <div className="flex h-[24px] flex-wrap gap-1 overflow-hidden">
+                            <div className="flex min-h-[24px] flex-wrap gap-1 overflow-hidden">
                               {getProductSizeLabels(product).map((size) => (
                                 <span key={size} className="mobile-commerce-chip max-w-full truncate px-2 py-1 text-[9px]">{size}</span>
                               ))}
                             </div>
-                            <div className="mt-1.5 flex h-[21px] flex-wrap gap-1 overflow-hidden">
+                            <div className="mt-1.5 flex min-h-[22px] flex-wrap gap-1 overflow-hidden">
                               <span className="mobile-commerce-muted-chip max-w-full truncate px-2 py-1 text-[9px] uppercase">
                                 {getProductPrimaryTag(product)}
                               </span>
