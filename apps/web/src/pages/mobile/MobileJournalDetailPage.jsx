@@ -202,7 +202,7 @@ const MobileJournalDetailPage = () => {
               </span>
               <span className="inline-flex items-center gap-1 rounded-full border border-[#e5e7eb] bg-white px-2.5 py-1">
                 <Timer className="h-3.5 w-3.5" />
-                {readingMinutes} min read
+                {readingMinutes} menit baca
               </span>
             </div>
 

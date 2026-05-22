@@ -124,7 +124,7 @@ const JournalDetailPage = () => {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="ghost" onClick={handleBack} className="h-9 w-fit gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to journal
+            Kembali ke Journal
           </Button>
           {post ? (
             <div className="flex flex-wrap gap-2">
@@ -135,7 +135,7 @@ const JournalDetailPage = () => {
                 className="h-10 w-fit gap-2 rounded-2xl px-4"
               >
                 <Copy className="h-4 w-4" />
-                Copy link
+                Salin link
               </Button>
               <Button
                 type="button"
@@ -143,7 +143,7 @@ const JournalDetailPage = () => {
                 className="h-10 w-fit gap-2 rounded-2xl px-4"
               >
                 <Pencil className="h-4 w-4" />
-                Edit note
+                Edit artikel
               </Button>
             </div>
           ) : null}
@@ -164,8 +164,8 @@ const JournalDetailPage = () => {
         ) : !post ? (
           <EmptyState
             icon={BookOpenText}
-            title="Journal note not found"
-            description="The note may have been removed or is no longer available."
+            title="Artikel tidak ditemukan"
+            description="Artikel mungkin sudah dihapus atau link-nya berubah."
           />
         ) : (
           <article className="mx-auto max-w-5xl">
@@ -202,11 +202,11 @@ const JournalDetailPage = () => {
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-3 py-1.5">
                   <CalendarDays className="h-4 w-4 text-primary" />
-                  Updated {formatDate(post.updated || post.created)}
+                  Diperbarui {formatDate(post.updated || post.created)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-3 py-1.5">
                   <Timer className="h-4 w-4 text-primary" />
-                  {readingMinutes} min read
+                  {readingMinutes} menit baca
                 </span>
                 {relatedFormula ? (
                   <button

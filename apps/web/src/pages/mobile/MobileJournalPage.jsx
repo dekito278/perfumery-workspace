@@ -250,7 +250,7 @@ const MobileJournalPage = () => {
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Timer className="h-3.5 w-3.5" />
-                      {getReadingMinutes(post)} min
+                      {getReadingMinutes(post)} menit
                     </span>
                     {formula ? <span>{formula.name}</span> : null}
                   </div>

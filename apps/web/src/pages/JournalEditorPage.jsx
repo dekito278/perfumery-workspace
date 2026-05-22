@@ -155,17 +155,17 @@ const JournalEditorPage = () => {
         <div>
           <Button variant="ghost" onClick={handleBack} className="mb-4 h-9 gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to journal
+            Kembali ke Journal
           </Button>
         </div>
 
         <div className="rounded-[30px] border bg-[linear-gradient(135deg,rgba(255,255,255,0.97)_0%,rgba(246,241,232,0.98)_100%)] p-6 shadow-sm">
           <div className="inline-flex items-center gap-2 rounded-full border bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             <BookOpenText className="h-3.5 w-3.5 text-primary" />
-            Journal editor
+            Editor Journal
           </div>
           <h1 className="mt-4 text-3xl font-bold" style={{ letterSpacing: '-0.02em' }}>
-            {isEditMode ? 'Edit journal note.' : 'Write a new journal note.'}
+            {isEditMode ? 'Edit artikel Journal.' : 'Tulis artikel Journal baru.'}
           </h1>
           <p className="mt-3 max-w-3xl text-base text-muted-foreground">
             Tulis catatan accord, pengalaman meracik, eksperimen, atau ide produk dengan struktur yang ringan.
@@ -216,7 +216,7 @@ const JournalEditorPage = () => {
             </div>
 
             <aside className="rounded-[28px] border bg-white/90 p-5 shadow-sm xl:sticky xl:top-6 xl:self-start">
-              <div className="text-sm font-semibold">Publishing details</div>
+              <div className="text-sm font-semibold">Pengaturan publikasi</div>
               <div className="mt-4 space-y-4">
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Category</div>
@@ -256,13 +256,13 @@ const JournalEditorPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm font-medium">Related Formula</div>
+                  <div className="text-sm font-medium">Formula terkait</div>
                   <Select value={formState.related_formula_id} onValueChange={(value) => handleChange('related_formula_id', value)}>
                     <SelectTrigger className="h-11 rounded-2xl bg-white">
                       <SelectValue placeholder="Optional formula link" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No related formula</SelectItem>
+                      <SelectItem value="none">Tanpa formula terkait</SelectItem>
                       {formulas.map((formula) => (
                         <SelectItem key={formula.id} value={formula.id}>
                           {formula.name}
@@ -308,7 +308,7 @@ const JournalEditorPage = () => {
 
                 <Button type="submit" disabled={saving} className="h-11 w-full gap-2 rounded-2xl">
                   <Save className="h-4 w-4" />
-                  {saving ? 'Saving...' : isEditMode ? 'Update note' : 'Save note'}
+                  {saving ? 'Menyimpan...' : isEditMode ? 'Update artikel' : 'Simpan artikel'}
                 </Button>
               </div>
             </aside>

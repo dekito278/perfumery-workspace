@@ -163,7 +163,7 @@ const JournalPage = () => {
             </span>
             <span className="inline-flex items-center gap-1">
               <Timer className="h-3.5 w-3.5" />
-              {getReadingMinutes(post)} min read
+              {getReadingMinutes(post)} menit baca
             </span>
           </div>
         </div>
@@ -254,7 +254,7 @@ const JournalPage = () => {
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate('/studio')} className="mb-4 h-9 gap-2">
             <Home className="h-4 w-4" />
-            Back to dashboard
+            Kembali ke dashboard
           </Button>
         </div>
 
@@ -262,7 +262,7 @@ const JournalPage = () => {
           eyebrow="Writing library"
           title="Journal"
           description="Simpan tulisan tentang pengalaman meracik, catatan accord, material note, eksperimen, dan ide produk dalam satu rak kerja."
-          action="New Journal"
+          action="Artikel baru"
           actionIcon={Plus}
           onAction={() => navigate('/journal/new')}
         />
@@ -370,7 +370,7 @@ const JournalPage = () => {
               icon={BookOpenText}
               title="Your writing shelf is still empty"
               description="Mulai dari satu catatan kecil: accord yang sedang diuji, pengalaman meracik, material yang menarik, atau ide produk yang belum sempat dikerjakan."
-              action="New Journal"
+              action="Artikel baru"
               actionIcon={Plus}
               onAction={() => navigate('/journal/new')}
             />
@@ -444,8 +444,8 @@ const JournalPage = () => {
                       </div>
                     ) : null}
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground">
-                      <span>Updated {formatDate(post.updated || post.created)}</span>
-                      <span>{getReadingMinutes(post)} min read</span>
+                      <span>Diperbarui {formatDate(post.updated || post.created)}</span>
+                      <span>{getReadingMinutes(post)} menit baca</span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <Button
@@ -475,7 +475,7 @@ const JournalPage = () => {
                 currentPage={currentPage}
                 pageSize={pageSize}
                 totalItems={filteredPosts.length}
-                itemLabel="journal notes"
+                itemLabel="artikel journal"
                 onPageChange={setCurrentPage}
               />
             </>
