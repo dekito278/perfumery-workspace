@@ -117,6 +117,15 @@ export const getProductStorefrontPath = (product = {}, { mobile = false } = {}) 
   return slug ? `${mobile ? '/mobile' : ''}/products/${slug}` : '';
 };
 
+export const getProductSlugConflicts = (product = {}, products = []) => {
+  const slug = toSlug(product.slug || product.name);
+  if (!slug) return [];
+  return products.filter((item) => (
+    String(item.id || '') !== String(product.id || '')
+    && toSlug(item.slug || item.name) === slug
+  ));
+};
+
 export const getProductPublishStatus = (product = {}) => {
   const checklist = getProductPublishChecklist(product);
 

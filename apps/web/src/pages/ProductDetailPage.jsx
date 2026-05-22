@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
@@ -11,8 +11,14 @@ import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCa
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
+  const location = useLocation();
   const products = useCatalogProducts();
-  const product = products.find((item) => item.slug === slug && isProductVisibleInStorefront(item));
+  const previewProduct = location.state?.previewMode && location.state?.previewProduct?.slug === slug
+    ? location.state.previewProduct
+    : null;
+  const product = previewProduct || products.find((item) => item.slug === slug && isProductVisibleInStorefront(item));
+  const previewMode = Boolean(previewProduct);
+  const previewBackTo = location.state?.previewBackTo || '/studio/products';
   const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const selectedVariant = useMemo(() => {
@@ -41,6 +47,10 @@ const ProductDetailPage = () => {
   const soldOut = selectedStock <= 0;
   const lowStock = selectedStock > 0 && selectedStock <= 5;
   const addSelectedVariant = () => {
+    if (previewMode) {
+      toast.error('Preview draft belum bisa masuk keranjang');
+      return;
+    }
     if (selectedStock <= 0) {
       toast.error('Stok varian ini sedang habis');
       return;
@@ -66,11 +76,15 @@ const ProductDetailPage = () => {
       <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
         <section className="border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <Link to="/catalog" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
+            <Link to={previewMode ? previewBackTo : '/catalog'} className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
               <ArrowLeft className="h-4 w-4" />
-              Katalog
+              {previewMode ? 'Kembali ke editor' : 'Katalog'}
             </Link>
-            <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Keranjang</Link>
+            {previewMode ? (
+              <span className="rounded-2xl border border-amber-200/40 bg-amber-300/15 px-4 py-2 text-sm font-bold text-amber-100">Preview draft</span>
+            ) : (
+              <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Keranjang</Link>
+            )}
           </div>
         </section>
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
@@ -82,6 +96,15 @@ const ProductDetailPage = () => {
             </div>
             <h1 className="mt-5 text-5xl font-bold leading-none">{product.name}</h1>
             <p className="mt-4 text-lg font-semibold text-muted-foreground">{product.notes}</p>
+            {previewMode ? (
+              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                <div>
+                  <div className="text-sm font-bold">Mode preview admin</div>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed">Data ini belum tentu sudah tersimpan atau publish. Tombol cart dimatikan selama preview.</p>
+                </div>
+              </div>
+            ) : null}
             <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-muted-foreground">{product.description}</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {[['Harga', formatRupiah(selectedPrice)], ['Stok', `${selectedStock} tersisa`], ['Intensity', product.intensity]].map(([label, value]) => (
@@ -156,8 +179,8 @@ const ProductDetailPage = () => {
                   <Link to="/cart" className="inline-flex h-12 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
                     Lihat keranjang
                   </Link>
-                  <button type="button" onClick={addSelectedVariant} disabled={soldOut} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8] disabled:opacity-50">
-                    Masukkan keranjang
+                  <button type="button" onClick={addSelectedVariant} disabled={soldOut || previewMode} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8] disabled:opacity-50">
+                    {previewMode ? 'Preview saja' : 'Masukkan keranjang'}
                     <ShoppingBag className="h-4 w-4" />
                   </button>
                 </div>

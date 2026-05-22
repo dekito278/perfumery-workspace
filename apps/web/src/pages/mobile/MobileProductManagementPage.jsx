@@ -18,9 +18,11 @@ import {
   getProductFormulaId,
   getProductPublishChecklist,
   getProductPublishStatus,
+  getProductSlugConflicts,
   getProductStorefrontPath,
   getVisibleProductTags,
   isProductDraft,
+  normalizeProduct,
   PRODUCT_DRAFT_TAG,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
@@ -90,6 +92,27 @@ const getStatusBadgeClass = (tone) => {
   if (tone === 'rose') return 'bg-rose-50 text-rose-700';
   return 'bg-amber-50 text-amber-700';
 };
+
+const snapshotProductForm = (product) => JSON.stringify({
+  id: product.id || '',
+  name: product.name || '',
+  category: product.category || '',
+  priceNumber: Number(product.priceNumber || 0),
+  compareAtPriceNumber: Number(product.compareAtPriceNumber || 0),
+  stock: Number(product.stock || 0),
+  size: product.size || '',
+  variants: product.variants || [],
+  notes: product.notes || '',
+  topNotes: product.topNotes || '',
+  heartNotes: product.heartNotes || '',
+  baseNotes: product.baseNotes || '',
+  tags: product.tags || '',
+  description: product.description || '',
+  imageUrl: product.imageUrl || '',
+  images: product.images || [],
+  featured: Boolean(product.featured),
+  catalogVisible: Boolean(product.catalogVisible),
+});
 
 const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview, product }) => {
   const formulaId = getProductFormulaId(product);
@@ -195,6 +218,7 @@ const MobileProductManagementPage = () => {
   const [savingProduct, setSavingProduct] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
   const [productStatusFilter, setProductStatusFilter] = useState('all');
+  const [savedFormSnapshot, setSavedFormSnapshot] = useState(() => snapshotProductForm(emptyProduct));
   const editProductId = searchParams.get('edit') || '';
   const linkedFormulaId = getProductFormulaId(form);
   const batchDetails = getProductBatchDetails(form);
@@ -203,6 +227,9 @@ const MobileProductManagementPage = () => {
   const requiredReady = Boolean(form.name.trim() && form.category.trim() && form.notes.trim());
   const publishChecklist = useMemo(() => getProductPublishChecklist(form), [form]);
   const canPublish = publishChecklist.ready;
+  const currentFormSnapshot = useMemo(() => snapshotProductForm(form), [form]);
+  const hasUnsavedChanges = currentFormSnapshot !== savedFormSnapshot;
+  const slugConflicts = useMemo(() => getProductSlugConflicts(form, products), [form, products]);
   const productStatusCounts = useMemo(() => customProducts.reduce((counts, product) => {
     const status = getProductPublishStatus(product).key;
     counts.all += 1;
@@ -219,9 +246,25 @@ const MobileProductManagementPage = () => {
     if (!editProductId) return;
     const product = customProducts.find((item) => String(item.id) === editProductId);
     if (product && form.id !== product.id) {
-      setForm(toProductForm(product));
+      const nextForm = toProductForm(product);
+      setForm(nextForm);
+      setSavedFormSnapshot(snapshotProductForm(nextForm));
     }
   }, [customProducts, editProductId, form.id]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const confirmDiscardChanges = () => (
+    !hasUnsavedChanges || window.confirm('Ada perubahan produk yang belum disimpan. Lanjut dan buang perubahan?')
+  );
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -238,10 +281,15 @@ const MobileProductManagementPage = () => {
     ...current,
     variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
   }));
-  const updateView = (view) => setSearchParams(view === 'new' ? {} : { view }, { replace: true });
+  const updateView = (view, { force = false } = {}) => {
+    if (!force && activeView === 'new' && view !== 'new' && !confirmDiscardChanges()) return;
+    setSearchParams(view === 'new' ? {} : { view }, { replace: true });
+  };
   const resetForm = () => {
+    if (!confirmDiscardChanges()) return;
     setForm(emptyProduct);
-    updateView('new');
+    setSavedFormSnapshot(snapshotProductForm(emptyProduct));
+    updateView('new', { force: true });
   };
 
   const updateImagesFromText = (value) => {
@@ -300,7 +348,9 @@ const MobileProductManagementPage = () => {
         price: formatRupiah(primaryVariantPrice),
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
       });
-      setForm(toProductForm(product));
+      const nextForm = toProductForm(product);
+      setForm(nextForm);
+      setSavedFormSnapshot(snapshotProductForm(nextForm));
       toast.success(form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan produk');
@@ -310,7 +360,10 @@ const MobileProductManagementPage = () => {
   };
 
   const handleEdit = (product) => {
-    setForm(toProductForm(product));
+    if (!confirmDiscardChanges()) return;
+    const nextForm = toProductForm(product);
+    setForm(nextForm);
+    setSavedFormSnapshot(snapshotProductForm(nextForm));
     setSearchParams({ view: 'new', edit: product.id }, { replace: true });
   };
 
@@ -331,6 +384,29 @@ const MobileProductManagementPage = () => {
       return;
     }
     navigate(path);
+  };
+
+  const previewCurrentProduct = () => {
+    if (hasUnsavedChanges && !window.confirm('Preview akan membuka halaman produk memakai data form saat ini. Perubahan belum tersimpan tetap belum masuk katalog. Lanjut preview?')) {
+      return;
+    }
+    const primaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
+    const preview = normalizeProduct({
+      ...form,
+      priceNumber: primaryVariantPrice,
+      compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+      stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+      size: form.variants?.[0]?.size || form.size,
+      price: formatRupiah(primaryVariantPrice),
+      tags: getTagsForVisibility(form.tags, form.catalogVisible),
+    }, products);
+    navigate(getProductStorefrontPath(preview, { mobile: true }), {
+      state: {
+        previewProduct: preview,
+        previewMode: true,
+        previewBackTo: '/mobile/studio/products?view=new',
+      },
+    });
   };
 
   const handleDelete = async (product) => {
@@ -410,11 +486,17 @@ const MobileProductManagementPage = () => {
               <div className="min-w-0">
                 <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">{form.id ? 'Edit produk' : 'Produk baru'}</div>
                 <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{form.name || 'Buat item katalog'}</h1>
+                {hasUnsavedChanges ? (
+                  <div className="mt-2 w-fit rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-700">Belum disimpan</div>
+                ) : null}
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
                   Isi bagian penting dulu, lalu lengkapi visual dan cerita produk sebelum tampil di katalog.
                 </p>
               </div>
-              <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs" onClick={resetForm}>Baru</Button>
+              <div className="grid shrink-0 gap-2">
+                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs gap-1" onClick={previewCurrentProduct}><ExternalLink className="h-3.5 w-3.5" />Preview</Button>
+                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs" onClick={resetForm}>Baru</Button>
+              </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="rounded-2xl bg-white px-3 py-2">
@@ -637,6 +719,19 @@ const MobileProductManagementPage = () => {
                 ))}
               </div>
             </div>
+            {slugConflicts.length ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-800">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold">Slug sudah dipakai</div>
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed opacity-80">
+                      Bentrok dengan {slugConflicts.map((product) => product.name).join(', ')}. Saat disimpan, slug akan dibuat unik otomatis.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <label className="flex items-center gap-3 rounded-2xl bg-amber-50 px-3 py-3 text-xs font-bold text-amber-800">
               <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
               Featured di home
@@ -670,6 +765,10 @@ const MobileProductManagementPage = () => {
                 {savingProduct ? 'Menyimpan...' : requiredReady ? 'Simpan produk' : 'Lengkapi wajib'}
               </Button>
             </div>
+            <Button type="button" variant="outline" className="mt-2 h-11 w-full rounded-2xl bg-white gap-2 text-xs font-bold" onClick={previewCurrentProduct}>
+              <ExternalLink className="h-4 w-4" />
+              Preview draft
+            </Button>
           </StickyBottomActionBar>
         </form>
         ) : null}

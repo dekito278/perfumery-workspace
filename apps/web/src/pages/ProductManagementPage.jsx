@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock3, Copy, Edit3, ExternalLink, Filter, ImagePlus, ImageOff, PackagePlus, Plus, RotateCcw, Save, Tags, Trash2 } from 'lucide-react';
@@ -16,10 +16,12 @@ import {
   getProductPublishChecklist,
   getProductPublishStatus,
   getProductRestockThreshold,
+  getProductSlugConflicts,
   getProductStockCorrections,
   getProductStorefrontPath,
   getVisibleProductTags,
   isProductDraft,
+  normalizeProduct,
   PRODUCT_DRAFT_TAG,
   resetCustomProducts,
   saveCustomProduct,
@@ -97,6 +99,29 @@ const getStatusBadgeClass = (tone) => {
   return 'bg-amber-50 text-amber-700';
 };
 
+const snapshotProductForm = (product) => JSON.stringify({
+  id: product.id || '',
+  name: product.name || '',
+  category: product.category || '',
+  priceNumber: Number(product.priceNumber || 0),
+  compareAtPriceNumber: Number(product.compareAtPriceNumber || 0),
+  stock: Number(product.stock || 0),
+  restockThreshold: Number(product.restockThreshold || 0),
+  size: product.size || '',
+  variants: product.variants || [],
+  notes: product.notes || '',
+  topNotes: product.topNotes || '',
+  heartNotes: product.heartNotes || '',
+  baseNotes: product.baseNotes || '',
+  description: product.description || '',
+  imageUrl: product.imageUrl || '',
+  images: product.images || [],
+  tags: product.tags || '',
+  mood: product.mood || '',
+  featured: Boolean(product.featured),
+  catalogVisible: Boolean(product.catalogVisible),
+});
+
 const buildStockCorrection = ({ form, previousProduct }) => {
   if (!previousProduct) return null;
   const previousVariants = new Map((previousProduct.variants || []).map((variant) => [variant.id || variant.size, variant]));
@@ -149,8 +174,12 @@ const ProductManagementPage = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [productStatusFilter, setProductStatusFilter] = useState('all');
+  const [savedFormSnapshot, setSavedFormSnapshot] = useState(() => snapshotProductForm(emptyProduct));
   const publishChecklist = useMemo(() => getProductPublishChecklist(form), [form]);
   const canPublish = publishChecklist.ready;
+  const currentFormSnapshot = useMemo(() => snapshotProductForm(form), [form]);
+  const hasUnsavedChanges = currentFormSnapshot !== savedFormSnapshot;
+  const slugConflicts = useMemo(() => getProductSlugConflicts(form, products), [form, products]);
   const productStatusCounts = useMemo(() => customProducts.reduce((counts, product) => {
     const status = getProductPublishStatus(product).key;
     counts.all += 1;
@@ -179,7 +208,25 @@ const ProductManagementPage = () => {
     variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
   }));
 
-  const resetForm = () => setForm(emptyProduct);
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const confirmDiscardChanges = () => (
+    !hasUnsavedChanges || window.confirm('Ada perubahan produk yang belum disimpan. Lanjut dan buang perubahan?')
+  );
+
+  const resetForm = () => {
+    if (!confirmDiscardChanges()) return;
+    setForm(emptyProduct);
+    setSavedFormSnapshot(snapshotProductForm(emptyProduct));
+  };
 
   const updateImagesFromText = (value) => {
     const images = value.split('\n').map((item) => item.trim()).filter(Boolean);
@@ -242,14 +289,21 @@ const ProductManagementPage = () => {
         size: form.variants?.[0]?.size || form.size,
         price: formatRupiah(form.priceNumber),
       });
-      setForm(toEditableProduct(product));
+      const nextForm = toEditableProduct(product);
+      setForm(nextForm);
+      setSavedFormSnapshot(snapshotProductForm(nextForm));
       toast.success(stockCorrection ? 'Produk tersimpan dan koreksi stok dicatat' : form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
     } finally {
       setSavingProduct(false);
     }
   };
 
-  const handleEdit = (product) => setForm(toEditableProduct(product));
+  const handleEdit = (product) => {
+    if (!confirmDiscardChanges()) return;
+    const nextForm = toEditableProduct(product);
+    setForm(nextForm);
+    setSavedFormSnapshot(snapshotProductForm(nextForm));
+  };
 
   const copyProductLink = async (product) => {
     const path = getProductStorefrontPath(product);
@@ -266,6 +320,27 @@ const ProductManagementPage = () => {
     navigate(path);
   };
 
+  const previewCurrentProduct = () => {
+    if (hasUnsavedChanges && !window.confirm('Preview akan membuka halaman produk memakai data form saat ini. Perubahan belum tersimpan tetap belum masuk katalog. Lanjut preview?')) {
+      return;
+    }
+    const preview = normalizeProduct({
+      ...form,
+      tags: getTagsForVisibility(form.tags, form.catalogVisible),
+      priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
+      compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+      stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+      size: form.variants?.[0]?.size || form.size,
+    }, products);
+    navigate(getProductStorefrontPath(preview), {
+      state: {
+        previewProduct: preview,
+        previewMode: true,
+        previewBackTo: '/studio/products',
+      },
+    });
+  };
+
   const handleDelete = async (product) => {
     await deleteCustomProduct(product.id);
     if (form.id === product.id) resetForm();
@@ -273,8 +348,10 @@ const ProductManagementPage = () => {
   };
 
   const handleResetAll = async () => {
+    if (!confirmDiscardChanges()) return;
     await resetCustomProducts();
-    resetForm();
+    setForm(emptyProduct);
+    setSavedFormSnapshot(snapshotProductForm(emptyProduct));
     toast.success('Produk custom direset');
   };
 
@@ -313,10 +390,18 @@ const ProductManagementPage = () => {
           <form onSubmit={handleSubmit} className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold">{form.id ? 'Edit produk' : 'Tambah produk'}</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-bold">{form.id ? 'Edit produk' : 'Tambah produk'}</h2>
+                  {hasUnsavedChanges ? (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-700">Belum disimpan</span>
+                  ) : null}
+                </div>
                 <p className="mt-1 text-sm font-semibold text-muted-foreground">Form dibagi per bagian supaya edit produk tidak terasa panjang.</p>
               </div>
-              <Button type="button" variant="outline" className="rounded-2xl" onClick={resetForm}>Baru</Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={previewCurrentProduct}><ExternalLink className="h-4 w-4" />Preview</Button>
+                <Button type="button" variant="outline" className="rounded-2xl" onClick={resetForm}>Baru</Button>
+              </div>
             </div>
 
             <Tabs defaultValue="utama" className="mt-5">
@@ -446,6 +531,19 @@ const ProductManagementPage = () => {
                     ))}
                   </div>
                 </div>
+                {slugConflicts.length ? (
+                  <div className="sm:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                      <div>
+                        <div className="text-sm font-bold">Slug produk sudah dipakai</div>
+                        <p className="mt-1 text-xs font-semibold leading-relaxed opacity-80">
+                          Bentrok dengan {slugConflicts.map((product) => product.name).join(', ')}. Saat disimpan, slug akan dibuat unik otomatis supaya link produk tidak saling menimpa.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 {[
                   ['topNotes', 'Top notes'],
                   ['heartNotes', 'Heart notes'],
@@ -489,6 +587,7 @@ const ProductManagementPage = () => {
 
             <div className="mt-5 flex flex-wrap gap-3">
               <Button type="submit" className="rounded-2xl gap-2" disabled={savingProduct}><Save className="h-4 w-4" />{savingProduct ? 'Menyimpan...' : 'Simpan produk'}</Button>
+              <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={previewCurrentProduct}><ExternalLink className="h-4 w-4" />Preview draft</Button>
               <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={resetForm}><RotateCcw className="h-4 w-4" />Clear</Button>
             </div>
           </form>
