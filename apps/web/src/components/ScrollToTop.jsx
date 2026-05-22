@@ -10,8 +10,9 @@ const getMobilePrimaryScroller = () => {
 
     const { overflowY } = window.getComputedStyle(shell);
     const allowsScrolling = overflowY === 'auto' || overflowY === 'scroll';
+    const hasScrollableContent = shell.scrollHeight > shell.clientHeight + 1;
 
-    return allowsScrolling ? shell : null;
+    return allowsScrolling && hasScrollableContent ? shell : null;
 };
 
 const getActiveScroller = () => getMobilePrimaryScroller() || window;
@@ -80,6 +81,8 @@ const ScrollToTop = () => {
         const shouldRestore = navigationType === 'POP' || Boolean(state?.restoreScroll);
         const isSamePathNavigation = previousPathnameRef.current === pathname;
         const savedPosition = sessionStorage.getItem(storageKey);
+        const explicitPosition = Number(state?.scrollTop);
+        const hasExplicitPosition = Number.isFinite(explicitPosition);
         let timeoutId = null;
         let cancelled = false;
 
@@ -108,7 +111,9 @@ const ScrollToTop = () => {
             }, 140);
         };
 
-        if (shouldRestore && savedPosition !== null) {
+        if (shouldRestore && hasExplicitPosition) {
+            restoreScrollPosition(explicitPosition);
+        } else if (shouldRestore && savedPosition !== null) {
             restoreScrollPosition(Number(savedPosition));
         } else if (isSamePathNavigation) {
             previousPathnameRef.current = pathname;
@@ -130,7 +135,7 @@ const ScrollToTop = () => {
                 window.clearTimeout(timeoutId);
             }
         };
-    }, [navigationType, pathname, state?.restoreScroll, storageKey]);
+    }, [navigationType, pathname, state?.restoreScroll, state?.scrollTop, storageKey]);
 
     return null;
 };

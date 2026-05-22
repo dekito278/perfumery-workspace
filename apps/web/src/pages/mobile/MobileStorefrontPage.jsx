@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -29,7 +29,7 @@ import {
   isProductVisibleInStorefront,
 } from '@/services/productCatalogService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
-import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { getMobileFromState, getMobileScrollTop } from '@/hooks/useMobileBackNavigation.js';
 
 const mobileNotes = [
   { icon: Sparkles, label: 'Luxury' },
@@ -41,6 +41,7 @@ const mobileHomeAssets = {
   rawMaterialLibrary: '/brand/home/raw-material-library.jpg',
   perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
 };
+const PRODUCT_NAVIGATION_SCROLL_SETTLE_MS = 1000;
 
 const getProductCategoryLabel = (product) => product?.category || 'Solivagant';
 const getProductStockLabel = (product) => (Number(product?.stock || 0) > 0 ? `${Number(product.stock)} pcs` : 'Habis');
@@ -53,6 +54,12 @@ const getProductPrimaryTag = (product) => getVisibleProductTags(product).find(Bo
 export const MobileStorefrontContent = ({ active = true }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const outgoingScrollTopRef = useRef(0);
+  const initialScrollTopRef = useRef(0);
+  const stableScrollTopRef = useRef(0);
+  const latestScrollTopRef = useRef(0);
+  const lastScrollAtRef = useRef(0);
+  const hasUserScrollIntentRef = useRef(false);
   const catalogProducts = useCatalogProducts();
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
@@ -61,6 +68,54 @@ export const MobileStorefrontContent = ({ active = true }) => {
   const heroProduct = quickProducts[0];
   const productsLoading = Boolean(catalogProducts.loading);
   const hasProducts = products.length > 0;
+  const captureOutgoingScrollTop = useCallback(() => {
+    if (!hasUserScrollIntentRef.current) {
+      outgoingScrollTopRef.current = initialScrollTopRef.current;
+      return;
+    }
+
+    const currentScrollTop = getMobileScrollTop();
+    const scrollIsSettled = Date.now() - lastScrollAtRef.current > PRODUCT_NAVIGATION_SCROLL_SETTLE_MS;
+    if (scrollIsSettled) {
+      stableScrollTopRef.current = currentScrollTop;
+      latestScrollTopRef.current = currentScrollTop;
+    }
+    outgoingScrollTopRef.current = scrollIsSettled ? currentScrollTop : stableScrollTopRef.current;
+  }, []);
+
+  React.useEffect(() => {
+    if (!active) return undefined;
+
+    initialScrollTopRef.current = getMobileScrollTop();
+    stableScrollTopRef.current = initialScrollTopRef.current;
+    latestScrollTopRef.current = stableScrollTopRef.current;
+    outgoingScrollTopRef.current = stableScrollTopRef.current;
+    hasUserScrollIntentRef.current = false;
+    let timeoutId = 0;
+    const markUserScrollIntent = () => {
+      hasUserScrollIntentRef.current = true;
+    };
+    const updateStableScrollTop = () => {
+      latestScrollTopRef.current = getMobileScrollTop();
+      lastScrollAtRef.current = Date.now();
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        stableScrollTopRef.current = latestScrollTopRef.current;
+      }, PRODUCT_NAVIGATION_SCROLL_SETTLE_MS);
+    };
+
+    window.addEventListener('wheel', markUserScrollIntent, { passive: true });
+    window.addEventListener('touchmove', markUserScrollIntent, { passive: true });
+    window.addEventListener('keydown', markUserScrollIntent);
+    window.addEventListener('scroll', updateStableScrollTop, { passive: true });
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('wheel', markUserScrollIntent);
+      window.removeEventListener('touchmove', markUserScrollIntent);
+      window.removeEventListener('keydown', markUserScrollIntent);
+      window.removeEventListener('scroll', updateStableScrollTop);
+    };
+  }, [active]);
   const handleStaticImageError = (source) => {
     logMobileRenderIssue('image-load-failed', {
       source,
@@ -113,7 +168,11 @@ export const MobileStorefrontContent = ({ active = true }) => {
             {heroProduct ? (
               <button
                 type="button"
-                onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location) })}
+                onPointerDown={captureOutgoingScrollTop}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
+                }}
+                onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
                 className="mobile-commerce-panel min-w-0 p-2 text-left"
               >
                 <ProductVisual product={heroProduct} className="aspect-square rounded-xl" bottleClassName="left-4 top-4 h-14 w-7 rounded-[0.85rem]" label={false} priority sizes="126px" imageFit="cover" />
@@ -226,7 +285,15 @@ export const MobileStorefrontContent = ({ active = true }) => {
           <div className="grid grid-cols-2 gap-3">
           {quickProducts.map((product, index) => (
             <article key={product.id} className="mobile-card mobile-commerce-product-card min-w-0 overflow-hidden p-2">
-              <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location) })} className="block w-full text-left">
+              <button
+                type="button"
+                onPointerDown={captureOutgoingScrollTop}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
+                }}
+                onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
+                className="block w-full text-left"
+              >
                 <div className="relative">
                   <ProductVisual product={product} className="aspect-[4/5] rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 44vw, 198px" imageFit="cover" />
                   <div className="mobile-commerce-chip absolute left-2 top-2 max-w-[calc(100%-16px)] truncate bg-white/90 px-2 py-1 text-[9px] uppercase shadow-sm">

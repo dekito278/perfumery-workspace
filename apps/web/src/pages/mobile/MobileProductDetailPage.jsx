@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -222,10 +222,14 @@ const MobileProductDetailPage = () => {
           </div>
         </section>
 
-        <Link to={previewMode ? previewBackTo : '/mobile/catalog'} className="mobile-card flex items-center justify-between p-3 text-sm font-bold text-[#0b130c]">
+        <button
+          type="button"
+          onClick={previewMode ? () => navigate(previewBackTo, { replace: true }) : handleBack}
+          className="mobile-card flex w-full items-center justify-between p-3 text-left text-sm font-bold text-[#0b130c]"
+        >
           {previewMode ? 'Kembali ke editor' : 'Kembali ke katalog'}
           <ShoppingBag className="h-4 w-4 text-[#263d27]" />
-        </Link>
+        </button>
 
         <section className="mobile-card border border-[#263d27]/15 p-3">
           <div className="flex items-center justify-between gap-3">

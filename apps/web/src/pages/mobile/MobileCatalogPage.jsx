@@ -19,13 +19,14 @@ import {
 } from '@/services/productCatalogService.js';
 import { getOptimizedProductImageUrl } from '@/services/productImageStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
-import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
+import { getMobileFromState, getMobileScrollTop } from '@/hooks/useMobileBackNavigation.js';
 
 const MOBILE_CATALOG_COLUMNS = 2;
 const MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT = 342;
 const MOBILE_CATALOG_OVERSCAN_ROWS = 3;
 const MOBILE_CATALOG_VIRTUALIZE_AFTER = 40;
 const MOBILE_CATALOG_PAGE_SIZE = 6;
+const PRODUCT_NAVIGATION_SCROLL_SETTLE_MS = 1000;
 const commerceCategoryNames = new Set(['limited', 'regular', 'limited perfume', 'regular perfume', 'all']);
 const shopTypeOptions = [
   { name: 'Semua', filter: 'all' },
@@ -102,6 +103,12 @@ export const MobileCatalogContent = ({ active = true }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const searchSectionRef = useRef(null);
   const virtualListRef = useRef(null);
+  const outgoingScrollTopRef = useRef(0);
+  const initialScrollTopRef = useRef(0);
+  const stableScrollTopRef = useRef(0);
+  const latestScrollTopRef = useRef(0);
+  const lastScrollAtRef = useRef(0);
+  const hasUserScrollIntentRef = useRef(false);
   const [virtualRowHeight, setVirtualRowHeight] = useState(MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT);
   const [virtualRows, setVirtualRows] = useState({ start: 0, end: 8 });
   const catalogProducts = useCatalogProducts();
@@ -165,6 +172,54 @@ export const MobileCatalogContent = ({ active = true }) => {
   const firstVisibleProductPreload = getOptimizedProductImageUrl(firstVisibleProductImage, 720);
   const virtualPaddingTop = shouldVirtualizeCatalog ? virtualStartRow * virtualRowHeight : 0;
   const virtualPaddingBottom = shouldVirtualizeCatalog ? Math.max(totalVirtualRows - virtualEndRow, 0) * virtualRowHeight : 0;
+  const captureOutgoingScrollTop = useCallback(() => {
+    if (!hasUserScrollIntentRef.current) {
+      outgoingScrollTopRef.current = initialScrollTopRef.current;
+      return;
+    }
+
+    const currentScrollTop = getMobileScrollTop();
+    const scrollIsSettled = Date.now() - lastScrollAtRef.current > PRODUCT_NAVIGATION_SCROLL_SETTLE_MS;
+    if (scrollIsSettled) {
+      stableScrollTopRef.current = currentScrollTop;
+      latestScrollTopRef.current = currentScrollTop;
+    }
+    outgoingScrollTopRef.current = scrollIsSettled ? currentScrollTop : stableScrollTopRef.current;
+  }, []);
+
+  useEffect(() => {
+    if (!active) return undefined;
+
+    initialScrollTopRef.current = getMobileScrollTop();
+    stableScrollTopRef.current = initialScrollTopRef.current;
+    latestScrollTopRef.current = stableScrollTopRef.current;
+    outgoingScrollTopRef.current = stableScrollTopRef.current;
+    hasUserScrollIntentRef.current = false;
+    let timeoutId = 0;
+    const markUserScrollIntent = () => {
+      hasUserScrollIntentRef.current = true;
+    };
+    const updateStableScrollTop = () => {
+      latestScrollTopRef.current = getMobileScrollTop();
+      lastScrollAtRef.current = Date.now();
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        stableScrollTopRef.current = latestScrollTopRef.current;
+      }, PRODUCT_NAVIGATION_SCROLL_SETTLE_MS);
+    };
+
+    window.addEventListener('wheel', markUserScrollIntent, { passive: true });
+    window.addEventListener('touchmove', markUserScrollIntent, { passive: true });
+    window.addEventListener('keydown', markUserScrollIntent);
+    window.addEventListener('scroll', updateStableScrollTop, { passive: true });
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('wheel', markUserScrollIntent);
+      window.removeEventListener('touchmove', markUserScrollIntent);
+      window.removeEventListener('keydown', markUserScrollIntent);
+      window.removeEventListener('scroll', updateStableScrollTop);
+    };
+  }, [active]);
 
   useMobileRenderSectionMonitor({
     active,
@@ -584,7 +639,15 @@ export const MobileCatalogContent = ({ active = true }) => {
 
                   return (
                     <article key={product.id} className="mobile-card mobile-catalog-card mobile-commerce-product-card min-w-0 overflow-hidden p-2">
-                      <button type="button" onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location) })} className="block w-full text-left">
+                      <button
+                        type="button"
+                        onPointerDown={captureOutgoingScrollTop}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
+                        }}
+                        onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
+                        className="block w-full text-left"
+                      >
                         <div className="relative">
                           <ProductVisual
                             product={product}
