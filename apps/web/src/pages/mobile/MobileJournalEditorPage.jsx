@@ -24,15 +24,15 @@ const createEmptyPost = (formulaId = 'none', formulaName = '') => {
   const hasFormula = formulaId && formulaId !== 'none';
 
   return {
-  title: hasFormula && formulaName ? `${formulaName} notes` : '',
-  category: hasFormula ? 'formula_accord' : 'experience',
-  status: 'draft',
-  related_formula_id: formulaId || 'none',
-  excerpt: '',
-  content: '',
-  seo_title: '',
-  cover_image_url: '',
-  tags: '',
+    title: hasFormula && formulaName ? `${formulaName} notes` : '',
+    category: hasFormula ? 'formula_accord' : 'experience',
+    status: 'draft',
+    related_formula_id: formulaId || 'none',
+    excerpt: '',
+    content: '',
+    seo_title: '',
+    cover_image_url: '',
+    tags: '',
   };
 };
 
@@ -81,7 +81,7 @@ const MobileJournalEditorPage = () => {
         setFormulas(formulaRows);
         setFormState(post ? toEditorState(post) : createEmptyPost(queryFormulaId, linkedFormula?.name));
       } catch (error) {
-        toast.error('Failed to load journal editor');
+        toast.error('Editor artikel belum bisa dimuat');
         navigate('/mobile/journal');
       } finally {
         if (active) {
@@ -98,7 +98,7 @@ const MobileJournalEditorPage = () => {
   }, [getFormulas, getJournalPostById, id, isEditMode, navigate, queryFormulaId]);
 
   const pageTitle = useMemo(
-    () => (isEditMode ? 'Edit Journal Mobile - Solivagant' : 'New Journal Mobile - Solivagant'),
+    () => (isEditMode ? 'Edit Artikel Mobile - Solivagant' : 'Artikel Mobile Baru - Solivagant'),
     [isEditMode]
   );
 
@@ -125,7 +125,7 @@ const MobileJournalEditorPage = () => {
     }
 
     if (!formState.title.trim()) {
-      toast.error('Title is required');
+      toast.error('Judul artikel wajib diisi');
       return;
     }
 
@@ -140,10 +140,10 @@ const MobileJournalEditorPage = () => {
         ? await updateJournalPost(id, payload)
         : await createJournalPost(payload);
 
-      toast.success(isEditMode ? 'Journal note updated' : 'Journal note saved');
+      toast.success(isEditMode ? 'Artikel diperbarui' : 'Artikel disimpan');
       navigate(`/mobile/journal/${savedPost.id}`);
     } catch (error) {
-      toast.error(isEditMode ? 'Failed to update journal note' : 'Failed to save journal note');
+      toast.error(isEditMode ? 'Artikel belum bisa diperbarui' : 'Artikel belum bisa disimpan');
     } finally {
       setSaving(false);
     }
@@ -158,17 +158,17 @@ const MobileJournalEditorPage = () => {
 
       <MobileTopBar
         title={isEditMode ? 'Edit artikel' : 'Buat artikel'}
-        subtitle="Journal editor"
-        eyebrow="Writing"
+        subtitle="Editor artikel"
+        eyebrow="Studio"
         onBack={handleBack}
       />
 
       {loading ? (
-        <MobileLoadingSkeleton title="Opening editor" subtitle="Loading formulas and note details." />
+        <MobileLoadingSkeleton title="Memuat editor" subtitle="Menyiapkan formula dan detail artikel." />
       ) : (
         <form id="mobile-journal-editor-form" onSubmit={handleSubmit} className="space-y-4 pb-5">
           <section className="space-y-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-            <MobileFormField id="journal-title" label="Title">
+            <MobileFormField id="journal-title" label="Judul">
               <Input
                 id="journal-title"
                 value={formState.title}
@@ -180,7 +180,7 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
-            <MobileFormField id="journal-category" label="Category">
+            <MobileFormField id="journal-category" label="Kategori">
               <Select value={formState.category} onValueChange={(value) => handleChange('category', value)}>
                 <SelectTrigger id="journal-category" className="h-11 rounded-2xl bg-white">
                   <SelectValue placeholder="Choose category" />
@@ -208,13 +208,13 @@ const MobileJournalEditorPage = () => {
               </p>
             </MobileFormField>
 
-            <MobileFormField id="journal-related-formula" label="Related Formula" helper="Opsional, boleh dikosongkan.">
+            <MobileFormField id="journal-related-formula" label="Formula terkait" helper="Opsional, boleh dikosongkan.">
               <Select value={formState.related_formula_id} onValueChange={(value) => handleChange('related_formula_id', value)}>
                 <SelectTrigger id="journal-related-formula" className="h-11 rounded-2xl bg-white">
                   <SelectValue placeholder="Optional formula link" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No related formula</SelectItem>
+                  <SelectItem value="none">Tanpa formula terkait</SelectItem>
                   {formulas.map((formula) => (
                     <SelectItem key={formula.id} value={formula.id}>
                       {formula.name}
@@ -226,7 +226,7 @@ const MobileJournalEditorPage = () => {
           </section>
 
           <section className="space-y-4 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-            <MobileFormField id="journal-excerpt" label="Excerpt">
+            <MobileFormField id="journal-excerpt" label="Ringkasan">
               <Textarea
                 id="journal-excerpt"
                 value={formState.excerpt}
@@ -237,7 +237,7 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
-            <MobileFormField id="journal-content" label="Content">
+            <MobileFormField id="journal-content" label="Isi artikel">
               <Textarea
                 id="journal-content"
                 value={formState.content}
@@ -247,7 +247,7 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
-            <MobileFormField id="journal-tags" label="Tags" helper="Pisahkan tag dengan koma.">
+            <MobileFormField id="journal-tags" label="Tag" helper="Pisahkan tag dengan koma.">
               <Input
                 id="journal-tags"
                 value={formState.tags}
@@ -257,7 +257,7 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
-            <MobileFormField id="journal-seo-title" label="SEO Title" helper="Opsional untuk halaman publik nanti.">
+            <MobileFormField id="journal-seo-title" label="Judul SEO" helper="Opsional untuk halaman publik nanti.">
               <Input
                 id="journal-seo-title"
                 value={formState.seo_title}
@@ -268,7 +268,7 @@ const MobileJournalEditorPage = () => {
               />
             </MobileFormField>
 
-            <MobileFormField id="journal-cover-image" label="Cover Image URL" helper="Opsional untuk rasa blog sungguhan.">
+            <MobileFormField id="journal-cover-image" label="URL cover image" helper="Opsional untuk rasa blog sungguhan.">
               <Input
                 id="journal-cover-image"
                 value={formState.cover_image_url}

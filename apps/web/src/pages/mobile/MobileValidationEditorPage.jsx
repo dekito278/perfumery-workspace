@@ -21,9 +21,9 @@ import { runWithTimeout } from '@/utils/asyncTimeout.js';
 
 const steps = [
   { value: 0, label: 'Formula' },
-  { value: 1, label: 'Notes' },
-  { value: 2, label: 'Test' },
-  { value: 3, label: 'Result' },
+  { value: 1, label: 'Catatan' },
+  { value: 2, label: 'Tes' },
+  { value: 3, label: 'Hasil' },
 ];
 
 const testTypeOptions = [
@@ -31,13 +31,13 @@ const testTypeOptions = [
   { value: 'skin', label: 'Skin' },
   { value: 'stability', label: 'Stability' },
   { value: 'revision', label: 'Revision' },
-  { value: 'other', label: 'Other' },
+  { value: 'other', label: 'Lainnya' },
 ];
 
 const statusOptions = [
-  { value: 'logged', label: 'Logged' },
-  { value: 'action_needed', label: 'Action' },
-  { value: 'approved', label: 'Approved' },
+  { value: 'logged', label: 'Tercatat' },
+  { value: 'action_needed', label: 'Aksi' },
+  { value: 'approved', label: 'Disetujui' },
 ];
 
 const createEmptyLog = (formulaId = 'none') => ({
@@ -99,7 +99,7 @@ const MobileValidationEditorPage = () => {
         if (isEditMode) {
           const match = (logRows || []).find((log) => String(log.id) === String(id));
           if (!match) {
-            setLoadError('Validation log not found. It may have been deleted or moved.');
+            setLoadError('Catatan validasi tidak ditemukan. Mungkin sudah dihapus atau dipindah.');
             return;
           }
           setFormState({
@@ -116,7 +116,7 @@ const MobileValidationEditorPage = () => {
           setFormState(createEmptyLog(queryFormulaId));
         }
       } catch (error) {
-        if (!cancelled) setLoadError(error.message || 'Validation form could not be loaded right now.');
+        if (!cancelled) setLoadError(error.message || 'Form validasi belum bisa dimuat saat ini.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -127,17 +127,21 @@ const MobileValidationEditorPage = () => {
 
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
   const selectedFormula = formulasById.get(formState.formula_id);
-  const pageTitle = isEditMode ? 'Edit validation' : 'New validation';
-  const saveLabel = isEditMode ? 'Update' : 'Save';
+  const pageTitle = isEditMode ? 'Edit validasi' : 'Validasi baru';
+  const saveLabel = isEditMode ? 'Update' : 'Simpan';
 
   const handleSave = async () => {
+    if (saving) {
+      return;
+    }
+
     if (!formState.formula_id || formState.formula_id === 'none') {
-      toast.error('Choose a formula first');
+      toast.error('Pilih formula dulu');
       setStep(0);
       return;
     }
     if (!formState.note.trim()) {
-      toast.error('Validation note is required');
+      toast.error('Catatan validasi wajib diisi');
       setStep(1);
       return;
     }
@@ -145,15 +149,15 @@ const MobileValidationEditorPage = () => {
     try {
       if (isEditMode) {
         await updateValidationLog(id, formState);
-        toast.success('Validation log updated');
+        toast.success('Catatan validasi diperbarui');
       } else {
         await createValidationLog(formState);
-        toast.success(formState.status === 'approved' ? 'Validation completed' : 'Validation saved');
+        toast.success(formState.status === 'approved' ? 'Validasi selesai' : 'Validasi disimpan');
       }
       triggerMobileHaptic('success');
       navigate('/mobile/validation', { state: { restoreScroll: true } });
     } catch (error) {
-      toast.error(error.message || 'Failed to save validation');
+      toast.error(error.message || 'Validasi belum bisa disimpan');
     } finally {
       setSaving(false);
     }
@@ -179,35 +183,35 @@ const MobileValidationEditorPage = () => {
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet><title>{pageTitle} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title={pageTitle} subtitle="Structured test notes" onBack={goBack} />
+        <MobileTopBar title={pageTitle} subtitle="Catatan tes terstruktur" onBack={goBack} />
         <section className="mobile-soft-card p-4">
           <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
               <ClipboardCheck className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Dedicated flow</div>
-              <h1 className="text-lg font-bold leading-tight text-[#0b130c]">Capture the validation decision without fighting a modal.</h1>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Flow khusus</div>
+              <h1 className="text-lg font-bold leading-tight text-[#0b130c]">Catat keputusan validasi tanpa modal yang sempit.</h1>
               <p className="mt-1 text-xs leading-relaxed text-[#6b7280]">
-                Work through formula, notes, test context, and result. The action bar stays predictable at the bottom.
+                Isi formula, catatan, konteks tes, dan hasil. Tombol aksi tetap konsisten di bawah.
               </p>
             </div>
           </div>
         </section>
 
         {loading ? (
-          <MobileStatePanel tone="neutral" title="Loading validation form" description="Preparing formulas and existing notes." />
+          <MobileStatePanel tone="loading" title="Memuat form validasi" description="Menyiapkan formula dan catatan yang sudah ada." />
         ) : loadError ? (
-          <MobileStatePanel tone="error" title="Couldn't open validation form" description={loadError} action="Back to validation" onAction={goBack} />
+          <MobileStatePanel tone="error" title="Form validasi belum bisa dibuka" description={loadError} action="Kembali ke validasi" onAction={goBack} />
         ) : (
           <>
             <MobileSegmentedControl options={steps} value={step} onChange={setStep} />
             {step === 0 ? (
               <ValidationStepSection
                 icon={FlaskConical}
-                eyebrow="Step 1"
-                title="Choose formula and revision"
-                description="Anchor the note to the exact candidate before you start writing observations."
+                eyebrow="Langkah 1"
+                title="Pilih formula dan revisi"
+                description="Kaitkan catatan ke kandidat formula yang tepat sebelum menulis observasi."
               >
                 <div className="space-y-2">
                   <Label>Formula</Label>
@@ -216,12 +220,12 @@ const MobileValidationEditorPage = () => {
                     onClick={() => setSelectorOpen(true)}
                     className="mobile-interactive mobile-pressable mobile-card w-full p-4 text-left text-sm font-bold"
                   >
-                    <span className="block text-[#0b130c]">{selectedFormula?.name || 'Choose formula'}</span>
-                    <span className="mt-1 block text-xs font-medium text-[#6b7280]">{selectedFormula?.code || 'Required before saving'}</span>
+                    <span className="block text-[#0b130c]">{selectedFormula?.name || 'Pilih formula'}</span>
+                    <span className="mt-1 block text-xs font-medium text-[#6b7280]">{selectedFormula?.code || 'Wajib sebelum simpan'}</span>
                   </button>
                 </div>
                 <div className="space-y-2">
-                  <Label>Revision label</Label>
+                  <Label>Label revisi</Label>
                   <Input
                     value={formState.revision_label}
                     onChange={(event) => setFormState((current) => ({ ...current, revision_label: event.target.value }))}
@@ -235,12 +239,12 @@ const MobileValidationEditorPage = () => {
             {step === 1 ? (
               <ValidationStepSection
                 icon={NotebookPen}
-                eyebrow="Step 2"
-                title="Write the observation"
-                description="This is the heart of the validation record, so it gets page space instead of cramped modal space."
+                eyebrow="Langkah 2"
+                title="Tulis observasi"
+                description="Ini inti catatan validasi, jadi diberi ruang halaman penuh."
               >
                 <div className="space-y-2">
-                  <Label>Validation notes</Label>
+                  <Label>Catatan validasi</Label>
                   <Textarea
                     value={formState.note}
                     onChange={(event) => setFormState((current) => ({ ...current, note: event.target.value }))}
@@ -254,16 +258,16 @@ const MobileValidationEditorPage = () => {
             {step === 2 ? (
               <ValidationStepSection
                 icon={CalendarCheck}
-                eyebrow="Step 3"
-                title="Set test context"
-                description="Capture where this evidence came from, so the final decision is traceable."
+                eyebrow="Langkah 3"
+                title="Atur konteks tes"
+                description="Simpan sumber evidence agar keputusan akhirnya bisa ditelusuri."
               >
                 <div className="space-y-2">
-                  <Label>Test type</Label>
+                  <Label>Tipe tes</Label>
                   <MobileSegmentedControl options={testTypeOptions} value={formState.test_type} onChange={(value) => setFormState((current) => ({ ...current, test_type: value }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Test date</Label>
+                  <Label>Tanggal tes</Label>
                   <Input
                     type="date"
                     value={formState.tested_at}
@@ -276,7 +280,7 @@ const MobileValidationEditorPage = () => {
                   <Input
                     value={formState.evaluator_name}
                     onChange={(event) => setFormState((current) => ({ ...current, evaluator_name: event.target.value }))}
-                    placeholder="Optional evaluator name"
+                    placeholder="Nama evaluator opsional"
                     className="rounded-2xl"
                   />
                 </div>
@@ -286,16 +290,16 @@ const MobileValidationEditorPage = () => {
             {step === 3 ? (
               <ValidationStepSection
                 icon={ClipboardCheck}
-                eyebrow="Step 4"
-                title="Decide the result"
-                description="Close the loop: approve, keep logged, or turn it into an action item."
+                eyebrow="Langkah 4"
+                title="Tentukan hasil"
+                description="Tutup loop: setujui, simpan sebagai catatan, atau jadikan item aksi."
               >
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <MobileSegmentedControl options={statusOptions} value={formState.status} onChange={(value) => setFormState((current) => ({ ...current, status: value }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Follow-up action</Label>
+                  <Label>Aksi lanjutan</Label>
                   <Textarea
                     value={formState.next_action}
                     onChange={(event) => setFormState((current) => ({ ...current, next_action: event.target.value }))}
@@ -313,10 +317,10 @@ const MobileValidationEditorPage = () => {
         <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Validation form actions">
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleSecondaryAction} disabled={saving}>
-              {step === 0 ? 'Cancel' : 'Back'}
+              {step === 0 ? 'Batal' : 'Kembali'}
             </Button>
             <Button type="button" className="rounded-2xl" disabled={saving} onClick={handlePrimaryAction}>
-              {step === steps.length - 1 ? (saving ? 'Saving...' : saveLabel) : 'Continue'}
+              {step === steps.length - 1 ? (saving ? 'Menyimpan...' : saveLabel) : 'Lanjut'}
             </Button>
           </div>
         </StickyBottomActionBar>
@@ -325,7 +329,7 @@ const MobileValidationEditorPage = () => {
       <MobileSearchableSelector
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
-        title="Select formula"
+        title="Pilih formula"
         options={formulas}
         onSelect={(formula) => {
           setFormState((current) => ({ ...current, formula_id: formula.id }));

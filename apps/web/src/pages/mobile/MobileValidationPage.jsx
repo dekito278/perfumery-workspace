@@ -21,9 +21,9 @@ import { runWithTimeout } from '@/utils/asyncTimeout.js';
 import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const tabs = [
-  { value: 'pending', label: 'Action' },
-  { value: 'in_progress', label: 'Logged' },
-  { value: 'completed', label: 'Approved' },
+  { value: 'pending', label: 'Aksi' },
+  { value: 'in_progress', label: 'Tercatat' },
+  { value: 'completed', label: 'Disetujui' },
 ];
 
 const StatTile = ({ label, value, tone = 'neutral' }) => {
@@ -71,8 +71,8 @@ const MobileValidationPage = () => {
         console.warn('Validation formula names are delayed:', error);
       }
     } catch (error) {
-      toast.error('Failed to load validation workspace');
-      setLoadError(error.message || 'Validation workspace could not be loaded right now.');
+      toast.error('Workspace validasi belum bisa dimuat');
+      setLoadError(error.message || 'Workspace validasi belum bisa dimuat saat ini.');
       setLoading(false);
     } finally {
       setLoading(false);
@@ -116,11 +116,11 @@ const MobileValidationPage = () => {
     try {
       await deleteValidationLog(deleteTarget.id);
       triggerMobileHaptic('success');
-      toast.success('Validation log deleted');
+      toast.success('Catatan validasi dihapus');
       setDeleteTarget(null);
       await loadWorkspace();
     } catch (error) {
-      toast.error(error.message || 'Failed to delete validation log');
+      toast.error(error.message || 'Catatan validasi belum bisa dihapus');
     } finally {
       setDeleting(false);
     }
@@ -128,11 +128,11 @@ const MobileValidationPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>Mobile Validation - Solivagant</title></Helmet>
+      <Helmet><title>Validasi Mobile - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar
-          title="Validation"
-          subtitle="Tests and revision notes"
+          title="Validasi"
+          subtitle="Tes dan catatan revisi"
           action={(
             <Button type="button" size="icon" onClick={openNewLog} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl">
               <Plus className="h-5 w-5" />
@@ -145,23 +145,23 @@ const MobileValidationPage = () => {
               <ClipboardCheck className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Validation queue</div>
-              <h2 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{actionCount ? `${actionCount} needs action` : 'No urgent action'}</h2>
+              <div className="text-[10px] font-bold uppercase text-amber-700">Antrean validasi</div>
+              <h2 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{actionCount ? `${actionCount} perlu aksi` : 'Tidak ada aksi mendesak'}</h2>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <StatTile label="Action" value={actionCount} tone="amber" />
-                <StatTile label="Logged" value={loggedCount} />
-                <StatTile label="Approved" value={approvedCount} tone="emerald" />
+                <StatTile label="Aksi" value={actionCount} tone="amber" />
+                <StatTile label="Tercatat" value={loggedCount} />
+                <StatTile label="Disetujui" value={approvedCount} tone="emerald" />
               </div>
             </div>
           </div>
         </section>
         <MobileSegmentedControl options={tabs} value={tab} onChange={setTab} />
-        {loading ? <MobileLoadingSkeleton count={4} title="Loading validation..." subtitle="Preparing action queue, approvals, and recent notes." /> : loadError ? (
+        {loading ? <MobileLoadingSkeleton count={4} title="Memuat validasi..." subtitle="Menyiapkan antrean aksi, approval, dan catatan terbaru." /> : loadError ? (
           <MobileStatePanel
             tone="error"
-            title="Couldn't load validation"
+            title="Validasi belum bisa dimuat"
             description={loadError}
-            action="Try again"
+            action="Coba lagi"
             onAction={loadWorkspace}
           />
         ) : visible.length ? (
@@ -184,13 +184,13 @@ const MobileValidationPage = () => {
         ) : (
           <MobileEmptyState
             icon={NotebookPen}
-            title={tab === 'pending' ? 'No items need action' : tab === 'completed' ? 'No approved validations yet' : 'No validation notes yet'}
+            title={tab === 'pending' ? 'Tidak ada item yang perlu aksi' : tab === 'completed' ? 'Belum ada validasi disetujui' : 'Belum ada catatan validasi'}
             description={tab === 'pending'
-              ? 'When a test needs follow-up, it will appear here for quick review.'
+              ? 'Jika test perlu follow-up, itemnya akan muncul di sini untuk review cepat.'
               : tab === 'completed'
-                ? 'Approved validation results will collect here after review.'
-                : 'Log blotter, skin, stability, or revision notes once a formula is ready to review.'}
-            action={tab === 'in_progress' ? 'New Validation' : 'View logged'}
+                ? 'Hasil validasi yang disetujui akan terkumpul di sini setelah review.'
+                : 'Catat blotter, skin, stability, atau revisi saat formula siap direview.'}
+            action={tab === 'in_progress' ? 'Validasi baru' : 'Lihat catatan'}
             onAction={tab === 'in_progress' ? openNewLog : () => setTab('in_progress')}
           />
         )}
@@ -198,7 +198,7 @@ const MobileValidationPage = () => {
       <DeleteConfirmationDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        itemName={deleteTarget ? formulasById.get(deleteTarget.formula_id)?.name || 'Validation log' : ''}
+        itemName={deleteTarget ? formulasById.get(deleteTarget.formula_id)?.name || 'Catatan validasi' : ''}
         onConfirm={handleDeleteLog}
         loading={deleting}
       />

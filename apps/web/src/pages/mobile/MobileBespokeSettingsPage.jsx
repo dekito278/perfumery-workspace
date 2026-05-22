@@ -61,6 +61,10 @@ const MobileBespokeSettingsPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (saving) {
+      return;
+    }
+
     if (!form.label.trim()) {
       toast.error('Nama opsi wajib diisi');
       return;
@@ -82,6 +86,10 @@ const MobileBespokeSettingsPage = () => {
   };
 
   const handleDelete = async (option) => {
+    if (saving) {
+      return;
+    }
+
     setSaving(true);
     try {
       await deleteBespokeOption(activeCollection, option.id);
@@ -95,6 +103,10 @@ const MobileBespokeSettingsPage = () => {
   };
 
   const handleReset = async () => {
+    if (saving) {
+      return;
+    }
+
     setSaving(true);
     try {
       await resetBespokeSettings();
@@ -109,9 +121,9 @@ const MobileBespokeSettingsPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>Bespoke Settings - Solivagant</title></Helmet>
+      <Helmet><title>Pengaturan Bespoke - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title="Bespoke" subtitle="Custom wizard settings" eyebrow="E-commerce" action={<WandSparkles className="h-5 w-5 text-amber-700" />} />
+        <MobileTopBar title="Bespoke" subtitle="Pengaturan wizard custom" eyebrow="E-commerce" action={<WandSparkles className="h-5 w-5 text-amber-700" />} />
 
         <section className="mobile-soft-card p-4">
           <div className="flex items-start gap-3">
@@ -151,7 +163,7 @@ const MobileBespokeSettingsPage = () => {
               <h2 className="text-base font-bold text-[#1f2937]">{form.id ? `Edit ${collection.title}` : `Tambah ${collection.title}`}</h2>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">{collection.helper}</p>
             </div>
-            <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white px-3 text-xs" onClick={resetForm}>New</Button>
+            <Button type="button" variant="outline" className="h-9 rounded-2xl bg-white px-3 text-xs" onClick={resetForm} disabled={saving}>Baru</Button>
           </div>
           <div className="mt-3 grid gap-2">
             <input value={form.label} onChange={(event) => updateField('label', event.target.value)} placeholder="Nama opsi" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
@@ -161,7 +173,7 @@ const MobileBespokeSettingsPage = () => {
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               {form.imageUrl ? (
                 <div className="relative aspect-square overflow-hidden rounded-2xl border bg-white">
-                  <img src={form.imageUrl} alt={form.label || 'Bespoke option'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
+                  <img src={form.imageUrl} alt={form.label || 'Opsi bespoke'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
                   <button type="button" onClick={() => updateField('imageUrl', '')} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-rose-700" aria-label="Remove option image">
                     <ImageOff className="h-4 w-4" />
                   </button>
@@ -173,8 +185,8 @@ const MobileBespokeSettingsPage = () => {
               )}
               <label className="mt-3 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-xs font-bold">
                 <ImagePlus className="h-4 w-4" />
-                {uploadingImage ? 'Uploading...' : 'Upload gambar'}
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage} />
+                {uploadingImage ? 'Mengunggah...' : 'Upload gambar'}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={handleImageUpload} disabled={uploadingImage || saving} />
               </label>
               <input value={form.imageUrl} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="Atau paste Image URL" className="mt-2 h-12 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
               <p className="mt-2 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
@@ -185,7 +197,7 @@ const MobileBespokeSettingsPage = () => {
               <input type="checkbox" checked={Boolean(form.enabled)} onChange={(event) => updateField('enabled', event.target.checked)} />
               Tampilkan ke customer
             </label>
-            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={saving}><Save className="h-4 w-4" />{saving ? 'Saving...' : 'Save option'}</Button>
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={saving || uploadingImage}><Save className="h-4 w-4" />{saving ? 'Menyimpan...' : 'Simpan opsi'}</Button>
           </div>
         </form>
 
@@ -205,12 +217,12 @@ const MobileBespokeSettingsPage = () => {
                   <h3 className="text-sm font-bold text-[#1f2937]">{option.label}</h3>
                   <p className="mt-1 text-xs font-semibold leading-snug text-[#6b7280]">{option.description || '-'}</p>
                   <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">
-                    {formatRupiah(option.price)} / {option.enabled ? 'active' : 'hidden'}
+                    {formatRupiah(option.price)} / {option.enabled ? 'aktif' : 'disembunyikan'}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
                   <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => handleEdit(option)} aria-label={`Edit ${option.label}`} disabled={saving}><Edit3 className="h-4 w-4" /></Button>
-                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(option)} aria-label={`Delete ${option.label}`} disabled={saving}><Trash2 className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDelete(option)} aria-label={`Hapus ${option.label}`} disabled={saving}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
             </article>

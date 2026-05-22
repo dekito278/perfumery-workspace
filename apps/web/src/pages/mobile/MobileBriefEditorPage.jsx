@@ -21,9 +21,9 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import { generateBriefRecommendations } from '@/utils/briefRecommendationEngine.js';
 
 const steps = [
-  { value: 'idea', label: 'Idea' },
-  { value: 'direction', label: 'Direction' },
-  { value: 'identity', label: 'Identity' },
+  { value: 'idea', label: 'Ide' },
+  { value: 'direction', label: 'Arah' },
+  { value: 'identity', label: 'Identitas' },
   { value: 'review', label: 'Review' },
 ];
 
@@ -67,7 +67,7 @@ const MobileBriefEditorPage = () => {
         if (isEditMode) {
           const brief = briefRows.find((item) => item.id === id);
           if (!brief) {
-            toast.error('Brief not found');
+            toast.error('Brief tidak ditemukan');
             navigate('/mobile/briefs');
             return;
           }
@@ -82,7 +82,7 @@ const MobileBriefEditorPage = () => {
           });
         }
       } catch (error) {
-        toast.error('Failed to load brief editor');
+        toast.error('Editor brief belum bisa dimuat');
       } finally {
         if (active) setLoading(false);
       }
@@ -101,7 +101,7 @@ const MobileBriefEditorPage = () => {
   const handleGenerate = () => {
     const recommendation = generateBriefRecommendations(descriptionInput);
     if (!recommendation) {
-      toast.error('Add a short description first');
+      toast.error('Tambahkan deskripsi singkat dulu');
       return;
     }
     setFormState((current) => ({
@@ -112,13 +112,17 @@ const MobileBriefEditorPage = () => {
       performance_target: recommendation.performance_target,
       budget_direction: recommendation.budget_direction,
     }));
-    toast.success('Recommendation generated');
+    toast.success('Rekomendasi dibuat');
     setStep('direction');
   };
 
   const handleSubmit = async () => {
+    if (saving) {
+      return;
+    }
+
     if (!formState.title.trim()) {
-      toast.error('Brief title is required');
+      toast.error('Judul brief wajib diisi');
       setStep('identity');
       return;
     }
@@ -140,10 +144,10 @@ const MobileBriefEditorPage = () => {
       } catch (projectError) {
         console.error('Failed to ensure mobile brief project:', projectError);
       }
-      toast.success(isEditMode ? 'Brief updated' : 'Brief created');
+      toast.success(isEditMode ? 'Brief diperbarui' : 'Brief dibuat');
       navigate(`/mobile/briefs/${savedBrief.id}`);
     } catch (error) {
-      toast.error(isEditMode ? 'Failed to update brief' : 'Failed to create brief');
+      toast.error(isEditMode ? 'Brief belum bisa diperbarui' : 'Brief belum bisa dibuat');
     } finally {
       setSaving(false);
     }
@@ -151,39 +155,39 @@ const MobileBriefEditorPage = () => {
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
-      <Helmet><title>{isEditMode ? 'Edit Mobile Brief' : 'New Mobile Brief'} - Solivagant</title></Helmet>
+      <Helmet><title>{isEditMode ? 'Edit Brief Mobile' : 'Brief Mobile Baru'} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
-        <MobileTopBar title={isEditMode ? 'Edit Brief' : 'New Brief'} onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />
+        <MobileTopBar title={isEditMode ? 'Edit Brief' : 'Brief Baru'} onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />
         <MobileSegmentedControl options={steps} value={step} onChange={setStep} />
-        {loading ? <MobileLoadingState eyebrow="Brief editor" title="Loading editor..." subtitle="Preparing formulas and brief details." className="min-h-[calc(100dvh-260px)]" /> : (
+        {loading ? <MobileLoadingState eyebrow="Editor brief" title="Memuat editor..." subtitle="Menyiapkan formula dan detail brief." className="min-h-[calc(100dvh-260px)]" /> : (
           <section className="mobile-card p-4">
             {step === 'idea' ? (
               <div className="space-y-4">
-                <MobileFormField label="Describe idea" helper="Tulis ringkasan yang cukup jelas agar rekomendasi awal lebih tepat.">
+                <MobileFormField label="Deskripsi ide" helper="Tulis ringkasan yang cukup jelas agar rekomendasi awal lebih tepat.">
                   <Textarea value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} className="min-h-[180px] rounded-2xl bg-white" placeholder="Rose kering, panas, elegan, breathable..." />
                 </MobileFormField>
-                <Button type="button" variant="outline" onClick={handleGenerate} className="w-full rounded-2xl bg-white">Generate Recommendation</Button>
+                <Button type="button" variant="outline" onClick={handleGenerate} className="w-full rounded-2xl bg-white">Buat rekomendasi</Button>
               </div>
             ) : null}
             {step === 'direction' ? (
               <div className="grid gap-4">
-                <MobileFormField label="Mood and story" helper="Nuansa, emosi, dan cerita yang ingin dibawa."><Textarea value={formState.mood_story} onChange={(event) => setField('mood_story', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
-                <MobileFormField label="Audience and usage" helper="Siapa yang memakai dan kapan dipakai."><Textarea value={formState.audience_usage} onChange={(event) => setField('audience_usage', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
-                <MobileFormField label="Performance target" helper="Ekspektasi projection, longevity, atau feel pemakaian."><Textarea value={formState.performance_target} onChange={(event) => setField('performance_target', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
-                <MobileFormField label="Budget and direction" helper="Batas biaya atau batasan bahan bila ada."><Textarea value={formState.budget_direction} onChange={(event) => setField('budget_direction', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Mood dan cerita" helper="Nuansa, emosi, dan cerita yang ingin dibawa."><Textarea value={formState.mood_story} onChange={(event) => setField('mood_story', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Audiens dan penggunaan" helper="Siapa yang memakai dan kapan dipakai."><Textarea value={formState.audience_usage} onChange={(event) => setField('audience_usage', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Target performa" helper="Ekspektasi projection, longevity, atau feel pemakaian."><Textarea value={formState.performance_target} onChange={(event) => setField('performance_target', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
+                <MobileFormField label="Budget dan arah" helper="Batas biaya atau batasan bahan bila ada."><Textarea value={formState.budget_direction} onChange={(event) => setField('budget_direction', event.target.value)} className="min-h-[120px] rounded-2xl" /></MobileFormField>
               </div>
             ) : null}
             {step === 'identity' ? (
               <div className="grid gap-4">
-                <MobileFormField label="Title" helper="Nama singkat yang mudah dikenali tim."><Input value={formState.title} onChange={(event) => setField('title', event.target.value)} className="rounded-2xl" required /></MobileFormField>
+                <MobileFormField label="Judul" helper="Nama singkat yang mudah dikenali tim."><Input value={formState.title} onChange={(event) => setField('title', event.target.value)} className="rounded-2xl" required /></MobileFormField>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <MobileSegmentedControl options={[{ value: 'draft', label: 'Draft' }, { value: 'active', label: 'Active' }, { value: 'archived', label: 'Archived' }]} value={formState.status} onChange={(value) => setField('status', value)} />
+                  <MobileSegmentedControl options={[{ value: 'draft', label: 'Draft' }, { value: 'active', label: 'Aktif' }, { value: 'archived', label: 'Arsip' }]} value={formState.status} onChange={(value) => setField('status', value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Linked formula</Label>
+                  <Label>Formula terkait</Label>
                   <button type="button" onClick={() => setFormulaSelectorOpen(true)} className="mobile-card w-full p-4 text-left text-sm font-bold">
-                    {linkedFormula?.name || 'Auto-create new'}
+                    {linkedFormula?.name || 'Buat otomatis'}
                   </button>
                 </div>
               </div>
@@ -191,12 +195,12 @@ const MobileBriefEditorPage = () => {
             {step === 'review' ? (
               <div className="space-y-3">
                 {[
-                  ['Title', formState.title || 'Untitled'],
+                  ['Judul', formState.title || 'Tanpa judul'],
                   ['Status', formState.status],
-                  ['Formula', linkedFormula?.name || 'Auto-create new'],
+                  ['Formula', linkedFormula?.name || 'Buat otomatis'],
                   ['Mood', formState.mood_story || '-'],
-                  ['Audience', formState.audience_usage || '-'],
-                  ['Performance', formState.performance_target || '-'],
+                  ['Audiens', formState.audience_usage || '-'],
+                  ['Performa', formState.performance_target || '-'],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl bg-[#f8f7f4] p-3">
                     <div className="text-[11px] font-bold uppercase text-[#9ca3af]">{label}</div>
@@ -209,11 +213,11 @@ const MobileBriefEditorPage = () => {
         )}
         <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Brief editor actions">
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant="outline" onClick={goBack} className="rounded-2xl bg-white">{currentIndex === 0 ? 'Cancel' : 'Back'}</Button>
+            <Button type="button" variant="outline" onClick={goBack} className="rounded-2xl bg-white">{currentIndex === 0 ? 'Batal' : 'Kembali'}</Button>
             {step === 'review' ? (
-              <Button type="button" onClick={handleSubmit} disabled={saving} className="rounded-2xl">{saving ? 'Saving...' : isEditMode ? 'Update Brief' : 'Create Brief'}</Button>
+              <Button type="button" onClick={handleSubmit} disabled={saving} className="rounded-2xl">{saving ? 'Menyimpan...' : isEditMode ? 'Update Brief' : 'Buat Brief'}</Button>
             ) : (
-              <Button type="button" onClick={goNext} className="rounded-2xl">Continue</Button>
+              <Button type="button" onClick={goNext} className="rounded-2xl">Lanjut</Button>
             )}
           </div>
         </StickyBottomActionBar>
@@ -221,8 +225,8 @@ const MobileBriefEditorPage = () => {
       <MobileSearchableSelector
         open={formulaSelectorOpen}
         onOpenChange={setFormulaSelectorOpen}
-        title="Linked formula"
-        options={[{ id: 'none', name: 'No linked formula yet', code: 'Auto-create new' }, ...formulas]}
+        title="Formula terkait"
+        options={[{ id: 'none', name: 'Belum ada formula terkait', code: 'Buat otomatis' }, ...formulas]}
         onSelect={(formula) => setField('formula_id', formula.id)}
         getLabel={(formula) => formula.name}
         getMeta={(formula) => formula.code}

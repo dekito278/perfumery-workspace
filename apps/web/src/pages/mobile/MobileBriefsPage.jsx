@@ -21,11 +21,11 @@ import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 
 const statusOptions = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'Semua' },
   { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'active', label: 'Aktif' },
+  { value: 'in_progress', label: 'Berjalan' },
+  { value: 'completed', label: 'Selesai' },
 ];
 
 const runWithTimeout = (promise, fallbackValue, timeoutMs = 5000) => Promise.race([
@@ -67,8 +67,8 @@ const MobileBriefsPage = () => {
         console.warn('Brief formula names are delayed:', error);
       }
     } catch (error) {
-      toast.error('Failed to load briefs');
-      if (isActive()) setLoadError(error.message || 'Briefs could not be loaded right now.');
+      toast.error('Brief belum bisa dimuat');
+      if (isActive()) setLoadError(error.message || 'Brief belum bisa dimuat saat ini.');
       if (isActive()) setLoading(false);
     } finally {
       if (isActive()) setLoading(false);
@@ -96,11 +96,11 @@ const MobileBriefsPage = () => {
     try {
       await deleteBrief(deleteTarget.id);
       triggerMobileHaptic('success');
-      toast.success('Brief deleted');
+      toast.success('Brief dihapus');
       setDeleteTarget(null);
       await loadData();
     } catch (error) {
-      toast.error(error.message || 'Failed to delete brief');
+      toast.error(error.message || 'Brief belum bisa dihapus');
     } finally {
       setDeleting(false);
     }
@@ -112,33 +112,33 @@ const MobileBriefsPage = () => {
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Briefs"
-          action={<Button type="button" size="icon" onClick={() => navigate(queryFormulaId ? `/mobile/briefs/new?formulaId=${queryFormulaId}` : '/mobile/briefs/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" onClick={() => navigate(queryFormulaId ? `/mobile/briefs/new?formulaId=${queryFormulaId}` : '/mobile/briefs/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl" aria-label="Buat brief"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
-          <MobileSearchBar value={query} onChange={setQuery} placeholder="Search briefs or formulas..." disabled={loading} />
+          <MobileSearchBar value={query} onChange={setQuery} placeholder="Cari brief atau formula..." disabled={loading} />
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
         </div>
-        {loading ? <MobileLoadingSkeleton count={4} title="Loading briefs..." subtitle="Preparing recent projects and linked formulas." /> : loadError ? (
+        {loading ? <MobileLoadingSkeleton count={4} title="Memuat brief..." subtitle="Menyiapkan project terbaru dan formula terkait." /> : loadError ? (
           <MobileStatePanel
             tone="error"
-            title="Couldn’t load briefs"
+            title="Brief belum bisa dimuat"
             description={loadError}
-            action="Try again"
+            action="Coba lagi"
             onAction={() => loadData()}
           />
         ) : briefs.length === 0 ? (
           <MobileEmptyState
             icon={ClipboardList}
-            title="No briefs yet"
-            description="Start with a brief to capture the scent direction, shortlist materials, and keep the project history together."
-            action="New Brief"
+            title="Belum ada brief"
+            description="Mulai dari brief untuk menyimpan arah aroma, shortlist material, dan histori project."
+            action="Brief baru"
             onAction={() => navigate('/mobile/briefs/new')}
           />
         ) : filtered.length === 0 ? (
           <MobileEmptyState
-            title="No matching briefs"
-            description="Try a different keyword or clear the current status filter."
-            action="Clear filters"
+            title="Brief tidak ditemukan"
+            description="Coba kata kunci lain atau reset filter status."
+            action="Reset filter"
             onAction={() => {
               setQuery('');
               setStatus('all');

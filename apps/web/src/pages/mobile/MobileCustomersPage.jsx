@@ -24,29 +24,29 @@ const MobileCustomersPage = () => {
 
   const copyCode = async (customer) => {
     const copied = await copyTextToClipboard(customer.customerCode);
-    copied ? toast.success(`${customer.customerCode} copied`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
+    copied ? toast.success(`${customer.customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
   };
 
   return (
     <MobileAuthenticatedLayout showFab={false}>
       <Helmet>
-        <title>Customers - Solivagant</title>
+        <title>Customer - Solivagant</title>
       </Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
-          title="Customers"
-          subtitle={`${summary.total} records / ${summary.repeat} repeat`}
+          title="Customer"
+          subtitle={`${summary.total} data / ${summary.repeat} repeat`}
           eyebrow="E-commerce"
           action={<UsersRound className="h-5 w-5 text-amber-700" />}
         />
 
         <section className="mobile-soft-card grid grid-cols-2 gap-3 p-4">
           <div>
-            <div className="text-[10px] font-bold uppercase text-amber-700">Customer code</div>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Kode customer</div>
             <div className="mt-1 text-sm font-bold text-[#1f2937]">SOLIxxxxx</div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-amber-700">Linked orders</div>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Order terkait</div>
             <div className="mt-1 text-lg font-bold text-[#1f2937]">{summary.orders}</div>
           </div>
         </section>
@@ -58,22 +58,22 @@ const MobileCustomersPage = () => {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate text-sm font-bold text-[#1f2937]">{customer.customerName}</h2>
-                    {customer.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Local</span> : null}
+                    {customer.persistence === 'local' ? <span className="rounded-full bg-stone-100 px-2 py-1 text-[10px] font-bold uppercase text-stone-600">Lokal</span> : null}
                   </div>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.contact}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.deliveryArea || customer.deliveryAddress || 'No address saved'}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.deliveryArea || customer.deliveryAddress || 'Belum ada alamat'}</p>
                 </div>
                 <button type="button" onClick={() => copyCode(customer)} className="mobile-interactive mobile-pressable shrink-0 rounded-2xl bg-[#263d27] px-3 py-2 text-xs font-bold text-[#eef2e8]">
                   {customer.customerCode}
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-[#f8f7f4] p-3 text-xs font-semibold text-[#6b7280]">
-                <p><strong className="block text-[10px] uppercase text-[#263d27]">Orders</strong>{customer.orderCount}</p>
-                <p><strong className="block text-[10px] uppercase text-[#263d27]">Last order</strong>{formatDate(customer.lastOrderAt)}</p>
+                <p><strong className="block text-[10px] uppercase text-[#263d27]">Order</strong>{customer.orderCount}</p>
+                <p><strong className="block text-[10px] uppercase text-[#263d27]">Order terakhir</strong>{formatDate(customer.lastOrderAt)}</p>
               </div>
               <Button type="button" variant="outline" className="mobile-interactive mobile-pressable mt-3 w-full rounded-2xl gap-2 bg-white" onClick={() => copyCode(customer)}>
                 <Clipboard className="h-4 w-4" />
-                Copy customer code
+                Salin kode customer
               </Button>
             </article>
           ))}
@@ -86,14 +86,14 @@ const MobileCustomersPage = () => {
           {!customers.length && !loading ? (
             <MobileStatePanel
               icon={UsersRound}
-              title="No customers yet"
+              title="Belum ada customer"
               description="Customer dari checkout dan bespoke request akan muncul di sini."
             />
           ) : null}
           {loading && !customers.length ? (
             <MobileStatePanel
               tone="loading"
-              title="Loading customers"
+              title="Memuat customer"
               description="Menyiapkan customer terbaru dan histori order."
             />
           ) : null}

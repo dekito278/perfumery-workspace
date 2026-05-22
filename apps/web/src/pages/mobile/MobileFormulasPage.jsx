@@ -32,7 +32,7 @@ import { triggerMobileHaptic } from '@/hooks/useMobileTouchFeedback.js';
 const ImportFormulaPdfModal = lazy(() => import('@/components/ImportFormulaPdfModal.jsx'));
 
 const statusOptions = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'Semua' },
   { value: 'draft', label: 'Draft' },
   { value: 'ready_for_batch', label: 'Ready' },
   { value: 'batched', label: 'Batched' },
@@ -190,18 +190,18 @@ const MobileFormulasPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Mobile Formulas - Solivagant</title></Helmet>
+      <Helmet><title>Formula Mobile - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Formulas"
-          action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
+          action={<Button type="button" size="icon" onClick={() => navigate('/mobile/formulas/new')} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl" aria-label="Buat formula"><Plus className="h-5 w-5" /></Button>}
         />
         <div className="mobile-sticky-search">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Cari formula, kode, kategori..." disabled={loading} />
           <MobileFilterChips options={statusOptions} value={status} onChange={setStatus} />
           <Button type="button" variant="outline" onClick={() => setImportOpen(true)} className="mobile-interactive mobile-pressable mt-2 h-11 w-full rounded-2xl bg-white">
             <FileUp className="mr-2 h-4 w-4" />
-            Import PDF Formula
+            Import PDF formula
           </Button>
         </div>
         {loading ? <MobileLoadingSkeleton count={4} title="Memuat formula..." subtitle="Menyiapkan ringkasan workbook, validasi, dan kesiapan batch." /> : loadError ? (
@@ -253,7 +253,7 @@ const MobileFormulasPage = () => {
       </main>
       <DeleteConfirmationDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)} itemName={deleteTarget?.name} onConfirm={handleDelete} loading={deleting} />
       {importOpen ? (
-        <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Memuat importer...</div>}>
+        <Suspense fallback={<div className="p-4 text-sm text-[#6b7280]">Memuat import PDF...</div>}>
           <ImportFormulaPdfModal
             open={importOpen}
             onOpenChange={setImportOpen}
