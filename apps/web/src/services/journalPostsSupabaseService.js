@@ -98,8 +98,6 @@ export const getJournalPublicPath = (post, { mobile = false } = {}) => {
   return `${mobile ? '/mobile' : ''}/articles/${articleKey}`;
 };
 
-export const hasJournalPublicLink = (post) => Boolean(getJournalPublicPath(post));
-
 const ensurePublishedShareFields = async (post) => {
   if (!post || post.status !== 'published' || (post.slug && post.published_at)) {
     return post;

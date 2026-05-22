@@ -19,15 +19,15 @@ const createEmptyPost = (formulaId = 'none', formulaName = '') => {
   const hasFormula = formulaId && formulaId !== 'none';
 
   return {
-  title: hasFormula && formulaName ? `${formulaName} notes` : '',
-  category: hasFormula ? 'formula_accord' : 'experience',
-  status: 'draft',
-  related_formula_id: formulaId || 'none',
-  excerpt: '',
-  content: '',
-  seo_title: '',
-  cover_image_url: '',
-  tags: '',
+    title: hasFormula && formulaName ? `${formulaName} notes` : '',
+    category: hasFormula ? 'formula_accord' : 'experience',
+    status: 'draft',
+    related_formula_id: formulaId || 'none',
+    excerpt: '',
+    content: '',
+    seo_title: '',
+    cover_image_url: '',
+    tags: '',
   };
 };
 
@@ -115,6 +115,9 @@ const JournalEditorPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (saving) {
+      return;
+    }
 
     if (!formState.title.trim()) {
       toast.error('Title is required');
@@ -128,17 +131,14 @@ const JournalEditorPage = () => {
         related_formula_id: formState.related_formula_id === 'none' ? null : formState.related_formula_id,
       };
 
-      if (isEditMode) {
-        await updateJournalPost(id, payload);
-        toast.success('Journal note updated');
-      } else {
-        await createJournalPost(payload);
-        toast.success('Journal note saved');
-      }
+      const savedPost = isEditMode
+        ? await updateJournalPost(id, payload)
+        : await createJournalPost(payload);
 
-      navigate('/journal');
+      toast.success(isEditMode ? 'Artikel berhasil diperbarui' : 'Artikel berhasil disimpan');
+      navigate(`/journal/${savedPost.id}`);
     } catch (error) {
-      toast.error(isEditMode ? 'Failed to update journal note' : 'Failed to save journal note');
+      toast.error(isEditMode ? 'Artikel belum bisa diperbarui' : 'Artikel belum bisa disimpan');
     } finally {
       setSaving(false);
     }
@@ -248,6 +248,11 @@ const JournalEditorPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {formState.status === 'published'
+                      ? 'Published akan tampil di halaman Artikel publik setelah disimpan.'
+                      : 'Draft hanya tersimpan di Studio Journal dan belum tampil untuk pembeli.'}
+                  </p>
                 </div>
 
                 <div className="space-y-2">

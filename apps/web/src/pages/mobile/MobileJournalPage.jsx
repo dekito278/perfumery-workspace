@@ -230,7 +230,7 @@ const MobileJournalPage = () => {
                             {post.status}
                           </Badge>
                           <Badge variant="outline" className={`rounded-full text-[10px] ${publicPath ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
-                            {publicPath ? 'Publik' : 'Studio only'}
+                            {publicPath ? 'Publik' : 'Studio saja'}
                           </Badge>
                         </div>
                         <h2 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-[#111827]">

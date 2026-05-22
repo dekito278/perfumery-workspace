@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Beaker, BookOpenText, CalendarDays, Copy, Pencil, Timer } from 'lucide-react';
+import { ArrowLeft, Beaker, BookOpenText, CalendarDays, Copy, ExternalLink, Pencil, RefreshCw, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
+import StateBlock from '@/components/ui/state-block.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
@@ -14,6 +15,7 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import {
   getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalPublicPath,
   getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
@@ -33,12 +35,15 @@ const JournalDetailPage = () => {
   const [post, setPost] = useState(null);
   const [formulas, setFormulas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
 
     const loadJournalDetail = async () => {
       setLoading(true);
+      setLoadError('');
       try {
         const [postRow, formulaRows] = await Promise.all([
           getJournalPostById(id),
@@ -52,8 +57,11 @@ const JournalDetailPage = () => {
         setPost(postRow);
         setFormulas(formulaRows);
       } catch (error) {
-        toast.error('Failed to load journal note');
-        navigate('/journal');
+        if (active) {
+          setPost(null);
+          setLoadError(error.message || 'Artikel tidak bisa dimuat.');
+        }
+        toast.error('Artikel tidak bisa dimuat');
       } finally {
         if (active) {
           setLoading(false);
@@ -66,7 +74,7 @@ const JournalDetailPage = () => {
     return () => {
       active = false;
     };
-  }, [getFormulas, getJournalPostById, id, navigate]);
+  }, [getFormulas, getJournalPostById, id, reloadKey]);
 
   const formulasById = useMemo(
     () => new Map(formulas.map((formula) => [formula.id, formula])),
@@ -77,6 +85,8 @@ const JournalDetailPage = () => {
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
   const readingMinutes = getReadingMinutes(post?.content);
   const articleTitle = post?.seo_title || post?.title;
+  const publicPath = getJournalPublicPath(post);
+  const publicUrl = publicPath ? `${window.location.origin}${publicPath}` : '';
 
   const handleBack = () => {
     if (location.state?.from) {
@@ -88,16 +98,18 @@ const JournalDetailPage = () => {
   };
 
   const handleCopyLink = async () => {
-    const path = post.status === 'published' && post.slug ? `/articles/${post.slug}` : `/journal/${post.id}`;
+    const path = publicPath || `/journal/${post.id}`;
     const url = `${window.location.origin}${path}`;
 
     try {
       await copyTextToClipboard(url);
-      toast.success('Journal link copied');
+      toast.success('Link artikel disalin');
     } catch (error) {
-      toast.error('Failed to copy link');
+      toast.error('Link belum bisa disalin');
     }
   };
+
+  const handleRetry = () => setReloadKey((current) => current + 1);
 
   return (
     <AuthenticatedLayout>
@@ -141,6 +153,14 @@ const JournalDetailPage = () => {
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           </div>
+        ) : loadError ? (
+          <StateBlock
+            tone="error"
+            title="Artikel tidak bisa dibuka"
+            description={loadError}
+            action="Coba lagi"
+            onAction={handleRetry}
+          />
         ) : !post ? (
           <EmptyState
             icon={BookOpenText}
@@ -156,6 +176,9 @@ const JournalDetailPage = () => {
                 </Badge>
                 <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName(post.status)}`}>
                   {formatStatus(post.status || 'draft')}
+                </Badge>
+                <Badge variant="outline" className={`rounded-full text-xs ${publicPath ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+                  {publicPath ? 'Publik' : 'Studio saja'}
                 </Badge>
               </div>
 
@@ -194,6 +217,41 @@ const JournalDetailPage = () => {
                     <Beaker className="h-4 w-4" />
                     {relatedFormula.name}
                   </button>
+                ) : null}
+              </div>
+
+              <div className="mt-6 rounded-2xl border bg-white/80 p-4">
+                <div className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Status publik</div>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  {publicPath
+                    ? 'Artikel ini sudah Published dan bisa dibuka dari halaman Artikel publik.'
+                    : 'Artikel ini masih Draft. Draft tersimpan di Studio Journal dan belum muncul untuk pembeli.'}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate(`/journal/${post.id}/edit`, { state: { from: `/journal/${post.id}` } })}
+                    className="h-10 rounded-2xl bg-white"
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit artikel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate(publicPath)}
+                    disabled={!publicPath}
+                    className="h-10 rounded-2xl bg-white"
+                  >
+                    {publicPath ? <ExternalLink className="mr-2 h-4 w-4" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    {publicPath ? 'Buka publik' : 'Publish dulu'}
+                  </Button>
+                </div>
+                {publicUrl ? (
+                  <div className="mt-3 truncate rounded-xl bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
+                    {publicUrl}
+                  </div>
                 ) : null}
               </div>
 

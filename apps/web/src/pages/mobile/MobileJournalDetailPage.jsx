@@ -70,7 +70,7 @@ const MobileJournalDetailPage = () => {
           setPost(null);
           setLoadError(err.message || 'Artikel tidak bisa dimuat.');
         }
-        toast.error('Failed to load journal note');
+        toast.error('Artikel tidak bisa dimuat');
       }
     };
 
@@ -97,9 +97,9 @@ const MobileJournalDetailPage = () => {
 
     try {
       await copyTextToClipboard(url);
-      toast.success('Journal link copied');
+      toast.success('Link artikel disalin');
     } catch (error) {
-      toast.error('Failed to copy link');
+      toast.error('Link belum bisa disalin');
     }
   };
 
@@ -168,7 +168,7 @@ const MobileJournalDetailPage = () => {
               </Badge>
               {post.status === 'published' ? (
                 <Badge variant="outline" className={`rounded-full ${post.slug ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
-                  {post.slug ? `/${post.slug}` : 'public link memakai ID'}
+                  {post.slug ? `/${post.slug}` : 'link publik pakai ID'}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 text-slate-700">

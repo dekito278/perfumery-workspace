@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenText, CalendarDays, Home, Plus, RefreshCw, Timer } from 'lucide-react';
+import { BookOpenText, CalendarDays, ExternalLink, Home, Plus, RefreshCw, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,11 @@ import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import {
   JOURNAL_CATEGORIES,
+  JOURNAL_POSTS_CHANGED_EVENT,
   JOURNAL_STATUSES,
   getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalPublicPath,
   getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
@@ -71,6 +73,14 @@ const JournalPage = () => {
 
   useEffect(() => {
     loadJournalPosts();
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadJournalPosts);
+
+    return () => {
+      window.removeEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadJournalPosts);
+    };
   }, []);
 
   const summary = useMemo(() => ({
@@ -171,11 +181,20 @@ const JournalPage = () => {
     {
       key: 'status',
       label: 'Status',
-      render: (post) => (
-        <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName(post.status)}`}>
-          {formatStatus(post.status || 'draft')}
-        </Badge>
-      ),
+      render: (post) => {
+        const publicPath = getJournalPublicPath(post);
+
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName(post.status)}`}>
+              {formatStatus(post.status || 'draft')}
+            </Badge>
+            <Badge variant="outline" className={`rounded-full text-xs ${publicPath ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+              {publicPath ? 'Publik' : 'Studio saja'}
+            </Badge>
+          </div>
+        );
+      },
     },
     {
       key: 'related_formula',
@@ -363,6 +382,24 @@ const JournalPage = () => {
                 columns={columns}
                 data={paginatedPosts}
                 onEdit={(post) => navigate(`/journal/${post.id}/edit`)}
+                actions={(post) => {
+                  const publicPath = getJournalPublicPath(post);
+
+                  return (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(publicPath)}
+                      disabled={!publicPath}
+                      className="table-action-button"
+                      title={publicPath ? 'Buka artikel publik' : 'Publish artikel dulu'}
+                      aria-label={publicPath ? `Buka artikel publik ${post.title}` : `${post.title} masih draft`}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  );
+                }}
                 mobileCard={(post) => (
                   <div className="mobile-card mobile-list-card p-4">
                     <div className="grid grid-cols-[88px_1fr] gap-3 sm:grid-cols-[96px_1fr_auto]">
@@ -409,6 +446,26 @@ const JournalPage = () => {
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground">
                       <span>Updated {formatDate(post.updated || post.created)}</span>
                       <span>{getReadingMinutes(post)} min read</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => navigate(`/journal/${post.id}`)}
+                        className="h-9 rounded-xl bg-white text-xs font-bold"
+                      >
+                        Detail
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => navigate(getJournalPublicPath(post))}
+                        disabled={!getJournalPublicPath(post)}
+                        className="h-9 rounded-xl bg-white text-xs font-bold"
+                      >
+                        <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                        {getJournalPublicPath(post) ? 'Buka publik' : 'Draft'}
+                      </Button>
                     </div>
                   </div>
                 )}
