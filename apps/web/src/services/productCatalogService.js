@@ -82,6 +82,36 @@ export const isProductDraft = (product = {}) => (
 
 export const isProductVisibleInStorefront = (product = {}) => !isProductDraft(product);
 
+export const getProductPublishChecklist = (product = {}) => {
+  const variants = normalizeProductVariants(product);
+  const images = normalizeProductImages(product);
+  const priceNumber = getProductPriceRange(variants) || parseRupiah(product.priceNumber || product.price);
+  const stock = getProductStockTotal(variants) || Number(product.stock || 0);
+  const slug = toSlug(product.slug || product.name);
+  const items = [
+    { key: 'name', label: 'Nama produk', ok: Boolean(String(product.name || '').trim()), required: true, message: 'Nama produk wajib diisi.' },
+    { key: 'category', label: 'Kategori', ok: Boolean(String(product.category || '').trim()), required: true, message: 'Pilih kategori sebelum publish.' },
+    { key: 'summary', label: 'Ringkasan katalog', ok: Boolean(String(product.notes || '').trim()), required: true, message: 'Ringkasan singkat wajib diisi.' },
+    { key: 'price', label: 'Harga', ok: priceNumber > 0, required: true, message: 'Harga produk harus lebih dari 0.' },
+    { key: 'stock', label: 'Stok', ok: stock > 0, required: true, message: 'Stok harus lebih dari 0 agar produk bisa dibeli.' },
+    { key: 'image', label: 'Gambar', ok: images.length > 0, required: true, message: 'Tambahkan minimal satu gambar produk.' },
+    { key: 'slug', label: 'Slug', ok: Boolean(slug), required: true, message: 'Slug akan dibuat otomatis dari nama produk.' },
+    { key: 'description', label: 'Deskripsi', ok: Boolean(String(product.description || '').trim()), required: false, message: 'Deskripsi belum diisi.' },
+  ];
+  const blocking = items.filter((item) => item.required && !item.ok);
+  const warnings = items.filter((item) => !item.required && !item.ok);
+
+  return {
+    ready: blocking.length === 0,
+    blocking,
+    warnings,
+    items,
+    priceNumber,
+    stock,
+    slug,
+  };
+};
+
 export const getProductBatchKey = (product = {}) => {
   const tag = splitList(product.tags).find((item) => item.startsWith(PRODUCT_BATCH_TAG_PREFIX));
   return tag ? tag.slice(PRODUCT_BATCH_TAG_PREFIX.length).trim() : '';
@@ -539,7 +569,7 @@ const readLastValidProducts = () => {
 const writeStoredProducts = (products) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(PRODUCT_CATALOG_STORAGE_KEY, JSON.stringify(products));
-  window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+  dispatchProductsUpdated();
 };
 
 const upsertStoredProduct = (product) => {
@@ -595,6 +625,14 @@ const PREFETCH_CACHE_TTL_MS = 30000;
 let catalogProductsRequest = null;
 let catalogProductsWarmCache = null;
 let catalogProductsWarmCacheAt = 0;
+
+const dispatchProductsUpdated = () => {
+  if (typeof window === 'undefined') return;
+  catalogProductsRequest = null;
+  catalogProductsWarmCache = null;
+  catalogProductsWarmCacheAt = 0;
+  window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+};
 
 export const getCatalogProducts = () => {
   return readStoredProducts().length ? readStoredProducts() : readLastValidProducts();
@@ -691,7 +729,7 @@ export const saveCustomProduct = async (input) => {
 
     const savedProduct = fromDatabaseRow(data);
     upsertStoredProduct(savedProduct);
-    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    dispatchProductsUpdated();
     return savedProduct;
   } catch (error) {
     console.warn('Saving storefront product locally because database save failed:', error.message || error);
@@ -711,7 +749,7 @@ export const deleteCustomProduct = async (id) => {
     }
 
     removeStoredProduct(id);
-    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    dispatchProductsUpdated();
   } catch (error) {
     console.warn('Deleting local storefront product fallback:', error.message || error);
     const nextProducts = readStoredProducts().filter((product) => product.id !== id);
@@ -730,7 +768,7 @@ export const resetCustomProducts = async () => {
       throw error;
     }
 
-    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    dispatchProductsUpdated();
   } catch (error) {
     console.warn('Resetting local storefront products fallback:', error.message || error);
     writeStoredProducts([]);
@@ -756,7 +794,7 @@ export const deductInventoryForOrder = async (order) => {
     }
 
     const events = Array.isArray(data) ? data : [];
-    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    dispatchProductsUpdated();
     return events;
   } catch (error) {
     console.warn('Using client inventory deduction fallback:', error.message || error);
@@ -810,7 +848,7 @@ export const restoreInventoryForOrder = async (order, reason = 'Order cancelled/
     }
 
     const events = Array.isArray(data) ? data : [];
-    window.dispatchEvent(new CustomEvent('dekito:products-updated'));
+    dispatchProductsUpdated();
     return events;
   } catch (error) {
     console.warn('Using client inventory restore fallback:', error.message || error);

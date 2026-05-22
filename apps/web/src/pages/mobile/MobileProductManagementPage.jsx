@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Edit3, ImageOff, ImagePlus, PackagePlus, Plus, Save, Tags, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Edit3, ImageOff, ImagePlus, PackagePlus, Plus, Save, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -16,6 +16,7 @@ import {
   formatRupiah,
   getProductBatchDetails,
   getProductFormulaId,
+  getProductPublishChecklist,
   isProductDraft,
   PRODUCT_DRAFT_TAG,
   saveCustomProduct,
@@ -172,6 +173,8 @@ const MobileProductManagementPage = () => {
   const totalVariantStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
   const primaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
   const requiredReady = Boolean(form.name.trim() && form.category.trim() && form.notes.trim());
+  const publishChecklist = useMemo(() => getProductPublishChecklist(form), [form]);
+  const canPublish = publishChecklist.ready;
 
   useEffect(() => {
     if (!editProductId) return;
@@ -242,6 +245,10 @@ const MobileProductManagementPage = () => {
       toast.error('Nama, kategori, dan ringkasan wajib diisi');
       return;
     }
+    if (form.catalogVisible && !publishChecklist.ready) {
+      toast.error(`Produk belum siap publish: ${publishChecklist.blocking[0]?.message || 'lengkapi data wajib.'}`);
+      return;
+    }
     setSavingProduct(true);
     try {
       const primaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
@@ -255,7 +262,7 @@ const MobileProductManagementPage = () => {
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
       });
       setForm(toProductForm(product));
-      toast.success('Produk tersimpan');
+      toast.success(form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan produk');
     } finally {
@@ -366,7 +373,7 @@ const MobileProductManagementPage = () => {
               </div>
               <div className="rounded-2xl bg-white px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Status</div>
-                <div className={`mt-1 truncate text-xs font-bold ${form.catalogVisible ? 'text-emerald-700' : 'text-amber-700'}`}>{form.catalogVisible ? 'Live' : 'Draf'}</div>
+                <div className={`mt-1 truncate text-xs font-bold ${form.catalogVisible && canPublish ? 'text-emerald-700' : 'text-amber-700'}`}>{form.catalogVisible ? (canPublish ? 'Live' : 'Belum siap') : 'Draf'}</div>
               </div>
             </div>
           </section>
@@ -556,15 +563,47 @@ const MobileProductManagementPage = () => {
             title="Visibilitas katalog"
             description="Draft tetap tersimpan di studio tetapi tidak muncul di shop customer."
           >
+            <div className={`rounded-2xl border p-3 ${canPublish ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+              <div className="flex items-start gap-2">
+                {canPublish ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                <div className="min-w-0">
+                  <div className="text-xs font-bold">{canPublish ? 'Siap publish ke katalog' : 'Belum siap tampil di katalog'}</div>
+                  <p className="mt-1 text-[11px] font-semibold leading-relaxed opacity-80">
+                    {canPublish
+                      ? `Slug publik: /mobile/products/${publishChecklist.slug}`
+                      : publishChecklist.blocking.map((item) => item.label).join(', ')}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-1.5">
+                {publishChecklist.items.map((item) => (
+                  <div key={item.key} className={`rounded-xl px-2 py-1.5 text-[10px] font-bold ${item.ok ? 'bg-white/75 text-emerald-800' : item.required ? 'bg-white/75 text-amber-800' : 'bg-white/60 text-[#6b7280]'}`}>
+                    {item.ok ? 'OK' : item.required ? 'Wajib' : 'Opsional'} · {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
             <label className="flex items-center gap-3 rounded-2xl bg-amber-50 px-3 py-3 text-xs font-bold text-amber-800">
               <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
               Featured di home
             </label>
-            <label className="flex items-start gap-3 rounded-2xl bg-emerald-50 px-3 py-3 text-xs font-bold text-emerald-800">
-              <input type="checkbox" checked={Boolean(form.catalogVisible)} onChange={(event) => updateField('catalogVisible', event.target.checked)} className="mt-0.5" />
+            <label className={`flex items-start gap-3 rounded-2xl px-3 py-3 text-xs font-bold ${canPublish ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+              <input
+                type="checkbox"
+                checked={Boolean(form.catalogVisible)}
+                onChange={(event) => {
+                  if (event.target.checked && !canPublish) {
+                    toast.error(`Belum bisa publish: ${publishChecklist.blocking[0]?.message || 'lengkapi data wajib.'}`);
+                    updateField('catalogVisible', false);
+                    return;
+                  }
+                  updateField('catalogVisible', event.target.checked);
+                }}
+                className="mt-0.5"
+              />
               <span>
                 <span className="block">Tampilkan di katalog customer</span>
-                <span className="mt-0.5 block text-[10px] font-semibold text-emerald-700/75">Matikan untuk draft: bisa edit foto, deskripsi, notes, dan harga dulu tanpa tampil di shop.</span>
+                <span className="mt-0.5 block text-[10px] font-semibold opacity-75">{canPublish ? 'Produk akan langsung muncul di shop setelah disimpan.' : 'Lengkapi checklist dulu sebelum produk bisa dipublish.'}</span>
               </span>
             </label>
           </ProductFormSection>

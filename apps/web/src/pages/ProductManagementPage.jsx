@@ -13,9 +13,12 @@ import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import {
   deleteCustomProduct,
   formatRupiah,
+  getProductPublishChecklist,
   getProductRestockThreshold,
   getProductStockCorrections,
   getVisibleProductTags,
+  isProductDraft,
+  PRODUCT_DRAFT_TAG,
   resetCustomProducts,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
@@ -45,10 +48,12 @@ const emptyProduct = {
   tags: '',
   mood: '',
   featured: true,
+  catalogVisible: true,
 };
 
 const toEditableProduct = (product) => ({
   ...product,
+  catalogVisible: !isProductDraft(product),
   topNotes: product.topNotes.join(', '),
   heartNotes: product.heartNotes.join(', '),
   baseNotes: product.baseNotes.join(', '),
@@ -60,6 +65,20 @@ const toEditableProduct = (product) => ({
   stockCorrections: getProductStockCorrections(product),
   images: product.images || (product.imageUrl ? [product.imageUrl] : []),
 });
+
+const getTagsForVisibility = (tags, catalogVisible) => {
+  const nextTags = String(tags || '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag) => tag.toLowerCase() !== PRODUCT_DRAFT_TAG.toLowerCase());
+
+  if (!catalogVisible) {
+    nextTags.unshift(PRODUCT_DRAFT_TAG);
+  }
+
+  return [...new Set(nextTags)];
+};
 
 const buildStockCorrection = ({ form, previousProduct }) => {
   if (!previousProduct) return null;
@@ -112,6 +131,8 @@ const ProductManagementPage = () => {
   const [form, setForm] = useState(emptyProduct);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
+  const publishChecklist = useMemo(() => getProductPublishChecklist(form), [form]);
+  const canPublish = publishChecklist.ready;
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -168,6 +189,10 @@ const ProductManagementPage = () => {
       toast.error('Product name, category, and notes are required');
       return;
     }
+    if (form.catalogVisible && !publishChecklist.ready) {
+      toast.error(`Produk belum siap publish: ${publishChecklist.blocking[0]?.message || 'lengkapi data wajib.'}`);
+      return;
+    }
 
     setSavingProduct(true);
     try {
@@ -181,6 +206,7 @@ const ProductManagementPage = () => {
         internalTags: form.internalTags,
         restockThreshold: Number(form.restockThreshold || 0),
         stockCorrections,
+        tags: getTagsForVisibility(form.tags, form.catalogVisible),
         priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
         compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
         stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
@@ -188,7 +214,7 @@ const ProductManagementPage = () => {
         price: formatRupiah(form.priceNumber),
       });
       setForm(toEditableProduct(product));
-      toast.success(stockCorrection ? 'Produk tersimpan dan koreksi stok dicatat' : 'Produk tersimpan ke katalog');
+      toast.success(stockCorrection ? 'Produk tersimpan dan koreksi stok dicatat' : form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
     } finally {
       setSavingProduct(false);
     }
@@ -356,6 +382,26 @@ const ProductManagementPage = () => {
               </TabsContent>
 
               <TabsContent value="story" className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className={`sm:col-span-2 rounded-2xl border p-4 ${canPublish ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+                  <div className="flex items-start gap-3">
+                    {canPublish ? <PackagePlus className="mt-0.5 h-5 w-5 shrink-0" /> : <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />}
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold">{canPublish ? 'Siap publish ke katalog' : 'Belum siap tampil di katalog'}</div>
+                      <p className="mt-1 text-xs font-semibold leading-relaxed opacity-80">
+                        {canPublish
+                          ? `Slug publik: /products/${publishChecklist.slug}`
+                          : publishChecklist.blocking.map((item) => item.label).join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                    {publishChecklist.items.map((item) => (
+                      <div key={item.key} className={`rounded-xl px-3 py-2 text-xs font-bold ${item.ok ? 'bg-white/75 text-emerald-800' : item.required ? 'bg-white/75 text-amber-800' : 'bg-white/60 text-muted-foreground'}`}>
+                        {item.ok ? 'OK' : item.required ? 'Wajib' : 'Opsional'} · {item.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 {[
                   ['topNotes', 'Top notes'],
                   ['heartNotes', 'Heart notes'],
@@ -374,6 +420,25 @@ const ProductManagementPage = () => {
                 <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
                   <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
                   Featured di home
+                </label>
+                <label className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-bold ${canPublish ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form.catalogVisible)}
+                    onChange={(event) => {
+                      if (event.target.checked && !canPublish) {
+                        toast.error(`Belum bisa publish: ${publishChecklist.blocking[0]?.message || 'lengkapi data wajib.'}`);
+                        updateField('catalogVisible', false);
+                        return;
+                      }
+                      updateField('catalogVisible', event.target.checked);
+                    }}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block">Tampilkan di katalog customer</span>
+                    <span className="mt-1 block text-xs font-semibold opacity-75">{canPublish ? 'Produk akan langsung muncul di shop setelah disimpan.' : 'Lengkapi checklist dulu sebelum produk bisa dipublish.'}</span>
+                  </span>
                 </label>
               </TabsContent>
             </Tabs>
@@ -484,6 +549,11 @@ const ProductManagementPage = () => {
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-bold">{product.name}</h3>
                         <p className="mt-1 text-sm font-semibold text-muted-foreground">{product.notes}</p>
+                        {isProductDraft(product) ? (
+                          <div className="mt-2 w-fit rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-700">
+                            Draft - tidak tampil di toko
+                          </div>
+                        ) : null}
                         <div className="mt-2 flex flex-wrap gap-1">
                           {product.variants.slice(0, 4).map((variant) => (
                             <span key={variant.id || variant.size} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
