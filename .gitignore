@@ -18,6 +18,9 @@ vite-*.log
 .codex-dev-server.*.log
 .codex-temp/
 backups/
+*.tar.gz
+*.tgz
+*.zip
 
 docs/browser-qa-*/
 docs/browser-smoke-check/
