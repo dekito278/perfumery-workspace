@@ -95,6 +95,27 @@ const writeStoredCategories = (categories) => {
   window.dispatchEvent(new CustomEvent(STOREFRONT_CATEGORY_UPDATED_EVENT));
 };
 
+const upsertStoredCategory = (category) => {
+  if (typeof window === 'undefined' || !category?.name) return;
+  const storedCategories = readStoredCategories();
+  const nextCategories = storedCategories.some((item) => item.id === category.id || item.name.toLowerCase() === category.name.toLowerCase())
+    ? storedCategories.map((item) => (
+      item.id === category.id || item.name.toLowerCase() === category.name.toLowerCase()
+        ? { ...item, ...category }
+        : item
+    ))
+    : [...storedCategories, category];
+  writeStoredCategories(nextCategories);
+  cacheLastValidCategories(nextCategories);
+};
+
+const removeStoredCategory = (id) => {
+  if (typeof window === 'undefined' || !id) return;
+  const nextCategories = readStoredCategories().filter((category) => category.id !== id);
+  writeStoredCategories(nextCategories);
+  cacheLastValidCategories(nextCategories);
+};
+
 const cacheLastValidCategories = (categories) => {
   if (typeof window === 'undefined' || !Array.isArray(categories) || categories.length === 0) return;
   window.localStorage.setItem(STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY, JSON.stringify({
@@ -219,8 +240,10 @@ export const saveStorefrontCategory = async (input) => {
       throw error;
     }
 
+    const savedCategory = mapCategory(data);
+    upsertStoredCategory(savedCategory);
     dispatchStorefrontCategoryUpdate();
-    return mapCategory(data);
+    return savedCategory;
   } catch (error) {
     console.warn('Saving storefront category locally because database save failed:', error.message || error);
     const storedCategories = readStoredCategories();
@@ -248,6 +271,7 @@ export const deleteStorefrontCategory = async (id) => {
       throw error;
     }
 
+    removeStoredCategory(id);
     dispatchStorefrontCategoryUpdate();
   } catch (error) {
     console.warn('Deleting local storefront category fallback:', error.message || error);

@@ -542,6 +542,20 @@ const writeStoredProducts = (products) => {
   window.dispatchEvent(new CustomEvent('dekito:products-updated'));
 };
 
+const upsertStoredProduct = (product) => {
+  if (typeof window === 'undefined' || !product?.id) return;
+  const storedProducts = readStoredProducts();
+  const nextProducts = storedProducts.some((item) => item.id === product.id)
+    ? storedProducts.map((item) => (item.id === product.id ? product : item))
+    : [product, ...storedProducts];
+  cacheFetchedProducts(nextProducts);
+};
+
+const removeStoredProduct = (id) => {
+  if (typeof window === 'undefined' || !id) return;
+  cacheFetchedProducts(readStoredProducts().filter((product) => product.id !== id));
+};
+
 const mergeLocalFallbackProducts = (products = []) => {
   const remoteKeys = new Set(products.flatMap((product) => [product.id, product.slug].filter(Boolean)));
   const localFallbackProducts = readStoredProducts()
@@ -675,8 +689,10 @@ export const saveCustomProduct = async (input) => {
       throw error;
     }
 
+    const savedProduct = fromDatabaseRow(data);
+    upsertStoredProduct(savedProduct);
     window.dispatchEvent(new CustomEvent('dekito:products-updated'));
-    return fromDatabaseRow(data);
+    return savedProduct;
   } catch (error) {
     console.warn('Saving storefront product locally because database save failed:', error.message || error);
     return saveLocalCustomProduct(input);
@@ -694,6 +710,7 @@ export const deleteCustomProduct = async (id) => {
       throw error;
     }
 
+    removeStoredProduct(id);
     window.dispatchEvent(new CustomEvent('dekito:products-updated'));
   } catch (error) {
     console.warn('Deleting local storefront product fallback:', error.message || error);

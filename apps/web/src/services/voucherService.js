@@ -159,6 +159,12 @@ const cacheVouchers = (vouchers) => {
   return vouchers;
 };
 
+const persistCachedVouchers = (vouchers) => {
+  const nextVouchers = cacheVouchers(vouchers);
+  writeStoredVouchers(nextVouchers);
+  return nextVouchers;
+};
+
 const parseStoredUsageRecords = (value) => {
   try {
     const parsed = value ? JSON.parse(value) : [];
@@ -337,13 +343,12 @@ export const saveVoucher = async (input) => {
   }
 
   const savedVoucher = normalizeVoucher(data);
-  cacheVouchers([
+  persistCachedVouchers([
     savedVoucher,
     ...storedVouchers.filter((item) => (
       item.id !== savedVoucher.id && normalizeVoucherCode(item.code) !== savedVoucher.code
     )),
   ]);
-  dispatchVoucherUpdated();
   return savedVoucher;
 };
 
@@ -362,8 +367,7 @@ export const deleteVoucher = async (idOrCode) => {
   const nextVouchers = getCachedVouchers().filter((voucher) => (
     voucher.id !== idOrCode && normalizeVoucherCode(voucher.code) !== targetCode
   ));
-  cacheVouchers(nextVouchers);
-  dispatchVoucherUpdated();
+  persistCachedVouchers(nextVouchers);
   return nextVouchers;
 };
 
@@ -677,7 +681,7 @@ export const recordVoucherUsageForOrder = async ({
   } : null;
 
   if (updatedVoucher) {
-    cacheVouchers(getCachedVouchers().map((item) => (
+    persistCachedVouchers(getCachedVouchers().map((item) => (
       item.id === updatedVoucher.id || normalizeVoucherCode(item.code) === updatedVoucher.code
         ? updatedVoucher
         : item

@@ -119,6 +119,7 @@ const MobileVoucherManagementPage = () => {
   const [usageSearchTerm, setUsageSearchTerm] = useState('');
   const [voucherVisibleCount, setVoucherVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [usageVisibleCount, setUsageVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const [savingVoucher, setSavingVoucher] = useState(false);
   const products = useCatalogProducts({ editableOnly: true });
 
   const loadVouchers = async () => {
@@ -224,6 +225,10 @@ const MobileVoucherManagementPage = () => {
 
   const submitVoucher = async (event) => {
     event.preventDefault();
+    if (savingVoucher) {
+      return;
+    }
+    setSavingVoucher(true);
     try {
       const savedVoucher = await saveVoucher({
         ...draft,
@@ -238,6 +243,8 @@ const MobileVoucherManagementPage = () => {
       toast.success(`Voucher ${savedVoucher.code} tersimpan`);
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan voucher');
+    } finally {
+      setSavingVoucher(false);
     }
   };
 
@@ -256,15 +263,25 @@ const MobileVoucherManagementPage = () => {
   };
 
   const toggleVoucher = async (voucher) => {
+    if (savingVoucher) {
+      return;
+    }
+    setSavingVoucher(true);
     try {
       const savedVoucher = await saveVoucher({ ...voucher, active: !voucher.active });
       toast.success(`${savedVoucher.code} ${savedVoucher.active ? 'diaktifkan' : 'dinonaktifkan'}`);
     } catch (error) {
       toast.error(error.message || 'Gagal mengubah status voucher');
+    } finally {
+      setSavingVoucher(false);
     }
   };
 
   const removeVoucher = async (voucher) => {
+    if (savingVoucher) {
+      return;
+    }
+    setSavingVoucher(true);
     try {
       await deleteVoucher(voucher.id || voucher.code);
       if (draft.id === voucher.id || draft.code === voucher.code) {
@@ -273,6 +290,8 @@ const MobileVoucherManagementPage = () => {
       toast.success(`Voucher ${voucher.code} dihapus`);
     } catch (error) {
       toast.error(error.message || 'Gagal menghapus voucher');
+    } finally {
+      setSavingVoucher(false);
     }
   };
 
@@ -442,11 +461,11 @@ const MobileVoucherManagementPage = () => {
           </MobileAccordion>
 
           <div className="grid grid-cols-[1fr_auto] gap-2">
-            <Button type="submit" className="h-12 rounded-2xl gap-2">
+            <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingVoucher}>
               <Save className="h-4 w-4" />
-              Simpan
+              {savingVoucher ? 'Menyimpan...' : 'Simpan'}
             </Button>
-            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4" onClick={resetDraft}>
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4" onClick={resetDraft} disabled={savingVoucher}>
               Reset
             </Button>
           </div>
@@ -558,10 +577,10 @@ const MobileVoucherManagementPage = () => {
                     <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => editVoucher(voucher)} aria-label={`Edit voucher ${voucher.code}`}>
                       <Edit3 className="h-4 w-4" />
                     </Button>
-                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => toggleVoucher(voucher)} aria-label={`${voucher.active ? 'Nonaktifkan' : 'Aktifkan'} voucher ${voucher.code}`}>
+                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => toggleVoucher(voucher)} aria-label={`${voucher.active ? 'Nonaktifkan' : 'Aktifkan'} voucher ${voucher.code}`} disabled={savingVoucher}>
                       {voucher.active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
                     </Button>
-                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeVoucher(voucher)} aria-label={`Hapus voucher ${voucher.code}`}>
+                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeVoucher(voucher)} aria-label={`Hapus voucher ${voucher.code}`} disabled={savingVoucher}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

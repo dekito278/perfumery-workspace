@@ -234,7 +234,10 @@ const MobileProductManagementPage = () => {
   };
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
+    event?.preventDefault();
+    if (savingProduct) {
+      return;
+    }
     if (!form.name.trim() || !form.category.trim() || !form.notes.trim()) {
       toast.error('Nama, kategori, dan ringkasan wajib diisi');
       return;
@@ -569,7 +572,7 @@ const MobileProductManagementPage = () => {
           <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Aksi form produk">
             <div className="grid grid-cols-[auto_1fr] gap-2">
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={resetForm}>Baru</Button>
-              <Button type="submit" form="mobile-product-form" className="h-12 rounded-2xl gap-2" disabled={savingProduct || !requiredReady}>
+              <Button type="button" className="h-12 rounded-2xl gap-2" onClick={handleSubmit} disabled={savingProduct || !requiredReady}>
                 <Save className="h-4 w-4" />
                 {savingProduct ? 'Menyimpan...' : requiredReady ? 'Simpan produk' : 'Lengkapi wajib'}
               </Button>

@@ -119,7 +119,10 @@ const MobileJournalEditorPage = () => {
   };
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
+    event?.preventDefault();
+    if (saving) {
+      return;
+    }
 
     if (!formState.title.trim()) {
       toast.error('Title is required');
@@ -276,7 +279,7 @@ const MobileJournalEditorPage = () => {
               <Button type="button" variant="outline" onClick={handleBack} className="h-11 rounded-2xl bg-white">
                 Batal
               </Button>
-              <Button type="submit" form="mobile-journal-editor-form" disabled={saving} className="h-11 gap-2 rounded-2xl">
+              <Button type="button" onClick={handleSubmit} disabled={saving} className="h-11 gap-2 rounded-2xl">
                 <Save className="h-4 w-4" />
                 {saving ? 'Menyimpan...' : 'Simpan'}
               </Button>
