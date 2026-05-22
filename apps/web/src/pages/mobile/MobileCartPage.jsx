@@ -183,8 +183,6 @@ const MobileCartPage = () => {
                 icon={ShoppingBag}
                 title="Keranjang kosong"
                 description="Pilih parfum ready stock, mulai custom, atau lihat rekomendasi kecil di bawah."
-                action="Buka katalog"
-                onAction={() => navigate('/mobile/catalog')}
               />
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/bespoke')}>

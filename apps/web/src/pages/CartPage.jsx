@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
-import { BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
@@ -227,8 +227,6 @@ const CartPage = () => {
                     icon={ShoppingBag}
                     title="Keranjang kosong"
                     description="Pilih parfum ready stock, mulai custom, atau kembali lihat katalog."
-                    action="Buka katalog"
-                    onAction={() => navigate('/catalog')}
                   />
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <Link to="/bespoke" className="inline-flex h-12 items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-5 text-sm font-bold text-[#0b130c]">
@@ -239,6 +237,32 @@ const CartPage = () => {
                     </Link>
                   </div>
                 </div>
+              ) : null}
+              {items.length ? (
+                <section className="grid gap-3 rounded-[28px] border border-[#263d27]/10 bg-white/82 p-4 shadow-sm sm:grid-cols-2">
+                  <Link to="/catalog" className="group flex min-h-[118px] flex-col justify-between rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4 transition hover:-translate-y-0.5 hover:border-[#263d27]/25 hover:bg-[#eef2e8]">
+                    <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#263d27] shadow-sm">
+                      <ShoppingBag className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-base font-bold text-[#0b130c]">Tambah aroma ready stock</span>
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold uppercase text-[#263d27]">
+                        Lihat katalog <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
+                  </Link>
+                  <Link to="/bespoke" className="group flex min-h-[118px] flex-col justify-between rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4 transition hover:-translate-y-0.5 hover:border-[#263d27]/25 hover:bg-white">
+                    <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27] shadow-sm">
+                      <Sparkles className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-base font-bold text-[#0b130c]">Mau dibuat custom?</span>
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold uppercase text-[#263d27]">
+                        Buat brief <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
+                  </Link>
+                </section>
               ) : null}
             </div>
           </div>

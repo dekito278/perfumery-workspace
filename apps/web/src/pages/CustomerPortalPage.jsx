@@ -1698,11 +1698,33 @@ const CustomerPortalPage = () => {
                 </section>
               </>
             ) : (
-              <StateBlock
-                icon={searched ? Search : ShoppingBag}
-                title={searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}
-                description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
-              />
+              <section className="overflow-hidden rounded-[28px] border border-[#263d27]/10 bg-white shadow-sm">
+                <div className="grid gap-0 lg:grid-cols-[1fr_0.9fr]">
+                  <div className="grid min-h-[236px] place-items-center border-b border-[#263d27]/10 bg-[#fbfaf7] px-6 py-8 text-center lg:border-b-0 lg:border-r">
+                    <StateBlock
+                      className="border-0 bg-transparent p-0 shadow-none"
+                      icon={searched ? Search : ShoppingBag}
+                      title={searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}
+                      description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
+                    />
+                  </div>
+                  <div className="grid content-center gap-3 bg-[#eef2e8] p-5">
+                    {[
+                      ['1', 'Masukkan kode SOLI', 'Kode muncul setelah checkout pertama atau dari halaman sukses order.'],
+                      ['2', 'Cek pembayaran dan produksi', 'Status bayar, bukti transfer, custom progress, dan resi tampil di satu tempat.'],
+                      ['3', 'Reorder lebih cepat', 'Order lama bisa dipakai lagi tanpa mengulang data dari awal.'],
+                    ].map(([step, title, description]) => (
+                      <div key={step} className="flex gap-3 rounded-2xl bg-white/82 p-3 shadow-sm shadow-[#263d27]/5">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">{step}</span>
+                        <span>
+                          <span className="block text-sm font-bold text-[#0b130c]">{title}</span>
+                          <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#667264]">{description}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
             )}
           </div>
         </section>
