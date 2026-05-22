@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CalendarDays, Copy, Edit3, FileText, Timer } from 'lucide-react';
+import { CalendarDays, Copy, Edit3, ExternalLink, FileText, RefreshCw, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -16,6 +16,7 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import {
   getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalPublicPath,
   getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
@@ -44,11 +45,14 @@ const MobileJournalDetailPage = () => {
   const { getFormulas } = useFormulas();
   const [post, setPost] = useState(null);
   const [formulas, setFormulas] = useState([]);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
 
     const loadDetail = async () => {
+      setLoadError('');
       try {
         const [postRow, formulaRows] = await Promise.all([
           getJournalPostById(id),
@@ -62,6 +66,10 @@ const MobileJournalDetailPage = () => {
         setPost(postRow);
         setFormulas(formulaRows);
       } catch (err) {
+        if (active) {
+          setPost(null);
+          setLoadError(err.message || 'Artikel tidak bisa dimuat.');
+        }
         toast.error('Failed to load journal note');
       }
     };
@@ -71,7 +79,7 @@ const MobileJournalDetailPage = () => {
     return () => {
       active = false;
     };
-  }, [getFormulas, getJournalPostById, id]);
+  }, [getFormulas, getJournalPostById, id, reloadKey]);
 
   const formula = useMemo(
     () => formulas.find((item) => item.id === post?.related_formula_id),
@@ -80,9 +88,11 @@ const MobileJournalDetailPage = () => {
 
   const readingMinutes = useMemo(() => getReadingMinutes(post?.content), [post?.content]);
   const articleTitle = post?.seo_title || post?.title;
+  const publicPath = useMemo(() => getJournalPublicPath(post, { mobile: true }), [post]);
+  const publicUrl = publicPath ? `${window.location.origin}${publicPath}` : '';
 
   const handleCopyLink = async () => {
-    const path = post.status === 'published' && post.slug ? `/articles/${post.slug}` : `/journal/${post.id}`;
+    const path = post.status === 'published' && (post.slug || post.id) ? `/articles/${post.slug || post.id}` : `/journal/${post.id}`;
     const url = `${window.location.origin}${path}`;
 
     try {
@@ -92,6 +102,8 @@ const MobileJournalDetailPage = () => {
       toast.error('Failed to copy link');
     }
   };
+
+  const handleRetry = () => setReloadKey((current) => current + 1);
 
   return (
     <MobileAuthenticatedLayout>
@@ -134,13 +146,15 @@ const MobileJournalDetailPage = () => {
 
       {loading && !post ? (
         <MobileLoadingSkeleton title="Loading note" subtitle="Opening your journal entry." />
-      ) : error ? (
+      ) : error || loadError ? (
         <MobileStatePanel
           tone="error"
-          title="Note unavailable"
-          description={error}
-          action="Back to journal"
-          onAction={() => navigate('/mobile/journal')}
+          title="Artikel tidak bisa dibuka"
+          description={loadError || error || 'Data artikel tidak ditemukan atau belum bisa dimuat.'}
+          action="Coba lagi"
+          onAction={handleRetry}
+          secondaryAction="Kembali"
+          onSecondaryAction={() => navigate('/mobile/journal')}
         />
       ) : post ? (
         <article className="space-y-4 pb-6">
@@ -152,6 +166,15 @@ const MobileJournalDetailPage = () => {
               <Badge variant="outline" className={`rounded-full capitalize ${getJournalStatusBadgeClassName(post.status)}`}>
                 {post.status}
               </Badge>
+              {post.status === 'published' ? (
+                <Badge variant="outline" className={`rounded-full ${post.slug ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+                  {post.slug ? `/${post.slug}` : 'public link memakai ID'}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 text-slate-700">
+                  Draft belum tampil di Artikel
+                </Badge>
+              )}
             </div>
 
             <h1 className="mt-4 text-[24px] font-bold leading-tight text-[#111827]">
@@ -195,6 +218,41 @@ const MobileJournalDetailPage = () => {
               </Button>
             ) : null}
 
+            <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-white p-3">
+              <div className="text-[10px] font-bold uppercase text-[#9ca3af]">Status publik</div>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                {publicPath
+                  ? 'Artikel ini sudah Published dan bisa dibuka dari halaman Artikel publik.'
+                  : 'Artikel ini masih Draft. Artikel Draft tersimpan di Studio Journal dan belum muncul untuk pembeli.'}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(`/mobile/journal/${post.id}/edit`, { state: { from: `/mobile/journal/${post.id}` } })}
+                  className="h-10 rounded-2xl bg-white text-xs font-bold"
+                >
+                  <Edit3 className="mr-1.5 h-3.5 w-3.5" />
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(publicPath)}
+                  disabled={!publicPath}
+                  className="h-10 rounded-2xl bg-white text-xs font-bold"
+                >
+                  {publicPath ? <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
+                  {publicPath ? 'Buka publik' : 'Publish dulu'}
+                </Button>
+              </div>
+              {publicUrl ? (
+                <div className="mt-2 truncate rounded-xl bg-[#f3f4f6] px-2.5 py-2 text-[11px] font-semibold text-[#6b7280]">
+                  {publicUrl}
+                </div>
+              ) : null}
+            </div>
+
             {post.tags?.length ? (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {post.tags.map((tag) => (
@@ -214,7 +272,15 @@ const MobileJournalDetailPage = () => {
             )}
           </section>
         </article>
-      ) : null}
+      ) : (
+        <MobileStatePanel
+          tone="empty"
+          title="Artikel tidak ditemukan"
+          description="Artikel ini mungkin sudah dihapus atau link-nya berubah."
+          action="Kembali ke Journal"
+          onAction={() => navigate('/mobile/journal')}
+        />
+      )}
     </MobileAuthenticatedLayout>
   );
 };

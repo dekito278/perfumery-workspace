@@ -201,6 +201,11 @@ const MobileJournalEditorPage = () => {
                 value={formState.status}
                 onChange={(value) => handleChange('status', value)}
               />
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
+                {formState.status === 'published'
+                  ? 'Published akan tampil di halaman Artikel publik setelah disimpan.'
+                  : 'Draft hanya tersimpan di Studio Journal dan belum tampil untuk pembeli.'}
+              </p>
             </MobileFormField>
 
             <MobileFormField id="journal-related-formula" label="Related Formula" helper="Opsional, boleh dikosongkan.">

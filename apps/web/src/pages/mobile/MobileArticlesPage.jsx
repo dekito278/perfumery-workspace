@@ -13,8 +13,10 @@ import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import {
   JOURNAL_CATEGORIES,
+  JOURNAL_POSTS_CHANGED_EVENT,
   getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalPublicPath,
   getPublishedJournalPosts,
 } from '@/services/journalPostsSupabaseService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
@@ -74,6 +76,14 @@ export const MobileArticlesContent = ({ active = true }) => {
     loadArticles();
   }, [loadArticles]);
 
+  useEffect(() => {
+    window.addEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadArticles);
+
+    return () => {
+      window.removeEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadArticles);
+    };
+  }, [loadArticles]);
+
   const categoryOptions = useMemo(() => [
     { value: 'all', label: 'Semua' },
     ...JOURNAL_CATEGORIES,
@@ -102,8 +112,9 @@ export const MobileArticlesContent = ({ active = true }) => {
   const listPosts = featuredPost ? filteredPosts.slice(1) : [];
 
   const openArticle = (post) => {
-    if (!post?.slug) return;
-    navigate(`/mobile/articles/${post.slug}`, { state: getMobileFromState(location) });
+    const path = getJournalPublicPath(post, { mobile: true });
+    if (!path) return;
+    navigate(path, { state: getMobileFromState(location) });
   };
 
   return (
@@ -226,7 +237,7 @@ export const MobileArticlesContent = ({ active = true }) => {
           <MobileEmptyState
             icon={query || category !== 'all' ? Search : FileText}
             title={posts.length ? 'Artikel tidak ditemukan' : 'Artikel belum tersedia'}
-            description={posts.length ? 'Coba kata kunci atau kategori lain.' : 'Artikel yang sudah dipublish dari Journal akan muncul di sini.'}
+            description={posts.length ? 'Coba kata kunci atau kategori lain.' : 'Artikel yang statusnya Published di Studio Journal akan muncul di sini. Draft tetap tersimpan di Studio dan belum tampil untuk pembeli.'}
             action={posts.length ? 'Reset pencarian' : 'Belanja parfum'}
             onAction={() => {
               if (posts.length) {

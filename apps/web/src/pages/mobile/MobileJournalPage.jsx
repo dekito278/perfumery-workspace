@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenText, CalendarDays, FileText, Plus, Timer } from 'lucide-react';
+import { BookOpenText, CalendarDays, ExternalLink, FileText, Plus, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -18,9 +18,11 @@ import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import {
   JOURNAL_CATEGORIES,
+  JOURNAL_POSTS_CHANGED_EVENT,
   JOURNAL_STATUSES,
   getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
+  getJournalPublicPath,
   getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { filterByText, getVisibleItems, MOBILE_PAGE_SIZE, sortByUpdated } from '@/pages/mobile/mobilePageUtils.js';
@@ -84,6 +86,16 @@ const MobileJournalPage = () => {
 
     return () => {
       active = false;
+    };
+  }, [loadJournal]);
+
+  useEffect(() => {
+    const handleJournalChanged = () => loadJournal();
+
+    window.addEventListener(JOURNAL_POSTS_CHANGED_EVENT, handleJournalChanged);
+
+    return () => {
+      window.removeEventListener(JOURNAL_POSTS_CHANGED_EVENT, handleJournalChanged);
     };
   }, [loadJournal]);
 
@@ -191,6 +203,7 @@ const MobileJournalPage = () => {
             {visiblePosts.map((post) => {
               const formula = formulaById.get(post.related_formula_id);
               const preview = getPreviewText(post);
+              const publicPath = getJournalPublicPath(post, { mobile: true });
               return (
                 <article
                   key={post.id}
@@ -215,6 +228,9 @@ const MobileJournalPage = () => {
                           </Badge>
                           <Badge variant="outline" className={`rounded-full text-[10px] capitalize ${getJournalStatusBadgeClassName(post.status)}`}>
                             {post.status}
+                          </Badge>
+                          <Badge variant="outline" className={`rounded-full text-[10px] ${publicPath ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+                            {publicPath ? 'Publik' : 'Studio only'}
                           </Badge>
                         </div>
                         <h2 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-[#111827]">
@@ -248,6 +264,27 @@ const MobileJournalPage = () => {
                       ))}
                     </div>
                   ) : null}
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate(`/mobile/journal/${post.id}`)}
+                      className="h-10 rounded-2xl bg-white text-xs font-bold"
+                    >
+                      Detail
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate(publicPath)}
+                      disabled={!publicPath}
+                      className="h-10 rounded-2xl bg-white text-xs font-bold"
+                    >
+                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                      {publicPath ? 'Buka publik' : 'Draft'}
+                    </Button>
+                  </div>
                 </article>
               );
             })}
