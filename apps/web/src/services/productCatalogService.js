@@ -112,6 +112,53 @@ export const getProductPublishChecklist = (product = {}) => {
   };
 };
 
+export const getProductStorefrontPath = (product = {}, { mobile = false } = {}) => {
+  const slug = toSlug(product.slug || product.name);
+  return slug ? `${mobile ? '/mobile' : ''}/products/${slug}` : '';
+};
+
+export const getProductPublishStatus = (product = {}) => {
+  const checklist = getProductPublishChecklist(product);
+
+  if (isProductDraft(product)) {
+    return {
+      key: 'draft',
+      label: 'Draft',
+      tone: 'amber',
+      reason: 'Draft - tidak tampil di toko.',
+      checklist,
+    };
+  }
+
+  if (checklist.stock <= 0) {
+    return {
+      key: 'stockout',
+      label: 'Stok habis',
+      tone: 'rose',
+      reason: 'Stok 0 - produk belum bisa dibeli.',
+      checklist,
+    };
+  }
+
+  if (!checklist.ready) {
+    return {
+      key: 'blocked',
+      label: 'Belum siap',
+      tone: 'amber',
+      reason: `Lengkapi: ${checklist.blocking.map((item) => item.label).join(', ')}.`,
+      checklist,
+    };
+  }
+
+  return {
+    key: 'live',
+    label: 'Live',
+    tone: 'emerald',
+    reason: 'Tampil di katalog customer.',
+    checklist,
+  };
+};
+
 export const getProductBatchKey = (product = {}) => {
   const tag = splitList(product.tags).find((item) => item.startsWith(PRODUCT_BATCH_TAG_PREFIX));
   return tag ? tag.slice(PRODUCT_BATCH_TAG_PREFIX.length).trim() : '';
