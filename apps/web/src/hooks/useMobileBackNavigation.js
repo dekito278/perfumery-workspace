@@ -6,10 +6,20 @@ export const getMobileScrollTop = () => (
     : window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
 );
 
-export const getMobileFromState = (location, scrollTop = getMobileScrollTop()) => ({
-  from: `${location.pathname}${location.search}${location.hash}`,
-  fromScrollTop: scrollTop,
-});
+export const getMobileFromState = (location, scrollTop = getMobileScrollTop()) => {
+  const from = `${location.pathname}${location.search}${location.hash}`;
+  const safeScrollTop = Number.isFinite(Number(scrollTop)) ? Number(scrollTop) : 0;
+
+  if (typeof window !== 'undefined' && from.startsWith('/mobile/')) {
+    window.sessionStorage.setItem(`scroll:${from}`, String(safeScrollTop));
+    window.sessionStorage.setItem(`scroll-lock:${from}`, String(safeScrollTop));
+  }
+
+  return {
+    from,
+    fromScrollTop: safeScrollTop,
+  };
+};
 
 export const useMobileBackNavigation = (fallback) => {
   const location = useLocation();

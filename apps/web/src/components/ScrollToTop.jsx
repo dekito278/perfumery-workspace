@@ -46,12 +46,19 @@ const ScrollToTop = () => {
     const { pathname, search, state } = location;
     const navigationType = useNavigationType();
     const storageKey = `scroll:${pathname}${search}`;
+    const storageLockKey = `scroll-lock:${pathname}${search}`;
     const previousPathnameRef = useRef(null);
 
     useLayoutEffect(() => {
         let activeScroller = getActiveScroller();
 
         const persistPosition = () => {
+            const lockedPosition = sessionStorage.getItem(storageLockKey);
+            if (lockedPosition !== null) {
+                sessionStorage.setItem(storageKey, lockedPosition);
+                return;
+            }
+
             sessionStorage.setItem(storageKey, String(getScrollTop(activeScroller)));
         };
 
@@ -75,7 +82,7 @@ const ScrollToTop = () => {
             activeScroller.removeEventListener('scroll', persistPosition);
             window.removeEventListener('resize', handleWindowResize);
         };
-    }, [storageKey]);
+    }, [storageKey, storageLockKey]);
 
     useLayoutEffect(() => {
         const shouldRestore = navigationType === 'POP' || Boolean(state?.restoreScroll);
@@ -128,6 +135,7 @@ const ScrollToTop = () => {
         }
 
         previousPathnameRef.current = pathname;
+        sessionStorage.removeItem(storageLockKey);
 
         return () => {
             cancelled = true;
@@ -135,7 +143,7 @@ const ScrollToTop = () => {
                 window.clearTimeout(timeoutId);
             }
         };
-    }, [navigationType, pathname, state?.restoreScroll, state?.scrollTop, storageKey]);
+    }, [navigationType, pathname, state?.restoreScroll, state?.scrollTop, storageKey, storageLockKey]);
 
     return null;
 };
