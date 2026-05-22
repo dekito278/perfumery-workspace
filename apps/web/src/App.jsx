@@ -203,7 +203,10 @@ const MobileBrowserRedirect = () => {
     return null;
   }
 
-  return <Navigate to={`${mobilePath}${search}${hash}`} replace />;
+  const separator = mobilePath.includes('?') && search ? '&' : '';
+  const normalizedSearch = separator ? search.slice(1) : search;
+
+  return <Navigate to={`${mobilePath}${separator}${normalizedSearch}${hash}`} replace />;
 };
 
 const mobileTabOrder = ['/mobile/dashboard', '/mobile/catalog', '/mobile/articles'];
