@@ -223,7 +223,7 @@ const MobileEditFormulaPage = () => {
 
   if (loadingData) {
     return (
-      <MobileAuthenticatedLayout showFab={false}>
+      <MobileAuthenticatedLayout taskMode>
         <Helmet><title>Loading Formula Editor - Solivagant</title></Helmet>
         <MobileLoadingState eyebrow="Formula editor" title="Loading workbook..." subtitle="Syncing composition and material guidance." />
       </MobileAuthenticatedLayout>
@@ -231,7 +231,7 @@ const MobileEditFormulaPage = () => {
   }
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout taskMode>
       <Helmet><title>Edit {name} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={name || 'Edit Formula'} subtitle={unsaved ? 'Unsaved revision' : 'Workbook ready'} onBack={handleBack} action={<MobileStatusBadge status={status} />} />

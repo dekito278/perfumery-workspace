@@ -78,7 +78,8 @@
 .mobile-app.mobile-keyboard-active .mobile-fab,
 .mobile-app.mobile-keyboard-active .mobile-studio-floating-link,
 .mobile-app.mobile-keyboard-active .mobile-fixed-action,
-.mobile-app.mobile-keyboard-active .mobile-pwa-install {
+.mobile-app.mobile-keyboard-active .mobile-pwa-install,
+.mobile-app.mobile-keyboard-active .mobile-pwa-update {
   opacity: 0;
   pointer-events: none;
   transform: translateY(12px);
@@ -89,6 +90,7 @@
 .mobile-studio-floating-link,
 .mobile-fixed-action,
 .mobile-pwa-install,
+.mobile-pwa-update,
 .mobile-session-actions,
 .mobile-session-button,
 .mobile-session-panel {

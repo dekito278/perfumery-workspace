@@ -145,6 +145,9 @@ const setupApiMocks = async (page) => {
   await page.route('**/rest/v1/storefront_products**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([productRow]) });
   });
+  await page.route('**/rest/v1/storefront_vouchers**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
   await page.route('**/rest/v1/storefront_orders**', async (route, request) => {
     const method = request.method();
     if (method === 'GET') {
@@ -317,13 +320,11 @@ const main = async () => {
   checkpoints.push(await expectVisibleText(page, 'Checkout', 'cart checkout'));
 
   await fillByPlaceholder(page, 'Nama customer', 'E2E Customer');
-  await fillByPlaceholder(page, 'WhatsApp atau email', '6281200000000');
-  await fillByPlaceholder(page, 'Alamat lengkap pengiriman', 'Jalan E2E 1');
-  await fillByPlaceholder(page, 'Kecamatan / kota', 'Jakarta Selatan');
+  await fillByPlaceholder(page, 'Contoh: 081234567890', '6281200000000');
+  await fillByPlaceholder(page, 'Nama jalan', 'Jalan E2E 1, Jakarta Selatan');
   await page.locator('select').first().selectOption('jne');
-  await clickFirstText(page, 'Cari area ongkir');
-  await clickFirstText(page, 'Jakarta Selatan');
-  await clickFirstText(page, 'Reguler');
+  await expectVisibleText(page, 'Ongkir paling hemat dipilih', 'shipping auto selected');
+  await clickFirstText(page, 'DOKU Checkout');
   await clickFirstText(page, 'Bayar sekarang');
   checkpoints.push(await expectVisibleText(page, 'Pembayaran Solivagant', 'payment page'));
   checkpoints.push(await expectVisibleText(page, customerCode, 'payment customer code'));
@@ -341,7 +342,7 @@ const main = async () => {
   await fillByPlaceholder(page, 'Nomor resi', 'E2E-RESI-001');
   await page.locator('select').last().selectOption('shipped');
   await page.getByRole('checkbox').last().click();
-  await fillByPlaceholder(page, 'Bulk kurir', 'JNE');
+  await fillByPlaceholder(page, 'Kurir massal', 'JNE');
   checkpoints.push(await expectVisibleText(page, 'Siap cetak', 'batch shipment controls'));
 
   await page.screenshot({ path: path.join(outputDir, 'production-flow.png'), fullPage: true });

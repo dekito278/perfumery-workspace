@@ -180,7 +180,7 @@ const MobileValidationEditorPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout taskMode>
       <Helmet><title>{pageTitle} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title={pageTitle} subtitle="Catatan tes terstruktur" onBack={goBack} />

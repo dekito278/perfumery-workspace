@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
@@ -74,7 +75,29 @@ const MobileProductDetailPage = () => {
   }
 
   if (!product) {
-    return <Navigate to="/mobile/catalog" replace />;
+    return (
+      <MobileCommerceLayout>
+        <Helmet>
+          <title>Produk tidak ditemukan - Solivagant</title>
+        </Helmet>
+        <main className="mobile-page space-y-4">
+          <MobileTopBar
+            title="Produk tidak ditemukan"
+            subtitle="Produk mungkin belum publish atau stok katalog sedang diperbarui."
+            eyebrow="Katalog"
+            onBack={handleBack}
+            action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
+          />
+          <MobileStatePanel
+            tone="empty"
+            title="Produk belum tersedia"
+            description="Kembali ke katalog untuk melihat produk yang sedang aktif."
+            action="Buka katalog"
+            onAction={() => navigate('/mobile/catalog')}
+          />
+        </main>
+      </MobileCommerceLayout>
+    );
   }
 
   const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);

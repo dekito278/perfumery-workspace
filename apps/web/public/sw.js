@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'solivagant-v14';
+const CACHE_VERSION = 'solivagant-v15';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [

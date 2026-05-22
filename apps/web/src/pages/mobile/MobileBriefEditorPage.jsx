@@ -154,7 +154,7 @@ const MobileBriefEditorPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout taskMode>
       <Helmet><title>{isEditMode ? 'Edit Brief Mobile' : 'Brief Mobile Baru'} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title={isEditMode ? 'Edit Brief' : 'Brief Baru'} onBack={goBack} action={<WandSparkles className="h-6 w-6 text-amber-600" />} />

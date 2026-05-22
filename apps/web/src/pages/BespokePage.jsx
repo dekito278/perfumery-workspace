@@ -235,7 +235,7 @@ const BespokePage = () => {
 
   const savedDraft = useMemo(() => readBespokeDraft(), []);
   const savedForm = savedDraft.form && typeof savedDraft.form === 'object' && !Array.isArray(savedDraft.form) ? savedDraft.form : {};
-  const [step, setStep] = useState(Number.isInteger(savedDraft.step) ? Math.min(Math.max(savedDraft.step, 0), 3) : 0);
+  const [step, setStep] = useState(Number.isInteger(savedDraft.step) ? Math.min(Math.max(savedDraft.step, 0), 4) : 0);
   const [saving, setSaving] = useState(false);
   const [destinationSearch, setDestinationSearch] = useState(savedDraft.destinationSearch || savedForm.deliveryArea || '');
   const [destinationOptions, setDestinationOptions] = useState([]);
@@ -514,8 +514,8 @@ const BespokePage = () => {
       key: 'aroma',
       shortLabel: 'Aroma',
       title: 'Brief aroma',
-      description: 'Beri nama parfum, lalu ceritakan karakter scent dan momen pemakaian.',
-      isComplete: () => form.perfumeName.trim().length > 1 && form.scentDescription.trim().length > 3 && Boolean(form.occasion),
+      description: 'Beri nama parfum, lalu ceritakan arah aroma dan momen pemakaian.',
+      isComplete: () => form.perfumeName.trim().length > 1 && form.scentDescription.trim().length > 3,
       render: () => (
         <div className="grid gap-5">
           <label>
@@ -549,8 +549,19 @@ const BespokePage = () => {
               </button>
             ))}
           </div>
+        </div>
+      ),
+    },
+    {
+      key: 'preferences',
+      shortLabel: 'Preferensi',
+      title: 'Preferensi pemakaian',
+      description: 'Pilih momen pemakaian agar arah custom lebih jelas.',
+      isComplete: () => Boolean(form.occasion),
+      render: () => (
+        <div className="grid gap-5">
           <div>
-            <span className="text-xs font-bold uppercase text-[#6b7280]">Occasion</span>
+            <span className="text-xs font-bold uppercase text-[#6b7280]">Momen pemakaian</span>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {bespokeOccasionOptions.map((option) => (
                 <OptionCard key={option} active={form.occasion === option} onClick={() => updateField('occasion', option)}>
@@ -558,6 +569,12 @@ const BespokePage = () => {
                 </OptionCard>
               ))}
             </div>
+          </div>
+          <div className="rounded-3xl border border-[#263d27]/10 bg-[#f7f8f2] p-5">
+            <div className="text-sm font-bold text-[#0b130c]">Ringkasan aroma</div>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
+              {form.scentDescription.trim() || 'Isi cerita aroma di langkah sebelumnya.'}
+            </p>
           </div>
         </div>
       ),
@@ -1070,11 +1087,11 @@ const BespokePage = () => {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <Link to="/home" className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
               <ArrowLeft className="h-4 w-4" />
-              Home
+              Beranda
             </Link>
             <div className="flex items-center gap-2">
-              <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Catalog</Link>
-              <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Cart</Link>
+              <Link to="/catalog" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Katalog</Link>
+              <Link to="/cart" className="rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]">Keranjang</Link>
             </div>
           </div>
         </section>
@@ -1084,11 +1101,11 @@ const BespokePage = () => {
             <div className="rounded-[28px] border border-[#263d27]/10 bg-white p-5 shadow-sm">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/15 bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
                 <WandSparkles className="h-4 w-4" />
-                Bespoke perfume
+                Brief custom
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-none lg:text-5xl">Custom scent request</h1>
+              <h1 className="mt-5 text-4xl font-bold leading-none lg:text-5xl">Request parfum custom</h1>
               <p className="mt-4 text-sm font-semibold leading-relaxed text-[#6b7280]">
-                Flow desktop sekarang mengikuti pola mobile: brief, pilihan botol, pengiriman, lalu payment.
+                Cerita aroma, pilihan botol, delivery, dan payment dalam flow yang sama dengan aplikasi mobile.
               </p>
               <div className="mt-4 inline-flex items-center rounded-full bg-[#263d27] px-3 py-1 text-xs font-bold uppercase text-white">
                 Pre-order / 7-14 hari
@@ -1119,16 +1136,16 @@ const BespokePage = () => {
               <div className="mt-4 grid gap-3">
                 <SummaryLine label="Nama" value={form.perfumeName || '-'} />
                 <SummaryLine label="Aroma" value={form.scentDescription.trim() ? form.scentDescription.slice(0, 58) : '-'} />
-                <SummaryLine label="Occasion" value={form.occasion} />
+                <SummaryLine label="Momen" value={form.occasion} />
                 <SummaryLine label="Package" value={budgetSummary} />
-                <SummaryLine label="Shipping" value={shippingSummary || '-'} />
+                <SummaryLine label="Ongkir" value={shippingSummary || '-'} />
               </div>
             </div>
           </aside>
 
           <section className="rounded-[28px] border border-[#263d27]/10 bg-white p-5 shadow-sm lg:p-6">
             <header className="border-b border-[#263d27]/10 pb-5">
-              <div className="text-xs font-bold uppercase text-[#6b7280]">Step {step + 1} / {stepContent.length}</div>
+              <div className="text-xs font-bold uppercase text-[#6b7280]">Langkah {step + 1} dari {stepContent.length}</div>
               <h2 className="mt-2 text-3xl font-bold leading-tight text-[#0b130c]">{activeStep.title}</h2>
               <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">{activeStep.description}</p>
             </header>
@@ -1143,16 +1160,16 @@ const BespokePage = () => {
                 onClick={() => setStep((current) => Math.max(current - 1, 0))}
                 disabled={step === 0 || saving}
               >
-                Back
+                Kembali
               </Button>
               {step < stepContent.length - 1 ? (
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-7 text-sm font-bold" onClick={goNext}>
-                  Continue
+                  Lanjut
                   <ChevronDown className="-rotate-90 h-4 w-4" />
                 </Button>
               ) : (
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-7 text-sm font-bold" onClick={submitRequest} disabled={saving}>
-                  {saving ? 'Saving request...' : 'Send request'}
+                  {saving ? 'Menyimpan request...' : 'Kirim request'}
                   <Send className="h-4 w-4" />
                 </Button>
               )}

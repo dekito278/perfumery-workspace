@@ -174,7 +174,7 @@ const MobileRawMaterialEditorPage = () => {
 
   if (loading) {
     return (
-      <MobileAuthenticatedLayout showFab={false}>
+      <MobileAuthenticatedLayout taskMode>
         <Helmet><title>{isEditing ? 'Edit Material' : 'New Material'} - Solivagant</title></Helmet>
         <MobileLoadingState eyebrow="Material editor" title="Loading material..." subtitle="Preparing editable stock and guidance fields." />
       </MobileAuthenticatedLayout>
@@ -182,7 +182,7 @@ const MobileRawMaterialEditorPage = () => {
   }
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout taskMode>
       <Helmet><title>{isEditing ? `Edit ${formState.name || 'Material'}` : 'New Material'} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title={isEditing ? 'Edit material' : 'New material'} subtitle={isEditing ? formState.name || 'Material setup' : 'Stock and reference setup'} onBack={goBack} />

@@ -226,13 +226,23 @@ const CartPage = () => {
                 );
               })}
               {!items.length ? (
-                <StateBlock
-                  icon={ShoppingBag}
-                  title="Keranjang kosong"
-                  description="Pilih parfum dari katalog untuk mulai checkout."
-                  action="Buka katalog"
-                  onAction={() => navigate('/catalog')}
-                />
+                <div className="rounded-[28px] border border-[#263d27]/10 bg-white p-4 shadow-sm">
+                  <StateBlock
+                    icon={ShoppingBag}
+                    title="Keranjang kosong"
+                    description="Pilih parfum ready stock, mulai custom, atau kembali lihat katalog."
+                    action="Buka katalog"
+                    onAction={() => navigate('/catalog')}
+                  />
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <Link to="/bespoke" className="inline-flex h-12 items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-5 text-sm font-bold text-[#0b130c]">
+                      Mulai custom
+                    </Link>
+                    <Link to="/catalog" className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
+                      Buka katalog
+                    </Link>
+                  </div>
+                </div>
               ) : null}
             </div>
           </div>

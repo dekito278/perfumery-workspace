@@ -91,18 +91,18 @@ const PwaInstallPrompt = () => {
 
   return (
     <div className="mobile-pwa-install" role="dialog" aria-label="Install Solivagant">
-      <button type="button" className="mobile-pwa-install-close" onClick={dismiss} aria-label="Dismiss install prompt">
+      <button type="button" className="mobile-pwa-install-close" onClick={dismiss} aria-label="Tutup prompt install">
         <X className="h-4 w-4" />
       </button>
       <div className="mobile-pwa-install-mark">S</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold text-[#1f2937]">
-          {ios ? 'Add Solivagant to Home Screen' : 'Install Solivagant'}
+          {ios ? 'Tambah Solivagant ke Home Screen' : 'Install Solivagant'}
         </div>
         <p className="mt-1 text-xs font-medium leading-snug text-[#6b7280]">
           {ios
-            ? 'Tap Share, then Add to Home Screen for a standalone iOS app view.'
-            : 'Install for fullscreen access, faster relaunch, and a cleaner app experience.'}
+            ? 'Tap Share, lalu Add to Home Screen agar Solivagant terbuka seperti aplikasi.'
+            : 'Install untuk akses fullscreen, buka lebih cepat, dan pengalaman aplikasi yang lebih rapi.'}
         </p>
         <div className="mt-3 flex gap-2">
           {ios ? (
@@ -117,7 +117,7 @@ const PwaInstallPrompt = () => {
             </Button>
           )}
           <Button type="button" variant="outline" onClick={dismiss} className="h-9 rounded-xl bg-white px-3 text-xs">
-            Later
+            Nanti
           </Button>
         </div>
       </div>

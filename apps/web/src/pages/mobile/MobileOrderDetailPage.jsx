@@ -638,7 +638,7 @@ const MobileOrderDetailPage = () => {
 
   if (loading) {
     return (
-      <MobileAuthenticatedLayout showFab={false}>
+      <MobileAuthenticatedLayout taskMode>
         <main className="mobile-page">
           <StateBlock
             className="mobile-card"
@@ -653,7 +653,7 @@ const MobileOrderDetailPage = () => {
 
   if (!order) {
     return (
-      <MobileAuthenticatedLayout showFab={false}>
+      <MobileAuthenticatedLayout taskMode>
         <main className="mobile-page space-y-4">
           <MobileTopBar title="Order tidak ditemukan" subtitle="Order Studio" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
           <Button type="button" className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/studio/orders')}>
@@ -669,7 +669,7 @@ const MobileOrderDetailPage = () => {
   const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout taskMode>
       <Helmet><title>{order.orderNumber} - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar

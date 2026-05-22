@@ -8,15 +8,16 @@ const StickyBottomActionBar = ({
   contentClassName,
   fixed = false,
   keyboardBehavior = 'hide',
-  reserveSpace = false,
+  reserveSpace = fixed,
   'aria-label': ariaLabel = 'Mobile actions',
 }) => {
+  const normalizedKeyboardBehavior = keyboardBehavior === 'stay' ? 'stay' : 'hide';
   const actionBar = (
     <div
       className={cn(
         'mobile-action-bar',
         fixed ? 'mobile-fixed-action' : 'mobile-inline-action',
-        fixed && `mobile-action-bar--keyboard-${keyboardBehavior}`,
+        fixed && `mobile-action-bar--keyboard-${normalizedKeyboardBehavior}`,
         className
       )}
       role="region"

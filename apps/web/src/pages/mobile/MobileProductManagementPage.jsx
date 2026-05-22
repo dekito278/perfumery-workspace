@@ -453,7 +453,7 @@ const MobileProductManagementPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout taskMode>
       <Helmet>
         <title>Produk - Solivagant</title>
       </Helmet>
