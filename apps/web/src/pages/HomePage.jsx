@@ -331,7 +331,7 @@ const HomePage = () => {
           className="solivagant-section solivagant-story"
         >
           <motion.div variants={fadeUp} className="solivagant-story__image">
-            <img src={homeAssets.perfumerAtWork} alt="Dekito working inside the Solivagant atelier" />
+            <img src={homeAssets.perfumerCylinder} alt="Dekito working inside the Solivagant atelier" />
           </motion.div>
           <div className="solivagant-story__copy">
             <motion.div variants={fadeUp} className="solivagant-kicker">

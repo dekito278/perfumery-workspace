@@ -121,7 +121,7 @@
 .solivagant-cinematic {
   position: relative;
   background:
-    linear-gradient(180deg, #070906 0%, #10180f 36%, #f1eadb 36.1%, #f7f1e5 100%);
+    linear-gradient(180deg, #f1eadb 0%, #f7f1e5 54%, #eef2e8 100%);
 }
 
 .solivagant-cinematic-nav {
@@ -145,7 +145,7 @@
 
 .solivagant-hero {
   position: relative;
-  min-height: 100vh;
+  min-height: 88svh;
   overflow: hidden;
   --hero-parallax-x: 0;
   --hero-parallax-y: 0;
@@ -407,8 +407,8 @@
   display: grid;
   align-content: center;
   width: min(700px, calc(100% - 48px));
-  min-height: 100vh;
-  padding: 96px 0 108px;
+  min-height: 88svh;
+  padding: 112px 0 96px;
   margin-left: max(32px, calc((100vw - 1280px) / 2 + 32px));
 }
 
@@ -535,7 +535,7 @@
   z-index: 1;
   width: min(1280px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 96px 0;
+  padding: clamp(72px, 8vw, 104px) 0;
 }
 
 .solivagant-story,
@@ -591,8 +591,8 @@
 .solivagant-bespoke__copy h2,
 .solivagant-section-heading h2 {
   color: #11190f;
-  font-size: clamp(2.75rem, 4.4vw, 5.55rem);
-  line-height: 0.98;
+  font-size: clamp(2.45rem, 4.1vw, 5rem);
+  line-height: 1.02;
 }
 
 .solivagant-story__copy > p,
@@ -681,7 +681,7 @@
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 34px;
+  margin-bottom: 28px;
 }
 
 .solivagant-section-heading h2 {
@@ -770,6 +770,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 14px;
+  flex-wrap: wrap;
 }
 
 .solivagant-product-card__footer span {
@@ -787,6 +788,7 @@
   width: 34px;
   height: 34px;
   margin-left: auto;
+  flex: 0 0 34px;
   place-items: center;
   border-radius: 999px;
   background: #172519;
@@ -997,10 +999,58 @@
     background: #070906 !important;
   }
 
+  .solivagant-cinematic-nav > div {
+    gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .solivagant-cinematic-nav > div > a:first-child {
+    flex: 0 0 auto;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .solivagant-cinematic-nav > div > a:first-child img {
+    height: 18px;
+    width: 18px;
+  }
+
+  .solivagant-cinematic-nav > div > a:first-child span {
+    max-width: 78px;
+    overflow: hidden;
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .solivagant-cinematic-nav > div > div {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .solivagant-cinematic-nav > div > div a {
+    min-width: 0;
+    height: 36px;
+    border-radius: 8px;
+    padding: 0 9px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .solivagant-cinematic-nav > div > div a[aria-label] {
+    width: 36px;
+    padding: 0;
+    flex: 0 0 36px;
+  }
+
   .solivagant-hero {
     min-height: auto;
     background:
-      linear-gradient(180deg, rgba(7, 9, 6, 0.76), rgba(7, 9, 6, 0.62)),
+      linear-gradient(180deg, rgba(7, 9, 6, 0.82), rgba(7, 9, 6, 0.72)),
       url('/brand/home/raw-material-library.jpg') center / cover;
   }
 
@@ -1008,12 +1058,12 @@
     width: min(100% - 32px, 620px);
     min-height: auto;
     margin: 0 auto;
-    padding: 82px 0 44px;
+    padding: 64px 0 34px;
   }
 
   .solivagant-hero h1 {
-    font-size: 3.3rem;
-    line-height: 0.98;
+    font-size: clamp(2.7rem, 14vw, 3.25rem);
+    line-height: 1;
   }
 
   .solivagant-hero p {
@@ -1054,7 +1104,8 @@
   .solivagant-story__copy h2,
   .solivagant-bespoke__copy h2,
   .solivagant-section-heading h2 {
-    font-size: 2.7rem;
+    font-size: clamp(2.1rem, 11vw, 2.65rem);
+    line-height: 1.04;
   }
 
   .solivagant-story__image img,
