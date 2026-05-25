@@ -19,7 +19,6 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import {
   perfumerProfile,
-  storefrontSegments,
 } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
@@ -48,7 +47,6 @@ const homeAssets = {
   rawMaterialShelf: '/brand/home/raw-material-shelf.jpg',
   perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
   perfumerCylinder: '/brand/home/perfumer-cylinder.jpg',
-  perfumerAtWork: '/brand/home/perfumer-at-work.jpg',
 };
 
 const atelierPrinciples = [
@@ -130,6 +128,13 @@ const journalTeasers = [
     title: 'Why quiet perfume can still feel unforgettable',
     meta: 'Editorial',
   },
+];
+
+const fallbackAromaFamilies = [
+  { name: 'Fresh' },
+  { name: 'Floral' },
+  { name: 'Woody' },
+  { name: 'Gourmand' },
 ];
 
 const getProductMood = (product) => product?.mood || product?.category || 'Atelier signature';
@@ -398,7 +403,7 @@ const HomePage = () => {
             ))}
           </div>
           <div className="solivagant-category-rail" aria-label="Aroma families">
-            {(categories.length ? categories : storefrontSegments).slice(0, 8).map((category) => (
+            {(categories.length ? categories : fallbackAromaFamilies).slice(0, 8).map((category) => (
               <Link key={category.name} to={category.filter === 'bespoke' ? '/bespoke' : `/catalog?category=${encodeURIComponent(category.name)}`}>
                 {category.name}
               </Link>
