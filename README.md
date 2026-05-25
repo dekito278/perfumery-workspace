@@ -14,6 +14,8 @@ Root repo sekarang juga mengikuti alur itu:
 - `npm run dev` menjalankan frontend aktif
 - `npm run build` membangun frontend aktif
 - `npm run lint` memeriksa frontend aktif
+- `npm run browser:smoke` menjalankan smoke test browser publik/protected redirect
+- `npm run e2e:production-flow` menjalankan flow checkout sampai shipment dengan API mock
 
 ## Legacy Folders
 
@@ -75,6 +77,31 @@ Lalu buka:
 
 - `http://localhost:3000` untuk `dev`
 - `http://127.0.0.1:3002` untuk `dev:web:3002`
+
+## QA Lokal
+
+Jalankan pengecekan statis dari root:
+
+```bash
+npm run lint
+npm run lint:warn
+npm run build
+```
+
+Untuk smoke test browser, nyalakan server port tetap dulu:
+
+```bash
+npm run dev:web:3002
+```
+
+Lalu jalankan:
+
+```bash
+npm run browser:smoke -- --base-url http://127.0.0.1:3002
+npm run e2e:production-flow -- --base-url http://127.0.0.1:3002
+```
+
+`browser:smoke` mengecek login, halaman publik, dan redirect halaman protected. `e2e:production-flow` memakai API mock untuk mengecek product detail, cart, payment, customer portal, dan shipment controls tanpa menyentuh data live.
 
 ## Jika Memang Mau Menyalakan Stack Legacy
 

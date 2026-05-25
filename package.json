@@ -16,7 +16,10 @@
     "start:legacy": "concurrently --kill-others --raw \"npm run start --prefix apps/api\" \"npm run start --prefix apps/pocketbase\"",
     "lint": "npm run lint:web",
     "lint:web": "npm run lint --prefix apps/web",
-    "lint:legacy": "npm run lint --prefix apps/api"
+    "lint:warn": "npm run lint:warn --prefix apps/web",
+    "lint:legacy": "npm run lint --prefix apps/api",
+    "browser:smoke": "npm --prefix apps/web run browser:smoke --",
+    "e2e:production-flow": "npm --prefix apps/web run e2e:production-flow --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
