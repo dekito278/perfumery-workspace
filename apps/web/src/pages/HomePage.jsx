@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
@@ -17,7 +17,6 @@ import gsap from 'gsap';
 import Lenis from 'lenis';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
-import CinematicAtelierScene from '@/components/storefront/CinematicAtelierScene.jsx';
 import {
   perfumerProfile,
   storefrontSegments,
@@ -34,6 +33,8 @@ const fadeUp = {
     transition: { duration: 0.78, ease: [0.22, 1, 0.36, 1] },
   },
 };
+
+const CinematicAtelierScene = lazy(() => import('@/components/storefront/CinematicAtelierScene.jsx'));
 
 const stagger = {
   hidden: {},
@@ -120,6 +121,7 @@ const getProductMood = (product) => product?.mood || product?.category || 'Ateli
 const HomePage = () => {
   const introRef = useRef(null);
   const [introComplete, setIntroComplete] = useState(false);
+  const [shouldRenderScene, setShouldRenderScene] = useState(false);
   const catalogProducts = useCatalogProducts();
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
@@ -173,6 +175,23 @@ const HomePage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 900px)');
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const updateScenePreference = () => {
+      setShouldRenderScene(Boolean(media?.matches) && !reducedMotion?.matches);
+    };
+
+    updateScenePreference();
+    media?.addEventListener?.('change', updateScenePreference);
+    reducedMotion?.addEventListener?.('change', updateScenePreference);
+
+    return () => {
+      media?.removeEventListener?.('change', updateScenePreference);
+      reducedMotion?.removeEventListener?.('change', updateScenePreference);
+    };
+  }, []);
+
   const storefrontStats = [
     { value: String(products.length || 13), label: 'Perfume objects' },
     { value: String(categories.length || 8), label: 'Aroma families' },
@@ -209,9 +228,13 @@ const HomePage = () => {
 
         <section className="solivagant-hero">
           <div className="solivagant-hero__scene" aria-hidden="true">
-            <Suspense fallback={<div className="solivagant-scene-fallback" />}>
-              <CinematicAtelierScene />
-            </Suspense>
+            {introComplete && shouldRenderScene ? (
+              <Suspense fallback={<div className="solivagant-scene-fallback" />}>
+                <CinematicAtelierScene />
+              </Suspense>
+            ) : (
+              <div className="solivagant-scene-fallback" />
+            )}
           </div>
           <div className="solivagant-hero__grain" />
           <motion.div

@@ -177,8 +177,22 @@ const isStorefrontRoute = (pathname) => (
   && storefrontRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 );
 
+const HomeRouteFallback = () => (
+  <div className="solivagant-loader solivagant-loader--route" aria-label="Loading Solivagant" role="status" aria-live="polite">
+    <div className="solivagant-loader__grain" />
+    <div className="solivagant-loader__fog" />
+    <p>Artisan Perfumery Atelier</p>
+    <h1>SOLIVAGANT</h1>
+    <span>Fragrance, memory, and craftsmanship</span>
+  </div>
+);
+
 const RouteFallback = () => {
   const { pathname } = useLocation();
+
+  if (pathname === '/home' || pathname === '/') {
+    return <HomeRouteFallback />;
+  }
 
   if (isDesktopProtectedRoute(pathname)) {
     return (
