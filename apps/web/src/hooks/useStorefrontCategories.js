@@ -39,19 +39,41 @@ export const useStorefrontCategories = (products = []) => {
     let isMounted = true;
 
     const syncCategories = async ({ force = false } = {}) => {
-      setLoading(true);
-      const nextCategories = await prefetchStorefrontCategories({ force });
       if (isMounted) {
-        setManagedCategories(nextCategories);
-        setLoading(false);
+        setLoading(true);
+      }
+
+      try {
+        const nextCategories = await prefetchStorefrontCategories({ force });
+        if (isMounted) {
+          setManagedCategories(Array.isArray(nextCategories) ? nextCategories : getLocalStorefrontCategories());
+        }
+      } catch (error) {
+        console.warn('Storefront category sync failed, using local fallback:', error.message || error);
+        if (isMounted) {
+          setManagedCategories(getLocalStorefrontCategories());
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-    const refreshCategories = () => syncCategories({ force: true });
+    const refreshCategories = () => {
+      syncCategories({ force: true }).catch((error) => {
+        console.warn('Storefront category refresh failed:', error.message || error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+    };
 
     window.addEventListener('storage', refreshCategories);
     window.addEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, refreshCategories);
     window.addEventListener('dekito:products-updated', refreshCategories);
-    syncCategories();
+    syncCategories().catch((error) => {
+      console.warn('Initial storefront category sync failed:', error.message || error);
+    });
 
     return () => {
       isMounted = false;

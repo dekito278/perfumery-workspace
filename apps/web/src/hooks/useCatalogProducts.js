@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  getCatalogProducts,
   getEditableProducts,
   getLocalCatalogProducts,
   prefetchCatalogProducts,
@@ -12,20 +13,43 @@ export const useCatalogProducts = ({ editableOnly = false } = {}) => {
   useEffect(() => {
     let isMounted = true;
     const syncProducts = async ({ force = false } = {}) => {
-      setLoading(true);
-      const nextProducts = editableOnly
-        ? await getEditableProducts({ useLastValidFallback: false, timeoutMs: 8000 })
-        : await prefetchCatalogProducts({ force });
       if (isMounted) {
-        setProducts(nextProducts);
-        setLoading(false);
+        setLoading(true);
+      }
+
+      try {
+        const nextProducts = editableOnly
+          ? await getEditableProducts({ useLastValidFallback: false, timeoutMs: 8000 })
+          : await prefetchCatalogProducts({ force });
+        if (isMounted) {
+          setProducts(Array.isArray(nextProducts) ? nextProducts : []);
+        }
+      } catch (error) {
+        console.warn('Catalog product sync failed, using local fallback:', error.message || error);
+        if (isMounted) {
+          setProducts(editableOnly ? [] : getCatalogProducts());
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-    const refreshProducts = () => syncProducts({ force: true });
+
+    const refreshProducts = () => {
+      syncProducts({ force: true }).catch((error) => {
+        console.warn('Catalog product refresh failed:', error.message || error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+    };
 
     window.addEventListener('storage', refreshProducts);
     window.addEventListener('dekito:products-updated', refreshProducts);
-    syncProducts();
+    syncProducts().catch((error) => {
+      console.warn('Initial catalog product sync failed:', error.message || error);
+    });
 
     return () => {
       isMounted = false;

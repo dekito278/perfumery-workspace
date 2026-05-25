@@ -15,76 +15,126 @@ import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
 import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
 
-const HomePage = lazy(() => import('@/pages/HomePage.jsx'));
-const CatalogPage = lazy(() => import('@/pages/CatalogPage.jsx'));
-const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage.jsx'));
-const BespokePage = lazy(() => import('@/pages/BespokePage.jsx'));
-const CartPage = lazy(() => import('@/pages/CartPage.jsx'));
-const PaymentPage = lazy(() => import('@/pages/PaymentPage.jsx'));
-const CustomerPortalPage = lazy(() => import('@/pages/CustomerPortalPage.jsx'));
-const CustomerInvoicePage = lazy(() => import('@/pages/CustomerInvoicePage.jsx'));
-const LoginPage = lazy(() => import('@/pages/LoginPage.jsx'));
-const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage.jsx'));
-const AuthenticatorSetupPage = lazy(() => import('@/pages/AuthenticatorSetupPage.jsx'));
-const DashboardPage = lazy(() => import('@/pages/DashboardPage.jsx'));
-const ProductManagementPage = lazy(() => import('@/pages/ProductManagementPage.jsx'));
-const ProductCategoriesPage = lazy(() => import('@/pages/ProductCategoriesPage.jsx'));
-const VoucherManagementPage = lazy(() => import('@/pages/VoucherManagementPage.jsx'));
-const OrdersPage = lazy(() => import('@/pages/OrdersPage.jsx'));
-const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage.jsx'));
-const CustomersPage = lazy(() => import('@/pages/CustomersPage.jsx'));
-const ShipmentsPage = lazy(() => import('@/pages/ShipmentsPage.jsx'));
-const BriefsPage = lazy(() => import('@/pages/BriefsPage.jsx'));
-const JournalPage = lazy(() => import('@/pages/JournalPage.jsx'));
-const JournalEditorPage = lazy(() => import('@/pages/JournalEditorPage.jsx'));
-const JournalDetailPage = lazy(() => import('@/pages/JournalDetailPage.jsx'));
-const PublicJournalArticlePage = lazy(() => import('@/pages/PublicJournalArticlePage.jsx'));
-const BriefEditorPage = lazy(() => import('@/pages/BriefEditorPage.jsx'));
-const BriefDetailPage = lazy(() => import('@/pages/BriefDetailPage.jsx'));
-const RawMaterialsPage = lazy(() => import('@/pages/RawMaterialsPage.jsx'));
-const RawMaterialAuditPage = lazy(() => import('@/pages/RawMaterialAuditPage.jsx'));
-const RawMaterialDetailPage = lazy(() => import('@/pages/RawMaterialDetailPage.jsx'));
-const CategoriesPage = lazy(() => import('@/pages/CategoriesPage.jsx'));
-const FormulasPage = lazy(() => import('@/pages/FormulasPage.jsx'));
-const CreateFormulaPage = lazy(() => import('@/pages/CreateFormulaPage.jsx'));
-const EditFormulaPage = lazy(() => import('@/pages/EditFormulaPage.jsx'));
-const FormulaDetailPage = lazy(() => import('@/pages/FormulaDetailPage.jsx'));
-const BatchProductionPage = lazy(() => import('@/pages/BatchProductionPage.jsx'));
-const ProductionCostPage = lazy(() => import('@/pages/ProductionCostPage.jsx'));
-const ValidationLogPage = lazy(() => import('@/pages/ValidationLogPage.jsx'));
-const MobileLoginPage = lazy(() => import('@/pages/mobile/MobileLoginPage.jsx'));
-const MobileCommerceTabsPage = lazy(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
-const MobileProductDetailPage = lazy(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
-const MobileBespokePage = lazy(() => import('@/pages/mobile/MobileBespokePage.jsx'));
-const MobileCartPage = lazy(() => import('@/pages/mobile/MobileCartPage.jsx'));
-const MobileCheckoutPage = lazy(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
-const MobileProductManagementPage = lazy(() => import('@/pages/mobile/MobileProductManagementPage.jsx'));
-const MobileBespokeSettingsPage = lazy(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
-const MobileVoucherManagementPage = lazy(() => import('@/pages/mobile/MobileVoucherManagementPage.jsx'));
-const MobileOrdersPage = lazy(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
-const MobileOrderDetailPage = lazy(() => import('@/pages/mobile/MobileOrderDetailPage.jsx'));
-const MobileFulfillmentPage = lazy(() => import('@/pages/mobile/MobileFulfillmentPage.jsx'));
-const MobileCustomersPage = lazy(() => import('@/pages/mobile/MobileCustomersPage.jsx'));
-const MobileDashboardPage = lazy(() => import('@/pages/mobile/MobileDashboardPage.jsx'));
-const MobileBriefsPage = lazy(() => import('@/pages/mobile/MobileBriefsPage.jsx'));
-const MobileBriefEditorPage = lazy(() => import('@/pages/mobile/MobileBriefEditorPage.jsx'));
-const MobileBriefDetailPage = lazy(() => import('@/pages/mobile/MobileBriefDetailPage.jsx'));
-const MobileJournalPage = lazy(() => import('@/pages/mobile/MobileJournalPage.jsx'));
-const MobileJournalEditorPage = lazy(() => import('@/pages/mobile/MobileJournalEditorPage.jsx'));
-const MobileJournalDetailPage = lazy(() => import('@/pages/mobile/MobileJournalDetailPage.jsx'));
-const MobileRawMaterialsPage = lazy(() => import('@/pages/mobile/MobileRawMaterialsPage.jsx'));
-const MobileRawMaterialEditorPage = lazy(() => import('@/pages/mobile/MobileRawMaterialEditorPage.jsx'));
-const MobileRawMaterialDetailPage = lazy(() => import('@/pages/mobile/MobileRawMaterialDetailPage.jsx'));
-const MobileRawMaterialAuditPage = lazy(() => import('@/pages/mobile/MobileRawMaterialAuditPage.jsx'));
-const MobileCategoriesPage = lazy(() => import('@/pages/mobile/MobileCategoriesPage.jsx'));
-const MobileFormulasPage = lazy(() => import('@/pages/mobile/MobileFormulasPage.jsx'));
-const MobileCreateFormulaPage = lazy(() => import('@/pages/mobile/MobileCreateFormulaPage.jsx'));
-const MobileEditFormulaPage = lazy(() => import('@/pages/mobile/MobileEditFormulaPage.jsx'));
-const MobileFormulaDetailPage = lazy(() => import('@/pages/mobile/MobileFormulaDetailPage.jsx'));
-const MobileBatchesPage = lazy(() => import('@/pages/mobile/MobileBatchesPage.jsx'));
-const MobileProductionCostingPage = lazy(() => import('@/pages/mobile/MobileProductionCostingPage.jsx'));
-const MobileValidationPage = lazy(() => import('@/pages/mobile/MobileValidationPage.jsx'));
-const MobileValidationEditorPage = lazy(() => import('@/pages/mobile/MobileValidationEditorPage.jsx'));
+const LAZY_ROUTE_RECOVERY_KEY = 'solivagant.lazy-route-recovered';
+const LAZY_IMPORT_RETRY_DELAY_MS = 350;
+const LAZY_IMPORT_ERROR_PATTERNS = [
+  /Failed to fetch dynamically imported module/i,
+  /Importing a module script failed/i,
+  /Loading chunk [\w-]+ failed/i,
+  /Unable to preload CSS/i,
+];
+
+const isLazyImportError = (error) => {
+  const message = String(error?.message || error || '');
+  return LAZY_IMPORT_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+};
+
+const recoverLazyRoute = (error) => {
+  if (typeof window === 'undefined' || !isLazyImportError(error) || !window.navigator.onLine) {
+    return false;
+  }
+
+  try {
+    if (window.sessionStorage.getItem(LAZY_ROUTE_RECOVERY_KEY) === window.location.href) {
+      return false;
+    }
+    window.sessionStorage.setItem(LAZY_ROUTE_RECOVERY_KEY, window.location.href);
+  } catch {
+    return false;
+  }
+
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.set('route-recover', Date.now().toString(36));
+  window.location.replace(nextUrl.toString());
+  return true;
+};
+
+const lazyRoute = (loader) => lazy(async () => {
+  try {
+    return await loader();
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, LAZY_IMPORT_RETRY_DELAY_MS));
+    try {
+      return await loader();
+    } catch (secondError) {
+      if (recoverLazyRoute(secondError)) {
+        return new Promise(() => {});
+      }
+      throw secondError;
+    }
+  }
+});
+
+const HomePage = lazyRoute(() => import('@/pages/HomePage.jsx'));
+const CatalogPage = lazyRoute(() => import('@/pages/CatalogPage.jsx'));
+const ProductDetailPage = lazyRoute(() => import('@/pages/ProductDetailPage.jsx'));
+const BespokePage = lazyRoute(() => import('@/pages/BespokePage.jsx'));
+const CartPage = lazyRoute(() => import('@/pages/CartPage.jsx'));
+const PaymentPage = lazyRoute(() => import('@/pages/PaymentPage.jsx'));
+const CustomerPortalPage = lazyRoute(() => import('@/pages/CustomerPortalPage.jsx'));
+const CustomerInvoicePage = lazyRoute(() => import('@/pages/CustomerInvoicePage.jsx'));
+const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
+const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
+const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetupPage.jsx'));
+const DashboardPage = lazyRoute(() => import('@/pages/DashboardPage.jsx'));
+const ProductManagementPage = lazyRoute(() => import('@/pages/ProductManagementPage.jsx'));
+const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
+const VoucherManagementPage = lazyRoute(() => import('@/pages/VoucherManagementPage.jsx'));
+const OrdersPage = lazyRoute(() => import('@/pages/OrdersPage.jsx'));
+const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
+const CustomersPage = lazyRoute(() => import('@/pages/CustomersPage.jsx'));
+const ShipmentsPage = lazyRoute(() => import('@/pages/ShipmentsPage.jsx'));
+const BriefsPage = lazyRoute(() => import('@/pages/BriefsPage.jsx'));
+const JournalPage = lazyRoute(() => import('@/pages/JournalPage.jsx'));
+const JournalEditorPage = lazyRoute(() => import('@/pages/JournalEditorPage.jsx'));
+const JournalDetailPage = lazyRoute(() => import('@/pages/JournalDetailPage.jsx'));
+const PublicJournalArticlePage = lazyRoute(() => import('@/pages/PublicJournalArticlePage.jsx'));
+const BriefEditorPage = lazyRoute(() => import('@/pages/BriefEditorPage.jsx'));
+const BriefDetailPage = lazyRoute(() => import('@/pages/BriefDetailPage.jsx'));
+const RawMaterialsPage = lazyRoute(() => import('@/pages/RawMaterialsPage.jsx'));
+const RawMaterialAuditPage = lazyRoute(() => import('@/pages/RawMaterialAuditPage.jsx'));
+const RawMaterialDetailPage = lazyRoute(() => import('@/pages/RawMaterialDetailPage.jsx'));
+const CategoriesPage = lazyRoute(() => import('@/pages/CategoriesPage.jsx'));
+const FormulasPage = lazyRoute(() => import('@/pages/FormulasPage.jsx'));
+const CreateFormulaPage = lazyRoute(() => import('@/pages/CreateFormulaPage.jsx'));
+const EditFormulaPage = lazyRoute(() => import('@/pages/EditFormulaPage.jsx'));
+const FormulaDetailPage = lazyRoute(() => import('@/pages/FormulaDetailPage.jsx'));
+const BatchProductionPage = lazyRoute(() => import('@/pages/BatchProductionPage.jsx'));
+const ProductionCostPage = lazyRoute(() => import('@/pages/ProductionCostPage.jsx'));
+const ValidationLogPage = lazyRoute(() => import('@/pages/ValidationLogPage.jsx'));
+const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
+const MobileCommerceTabsPage = lazyRoute(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
+const MobileProductDetailPage = lazyRoute(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
+const MobileBespokePage = lazyRoute(() => import('@/pages/mobile/MobileBespokePage.jsx'));
+const MobileCartPage = lazyRoute(() => import('@/pages/mobile/MobileCartPage.jsx'));
+const MobileCheckoutPage = lazyRoute(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
+const MobileProductManagementPage = lazyRoute(() => import('@/pages/mobile/MobileProductManagementPage.jsx'));
+const MobileBespokeSettingsPage = lazyRoute(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
+const MobileVoucherManagementPage = lazyRoute(() => import('@/pages/mobile/MobileVoucherManagementPage.jsx'));
+const MobileOrdersPage = lazyRoute(() => import('@/pages/mobile/MobileOrdersPage.jsx'));
+const MobileOrderDetailPage = lazyRoute(() => import('@/pages/mobile/MobileOrderDetailPage.jsx'));
+const MobileFulfillmentPage = lazyRoute(() => import('@/pages/mobile/MobileFulfillmentPage.jsx'));
+const MobileCustomersPage = lazyRoute(() => import('@/pages/mobile/MobileCustomersPage.jsx'));
+const MobileDashboardPage = lazyRoute(() => import('@/pages/mobile/MobileDashboardPage.jsx'));
+const MobileBriefsPage = lazyRoute(() => import('@/pages/mobile/MobileBriefsPage.jsx'));
+const MobileBriefEditorPage = lazyRoute(() => import('@/pages/mobile/MobileBriefEditorPage.jsx'));
+const MobileBriefDetailPage = lazyRoute(() => import('@/pages/mobile/MobileBriefDetailPage.jsx'));
+const MobileJournalPage = lazyRoute(() => import('@/pages/mobile/MobileJournalPage.jsx'));
+const MobileJournalEditorPage = lazyRoute(() => import('@/pages/mobile/MobileJournalEditorPage.jsx'));
+const MobileJournalDetailPage = lazyRoute(() => import('@/pages/mobile/MobileJournalDetailPage.jsx'));
+const MobileRawMaterialsPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialsPage.jsx'));
+const MobileRawMaterialEditorPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialEditorPage.jsx'));
+const MobileRawMaterialDetailPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialDetailPage.jsx'));
+const MobileRawMaterialAuditPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialAuditPage.jsx'));
+const MobileCategoriesPage = lazyRoute(() => import('@/pages/mobile/MobileCategoriesPage.jsx'));
+const MobileFormulasPage = lazyRoute(() => import('@/pages/mobile/MobileFormulasPage.jsx'));
+const MobileCreateFormulaPage = lazyRoute(() => import('@/pages/mobile/MobileCreateFormulaPage.jsx'));
+const MobileEditFormulaPage = lazyRoute(() => import('@/pages/mobile/MobileEditFormulaPage.jsx'));
+const MobileFormulaDetailPage = lazyRoute(() => import('@/pages/mobile/MobileFormulaDetailPage.jsx'));
+const MobileBatchesPage = lazyRoute(() => import('@/pages/mobile/MobileBatchesPage.jsx'));
+const MobileProductionCostingPage = lazyRoute(() => import('@/pages/mobile/MobileProductionCostingPage.jsx'));
+const MobileValidationPage = lazyRoute(() => import('@/pages/mobile/MobileValidationPage.jsx'));
+const MobileValidationEditorPage = lazyRoute(() => import('@/pages/mobile/MobileValidationEditorPage.jsx'));
 
 const desktopProtectedRoutePrefixes = [
   '/studio',

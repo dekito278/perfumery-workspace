@@ -326,6 +326,9 @@ const BespokePage = () => {
   }], [estimatedTotal]);
   const voucher = useAppliedVoucher(estimatedTotal, bespokeVoucherItems);
   const shippingFee = Number(selectedShipping?.cost || 0);
+  const discountAmount = Number(voucher.discountAmount || 0);
+  const discountedEstimatedTotal = Number(voucher.subtotalAfterDiscount ?? estimatedTotal);
+  const totalDue = discountedEstimatedTotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight([{ quantity: 1 }]), []);
   const visibleShippingOptions = selectedCourier
@@ -820,7 +823,7 @@ const BespokePage = () => {
                 <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] px-4 py-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
-                    <div className="mt-0.5 text-xs font-semibold text-[#51624b]">Potongan voucher masuk ke nominal pembayaran tanpa menampilkan harga bespoke.</div>
+                    <div className="mt-0.5 text-xs font-semibold text-[#51624b]">Total transfer sudah disesuaikan voucher.</div>
                   </div>
                   <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                     <X className="h-4 w-4" />
@@ -869,8 +872,17 @@ const BespokePage = () => {
                 type="checkbox"
                 checked={Boolean(form.preorderAcknowledged)}
                 onChange={(event) => updateField('preorderAcknowledged', event.target.checked)}
-                className="mt-1 h-4 w-4 accent-[#263d27]"
+                className="sr-only"
               />
+              <span
+                className={cn(
+                  'mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-xl border text-white transition',
+                  form.preorderAcknowledged ? 'border-[#263d27] bg-[#263d27]' : 'border-[#263d27]/24 bg-white'
+                )}
+                aria-hidden="true"
+              >
+                {form.preorderAcknowledged ? <Check className="h-4 w-4" /> : null}
+              </span>
               <span>
                 <span className="block text-sm font-bold text-[#0b130c]">Konfirmasi pre-order</span>
                 <span className="mt-1 block text-sm font-semibold leading-relaxed text-[#6b7280]">
@@ -890,8 +902,14 @@ const BespokePage = () => {
               <SummaryLine label="Voucher" value={voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'} />
               <SummaryLine label="Ongkir" value={shippingFee ? formatRupiah(shippingFee) : '-'} />
               <div className="border-t border-[#263d27]/10 pt-3">
-                <SummaryLine label="Total bayar" value="Dikonfirmasi setelah brief" />
+                <SummaryLine label="Total transfer" value={formatRupiah(totalDue)} />
               </div>
+              {discountAmount ? (
+                <div className="flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700">
+                  <span>Voucher</span>
+                  <span>-{formatRupiah(discountAmount)}</span>
+                </div>
+              ) : null}
               <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-[#6b7280]">{budgetSummary}</p>
             </div>
           </div>
@@ -1165,7 +1183,7 @@ const BespokePage = () => {
                 </Button>
               ) : (
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-7 text-sm font-bold" onClick={submitRequest} disabled={saving}>
-                  {saving ? 'Menyimpan request...' : 'Kirim request'}
+                  {saving ? 'Menyimpan request...' : `${isManualPayment ? 'Buat pesanan' : 'Bayar sekarang'} - ${formatRupiah(totalDue)}`}
                   <Send className="h-4 w-4" />
                 </Button>
               )}

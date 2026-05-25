@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, ChevronDown, ClipboardList, CreditCard, MessageCircle, Sparkles, Ticket, WandSparkles, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ClipboardList, CreditCard, MessageCircle, Sparkles, Ticket, WandSparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -226,6 +226,9 @@ const MobileBespokePage = () => {
   }], [estimatedTotal]);
   const voucher = useAppliedVoucher(estimatedTotal, bespokeVoucherItems);
   const shippingFee = Number(selectedShipping?.cost || 0);
+  const discountAmount = Number(voucher.discountAmount || 0);
+  const discountedEstimatedTotal = Number(voucher.subtotalAfterDiscount ?? estimatedTotal);
+  const totalDue = discountedEstimatedTotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight([{ quantity: 1 }]), []);
   const visibleShippingOptions = selectedCourier
@@ -634,7 +637,16 @@ const MobileBespokePage = () => {
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Custom perfume</span><span>Dikonfirmasi Studio</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Voucher</span><span>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
-            <div className="mt-3 flex justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-sm text-[#0b130c]"><span>Total bayar</span><span>Dikonfirmasi setelah brief</span></div>
+            <div className="mt-3 flex items-end justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-sm text-[#0b130c]">
+              <span>Total transfer</span>
+              <span className="text-base text-[#263d27]">{formatRupiah(totalDue)}</span>
+            </div>
+            {discountAmount ? (
+              <div className="mt-1 flex justify-between gap-3 text-[11px] text-emerald-700">
+                <span>Voucher</span>
+                <span>-{formatRupiah(discountAmount)}</span>
+              </div>
+            ) : null}
             <p className="mt-3 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{budgetSummary}</p>
           </div>
           <div className="mobile-commerce-panel p-3">
@@ -657,7 +669,7 @@ const MobileBespokePage = () => {
               <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] px-3 py-2">
                 <div className="min-w-0">
                   <div className="truncate text-xs font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
-                  <div className="mt-0.5 text-[10px] font-semibold text-[#51624b]">Nominal bespoke tetap tidak ditampilkan.</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-[#51624b]">Total transfer sudah disesuaikan voucher.</div>
                 </div>
                 <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-3.5 w-3.5" />
@@ -685,8 +697,17 @@ const MobileBespokePage = () => {
               type="checkbox"
               checked={Boolean(form.preorderAcknowledged)}
               onChange={(event) => updateField('preorderAcknowledged', event.target.checked)}
-              className="mt-1 h-4 w-4 accent-[#263d27]"
+              className="sr-only"
             />
+            <span
+              className={cn(
+                'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-white transition',
+                form.preorderAcknowledged ? 'border-[#263d27] bg-[#263d27]' : 'border-[#263d27]/24 bg-white'
+              )}
+              aria-hidden="true"
+            >
+              {form.preorderAcknowledged ? <Check className="h-4 w-4" /> : null}
+            </span>
             <span>
               <span className="block text-sm font-bold text-[#0b130c]">Konfirmasi pre-order</span>
               <span className="mt-1 block text-[11px] font-semibold leading-relaxed">
@@ -698,7 +719,7 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
-  ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, visibleShippingOptions, voucher]);
+  ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, visibleShippingOptions, voucher]);
 
   const activeStep = flowSteps[step];
   const completion = Math.round(((step + Number(activeStep.isComplete())) / flowSteps.length) * 100);
@@ -1031,19 +1052,35 @@ const MobileBespokePage = () => {
           className="mobile-bespoke-action-bar"
           contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
         >
-          <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
-              Kembali
-            </Button>
-            {step === flowSteps.length - 1 ? (
-              <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
-                {saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang')}
-                {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
+          {step === flowSteps.length - 1 ? (
+            <div className="grid gap-2">
+              <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] px-3 py-2">
+                <div className="flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase text-[#6b7280]">Total transfer</p>
+                    <p className="text-lg font-bold leading-tight text-[#263d27]">{formatRupiah(totalDue)}</p>
+                  </div>
+                  <p className="shrink-0 text-[10px] font-bold uppercase text-[#263d27]">Siap dibayar</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={saving} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
+                  Kembali
+                </Button>
+                <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
+                  {saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang')}
+                  {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
+                Kembali
               </Button>
-            ) : (
               <Button type="button" className="rounded-2xl" onClick={nextStep}>Lanjut</Button>
-            )}
-          </div>
+            </div>
+          )}
         </StickyBottomActionBar>
 
       </main>
