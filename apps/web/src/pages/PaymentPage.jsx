@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
@@ -648,11 +648,11 @@ const PaymentPageContent = ({ isMobile }) => {
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const orderNumber = searchParams.get('order');
   const paymentReturn = searchParams.get('payment');
-  const isSessionForOrder = (candidate) => (
+  const isSessionForOrder = useCallback((candidate) => (
     candidate && (!orderNumber || candidate.orderNumber === orderNumber || candidate.invoiceNumber === orderNumber)
-  );
+  ), [orderNumber]);
 
-  const recoverDokuPaymentSession = async (order) => {
+  const recoverDokuPaymentSession = useCallback(async (order) => {
     if (!order?.orderNumber || order.paymentStatus === 'paid') {
       return null;
     }
@@ -684,9 +684,9 @@ const PaymentPageContent = ({ isMobile }) => {
       console.warn('Failed to recover DOKU payment session:', error.message || error);
       return null;
     }
-  };
+  }, [isMobile]);
 
-  const loadPaymentSession = async ({ syncStatus = false } = {}) => {
+  const loadPaymentSession = useCallback(async ({ syncStatus = false } = {}) => {
     const storedSession = readPaymentSession();
     if (syncStatus && orderNumber && paymentReturn === 'doku') {
       setRefreshingStatus(true);
@@ -760,12 +760,11 @@ const PaymentPageContent = ({ isMobile }) => {
     } finally {
       setLoadingOrder(false);
     }
-  };
+  }, [isSessionForOrder, orderNumber, paymentReturn, recoverDokuPaymentSession]);
 
   useEffect(() => {
     loadPaymentSession({ syncStatus: paymentReturn === 'doku' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderNumber, paymentReturn]);
+  }, [loadPaymentSession, paymentReturn]);
 
   const refreshPaymentSession = () => loadPaymentSession({ syncStatus: Boolean(orderNumber) });
   const sessionIsManual = isManualTransferPayment(session?.paymentProvider || session?.paymentType);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
@@ -198,7 +198,7 @@ const MobileRawMaterialsPage = () => {
     return () => window.clearTimeout(timeoutId);
   }, [query]);
 
-  const loadMaterials = async () => {
+  const loadMaterials = useCallback(async () => {
     const loadToken = loadTokenRef.current + 1;
     loadTokenRef.current = loadToken;
     let baseLoaded = false;
@@ -276,16 +276,15 @@ const MobileRawMaterialsPage = () => {
         setGuidanceLoading(false);
       }
     }
-  };
+  }, [cleanupFilter, debouncedQuery, fetchMaterialsPage, referenceFilter, visibleCount]);
 
   useEffect(() => {
     loadMaterials();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, referenceFilter, cleanupFilter, visibleCount]);
+  }, [loadMaterials]);
 
   useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [debouncedQuery, referenceFilter, cleanupFilter]);
 
-  const refreshShortlist = async () => {
+  const refreshShortlist = useCallback(async () => {
     if (!activeBriefId) {
       setBriefContext(null);
       setShortlistItems([]);
@@ -305,12 +304,11 @@ const MobileRawMaterialsPage = () => {
     } finally {
       setShortlistLoading(false);
     }
-  };
+  }, [activeBriefId, getBriefMaterialShortlist, getBriefs]);
 
   useEffect(() => {
     refreshShortlist();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeBriefId]);
+  }, [refreshShortlist]);
 
   const openGuidance = (material) => {
     setGuidanceTarget(material);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, Save, ClipboardList, Sparkles } from 'lucide-react';
@@ -213,6 +213,21 @@ const EditFormulaPage = () => {
     activeItemInsight,
     activeReferenceProfileDetails,
   } = composer;
+  const briefIntentSnapshotRef = useRef({
+    activeStage,
+    draftAnswers,
+    rawMaterialsById,
+    wizardStageItemsMap,
+  });
+
+  useEffect(() => {
+    briefIntentSnapshotRef.current = {
+      activeStage,
+      draftAnswers,
+      rawMaterialsById,
+      wizardStageItemsMap,
+    };
+  }, [activeStage, draftAnswers, rawMaterialsById, wizardStageItemsMap]);
 
   useEffect(() => {
     if (loadingData || !linkedBrief?.id) {
@@ -248,14 +263,15 @@ const EditFormulaPage = () => {
           return;
         }
 
+        const intentSnapshot = briefIntentSnapshotRef.current;
         const feedbackSummary = summarizeWizardFeedback({
-          wizardStageItemsMap,
-          rawMaterialsById,
-          activeStage,
+          wizardStageItemsMap: intentSnapshot.wizardStageItemsMap,
+          rawMaterialsById: intentSnapshot.rawMaterialsById,
+          activeStage: intentSnapshot.activeStage,
         });
         const payload = buildBriefAiIntentRequestPayload({
           brief: linkedBrief,
-          existingAnswers: draftAnswers,
+          existingAnswers: intentSnapshot.draftAnswers,
           feedbackSummary,
         });
         const nextIntent = await requestBriefAiIntent({
@@ -298,9 +314,7 @@ const EditFormulaPage = () => {
     return () => {
       active = false;
     };
-  // Resolve once per linked brief; live feedback is consumed by the local recommender every generation.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedBrief?.id, loadingData]);
+  }, [linkedBrief, loadingData]);
 
   useEffect(() => {
     let active = true;
