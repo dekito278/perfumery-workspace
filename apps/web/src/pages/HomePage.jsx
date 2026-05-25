@@ -242,22 +242,6 @@ const HomePage = () => {
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
-      {!introComplete ? (
-        <div ref={introRef} className="solivagant-loader" aria-label="SOLIVAGANT cinematic intro">
-          <div className="solivagant-loader__grain" />
-          <div className="solivagant-loader__fog" />
-          <div className="solivagant-loader__content">
-            <p data-loader-line>Artisan Perfumery Atelier</p>
-            <h1 data-loader-line>SOLIVAGANT</h1>
-            <span data-loader-line>Fragrance, memory, and craftsmanship</span>
-            <div className="solivagant-loader__actions" aria-label="Storefront quick links">
-              <Link to="/catalog">Explore Collection</Link>
-              <Link to="/bespoke">Create Bespoke Perfume</Link>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       <main className="solivagant-cinematic min-h-screen overflow-hidden bg-[#070906] text-[#f6f0e3]">
         <StorefrontHeader
           className="solivagant-cinematic-nav"
@@ -514,6 +498,22 @@ const HomePage = () => {
           </div>
         </section>
       </main>
+
+      {!introComplete ? (
+        <div ref={introRef} className="solivagant-loader" aria-hidden="true">
+          <div className="solivagant-loader__grain" />
+          <div className="solivagant-loader__fog" />
+          <div className="solivagant-loader__content">
+            <p data-loader-line>Artisan Perfumery Atelier</p>
+            <h1 data-loader-line>SOLIVAGANT</h1>
+            <span data-loader-line>Fragrance, memory, and craftsmanship</span>
+            <div className="solivagant-loader__actions">
+              <Link to="/catalog" tabIndex={-1}>Explore Collection</Link>
+              <Link to="/bespoke" tabIndex={-1}>Book Bespoke Consultation</Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 };

@@ -23,11 +23,13 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  pointer-events: none;
   background:
     linear-gradient(115deg, rgba(7, 9, 6, 0.86), rgba(23, 37, 25, 0.94)),
     #070906;
   color: var(--atelier-ivory);
   text-align: center;
+  animation: solivagant-loader-auto-hide 1.35s ease 0.2s forwards;
 }
 
 .solivagant-loader--route {
@@ -110,6 +112,7 @@
   font-weight: 850;
   letter-spacing: 0.02em;
   text-decoration: none;
+  pointer-events: none;
 }
 
 .solivagant-loader__actions a:first-child {
@@ -977,6 +980,18 @@
   }
   to {
     transform: translate3d(2%, 1%, 0);
+  }
+}
+
+@keyframes solivagant-loader-auto-hide {
+  0%,
+  72% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 
