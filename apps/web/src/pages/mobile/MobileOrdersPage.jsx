@@ -1,7 +1,7 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clipboard, CreditCard, Download, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
+import { AlertTriangle, Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
@@ -22,6 +22,7 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
@@ -196,6 +197,15 @@ const MobileOrdersPage = () => {
     toast.success(`${order.orderNumber} disalin`);
   };
 
+  const copyPublicTrackingLink = async (order) => {
+    try {
+      await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
+      toast.success('Link tracking publik disalin');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin tracking');
+    }
+  };
+
   const toggleOrderSelection = (order, checked) => {
     const key = order.id || order.orderNumber;
     setSelectedOrders((current) => (
@@ -230,7 +240,7 @@ const MobileOrdersPage = () => {
 
   const bulkPrintResi = async () => {
     const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
-    const printedCount = exportShippingLabelsPdf(selectedFilteredOrders);
+    const printedCount = await exportShippingLabelsPdf(selectedFilteredOrders);
     if (!printedCount) {
       toast.error('Pilih order paid untuk print resi');
       return;
@@ -257,7 +267,7 @@ const MobileOrdersPage = () => {
       return;
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    exportShippingLabelPdf(order);
+    await exportShippingLabelPdf(order);
     if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
       await updateOrderShipment(order.id || order.orderNumber, {
         shipmentStatus: 'packing',
@@ -601,6 +611,7 @@ const MobileOrdersPage = () => {
                   <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => openQuickFollowUp(order)}><MessageCircle className="h-4 w-4" />WA</Button>
                 )}
                 <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
+                <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyPublicTrackingLink(order)}><ExternalLink className="h-4 w-4" />Tracking</Button>
                 <Button type="button" variant="outline" className="mobile-interactive mobile-delete-action h-12 rounded-2xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
               </div>
             </article>

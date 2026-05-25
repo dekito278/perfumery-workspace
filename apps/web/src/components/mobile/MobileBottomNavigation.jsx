@@ -14,6 +14,7 @@ import {
   PackagePlus,
   ShoppingBag,
   Store,
+  Truck,
   UsersRound,
   WandSparkles,
 } from 'lucide-react';
@@ -26,7 +27,7 @@ const navGroups = [
     label: 'E-commerce',
     icon: ShoppingBag,
     description: 'Produk, order, customer, bespoke, dan tampilan home.',
-    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/studio/fulfillment', '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/studio/vouchers', '/mobile/dashboard', '/mobile/catalog', '/mobile/cart', '/mobile/bespoke', '/mobile/products'],
+    paths: ['/mobile/studio/products', '/mobile/studio/orders', '/mobile/studio/fulfillment', '/mobile/studio/customers', '/mobile/studio/bespoke', '/mobile/studio/vouchers', '/mobile/studio/shipping', '/mobile/dashboard', '/mobile/catalog', '/mobile/cart', '/mobile/bespoke', '/mobile/products'],
     items: [
       { path: '/mobile/studio/products', label: 'Produk', helper: 'Kelola produk katalog', icon: PackagePlus },
       { path: '/mobile/studio/orders', label: 'Orders', helper: 'Antrean order dari checkout', icon: PackageCheck },
@@ -34,6 +35,7 @@ const navGroups = [
       { path: '/mobile/studio/customers', label: 'Customer', helper: 'Cari kode customer', icon: UsersRound },
       { path: '/mobile/studio/bespoke', label: 'Bespoke', helper: 'Botol, cap, label', icon: WandSparkles },
       { path: '/mobile/studio/vouchers', label: 'Vouchers', helper: 'Kode promo', icon: BadgePercent },
+      { path: '/mobile/studio/shipping', label: 'Ongkir', helper: 'Gratis ongkir dan area', icon: Truck },
       { path: '/mobile/journal', label: 'Journal', helper: 'Tulis dan publish artikel', icon: BookOpenText },
       { path: '/mobile/dashboard', label: 'Toko', helper: 'Preview home customer', icon: Store },
     ],

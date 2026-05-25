@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, Clipboard, CreditCard, Download, Loader2, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
+import { ArrowRight, Clipboard, Copy, CreditCard, Download, ExternalLink, Loader2, MessageCircle, PackageCheck, PackageOpen, ScanLine, Search, Send, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
@@ -18,9 +18,15 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import {
+  hasShippingLabelPrinted,
+  isArchivedOrder,
+  isShippedOrder,
+} from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -44,7 +50,7 @@ const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumbe
 
 const queueFilterOptions = [
   { value: 'paid', label: 'Paid' },
-  { value: 'packing', label: 'Packing' },
+  { value: 'packing', label: 'Label/resi' },
   { value: 'shipped', label: 'Shipped' },
   { value: 'follow_up', label: 'Follow-up' },
   { value: 'need_resi', label: 'Butuh resi' },
@@ -249,24 +255,56 @@ const MobileFulfillmentPage = () => {
     window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer');
   };
 
+  const copyPublicTrackingLink = async (order) => {
+    try {
+      await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
+      toast.success('Link tracking publik disalin');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin link tracking');
+    }
+  };
+
   const exportResi = async (order) => {
     if (!canExportShippingLabel(order)) {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    exportShippingLabelPdf(order);
+    await exportShippingLabelPdf(order);
+    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+      const draft = drafts[order.id || order.orderNumber] || {};
+      await updateOrderShipment(order.id || order.orderNumber, {
+        ...draft,
+        shipmentStatus: 'packing',
+        packingNotes: draft.packingNotes || order.packingNotes || 'Resi PDF dicetak dari Mobile Fulfillment.',
+      });
+      await reload();
+      setQueueFilter('packing');
+      toast.success('Resi PDF siap. Order masuk Label/resi.');
+      return;
+    }
     toast.success('Resi PDF siap');
   };
 
   const bulkPrintResi = async () => {
     const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
-    const printedCount = exportShippingLabelsPdf(selectedSearchedOrders);
+    const printedCount = await exportShippingLabelsPdf(selectedSearchedOrders);
     if (!printedCount) {
       toast.error('Pilih order paid untuk print resi');
       return;
     }
-    toast.success(`${printedCount} resi PDF siap`);
+    await Promise.all(selectedPrintableOrders.map((order) => (
+      hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
+        ? Promise.resolve()
+        : updateOrderShipment(order.id || order.orderNumber, {
+          ...(drafts[order.id || order.orderNumber] || {}),
+          shipmentStatus: 'packing',
+          packingNotes: drafts[order.id || order.orderNumber]?.packingNotes || order.packingNotes || 'Resi PDF dicetak dari Mobile Fulfillment.',
+        })
+    )));
+    await reload();
+    setQueueFilter('packing');
+    toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 
   const bulkWhatsAppFollowUp = async () => {
@@ -319,9 +357,9 @@ const MobileFulfillmentPage = () => {
         <section className="mobile-studio-hero p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Dashboard packing</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">Dashboard label/resi</div>
               <h1 className="mt-1 text-2xl font-bold leading-tight text-[#142116]">
-                {loading ? 'Sinkron order' : readyOrders.length ? 'Siap packing' : 'Antrean kosong'}
+                {loading ? 'Sinkron order' : readyOrders.length ? 'Siap label/resi' : 'Antrean kosong'}
               </h1>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#68736a]">
                 Paid storefront order masuk sini setelah siap dikirim. Bespoke muncul setelah production status Ready.
@@ -333,7 +371,7 @@ const MobileFulfillmentPage = () => {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <FulfillmentMetric label="Siap" value={loading ? '-' : readyOrders.length} tone="emerald" />
-            <FulfillmentMetric label="Packing" value={loading ? '-' : packingOrders.length} tone="amber" />
+            <FulfillmentMetric label="Label/resi" value={loading ? '-' : packingOrders.length} tone="amber" />
             <FulfillmentMetric label="Paid tertahan" value={loading ? '-' : blockedPaidOrders.length} tone={blockedPaidOrders.length ? 'rose' : 'stone'} />
             <FulfillmentMetric label="Dikirim hari ini" value={loading ? '-' : shippedToday.length} tone="stone" />
           </div>
@@ -370,7 +408,7 @@ const MobileFulfillmentPage = () => {
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkPrintResi} disabled={!selectedPrintableOrders.length}>
                 <Download className="h-4 w-4" />
-                Print resi
+                Resi PDF
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-1 text-xs" onClick={bulkWhatsAppFollowUp} disabled={!selectedSearchedOrders.length}>
                 <MessageCircle className="h-4 w-4" />
@@ -479,7 +517,7 @@ const MobileFulfillmentPage = () => {
                       updateDraft(orderKey, 'trackingNumber', nextTrackingNumber);
                       saveShipment(order, draft.shipmentStatus === 'shipped' ? 'shipped' : 'packing', { trackingNumber: nextTrackingNumber });
                     }}
-                    placeholder="Scan / paste nomor resi"
+                    placeholder="Scan / paste resi kurir"
                     className="h-14 min-w-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 text-base font-bold tracking-[0.04em] text-[#1f2937] outline-none focus:border-amber-400"
                     disabled={blocked}
                     autoCapitalize="characters"
@@ -496,7 +534,7 @@ const MobileFulfillmentPage = () => {
                   <input
                     value={draft.trackingUrl || ''}
                     onChange={(event) => updateDraft(orderKey, 'trackingUrl', event.target.value)}
-                    placeholder="Tracking URL"
+                    placeholder="URL tracking kurir"
                     className="h-11 min-w-0 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300"
                     disabled={blocked}
                   />
@@ -545,11 +583,19 @@ const MobileFulfillmentPage = () => {
                     disabled={saving || blocked}
                   >
                     <PackageOpen className="h-4 w-4" />
-                    Packed
+                    Label/resi
                   </Button>
                   <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-14 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => openWhatsAppFollowUp(order, draft)}>
                     <MessageCircle className="h-4 w-4" />
                     WA customer
+                  </Button>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPublicTrackingLink(order)}>
+                    <Copy className="h-4 w-4" />
+                    Salin tracking
+                  </Button>
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => window.open(buildPublicTrackingUrl(order.orderNumber), '_blank', 'noopener,noreferrer')}>
+                    <ExternalLink className="h-4 w-4" />
+                    Buka tracking
                   </Button>
                   <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl bg-white gap-1 text-xs font-bold" onClick={() => copyPackingList(order, draft)}>
                     <Clipboard className="h-4 w-4" />

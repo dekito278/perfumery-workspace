@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Download, Eye, Loader2, MessageCircle, PackageCheck, Save, Search, Truck } from 'lucide-react';
+import { ArrowLeft, Copy, CreditCard, Download, ExternalLink, Eye, Loader2, MessageCircle, PackageCheck, Save, Search, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -11,7 +11,14 @@ import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/compo
 import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import {
+  hasShippingLabelPrinted,
+  isArchivedOrder,
+  isFrontQueueOrder,
+  isShippedOrder,
+} from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -26,10 +33,11 @@ const formatDate = (value) => (value
 
 const shipmentStatusLabels = getShipmentStatusLabels();
 const fulfillmentFilterLabels = {
-  ready_to_ship: 'Paid belum dikirim',
-  all: 'Semua aktif',
-  shipped: 'Sudah dikirim',
+  ready_to_ship: 'Siap proses',
+  label_resi: 'Label/resi',
+  shipped: 'Dikirim',
   unpaid: 'Belum paid',
+  archive: 'Arsip',
 };
 
 const buildShipmentDraft = (order = {}) => ({
@@ -54,19 +62,17 @@ const ShipmentsPage = () => {
   });
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  const shipmentOrders = useMemo(() => (
-    orders.filter((order) => order.status !== 'cancelled')
-  ), [orders]);
+  const shipmentOrders = useMemo(() => orders, [orders]);
 
   const filteredShipmentOrders = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return shipmentOrders.filter((order) => {
       const paid = order.paymentStatus === 'paid';
-      const shipped = ['shipped', 'delivered'].includes(order.shipmentStatus);
-      const matchesFilter = fulfillmentFilter === 'all'
-        || (fulfillmentFilter === 'ready_to_ship' && paid && !shipped)
-        || (fulfillmentFilter === 'shipped' && shipped)
-        || (fulfillmentFilter === 'unpaid' && !paid);
+      const matchesFilter = (fulfillmentFilter === 'ready_to_ship' && paid && isFrontQueueOrder(order))
+        || (fulfillmentFilter === 'label_resi' && hasShippingLabelPrinted(order))
+        || (fulfillmentFilter === 'shipped' && isShippedOrder(order) && !isArchivedOrder(order))
+        || (fulfillmentFilter === 'unpaid' && !paid && isFrontQueueOrder(order))
+        || (fulfillmentFilter === 'archive' && isArchivedOrder(order));
 
       if (!matchesFilter) return false;
       if (!query) return true;
@@ -89,14 +95,16 @@ const ShipmentsPage = () => {
   const selectedPrintableOrders = selectedShipmentOrders.filter(canExportShippingLabel);
   const visibleOrderKeys = filteredShipmentOrders.map((order) => order.id || order.orderNumber);
   const allVisibleSelected = visibleOrderKeys.length > 0 && visibleOrderKeys.every((key) => selectedOrderSet.has(key));
-  const readyToShipCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length;
-  const missingResiCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && ['packing', 'ready_to_ship', 'shipped'].includes(order.shipmentStatus) && !order.trackingNumber).length;
-  const shippedCount = shipmentOrders.filter((order) => ['shipped', 'delivered'].includes(order.shipmentStatus)).length;
+  const readyToShipCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length;
+  const labelResiCount = shipmentOrders.filter(hasShippingLabelPrinted).length;
+  const missingResiCount = shipmentOrders.filter((order) => order.paymentStatus === 'paid' && hasShippingLabelPrinted(order) && !order.trackingNumber).length;
+  const shippedCount = shipmentOrders.filter((order) => isShippedOrder(order) && !isArchivedOrder(order)).length;
   const filterCounts = {
     ready_to_ship: readyToShipCount,
-    all: shipmentOrders.length,
+    label_resi: labelResiCount,
     shipped: shippedCount,
-    unpaid: shipmentOrders.filter((order) => order.paymentStatus !== 'paid').length,
+    unpaid: shipmentOrders.filter((order) => order.paymentStatus !== 'paid' && isFrontQueueOrder(order)).length,
+    archive: shipmentOrders.filter(isArchivedOrder).length,
   };
 
   useEffect(() => {
@@ -218,18 +226,56 @@ const ShipmentsPage = () => {
       return;
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    exportShippingLabelPdf(order);
+    await exportShippingLabelPdf(order);
+    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+      const key = order.id || order.orderNumber;
+      const currentDraft = drafts[key] || buildShipmentDraft(order);
+      await updateOrderShipment(key, {
+        ...currentDraft,
+        shipmentStatus: 'packing',
+        packingNotes: currentDraft.packingNotes || 'Resi PDF dicetak dari Desktop Fulfillment.',
+      });
+      await reload();
+      setFulfillmentFilter('label_resi');
+      toast.success(`${order.orderNumber} resi PDF siap. Order masuk Label/resi.`);
+      return;
+    }
     toast.success(`${order.orderNumber} resi PDF siap`);
+  };
+
+  const copyPublicTrackingLink = async (order) => {
+    try {
+      await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
+      toast.success(`${order.orderNumber} link tracking publik disalin`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin link tracking publik');
+    }
+  };
+
+  const openPublicTrackingLink = (order) => {
+    window.open(buildPublicTrackingUrl(order.orderNumber), '_blank', 'noopener,noreferrer');
   };
 
   const exportSelectedShippingLabels = async () => {
     const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
-    const printedCount = exportShippingLabelsPdf(selectedShipmentOrders);
+    const printedCount = await exportShippingLabelsPdf(selectedShipmentOrders);
     if (!printedCount) {
       toast.error('Pilih order paid untuk cetak bulk resi');
       return;
     }
-    toast.success(`${printedCount} resi PDF siap`);
+    await Promise.all(selectedPrintableOrders.map((order) => {
+      if (hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)) return Promise.resolve();
+      const key = order.id || order.orderNumber;
+      const currentDraft = drafts[key] || buildShipmentDraft(order);
+      return updateOrderShipment(key, {
+        ...currentDraft,
+        shipmentStatus: 'packing',
+        packingNotes: currentDraft.packingNotes || 'Resi PDF dicetak dari Desktop Fulfillment.',
+      });
+    }));
+    await reload();
+    setFulfillmentFilter('label_resi');
+    toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 
   const bulkMarkPaid = async () => {
@@ -298,13 +344,13 @@ const ShipmentsPage = () => {
             </div>
             <h1 className="text-3xl font-bold sm:text-4xl">Pengiriman</h1>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Simpan kurir, nomor resi, status pengiriman, dan cetak label setelah order paid.
+              Cetak resi, lengkapi kurir, pindahkan ke dikirim, lalu tutup order setelah delivered.
             </p>
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Order aktif</span><strong>{summary.active}</strong></div>
             <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Total order</span><strong>{summary.total}</strong></div>
-            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Siap kirim</span><strong>{readyToShipCount}</strong></div>
+            <div className="dashboard-hero-stat"><span className="dashboard-hero-stat-label">Siap proses</span><strong>{readyToShipCount}</strong></div>
           </div>
         </div>
 
@@ -345,16 +391,16 @@ const ShipmentsPage = () => {
 
             <div className="grid gap-3 border-t pt-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Siap packing</div>
+                <div className="text-xs font-bold uppercase text-muted-foreground">Siap proses</div>
                 <div className="mt-1 text-2xl font-bold text-[#263d27]">{readyToShipCount}</div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Belum ada resi</div>
-                <div className="mt-1 text-2xl font-bold text-amber-700">{missingResiCount}</div>
+                <div className="text-xs font-bold uppercase text-muted-foreground">Label/resi</div>
+                <div className="mt-1 text-2xl font-bold text-amber-700">{labelResiCount}</div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3">
-                <div className="text-xs font-bold uppercase text-muted-foreground">Siap cetak</div>
-                <div className="mt-1 text-2xl font-bold text-[#263d27]">{selectedPrintableOrders.length}</div>
+                <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>
+                <div className="mt-1 text-2xl font-bold text-[#263d27]">{missingResiCount}</div>
               </div>
             </div>
 
@@ -389,7 +435,7 @@ const ShipmentsPage = () => {
                 </Button>
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportSelectedShippingLabels} disabled={!selectedPrintableOrders.length}>
                   <Download className="h-4 w-4" />
-                  Cetak resi
+                  Resi PDF
                 </Button>
                 <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={bulkWhatsAppFollowUp} disabled={!selectedShipmentOrders.length}>
                   <MessageCircle className="h-4 w-4" />
@@ -464,13 +510,13 @@ const ShipmentsPage = () => {
                       <input
                         value={draft.trackingNumber}
                         onChange={(event) => updateDraft(order, 'trackingNumber', event.target.value)}
-                        placeholder="Nomor resi"
+                        placeholder="Nomor resi kurir"
                         className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
                       />
                       <input
                         value={draft.trackingUrl}
                         onChange={(event) => updateDraft(order, 'trackingUrl', event.target.value)}
-                        placeholder="URL tracking opsional"
+                        placeholder="URL tracking kurir opsional"
                         className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
                       />
                       <textarea
@@ -492,6 +538,14 @@ const ShipmentsPage = () => {
                         <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}>
                           <Download className="h-4 w-4" />
                           Resi PDF
+                        </Button>
+                        <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => copyPublicTrackingLink(order)}>
+                          <Copy className="h-4 w-4" />
+                          Salin tracking
+                        </Button>
+                        <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => openPublicTrackingLink(order)}>
+                          <ExternalLink className="h-4 w-4" />
+                          Buka tracking
                         </Button>
                       </div>
                     </div>

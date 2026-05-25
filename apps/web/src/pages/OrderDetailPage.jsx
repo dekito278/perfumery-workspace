@@ -22,6 +22,7 @@ import {
   Save,
   Send,
   ShieldCheck,
+  Sparkles,
   Truck,
   UserRound,
 } from 'lucide-react';
@@ -35,10 +36,13 @@ import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import {
   getOrderAuditLogs,
   getOrderById,
+  getBespokeItem,
+  getBespokeProductionStatusLabels,
   getOrderPaymentLogs,
   getOrderReservationExpiresAt,
   getOrderStatusLabels,
   getShipmentStatusLabels,
+  isBespokeOrder,
   PAYMENT_RESERVATION_TTL_HOURS,
   reviewOrderPaymentProof,
   updateOrderInternalNotes,
@@ -53,6 +57,7 @@ import {
   getNotificationEventLabels,
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
 import {
   getOrderProductItems,
@@ -62,6 +67,12 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import {
+  getBespokeOrderSummary,
+  hasShippingLabelPrinted,
+  isArchivedOrder,
+  isShippedOrder,
+} from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -71,6 +82,7 @@ const canExportShippingLabel = (order) => Boolean(
 
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
+const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const notificationEventLabels = getNotificationEventLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 
@@ -193,6 +205,45 @@ const parseNoteLines = (notes = '') => String(notes || '')
 const getNoteValue = (rows, label) => (
   rows.find((row) => row.label.toLowerCase() === label.toLowerCase())?.value || ''
 );
+
+const bespokeDetailRows = (item) => [
+  ['Aroma', item?.preferredNotes || item?.notes],
+  ['Momen', item?.occasion],
+  ['Ukuran', item?.size],
+  ['Botol', item?.bottleType],
+  ['Cap', item?.capDesign],
+  ['Label', item?.labelDesign],
+  ['Material', item?.exoticMaterial],
+  ['Budget', item?.budget],
+  ['Reference', item?.referenceProductName],
+  ['Story', item?.story],
+].filter(([, value]) => value);
+
+const getNextOperationalTask = (order, bespoke) => {
+  if (!order) return { title: 'Review order', helper: 'Buka order dan cek data terbaru.' };
+  if (order.paymentProofStatus === 'submitted') {
+    return { title: 'Review bukti transfer', helper: 'Buka bukti, approve atau reject dengan catatan.' };
+  }
+  if (order.paymentStatus !== 'paid') {
+    return { title: 'Tuntaskan pembayaran', helper: 'Follow-up pembayaran atau sinkron DOKU bila perlu.' };
+  }
+  if (bespoke && order.bespokeProductionStatus !== 'ready') {
+    return { title: 'Lanjutkan produksi bespoke', helper: 'Update brief, formula, sample, sampai status Ready.' };
+  }
+  if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+    return { title: 'Cetak resi PDF', helper: 'Setelah dicetak, order masuk antrean Label/resi.' };
+  }
+  if (hasShippingLabelPrinted(order) && !order.trackingNumber) {
+    return { title: 'Lengkapi nomor resi', helper: 'Scan atau paste resi sebelum order ditandai dikirim.' };
+  }
+  if (hasShippingLabelPrinted(order)) {
+    return { title: 'Packing lalu kirim', helper: 'Simpan kurir/resi dan tandai dikirim setelah paket keluar.' };
+  }
+  if (isShippedOrder(order) && !isArchivedOrder(order)) {
+    return { title: 'Follow-up pengiriman', helper: 'Pantau tracking dan tutup order setelah delivered.' };
+  }
+  return { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' };
+};
 
 const toDatetimeLocal = (value) => (value ? value.slice(0, 16) : '');
 const fromDatetimeLocal = (value) => (value ? new Date(value).toISOString() : '');
@@ -563,12 +614,35 @@ const OrderDetailPage = () => {
       return;
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    exportShippingLabelPdf(order);
+    await exportShippingLabelPdf(order);
+    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+      await updateOrderShipment(orderKey, {
+        ...shipmentDraft,
+        shipmentStatus: 'packing',
+        packingNotes: shipmentDraft.packingNotes || 'Resi PDF dicetak dari Detail Order Studio.',
+      });
+      await refreshOrder();
+      toast.success('Resi PDF siap. Order masuk Label/resi.');
+      return;
+    }
     toast.success('Resi PDF siap');
   };
 
   const openWhatsApp = (message) => {
     window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
+  };
+
+  const copyPublicTrackingLink = async () => {
+    try {
+      await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
+      toast.success('Link tracking publik disalin');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin link tracking publik');
+    }
+  };
+
+  const openPublicTrackingLink = () => {
+    window.open(buildPublicTrackingUrl(order.orderNumber), '_blank', 'noopener,noreferrer');
   };
 
   const openEmail = () => {
@@ -601,6 +675,10 @@ const OrderDetailPage = () => {
 
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
+  const bespoke = isBespokeOrder(order);
+  const bespokeItem = getBespokeItem(order);
+  const bespokeSummary = getBespokeOrderSummary(order);
+  const nextOperationalTask = getNextOperationalTask(order, bespoke);
 
   return (
     <AuthenticatedLayout>
@@ -679,7 +757,7 @@ const OrderDetailPage = () => {
 
         {voucherSnapshot ? (
           <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4 text-sm font-bold text-[#263d27] shadow-sm">
-            <div className="grid gap-2 sm:grid-cols-4">
+            <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Subtotal produk</span>{formatTotal(getOrderProductsSubtotal(order))}</div>
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {voucherSnapshot.code}</span>-{formatTotal(voucherSnapshot.discountAmount)}</div>
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Setelah voucher</span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</div>
@@ -687,6 +765,47 @@ const OrderDetailPage = () => {
             </div>
           </section>
         ) : null}
+
+        <section className="mb-5 grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <Clipboard className="h-4 w-4" />
+              Tugas berikutnya
+            </div>
+            <h2 className="mt-2 text-xl font-bold text-[#0b130c]">{nextOperationalTask.title}</h2>
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-muted-foreground">{nextOperationalTask.helper}</p>
+          </div>
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase text-muted-foreground">Pembayaran</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <StatusChip tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
+              <StatusChip tone={paymentProofToneByStatus[paymentProofStatus] || 'warning'}>{paymentProofStatusLabels[paymentProofStatus] || paymentProofStatus}</StatusChip>
+            </div>
+            <p className="mt-3 text-sm font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</p>
+          </div>
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase text-muted-foreground">Fulfillment</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <StatusChip tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
+              {order.trackingNumber ? <StatusChip tone="success">Resi siap</StatusChip> : <StatusChip tone="warning">Butuh resi</StatusChip>}
+            </div>
+            <p className="mt-3 truncate text-sm font-bold text-[#0b130c]">{order.courierName || 'Kurir belum diisi'}</p>
+          </div>
+          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+            <div className="text-xs font-bold uppercase text-muted-foreground">{bespoke ? 'Bespoke' : 'Customer'}</div>
+            {bespoke ? (
+              <>
+                <StatusChip tone="primary" className="mt-2">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip>
+                <p className="mt-3 truncate text-sm font-bold text-[#0b130c]">{bespokeSummary?.bottle}</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 truncate text-sm font-bold text-[#0b130c]">{order.customerName}</p>
+                <p className="mt-1 truncate text-xs font-semibold text-muted-foreground">{order.contact || order.customerCode || '-'}</p>
+              </>
+            )}
+          </div>
+        </section>
 
         <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -708,6 +827,14 @@ const OrderDetailPage = () => {
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
                 <Download className="h-4 w-4" />
                 Resi PDF
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={copyPublicTrackingLink}>
+                <Copy className="h-4 w-4" />
+                Salin tracking
+              </Button>
+              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={openPublicTrackingLink}>
+                <ExternalLink className="h-4 w-4" />
+                Buka tracking
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => openWhatsApp(notificationMessage)}>
                 <MessageCircle className="h-4 w-4" />
@@ -739,6 +866,44 @@ const OrderDetailPage = () => {
                 </div>
               </div>
             </section>
+
+            {bespoke ? (
+              <section className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-5 shadow-sm">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+                    <Sparkles className="h-4 w-4" />
+                    Bespoke brief
+                  </div>
+                  <StatusChip tone="primary">
+                    {bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}
+                  </StatusChip>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-2xl bg-white px-4 py-3">
+                    <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Botol</span>
+                    <span className="mt-1 block truncate text-sm font-bold text-[#0b130c]">{bespokeSummary?.bottle}</span>
+                  </div>
+                  <div className="rounded-2xl bg-white px-4 py-3 md:col-span-2">
+                    <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Cap / label</span>
+                    <span className="mt-1 block truncate text-sm font-bold text-[#0b130c]">{bespokeSummary?.design}</span>
+                  </div>
+                </div>
+                {bespokeSummary?.aroma ? (
+                  <p className="mt-3 line-clamp-2 text-sm font-semibold leading-relaxed text-[#1f2937]">{bespokeSummary.aroma}</p>
+                ) : null}
+                <details className="mt-3 rounded-2xl bg-white/70 px-4 py-3">
+                  <summary className="cursor-pointer select-none text-xs font-bold text-[#263d27]">Buka detail brief lengkap</summary>
+                  <div className="mt-3 grid gap-2 border-t border-[#263d27]/10 pt-3 sm:grid-cols-2">
+                    {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                      <p key={label} className="text-xs font-semibold text-muted-foreground">
+                        <span className="block text-[10px] font-bold uppercase text-[#263d27]">{label}</span>
+                        {value}
+                      </p>
+                    ))}
+                  </div>
+                </details>
+              </section>
+            ) : null}
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -885,8 +1050,8 @@ const OrderDetailPage = () => {
                   {Object.entries(shipmentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
                 <input value={shipmentDraft.courierName} onChange={(event) => setShipmentDraft((current) => ({ ...current, courierName: event.target.value }))} placeholder="Kurir, contoh: JNE / J&T" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                <input value={shipmentDraft.trackingNumber} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingNumber: event.target.value }))} placeholder="Nomor resi" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                <input value={shipmentDraft.trackingUrl} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="URL tracking" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                <input value={shipmentDraft.trackingNumber} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingNumber: event.target.value }))} placeholder="Nomor resi kurir" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                <input value={shipmentDraft.trackingUrl} onChange={(event) => setShipmentDraft((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="URL tracking kurir" className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                 <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
                   Tanggal kirim
                   <input type="datetime-local" value={shipmentDraft.shippedAt} onChange={(event) => setShipmentDraft((current) => ({ ...current, shippedAt: event.target.value }))} className="h-11 rounded-2xl border bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300" />

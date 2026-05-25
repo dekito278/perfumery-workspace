@@ -436,6 +436,9 @@ const BespokePage = () => {
     try {
       const rates = await getShippingRates({
         destinationId: destination.id,
+        destination,
+        destinationLabel: destination.label,
+        subtotal: estimatedTotal,
         weight: shippingWeight,
         couriers: [courierCode],
       });
@@ -781,8 +784,14 @@ const BespokePage = () => {
                     <button key={`${rate.courierCode}-${rate.service}-${rate.cost}`} type="button" onClick={() => setSelectedShipping(rate)} className={cn('rounded-2xl border px-3 py-3 text-left transition', active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white')}>
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-sm font-bold text-[#1f2937]">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
-                        <span className="text-sm font-bold text-[#263d27]">{formatRupiah(rate.cost)}</span>
+                        <span className="shrink-0 text-right text-sm font-bold text-[#263d27]">
+                          {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                            <span className="block text-[11px] text-[#8a9280] line-through">{formatRupiah(rate.originalCost)}</span>
+                          ) : null}
+                          {formatRupiah(rate.cost)}
+                        </span>
                       </div>
+                      {rate.promotionApplied ? <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">{rate.promotionLabel}</div> : null}
                       <p className="mt-1 text-xs font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
                     </button>
                   );

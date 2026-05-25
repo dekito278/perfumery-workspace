@@ -88,6 +88,7 @@ const AppShell = ({ children }) => {
         { path: '/studio/products', label: 'Produk', icon: PackagePlus },
         { path: '/studio/product-categories', label: 'Kategori', icon: Tags },
         { path: '/studio/vouchers', label: 'Vouchers', icon: BadgePercent },
+        { path: '/studio/shipping', label: 'Ongkir', icon: Truck },
         { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customer', icon: UsersRound },
         { path: '/studio/shipments', label: 'Fulfillment', icon: Truck },

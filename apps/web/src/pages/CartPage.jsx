@@ -417,9 +417,15 @@ const CartPage = () => {
                         <button key={`${rate.courierCode}-${rate.service}-${rate.cost}`} type="button" onClick={() => setSelectedShipping(rate)} className={`rounded-2xl border px-4 py-3 text-left transition ${active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-white'}`}>
                           <div className="flex items-center justify-between gap-3">
                             <span className="text-sm font-bold">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
-                            <span className="shrink-0 text-sm font-bold text-[#263d27]">{formatTotal(rate.cost)}</span>
+                            <span className="shrink-0 text-right text-sm font-bold text-[#263d27]">
+                              {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                                <span className="block text-[11px] text-muted-foreground line-through">{formatTotal(rate.originalCost)}</span>
+                              ) : null}
+                              {formatTotal(rate.cost)}
+                            </span>
                           </div>
                           {active ? <div className="mt-2 inline-flex rounded-full bg-[#263d27] px-2.5 py-1 text-[10px] font-bold uppercase text-white">Dipilih</div> : null}
+                          {rate.promotionApplied ? <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-700">{rate.promotionLabel}</div> : null}
                           <p className="mt-1 text-xs font-semibold text-muted-foreground">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
                         </button>
                       );
@@ -432,6 +438,7 @@ const CartPage = () => {
                     <p className="mt-1 text-sm font-bold text-[#0b130c]">
                       {courierLabels[selectedShipping.courierCode] || selectedShipping.courierName} {selectedShipping.serviceLabel || selectedShipping.service} · {formatTotal(selectedShipping.cost)}
                     </p>
+                    {selectedShipping.promotionApplied ? <p className="mt-1 text-xs font-bold text-emerald-700">{selectedShipping.promotionLabel}</p> : null}
                     <Button type="button" className="mt-3 h-11 w-full rounded-2xl" onClick={scrollToPayment}>
                       Lanjut pilih pembayaran
                     </Button>

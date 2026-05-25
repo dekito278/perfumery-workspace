@@ -1,4 +1,6 @@
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 
 const PAGE_WIDTH = 105;
 const PAGE_HEIGHT = 148;
@@ -78,10 +80,24 @@ const drawLabelValue = (doc, label, value, x, y, width = CONTENT_WIDTH) => {
   return y + 5 + (lines.length * 3.7);
 };
 
-const drawShippingLabel = (doc, order) => {
+const createTrackingQrDataUrl = async (value) => {
+  try {
+    return await QRCode.toDataURL(value, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 180,
+    });
+  } catch {
+    return '';
+  }
+};
+
+const drawShippingLabel = async (doc, order) => {
   const address = getOrderAddress(order);
   const area = getOrderArea(order);
   const shipping = getOrderShipping(order);
+  const publicTrackingUrl = buildPublicTrackingUrl(order.orderNumber);
+  const publicTrackingQr = await createTrackingQrDataUrl(publicTrackingUrl);
   const itemSummary = (order.items || [])
     .map((item) => `${item.name} x${item.quantity}${item.size ? ` / ${item.size}` : ''}`)
     .join('\n');
@@ -143,34 +159,39 @@ const drawShippingLabel = (doc, order) => {
   y = Math.min(y + 2, PAGE_HEIGHT - 33);
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(...BRAND.ink);
-  doc.roundedRect(MARGIN, PAGE_HEIGHT - 27, CONTENT_WIDTH, 18, 2, 2, 'S');
+  doc.roundedRect(MARGIN, PAGE_HEIGHT - 31, CONTENT_WIDTH, 22, 2, 2, 'S');
+  if (publicTrackingQr) {
+    doc.addImage(publicTrackingQr, 'PNG', MARGIN + 2, PAGE_HEIGHT - 29, 18, 18);
+  }
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  doc.setFontSize(15);
   doc.setTextColor(...BRAND.ink);
-  doc.text(asText(order.orderNumber), PAGE_WIDTH / 2, PAGE_HEIGHT - 16, { align: 'center' });
+  doc.text(asText(order.orderNumber), PAGE_WIDTH - MARGIN - 3, PAGE_HEIGHT - 22, { align: 'right' });
   doc.setFontSize(7);
   doc.setTextColor(...BRAND.muted);
-  doc.text('Scan/check order di admin sebelum serah ke kurir', PAGE_WIDTH / 2, PAGE_HEIGHT - 10.7, { align: 'center' });
+  doc.text('Scan QR / cek publik:', PAGE_WIDTH - MARGIN - 3, PAGE_HEIGHT - 17.4, { align: 'right' });
+  doc.setFontSize(6.2);
+  doc.text(doc.splitTextToSize(publicTrackingUrl, CONTENT_WIDTH - 28), PAGE_WIDTH - MARGIN - 3, PAGE_HEIGHT - 13.8, { align: 'right' });
 };
 
-export const exportShippingLabelPdf = (order) => {
+export const exportShippingLabelPdf = async (order) => {
   const doc = new jsPDF({ unit: 'mm', format: 'a6', orientation: 'portrait' });
-  drawShippingLabel(doc, order);
+  await drawShippingLabel(doc, order);
 
   doc.save(safeFilename(order.orderNumber));
 };
 
-export const exportShippingLabelsPdf = (orders = []) => {
+export const exportShippingLabelsPdf = async (orders = []) => {
   const printableOrders = orders.filter(canExportShippingLabel);
   if (!printableOrders.length) return 0;
 
   const doc = new jsPDF({ unit: 'mm', format: 'a6', orientation: 'portrait' });
-  printableOrders.forEach((order, index) => {
+  for (const [index, order] of printableOrders.entries()) {
     if (index > 0) {
       doc.addPage('a6', 'portrait');
     }
-    drawShippingLabel(doc, order);
-  });
+    await drawShippingLabel(doc, order);
+  }
 
   doc.save(safeBatchFilename(printableOrders.length));
   return printableOrders.length;

@@ -24,6 +24,7 @@ import {
   updateOrderPaymentStatus,
   updateOrderStatus,
 } from '@/services/orderService.js';
+import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { buildOrderNotes, checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { applyVoucherToSubtotalAsync, recordVoucherUsageForOrder } from '@/services/voucherService.js';
@@ -586,6 +587,10 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
 
 const ShipmentPanel = ({ order, compact = false }) => {
   if (!order || order.shipmentStatus === 'not_ready') return null;
+  const courierSearchUrl = buildCourierTrackingSearchUrl({
+    courierName: order.courierName,
+    trackingNumber: order.trackingNumber,
+  });
 
   return (
     <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#263d27]/10 bg-white`}>
@@ -628,6 +633,16 @@ const ShipmentPanel = ({ order, compact = false }) => {
           Track resi
         </a>
       ) : null}
+      {!order.trackingUrl && courierSearchUrl ? (
+        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-3 text-xs font-bold text-[#eef2e8]">
+          <ExternalLink className="h-4 w-4" />
+          Cari resi kurir
+        </a>
+      ) : null}
+      <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-3 text-xs font-bold text-[#263d27]">
+        <ExternalLink className="h-4 w-4" />
+        Tracking publik
+      </a>
     </div>
   );
 };
@@ -649,6 +664,10 @@ const SelfServiceActions = ({
     : 'inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold';
   const outlineClass = `${buttonClass} border border-[#263d27]/15 bg-white text-[#263d27]`;
   const primaryClass = `${buttonClass} bg-[#263d27] text-[#eef2e8]`;
+  const courierSearchUrl = buildCourierTrackingSearchUrl({
+    courierName: order.courierName,
+    trackingNumber: order.trackingNumber,
+  });
 
   return (
     <div className={compact ? 'mt-3 grid gap-2' : 'mt-4 flex flex-wrap gap-2'}>
@@ -674,6 +693,16 @@ const SelfServiceActions = ({
           Lacak resi
         </a>
       ) : null}
+      {!canTrackShipment(order) && courierSearchUrl ? (
+        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className={primaryClass}>
+          <ExternalLink className="h-4 w-4" />
+          Cari resi kurir
+        </a>
+      ) : null}
+      <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className={outlineClass}>
+        <ExternalLink className="h-4 w-4" />
+        Tracking publik
+      </a>
       <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
         <ShoppingBag className="h-4 w-4" />
         Reorder

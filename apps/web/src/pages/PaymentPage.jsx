@@ -13,7 +13,14 @@ import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuChe
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
-import { getOrderProductsSubtotal, getOrderShippingFee, getOrderSubtotalAfterVoucher, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
+import {
+  getOrderProductsSubtotal,
+  getOrderShippingFee,
+  getOrderShippingPromotionLabel,
+  getOrderShippingSummary,
+  getOrderSubtotalAfterVoucher,
+  getOrderVoucherSnapshot,
+} from '@/utils/orderTotals.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -96,6 +103,7 @@ const buildManualTransferFromOrder = (order) => ({
   paymentProofStatus: order.paymentProofStatus,
   paymentProofNotes: order.paymentProofNotes,
   voucherSnapshot: getOrderVoucherSnapshot(order),
+  shippingSummary: getOrderShippingSummary(order),
   shippingFee: getOrderShippingFee(order),
   manualTransfer: {
     bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
@@ -125,36 +133,49 @@ const buildDokuSessionFromCheckout = (order, checkout) => ({
   paymentProofStatus: order.paymentProofStatus,
   paymentProofNotes: order.paymentProofNotes,
   voucherSnapshot: getOrderVoucherSnapshot(order),
+  shippingSummary: getOrderShippingSummary(order),
   shippingFee: getOrderShippingFee(order),
   createdAt: order.createdAt || new Date().toISOString(),
 });
 
 const PaymentTotalBreakdown = ({ session, compact = false }) => {
   const voucherSnapshot = getOrderVoucherSnapshot(session);
-  if (!voucherSnapshot) return null;
+  const shippingFee = Number(session.shippingFee || 0);
+  const shippingSummary = getOrderShippingSummary(session);
+  const shippingPromotionLabel = getOrderShippingPromotionLabel(session);
+  const shouldShowShipping = Boolean(shippingFee || shippingSummary);
+  if (!voucherSnapshot && !shouldShowShipping) return null;
 
   const subtotalAfterVoucher = getOrderSubtotalAfterVoucher(session);
-  const shippingFee = Number(session.shippingFee || 0);
+  const fallbackProductsSubtotal = Math.max(Number(session.amount || 0) - shippingFee, 0);
+  const productsSubtotal = getOrderProductsSubtotal(session) || fallbackProductsSubtotal;
+  const displayedSubtotalAfterVoucher = subtotalAfterVoucher || fallbackProductsSubtotal;
+
   return (
     <div className={`mt-4 rounded-2xl border border-[#263d27]/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#263d27]`}>
       <div className="flex justify-between gap-3">
         <span>Subtotal produk</span>
-        <span>{formatTotal(getOrderProductsSubtotal(session))}</span>
+        <span>{formatTotal(productsSubtotal)}</span>
       </div>
-      <div className="mt-2 flex justify-between gap-3">
-        <span>Voucher {voucherSnapshot.code}</span>
-        <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
-      </div>
-      <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-        <span>Subtotal setelah voucher</span>
-        <span>{formatTotal(subtotalAfterVoucher)}</span>
-      </div>
-      {shippingFee ? (
+      {voucherSnapshot ? (
+        <>
+          <div className="mt-2 flex justify-between gap-3">
+            <span>Voucher {voucherSnapshot.code}</span>
+            <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
+          </div>
+          <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
+            <span>Subtotal setelah voucher</span>
+            <span>{formatTotal(displayedSubtotalAfterVoucher)}</span>
+          </div>
+        </>
+      ) : null}
+      {shouldShowShipping ? (
         <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-          <span>Ongkir</span>
+          <span>{shippingPromotionLabel ? 'Ongkir setelah promo' : 'Ongkir'}</span>
           <span>{formatTotal(shippingFee)}</span>
         </div>
       ) : null}
+      {shippingPromotionLabel ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
       <div className="mt-3 flex justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-[#0b130c]">
         <span>Total bayar</span>
         <span>{formatTotal(session.amount)}</span>
@@ -711,6 +732,7 @@ const PaymentPageContent = ({ isMobile }) => {
           paymentProofStatus: order.paymentProofStatus,
           paymentProofNotes: order.paymentProofNotes,
           voucherSnapshot: getOrderVoucherSnapshot(order),
+          shippingSummary: getOrderShippingSummary(order),
           shippingFee: getOrderShippingFee(order),
           createdAt: order.createdAt,
         };

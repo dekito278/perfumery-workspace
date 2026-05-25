@@ -273,12 +273,18 @@ const MobileCheckoutPage = () => {
                 >
                   <div className="flex justify-between gap-3 text-sm font-bold">
                     <span className="min-w-0">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
-                    <span className="shrink-0">{formatTotal(rate.cost)}</span>
+                    <span className="shrink-0 text-right">
+                      {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
+                        <span className="block text-[10px] text-[#8a9280] line-through">{formatTotal(rate.originalCost)}</span>
+                      ) : null}
+                      {formatTotal(rate.cost)}
+                    </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
                     {active ? <span className="shrink-0 rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
                   </div>
+                  {rate.promotionApplied ? <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase text-emerald-700">{rate.promotionLabel}</div> : null}
                 </button>
               );
             }) : null}
@@ -290,6 +296,7 @@ const MobileCheckoutPage = () => {
                     <p className="mt-1 text-xs font-bold text-[#1f2937]">
                       {courierLabels[selectedShipping.courierCode] || selectedShipping.courierName} {selectedShipping.serviceLabel || selectedShipping.service} - {formatTotal(selectedShipping.cost)}
                     </p>
+                    {selectedShipping.promotionApplied ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{selectedShipping.promotionLabel}</p> : null}
                     {selectedDestination ? (
                       <p className="mt-1 text-[11px] font-semibold leading-snug text-[#51624b]">Area: {selectedDestination.label}</p>
                     ) : null}

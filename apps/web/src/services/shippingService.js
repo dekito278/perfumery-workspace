@@ -1,3 +1,8 @@
+import {
+  applyShippingPromotionToRates,
+  getShippingPromotionSettingsAsync,
+} from '@/services/shippingPromotionService.js';
+
 export const SHIPPING_STORAGE_KEY = 'solivagant.checkout.shipping.v1';
 
 const requestJson = async (url, options = {}) => {
@@ -23,6 +28,9 @@ export const searchShippingDestinations = async (query) => {
 
 export const getShippingRates = async ({
   destinationId,
+  destination,
+  destinationLabel,
+  subtotal,
   weight,
   couriers,
 }) => {
@@ -38,7 +46,15 @@ export const getShippingRates = async ({
     }),
   });
 
-  return Array.isArray(data.rates) ? data.rates : [];
+  const rates = Array.isArray(data.rates) ? data.rates : [];
+  const promotionDestination = destination || { id: destinationId, label: destinationLabel };
+
+  return applyShippingPromotionToRates(
+    rates,
+    promotionDestination,
+    await getShippingPromotionSettingsAsync(),
+    { subtotal },
+  );
 };
 
 export const getCheckoutShippingWeight = (items) => {
@@ -57,5 +73,6 @@ export const describeShippingRate = (rate) => {
     `${rate.courierName || rate.courierCode || 'Courier'} ${rate.serviceLabel || rate.service || ''}`.trim(),
     rate.etd ? `ETA ${rate.etd}` : '',
     `Rp ${new Intl.NumberFormat('id-ID').format(Number(rate.cost || 0))}`,
+    rate.promotionApplied ? rate.promotionLabel : '',
   ].filter(Boolean).join(' / ');
 };

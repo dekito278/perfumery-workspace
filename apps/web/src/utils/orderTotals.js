@@ -59,3 +59,24 @@ export const getOrderShippingFee = (order = {}) => {
   const afterVoucher = getOrderSubtotalAfterVoucher(order);
   return Math.max(total - afterVoucher, 0);
 };
+
+export const getOrderShippingSummary = (order = {}) => {
+  const directSummary = String(order.shippingSummary || order.shipping_summary || order.shipping || '').trim();
+  if (directSummary) return directSummary;
+
+  const notes = String(order.notes || order.customerNotes || order.customer_notes || '').trim();
+  const match = notes.match(/^Shipping:\s*(.+)$/im);
+  return match?.[1]?.trim() || '';
+};
+
+export const getOrderShippingPromotionLabel = (order = {}) => {
+  const summary = getOrderShippingSummary(order);
+  if (!summary) return '';
+
+  const promoPart = summary
+    .split('/')
+    .map((part) => part.trim())
+    .find((part) => /gratis|diskon|promo|maksimal/i.test(part));
+
+  return promoPart || '';
+};

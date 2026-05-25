@@ -265,6 +265,9 @@ export const useCheckoutFlow = ({
     try {
       const rates = await getShippingRates({
         destinationId: destination.id,
+        destination,
+        destinationLabel: destination.label,
+        subtotal: summary.subtotal,
         weight: shippingWeight,
         couriers: [courierCode],
       });
@@ -310,6 +313,9 @@ export const useCheckoutFlow = ({
       if (selectedDestination?.id && String(selectedDestination.label || '').trim() === search) {
         const rates = await getShippingRates({
           destinationId: selectedDestination.id,
+          destination: selectedDestination,
+          destinationLabel: selectedDestination.label,
+          subtotal: summary.subtotal,
           weight: shippingWeight,
           couriers: [courierCode],
         });

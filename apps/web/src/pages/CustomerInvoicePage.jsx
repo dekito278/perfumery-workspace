@@ -12,10 +12,13 @@ import {
   verifyCustomerPortalSecurity,
 } from '@/services/customerService.js';
 import { getShipmentStatusLabels } from '@/services/orderService.js';
+import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import {
   getOrderProductItems,
   getOrderProductsSubtotal,
   getOrderShippingFee,
+  getOrderShippingPromotionLabel,
+  getOrderShippingSummary,
   getOrderSubtotalAfterVoucher,
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
@@ -57,6 +60,13 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
   const productsSubtotal = getOrderProductsSubtotal(order);
   const subtotalAfterVoucher = getOrderSubtotalAfterVoucher(order);
   const shippingFee = getOrderShippingFee(order);
+  const shippingSummary = getOrderShippingSummary(order);
+  const shippingPromotionLabel = getOrderShippingPromotionLabel(order);
+  const shouldShowShipping = Boolean(shippingFee || shippingSummary);
+  const courierSearchUrl = buildCourierTrackingSearchUrl({
+    courierName: order.courierName,
+    trackingNumber: order.trackingNumber,
+  });
 
   return (
   <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-[28px] border bg-white shadow-sm'} overflow-hidden`}>
@@ -171,6 +181,16 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
                 Lacak resi
               </a>
             ) : null}
+            {!order.trackingUrl && courierSearchUrl ? (
+              <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
+                <ExternalLink className="h-4 w-4" />
+                Cari resi kurir
+              </a>
+            ) : null}
+            <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
+              <ExternalLink className="h-4 w-4" />
+              Tracking publik
+            </a>
           </div>
         </div>
         <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
@@ -192,12 +212,26 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
                 <span>Subtotal setelah voucher</span>
                 <span>{formatTotal(subtotalAfterVoucher)}</span>
               </div>
-              {shippingFee ? (
+              {shouldShowShipping ? (
                 <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
-                  <span>Ongkir</span>
+                  <span>{shippingPromotionLabel ? 'Ongkir setelah promo' : 'Ongkir'}</span>
                   <span>{formatTotal(shippingFee)}</span>
                 </div>
               ) : null}
+              {shippingPromotionLabel ? <p className="mt-1 text-xs font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
+            </>
+          ) : null}
+          {!voucherSnapshot && shouldShowShipping ? (
+            <>
+              <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3 text-sm font-semibold text-[#6b7280]">
+                <span>Subtotal produk</span>
+                <span>{formatTotal(Math.max(Number(order.subtotal || 0) - shippingFee, 0))}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
+                <span>{shippingPromotionLabel ? 'Ongkir setelah promo' : 'Ongkir'}</span>
+                <span>{formatTotal(shippingFee)}</span>
+              </div>
+              {shippingPromotionLabel ? <p className="mt-1 text-xs font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
             </>
           ) : null}
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">

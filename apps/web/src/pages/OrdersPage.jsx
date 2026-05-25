@@ -20,6 +20,7 @@ import {
   updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import {
   getOrderProductItems,
   getOrderProductsSubtotal,
@@ -184,6 +185,15 @@ const OrdersPage = () => {
     toast.success(`${order.orderNumber} disalin`);
   };
 
+  const copyPublicTrackingLink = async (order) => {
+    try {
+      await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
+      toast.success(`${order.orderNumber} link tracking publik disalin`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin link tracking publik');
+    }
+  };
+
   const prepareCustomerNotification = async (order, eventKey) => {
     const message = buildNotificationMessage(order, eventKey);
     if (!message) return;
@@ -248,7 +258,7 @@ const OrdersPage = () => {
 
   const bulkPrintResi = async () => {
     const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
-    const printedCount = exportShippingLabelsPdf(selectedVisibleOrders);
+    const printedCount = await exportShippingLabelsPdf(selectedVisibleOrders);
     if (!printedCount) {
       toast.error('Pilih order paid untuk cetak resi');
       return;
@@ -329,7 +339,7 @@ const OrdersPage = () => {
       return;
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    exportShippingLabelPdf(order);
+    await exportShippingLabelPdf(order);
     if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
       await updateOrderShipment(order.id || order.orderNumber, {
         shipmentStatus: 'packing',
@@ -621,6 +631,7 @@ const OrdersPage = () => {
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => navigate(`/studio/orders/${order.id || order.orderNumber}`)}><Eye className="h-4 w-4" />Detail</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}><Download className="h-4 w-4" />Resi PDF</Button>
+                      <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyPublicTrackingLink(order)}><ExternalLink className="h-4 w-4" />Tracking</Button>
                       <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
                     </div>
                   </div>

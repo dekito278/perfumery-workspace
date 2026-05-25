@@ -34,6 +34,7 @@ import {
   getNotificationEventLabels,
   getWhatsAppNotificationUrl,
 } from '@/services/notificationTemplateService.js';
+import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
@@ -528,7 +529,7 @@ const MobileOrderDetailPage = () => {
       return;
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    exportShippingLabelPdf(order);
+    await exportShippingLabelPdf(order);
     toast.success('Resi PDF siap');
   };
 
@@ -538,6 +539,15 @@ const MobileOrderDetailPage = () => {
       toast.success('Draft order disalin');
     } catch (error) {
       toast.error(error.message || 'Gagal menyalin draft order');
+    }
+  };
+
+  const copyPublicTrackingLink = async () => {
+    try {
+      await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
+      toast.success('Link tracking publik disalin');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin tracking');
     }
   };
 
@@ -752,6 +762,14 @@ const MobileOrderDetailPage = () => {
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
               <Download className="h-4 w-4" />
               Resi
+            </Button>
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={copyPublicTrackingLink}>
+              <Copy className="h-4 w-4" />
+              Tracking
+            </Button>
+            <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => window.open(buildPublicTrackingUrl(order.orderNumber), '_blank', 'noopener,noreferrer')}>
+              <ExternalLink className="h-4 w-4" />
+              Buka
             </Button>
           </div>
         </section>
@@ -1057,7 +1075,7 @@ const MobileOrderDetailPage = () => {
                 setShipmentDraft((current) => ({ ...current, trackingNumber, shipmentStatus: current.shipmentStatus === 'shipped' ? 'shipped' : 'packing' }));
                 quickShipmentUpdate(shipmentDraft.shipmentStatus === 'shipped' ? 'shipped' : 'packing', { trackingNumber });
               }}
-              placeholder="Nomor resi"
+              placeholder="Nomor resi kurir"
               className="h-14 rounded-2xl border border-amber-200 bg-amber-50 px-4 text-base font-bold tracking-[0.04em] outline-none focus:border-amber-400"
               autoCapitalize="characters"
               enterKeyHint="done"
@@ -1102,6 +1120,10 @@ const MobileOrderDetailPage = () => {
             <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={exportShippingLabel} disabled={!canExportShippingLabel(order)}>
               <Download className="h-4 w-4" />
               Resi PDF
+            </Button>
+            <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={copyPublicTrackingLink}>
+              <Copy className="h-4 w-4" />
+              Salin tracking
             </Button>
           </div>
         </section>
