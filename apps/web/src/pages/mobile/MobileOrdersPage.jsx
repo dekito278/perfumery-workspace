@@ -19,12 +19,20 @@ import {
   getBespokeProductionStatusLabels,
   getOrderStatusLabels,
   isBespokeOrder,
+  updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import {
+  getBespokeOrderSummary,
+  hasShippingLabelPrinted,
+  isArchivedOrder,
+  isFrontQueueOrder,
+  isShippedOrder,
+} from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
@@ -76,10 +84,11 @@ const orderFilterOptions = [
   { value: 'active', label: 'Aktif' },
   { value: 'proof_review', label: 'Bukti' },
   { value: 'paid', label: 'Sudah bayar' },
-  { value: 'packing', label: 'Packing' },
+  { value: 'packing', label: 'Label/resi' },
   { value: 'shipped', label: 'Dikirim' },
   { value: 'follow_up', label: 'Follow-up' },
   { value: 'bespoke', label: 'Bespoke' },
+  { value: 'archive', label: 'Arsip' },
 ];
 
 const paymentProofStatusLabels = {
@@ -106,15 +115,16 @@ const getQuickAction = (order) => {
   if (order.paymentProofStatus === 'submitted') return 'Cek bukti transfer';
   if (order.paymentProofStatus === 'rejected') return 'Menunggu upload ulang bukti';
   if (['unpaid', 'pending'].includes(order.paymentStatus)) return 'Follow-up pembayaran';
-  if (order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)) return 'Siap packing';
-  if (order.shipmentStatus === 'shipped') return 'Follow-up pengiriman';
+  if (hasShippingLabelPrinted(order)) return 'Resi sudah dicetak';
+  if (order.paymentStatus === 'paid' && isFrontQueueOrder(order)) return 'Siap cetak resi';
+  if (isShippedOrder(order)) return 'Follow-up pengiriman';
   return 'Review';
 };
 
 const MobileOrdersPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orders, summary, loading, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [orderFilter, setOrderFilter] = useState(() => {
     const filter = new URLSearchParams(location.search).get('filter');
     return orderFilterOptions.some((option) => option.value === filter) ? filter : 'active';
@@ -129,15 +139,16 @@ const MobileOrdersPage = () => {
   const lowStockProducts = products.filter(getProductLowStock);
   const lowStockPreview = lowStockProducts.slice(0, 8);
   const filteredOrders = useMemo(() => orders.filter((order) => {
-    if (orderFilter === 'proof_review') return order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status);
-    if (orderFilter === 'paid') return order.paymentStatus === 'paid' && !['completed', 'cancelled'].includes(order.status);
-    if (orderFilter === 'packing') return order.shipmentStatus === 'packing' && !['completed', 'cancelled'].includes(order.status);
-    if (orderFilter === 'shipped') return order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status);
+    if (orderFilter === 'proof_review') return order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order);
+    if (orderFilter === 'paid') return order.paymentStatus === 'paid' && isFrontQueueOrder(order);
+    if (orderFilter === 'packing') return hasShippingLabelPrinted(order);
+    if (orderFilter === 'shipped') return isShippedOrder(order) && !isArchivedOrder(order);
     if (orderFilter === 'follow_up') {
-      return ['unpaid', 'pending'].includes(order.paymentStatus) || order.shipmentStatus === 'shipped';
+      return !isArchivedOrder(order) && (['unpaid', 'pending'].includes(order.paymentStatus) || isShippedOrder(order));
     }
-    if (orderFilter === 'bespoke') return isBespokeOrder(order);
-    return !['completed', 'cancelled'].includes(order.status);
+    if (orderFilter === 'bespoke') return isBespokeOrder(order) && isFrontQueueOrder(order);
+    if (orderFilter === 'archive') return isArchivedOrder(order);
+    return isFrontQueueOrder(order);
   }).filter((order) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     if (!query) return true;
@@ -224,7 +235,41 @@ const MobileOrdersPage = () => {
       toast.error('Pilih order paid untuk print resi');
       return;
     }
-    toast.success(`${printedCount} resi PDF siap`);
+    await Promise.all(selectedPrintableOrders.map((order) => (
+      hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
+        ? Promise.resolve()
+        : updateOrderShipment(order.id || order.orderNumber, {
+          shipmentStatus: 'packing',
+          courierName: order.courierName,
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          packingNotes: order.packingNotes || 'Resi PDF dicetak dari Mobile Orders.',
+        })
+    )));
+    await reload();
+    setOrderFilter('packing');
+    toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
+  };
+
+  const exportShippingLabel = async (order) => {
+    if (!canExportShippingLabel(order)) {
+      toast.error('Resi PDF tersedia setelah payment paid');
+      return;
+    }
+    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
+    exportShippingLabelPdf(order);
+    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+      await updateOrderShipment(order.id || order.orderNumber, {
+        shipmentStatus: 'packing',
+        courierName: order.courierName,
+        trackingNumber: order.trackingNumber,
+        trackingUrl: order.trackingUrl,
+        packingNotes: order.packingNotes || 'Resi PDF dicetak dari Mobile Orders.',
+      });
+      await reload();
+      setOrderFilter('packing');
+    }
+    toast.success(`${order.orderNumber} resi PDF siap`);
   };
 
   const bulkWhatsAppFollowUp = async () => {
@@ -399,7 +444,8 @@ const MobileOrdersPage = () => {
           {visibleOrders.map((order) => {
             const bespoke = isBespokeOrder(order);
             const bespokeItem = getBespokeItem(order);
-            const packingReady = order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus);
+            const bespokeSummary = getBespokeOrderSummary(order);
+            const shippingLabelReady = canExportShippingLabel(order) && !hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order);
             const voucherSnapshot = getOrderVoucherSnapshot(order);
             const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
 
@@ -511,14 +557,30 @@ const MobileOrdersPage = () => {
                     <Sparkles className="h-3.5 w-3.5" />
                     Bespoke brief
                   </div>
-                  <div className="grid gap-2">
-                    {bespokeDetailRows(bespokeItem).map(([label, value]) => (
-                      <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
-                        <span className="text-[#6b7280]">{label}</span>
-                        <span className="min-w-0 text-[#1f2937]">{value}</span>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl bg-white px-3 py-2">
+                      <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Botol</span>
+                      <span className="mt-1 block truncate text-xs font-bold text-[#0b130c]">{bespokeSummary?.bottle}</span>
+                    </div>
+                    <div className="rounded-2xl bg-white px-3 py-2">
+                      <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Cap</span>
+                      <span className="mt-1 block truncate text-xs font-bold text-[#0b130c]">{bespokeItem?.capDesign || '-'}</span>
+                    </div>
                   </div>
+                  {bespokeSummary?.aroma ? (
+                    <p className="mt-2 line-clamp-2 text-xs font-semibold leading-relaxed text-[#1f2937]">{bespokeSummary.aroma}</p>
+                  ) : null}
+                  <details className="mt-2">
+                    <summary className="cursor-pointer select-none text-xs font-bold text-[#263d27]">Buka detail brief</summary>
+                    <div className="mt-3 grid gap-2 border-t border-[#263d27]/10 pt-3">
+                      {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                        <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
+                          <span className="text-[#6b7280]">{label}</span>
+                          <span className="min-w-0 text-[#1f2937]">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 </div>
               ) : null}
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -533,8 +595,8 @@ const MobileOrdersPage = () => {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button type="button" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 text-xs font-bold" onClick={() => navigate(`/mobile/studio/orders/${order.id || order.orderNumber}`, { state: getMobileFromState(location) })}><Eye className="h-4 w-4" />Detail</Button>
-                {packingReady ? (
-                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => navigate('/mobile/studio/fulfillment')}><Truck className="h-4 w-4" />Packing</Button>
+                {shippingLabelReady ? (
+                  <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => exportShippingLabel(order)}><Truck className="h-4 w-4" />Resi PDF</Button>
                 ) : (
                   <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => openQuickFollowUp(order)}><MessageCircle className="h-4 w-4" />WA</Button>
                 )}

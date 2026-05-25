@@ -17,6 +17,7 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
+  updateOrderShipment,
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import {
@@ -28,6 +29,13 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
+import {
+  getBespokeOrderSummary,
+  hasShippingLabelPrinted,
+  isArchivedOrder,
+  isFrontQueueOrder,
+  isShippedOrder,
+} from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -54,12 +62,14 @@ const paymentStatusLabels = {
 };
 
 const orderFilterLabels = {
-  all: 'Semua',
+  active: 'Aktif',
   proof_review: 'Review bukti',
   payment: 'Perlu dibayar',
-  packing: 'Siap packing',
+  paid: 'Sudah bayar',
+  packing: 'Label/resi',
   shipped: 'Dikirim',
   bespoke: 'Bespoke',
+  archive: 'Arsip',
 };
 
 const paymentProofStatusLabels = {
@@ -92,16 +102,17 @@ const OrderVoucherSummary = ({ order }) => {
 };
 
 const bespokeDetailRows = (item) => [
-  ['Mood', item?.mood],
-  ['Occasion', item?.occasion],
-  ['Budget', item?.budget],
-  ['Size', item?.size],
   ['Preferred aroma', item?.preferredNotes || item?.notes],
-  ['Avoided notes', item?.avoidedNotes],
   ['Story', item?.story],
-  ['Cap design', item?.capDesign],
+  ['Occasion', item?.occasion],
+  ['Size', item?.size],
+  ['Bottle', item?.bottleType],
+  ['Cap', item?.capDesign],
+  ['Label', item?.labelDesign],
+  ['Avoided notes', item?.avoidedNotes],
   ['Exotic material', item?.exoticMaterial],
   ['Reference scent', item?.referenceProductName],
+  ['Budget', item?.budget],
 ].filter(([, value]) => value);
 
 const OrdersPage = () => {
@@ -114,18 +125,19 @@ const OrdersPage = () => {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [orderFilter, setOrderFilter] = useState(() => {
     const filter = new URLSearchParams(location.search).get('filter');
-    return orderFilterLabels[filter] ? filter : 'all';
+    return orderFilterLabels[filter] ? filter : 'active';
   });
 
   const visibleOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
-    const shipped = ['shipped', 'delivered'].includes(order.shipmentStatus);
-    const matchesFilter = orderFilter === 'all'
-      || (orderFilter === 'proof_review' && order.paymentProofStatus === 'submitted')
-      || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus))
-      || (orderFilter === 'packing' && order.paymentStatus === 'paid' && !shipped)
-      || (orderFilter === 'shipped' && shipped)
-      || (orderFilter === 'bespoke' && isBespokeOrder(order));
+    const matchesFilter = (orderFilter === 'active' && isFrontQueueOrder(order))
+      || (orderFilter === 'proof_review' && order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order))
+      || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order))
+      || (orderFilter === 'paid' && order.paymentStatus === 'paid' && isFrontQueueOrder(order))
+      || (orderFilter === 'packing' && hasShippingLabelPrinted(order))
+      || (orderFilter === 'shipped' && isShippedOrder(order) && !isArchivedOrder(order))
+      || (orderFilter === 'bespoke' && isBespokeOrder(order) && isFrontQueueOrder(order))
+      || (orderFilter === 'archive' && isArchivedOrder(order));
     if (!matchesFilter) return false;
     if (!query) return true;
     return [
@@ -140,12 +152,14 @@ const OrdersPage = () => {
   });
 
   const filterCounts = {
-    all: orders.length,
-    proof_review: orders.filter((order) => order.paymentProofStatus === 'submitted').length,
-    payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)).length,
-    packing: orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)).length,
-    shipped: orders.filter((order) => ['shipped', 'delivered'].includes(order.shipmentStatus)).length,
-    bespoke: orders.filter(isBespokeOrder).length,
+    active: orders.filter(isFrontQueueOrder).length,
+    proof_review: orders.filter((order) => order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order)).length,
+    payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order)).length,
+    paid: orders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length,
+    packing: orders.filter(hasShippingLabelPrinted).length,
+    shipped: orders.filter((order) => isShippedOrder(order) && !isArchivedOrder(order)).length,
+    bespoke: orders.filter((order) => isBespokeOrder(order) && isFrontQueueOrder(order)).length,
+    archive: orders.filter(isArchivedOrder).length,
   };
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedVisibleOrders = visibleOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber));
@@ -239,7 +253,20 @@ const OrdersPage = () => {
       toast.error('Pilih order paid untuk cetak resi');
       return;
     }
-    toast.success(`${printedCount} resi PDF siap`);
+    await Promise.all(selectedPrintableOrders.map((order) => (
+      hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
+        ? Promise.resolve()
+        : updateOrderShipment(order.id || order.orderNumber, {
+          shipmentStatus: 'packing',
+          courierName: order.courierName,
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          packingNotes: order.packingNotes || 'Resi PDF dicetak dari Studio Orders.',
+        })
+    )));
+    await reload();
+    setOrderFilter('packing');
+    toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 
   const bulkWhatsAppFollowUp = async () => {
@@ -303,7 +330,18 @@ const OrdersPage = () => {
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     exportShippingLabelPdf(order);
-    toast.success(`${order.orderNumber} resi PDF prepared`);
+    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+      await updateOrderShipment(order.id || order.orderNumber, {
+        shipmentStatus: 'packing',
+        courierName: order.courierName,
+        trackingNumber: order.trackingNumber,
+        trackingUrl: order.trackingUrl,
+        packingNotes: order.packingNotes || 'Resi PDF dicetak dari Studio Orders.',
+      });
+      await reload();
+      setOrderFilter('packing');
+    }
+    toast.success(`${order.orderNumber} resi PDF prepared. Order masuk Label/resi.`);
   };
 
   return (
@@ -417,6 +455,7 @@ const OrdersPage = () => {
             {!loadError ? visibleOrders.map((order) => {
               const bespoke = isBespokeOrder(order);
               const bespokeItem = getBespokeItem(order);
+              const bespokeSummary = getBespokeOrderSummary(order);
               const reservationExpiresAt = getOrderReservationExpiresAt(order);
               const voucherSnapshot = getOrderVoucherSnapshot(order);
               const discountedItemLines = getDiscountedVoucherCartLines(getOrderProductItems(order), voucherSnapshot || {});
@@ -465,13 +504,35 @@ const OrdersPage = () => {
                       <OrderVoucherSummary order={order} />
                     </div>
                     {bespoke ? (
-                      <div className="mt-3 grid gap-2 rounded-2xl border border-[#263d27]/10 bg-white p-3 sm:grid-cols-2">
-                        {bespokeDetailRows(bespokeItem).map(([label, value]) => (
-                          <p key={label} className="text-xs font-semibold text-muted-foreground">
-                            <span className="block text-[10px] font-bold uppercase text-[#263d27]">{label}</span>
-                            {value}
+                      <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-white p-3">
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <div className="rounded-2xl bg-[#eef2e8] px-3 py-2">
+                            <span className="block text-[10px] font-bold uppercase text-[#263d27]">Botol</span>
+                            <span className="mt-1 block truncate text-xs font-bold text-[#0b130c]">{bespokeSummary?.bottle}</span>
+                          </div>
+                          <div className="rounded-2xl bg-[#f8f7f4] px-3 py-2 sm:col-span-2">
+                            <span className="block text-[10px] font-bold uppercase text-[#263d27]">Cap / label</span>
+                            <span className="mt-1 block truncate text-xs font-bold text-[#0b130c]">{bespokeSummary?.design}</span>
+                          </div>
+                        </div>
+                        {bespokeSummary?.aroma ? (
+                          <p className="mt-2 line-clamp-2 text-xs font-semibold leading-relaxed text-muted-foreground">
+                            {bespokeSummary.aroma}
                           </p>
-                        ))}
+                        ) : null}
+                        <details className="mt-2 group">
+                          <summary className="cursor-pointer select-none text-xs font-bold text-[#263d27]">
+                            Buka detail brief
+                          </summary>
+                          <div className="mt-3 grid gap-2 border-t border-[#263d27]/10 pt-3 sm:grid-cols-2">
+                            {bespokeDetailRows(bespokeItem).map(([label, value]) => (
+                              <p key={label} className="text-xs font-semibold text-muted-foreground">
+                                <span className="block text-[10px] font-bold uppercase text-[#263d27]">{label}</span>
+                                {value}
+                              </p>
+                            ))}
+                          </div>
+                        </details>
                       </div>
                     ) : null}
                     {order.notes ? <p className="mt-3 text-sm font-semibold text-muted-foreground">Notes: {order.notes}</p> : null}
