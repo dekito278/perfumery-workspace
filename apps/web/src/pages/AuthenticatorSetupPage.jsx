@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Copy, KeyRound, ScanLine, ShieldCheck, Smartphone } from 'lucide-react';
@@ -54,7 +54,7 @@ const SetupContent = ({ mobile = false }) => {
   const [changingPassword, setChangingPassword] = useState(false);
   const [disabling, setDisabling] = useState('');
 
-  const loadFactors = async () => {
+  const loadFactors = useCallback(async () => {
     setLoadingFactors(true);
     try {
       const factors = await listAuthenticatorFactors();
@@ -64,12 +64,11 @@ const SetupContent = ({ mobile = false }) => {
     } finally {
       setLoadingFactors(false);
     }
-  };
+  }, [listAuthenticatorFactors]);
 
   useEffect(() => {
     loadFactors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadFactors]);
 
   const startSetup = async () => {
     setLoading(true);

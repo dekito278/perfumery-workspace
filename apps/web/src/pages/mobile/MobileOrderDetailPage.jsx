@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FileCheck2, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
@@ -254,7 +254,7 @@ const MobileOrderDetailPage = () => {
     });
   };
 
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     setLoading(true);
     try {
       const nextOrder = await getOrderById(orderId);
@@ -276,12 +276,11 @@ const MobileOrderDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
 
   useEffect(() => {
     loadOrder();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
+  }, [loadOrder]);
 
   const bespoke = isBespokeOrder(order);
   const bespokeItem = getBespokeItem(order);

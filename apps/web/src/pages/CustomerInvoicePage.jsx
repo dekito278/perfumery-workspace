@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ExternalLink, FileText, Loader2, Printer, Search, ShieldCheck, Truck } from 'lucide-react';
@@ -264,7 +264,7 @@ const CustomerInvoicePage = () => {
 
   const dashboardPath = `${isMobileRoute ? '/mobile/customer' : '/customer'}${customerCode ? `?code=${encodeURIComponent(customerCode)}` : ''}`;
 
-  const loadInvoice = async (code) => {
+  const loadInvoice = useCallback(async (code) => {
     if (!code.trim()) {
       toast.error('Kode customer wajib diisi');
       return;
@@ -284,12 +284,11 @@ const CustomerInvoicePage = () => {
     setPortal(result);
     setCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
-  };
+  }, [setSearchParams]);
 
   useEffect(() => {
     if (initialCode) loadInvoice(initialCode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialCode, loadInvoice]);
 
   const submitLookup = (event) => {
     event.preventDefault();

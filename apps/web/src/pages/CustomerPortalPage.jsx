@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
@@ -845,7 +845,7 @@ const CustomerPortalPage = () => {
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
 
-  const loadPortalForCode = async (code, { silent = false } = {}) => {
+  const loadPortalForCode = useCallback(async (code, { silent = false } = {}) => {
     if (!code.trim()) {
       if (!silent) toast.error('Customer code is required');
       return;
@@ -871,14 +871,13 @@ const CustomerPortalPage = () => {
     writeLastCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
     if (!silent) toast.success(`${result.customer.customerCode} loaded`);
-  };
+  }, [setSearchParams]);
 
   useEffect(() => {
     if (initialCode) {
       loadPortalForCode(initialCode);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialCode, loadPortalForCode]);
 
   const loadPortal = async (event) => {
     event?.preventDefault();
