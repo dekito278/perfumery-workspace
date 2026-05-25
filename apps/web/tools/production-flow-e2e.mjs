@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 import { ensureDirectoryExists, parseArgs } from './material-reference-common.mjs';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:3000';
-const DEFAULT_OUTPUT_DIR = path.resolve('docs/production-flow-e2e');
+const DEFAULT_OUTPUT_DIR = path.resolve('../../docs/production-flow-e2e');
 
 const nowIso = new Date().toISOString();
 const orderNumber = `DKT-E2E-${Date.now()}`;
@@ -146,6 +146,9 @@ const setupApiMocks = async (page) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([productRow]) });
   });
   await page.route('**/rest/v1/storefront_vouchers**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+  await page.route('**/rest/v1/storefront_shipping_promotion_settings**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
   });
   await page.route('**/rest/v1/storefront_orders**', async (route, request) => {

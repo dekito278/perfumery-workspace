@@ -24,6 +24,7 @@ backups/
 
 docs/browser-qa-*/
 docs/browser-smoke-check/
+docs/production-flow-e2e/
 docs/material-reference-export/
 docs/material-reference-match-report/
 
