@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
@@ -157,16 +157,22 @@ const MobileDashboardPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState('');
   const [productMenuOpen, setProductMenuOpen] = useState(false);
+  const dataSnapshotRef = useRef({ briefs: [], formulas: [], logs: [], materials: [] });
 
-  const loadData = async (isActive = () => true) => {
+  useEffect(() => {
+    dataSnapshotRef.current = { briefs, formulas, logs, materials };
+  }, [briefs, formulas, logs, materials]);
+
+  const loadData = useCallback(async (isActive = () => true) => {
+    const snapshot = dataSnapshotRef.current;
     setSyncing(true);
-    if (!formulas.length && !briefs.length) {
+    if (!snapshot.formulas.length && !snapshot.briefs.length) {
       setLoading(true);
     }
     try {
       const [formulaRows, briefRows] = await Promise.all([
-        runWithFallback(getFormulas, 'Formulas', formulas, 3000),
-        runWithFallback(getBriefs, 'Briefs', briefs, 3000),
+        runWithFallback(getFormulas, 'Formulas', snapshot.formulas, 3000),
+        runWithFallback(getBriefs, 'Briefs', snapshot.briefs, 3000),
       ]);
 
       if (!isActive()) return;
@@ -190,8 +196,8 @@ const MobileDashboardPage = () => {
       setLoading(false);
 
       const [materialRows, logRows] = await Promise.all([
-        runWithFallback(fetchMaterialsSummary, 'Materials summary', materials, 4500),
-        runWithFallback(getValidationLogs, 'Validation logs', logs, 3500),
+        runWithFallback(fetchMaterialsSummary, 'Materials summary', snapshot.materials, 4500),
+        runWithFallback(getValidationLogs, 'Validation logs', snapshot.logs, 3500),
       ]);
 
       if (!isActive()) return;
@@ -221,13 +227,13 @@ const MobileDashboardPage = () => {
       if (isActive()) setLoading(false);
       if (isActive()) setSyncing(false);
     }
-  };
+  }, [fetchMaterialsSummary, getBriefs, getFormulas, getValidationLogs]);
 
   useEffect(() => {
     let active = true;
     loadData(() => active);
     return () => { active = false; };
-  }, [fetchMaterialsSummary, getBriefs, getFormulas, getValidationLogs]);
+  }, [loadData]);
 
   const activeBriefs = useMemo(() => briefs.filter((brief) => ['draft', 'active'].includes(brief.status || 'draft')), [briefs]);
   const draftFormulas = useMemo(() => sortByUpdated(formulas.filter((formula) => (formula.status || 'draft') === 'draft')).slice(0, MOBILE_ACTIVITY_LIMIT), [formulas]);

@@ -136,7 +136,7 @@ const MobileBottomSheet = ({
     setInputFocused(Boolean(event.target?.matches?.(focusTargets)));
   };
 
-  const handleBlurCapture = (event) => {
+  const handleBlurCapture = () => {
     if (!hideFooterOnInputFocus) return;
 
     window.setTimeout(() => {

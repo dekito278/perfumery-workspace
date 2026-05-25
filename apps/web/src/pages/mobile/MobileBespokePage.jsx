@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, CheckCircle2, ChevronDown, ClipboardList, CreditCard, MessageCircle, Sparkles, Ticket, WandSparkles, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ClipboardList, CreditCard, MessageCircle, Sparkles, Ticket, X } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -207,7 +207,7 @@ const MobileBespokePage = () => {
     });
   }, [destinationSearch, form, selectedCourier, selectedDestination, selectedShipping, step]);
 
-  const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const updateField = useCallback((key, value) => setForm((current) => ({ ...current, [key]: value })), []);
   const selectedSize = bottleSizeOptions.find((option) => option.value === form.size) || bottleSizeOptions[0];
   const selectedBottleType = bottleTypeOptions.find((option) => option.value === form.bottleType) || bottleTypeOptions[0];
   const selectedCap = capDesignOptions.find((option) => option.value === form.capDesign) || capDesignOptions[0];
@@ -242,7 +242,38 @@ const MobileBespokePage = () => {
     selectedExoticMaterial ? selectedExoticMaterial.label : '',
   ].filter(Boolean).join(' / ');
 
-  const lookupCustomer = async () => {
+  const pasteCustomerCode = useCallback(async () => {
+    try {
+      const clipboardText = await navigator.clipboard?.readText?.();
+      const nextCode = String(clipboardText || '').trim().toUpperCase();
+      if (!nextCode) {
+        toast.error('Clipboard kosong. Tekan lama kolom kode untuk tempel manual.');
+        return;
+      }
+      updateField('customerCode', nextCode);
+      toast.success('Kode customer ditempel');
+    } catch (error) {
+      toast.error('Tempel otomatis belum diizinkan browser. Tekan lama kolom kode lalu pilih Tempel.');
+    }
+  }, [updateField]);
+
+  const resetShipping = useCallback(({ keepSearch = true, keepCourier = true } = {}) => {
+    setSelectedDestination(null);
+    setSelectedShipping(null);
+    setShippingOptions([]);
+    setDestinationOptions([]);
+    setShippingError('');
+    if (!keepCourier) setSelectedCourier('');
+    if (!keepSearch) setDestinationSearch('');
+  }, []);
+
+  const updateDestinationSearch = useCallback((value) => {
+    const nextValue = String(value || '');
+    setDestinationSearch(nextValue);
+    resetShipping({ keepSearch: true });
+  }, [resetShipping]);
+
+  const lookupCustomer = useCallback(async () => {
     if (!form.customerCode.trim()) {
       toast.error('Kode customer wajib diisi');
       return;
@@ -263,47 +294,16 @@ const MobileBespokePage = () => {
     }));
     updateDestinationSearch(customer.deliveryArea || '');
     toast.success(`${customer.customerCode} loaded`);
-  };
+  }, [form.customerCode, updateDestinationSearch]);
 
-  const pasteCustomerCode = async () => {
-    try {
-      const clipboardText = await navigator.clipboard?.readText?.();
-      const nextCode = String(clipboardText || '').trim().toUpperCase();
-      if (!nextCode) {
-        toast.error('Clipboard kosong. Tekan lama kolom kode untuk tempel manual.');
-        return;
-      }
-      updateField('customerCode', nextCode);
-      toast.success('Kode customer ditempel');
-    } catch (error) {
-      toast.error('Tempel otomatis belum diizinkan browser. Tekan lama kolom kode lalu pilih Tempel.');
-    }
-  };
-
-  const resetShipping = ({ keepSearch = true, keepCourier = true } = {}) => {
-    setSelectedDestination(null);
-    setSelectedShipping(null);
-    setShippingOptions([]);
-    setDestinationOptions([]);
-    setShippingError('');
-    if (!keepCourier) setSelectedCourier('');
-    if (!keepSearch) setDestinationSearch('');
-  };
-
-  const updateDestinationSearch = (value) => {
-    const nextValue = String(value || '');
-    setDestinationSearch(nextValue);
-    resetShipping({ keepSearch: true });
-  };
-
-  const chooseShippingCourier = (courierCode) => {
+  const chooseShippingCourier = useCallback((courierCode) => {
     setSelectedCourier(courierCode);
     setSelectedShipping(null);
     setShippingOptions([]);
     setShippingError('');
-  };
+  }, []);
 
-  const searchDestinations = async () => {
+  const searchDestinations = useCallback(async () => {
     const search = destinationSearch.trim();
     if (search.length < 3) {
       toast.error('Isi minimal 3 huruf area, kecamatan, atau kota');
@@ -326,9 +326,9 @@ const MobileBespokePage = () => {
     } finally {
       setShippingLoading(false);
     }
-  };
+  }, [destinationSearch]);
 
-  const loadShippingRates = async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
+  const loadShippingRates = useCallback(async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
     setSelectedDestination(destination);
     setDestinationSearch(destination.label);
     setDestinationOptions([]);
@@ -363,9 +363,9 @@ const MobileBespokePage = () => {
     } finally {
       setShippingLoading(false);
     }
-  };
+  }, [estimatedTotal, selectedCourier, shippingWeight]);
 
-  const autoCalculateShipping = async ({
+  const autoCalculateShipping = useCallback(async ({
     courierCode = selectedCourier,
     searchText = '',
     autoSelectBest = false,
@@ -424,16 +424,16 @@ const MobileBespokePage = () => {
     } finally {
       setShippingLoading(false);
     }
-  };
+  }, [destinationSearch, estimatedTotal, form.deliveryAddress, loadShippingRates, selectedCourier, selectedDestination, shippingWeight]);
 
-  const handleCourierChange = (courierCode) => {
+  const handleCourierChange = useCallback((courierCode) => {
     chooseShippingCourier(courierCode);
     if (!courierCode) return;
     const searchText = destinationSearch.trim() || form.deliveryAddress.trim();
     if (searchText.length >= 3) {
       autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
     }
-  };
+  }, [autoCalculateShipping, chooseShippingCourier, destinationSearch, form.deliveryAddress]);
 
   const flowSteps = useMemo(() => [
     {
@@ -731,7 +731,7 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
-  ], [bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, estimatedTotal, exoticMaterialOptions, form, labelDesignOptions, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, visibleShippingOptions, voucher]);
+  ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher]);
 
   const activeStep = flowSteps[step];
   const completion = Math.round(((step + Number(activeStep.isComplete())) / flowSteps.length) * 100);

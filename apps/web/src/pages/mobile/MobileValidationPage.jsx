@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ClipboardCheck, NotebookPen, Plus } from 'lucide-react';
@@ -57,7 +57,7 @@ const MobileValidationPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState('');
 
-  const loadWorkspace = async () => {
+  const loadWorkspace = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -77,9 +77,9 @@ const MobileValidationPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getFormulas, getValidationLogs]);
 
-  useEffect(() => { loadWorkspace(); }, []);
+  useEffect(() => { loadWorkspace(); }, [loadWorkspace]);
   useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [tab]);
 
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowRight, ExternalLink, Loader2, PackageCheck, Search, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowRight, ExternalLink, PackageCheck, Search, ShieldCheck, Truck } from 'lucide-react';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';

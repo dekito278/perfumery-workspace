@@ -50,7 +50,7 @@ const optionFromIntent = (option, stage, index) => {
   };
 };
 
-const buildGeneratedQuestion = ({ stage, id, title, description, options }) => ({
+const buildGeneratedQuestion = ({ id, title, description, options }) => ({
   id,
   title,
   description,

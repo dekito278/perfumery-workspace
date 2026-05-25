@@ -105,7 +105,6 @@ const CreateFormulaPage = () => {
     totalGrams,
     itemsWithPercentages,
     rawMaterialsById,
-    selectedRawMaterialIds,
     selectedRawMaterialIdsSet,
     filteredLibraryMaterials,
     getItemGuidanceStatus,

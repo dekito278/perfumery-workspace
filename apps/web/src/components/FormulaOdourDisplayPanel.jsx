@@ -113,7 +113,6 @@ const buildWorkbookPieSlices = (data) => {
 const WorkbookPieChart = ({
   data,
   elapsedHour,
-  maxElapsedHour,
   impactEstimate,
   simpleLifeHours,
   hasImpactData,

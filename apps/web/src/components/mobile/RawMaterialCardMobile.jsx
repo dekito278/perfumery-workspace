@@ -1,5 +1,5 @@
 import React from 'react';
-import { Archive, ChevronRight, Link2, PackageCheck, Plus, Trash2 } from 'lucide-react';
+import { Archive, ChevronRight, Link2, PackageCheck, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import { getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';

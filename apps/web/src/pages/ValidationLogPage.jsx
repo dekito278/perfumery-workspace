@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Home, NotebookPen, Trash2 } from 'lucide-react';
@@ -44,7 +44,7 @@ const ValidationLogPage = () => {
   const [editingLogId, setEditingLogId] = useState(null);
   const [formState, setFormState] = useState(createEmptyLog(queryFormulaId));
 
-  const loadWorkspace = async () => {
+  const loadWorkspace = useCallback(async () => {
     setLoading(true);
     try {
       const [formulaRows, logRows] = await Promise.all([
@@ -58,11 +58,11 @@ const ValidationLogPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getFormulas, getValidationLogs]);
 
   useEffect(() => {
     loadWorkspace();
-  }, []);
+  }, [loadWorkspace]);
 
   useEffect(() => {
     setFormState((current) => (

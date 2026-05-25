@@ -2,7 +2,6 @@ import React from 'react';
 import { AlertTriangle, Info } from 'lucide-react';
 import DetailSection from '@/components/DetailSection.jsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatPercentage } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';

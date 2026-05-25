@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ClipboardList, Eye, Home, Plus, RefreshCw } from 'lucide-react';
@@ -33,7 +33,7 @@ const BriefsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
-  const loadBriefs = async () => {
+  const loadBriefs = useCallback(async () => {
     setLoading(true);
     try {
       const [briefRows, formulaRows] = await Promise.all([
@@ -47,11 +47,11 @@ const BriefsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getBriefs, getFormulas]);
 
   useEffect(() => {
     loadBriefs();
-  }, []);
+  }, [loadBriefs]);
 
   const formulasById = useMemo(
     () => new Map(formulas.map((formula) => [formula.id, formula])),

@@ -334,7 +334,7 @@ const MobileRouteTransition = ({ children }) => {
 
   useEffect(() => {
     previousMetaRef.current = currentMeta;
-  }, [currentMeta.depth, currentMeta.isCommerce, currentMeta.isDetail, currentMeta.isMobile, currentMeta.isTab, currentMeta.tabIndex]);
+  }, [currentMeta]);
 
   if (!currentMeta.isMobile || (currentMeta.isCommerce && previousMeta.isCommerce)) {
     return children;

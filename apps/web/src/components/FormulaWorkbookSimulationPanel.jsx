@@ -52,12 +52,6 @@ const PACE_TARGETS = {
   bridgeQuality: 62,
 };
 
-const OBJECTIVE_TARGETS = {
-  balance: 74,
-  projection: 68,
-  longevity: 72,
-};
-
 const formatHours = (value) => {
   if (value === null || value === undefined) {
     return '-';
@@ -409,22 +403,6 @@ const buildDecreaseDelta = (currentGrams, score) => {
 };
 
 const formatRecommendationValue = (value) => formatGramAmount(Number(value || 0));
-
-const getObjectiveStatus = (value, target) => {
-  if (value >= target + 6) {
-    return 'Strong';
-  }
-
-  if (value >= target) {
-    return 'Healthy';
-  }
-
-  if (value >= target - 8) {
-    return 'Needs work';
-  }
-
-  return 'Weak';
-};
 
 const getRecommendationPriorityBoost = (objective, priorityMode) => {
   if (!objective) {

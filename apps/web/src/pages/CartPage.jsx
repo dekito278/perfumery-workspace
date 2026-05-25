@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, CheckCircle2, CreditCard, Minus, Plus, ShoppingBag, Sparkles, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
@@ -32,7 +32,6 @@ const CheckoutSectionTitle = ({ step, title, description }) => (
 );
 
 const CartPage = () => {
-  const navigate = useNavigate();
   const paymentSectionRef = useRef(null);
   const [showManualShippingArea, setShowManualShippingArea] = useState(false);
   const { items, summary, updateQuantity, removeItem, clear } = useCart();

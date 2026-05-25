@@ -168,7 +168,7 @@ const BatchProductionPage = () => {
   const formulaRatio = concentration / 100;
   const bottleValue = Math.max(parseNumberInput(bottleMl), 0);
   const lossValue = clampPercentage(parseNumberInput(lossPercent));
-  const formulaItems = formulaProfile?.items || [];
+  const formulaItems = useMemo(() => formulaProfile?.items || [], [formulaProfile?.items]);
   const totalFormulaGrams = Number(formulaProfile?.totalGrams || 0);
   const concentrateRows = useMemo(() => {
     if (!formulaItems.length || !targetValue || !totalFormulaGrams) return [];

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Beaker, FileUp, Plus } from 'lucide-react';
@@ -62,8 +62,13 @@ const MobileFormulasPage = () => {
   const [duplicatingId, setDuplicatingId] = useState('');
   const [importOpen, setImportOpen] = useState(searchParams.get('action') === 'import');
   const [loadError, setLoadError] = useState('');
+  const metricsRef = useRef(metrics);
 
-  const loadPipeline = async (formulaRows = []) => {
+  useEffect(() => {
+    metricsRef.current = metrics;
+  }, [metrics]);
+
+  const loadPipeline = useCallback(async (formulaRows = []) => {
     try {
       const [briefRows, logRows] = await Promise.all([
         runWithTimeout(getBriefs(), [], 4500),
@@ -88,9 +93,9 @@ const MobileFormulasPage = () => {
     } catch (error) {
       console.warn('Formula pipeline badges are delayed:', error);
     }
-  };
+  }, [getBriefs, getValidationLogs]);
 
-  const loadFormulas = async () => {
+  const loadFormulas = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -103,10 +108,11 @@ const MobileFormulasPage = () => {
       setLoadError(error.message || 'Formula belum bisa dimuat saat ini.');
       setLoading(false);
     }
-  };
+  }, [getFormulas, loadPipeline]);
 
-  const loadVisibleMetrics = async (formulaRows = []) => {
-    const missingRows = formulaRows.filter((formula) => formula.id && !metrics[formula.id]);
+  const loadVisibleMetrics = useCallback(async (formulaRows = []) => {
+    const currentMetrics = metricsRef.current;
+    const missingRows = formulaRows.filter((formula) => formula.id && !currentMetrics[formula.id]);
     if (!missingRows.length) return;
 
     try {
@@ -134,9 +140,9 @@ const MobileFormulasPage = () => {
       console.warn('Formula card metrics are delayed:', error);
     } finally {
     }
-  };
+  }, [getFormulaItems]);
 
-  useEffect(() => { loadFormulas(); }, []);
+  useEffect(() => { loadFormulas(); }, [loadFormulas]);
   useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [query, status]);
 
   const filtered = useMemo(() => {
@@ -149,14 +155,17 @@ const MobileFormulasPage = () => {
       return (formula.status || 'draft') === status;
     });
   }, [formulas, pipeline, query, status]);
-  const visible = getVisibleItems(filtered, visibleCount);
+  const visible = useMemo(() => getVisibleItems(filtered, visibleCount), [filtered, visibleCount]);
+  const visibleFormulaKey = useMemo(
+    () => visible.map((formula) => formula.id).join('|'),
+    [visible]
+  );
 
   useEffect(() => {
     if (!loading && visible.length) {
       loadVisibleMetrics(visible);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, visible.map((formula) => formula.id).join('|')]);
+  }, [loadVisibleMetrics, loading, visible, visibleFormulaKey]);
 
   const handleDuplicate = async (formula) => {
     setDuplicatingId(formula.id);

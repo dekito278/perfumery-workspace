@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useBriefProjects } from '@/hooks/useBriefProjects.js';
@@ -55,18 +55,6 @@ export const useFormulaDetailPage = (id) => {
   const pacePriorityMode = normalizePacePriorityMode(searchParams.get(PACE_PRIORITY_QUERY_KEY));
 
   useEffect(() => {
-    loadFormulaDetails();
-  }, [id]);
-
-  useEffect(() => {
-    loadFormulaValidationLogs();
-  }, [id]);
-
-  useEffect(() => {
-    loadLinkedBriefs();
-  }, [id]);
-
-  useEffect(() => {
     const loadProjectContext = async () => {
       if (!linkedBriefs.length) {
         setLinkedProject(null);
@@ -94,7 +82,7 @@ export const useFormulaDetailPage = (id) => {
     loadProjectContext();
   }, [getBriefProjectByBriefId, getBriefProjectStageItems, linkedBriefs]);
 
-  const loadFormulaDetails = async () => {
+  const loadFormulaDetails = useCallback(async () => {
     setLoading(true);
     try {
       const formulaData = await getFormulaById(id);
@@ -133,9 +121,9 @@ export const useFormulaDetailPage = (id) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getFormulaItems, id, navigate]);
 
-  const loadFormulaValidationLogs = async () => {
+  const loadFormulaValidationLogs = useCallback(async () => {
     setValidationLoading(true);
     try {
       const logs = await getValidationLogs({ formulaId: id });
@@ -145,16 +133,28 @@ export const useFormulaDetailPage = (id) => {
     } finally {
       setValidationLoading(false);
     }
-  };
+  }, [getValidationLogs, id]);
 
-  const loadLinkedBriefs = async () => {
+  const loadLinkedBriefs = useCallback(async () => {
     try {
       const briefs = await getBriefs();
       setLinkedBriefs(briefs.filter((brief) => brief.formula_id === id));
     } catch {
       toast.error('Failed to load linked briefs');
     }
-  };
+  }, [getBriefs, id]);
+
+  useEffect(() => {
+    loadFormulaDetails();
+  }, [loadFormulaDetails]);
+
+  useEffect(() => {
+    loadFormulaValidationLogs();
+  }, [loadFormulaValidationLogs]);
+
+  useEffect(() => {
+    loadLinkedBriefs();
+  }, [loadLinkedBriefs]);
 
   const totalGrams = useMemo(() => calculateTotalAmount(items), [items]);
   const totalPercentage = useMemo(() => items.reduce((sum, item) => sum + (item.percentage || 0), 0), [items]);

@@ -19,13 +19,12 @@ import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';
 import MobileSearchBar from '@/components/mobile-ui/MobileSearchBar.jsx';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import MobileInlineNotice from '@/components/mobile-ui/MobileInlineNotice.jsx';
-import MobileStatusBadge from '@/components/mobile-ui/MobileStatusBadge.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
-import { MOBILE_PAGE_SIZE, filterByText, getVisibleItems } from '@/pages/mobile/mobilePageUtils.js';
+import { filterByText, getVisibleItems } from '@/pages/mobile/mobilePageUtils.js';
 import { buildWorkbookSimulation, getFormulaItemDilutionFactor } from '@/utils/formulaWorkbookSimulation.js';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import {
@@ -91,54 +90,6 @@ const MetricPill = ({ label, value, tone = 'slate', helper }) => (
     {helper ? <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{helper}</div> : null}
   </div>
 );
-
-const MiniWorkbookRows = ({ rows = [], empty = 'No chart data' }) => {
-  const visibleRows = rows.filter((entry) => Number(entry.value || entry.percent || 0) > 0).slice(0, 6);
-  if (!visibleRows.length) {
-    return <div className="rounded-xl bg-[#f8f7f4] p-2 text-[11px] font-semibold text-[#6b7280]">{empty}</div>;
-  }
-
-  return (
-    <div className="space-y-1.5">
-      {visibleRows.map((entry) => {
-        const value = Number(entry.value ?? entry.percent ?? 0);
-        return (
-          <div key={entry.key || entry.label || entry.family || entry.facet} className="grid grid-cols-[72px_1fr_34px] items-center gap-2 text-[11px] font-semibold">
-            <span className="truncate text-[#374151]">{entry.label || entry.family || entry.facet}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-[#ece8df]">
-              <span className="block h-full rounded-full bg-amber-500" style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }} />
-            </span>
-            <span className="text-right text-[#6b7280]">{Math.round(value)}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const buildWorkbookClassRows = (rows = []) => {
-  const totals = new Map();
-  rows.forEach((row) => {
-    const rowWeight = Number(row.odourWeight || 0);
-    if (!rowWeight) return;
-    (row.classDistribution || []).forEach((entry) => {
-      const key = entry.letter || entry.familyName || entry.classIndex;
-      if (!key) return;
-      const current = totals.get(key) || {
-        key,
-        label: entry.letter ? `${entry.letter} ${entry.familyName || ''}`.trim() : entry.familyName || `Class ${entry.classIndex}`,
-        value: 0,
-      };
-      current.value += (rowWeight * Number(entry.share || 0)) / 100;
-      totals.set(key, current);
-    });
-  });
-
-  const total = [...totals.values()].reduce((sum, entry) => sum + entry.value, 0);
-  return [...totals.values()]
-    .map((entry) => ({ ...entry, value: total > 0 ? (entry.value / total) * 100 : 0 }))
-    .sort((left, right) => right.value - left.value);
-};
 
 const SectionTitle = ({ title, subtitle, action }) => (
   <div className="flex items-start justify-between gap-2">
@@ -642,7 +593,6 @@ const MobileFormulaComposerWorkspace = ({
     ...insight.warnings,
   ].slice(0, 3);
   const graphEntries = insight.odorProfileGraph.slice(0, 8);
-  const workbookClassRows = useMemo(() => buildWorkbookClassRows(workbookSimulation.rows), [workbookSimulation.rows]);
   const impactDisplay = workbookSimulation.hasImpactData ? formatMetricNumber(workbookSimulation.impactEstimate, 1) : '-';
   const lifetimeHours = workbookSimulation.odourWeightedLifeHours ?? workbookSimulation.simpleLifeHours;
   const lifetimeDisplay = workbookSimulation.hasLifeData ? formatMetricNumber(lifetimeHours, 1) : '-';

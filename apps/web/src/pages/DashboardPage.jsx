@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, FileCheck2, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
@@ -128,7 +128,7 @@ const DashboardPage = () => {
     lastCheckedAt: '',
   });
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -180,16 +180,12 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchMaterialsSummary, getBriefMaterialShortlistsByBriefIds, getBriefs, getFormulas, getValidationLogs]);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
-  const guidanceBackedMaterials = useMemo(
-    () => materials.filter((material) => hasGuidanceCoverage(material)),
-    [materials]
-  );
   const missingGuidanceMaterials = useMemo(
     () => materials.filter((material) => !hasGuidanceCoverage(material)),
     [materials]
@@ -220,14 +216,6 @@ const DashboardPage = () => {
   );
   const proofReviewOrders = useMemo(
     () => orders.filter((order) => order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status)),
-    [orders]
-  );
-  const paymentFollowUps = useMemo(
-    () => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)),
-    [orders]
-  );
-  const shipmentFollowUps = useMemo(
-    () => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)),
     [orders]
   );
   const opsHealth = useMemo(() => getOpsHealthSnapshot(orders), [orders]);
@@ -438,10 +426,6 @@ const DashboardPage = () => {
   const recentBriefs = useMemo(
     () => [...briefs].sort((a, b) => new Date(b.updated || b.created || 0) - new Date(a.updated || a.created || 0)).slice(0, 5),
     [briefs]
-  );
-  const recentMaterials = useMemo(
-    () => [...materials].sort((a, b) => new Date(b.updated || b.created || 0) - new Date(a.updated || a.created || 0)).slice(0, 5),
-    [materials]
   );
   const guidanceGapPreview = missingGuidanceMaterials.slice(0, 5);
   const validationPreview = actionNeededLogs.slice(0, 5);
@@ -997,7 +981,7 @@ const DashboardPage = () => {
               emptyMessage="No action-needed validation logs"
               color="text-blue-600"
               badgeVariant="outline"
-              onItemClick={(item) => navigate('/validation', {
+              onItemClick={() => navigate('/validation', {
                 state: { from: `${location.pathname}${location.search}` },
               })}
               isLoading={loading}

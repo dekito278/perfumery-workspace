@@ -6,7 +6,6 @@ import {
   Gem,
   Leaf,
   MessageCircle,
-  PackagePlus,
   ShoppingBag,
   Sparkles,
   UserRound,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -99,11 +99,6 @@ const RawMaterialDetailPage = () => {
   const [deleteDependencyLoading, setDeleteDependencyLoading] = useState(false);
 
   useEffect(() => {
-    loadMaterial();
-    loadReferenceProfile();
-  }, [id]);
-
-  useEffect(() => {
     const loadDeleteDependencies = async () => {
       if (!deleteDialogOpen || !id) {
         setDeleteDependencyLoading(false);
@@ -130,7 +125,7 @@ const RawMaterialDetailPage = () => {
     loadDeleteDependencies();
   }, [deleteDialogOpen, id]);
 
-  const loadMaterial = async () => {
+  const loadMaterial = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getRawMaterialById(id);
@@ -141,9 +136,9 @@ const RawMaterialDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
-  const loadReferenceProfile = async () => {
+  const loadReferenceProfile = useCallback(async () => {
     setReferenceLoading(true);
     try {
       const data = await getReferenceProfileByRawMaterialId(id);
@@ -154,7 +149,12 @@ const RawMaterialDetailPage = () => {
     } finally {
       setReferenceLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadMaterial();
+    loadReferenceProfile();
+  }, [loadMaterial, loadReferenceProfile]);
 
   const handleDelete = async () => {
     setDeleting(true);

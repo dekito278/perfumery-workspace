@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { formatGramAmount, formatPercentage, formatStatus, formatQuantity } from '@/utils/formatting.js';
@@ -25,13 +25,11 @@ const FormulaPreview = ({ formula }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (formula?.id) {
-      loadFormulaItems();
+  const loadFormulaItems = useCallback(async () => {
+    if (!formula?.id) {
+      return;
     }
-  }, [formula]);
 
-  const loadFormulaItems = async () => {
     setLoading(true);
     try {
       const itemsData = await getFormulaItems(formula.id);
@@ -58,7 +56,11 @@ const FormulaPreview = ({ formula }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formula?.id]);
+
+  useEffect(() => {
+    loadFormulaItems();
+  }, [loadFormulaItems]);
 
   if (loading) {
     return (

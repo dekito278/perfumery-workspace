@@ -93,7 +93,7 @@ const ImportFormulaPdfModal = ({ open, onOpenChange, onSuccess }) => {
     }
 
     return getMissingMobileCapabilities();
-  }, [open]);
+  }, []);
 
   useEffect(() => {
     if (!open) {

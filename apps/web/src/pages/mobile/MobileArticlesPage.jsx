@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpenText, CalendarDays, FileText, Search, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
-import { Button } from '@/components/ui/button.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileEmptyState from '@/components/mobile-ui/MobileEmptyState.jsx';
 import MobileFilterChips from '@/components/mobile-ui/MobileFilterChips.jsx';

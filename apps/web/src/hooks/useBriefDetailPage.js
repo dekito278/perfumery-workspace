@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useBriefProjects } from '@/hooks/useBriefProjects.js';
@@ -71,10 +71,11 @@ export const useBriefDetailPage = (id) => {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardQuestionIndex, setWizardQuestionIndex] = useState(0);
   const autoOpenedWizardRef = useRef(false);
+  const openStageWizardRef = useRef(null);
 
   const projectPhase = project?.current_stage || activeStage;
 
-  const loadBoard = async () => {
+  const loadBoard = useCallback(async () => {
     setLoading(true);
     try {
       const [briefsResult, formulasResult, materialsResult] = await Promise.allSettled([
@@ -182,12 +183,23 @@ export const useBriefDetailPage = (id) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    ensureBriefProject,
+    getBriefProjectByBriefId,
+    getBriefProjectStageItems,
+    getBriefProjectStages,
+    getBriefs,
+    getFormulaItemsByFormulaIds,
+    getFormulas,
+    getValidationLogs,
+    id,
+    navigate,
+  ]);
 
   useEffect(() => {
     autoOpenedWizardRef.current = false;
     loadBoard();
-  }, [id]);
+  }, [loadBoard]);
 
   useEffect(() => {
     if (loading || !brief || autoOpenedWizardRef.current || searchParams.get('openWizard') !== '1') {
@@ -195,7 +207,7 @@ export const useBriefDetailPage = (id) => {
     }
 
     autoOpenedWizardRef.current = true;
-    openStageWizard(resolveActiveBoardStage(project?.current_stage || 'top'));
+    openStageWizardRef.current?.(resolveActiveBoardStage(project?.current_stage || 'top'));
 
     const nextSearchParams = new URLSearchParams(searchParams);
     nextSearchParams.delete('openWizard');
@@ -222,8 +234,14 @@ export const useBriefDetailPage = (id) => {
   );
 
   const currentQuestion = currentQuestions[wizardQuestionIndex] || currentQuestions[currentQuestions.length - 1] || null;
-  const currentStageRows = stageItemsMap.get(activeStage) || [];
-  const currentSelectedRows = selectedItemsByStage.get(activeStage) || [];
+  const currentStageRows = useMemo(
+    () => stageItemsMap.get(activeStage) || [],
+    [activeStage, stageItemsMap]
+  );
+  const currentSelectedRows = useMemo(
+    () => selectedItemsByStage.get(activeStage) || [],
+    [activeStage, selectedItemsByStage]
+  );
   const currentGeneratedRows = currentSelectedRows;
   const currentRecommendedRows = currentStageRows.filter((item) => item.selection_state === 'recommended');
   const currentRejectedRows = currentStageRows.filter((item) => item.selection_state === 'rejected');
@@ -324,6 +342,7 @@ export const useBriefDetailPage = (id) => {
     setWizardQuestionIndex(getFirstIncompleteQuestionIndex(nextQuestions, draftAnswers[stage] || {}));
     setWizardOpen(true);
   };
+  openStageWizardRef.current = openStageWizard;
 
   const handleWizardOptionSelect = (questionId, value) => {
     setStageAnswer(activeStage, questionId, value);

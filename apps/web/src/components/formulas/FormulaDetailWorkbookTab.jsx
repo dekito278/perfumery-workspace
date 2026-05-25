@@ -16,7 +16,6 @@ const FormulaDetailWorkbookTab = ({
   items,
   pacePriorityMode,
   rawMaterialsById,
-  totalCost,
   workbookBoardStats,
 }) => (
   <div className="space-y-5">

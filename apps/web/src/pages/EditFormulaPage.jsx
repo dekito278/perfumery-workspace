@@ -722,7 +722,6 @@ const EditFormulaPage = () => {
         .filter((row) => !lockedMaterialIds.has(row.raw_material_id))
         .slice(0, WIZARD_CANDIDATE_LIMIT);
 
-      let nextProjectStageItems = [];
       if (projectUnavailable) {
         const preservedStageRows = (wizardStageItemsMap.get(activeStage) || [])
           .filter((item) => item.selection_state !== 'recommended');
@@ -781,7 +780,7 @@ const EditFormulaPage = () => {
           current_stage: allStagesReady ? 'formula' : activeStage,
         });
 
-        nextProjectStageItems = await refreshLinkedProjectStageItems(project.id);
+        await refreshLinkedProjectStageItems(project.id);
       }
 
       toast.success(`${getStageLabel(activeStage)} candidates generated. Pick the materials you want to add.`);

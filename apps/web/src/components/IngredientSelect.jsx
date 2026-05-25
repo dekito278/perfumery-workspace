@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Check, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -128,14 +128,14 @@ const IngredientSelect = ({
   const selectedIngredient = ingredients.find((ing) => ing.id === value);
   const trimmedSearchTerm = searchTerm.trim();
 
-  const findExactMatch = (rawValue = searchTerm) => {
+  const findExactMatch = useCallback((rawValue = searchTerm) => {
     const normalizedTerm = String(rawValue || '').trim().toLowerCase();
     if (!normalizedTerm) {
       return null;
     }
 
     return ingredients.find((ingredient) => ingredient.name.trim().toLowerCase() === normalizedTerm) || null;
-  };
+  }, [ingredients, searchTerm]);
 
   const filteredIngredients = useMemo(() => {
     if (!showSuggestions) {
@@ -159,7 +159,7 @@ const IngredientSelect = ({
     return scoredMatches
       .slice(0, getSuggestionLimit(normalizedTerm))
       .map((entry) => entry.ingredient);
-  }, [ingredients, searchTerm]);
+  }, [ingredients, searchTerm, showSuggestions]);
 
   const exactSearchMatch = useMemo(
     () => ingredients.some((ingredient) => normalizeSearchValue(ingredient.name) === normalizeSearchValue(searchTerm)),
@@ -227,7 +227,7 @@ const IngredientSelect = ({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('touchstart', handlePointerDown);
     };
-  }, [selectedIngredient, showSuggestions]);
+  }, [findExactMatch, onChange, selectedIngredient, showSuggestions, value]);
 
   const handleSelect = (ingredientId) => {
     onChange(ingredientId);

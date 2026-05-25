@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useCallback, useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,7 @@ const FormulasPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
 
-  const loadFormulas = async () => {
+  const loadFormulas = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -121,7 +121,7 @@ const FormulasPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getBriefMaterialShortlistsByBriefIds, getBriefs, getFormulaItems, getFormulas, getValidationLogs]);
 
   const handleImportSuccess = async (createdFormula) => {
     await loadFormulas();
@@ -133,7 +133,7 @@ const FormulasPage = () => {
 
   useEffect(() => {
     loadFormulas();
-  }, []);
+  }, [loadFormulas]);
 
   const filteredFormulas = useMemo(() => {
     return formulas.filter((formula) => {

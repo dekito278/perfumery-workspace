@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,19 +42,19 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
 
-  const createEmptyFormulaItem = () => ({
+  const createEmptyFormulaItem = useCallback(() => ({
     item_id: '',
     gram_amount: '',
     dilution_percent: '',
     dilution_solvent_id: '',
     dilution_solvent_name: '',
     item_type: '',
-  });
+  }), []);
 
   const getActiveFormulaItems = (items) =>
     items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
 
-  const ensureTrailingEmptyItem = (items) => {
+  const ensureTrailingEmptyItem = useCallback((items) => {
     const nextItems = [...getActiveFormulaItems(items)];
     const lastItem = nextItems[nextItems.length - 1];
 
@@ -63,15 +63,13 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     }
 
     return nextItems;
-  };
+  }, [createEmptyFormulaItem]);
 
-  useEffect(() => {
-    if (open && formula) {
-      loadData();
+  const loadData = useCallback(async () => {
+    if (!formula?.id) {
+      return;
     }
-  }, [open, formula]);
 
-  const loadData = async () => {
     setLoadingData(true);
     try {
       const [materialsData, itemsData] = await Promise.all([
@@ -110,7 +108,13 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [ensureTrailingEmptyItem, formula, getFormulaItems]);
+
+  useEffect(() => {
+    if (open && formula) {
+      loadData();
+    }
+  }, [loadData, open, formula]);
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, i) => i !== index);

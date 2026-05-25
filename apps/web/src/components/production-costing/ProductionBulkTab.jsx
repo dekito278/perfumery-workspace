@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { formatCurrency, formatPercentage } from '@/utils/formatting.js';
-import { formatPrice, formatPricePerUnit } from '@/utils/pricingUtils.js';
+import { formatPrice } from '@/utils/pricingUtils.js';
 
 const summaryCardClassName = 'rounded-lg border bg-muted/30 p-4';
 const statCardClassName = 'rounded-lg bg-muted/30 p-3';

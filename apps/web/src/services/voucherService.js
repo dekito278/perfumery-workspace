@@ -179,12 +179,6 @@ const readStoredUsageRecords = () => {
   return parseStoredUsageRecords(window.localStorage.getItem(VOUCHER_USAGE_STORAGE_KEY));
 };
 
-const writeStoredUsageRecords = (records) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(VOUCHER_USAGE_STORAGE_KEY, JSON.stringify(records));
-  window.dispatchEvent(new CustomEvent(VOUCHER_UPDATED_EVENT));
-};
-
 export const getAppliedVoucherCode = () => {
   if (typeof window === 'undefined') return '';
   return normalizeVoucherCode(window.localStorage.getItem(APPLIED_VOUCHER_STORAGE_KEY));

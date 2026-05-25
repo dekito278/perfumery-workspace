@@ -13,7 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart.jsx';
-import { formatGramAmount, formatPercentage, formatQuantity } from '@/utils/formatting.js';
+import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { buildFormulaSensoryCharts } from '@/utils/formulaSensoryCharts.js';
 import { Badge } from '@/components/ui/badge';
 

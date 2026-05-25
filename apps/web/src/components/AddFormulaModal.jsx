@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,28 +38,21 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
 
-  const createEmptyFormulaItem = () => ({
+  const createEmptyFormulaItem = useCallback(() => ({
     item_id: '',
     gram_amount: '',
     dilution_percent: '',
     dilution_solvent_id: '',
     dilution_solvent_name: '',
     item_type: '',
-  });
+  }), []);
 
   const getActiveFormulaItems = (items) =>
     items.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
 
   const normalizeFormulaItems = (items) => [createEmptyFormulaItem(), ...getActiveFormulaItems(items)];
 
-  useEffect(() => {
-    if (open) {
-      loadData();
-      resetForm();
-    }
-  }, [open]);
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setName('');
     setCode('');
     setCategory('perfume');
@@ -69,9 +62,9 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     setFormulaItems([createEmptyFormulaItem()]);
     setValidationErrors({});
     setFocusRowIndex(0);
-  };
+  }, [createEmptyFormulaItem]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoadingData(true);
     try {
       const materialsData = await getRawMaterialOptions();
@@ -81,7 +74,14 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      loadData();
+      resetForm();
+    }
+  }, [loadData, open, resetForm]);
 
   const removeFormulaItem = (index) => {
     const remainingItems = formulaItems.filter((_, i) => i !== index);

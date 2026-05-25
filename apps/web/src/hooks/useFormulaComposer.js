@@ -445,11 +445,11 @@ export const useFormulaComposer = ({
     [workbookSimulation.rows]
   );
 
-  const getItemGuidanceDetails = (item) => resolveFormulaItemGuidance({
+  const getItemGuidanceDetails = useCallback((item) => resolveFormulaItemGuidance({
     item,
     rawMaterialsById,
     referenceLinksMap,
-  });
+  }), [rawMaterialsById, referenceLinksMap]);
 
   const getItemGuidanceStatus = (item) => getItemGuidanceDetails(item);
 
@@ -481,7 +481,7 @@ export const useFormulaComposer = ({
       dilutionSolventImpact: simulationRow?.dilutionSolventImpact ?? null,
       dilutionSolventLifeHours: simulationRow?.dilutionSolventLifeHours ?? null,
     };
-  }, [activeRowIndex, formulaItems, rawMaterialsById, referenceLinksMap, simulationRowsByItemId]);
+  }, [activeRowIndex, formulaItems, getItemGuidanceDetails, simulationRowsByItemId]);
 
   const activeReferenceProfileDetails = useMemo(() => {
     const activeItem = formulaItems[activeRowIndex];
@@ -490,7 +490,7 @@ export const useFormulaComposer = ({
     }
 
     return getItemGuidanceDetails(activeItem);
-  }, [activeRowIndex, formulaItems, rawMaterialsById, referenceLinksMap]);
+  }, [activeRowIndex, formulaItems, getItemGuidanceDetails]);
 
   return {
     formulaItems,

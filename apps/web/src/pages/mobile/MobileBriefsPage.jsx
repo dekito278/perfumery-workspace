@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
@@ -52,7 +52,7 @@ const MobileBriefsPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState('');
 
-  const loadData = async (isActive = () => true) => {
+  const loadData = useCallback(async (isActive = () => true) => {
     setLoading(true);
     setLoadError('');
     try {
@@ -73,13 +73,13 @@ const MobileBriefsPage = () => {
     } finally {
       if (isActive()) setLoading(false);
     }
-  };
+  }, [getBriefs, getFormulas]);
 
   useEffect(() => {
     let active = true;
     loadData(() => active);
     return () => { active = false; };
-  }, [getBriefs, getFormulas]);
+  }, [loadData]);
 
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
   const filtered = useMemo(() => {

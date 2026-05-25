@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { BookOpenText, CalendarDays, ExternalLink, Home, Plus, RefreshCw, Timer } from 'lucide-react';
@@ -53,7 +53,7 @@ const JournalPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const loadJournalPosts = async () => {
+  const loadJournalPosts = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -69,11 +69,11 @@ const JournalPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getFormulas, getJournalPosts]);
 
   useEffect(() => {
     loadJournalPosts();
-  }, []);
+  }, [loadJournalPosts]);
 
   useEffect(() => {
     window.addEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadJournalPosts);
@@ -81,7 +81,7 @@ const JournalPage = () => {
     return () => {
       window.removeEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadJournalPosts);
     };
-  }, []);
+  }, [loadJournalPosts]);
 
   const summary = useMemo(() => ({
     total: posts.length,
