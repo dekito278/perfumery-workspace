@@ -34,6 +34,14 @@
   z-index: 70;
 }
 
+.solivagant-loader__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  padding: 0 24px;
+}
+
 .solivagant-loader__grain,
 .solivagant-hero__grain {
   position: absolute;
@@ -80,6 +88,36 @@
   letter-spacing: 0.08em;
 }
 
+.solivagant-loader__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.solivagant-loader__actions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(246, 240, 227, 0.24);
+  border-radius: 8px;
+  background: rgba(246, 240, 227, 0.06);
+  padding: 0 16px;
+  color: var(--atelier-ivory);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.solivagant-loader__actions a:first-child {
+  border-color: rgba(246, 240, 227, 0.88);
+  background: var(--atelier-ivory);
+  color: #0b100b;
+}
+
 .solivagant-cinematic {
   position: relative;
   background:
@@ -109,6 +147,8 @@
   position: relative;
   min-height: 100vh;
   overflow: hidden;
+  --hero-parallax-x: 0;
+  --hero-parallax-y: 0;
   border-bottom: 1px solid rgba(246, 240, 227, 0.12);
   background:
     radial-gradient(ellipse at 72% 45%, rgba(183, 155, 99, 0.2), transparent 36%),
@@ -130,17 +170,235 @@
   z-index: 0;
 }
 
-.cinematic-atelier-canvas {
-  width: 100%;
-  height: 100%;
-}
-
 .solivagant-scene-fallback {
   width: 100%;
   height: 100%;
   background:
     linear-gradient(115deg, rgba(23, 37, 25, 0.42), rgba(7, 9, 6, 0.8)),
     url('/brand/home/raw-material-library.jpg') center / cover;
+}
+
+.solivagant-editorial-scene {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 68% 42%, rgba(246, 240, 227, 0.09), transparent 30%),
+    radial-gradient(circle at 82% 62%, rgba(183, 155, 99, 0.16), transparent 22%),
+    linear-gradient(115deg, rgba(7, 9, 6, 0.08), rgba(23, 37, 25, 0.28));
+}
+
+.solivagant-editorial-scene__plate {
+  position: absolute;
+  right: max(40px, calc((100vw - 1280px) / 2 + 34px));
+  bottom: 8%;
+  width: min(52vw, 700px);
+  aspect-ratio: 1.82;
+  border: 1px solid rgba(246, 240, 227, 0.09);
+  background:
+    linear-gradient(180deg, rgba(246, 240, 227, 0.06), rgba(246, 240, 227, 0.01)),
+    radial-gradient(ellipse at 52% 38%, rgba(183, 155, 99, 0.16), transparent 48%);
+  filter: blur(0.2px);
+  transform:
+    translate3d(calc(var(--hero-parallax-x) * -10px), calc(var(--hero-parallax-y) * -8px), 0)
+    rotate(-4deg)
+    skewX(-8deg);
+  transition: transform 260ms ease-out;
+}
+
+.solivagant-editorial-scene__fog {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(42px);
+  opacity: 0.72;
+  mix-blend-mode: screen;
+}
+
+.solivagant-editorial-scene__fog--one {
+  right: 10%;
+  top: 20%;
+  width: 34vw;
+  height: 24vh;
+  background: rgba(174, 185, 159, 0.16);
+  animation: solivagant-fog-drift 7s ease-in-out infinite alternate;
+}
+
+.solivagant-editorial-scene__fog--two {
+  right: 26%;
+  bottom: 15%;
+  width: 42vw;
+  height: 18vh;
+  background: rgba(183, 155, 99, 0.13);
+  animation: solivagant-fog-drift 9s ease-in-out infinite alternate-reverse;
+}
+
+.solivagant-editorial-scene__bottle {
+  position: absolute;
+  right: max(118px, calc((100vw - 1280px) / 2 + 118px));
+  top: 17%;
+  width: clamp(260px, 25vw, 410px);
+  height: clamp(430px, 58vh, 610px);
+  transform:
+    translate3d(calc(var(--hero-parallax-x) * 22px), calc(var(--hero-parallax-y) * 16px), 0)
+    rotate(-2.5deg);
+  transform-origin: 50% 70%;
+  transition: transform 260ms ease-out;
+}
+
+.solivagant-editorial-scene__glass {
+  position: absolute;
+  inset: 21% 8% 0;
+  border: 1px solid rgba(246, 240, 227, 0.18);
+  border-radius: 4px 4px 18px 18px;
+  background:
+    linear-gradient(100deg, rgba(246, 240, 227, 0.12), transparent 28%, rgba(255, 255, 255, 0.08) 40%, transparent 58%),
+    linear-gradient(180deg, rgba(214, 222, 208, 0.74), rgba(90, 100, 84, 0.48)),
+    rgba(23, 37, 25, 0.34);
+  box-shadow:
+    inset 18px 0 24px rgba(246, 240, 227, 0.08),
+    inset -22px 0 28px rgba(0, 0, 0, 0.24),
+    0 40px 90px -58px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.solivagant-editorial-scene__cap,
+.solivagant-editorial-scene__neck {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.solivagant-editorial-scene__cap {
+  top: 7%;
+  z-index: 2;
+  width: 42%;
+  height: 15%;
+  border-radius: 14px 14px 3px 3px;
+  background:
+    linear-gradient(90deg, #4a3a18, #c5a461 36%, #7c642f 74%, #352b17);
+  box-shadow: inset 14px 0 22px rgba(255, 244, 214, 0.22), inset -20px 0 22px rgba(0, 0, 0, 0.28);
+}
+
+.solivagant-editorial-scene__neck {
+  top: 0;
+  width: 20%;
+  height: 14%;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(90deg, #020403, #1d261e 48%, #050705);
+}
+
+.solivagant-editorial-scene__highlight {
+  position: absolute;
+  left: 16%;
+  top: 6%;
+  width: 8%;
+  height: 72%;
+  background: linear-gradient(180deg, rgba(246, 240, 227, 0.58), transparent);
+  opacity: 0.42;
+  filter: blur(1px);
+}
+
+.solivagant-editorial-scene__label {
+  position: absolute;
+  left: 24%;
+  right: 18%;
+  top: 37%;
+  height: 26%;
+  border: 1px solid rgba(23, 37, 25, 0.12);
+  background:
+    linear-gradient(180deg, rgba(246, 240, 227, 0.84), rgba(218, 212, 193, 0.74));
+  box-shadow: 0 16px 26px -22px rgba(0, 0, 0, 0.65);
+}
+
+.solivagant-editorial-scene__label::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 48%;
+  height: 4px;
+  background: rgba(38, 61, 39, 0.68);
+}
+
+.solivagant-editorial-scene__reflection {
+  position: absolute;
+  left: 20%;
+  right: 1%;
+  bottom: -11%;
+  height: 18%;
+  background: linear-gradient(180deg, rgba(246, 240, 227, 0.12), transparent);
+  filter: blur(8px);
+  opacity: 0.58;
+  transform: skewX(-20deg);
+}
+
+.solivagant-editorial-scene__vial {
+  position: absolute;
+  width: 38px;
+  height: 112px;
+  border: 1px solid rgba(246, 240, 227, 0.12);
+  border-radius: 14px 14px 8px 8px;
+  background:
+    linear-gradient(90deg, rgba(246, 240, 227, 0.18), transparent 32%, rgba(0, 0, 0, 0.28)),
+    rgba(174, 185, 159, 0.24);
+  transform: translate3d(calc(var(--hero-parallax-x) * -16px), calc(var(--hero-parallax-y) * 10px), 0);
+  transition: transform 260ms ease-out;
+}
+
+.solivagant-editorial-scene__vial::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: -18px;
+  height: 24px;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(90deg, #4c3a18, #b79b63, #322812);
+}
+
+.solivagant-editorial-scene__vial--one {
+  right: 8%;
+  top: 24%;
+}
+
+.solivagant-editorial-scene__vial--two {
+  right: 4%;
+  bottom: 21%;
+  width: 30px;
+  height: 86px;
+  opacity: 0.72;
+}
+
+.solivagant-editorial-scene__archive {
+  position: absolute;
+  right: max(42px, calc((100vw - 1280px) / 2 + 42px));
+  bottom: 14%;
+  width: min(280px, 20vw);
+  border: 1px solid rgba(246, 240, 227, 0.14);
+  border-radius: 8px;
+  background: rgba(7, 9, 6, 0.34);
+  padding: 18px;
+  color: rgba(246, 240, 227, 0.78);
+  backdrop-filter: blur(18px);
+  transform: translate3d(calc(var(--hero-parallax-x) * -8px), calc(var(--hero-parallax-y) * -6px), 0);
+  transition: transform 260ms ease-out;
+}
+
+.solivagant-editorial-scene__archive span {
+  display: block;
+  color: rgba(183, 155, 99, 0.82);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.solivagant-editorial-scene__archive strong {
+  display: block;
+  margin-top: 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.22;
 }
 
 .solivagant-hero__content {
@@ -609,7 +867,7 @@
   display: grid;
   grid-template-columns: 42px 1fr;
   gap: 16px;
-  align-items: center;
+  align-items: start;
   padding: 18px;
 }
 
@@ -624,6 +882,7 @@
 }
 
 .solivagant-material-card h3 {
+  margin-top: 5px;
   color: #11190f;
   font-size: 1.08rem;
 }
@@ -633,6 +892,25 @@
   color: rgba(17, 25, 15, 0.62);
   font-size: 0.92rem;
   font-weight: 580;
+}
+
+.solivagant-material-card .solivagant-material-card__meta {
+  margin-top: 0;
+  color: #8c7448;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.solivagant-material-card strong {
+  display: block;
+  margin-top: 10px;
+  color: #263d27;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .solivagant-editorial {

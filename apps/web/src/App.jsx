@@ -1,7 +1,7 @@
 
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext.jsx';
+import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
@@ -10,6 +10,7 @@ import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
+import HomePage from '@/pages/HomePage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
@@ -65,7 +66,6 @@ const lazyRoute = (loader) => lazy(async () => {
   }
 });
 
-const HomePage = lazyRoute(() => import('@/pages/HomePage.jsx'));
 const CatalogPage = lazyRoute(() => import('@/pages/CatalogPage.jsx'));
 const ProductDetailPage = lazyRoute(() => import('@/pages/ProductDetailPage.jsx'));
 const BespokePage = lazyRoute(() => import('@/pages/BespokePage.jsx'));
@@ -178,12 +178,18 @@ const isStorefrontRoute = (pathname) => (
 );
 
 const HomeRouteFallback = () => (
-  <div className="solivagant-loader solivagant-loader--route" aria-label="Loading Solivagant" role="status" aria-live="polite">
+  <div className="solivagant-loader solivagant-loader--route" aria-label="SOLIVAGANT storefront preview">
     <div className="solivagant-loader__grain" />
     <div className="solivagant-loader__fog" />
-    <p>Artisan Perfumery Atelier</p>
-    <h1>SOLIVAGANT</h1>
-    <span>Fragrance, memory, and craftsmanship</span>
+    <div className="solivagant-loader__content">
+      <p>Artisan Perfumery Atelier</p>
+      <h1>SOLIVAGANT</h1>
+      <span>Fragrance, memory, and craftsmanship</span>
+      <div className="solivagant-loader__actions" aria-label="Storefront quick links">
+        <a href="/catalog">Explore Collection</a>
+        <a href="/bespoke">Book Bespoke Consultation</a>
+      </div>
+    </div>
   </div>
 );
 
@@ -228,17 +234,11 @@ const RouteFallback = () => {
 };
 
 const RootRedirect = () => {
-  const { initialLoading } = useAuth();
-
-  if (initialLoading) {
-    return <RouteFallback />;
-  }
-
   if (isMobileBrowser()) {
     return <Navigate to="/mobile/dashboard" replace />;
   }
 
-  return <Navigate to="/home" replace />;
+  return <HomePage />;
 };
 
 const MobileBrowserRedirect = () => {

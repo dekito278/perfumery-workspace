@@ -51,8 +51,6 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.17.10",
     "@supabase/supabase-js": "^2.103.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -79,7 +77,6 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.170.0",
     "vaul": "^1.1.2",
     "zod": "^4.3.6"
   },

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import {
@@ -34,7 +34,7 @@ const fadeUp = {
   },
 };
 
-const CinematicAtelierScene = lazy(() => import('@/components/storefront/CinematicAtelierScene.jsx'));
+const INTRO_MAX_DURATION_MS = 1350;
 
 const stagger = {
   hidden: {},
@@ -55,48 +55,64 @@ const atelierPrinciples = [
   {
     icon: FlaskConical,
     label: 'Raw material first',
-    text: 'Aroma dibangun dari material nyata, bukan sekadar moodboard.',
+    text: 'Every formula begins with the material itself: texture, volatility, shadow, and trace.',
   },
   {
     icon: Sparkles,
     label: 'Quiet signature',
-    text: 'Dipoles untuk terasa personal, wearable, dan punya jejak halus.',
+    text: 'Compositions are polished to feel intimate, wearable, and quietly memorable.',
   },
   {
     icon: Beaker,
     label: 'Measured by hand',
-    text: 'Setiap komposisi melewati takaran, evaluasi, dan revisi studio.',
+    text: 'Each scent moves through weighing, resting, evaluation, and deliberate revision.',
   },
 ];
 
 const bespokeSteps = [
-  'Mood',
-  'Memori',
-  'Notes',
-  'Occasion',
-  'Bottle',
+  'Discovery',
+  'Memory',
+  'Scent profile',
   'Direction',
+  'Refinement',
+  'Personal fragrance',
 ];
 
 const archiveMaterials = [
   {
     name: 'Tuberose absolute',
+    origin: 'India / cultivated white flowers',
+    family: 'White floral',
     profile: 'Creamy floral, narcotic, luminous.',
+    usage: 'Used when a brief needs velvet skin, night air, and a ceremonial floral glow.',
+    mood: 'Radiant, intimate, magnetic',
     tone: '#d8c5a3',
   },
   {
     name: 'Amberwood accord',
+    origin: 'Laboratory-built woody amber structure',
+    family: 'Amber woods',
     profile: 'Warm resin, dry woods, modern depth.',
+    usage: 'Gives modern perfumes their clean architecture, long shadow, and brushed-metal warmth.',
+    mood: 'Sculptural, warm, composed',
     tone: '#9b7554',
   },
   {
     name: 'Green fig leaf',
+    origin: 'Mediterranean fig impression',
+    family: 'Green aromatic',
     profile: 'Milky green, humid, quietly bitter.',
+    usage: 'Placed into fresh signatures when the formula needs shade, sap, and a living green edge.',
+    mood: 'Airy, verdant, reflective',
     tone: '#899d76',
   },
   {
     name: 'Clean musk trace',
+    origin: 'Soft synthetic musk palette',
+    family: 'Skin musk',
     profile: 'Soft skin, linen air, transparent trail.',
+    usage: 'Finishes a fragrance with diffusion, comfort, and the feeling of fabric warmed by skin.',
+    mood: 'Quiet, tactile, close',
     tone: '#c8d1c1',
   },
 ];
@@ -120,30 +136,29 @@ const getProductMood = (product) => product?.mood || product?.category || 'Ateli
 
 const HomePage = () => {
   const introRef = useRef(null);
+  const heroRef = useRef(null);
   const [introComplete, setIntroComplete] = useState(false);
-  const [shouldRenderScene, setShouldRenderScene] = useState(false);
   const catalogProducts = useCatalogProducts();
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
   const categories = useStorefrontCategories(products);
   const homeProducts = products.filter((product) => product.featured).slice(0, 4);
   const featuredProducts = homeProducts.length ? homeProducts : products.slice(0, 4);
-  const heroProduct = featuredProducts[0] || products[0];
 
   useEffect(() => {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const timer = window.setTimeout(() => setIntroComplete(true), reducedMotion ? 120 : 1650);
+    const timer = window.setTimeout(() => setIntroComplete(true), reducedMotion ? 80 : INTRO_MAX_DURATION_MS);
 
     if (introRef.current && !reducedMotion) {
       gsap.fromTo(
         introRef.current.querySelectorAll('[data-loader-line]'),
         { opacity: 0, y: 18, filter: 'blur(8px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.1, stagger: 0.16, ease: 'power3.out' }
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.72, stagger: 0.11, ease: 'power3.out' }
       );
       gsap.to(introRef.current, {
         opacity: 0,
         scale: 1.015,
-        delay: 1.18,
-        duration: 0.82,
+        delay: 0.82,
+        duration: 0.46,
         ease: 'power2.inOut',
       });
     }
@@ -176,19 +191,31 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia?.('(min-width: 900px)');
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    const updateScenePreference = () => {
-      setShouldRenderScene(Boolean(media?.matches) && !reducedMotion?.matches);
+    const hero = heroRef.current;
+    const isDesktop = window.matchMedia?.('(min-width: 1024px)').matches;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    if (!hero || !isDesktop || reducedMotion) return undefined;
+
+    const handlePointerMove = (event) => {
+      const rect = hero.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width - 0.5).toFixed(3);
+      const y = ((event.clientY - rect.top) / rect.height - 0.5).toFixed(3);
+      hero.style.setProperty('--hero-parallax-x', x);
+      hero.style.setProperty('--hero-parallax-y', y);
     };
 
-    updateScenePreference();
-    media?.addEventListener?.('change', updateScenePreference);
-    reducedMotion?.addEventListener?.('change', updateScenePreference);
+    const handlePointerLeave = () => {
+      hero.style.setProperty('--hero-parallax-x', '0');
+      hero.style.setProperty('--hero-parallax-y', '0');
+    };
+
+    hero.addEventListener('pointermove', handlePointerMove);
+    hero.addEventListener('pointerleave', handlePointerLeave);
 
     return () => {
-      media?.removeEventListener?.('change', updateScenePreference);
-      reducedMotion?.removeEventListener?.('change', updateScenePreference);
+      hero.removeEventListener('pointermove', handlePointerMove);
+      hero.removeEventListener('pointerleave', handlePointerLeave);
     };
   }, []);
 
@@ -201,17 +228,28 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>Solivagant - Cinematic Artisan Perfumery Atelier</title>
-        <meta name="description" content="Solivagant is an artisan perfumery atelier by Dekito, built around fragrance, memory, raw materials, and bespoke perfume rituals." />
+        <title>SOLIVAGANT - Artisan Perfumery Atelier by Dekito</title>
+        <meta name="description" content="SOLIVAGANT is an artisan perfumery atelier by Dekito, creating cinematic signature perfumes, limited drops, raw material stories, and bespoke scent rituals." />
+        <meta property="og:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
+        <meta property="og:description" content="A digital perfume atelier where fragrance, memory, and craftsmanship converge." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/brand/home/raw-material-library.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
       {!introComplete ? (
-        <div ref={introRef} className="solivagant-loader" aria-label="Loading Solivagant">
+        <div ref={introRef} className="solivagant-loader" aria-label="SOLIVAGANT cinematic intro">
           <div className="solivagant-loader__grain" />
           <div className="solivagant-loader__fog" />
-          <p data-loader-line>Artisan Perfumery Atelier</p>
-          <h1 data-loader-line>SOLIVAGANT</h1>
-          <span data-loader-line>Fragrance, memory, and craftsmanship</span>
+          <div className="solivagant-loader__content">
+            <p data-loader-line>Artisan Perfumery Atelier</p>
+            <h1 data-loader-line>SOLIVAGANT</h1>
+            <span data-loader-line>Fragrance, memory, and craftsmanship</span>
+            <div className="solivagant-loader__actions" aria-label="Storefront quick links">
+              <Link to="/catalog">Explore Collection</Link>
+              <Link to="/bespoke">Create Bespoke Perfume</Link>
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -226,15 +264,26 @@ const HomePage = () => {
           ]}
         />
 
-        <section className="solivagant-hero">
-          <div className="solivagant-hero__scene" aria-hidden="true">
-            {introComplete && shouldRenderScene ? (
-              <Suspense fallback={<div className="solivagant-scene-fallback" />}>
-                <CinematicAtelierScene />
-              </Suspense>
-            ) : (
-              <div className="solivagant-scene-fallback" />
-            )}
+        <section ref={heroRef} className="solivagant-hero">
+          <div className="solivagant-hero__scene solivagant-editorial-scene" aria-hidden="true">
+            <div className="solivagant-editorial-scene__plate" />
+            <div className="solivagant-editorial-scene__fog solivagant-editorial-scene__fog--one" />
+            <div className="solivagant-editorial-scene__fog solivagant-editorial-scene__fog--two" />
+            <div className="solivagant-editorial-scene__bottle">
+              <div className="solivagant-editorial-scene__cap" />
+              <div className="solivagant-editorial-scene__neck" />
+              <div className="solivagant-editorial-scene__glass">
+                <span className="solivagant-editorial-scene__highlight" />
+                <span className="solivagant-editorial-scene__label" />
+              </div>
+              <div className="solivagant-editorial-scene__reflection" />
+            </div>
+            <div className="solivagant-editorial-scene__vial solivagant-editorial-scene__vial--one" />
+            <div className="solivagant-editorial-scene__vial solivagant-editorial-scene__vial--two" />
+            <div className="solivagant-editorial-scene__archive">
+              <span>Lab note 04</span>
+              <strong>Fig leaf / amberwood / clean musk</strong>
+            </div>
           </div>
           <div className="solivagant-hero__grain" />
           <motion.div
@@ -259,7 +308,7 @@ const HomePage = () => {
                 <ShoppingBag className="h-4 w-4" />
               </Link>
               <Link to="/bespoke" className="solivagant-magnetic-button">
-                Create Bespoke Perfume
+                Book Bespoke Consultation
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -412,8 +461,11 @@ const HomePage = () => {
                 <motion.div key={material.name} variants={fadeUp} className="solivagant-material-card" style={{ '--material-tone': material.tone }}>
                   <span />
                   <div>
+                    <p className="solivagant-material-card__meta">{material.family} / {material.origin}</p>
                     <h3>{material.name}</h3>
                     <p>{material.profile}</p>
+                    <p>{material.usage}</p>
+                    <strong>{material.mood}</strong>
                   </div>
                 </motion.div>
               ))}
