@@ -2,7 +2,7 @@
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, Float } from '@react-three/drei';
+import { Float } from '@react-three/drei';
 
 const PerfumeBottle = () => {
   const groupRef = useRef(null);
@@ -202,7 +202,6 @@ const CinematicAtelierScene = () => (
       <planeGeometry args={[7.2, 7.2]} />
       <shadowMaterial color="#000000" opacity={0.28} />
     </mesh>
-    <Environment preset="studio" />
   </Canvas>
 );
 
