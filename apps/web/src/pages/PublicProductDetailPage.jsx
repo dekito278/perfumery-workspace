@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
-import { findPublicFragrance, getPublicFragranceCatalog, publicProductAliases } from '@/data/publicStorefront.js';
+import { findPublicFragrance, getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -24,12 +24,10 @@ const relatedFor = (product, catalog) => {
 
 const PublicProductDetailPage = () => {
   const { slug = '' } = useParams();
-  const location = useLocation();
-  const aliasSlug = publicProductAliases[location.pathname.replace(/\/$/, '')];
   const studioProducts = useCatalogProducts();
   const visibleProducts = studioProducts.filter(isProductVisibleInStorefront);
   const catalog = getPublicFragranceCatalog(visibleProducts);
-  const product = findPublicFragrance(aliasSlug || slug, visibleProducts);
+  const product = findPublicFragrance(slug, visibleProducts);
   const { addItem } = useCart();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
 

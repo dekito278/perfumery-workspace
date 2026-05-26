@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle2, SlidersHorizontal, ShoppingBag } from 'lucide
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
-import { getPublicFragranceCatalog, publicCatalogCategories } from '@/data/publicStorefront.js';
+import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -22,6 +22,10 @@ const CatalogPage = () => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
     return getPublicFragranceCatalog(visible).slice(0, 16);
   }, [allProducts]);
+  const catalogCategories = useMemo(() => [
+    'Semua',
+    ...Array.from(new Set(products.map((product) => product.publicCategory).filter(Boolean))),
+  ], [products]);
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return products.filter((product) => {
@@ -81,7 +85,7 @@ const CatalogPage = () => {
         <section className="editorial-section editorial-section--compact">
           <div className="editorial-catalog-toolbar" aria-label="Catalog filters">
             <div className="editorial-category-filter" role="list" aria-label="Product categories">
-              {publicCatalogCategories.map((category) => (
+              {catalogCategories.map((category) => (
                 <button
                   key={category}
                   type="button"

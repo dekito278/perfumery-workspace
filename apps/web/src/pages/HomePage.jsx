@@ -15,8 +15,8 @@ import {
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
-import { featuredProducts, perfumerProfile } from '@/data/storefront.js';
-import { getPublicFragranceCatalog, getPublicMaterialArchive } from '@/data/publicStorefront.js';
+import { perfumerProfile } from '@/data/storefront.js';
+import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 import { getJournalCategoryLabel, getJournalPublicPath, getPublishedJournalPosts } from '@/services/journalPostsSupabaseService.js';
@@ -29,8 +29,6 @@ const homeAssets = {
   perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
   perfumerCylinder: '/brand/home/perfumer-cylinder.jpg',
 };
-
-const fallbackCollection = getPublicFragranceCatalog(featuredProducts).slice(0, 4);
 
 const formatProductDescription = (product) => product?.subtitle || product?.description || product?.notes || product?.mood || 'A quiet Solivagant composition made for skin, atmosphere, and ritual.';
 const getNotes = (product, key, fallback = []) => (Array.isArray(product?.[key]) && product[key].length ? product[key] : fallback);
@@ -54,15 +52,14 @@ const HomePage = () => {
     () => catalogProducts.filter(isProductVisibleInStorefront),
     [catalogProducts]
   );
-  const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts.length ? visibleProducts : featuredProducts), [visibleProducts]);
+  const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
   const collection = publicCatalog.slice(0, 4);
-  const featured = collection[0] || fallbackCollection[0];
-  const fallbackMaterials = useMemo(() => getPublicMaterialArchive(publicCatalog).slice(0, 4), [publicCatalog]);
-  const materials = liveMaterials.length ? liveMaterials : fallbackMaterials;
+  const featured = collection[0];
+  const materials = liveMaterials;
 
-  const topNotes = getNotes(featured, 'topNotes', ['Bergamot', 'Green fig', 'Cardamom']);
-  const heartNotes = getNotes(featured, 'heartNotes', ['Orris', 'Tea absolute', 'Soft woods']);
-  const baseNotes = getNotes(featured, 'baseNotes', ['Amberwood', 'Clean musk', 'Cedar']);
+  const topNotes = getNotes(featured, 'topNotes');
+  const heartNotes = getNotes(featured, 'heartNotes');
+  const baseNotes = getNotes(featured, 'baseNotes');
   const firstCartItem = items[0];
 
   useEffect(() => {
@@ -143,8 +140,8 @@ const HomePage = () => {
             <div className="editorial-hero__panel">
               <img src={homeAssets.perfumerCylinder} alt="Perfume bottle and formulation objects in the Solivagant atelier" />
               <div className="editorial-bottle-card">
-                <span>Limited atelier object</span>
-                <strong>{featured?.name || 'Featured fragrance'}</strong>
+                <span>{featured ? 'Limited atelier object' : 'Collection'}</span>
+                <strong>{featured?.name || 'Menunggu produk publish'}</strong>
               </div>
             </div>
           </div>
@@ -212,33 +209,42 @@ const HomePage = () => {
                 </div>
               </article>
             ))}
+            {!collection.length ? (
+              <div className="editorial-empty-state editorial-empty-state--inline">
+                <ShoppingBag className="h-8 w-8" />
+                <p>Belum ada produk published untuk desktop storefront. Publish produk dari Studio Products agar collection tampil di sini.</p>
+                <Link to="/studio/products" className="editorial-button editorial-button--primary">Kelola Produk</Link>
+              </div>
+            ) : null}
           </div>
         </section>
 
-        <section className="editorial-section editorial-featured">
-          <div className="editorial-featured__visual">
-            <ProductVisual product={featured} className="editorial-featured__product" priority />
-          </div>
-          <div className="editorial-featured__copy">
-            <p className="editorial-eyebrow">PRODUCT DETAIL PREVIEW</p>
-            <h2>{featured?.name || 'Featured fragrance'}</h2>
-            <p>{formatProductDescription(featured)}</p>
-            <div className="editorial-notes-grid">
-              <div><span>Top</span><p>{topNotes.join(', ')}</p></div>
-              <div><span>Heart</span><p>{heartNotes.join(', ')}</p></div>
-              <div><span>Base</span><p>{baseNotes.join(', ')}</p></div>
+        {featured ? (
+          <section className="editorial-section editorial-featured">
+            <div className="editorial-featured__visual">
+              <ProductVisual product={featured} className="editorial-featured__product" priority />
             </div>
-            <div className="editorial-feature-list">
-              <span>{featured?.mood || 'Quiet daily signature'}</span>
-              <span>{featured?.concentration || 'Eau de Parfum'}</span>
-              <span>{featured?.sizeVariants?.map((variant) => variant.size).join(' / ') || '10 ml / 30 ml / 50 ml'}</span>
+            <div className="editorial-featured__copy">
+              <p className="editorial-eyebrow">PRODUCT DETAIL PREVIEW</p>
+              <h2>{featured.name}</h2>
+              <p>{formatProductDescription(featured)}</p>
+              <div className="editorial-notes-grid">
+                <div><span>Top</span><p>{topNotes.join(', ') || '-'}</p></div>
+                <div><span>Heart</span><p>{heartNotes.join(', ') || '-'}</p></div>
+                <div><span>Base</span><p>{baseNotes.join(', ') || '-'}</p></div>
+              </div>
+              <div className="editorial-feature-list">
+                <span>{featured.mood || 'Quiet daily signature'}</span>
+                <span>{featured.concentration || 'Eau de Parfum'}</span>
+                <span>{featured.sizeVariants?.map((variant) => variant.size).join(' / ') || featured.size || '-'}</span>
+              </div>
+              <button type="button" className="editorial-button editorial-button--primary" onClick={addFeaturedToCart}>
+                {lastAddedSlug === featured.slug ? 'Added to Cart' : 'Add to Cart'}
+                {lastAddedSlug === featured.slug ? <CheckCircle2 className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+              </button>
             </div>
-            <button type="button" className="editorial-button editorial-button--primary" onClick={addFeaturedToCart}>
-              {lastAddedSlug === featured?.slug ? 'Added to Cart' : 'Add to Cart'}
-              {lastAddedSlug === featured?.slug ? <CheckCircle2 className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
-            </button>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         <section id="bespoke" className="editorial-section editorial-bespoke">
           <div>
@@ -279,6 +285,12 @@ const HomePage = () => {
                 ) : null}
               </article>
             ))}
+            {!materials.length ? (
+              <div className="editorial-empty-state editorial-empty-state--inline">
+                <p>Belum ada raw material publik dari studio. Data akan tampil setelah raw material tersedia.</p>
+                <Link to="/raw-materials" className="editorial-button">Kelola Raw Material</Link>
+              </div>
+            ) : null}
           </div>
         </section>
 

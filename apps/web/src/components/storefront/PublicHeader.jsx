@@ -1,10 +1,27 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/hooks/useCart.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const PublicHeader = () => {
-  const { summary } = useCart();
+  const { items, removeItem, summary } = useCart();
+  const catalogProducts = useCatalogProducts();
+  const productsLoading = Boolean(catalogProducts.loading);
+  const validCartSlugs = useMemo(() => new Set(
+    catalogProducts
+      .filter(isProductVisibleInStorefront)
+      .flatMap((product) => [product.slug, ...(product.variants || []).map((variant) => variant.cartSlug || `${product.slug}-${variant.id || variant.size}`)])
+      .filter(Boolean)
+  ), [catalogProducts]);
+
+  useEffect(() => {
+    if (productsLoading || !items.length) return;
+    items
+      .filter((item) => !validCartSlugs.has(item.productSlug || item.slug) && !validCartSlugs.has(item.slug))
+      .forEach((item) => removeItem(item.slug));
+  }, [items, productsLoading, removeItem, validCartSlugs]);
 
   return (
     <header className="editorial-header">

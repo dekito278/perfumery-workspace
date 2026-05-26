@@ -1,11 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
-import { getPublicFragranceCatalog, getPublicMaterialArchive } from '@/data/publicStorefront.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getRawMaterials } from '@/services/rawMaterialsService.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const toPublicMaterial = (material = {}) => ({
   name: material.name || 'Untitled material',
@@ -18,16 +15,10 @@ const toPublicMaterial = (material = {}) => ({
 });
 
 const PublicMaterialsPage = () => {
-  const catalogProducts = useCatalogProducts();
-  const publicCatalog = useMemo(
-    () => getPublicFragranceCatalog(catalogProducts.filter(isProductVisibleInStorefront)),
-    [catalogProducts],
-  );
-  const fallbackMaterials = useMemo(() => getPublicMaterialArchive(publicCatalog), [publicCatalog]);
   const [liveMaterials, setLiveMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const materials = liveMaterials.length ? liveMaterials : fallbackMaterials;
+  const materials = liveMaterials;
 
   useEffect(() => {
     let active = true;
@@ -41,7 +32,7 @@ const PublicMaterialsPage = () => {
         setLiveMaterials((rows || []).slice(0, 16).map(toPublicMaterial));
       } catch (err) {
         if (active) {
-          setError('Raw material studio belum bisa dimuat, menampilkan arsip publik fallback.');
+          setError('Raw material studio belum bisa dimuat.');
         }
       } finally {
         if (active) setLoading(false);
@@ -79,7 +70,7 @@ const PublicMaterialsPage = () => {
             <div className="editorial-empty-state">
               <p className="editorial-eyebrow">NO MATERIALS</p>
               <h2>Belum ada raw material publik.</h2>
-              <p>Raw material akan tampil setelah data studio tersedia atau produk publik punya material highlight.</p>
+              <p>Raw material akan tampil setelah data studio tersedia.</p>
             </div>
           ) : null}
           <div className="editorial-material-grid">
