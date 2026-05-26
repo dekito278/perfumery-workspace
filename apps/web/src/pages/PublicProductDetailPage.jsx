@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { findPublicFragrance, getPublicFragranceCatalog, publicProductAliases } from '@/data/publicStorefront.js';
@@ -30,10 +31,26 @@ const PublicProductDetailPage = () => {
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(aliasSlug || slug, visibleProducts);
   const { addItem } = useCart();
+  const [lastAddedSlug, setLastAddedSlug] = useState('');
 
   if (!product) {
     return <Navigate to="/not-found" replace />;
   }
+
+  const handleAddToCart = (item) => {
+    addItem(item, 1);
+    setLastAddedSlug(item.slug);
+    toast.success(`${item.name} masuk ke keranjang`, {
+      description: 'Cart desktop sudah diperbarui.',
+      action: {
+        label: 'Lihat cart',
+        onClick: () => { window.location.href = '/cart'; },
+      },
+    });
+    window.setTimeout(() => {
+      setLastAddedSlug((current) => (current === item.slug ? '' : current));
+    }, 1800);
+  };
 
   return (
     <>
@@ -80,9 +97,9 @@ const PublicProductDetailPage = () => {
               </>
             ) : null}
             <div className="editorial-actions">
-              <button type="button" className="editorial-button editorial-button--primary" onClick={() => addItem(product, 1)}>
-                Add to Cart
-                <ShoppingBag className="h-4 w-4" />
+              <button type="button" className="editorial-button editorial-button--primary" onClick={() => handleAddToCart(product)}>
+                {lastAddedSlug === product.slug ? 'Added to Cart' : 'Add to Cart'}
+                {lastAddedSlug === product.slug ? <CheckCircle2 className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
               </button>
               <Link to="/catalog" className="editorial-button">Back to Collection</Link>
             </div>
@@ -104,7 +121,18 @@ const PublicProductDetailPage = () => {
                   <p>{item.character || item.subtitle}</p>
                   <div className="editorial-product-card__actions">
                     <Link to={`/catalog/${item.slug}`}>View Details</Link>
-                    <Link to="/cart">Cart</Link>
+                    <button
+                      type="button"
+                      className={lastAddedSlug === item.slug ? 'is-added' : ''}
+                      onClick={() => handleAddToCart(item)}
+                    >
+                      {lastAddedSlug === item.slug ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Added
+                        </>
+                      ) : 'Add to Cart'}
+                    </button>
                   </div>
                 </div>
               </article>

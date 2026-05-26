@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, CheckCircle2, SlidersHorizontal, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { getPublicFragranceCatalog, publicCatalogCategories } from '@/data/publicStorefront.js';
@@ -13,7 +14,8 @@ const getDescription = (product) => product.subtitle || product.description || p
 
 const CatalogPage = () => {
   const allProducts = useCatalogProducts();
-  const { addItem } = useCart();
+  const { addItem, summary } = useCart();
+  const [lastAddedSlug, setLastAddedSlug] = useState('');
   const [activeCategory, setActiveCategory] = useState('Semua');
   const [searchTerm, setSearchTerm] = useState('');
   const products = useMemo(() => {
@@ -41,6 +43,20 @@ const CatalogPage = () => {
       return matchesCategory && (!query || searchable.includes(query));
     });
   }, [activeCategory, products, searchTerm]);
+  const handleAddToCart = (product) => {
+    addItem(product, 1);
+    setLastAddedSlug(product.slug);
+    toast.success(`${product.name} masuk ke keranjang`, {
+      description: 'Cart desktop sudah diperbarui. Kamu bisa lanjut belanja atau cek keranjang.',
+      action: {
+        label: 'Lihat cart',
+        onClick: () => { window.location.href = '/cart'; },
+      },
+    });
+    window.setTimeout(() => {
+      setLastAddedSlug((current) => (current === product.slug ? '' : current));
+    }, 1800);
+  };
 
   return (
     <>
@@ -89,6 +105,10 @@ const CatalogPage = () => {
               <SlidersHorizontal className="h-4 w-4" />
               Filter
             </button>
+            <Link to="/cart" className="editorial-cart-status">
+              <ShoppingBag className="h-4 w-4" />
+              {summary.quantity ? `${summary.quantity} item di cart` : 'Cart kosong'}
+            </Link>
           </div>
           <div className="editorial-product-grid">
             {filteredProducts.map((product, index) => (
@@ -117,7 +137,18 @@ const CatalogPage = () => {
                   </dl>
                   <div className="editorial-product-card__actions">
                     <Link to={`/catalog/${product.slug}`}>View Details</Link>
-                    <button type="button" onClick={() => addItem(product, 1)}>Add to Cart</button>
+                    <button
+                      type="button"
+                      className={lastAddedSlug === product.slug ? 'is-added' : ''}
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      {lastAddedSlug === product.slug ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Added
+                        </>
+                      ) : 'Add to Cart'}
+                    </button>
                   </div>
                 </div>
               </article>
