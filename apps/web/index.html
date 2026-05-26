@@ -160,27 +160,145 @@
 	</head>
 	<body>
 		<div id="root">
-			<main class="app-boot-fallback" aria-label="SOLIVAGANT public storefront">
-				<div>
-					<p>Artisan Perfumery Atelier</p>
-					<h1>SOLIVAGANT</h1>
-					<h2>Fragrance as a cinematic memory object.</h2>
-					<p class="app-boot-description">Signature perfumes, limited drops, raw material stories, and bespoke scent rituals by perfumer Dekito.</p>
-					<ul class="app-boot-structure" aria-label="Storefront sections">
-						<li>Collection</li>
-						<li>Bespoke ritual</li>
-						<li>Raw material archive</li>
-						<li>Journal</li>
-					</ul>
-					<div class="app-boot-links">
-						<a href="/catalog">Explore Collection</a>
-						<a href="/bespoke">Book Bespoke Consultation</a>
+			<noscript>
+				<main class="app-boot-fallback" aria-label="SOLIVAGANT public storefront">
+					<div>
+						<p>JavaScript required</p>
+						<h1>SOLIVAGANT</h1>
+						<h2>Enable JavaScript to browse the public atelier storefront.</h2>
+						<p class="app-boot-description">The SOLIVAGANT collection, bespoke consultation, material archive, journal, cart, and order tracking are rendered by the public storefront app.</p>
+						<div class="app-boot-links">
+							<a href="/">Homepage</a>
+							<a href="/catalog">Collection</a>
+						</div>
 					</div>
-				</div>
-			</main>
+				</main>
+			</noscript>
 		</div>
 		<script>
 			(function () {
+				var PUBLIC_ROUTE_FALLBACKS = {
+					'/': {
+						eyebrow: 'Artisan Perfumery Atelier',
+						title: 'SOLIVAGANT',
+						headline: 'Fragrance as a memory object.',
+						description: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
+						items: ['Hero', 'Perfumer story', 'Collection preview', 'Bespoke ritual'],
+					},
+					'/home': {
+						eyebrow: 'Artisan Perfumery Atelier',
+						title: 'SOLIVAGANT',
+						headline: 'Fragrance as a memory object.',
+						description: 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.',
+						items: ['Hero', 'Perfumer story', 'Collection preview', 'Bespoke ritual'],
+					},
+					'/catalog': {
+						eyebrow: 'Fragrance Collection',
+						title: 'Fragrance Collection',
+						headline: 'Quiet signatures for skin, atmosphere, and ritual.',
+						description: 'Limited perfume objects with notes preview, size and price placeholders, detail links, and customer cart actions.',
+						items: ['Product grid', 'Notes preview', 'View details', 'Add to cart'],
+					},
+					'/bespoke': {
+						eyebrow: 'Bespoke Perfume Consultation',
+						title: 'Bespoke Perfume Consultation',
+						headline: 'A personal scent direction, shaped through conversation.',
+						description: 'Discovery, scent profiling, formula direction, refinement, and final fragrance for a customer-facing bespoke ritual.',
+						items: ['Discovery', 'Scent Profiling', 'Formula Direction', 'Final Fragrance'],
+					},
+					'/materials': {
+						eyebrow: 'Raw Material Archive',
+						title: 'Raw Material Archive',
+						headline: 'Materials as stories, not inventory.',
+						description: 'A public archive of origins, olfactive families, sensory descriptions, and mood.',
+						items: ['Origin', 'Olfactive family', 'Sensory description', 'Mood'],
+					},
+					'/journal': {
+						eyebrow: 'Journal',
+						title: 'Journal',
+						headline: 'Field notes from the atelier.',
+						description: 'Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture.',
+						items: ['Scent memory', 'Raw materials', 'Atelier process', 'Product stories'],
+					},
+					'/track-order': {
+						eyebrow: 'Track Your Order',
+						title: 'Track Your Order',
+						headline: 'Customer order status.',
+						description: 'Order number, email or phone lookup, public tracking timeline, and estimated delivery placeholder.',
+						items: ['Order number', 'Customer contact', 'Timeline', 'Estimated delivery'],
+					},
+					'/cart': {
+						eyebrow: 'Customer Cart',
+						title: 'Cart',
+						headline: 'Selected fragrance objects.',
+						description: 'Cart items, quantity controls, subtotal, and checkout CTA for public customers.',
+						items: ['Cart items', 'Quantity controls', 'Subtotal', 'Checkout'],
+					},
+					'/checkout': {
+						eyebrow: 'Checkout',
+						title: 'Checkout',
+						headline: 'Customer and shipping information.',
+						description: 'Checkout placeholder with customer information, shipping information, payment placeholder, and order summary.',
+						items: ['Customer information', 'Shipping', 'Payment placeholder', 'Order summary'],
+					},
+				};
+
+				function escapeHtml(value) {
+					return String(value || '').replace(/[&<>"']/g, function (character) {
+						return ({
+							'&': '&amp;',
+							'<': '&lt;',
+							'>': '&gt;',
+							'"': '&quot;',
+							"'": '&#39;',
+						})[character];
+					});
+				}
+
+				function normalizePathname(pathname) {
+					var normalized = String(pathname || '/').replace(/\/+$/, '');
+					return normalized || '/';
+				}
+
+				function getFallbackContent() {
+					var pathname = normalizePathname(window.location.pathname);
+					return PUBLIC_ROUTE_FALLBACKS[pathname] || {
+						eyebrow: 'SOLIVAGANT',
+						title: 'Page not found.',
+						headline: 'This public atelier page could not be found.',
+						description: 'Return to the homepage or explore the SOLIVAGANT fragrance collection.',
+						items: ['Homepage', 'Collection'],
+					};
+				}
+
+				function renderPublicBootFallback() {
+					var root = document.getElementById('root');
+					if (!root) return;
+
+					var content = getFallbackContent();
+					var items = content.items.map(function (item) {
+						return '<li>' + escapeHtml(item) + '</li>';
+					}).join('');
+
+					root.innerHTML = [
+						'<main class="app-boot-fallback" aria-label="SOLIVAGANT public storefront">',
+						'  <div>',
+						'    <p>' + escapeHtml(content.eyebrow) + '</p>',
+						'    <h1>' + escapeHtml(content.title) + '</h1>',
+						'    <h2>' + escapeHtml(content.headline) + '</h2>',
+						'    <p class="app-boot-description">' + escapeHtml(content.description) + '</p>',
+						'    <ul class="app-boot-structure" aria-label="Storefront sections">' + items + '</ul>',
+						'    <div class="app-boot-links">',
+						'      <a href="/catalog">Explore Collection</a>',
+						'      <a href="/bespoke">Book Bespoke Consultation</a>',
+						'    </div>',
+						'  </div>',
+						'</main>',
+					].join('');
+				}
+
+				renderPublicBootFallback();
+
 				var RECOVERY_KEY = 'solivagant.pwa.module-recovery.v2';
 				var MAX_RECOVERY_ATTEMPTS = 2;
 				var MODULE_FAILURE_MESSAGES = [

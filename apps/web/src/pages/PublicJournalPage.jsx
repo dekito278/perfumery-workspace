@@ -36,9 +36,10 @@ const PublicJournalPage = () => (
             <article key={article.title}>
               <span>{article.category}</span>
               <h3>{article.title}</h3>
+              <p>{article.date}</p>
               <p>{article.text}</p>
               <Link to="/journal" className="editorial-journal-link">
-                Read note <BookOpenText className="h-4 w-4" />
+                Read More <BookOpenText className="h-4 w-4" />
               </Link>
             </article>
           ))}

@@ -111,6 +111,7 @@ export const publicMaterials = [
     family: 'Powdered woods',
     description: 'Cool violet dust, suede, and cosmetic softness with a long, intimate trace.',
     mood: 'Quiet, polished, intimate',
+    usageStory: 'Used when a formula needs a powdered veil, a refined skin texture, or the feeling of a private keepsake.',
   },
   {
     name: 'Green fig leaf',
@@ -118,6 +119,7 @@ export const publicMaterials = [
     family: 'Green aromatic',
     description: 'Milky leaf, pear skin, wet stem, and a clean bitter-green edge.',
     mood: 'Verdant, reflective, airy',
+    usageStory: 'A material direction for outdoor memory: shaded leaves, morning humidity, and the clean snap of a broken stem.',
   },
   {
     name: 'Tuberose absolute',
@@ -125,6 +127,7 @@ export const publicMaterials = [
     family: 'White floral',
     description: 'Creamed petals, warm skin, night air, and a luminous ceremonial floral body.',
     mood: 'Radiant, intimate, magnetic',
+    usageStory: 'Reserved for nocturnal florals and ceremonial briefs where the perfume should feel luminous but close.',
   },
   {
     name: 'Amberwood accord',
@@ -132,6 +135,7 @@ export const publicMaterials = [
     family: 'Amber woods',
     description: 'Dry resin, modern woods, and polished depth used to give formulas architecture.',
     mood: 'Sculptural, warm, composed',
+    usageStory: 'A structural material used to frame delicate notes, extend warmth, and give the composition a polished silhouette.',
   },
   {
     name: 'Vetiver fraction',
@@ -139,6 +143,7 @@ export const publicMaterials = [
     family: 'Dry woods',
     description: 'Earth, smoke, mineral grass, and a tailored woody dryness.',
     mood: 'Grounded, elegant, restrained',
+    usageStory: 'Chosen for green-woody trails, rain-washed atmospheres, and formulas that need rooted elegance.',
   },
   {
     name: 'Clean musk trace',
@@ -146,6 +151,7 @@ export const publicMaterials = [
     family: 'Skin musk',
     description: 'Transparent linen, warmed skin, and a low-volume trail made for daily ritual.',
     mood: 'Tactile, close, serene',
+    usageStory: 'Used to create intimacy and soft diffusion: the sensation of clean fabric, skin warmth, and quiet persistence.',
   },
 ];
 
@@ -153,26 +159,31 @@ export const publicJournalArticles = [
   {
     category: 'Scent Memory',
     title: 'Fragrance as a memory object',
+    date: 'Atelier Note / 2026',
     text: 'How a private place, repeated gesture, or remembered person becomes the structure of a perfume brief.',
   },
   {
     category: 'Raw Materials',
     title: 'Reading woods, musks, and green shadows',
+    date: 'Material Field Note / 2026',
     text: 'A material note on texture, volatility, and the quiet decisions that make a fragrance feel tactile.',
   },
   {
     category: 'Atelier Process',
     title: 'From lab note to finished bottle',
+    date: 'Process Journal / 2026',
     text: 'The rhythm of weighing, resting, evaluating, refining, and finishing a small perfume batch.',
   },
   {
     category: 'Product Stories',
     title: 'Why quiet perfume can still feel unforgettable',
+    date: 'Collection Note / 2026',
     text: 'A look at restraint, diffusion, skin warmth, and the kind of presence that does not need volume.',
   },
   {
     category: 'Perfumery Culture',
     title: 'The small etiquette of wearing scent',
+    date: 'Culture Note / 2026',
     text: 'A practical editorial note on projection, intimacy, weather, and choosing fragrance for shared rooms.',
   },
 ];

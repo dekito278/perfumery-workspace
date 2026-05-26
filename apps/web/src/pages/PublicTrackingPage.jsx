@@ -8,7 +8,7 @@ const timeline = ['Order received', 'Payment confirmed', 'Atelier preparation', 
 const PublicTrackingPage = () => (
   <>
     <Helmet>
-      <title>Track Order - SOLIVAGANT</title>
+      <title>Track Your Order - SOLIVAGANT</title>
       <meta name="description" content="Customer-facing SOLIVAGANT order tracking." />
     </Helmet>
 
@@ -28,13 +28,13 @@ const PublicTrackingPage = () => (
       <section className="editorial-page-hero editorial-page-hero--split">
         <div>
           <p className="editorial-eyebrow">CUSTOMER ORDER TRACKING</p>
-          <h1>Track Order</h1>
+          <h1>Track Your Order</h1>
           <p>Check public order progress with your order number and customer contact. Internal production management stays inside the studio.</p>
         </div>
         <form className="editorial-form editorial-form--compact">
           <label>Order number<input type="text" placeholder="SOL-2026-001" /></label>
           <label>Email / phone<input type="text" placeholder="Customer email or WhatsApp" /></label>
-          <button type="button" className="editorial-button editorial-button--primary"><Search className="h-4 w-4" />Check Status</button>
+          <button type="button" className="editorial-button editorial-button--primary"><Search className="h-4 w-4" />Track Order</button>
         </form>
       </section>
 
