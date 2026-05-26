@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 
 const NotFoundPage = () => (
   <>
@@ -10,17 +11,7 @@ const NotFoundPage = () => (
     </Helmet>
 
     <main className="solivagant-editorial-home">
-      <header className="editorial-header">
-        <Link to="/home" className="editorial-wordmark">SOLIVAGANT</Link>
-        <nav className="editorial-nav" aria-label="Storefront navigation">
-          <Link to="/catalog">Collection</Link>
-          <Link to="/bespoke">Bespoke</Link>
-          <Link to="/materials">Materials</Link>
-          <Link to="/journal">Journal</Link>
-          <Link to="/track-order">Track Order</Link>
-        </nav>
-        <Link to="/cart" className="editorial-cart-button">Cart</Link>
-      </header>
+      <PublicHeader />
 
       <section className="editorial-not-found">
         <p className="editorial-eyebrow">SOLIVAGANT</p>

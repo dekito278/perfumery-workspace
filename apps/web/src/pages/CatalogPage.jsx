@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { featuredProducts } from '@/data/storefront.js';
 import { publicFragrances } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
@@ -28,17 +29,7 @@ const CatalogPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home">
-        <header className="editorial-header">
-          <Link to="/home" className="editorial-wordmark">SOLIVAGANT</Link>
-          <nav className="editorial-nav" aria-label="Storefront navigation">
-            <Link to="/catalog">Collection</Link>
-            <Link to="/bespoke">Bespoke</Link>
-            <Link to="/materials">Materials</Link>
-            <Link to="/journal">Journal</Link>
-            <Link to="/track-order">Track Order</Link>
-          </nav>
-          <Link to="/cart" className="editorial-cart-button"><ShoppingBag className="h-4 w-4" />Cart</Link>
-        </header>
+        <PublicHeader />
 
         <section className="editorial-page-hero">
           <p className="editorial-eyebrow">FRAGRANCE COLLECTION</p>
