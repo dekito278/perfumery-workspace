@@ -37,7 +37,7 @@ const PublicHeader = () => {
       </nav>
       <Link to="/cart" className="editorial-cart-button" aria-label={`Cart, ${summary.quantity} item`}>
         <ShoppingBag className="h-4 w-4" />
-        Cart
+        {'Cart '}
         {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
       </Link>
     </header>
