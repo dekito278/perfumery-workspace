@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 
-const timeline = ['Order received', 'Payment confirmed', 'Atelier preparation', 'Packed for delivery', 'Estimated delivery'];
+const timeline = ['Order received', 'Payment confirmed', 'In preparation', 'Packed', 'Shipped', 'Delivered'];
 
 const PublicTrackingPage = () => (
   <>

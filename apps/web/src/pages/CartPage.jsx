@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { Minus, Plus } from 'lucide-react';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { useCart } from '@/hooks/useCart.js';
 
@@ -41,6 +42,7 @@ const CartPage = () => {
             <h2>{items.length ? 'Your selected fragrances.' : 'Cart preview.'}</h2>
             {previewItems.map((item) => (
               <div key={item.slug} className="editorial-cart-line">
+                <ProductVisual product={item} className="editorial-cart-line__image" imageFit="cover" />
                 <div>
                   <strong>{item.name}</strong>
                   <span>{item.notes} / {item.size} / {item.price}</span>

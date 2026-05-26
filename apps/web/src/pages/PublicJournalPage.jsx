@@ -10,6 +10,8 @@ const PublicJournalPage = () => (
     <Helmet>
       <title>Journal - SOLIVAGANT</title>
       <meta name="description" content="Editorial notes from the SOLIVAGANT perfume atelier." />
+      <meta property="og:title" content="Journal - SOLIVAGANT" />
+      <meta property="og:description" content="Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture." />
     </Helmet>
 
     <main className="solivagant-editorial-home">

@@ -2,15 +2,18 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
-import { publicMaterials as materials } from '@/data/publicStorefront.js';
+import { getPublicFragranceCatalog, getPublicMaterialArchive } from '@/data/publicStorefront.js';
+
+const materials = getPublicMaterialArchive(getPublicFragranceCatalog());
 
 const PublicMaterialsPage = () => (
   <>
     <Helmet>
       <title>Raw Material Archive - SOLIVAGANT</title>
       <meta name="description" content="A public raw material storytelling archive from SOLIVAGANT." />
+      <meta property="og:title" content="Raw Material Archive - SOLIVAGANT" />
+      <meta property="og:description" content="Public raw material stories for origin, olfactive family, sensory texture, mood, and related SOLIVAGANT fragrances." />
     </Helmet>
-
     <main className="solivagant-editorial-home">
       <PublicHeader />
 
@@ -30,6 +33,9 @@ const PublicMaterialsPage = () => (
               <p>{material.description}</p>
               <strong>{material.mood}</strong>
               <p>{material.usageStory}</p>
+              {material.relatedFragranceReferences.length ? (
+                <p>Related fragrance: {material.relatedFragranceReferences.map((fragrance) => fragrance.name).join(', ')}</p>
+              ) : null}
             </article>
           ))}
         </div>

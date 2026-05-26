@@ -1,31 +1,54 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, SlidersHorizontal } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
-import { featuredProducts } from '@/data/storefront.js';
-import { publicFragrances } from '@/data/publicStorefront.js';
+import { getPublicFragranceCatalog, publicCatalogCategories } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
-const getDescription = (product) => product.description || product.notes || product.mood || 'A quiet Solivagant composition for skin, atmosphere, and ritual.';
+const getDescription = (product) => product.subtitle || product.description || product.notes || product.mood || 'A quiet Solivagant composition for skin, atmosphere, and ritual.';
 
 const CatalogPage = () => {
   const allProducts = useCatalogProducts();
   const { addItem } = useCart();
+  const [activeCategory, setActiveCategory] = useState('Semua');
+  const [searchTerm, setSearchTerm] = useState('');
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
-    const merged = [...publicFragrances, ...(visible.length ? visible : featuredProducts)];
-    return Array.from(new Map(merged.map((product) => [product.slug, product])).values()).slice(0, 12);
+    return getPublicFragranceCatalog(visible).slice(0, 16);
   }, [allProducts]);
+  const filteredProducts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return products.filter((product) => {
+      const matchesCategory = activeCategory === 'Semua' || product.publicCategory === activeCategory;
+      const searchable = [
+        product.name,
+        product.subtitle,
+        product.description,
+        product.notes,
+        product.mood,
+        product.character,
+        product.category,
+        product.publicCategory,
+        product.concentration,
+        ...(product.topNotes || []),
+        ...(product.heartNotes || []),
+        ...(product.baseNotes || []),
+      ].join(' ').toLowerCase();
+      return matchesCategory && (!query || searchable.includes(query));
+    });
+  }, [activeCategory, products, searchTerm]);
 
   return (
     <>
       <Helmet>
         <title>Fragrance Collection - SOLIVAGANT</title>
         <meta name="description" content="Explore the SOLIVAGANT fragrance collection by perfumer Dekito." />
+        <meta property="og:title" content="Fragrance Collection - SOLIVAGANT" />
+        <meta property="og:description" content="Public SOLIVAGANT fragrance objects with notes pyramid, concentration, sizes, price, and atelier stories." />
       </Helmet>
 
       <main className="solivagant-editorial-home">
@@ -40,14 +63,48 @@ const CatalogPage = () => {
         </section>
 
         <section className="editorial-section editorial-section--compact">
+          <div className="editorial-catalog-toolbar" aria-label="Catalog filters">
+            <div className="editorial-category-filter" role="list" aria-label="Product categories">
+              {publicCatalogCategories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={category === activeCategory ? 'is-active' : ''}
+                  onClick={() => setActiveCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <label className="editorial-search-field">
+              <span>Cari notes, mood, produk</span>
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari notes, mood, produk"
+              />
+            </label>
+            <button type="button" className="editorial-filter-button" aria-label="Apply catalog filters">
+              <SlidersHorizontal className="h-4 w-4" />
+              Filter
+            </button>
+          </div>
           <div className="editorial-product-grid">
-            {products.map((product, index) => (
+            {filteredProducts.map((product, index) => (
               <article key={product.id || product.slug} className="editorial-product-card">
-                <ProductVisual product={product} className="editorial-product-card__visual" imageFit="cover" priority={index < 2} />
+                <div className="editorial-product-card__media">
+                  <ProductVisual product={product} className="editorial-product-card__visual" imageFit="cover" priority={index < 2} />
+                  <span className="editorial-product-badge">{product.badge}</span>
+                </div>
                 <div className="editorial-product-card__body">
                   <span>{product.category || 'Atelier'}</span>
                   <h3>{product.name}</h3>
                   <p>{getDescription(product)}</p>
+                  <div className="editorial-product-pills">
+                    <span>{product.publicStatus || product.availability}</span>
+                    <span>{product.sizeVariants?.[0]?.size || product.size || '30 ml'}</span>
+                  </div>
                   <dl>
                     <div>
                       <dt>Notes</dt>
@@ -55,7 +112,7 @@ const CatalogPage = () => {
                     </div>
                     <div>
                       <dt>Size / price</dt>
-                      <dd>{product.size || '30 ml'} / {product.price || 'Rp 289.000'}</dd>
+                      <dd>{product.sizeVariants?.[0]?.size || product.size || '30 ml'} / {product.price || 'Rp 289.000'}</dd>
                     </div>
                   </dl>
                   <div className="editorial-product-card__actions">
@@ -66,6 +123,13 @@ const CatalogPage = () => {
               </article>
             ))}
           </div>
+          {!filteredProducts.length ? (
+            <div className="editorial-empty-state">
+              <p className="editorial-eyebrow">NO MATCH</p>
+              <h2>No fragrance matches this filter.</h2>
+              <button type="button" className="editorial-button" onClick={() => { setActiveCategory('Semua'); setSearchTerm(''); }}>Reset Catalog</button>
+            </div>
+          ) : null}
         </section>
 
         <footer className="editorial-footer">

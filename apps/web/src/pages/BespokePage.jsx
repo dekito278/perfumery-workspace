@@ -4,13 +4,15 @@ import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 
-const steps = ['Discovery', 'Scent Profiling', 'Formula Direction', 'Refinement', 'Final Fragrance'];
+const steps = ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'];
 
 const BespokePage = () => (
   <>
     <Helmet>
       <title>Bespoke Perfume Consultation - SOLIVAGANT</title>
       <meta name="description" content="Book a bespoke perfume consultation with SOLIVAGANT by Dekito." />
+      <meta property="og:title" content="Bespoke Perfume Consultation - SOLIVAGANT" />
+      <meta property="og:description" content="A public customer-facing consultation flow for discovery, scent profiling, formula direction, refinement, and final fragrance." />
     </Helmet>
 
     <main className="solivagant-editorial-home">
@@ -20,13 +22,14 @@ const BespokePage = () => (
         <div>
           <p className="editorial-eyebrow">BESPOKE PERFUME CONSULTATION</p>
           <h1>Bespoke Perfume Consultation</h1>
+          <p className="editorial-product-detail__price">Request parfum custom · Pre-order 7-14 hari</p>
           <p>
-            A personal fragrance direction shaped through memory, raw materials, skin texture, and the quiet rituals you want the perfume to hold.
+            A customer-facing request ritual for translating aroma direction, personal preference, bottle size, delivery area, and payment readiness into a refined atelier brief.
           </p>
         </div>
         <ol className="editorial-steps editorial-steps--panel">
-          {steps.map((step) => (
-            <li key={step}><Check className="h-4 w-4" />{step}</li>
+          {steps.map((step, index) => (
+            <li key={step}><Check className="h-4 w-4" />{index + 1}. {step}</li>
           ))}
         </ol>
       </section>
@@ -34,18 +37,31 @@ const BespokePage = () => (
       <section className="editorial-section editorial-bespoke editorial-section--compact">
         <div>
           <p className="editorial-eyebrow">ATELIER BRIEF</p>
-          <h2>Tell the atelier what the scent should remember.</h2>
+          <h2>A custom scent request, kept public and simple.</h2>
           <p>
-            Share a material, place, person, season, or mood. Dekito translates the brief into a focused olfactive direction before refinement and final fragrance.
+            This page mirrors the customer side of the SOLIVAGANT custom flow without exposing formula work, validation, material cost, or internal studio operations.
           </p>
+          <div className="editorial-bespoke-summary">
+            <p className="editorial-eyebrow">REQUEST SUMMARY</p>
+            <dl>
+              <div><dt>Selected aroma</dt><dd>Woody floral direction</dd></div>
+              <div><dt>Selected size</dt><dd>30 ml / 50 ml / 100 ml</dd></div>
+              <div><dt>Pre-order time</dt><dd>7-14 hari</dd></div>
+              <div><dt>Estimated price</dt><dd>Price on request</dd></div>
+            </dl>
+          </div>
         </div>
         <form className="editorial-form">
+          <label>Nama parfum / project name<input type="text" placeholder="A working name for the custom scent" /></label>
+          <label>Scent direction<input type="text" placeholder="Woody, floral, aquatic, gourmand, smoky..." /></label>
+          <label>Notes / mood reference<input type="text" placeholder="Materials, memories, places, or fragrances you like" /></label>
+          <label>Size selection<select defaultValue="30 ml"><option>30 ml</option><option>50 ml</option><option>100 ml</option></select></label>
+          <label>Bottle preference<input type="text" placeholder="Minimal, ceremonial, travel-friendly..." /></label>
+          <label>Delivery area<input type="text" placeholder="City / district for shipping estimate" /></label>
           <label>Name<input type="text" placeholder="Your name" /></label>
           <label>Email / WhatsApp<input type="text" placeholder="name@example.com / +62..." /></label>
-          <label>Preferred scent direction<input type="text" placeholder="Woody, floral, fresh, smoky..." /></label>
-          <label>Occasion / purpose<input type="text" placeholder="Daily ritual, gift, wedding, signature..." /></label>
           <label>Message<textarea rows="5" placeholder="Tell us the memory, material, or mood you want to explore." /></label>
-          <button type="button" className="editorial-button editorial-button--primary">Book Consultation</button>
+          <button type="button" className="editorial-button editorial-button--primary">Submit Request</button>
         </form>
       </section>
 

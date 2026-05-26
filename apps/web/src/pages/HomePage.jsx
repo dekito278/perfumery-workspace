@@ -14,6 +14,7 @@ import {
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { featuredProducts, perfumerProfile } from '@/data/storefront.js';
+import { getPublicFragranceCatalog, getPublicMaterialArchive, publicJournalArticles } from '@/data/publicStorefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
@@ -24,58 +25,9 @@ const homeAssets = {
   perfumerCylinder: '/brand/home/perfumer-cylinder.jpg',
 };
 
-const fallbackCollection = featuredProducts.slice(0, 4);
+const fallbackCollection = getPublicFragranceCatalog(featuredProducts).slice(0, 4);
 
-const materials = [
-  {
-    name: 'Orris butter',
-    origin: 'Italy / aged rhizome',
-    family: 'Powdered woods',
-    description: 'Cool violet dust, suede, and a cosmetic softness that settles close to skin.',
-    mood: 'Quiet, polished, intimate',
-  },
-  {
-    name: 'Green fig leaf',
-    origin: 'Mediterranean impression',
-    family: 'Green aromatic',
-    description: 'Milky leaf, sap, pear skin, and humid shade with a clean bitter edge.',
-    mood: 'Verdant, reflective, airy',
-  },
-  {
-    name: 'Amberwood accord',
-    origin: 'Atelier structure',
-    family: 'Amber woods',
-    description: 'A dry modern warmth that gives a formula architecture, diffusion, and shadow.',
-    mood: 'Sculptural, warm, composed',
-  },
-  {
-    name: 'Clean musk trace',
-    origin: 'Soft musk palette',
-    family: 'Skin musk',
-    description: 'Transparent linen, skin warmth, and a low-volume trail made for daily ritual.',
-    mood: 'Tactile, close, serene',
-  },
-];
-
-const journalArticles = [
-  {
-    title: 'Scent memory as a design material',
-    category: 'Memory',
-    text: 'How places, gestures, and personal rituals become the first structure of a perfume brief.',
-  },
-  {
-    title: 'Reading the raw material shelf',
-    category: 'Materials',
-    text: 'A field note on woods, musks, resins, florals, and the small decisions that shape texture.',
-  },
-  {
-    title: 'From lab note to finished bottle',
-    category: 'Process',
-    text: 'Inside the resting, evaluation, refinement, and finishing rhythm of a small atelier batch.',
-  },
-];
-
-const formatProductDescription = (product) => product?.description || product?.notes || product?.mood || 'A quiet Solivagant composition made for skin, atmosphere, and ritual.';
+const formatProductDescription = (product) => product?.subtitle || product?.description || product?.notes || product?.mood || 'A quiet Solivagant composition made for skin, atmosphere, and ritual.';
 const getNotes = (product, key, fallback = []) => (Array.isArray(product?.[key]) && product[key].length ? product[key] : fallback);
 
 const HomePage = () => {
@@ -84,8 +36,10 @@ const HomePage = () => {
     () => catalogProducts.filter(isProductVisibleInStorefront),
     [catalogProducts]
   );
-  const collection = (visibleProducts.length ? visibleProducts : fallbackCollection).slice(0, 4);
+  const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts.length ? visibleProducts : featuredProducts), [visibleProducts]);
+  const collection = publicCatalog.slice(0, 4);
   const featured = collection[0] || fallbackCollection[0];
+  const materials = useMemo(() => getPublicMaterialArchive(publicCatalog).slice(0, 4), [publicCatalog]);
 
   const topNotes = getNotes(featured, 'topNotes', ['Bergamot', 'Green fig', 'Cardamom']);
   const heartNotes = getNotes(featured, 'heartNotes', ['Orris', 'Tea absolute', 'Soft woods']);
@@ -177,7 +131,7 @@ const HomePage = () => {
                     </div>
                     <div>
                       <dt>Size</dt>
-                      <dd>{product.size || '30 ml'} / {product.price || 'Rp 289.000'}</dd>
+                      <dd>{product.sizeVariants?.[0]?.size || product.size || '30 ml'} / {product.price || 'Rp 289.000'}</dd>
                     </div>
                   </dl>
                   <div className="editorial-product-card__actions">
@@ -206,7 +160,7 @@ const HomePage = () => {
             <div className="editorial-feature-list">
               <span>{featured?.mood || 'Quiet daily signature'}</span>
               <span>{featured?.concentration || 'Eau de Parfum'}</span>
-              <span>10 ml / 30 ml / 50 ml</span>
+              <span>{featured?.sizeVariants?.map((variant) => variant.size).join(' / ') || '10 ml / 30 ml / 50 ml'}</span>
             </div>
             <Link to="/cart" className="editorial-button editorial-button--primary">
               Add to Cart
@@ -218,12 +172,12 @@ const HomePage = () => {
         <section id="bespoke" className="editorial-section editorial-bespoke">
           <div>
             <p className="editorial-eyebrow">BESPOKE CONSULTATION</p>
-            <h2>A personal scent direction, shaped through conversation.</h2>
+            <h2>A custom perfume request, shaped through the atelier.</h2>
             <p>
-              Begin with a place, a person, a texture, or a private ritual. The atelier translates the brief into a focused formula direction and refined finished fragrance.
+              Begin with aroma direction, personal preference, bottle size, delivery area, and a brief note for Dekito. The studio work stays private; the request stays simple.
             </p>
             <ol className="editorial-steps">
-              {['Discovery', 'Scent Profiling', 'Formula Direction', 'Refinement', 'Final Fragrance'].map((step) => (
+              {['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'].map((step) => (
                 <li key={step}><Check className="h-4 w-4" />{step}</li>
               ))}
             </ol>
@@ -231,8 +185,8 @@ const HomePage = () => {
           <form className="editorial-form">
             <label>Name<input type="text" placeholder="Your name" /></label>
             <label>Email / WhatsApp<input type="text" placeholder="name@example.com / +62..." /></label>
-            <label>Preferred scent direction<input type="text" placeholder="Woody, floral, fresh, smoky..." /></label>
-            <label>Occasion / purpose<input type="text" placeholder="Daily ritual, gift, wedding, signature..." /></label>
+            <label>Scent direction<input type="text" placeholder="Woody, floral, aquatic, gourmand..." /></label>
+            <label>Size selection<input type="text" placeholder="30 ml, 50 ml, or 100 ml" /></label>
             <label>Message<textarea rows="4" placeholder="Tell us the memory, mood, or material you want to explore." /></label>
             <Link to="/bespoke" className="editorial-button editorial-button--primary">Book Consultation</Link>
           </form>
@@ -251,6 +205,9 @@ const HomePage = () => {
                 <p className="editorial-material-card__origin">{material.origin}</p>
                 <p>{material.description}</p>
                 <strong>{material.mood}</strong>
+                {material.relatedFragranceReferences?.length ? (
+                  <p>Seen in {material.relatedFragranceReferences.map((fragrance) => fragrance.name).join(', ')}.</p>
+                ) : null}
               </article>
             ))}
           </div>
@@ -263,7 +220,7 @@ const HomePage = () => {
             <Link to="/journal">Read journal <BookOpenText className="h-4 w-4" /></Link>
           </div>
           <div className="editorial-journal-grid">
-            {journalArticles.map((article) => (
+            {publicJournalArticles.slice(0, 3).map((article) => (
               <article key={article.title}>
                 <span>{article.category}</span>
                 <h3>{article.title}</h3>
@@ -297,7 +254,7 @@ const HomePage = () => {
             <label>Order number<input type="text" placeholder="SOL-2026-001" /></label>
             <label>Email / phone<input type="text" placeholder="Customer contact" /></label>
             <div className="editorial-timeline">
-              {['Order received', 'Formula checked', 'Packed for delivery', 'Estimated delivery'].map((item, index) => (
+              {['Order received', 'Payment confirmed', 'In preparation', 'Packed', 'Shipped'].map((item, index) => (
                 <span key={item} className={index < 2 ? 'is-complete' : ''}>{item}</span>
               ))}
             </div>
@@ -308,7 +265,7 @@ const HomePage = () => {
         <footer className="editorial-footer">
           <PackageCheck className="h-5 w-5" />
           <span>SOLIVAGANT by Dekito</span>
-          <Link to="/customer">Customer Portal</Link>
+          <Link to="/track-order">Track Order</Link>
         </footer>
       </main>
     </>

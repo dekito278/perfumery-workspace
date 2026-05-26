@@ -358,6 +358,71 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.editorial-catalog-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.editorial-category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editorial-category-filter button,
+.editorial-filter-button {
+  min-height: 42px;
+  border: 1px solid var(--editorial-border);
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.7);
+  padding: 0 16px;
+  color: var(--editorial-forest);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.editorial-category-filter button.is-active {
+  border-color: rgba(24, 53, 34, 0.44);
+  background: var(--editorial-forest);
+  color: var(--editorial-paper);
+}
+
+.editorial-search-field {
+  display: grid;
+  gap: 7px;
+  color: rgba(27, 26, 22, 0.52);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editorial-search-field input {
+  min-height: 44px;
+  border: 1px solid var(--editorial-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0 16px;
+  color: var(--editorial-charcoal);
+  font: inherit;
+  letter-spacing: 0;
+  outline: none;
+  text-transform: none;
+}
+
+.editorial-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .editorial-product-card,
 .editorial-material-card,
 .editorial-journal article,
@@ -382,9 +447,27 @@
   box-shadow: 0 28px 58px -48px rgba(24, 53, 34, 0.58);
 }
 
+.editorial-product-card__media {
+  position: relative;
+}
+
 .editorial-product-card__visual {
   aspect-ratio: 1;
   border-radius: 0;
+}
+
+.editorial-product-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  border: 1px solid rgba(176, 139, 79, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.82);
+  padding: 7px 10px;
+  color: var(--editorial-forest);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
 }
 
 .editorial-product-card__body {
@@ -411,6 +494,27 @@
   color: var(--editorial-muted);
   font-size: 0.93rem;
   line-height: 1.58;
+}
+
+.editorial-product-pills,
+.editorial-detail-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.editorial-product-pills span,
+.editorial-detail-kicker span {
+  border: 1px solid rgba(24, 53, 34, 0.14);
+  border-radius: 999px;
+  background: rgba(238, 241, 231, 0.64);
+  padding: 7px 10px;
+  color: var(--editorial-forest);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .editorial-product-card dl {
@@ -578,6 +682,7 @@
 }
 
 .editorial-form input,
+.editorial-form select,
 .editorial-form textarea,
 .editorial-tracking-preview input {
   width: 100%;
@@ -593,10 +698,49 @@
 }
 
 .editorial-form input:focus,
+.editorial-form select:focus,
 .editorial-form textarea:focus,
 .editorial-tracking-preview input:focus {
   border-color: rgba(24, 53, 34, 0.42);
   box-shadow: 0 0 0 4px rgba(24, 53, 34, 0.08);
+}
+
+.editorial-bespoke-summary {
+  margin-top: 28px;
+  border: 1px solid var(--editorial-border);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.7);
+  padding: 22px;
+}
+
+.editorial-bespoke-summary dl {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.editorial-bespoke-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid rgba(27, 26, 22, 0.1);
+  padding-top: 12px;
+}
+
+.editorial-bespoke-summary dt {
+  color: rgba(27, 26, 22, 0.52);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editorial-bespoke-summary dd {
+  margin: 0;
+  color: var(--editorial-charcoal);
+  font-size: 0.9rem;
+  font-weight: 850;
+  text-align: right;
 }
 
 .editorial-form .editorial-button,
@@ -732,6 +876,13 @@
 
 .editorial-cart-line {
   margin-top: 22px;
+}
+
+.editorial-cart-line__image {
+  width: 74px;
+  min-width: 74px;
+  aspect-ratio: 1;
+  border-radius: 8px;
 }
 
 .editorial-cart-line strong,
@@ -909,6 +1060,7 @@
   }
 
   .editorial-section-heading,
+  .editorial-catalog-toolbar,
   .editorial-notes-grid,
   .editorial-product-grid,
   .editorial-product-grid--three,
