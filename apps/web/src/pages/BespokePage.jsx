@@ -10,9 +10,9 @@ const BespokePage = () => (
   <>
     <Helmet>
       <title>Bespoke Perfume Consultation - SOLIVAGANT</title>
-      <meta name="description" content="Book a bespoke perfume consultation with SOLIVAGANT by Dekito." />
+      <meta name="description" content="Request a SOLIVAGANT custom perfume consultation through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari." />
       <meta property="og:title" content="Bespoke Perfume Consultation - SOLIVAGANT" />
-      <meta property="og:description" content="A public customer-facing consultation flow for discovery, scent profiling, formula direction, refinement, and final fragrance." />
+      <meta property="og:description" content="A public customer-facing custom perfume request flow by SOLIVAGANT, with internal formula and studio workflow kept private." />
     </Helmet>
 
     <main className="solivagant-editorial-home">

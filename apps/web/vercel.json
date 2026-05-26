@@ -45,6 +45,26 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/home",
+      "destination": "/home/index.html"
+    },
+    {
+      "source": "/catalog",
+      "destination": "/catalog/index.html"
+    },
+    {
+      "source": "/bespoke",
+      "destination": "/bespoke/index.html"
+    },
+    {
+      "source": "/materials",
+      "destination": "/materials/index.html"
+    },
+    {
+      "source": "/journal",
+      "destination": "/journal/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

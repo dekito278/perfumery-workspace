@@ -156,6 +156,47 @@
 				background: #f6f0e3;
 				color: #0b100b;
 			}
+
+			.app-boot-sections {
+				position: relative;
+				display: grid;
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+				gap: 14px;
+				max-width: 1120px;
+				margin: 30px auto 0;
+				text-align: left;
+			}
+
+			.app-boot-sections article {
+				border: 1px solid rgba(246, 240, 227, 0.14);
+				border-radius: 8px;
+				background: rgba(246, 240, 227, 0.055);
+				padding: 18px;
+			}
+
+			.app-boot-sections h3 {
+				margin: 0;
+				color: #f6f0e3;
+				font-family: Georgia, "Times New Roman", serif;
+				font-size: 22px;
+				font-weight: 500;
+			}
+
+			.app-boot-sections p {
+				margin-top: 10px;
+				color: rgba(246, 240, 227, 0.66);
+				font-size: 13px;
+				font-weight: 600;
+				letter-spacing: 0;
+				line-height: 1.55;
+				text-transform: none;
+			}
+
+			@media (max-width: 900px) {
+				.app-boot-sections {
+					grid-template-columns: 1fr;
+				}
+			}
 		</style>
 	</head>
 	<body>
@@ -167,6 +208,24 @@
 						<h1>SOLIVAGANT</h1>
 						<h2>Fragrance as a memory object.</h2>
 						<p class="app-boot-description">SOLIVAGANT is an artisan perfume atelier by Dekito. The interactive storefront requires JavaScript for product browsing, cart, checkout, and order tracking.</p>
+						<section class="app-boot-sections" aria-label="Public storefront previews">
+							<article>
+								<h3>Fragrance Collection</h3>
+								<p>Quiet perfume objects with notes, concentration, size variants, price, and customer-facing availability.</p>
+							</article>
+							<article>
+								<h3>Bespoke Consultation</h3>
+								<p>Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari.</p>
+							</article>
+							<article>
+								<h3>Raw Material Archive</h3>
+								<p>Public storytelling for origins, olfactive families, sensory texture, mood, and usage stories.</p>
+							</article>
+							<article>
+								<h3>Journal</h3>
+								<p>Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture.</p>
+							</article>
+						</section>
 						<ul class="app-boot-structure" aria-label="Public storefront sections">
 							<li>Fragrance collection</li>
 							<li>Bespoke ritual</li>
@@ -205,15 +264,15 @@
 						eyebrow: 'Fragrance Collection',
 						title: 'Fragrance Collection',
 						headline: 'Quiet signatures for skin, atmosphere, and ritual.',
-						description: 'Limited perfume objects with notes preview, size and price placeholders, detail links, and customer cart actions.',
-						items: ['Product grid', 'Notes preview', 'View details', 'Add to cart'],
+						description: "Explore SOLIVAGANT fragrances including Hug, Chant Nocturne, Jaipong, Porte vers le Paradis, and Trace d'Aventure. Each public product preview includes notes, concentration, size variants, price, and availability.",
+						items: ['Hug', 'Chant Nocturne', 'Jaipong', 'Porte vers le Paradis', "Trace d'Aventure"],
 					},
 					'/bespoke': {
 						eyebrow: 'Bespoke Perfume Consultation',
 						title: 'Bespoke Perfume Consultation',
-						headline: 'A personal scent direction, shaped through conversation.',
-						description: 'Discovery, scent profiling, formula direction, refinement, and final fragrance for a customer-facing bespoke ritual.',
-						items: ['Discovery', 'Scent Profiling', 'Formula Direction', 'Final Fragrance'],
+						headline: 'Request parfum custom. Pre-order 7-14 hari.',
+						description: 'A public consultation flow for custom perfume requests: Aroma, Preferensi, Botol, Ongkir, and Bayar. The internal studio brief, formula, validation, and production details stay private.',
+						items: ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'],
 					},
 					'/materials': {
 						eyebrow: 'Raw Material Archive',
