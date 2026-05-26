@@ -68,15 +68,17 @@ const lazyRoute = (loader) => lazy(async () => {
 });
 
 const CatalogPage = lazyRoute(() => import('@/pages/CatalogPage.jsx'));
-const ProductDetailPage = lazyRoute(() => import('@/pages/ProductDetailPage.jsx'));
+const PublicProductDetailPage = lazyRoute(() => import('@/pages/PublicProductDetailPage.jsx'));
 const BespokePage = lazyRoute(() => import('@/pages/BespokePage.jsx'));
 const CartPage = lazyRoute(() => import('@/pages/CartPage.jsx'));
+const CheckoutPage = lazyRoute(() => import('@/pages/CheckoutPage.jsx'));
 const PaymentPage = lazyRoute(() => import('@/pages/PaymentPage.jsx'));
 const CustomerPortalPage = lazyRoute(() => import('@/pages/CustomerPortalPage.jsx'));
 const CustomerInvoicePage = lazyRoute(() => import('@/pages/CustomerInvoicePage.jsx'));
 const PublicTrackingPage = lazyRoute(() => import('@/pages/PublicTrackingPage.jsx'));
 const PublicMaterialsPage = lazyRoute(() => import('@/pages/PublicMaterialsPage.jsx'));
 const PublicJournalPage = lazyRoute(() => import('@/pages/PublicJournalPage.jsx'));
+const NotFoundPage = lazyRoute(() => import('@/pages/NotFoundPage.jsx'));
 const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
 const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
 const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetupPage.jsx'));
@@ -170,10 +172,17 @@ const storefrontRoutePrefixes = [
   '/materials',
   '/journal',
   '/cart',
+  '/checkout',
   '/payment',
   '/customer',
   '/track',
   '/track-order',
+  '/hug',
+  '/chant-nocturne',
+  '/jaipong',
+  '/porte-vers-le-paradis',
+  '/trace-daventure',
+  '/not-found',
 ];
 
 const isStorefrontRoute = (pathname) => (
@@ -387,12 +396,19 @@ function AppRoutes() {
         <Route path="/" element={<RootRedirect />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/catalog" element={<CatalogPage />} />
-        <Route path="/products/:slug" element={<ProductDetailPage />} />
+        <Route path="/catalog/:slug" element={<PublicProductDetailPage />} />
+        <Route path="/products/:slug" element={<PublicProductDetailPage />} />
+        <Route path="/hug" element={<PublicProductDetailPage />} />
+        <Route path="/chant-nocturne" element={<PublicProductDetailPage />} />
+        <Route path="/jaipong" element={<PublicProductDetailPage />} />
+        <Route path="/porte-vers-le-paradis" element={<PublicProductDetailPage />} />
+        <Route path="/trace-daventure" element={<PublicProductDetailPage />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/materials" element={<PublicMaterialsPage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/customer" element={<CustomerPortalPage />} />
         <Route path="/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
@@ -842,6 +858,8 @@ function AppRoutes() {
             <ValidationLogPage />
           </ProtectedRoute>
         } />
+        <Route path="/not-found" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </MobileRouteTransition>
       </Suspense>

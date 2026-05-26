@@ -2,29 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { BookOpenText, ShoppingBag } from 'lucide-react';
-
-const articles = [
-  {
-    category: 'Scent Memory',
-    title: 'Fragrance as a memory object',
-    text: 'How a private place, repeated gesture, or remembered person becomes the structure of a perfume brief.',
-  },
-  {
-    category: 'Raw Materials',
-    title: 'Reading woods, musks, and green shadows',
-    text: 'A material note on texture, volatility, and the quiet decisions that make a fragrance feel tactile.',
-  },
-  {
-    category: 'Atelier Process',
-    title: 'From lab note to finished bottle',
-    text: 'The rhythm of weighing, resting, evaluating, refining, and finishing a small perfume batch.',
-  },
-  {
-    category: 'Product Stories',
-    title: 'Why quiet perfume can still feel unforgettable',
-    text: 'A look at restraint, diffusion, skin warmth, and the kind of presence that does not need volume.',
-  },
-];
+import { publicJournalArticles as articles } from '@/data/publicStorefront.js';
 
 const PublicJournalPage = () => (
   <>

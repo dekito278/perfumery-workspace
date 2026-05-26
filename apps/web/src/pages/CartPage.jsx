@@ -75,7 +75,7 @@ const CartPage = () => {
               <span>Shipping information placeholder</span>
               <span>Payment placeholder</span>
             </div>
-            <button type="button" className="editorial-button editorial-button--primary">Proceed to Checkout</button>
+            <Link to="/checkout" className="editorial-button editorial-button--primary">Proceed to Checkout</Link>
             <Link to="/catalog" className="editorial-button">Continue Shopping</Link>
           </aside>
         </section>

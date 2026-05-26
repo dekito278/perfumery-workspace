@@ -2,51 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
-
-const materials = [
-  {
-    name: 'Orris butter',
-    origin: 'Italy / aged rhizome',
-    family: 'Powdered woods',
-    description: 'Cool violet dust, suede, and cosmetic softness with a long, intimate trace.',
-    mood: 'Quiet, polished, intimate',
-  },
-  {
-    name: 'Green fig leaf',
-    origin: 'Mediterranean impression',
-    family: 'Green aromatic',
-    description: 'Milky leaf, pear skin, wet stem, and a clean bitter-green edge.',
-    mood: 'Verdant, reflective, airy',
-  },
-  {
-    name: 'Tuberose absolute',
-    origin: 'India / cultivated white flowers',
-    family: 'White floral',
-    description: 'Creamed petals, warm skin, night air, and a luminous ceremonial floral body.',
-    mood: 'Radiant, intimate, magnetic',
-  },
-  {
-    name: 'Amberwood accord',
-    origin: 'Atelier structure',
-    family: 'Amber woods',
-    description: 'Dry resin, modern woods, and polished depth used to give formulas architecture.',
-    mood: 'Sculptural, warm, composed',
-  },
-  {
-    name: 'Vetiver fraction',
-    origin: 'Haiti / refined root material',
-    family: 'Dry woods',
-    description: 'Earth, smoke, mineral grass, and a tailored woody dryness.',
-    mood: 'Grounded, elegant, restrained',
-  },
-  {
-    name: 'Clean musk trace',
-    origin: 'Soft musk palette',
-    family: 'Skin musk',
-    description: 'Transparent linen, warmed skin, and a low-volume trail made for daily ritual.',
-    mood: 'Tactile, close, serene',
-  },
-];
+import { publicMaterials as materials } from '@/data/publicStorefront.js';
 
 const PublicMaterialsPage = () => (
   <>

@@ -354,6 +354,10 @@
   gap: 18px;
 }
 
+.editorial-product-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .editorial-product-card,
 .editorial-material-card,
 .editorial-journal article,
@@ -661,6 +665,56 @@
   align-items: stretch;
 }
 
+.editorial-product-detail,
+.editorial-checkout-page {
+  display: grid;
+  grid-template-columns: minmax(420px, 0.9fr) minmax(0, 1fr);
+  gap: clamp(42px, 6vw, 88px);
+  align-items: start;
+}
+
+.editorial-product-detail h1 {
+  margin: 8px 0 0;
+  color: var(--editorial-charcoal);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3.4rem, 5.5vw, 6.6rem);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.editorial-product-detail__price {
+  color: var(--editorial-forest);
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.editorial-not-found {
+  display: grid;
+  width: min(920px, calc(100% - 64px));
+  min-height: calc(100vh - 84px);
+  align-content: center;
+  margin: 0 auto;
+  padding: 80px 0;
+}
+
+.editorial-not-found h1 {
+  margin: 0;
+  color: var(--editorial-charcoal);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(4rem, 7vw, 7.5rem);
+  font-weight: 500;
+  line-height: 0.96;
+}
+
+.editorial-not-found p:not(.editorial-eyebrow) {
+  max-width: 560px;
+  margin: 22px 0 0;
+  color: var(--editorial-muted);
+  font-size: 1.08rem;
+  line-height: 1.72;
+}
+
 .editorial-cart-preview,
 .editorial-tracking-preview {
   padding: 26px;
@@ -792,6 +846,7 @@
 
 @media (max-width: 1180px) {
   .editorial-product-grid,
+  .editorial-product-grid--three,
   .editorial-material-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -822,7 +877,9 @@
   .editorial-story,
   .editorial-featured,
   .editorial-bespoke,
-  .editorial-commerce {
+  .editorial-commerce,
+  .editorial-product-detail,
+  .editorial-checkout-page {
     grid-template-columns: 1fr;
   }
 
@@ -854,6 +911,7 @@
   .editorial-section-heading,
   .editorial-notes-grid,
   .editorial-product-grid,
+  .editorial-product-grid--three,
   .editorial-material-grid,
   .editorial-journal-grid,
   .editorial-journal-grid--wide,

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { featuredProducts } from '@/data/storefront.js';
+import { publicFragrances } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -15,7 +16,8 @@ const CatalogPage = () => {
   const { addItem } = useCart();
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
-    return (visible.length ? visible : featuredProducts).slice(0, 12);
+    const merged = [...publicFragrances, ...(visible.length ? visible : featuredProducts)];
+    return Array.from(new Map(merged.map((product) => [product.slug, product])).values()).slice(0, 12);
   }, [allProducts]);
 
   return (
@@ -66,7 +68,7 @@ const CatalogPage = () => {
                     </div>
                   </dl>
                   <div className="editorial-product-card__actions">
-                    <Link to={`/products/${product.slug}`}>View Details</Link>
+                    <Link to={`/catalog/${product.slug}`}>View Details</Link>
                     <button type="button" onClick={() => addItem(product, 1)}>Add to Cart</button>
                   </div>
                 </div>
