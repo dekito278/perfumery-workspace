@@ -75,6 +75,8 @@ const PaymentPage = lazyRoute(() => import('@/pages/PaymentPage.jsx'));
 const CustomerPortalPage = lazyRoute(() => import('@/pages/CustomerPortalPage.jsx'));
 const CustomerInvoicePage = lazyRoute(() => import('@/pages/CustomerInvoicePage.jsx'));
 const PublicTrackingPage = lazyRoute(() => import('@/pages/PublicTrackingPage.jsx'));
+const PublicMaterialsPage = lazyRoute(() => import('@/pages/PublicMaterialsPage.jsx'));
+const PublicJournalPage = lazyRoute(() => import('@/pages/PublicJournalPage.jsx'));
 const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
 const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
 const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetupPage.jsx'));
@@ -88,7 +90,6 @@ const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
 const CustomersPage = lazyRoute(() => import('@/pages/CustomersPage.jsx'));
 const ShipmentsPage = lazyRoute(() => import('@/pages/ShipmentsPage.jsx'));
 const BriefsPage = lazyRoute(() => import('@/pages/BriefsPage.jsx'));
-const JournalPage = lazyRoute(() => import('@/pages/JournalPage.jsx'));
 const JournalEditorPage = lazyRoute(() => import('@/pages/JournalEditorPage.jsx'));
 const JournalDetailPage = lazyRoute(() => import('@/pages/JournalDetailPage.jsx'));
 const PublicJournalArticlePage = lazyRoute(() => import('@/pages/PublicJournalArticlePage.jsx'));
@@ -145,7 +146,6 @@ const desktopProtectedRoutePrefixes = [
   '/dashboard',
   '/authenticator',
   '/briefs',
-  '/journal',
   '/raw-materials',
   '/raw-material',
   '/raw-material-audit',
@@ -167,10 +167,13 @@ const storefrontRoutePrefixes = [
   '/products',
   '/articles',
   '/bespoke',
+  '/materials',
+  '/journal',
   '/cart',
   '/payment',
   '/customer',
   '/track',
+  '/track-order',
 ];
 
 const isStorefrontRoute = (pathname) => (
@@ -387,10 +390,14 @@ function AppRoutes() {
         <Route path="/products/:slug" element={<ProductDetailPage />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
+        <Route path="/materials" element={<PublicMaterialsPage />} />
+        <Route path="/journal" element={<PublicJournalPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/customer" element={<CustomerPortalPage />} />
         <Route path="/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
+        <Route path="/track-order" element={<PublicTrackingPage />} />
+        <Route path="/track-order/:code" element={<PublicTrackingPage />} />
         <Route path="/track" element={<PublicTrackingPage />} />
         <Route path="/track/:code" element={<PublicTrackingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -728,11 +735,6 @@ function AppRoutes() {
         <Route path="/briefs" element={
           <ProtectedRoute>
             <BriefsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/journal" element={
-          <ProtectedRoute>
-            <JournalPage />
           </ProtectedRoute>
         } />
         <Route path="/journal/new" element={

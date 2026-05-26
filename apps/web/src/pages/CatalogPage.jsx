@@ -1,220 +1,84 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, PackagePlus, Search, WandSparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, ShoppingBag } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
-import ListPagination from '@/components/ListPagination.jsx';
-import { catalogSortOptions, storefrontSegments } from '@/data/storefront.js';
+import { featuredProducts } from '@/data/storefront.js';
+import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
-import { cn } from '@/lib/utils.js';
-import {
-  formatRupiah,
-  getProductLowStock,
-  getVisibleProductTags,
-  isProductVisibleInStorefront,
-} from '@/services/productCatalogService.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
-const CATALOG_PAGE_SIZE = 6;
-
-const sortProducts = (products, sort) => {
-  const nextProducts = [...products];
-  if (sort === 'price-low') return nextProducts.sort((a, b) => a.priceNumber - b.priceNumber);
-  if (sort === 'price-high') return nextProducts.sort((a, b) => b.priceNumber - a.priceNumber);
-  if (sort === 'name') return nextProducts.sort((a, b) => a.name.localeCompare(b.name));
-  return nextProducts.sort((a, b) => Number(b.featured) - Number(a.featured) || b.popularity - a.popularity);
-};
+const getDescription = (product) => product.description || product.notes || product.mood || 'A quiet Solivagant composition for skin, atmosphere, and ritual.';
 
 const CatalogPage = () => {
-  const [searchParams] = useSearchParams();
-  const [query, setQuery] = useState('');
-  const [segment, setSegment] = useState(searchParams.get('segment') || 'all');
-  const [category, setCategory] = useState(searchParams.get('category') || 'All');
-  const [sort, setSort] = useState('featured');
-  const [currentPage, setCurrentPage] = useState(1);
-  const allCatalogProducts = useCatalogProducts();
-  const catalogProducts = useMemo(() => allCatalogProducts.filter(isProductVisibleInStorefront), [allCatalogProducts]);
-  const categories = useStorefrontCategories(catalogProducts);
-  const catalogLoading = Boolean(allCatalogProducts.loading);
-  const hasCatalogProducts = catalogProducts.length > 0;
-
+  const allProducts = useCatalogProducts();
+  const { addItem } = useCart();
   const products = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    return sortProducts(catalogProducts.filter((product) => {
-      const matchesSegment = segment === 'all'
-        || (segment === 'limited' && (product.featured || product.stock <= 8))
-        || (segment === 'regular' && !product.featured && product.stock > 0);
-      const matchesCategory = category === 'All' || product.category === category;
-      const searchable = [product.name, product.category, product.notes, product.mood, product.description, ...getVisibleProductTags(product)].join(' ').toLowerCase();
-      return matchesSegment && matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
-    }), sort);
-  }, [catalogProducts, category, query, segment, sort]);
-  const totalPages = Math.max(1, Math.ceil(products.length / CATALOG_PAGE_SIZE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const visibleProducts = useMemo(() => {
-    const startIndex = (safeCurrentPage - 1) * CATALOG_PAGE_SIZE;
-    return products.slice(startIndex, startIndex + CATALOG_PAGE_SIZE);
-  }, [products, safeCurrentPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [category, query, segment, sort]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+    const visible = allProducts.filter(isProductVisibleInStorefront);
+    return (visible.length ? visible : featuredProducts).slice(0, 12);
+  }, [allProducts]);
 
   return (
     <>
       <Helmet>
-        <title>Katalog - Solivagant</title>
-        <meta name="description" content="Jelajahi katalog Solivagant berdasarkan aroma, harga, dan profil parfum." />
+        <title>Fragrance Collection - SOLIVAGANT</title>
+        <meta name="description" content="Explore the SOLIVAGANT fragrance collection by perfumer Dekito." />
       </Helmet>
-      <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <StorefrontHeader actions={[
-          { to: '/cart', label: 'Keranjang', icon: 'cart', iconOnly: true },
-          { to: '/home', label: 'Beranda' },
-        ]}
-        />
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="text-xs font-bold uppercase text-[#263d27]">Belanja</div>
-              <h1 className="mt-1 text-4xl font-bold">Katalog parfum</h1>
-              <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-muted-foreground">
-                Cari berdasarkan aroma, notes, harga, atau mood.
-              </p>
-            </div>
-            <label className="flex h-12 w-full max-w-md items-center gap-2 rounded-2xl border bg-white px-4 shadow-sm">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari notes, mood, produk" className="min-h-0 flex-1 bg-transparent text-sm font-semibold outline-none" />
-            </label>
-          </div>
-          {hasCatalogProducts ? (
-            <section className="mt-6 rounded-2xl border border-[#263d27]/10 bg-white/86 p-4 shadow-sm">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0">
-                  <div className="text-[11px] font-bold uppercase text-[#6b7280]">Tipe</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {[{ name: 'Semua', filter: 'all' }, ...storefrontSegments.filter((item) => item.filter !== 'bespoke')].map((item) => (
-                      <button key={item.filter} type="button" onClick={() => setSegment(item.filter)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold transition', segment === item.filter ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm' : 'bg-white text-muted-foreground hover:border-[#263d27]/30 hover:text-[#263d27]')}>
-                        {item.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="shrink-0">
-                  <div className="text-[11px] font-bold uppercase text-[#6b7280]">Urutkan</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {catalogSortOptions.map((option) => (
-                      <button key={option.value} type="button" onClick={() => setSort(option.value)} className={cn('h-10 rounded-2xl border px-3 text-xs font-bold transition', sort === option.value ? 'border-[#263d27] bg-[#263d27] text-white shadow-sm' : 'bg-white text-muted-foreground hover:border-[#263d27]/30 hover:text-[#263d27]')}>
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 border-t border-[#263d27]/10 pt-4">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="text-[11px] font-bold uppercase text-[#6b7280]">Aroma</div>
-                  <div className="text-xs font-bold text-[#263d27]">{products.length} item</div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {['All', ...categories.map((item) => item.name)].map((item) => (
-                    <button key={item} type="button" onClick={() => setCategory(item)} className={cn('h-10 rounded-2xl border px-4 text-sm font-bold transition', category === item ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27] shadow-sm' : 'bg-white text-muted-foreground hover:border-[#263d27]/30 hover:text-[#263d27]')}>
-                      {item === 'All' ? 'Semua' : item}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-          ) : null}
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {visibleProducts.map((product) => (
-              <article key={product.id} className="group overflow-hidden rounded-2xl border border-stone-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-[#263d27]/18 hover:shadow-xl hover:shadow-[#263d27]/8">
-                <ProductVisual product={product} className="aspect-[4/3]" imageFit="cover" />
-                <div className="p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-lg font-bold">{product.name}</h2>
-                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{product.notes}</p>
+
+      <main className="solivagant-editorial-home">
+        <header className="editorial-header">
+          <Link to="/home" className="editorial-wordmark">SOLIVAGANT</Link>
+          <nav className="editorial-nav" aria-label="Storefront navigation">
+            <Link to="/catalog">Collection</Link>
+            <Link to="/bespoke">Bespoke</Link>
+            <Link to="/materials">Materials</Link>
+            <Link to="/journal">Journal</Link>
+            <Link to="/track-order">Track Order</Link>
+          </nav>
+          <Link to="/cart" className="editorial-cart-button"><ShoppingBag className="h-4 w-4" />Cart</Link>
+        </header>
+
+        <section className="editorial-page-hero">
+          <p className="editorial-eyebrow">FRAGRANCE COLLECTION</p>
+          <h1>Fragrance Collection</h1>
+          <p>
+            Limited perfume objects and quiet daily signatures composed from raw materials, memory, and the tactile rhythm of the atelier.
+          </p>
+        </section>
+
+        <section className="editorial-section editorial-section--compact">
+          <div className="editorial-product-grid">
+            {products.map((product, index) => (
+              <article key={product.id || product.slug} className="editorial-product-card">
+                <ProductVisual product={product} className="editorial-product-card__visual" imageFit="cover" priority={index < 2} />
+                <div className="editorial-product-card__body">
+                  <span>{product.category || 'Atelier'}</span>
+                  <h3>{product.name}</h3>
+                  <p>{getDescription(product)}</p>
+                  <dl>
+                    <div>
+                      <dt>Notes</dt>
+                      <dd>{product.notes || 'Orris, woods, clean musk'}</dd>
                     </div>
-                    <div className="shrink-0 text-right">
-                      {product.compareAtPriceNumber > product.priceNumber ? <div className="text-xs font-bold text-muted-foreground line-through">{formatRupiah(product.compareAtPriceNumber)}</div> : null}
-                      <div className="text-sm font-bold">{product.price}</div>
-                      <div className={cn('mt-1 text-xs font-bold', getProductLowStock(product) ? 'text-rose-700' : 'text-muted-foreground')}>{product.stock > 0 ? `${product.stock} tersisa` : 'Habis'}</div>
+                    <div>
+                      <dt>Size / price</dt>
+                      <dd>{product.size || '30 ml'} / {product.price || 'Rp 289.000'}</dd>
                     </div>
+                  </dl>
+                  <div className="editorial-product-card__actions">
+                    <Link to={`/products/${product.slug}`}>View Details</Link>
+                    <button type="button" onClick={() => addItem(product, 1)}>Add to Cart</button>
                   </div>
-                    <div className="mt-3 flex flex-wrap gap-1">
-                    {product.variants.slice(0, 4).map((variant) => (
-                      <span key={variant.id || variant.size} className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{variant.size}</span>
-                    ))}
-                    {getProductLowStock(product) ? <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase text-rose-700">Mau habis</span> : null}
-                  </div>
-                    <Link to={`/products/${product.slug}`} className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-sm font-bold text-white transition group-hover:bg-[#1c301d]">
-                    Lihat produk
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
                 </div>
               </article>
             ))}
           </div>
-          <ListPagination
-            currentPage={safeCurrentPage}
-            pageSize={CATALOG_PAGE_SIZE}
-            totalItems={products.length}
-            itemLabel="produk"
-            onPageChange={setCurrentPage}
-          />
-          {!products.length ? (
-            <div className="mt-8 overflow-hidden rounded-[28px] border border-[#263d27]/12 bg-white text-center shadow-sm">
-              <div className="bg-[#050705] px-6 py-10 text-[#eef2e8]">
-                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mx-auto h-16 w-48 rounded-2xl object-contain" />
-                <h2 className="mt-6 text-2xl font-bold">
-                  {catalogLoading ? 'Memuat koleksi parfum' : hasCatalogProducts ? 'Produk tidak ditemukan' : 'Belum ada parfum tersedia'}
-                </h2>
-                <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-relaxed text-[#cbd6c5]">
-                  {catalogLoading
-                    ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
-                    : hasCatalogProducts
-                    ? 'Coba kategori, tipe shop, atau kata kunci aroma lain.'
-                    : 'Koleksi publik akan tampil di sini setelah produk ditambahkan dari Studio. Pembeli tetap bisa mulai dari request custom.'}
-                </p>
-              </div>
-              {!catalogLoading ? (
-              <div className="flex flex-wrap justify-center gap-3 px-6 py-6">
-                {hasCatalogProducts ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery('');
-                      setSegment('all');
-                      setCategory('All');
-                      setSort('featured');
-                    }}
-                    className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]"
-                  >
-                    Reset filter
-                    <Search className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <Link to="/login" className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
-                    Tambah produk
-                    <PackagePlus className="h-4 w-4" />
-                  </Link>
-                )}
-                <Link to="/bespoke" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-5 text-sm font-bold text-[#0b130c]">
-                  Request custom
-                  <WandSparkles className="h-4 w-4" />
-                </Link>
-              </div>
-              ) : null}
-            </div>
-          ) : null}
         </section>
+
+        <footer className="editorial-footer">
+          <span>SOLIVAGANT by Dekito</span>
+          <Link to="/bespoke">Book Bespoke Consultation <ArrowRight className="h-4 w-4" /></Link>
+        </footer>
       </main>
     </>
   );

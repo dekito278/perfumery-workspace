@@ -116,11 +116,11 @@ const HomePage = () => {
             SOLIVAGANT
           </Link>
           <nav className="editorial-nav" aria-label="Storefront navigation">
-            <a href="#collection">Collection</a>
-            <a href="#bespoke">Bespoke</a>
-            <a href="#materials">Materials</a>
-            <a href="#journal">Journal</a>
-            <a href="#tracking">Track Order</a>
+            <Link to="/catalog">Collection</Link>
+            <Link to="/bespoke">Bespoke</Link>
+            <Link to="/materials">Materials</Link>
+            <Link to="/journal">Journal</Link>
+            <Link to="/track-order">Track Order</Link>
           </nav>
           <Link to="/cart" className="editorial-cart-button">
             <ShoppingBag className="h-4 w-4" />
@@ -280,7 +280,7 @@ const HomePage = () => {
           <div className="editorial-section-heading">
             <p className="editorial-eyebrow">JOURNAL / EDITORIAL</p>
             <h2>Field notes from the atelier.</h2>
-            <Link to="/articles">Read journal <BookOpenText className="h-4 w-4" /></Link>
+            <Link to="/journal">Read journal <BookOpenText className="h-4 w-4" /></Link>
           </div>
           <div className="editorial-journal-grid">
             {journalArticles.map((article) => (
@@ -321,7 +321,7 @@ const HomePage = () => {
                 <span key={item} className={index < 2 ? 'is-complete' : ''}>{item}</span>
               ))}
             </div>
-            <Link to="/track" className="editorial-button"><Search className="h-4 w-4" />Track Order</Link>
+            <Link to="/track-order" className="editorial-button"><Search className="h-4 w-4" />Track Order</Link>
           </div>
         </section>
 
