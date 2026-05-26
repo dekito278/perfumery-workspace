@@ -12,6 +12,15 @@ import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingSta
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import HomePage from '@/pages/HomePage.jsx';
+import CatalogPage from '@/pages/CatalogPage.jsx';
+import PublicProductDetailPage from '@/pages/PublicProductDetailPage.jsx';
+import BespokePage from '@/pages/BespokePage.jsx';
+import CartPage from '@/pages/CartPage.jsx';
+import CheckoutPage from '@/pages/CheckoutPage.jsx';
+import PublicTrackingPage from '@/pages/PublicTrackingPage.jsx';
+import PublicMaterialsPage from '@/pages/PublicMaterialsPage.jsx';
+import PublicJournalPage from '@/pages/PublicJournalPage.jsx';
+import NotFoundPage from '@/pages/NotFoundPage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
@@ -67,18 +76,9 @@ const lazyRoute = (loader) => lazy(async () => {
   }
 });
 
-const CatalogPage = lazyRoute(() => import('@/pages/CatalogPage.jsx'));
-const PublicProductDetailPage = lazyRoute(() => import('@/pages/PublicProductDetailPage.jsx'));
-const BespokePage = lazyRoute(() => import('@/pages/BespokePage.jsx'));
-const CartPage = lazyRoute(() => import('@/pages/CartPage.jsx'));
-const CheckoutPage = lazyRoute(() => import('@/pages/CheckoutPage.jsx'));
 const PaymentPage = lazyRoute(() => import('@/pages/PaymentPage.jsx'));
 const CustomerPortalPage = lazyRoute(() => import('@/pages/CustomerPortalPage.jsx'));
 const CustomerInvoicePage = lazyRoute(() => import('@/pages/CustomerInvoicePage.jsx'));
-const PublicTrackingPage = lazyRoute(() => import('@/pages/PublicTrackingPage.jsx'));
-const PublicMaterialsPage = lazyRoute(() => import('@/pages/PublicMaterialsPage.jsx'));
-const PublicJournalPage = lazyRoute(() => import('@/pages/PublicJournalPage.jsx'));
-const NotFoundPage = lazyRoute(() => import('@/pages/NotFoundPage.jsx'));
 const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
 const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
 const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetupPage.jsx'));

@@ -11,16 +11,10 @@ import {
   Search,
   ShoppingBag,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { featuredProducts, perfumerProfile } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-
-const reveal = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.48, ease: 'easeOut' } },
-};
 
 const homeAssets = {
   rawMaterialLibrary: '/brand/home/raw-material-library.jpg',
@@ -129,7 +123,7 @@ const HomePage = () => {
         </header>
 
         <section className="editorial-hero">
-          <motion.div initial="hidden" animate="visible" variants={reveal} className="editorial-hero__copy">
+          <div className="editorial-hero__copy">
             <p className="editorial-eyebrow">ARTISAN PERFUMERY ATELIER</p>
             <h1>Fragrance as a memory object.</h1>
             <p className="editorial-lede">
@@ -144,8 +138,8 @@ const HomePage = () => {
                 Book Bespoke Consultation
               </Link>
             </div>
-          </motion.div>
-          <motion.div initial="hidden" animate="visible" variants={reveal} className="editorial-hero__visual" aria-label="Solivagant perfume atelier composition">
+          </div>
+          <div className="editorial-hero__visual" aria-label="Solivagant perfume atelier composition">
             <div className="editorial-hero__panel">
               <img src={homeAssets.perfumerCylinder} alt="Perfume bottle and formulation objects in the Solivagant atelier" />
               <div className="editorial-bottle-card">
@@ -153,14 +147,14 @@ const HomePage = () => {
                 <strong>{featured?.name || 'Santal Morn'}</strong>
               </div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         <section className="editorial-section editorial-story">
           <div className="editorial-image-frame">
             <img src={homeAssets.perfumerPipettes} alt="Dekito working with pipettes and perfume materials" />
           </div>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={reveal} className="editorial-story__copy">
+          <div className="editorial-story__copy">
             <p className="editorial-eyebrow">PERFUMER STORY</p>
             <h2>Dekito builds scent as personal atmosphere.</h2>
             <p>{perfumerProfile.intro}</p>
@@ -168,7 +162,7 @@ const HomePage = () => {
               <span>Atelier note</span>
               <p>Each formula is treated as a small archive: raw material behavior, emotional direction, skin texture, and the memory it should leave behind.</p>
             </blockquote>
-          </motion.div>
+          </div>
         </section>
 
         <section id="collection" className="editorial-section">
@@ -201,7 +195,7 @@ const HomePage = () => {
                     </div>
                   </dl>
                   <div className="editorial-product-card__actions">
-                    <Link to={`/products/${product.slug}`}>View Details</Link>
+                    <Link to={`/catalog/${product.slug}`}>View Details</Link>
                     <Link to="/cart">Add to Cart</Link>
                   </div>
                 </div>

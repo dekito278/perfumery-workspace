@@ -13,6 +13,12 @@ export const isIosDevice = () => {
 export const isAndroidDevice = () => /android/i.test(window.navigator.userAgent || '');
 
 const isLocalDevelopmentHost = () => ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+const shouldCheckServiceWorkerOnResume = () => (
+  isStandaloneDisplayMode()
+  || window.location.pathname.startsWith('/mobile')
+  || isIosDevice()
+  || isAndroidDevice()
+);
 const SERVICE_WORKER_BUILD_ID = import.meta.env.VITE_APP_BUILD_ID || 'local';
 const UPDATE_AVAILABLE_EVENT = 'solivagant:pwa-update-available';
 const OFFLINE_STATE_EVENT = 'solivagant:pwa-connectivity-change';
@@ -166,12 +172,14 @@ export const registerServiceWorker = () => {
         if (registration.waiting) {
           notifyUpdateAvailable();
         }
-        window.addEventListener('focus', checkForUpdate);
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') {
-            checkForUpdate();
-          }
-        });
+        if (shouldCheckServiceWorkerOnResume()) {
+          window.addEventListener('focus', checkForUpdate);
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              checkForUpdate();
+            }
+          });
+        }
         updateIntervalId = window.setInterval(checkForUpdate, 30 * 60 * 1000);
       })
       .catch((error) => {

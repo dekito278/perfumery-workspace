@@ -21,12 +21,44 @@ const ignoredSelector = [
   '[role="dialog"]',
   '[data-vaul-drawer]',
   '.sonner-toaster',
+  '.solivagant-editorial-home',
 ].join(',');
+
+const publicStorefrontPaths = [
+  '/',
+  '/home',
+  '/catalog',
+  '/products',
+  '/bespoke',
+  '/materials',
+  '/journal',
+  '/track-order',
+  '/cart',
+  '/checkout',
+  '/hug',
+  '/chant-nocturne',
+  '/jaipong',
+  '/porte-vers-le-paradis',
+  '/trace-daventure',
+  '/not-found',
+];
+
+const isPublicStorefrontPath = (pathname) => (
+  publicStorefrontPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+);
 
 const ScrollRevealEffects = () => {
   const location = useLocation();
 
   useEffect(() => {
+    if (isPublicStorefrontPath(location.pathname)) {
+      document.querySelectorAll('.scroll-reveal').forEach((element) => {
+        element.classList.remove('scroll-reveal', 'is-visible');
+        element.style.removeProperty('--reveal-delay');
+      });
+      return undefined;
+    }
+
     if (location.pathname.startsWith('/mobile')) {
       document.querySelectorAll('.scroll-reveal').forEach((element) => {
         element.classList.remove('scroll-reveal', 'is-visible');
