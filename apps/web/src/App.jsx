@@ -9,6 +9,7 @@ import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import AppErrorBoundary from '@/components/AppErrorBoundary.jsx';
 import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 import StorefrontLoadingState from '@/components/storefront/StorefrontLoadingState.jsx';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import HomePage from '@/pages/HomePage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
@@ -178,19 +179,26 @@ const isStorefrontRoute = (pathname) => (
 );
 
 const HomeRouteFallback = () => (
-  <div className="solivagant-loader solivagant-loader--route" aria-label="SOLIVAGANT storefront preview">
-    <div className="solivagant-loader__grain" />
-    <div className="solivagant-loader__fog" />
-    <div className="solivagant-loader__content">
-      <p>Artisan Perfumery Atelier</p>
-      <h1>SOLIVAGANT</h1>
-      <span>Fragrance, memory, and craftsmanship</span>
-      <div className="solivagant-loader__actions" aria-label="Storefront quick links">
-        <a href="/catalog">Explore Collection</a>
-        <a href="/bespoke">Book Bespoke Consultation</a>
-      </div>
-    </div>
-  </div>
+  <main className="min-h-screen bg-[#f7f1e5] text-[#1b1a16]">
+    <StorefrontHeader
+      className="border-[#1b1a16]/10 bg-[#f7f1e5] text-[#1b1a16]"
+      actions={[
+        { to: '/catalog', label: 'Collection' },
+        { to: '/bespoke', label: 'Bespoke' },
+        { to: '/articles', label: 'Journal' },
+        { to: '/cart', label: 'Cart', icon: 'cart' },
+      ]}
+    />
+    <section className="mx-auto grid min-h-[68vh] max-w-6xl content-center px-6 py-16">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#b08b4f]">ARTISAN PERFUMERY ATELIER</p>
+      <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-[#1b1a16]">
+        Fragrance as a memory object.
+      </h1>
+      <p className="mt-6 max-w-2xl text-lg leading-8 text-[#6f695f]">
+        SOLIVAGANT is an artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.
+      </p>
+    </section>
+  </main>
 );
 
 const RouteFallback = () => {
