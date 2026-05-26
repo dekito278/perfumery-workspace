@@ -1,16 +1,19 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { Minus, Plus, ShoppingBag } from 'lucide-react';
+import { BadgePercent, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem } = useCart();
+  const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
+  const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);
 
   return (
     <>
@@ -61,7 +64,39 @@ const CartPage = () => {
           <aside className="editorial-tracking-preview">
             <p className="editorial-eyebrow">CHECKOUT</p>
             <h2>Order summary.</h2>
+            <div className="editorial-voucher-panel">
+              <div>
+                <p className="editorial-eyebrow">VOUCHER</p>
+                <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Punya kode voucher?'}</strong>
+              </div>
+              <div className="editorial-inline-field">
+                <input
+                  type="text"
+                  value={voucher.inputCode}
+                  onChange={(event) => voucher.setInputCode(event.target.value)}
+                  placeholder="Masukkan kode"
+                  disabled={!items.length || voucher.loading}
+                />
+                <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
+                  <BadgePercent className="h-4 w-4" />
+                  {voucher.loading ? 'Cek' : 'Pakai'}
+                </button>
+              </div>
+              {voucher.message ? <p className={voucher.appliedVoucher ? 'editorial-notice editorial-notice--success' : 'editorial-form-error'}>{voucher.message}</p> : null}
+              {voucher.appliedVoucher ? (
+                <button type="button" className="editorial-text-button" onClick={voucher.removeVoucher}>
+                  <X className="h-4 w-4" />
+                  Hapus voucher
+                </button>
+              ) : null}
+            </div>
             <div className="editorial-subtotal"><span>Subtotal</span><strong>{formatTotal(subtotal)}</strong></div>
+            {voucher.discountAmount ? (
+              <>
+                <div className="editorial-subtotal"><span>Voucher {voucher.appliedVoucher?.code}</span><strong>-{formatTotal(voucher.discountAmount)}</strong></div>
+                <div className="editorial-subtotal"><span>Setelah voucher</span><strong>{formatTotal(totalAfterVoucher)}</strong></div>
+              </>
+            ) : null}
             <div className="editorial-checkout-fields">
               <span>Shipping dihitung di checkout</span>
               <span>Payment tersedia di langkah berikutnya</span>

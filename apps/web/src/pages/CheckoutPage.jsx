@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ChevronDown, CreditCard, Search, ShoppingBag } from 'lucide-react';
+import { BadgePercent, ChevronDown, CreditCard, Search, ShoppingBag, X } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
@@ -167,6 +167,32 @@ const CheckoutPage = () => {
               </div>
             ) : null}
             {selectedDestination ? <p className="editorial-notice editorial-notice--success">Area: {selectedDestination.label}</p> : null}
+            <div className="editorial-voucher-panel">
+              <div>
+                <p className="editorial-eyebrow">VOUCHER</p>
+                <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}</strong>
+              </div>
+              <div className="editorial-inline-field">
+                <input
+                  type="text"
+                  value={voucher.inputCode}
+                  onChange={(event) => voucher.setInputCode(event.target.value)}
+                  placeholder="Kode voucher"
+                  disabled={!items.length || voucher.loading}
+                />
+                <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
+                  <BadgePercent className="h-4 w-4" />
+                  {voucher.loading ? 'Cek' : 'Pakai'}
+                </button>
+              </div>
+              {voucher.message ? <p className={voucher.appliedVoucher ? 'editorial-notice editorial-notice--success' : 'editorial-form-error'}>{voucher.message}</p> : null}
+              {voucher.appliedVoucher ? (
+                <button type="button" className="editorial-text-button" onClick={voucher.removeVoucher}>
+                  <X className="h-4 w-4" />
+                  Hapus voucher
+                </button>
+              ) : null}
+            </div>
             <label>
               Payment
               <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
@@ -182,6 +208,7 @@ const CheckoutPage = () => {
             <div className="editorial-checkout-fields">
               <span>Subtotal: {formatTotal(summary.subtotal)}</span>
               <span>Ongkir: {selectedShipping ? formatTotal(shippingFee) : 'Belum dipilih'}</span>
+              <span>Voucher: {voucher.appliedVoucher ? voucher.appliedVoucher.code : '-'}</span>
               <span>Diskon: {discountAmount ? `-${formatTotal(discountAmount)}` : '-'}</span>
               <span>Total: {formatTotal(totalDue)}</span>
             </div>
@@ -205,6 +232,9 @@ const CheckoutPage = () => {
                 <strong>{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
               </div>
             ))}
+            {voucher.discountAmount ? (
+              <div className="editorial-subtotal"><span>Voucher {voucher.appliedVoucher?.code}</span><strong>-{formatTotal(voucher.discountAmount)}</strong></div>
+            ) : null}
             <div className="editorial-subtotal"><span>Total</span><strong>{formatTotal(totalDue)}</strong></div>
             <Link to="/cart" className="editorial-button">Return to Cart</Link>
           </aside>

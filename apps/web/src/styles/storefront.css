@@ -766,6 +766,22 @@
   white-space: nowrap;
 }
 
+.editorial-voucher-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(24, 53, 34, 0.14);
+  border-radius: 8px;
+  background: rgba(238, 242, 232, 0.48);
+  padding: 16px;
+}
+
+.editorial-voucher-panel strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--editorial-forest);
+  font-size: 0.98rem;
+}
+
 .editorial-select-shell {
   position: relative;
   display: flex;
@@ -1131,6 +1147,9 @@
 }
 
 .editorial-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   background: transparent;
   color: var(--editorial-forest);
