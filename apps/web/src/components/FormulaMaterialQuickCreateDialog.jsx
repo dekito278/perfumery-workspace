@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import {
   AlertDialog,
@@ -11,6 +11,39 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog.jsx';
 import { Input } from '@/components/ui/input.jsx';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.jsx';
+import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
+import { PERFUMERS_WORLD_CATEGORIES } from '@/utils/perfumersWorldCategories.js';
+
+const NO_CATEGORY_VALUE = '__no_category__';
+
+const fallbackCategoryOptions = PERFUMERS_WORLD_CATEGORIES.map((category) => ({
+  id: `fallback-${category.code}`,
+  name: category.label,
+}));
+
+const normalizeCategoryOptions = (categories = []) => {
+  const seen = new Set();
+
+  return categories
+    .map((category) => ({
+      id: category.id || category.name,
+      name: String(category.name || '').trim(),
+    }))
+    .filter((category) => {
+      if (!category.name) return false;
+      const key = category.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
 
 const FormulaMaterialQuickCreateDialog = ({
   open,
@@ -23,11 +56,17 @@ const FormulaMaterialQuickCreateDialog = ({
 }) => {
   const name = String(materialName || '').trim();
   const hasDuplicateCandidates = duplicateCandidates.length > 0;
+  const [categoryOptions, setCategoryOptions] = useState(fallbackCategoryOptions);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [details, setDetails] = useState({
     category: '',
     cas_number: '',
     workbook_code: '',
   });
+  const resolvedCategoryOptions = useMemo(
+    () => (categoryOptions.length ? categoryOptions : fallbackCategoryOptions),
+    [categoryOptions]
+  );
 
   useEffect(() => {
     if (open) {
@@ -39,6 +78,32 @@ const FormulaMaterialQuickCreateDialog = ({
     }
   }, [materialName, open]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    let isMounted = true;
+    setCategoriesLoading(true);
+
+    getRawMaterialCategories()
+      .then((categories) => {
+        if (!isMounted) return;
+        const normalizedCategories = normalizeCategoryOptions(categories);
+        setCategoryOptions(normalizedCategories.length ? normalizedCategories : fallbackCategoryOptions);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        console.warn('Using fallback raw material categories:', error.message || error);
+        setCategoryOptions(fallbackCategoryOptions);
+      })
+      .finally(() => {
+        if (isMounted) setCategoriesLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open]);
+
   const updateDetail = (field, value) => {
     setDetails((current) => ({ ...current, [field]: value }));
   };
@@ -47,7 +112,7 @@ const FormulaMaterialQuickCreateDialog = ({
     <AlertDialog open={open} onOpenChange={(nextOpen) => {
       if (!loading) onOpenChange?.(nextOpen);
     }}>
-      <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-[520px] rounded-[26px] border-[#e6deca] bg-[#fffdf8] p-0 shadow-2xl">
+      <AlertDialogContent className="flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[540px] flex-col overflow-hidden rounded-[26px] border-[#e6deca] bg-[#fffdf8] p-0 shadow-2xl">
         <div className="border-b border-[#efe5d3] bg-[linear-gradient(180deg,#fff8e7_0%,#fffdf8_100%)] px-5 py-4">
           <AlertDialogHeader className="space-y-2 text-left">
             <div className="flex items-center gap-2">
@@ -65,7 +130,7 @@ const FormulaMaterialQuickCreateDialog = ({
           </AlertDialogHeader>
         </div>
 
-        <div className="space-y-3 px-5 py-4">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
           <div className="rounded-2xl border border-[#e6deca] bg-white p-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a7a5a]">Material name</p>
             <p className="mt-1 break-words text-base font-bold text-[#1f2937]">{name || '-'}</p>
@@ -81,7 +146,7 @@ const FormulaMaterialQuickCreateDialog = ({
                   </p>
                 </div>
               </div>
-              <div className="mt-3 grid gap-2">
+              <div className="mt-3 grid max-h-[250px] gap-2 overflow-y-auto pr-1">
                 {duplicateCandidates.map((material) => (
                   <button
                     key={material.id}
@@ -113,16 +178,26 @@ const FormulaMaterialQuickCreateDialog = ({
                 <p className="mt-1 text-xs font-semibold text-[#6b7280]">Isi kalau sudah tahu. Kalau belum, boleh kosong.</p>
               </div>
             </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <label className="space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a9099]">Category</span>
-                <Input
-                  value={details.category}
+                <Select
                   disabled={loading}
-                  onChange={(event) => updateDetail('category', event.target.value)}
-                  placeholder="ex: Floral"
-                  className="h-9 rounded-xl text-xs"
-                />
+                  value={details.category || NO_CATEGORY_VALUE}
+                  onValueChange={(value) => updateDetail('category', value === NO_CATEGORY_VALUE ? '' : value)}
+                >
+                  <SelectTrigger className="h-9 rounded-xl bg-white text-xs">
+                    <SelectValue placeholder={categoriesLoading ? 'Memuat...' : 'Pilih category'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72 rounded-xl">
+                    <SelectItem value={NO_CATEGORY_VALUE}>Tanpa category dulu</SelectItem>
+                    {resolvedCategoryOptions.map((category) => (
+                      <SelectItem key={category.id || category.name} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
               <label className="space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a9099]">CAS</span>
