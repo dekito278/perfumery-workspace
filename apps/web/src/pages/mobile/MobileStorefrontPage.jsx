@@ -144,54 +144,57 @@ export const MobileStorefrontContent = ({ active = true }) => {
       ) : null}
       <main className="mobile-page mobile-home-page">
         <section className="mobile-home-hero">
-          <div className="mobile-home-hero-copy">
-            <div className="mobile-home-kicker">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              <span>{productsLoading ? 'Memuat katalog' : `${products.length || 0} parfum`}</span>
+          <div className="mobile-home-hero-stage">
+            <div className="mobile-home-hero-copy">
+              <div className="mobile-home-kicker">
+                <ShoppingBag className="h-3.5 w-3.5" />
+                <span>{productsLoading ? 'Memuat katalog' : `${products.length || 0} parfum`}</span>
+              </div>
+              <h1>Temukan aroma yang terasa seperti kamu.</h1>
+              <p>
+                Ready stock, custom ritual, dan status order dekat dari satu layar.
+              </p>
             </div>
-            <h1>Temukan aroma yang terasa seperti kamu.</h1>
-            <p>
-              Ready stock, custom ritual, dan status order dibuat dekat dari satu layar.
-            </p>
-            <div className="mobile-home-hero-actions">
-              <Button className="h-12 rounded-2xl px-4 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
-                <Search className="h-4 w-4" />
-                Cari parfum
-              </Button>
-              <Button variant="outline" className="h-12 rounded-2xl bg-white/88 px-4 text-xs" onClick={() => navigate('/mobile/bespoke')}>
-                <WandSparkles className="h-4 w-4" />
-                Custom
-              </Button>
-            </div>
+
+            {heroProduct ? (
+              <button
+                type="button"
+                onPointerDown={captureOutgoingScrollTop}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
+                }}
+                onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
+                className="mobile-home-hero-product"
+              >
+                <ProductVisual product={heroProduct} className="mobile-home-hero-visual" label={false} priority sizes="(max-width: 448px) 36vw, 150px" imageFit="cover" />
+                <div className="mobile-home-product-overlay">
+                  <span>{heroProduct.featured ? 'Hari ini' : getProductPrimaryTag(heroProduct)}</span>
+                  <strong>{heroProduct.name}</strong>
+                  <small>{heroProduct.price}</small>
+                </div>
+              </button>
+            ) : (
+              <div className="mobile-home-hero-product">
+                <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="mobile-home-hero-visual object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="480" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
+                <div className="mobile-home-product-overlay">
+                  <span>Atelier</span>
+                  <strong>Custom scent ritual</strong>
+                  <small>Pre-order 7-14 hari</small>
+                </div>
+              </div>
+            )}
           </div>
 
-          {heroProduct ? (
-            <button
-              type="button"
-              onPointerDown={captureOutgoingScrollTop}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
-              }}
-              onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
-              className="mobile-home-hero-product"
-            >
-              <ProductVisual product={heroProduct} className="mobile-home-hero-visual" label={false} priority sizes="(max-width: 448px) 88vw, 394px" imageFit="contain" />
-              <div className="mobile-home-product-overlay">
-                <span>{heroProduct.featured ? 'Pilihan hari ini' : getProductPrimaryTag(heroProduct)}</span>
-                <strong>{heroProduct.name}</strong>
-                <small>{heroProduct.price}</small>
-              </div>
-            </button>
-          ) : (
-            <div className="mobile-home-hero-product">
-              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="mobile-home-hero-visual object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="480" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
-              <div className="mobile-home-product-overlay">
-                <span>Atelier</span>
-                <strong>Custom scent ritual</strong>
-                <small>Pre-order 7-14 hari</small>
-              </div>
-            </div>
-          )}
+          <div className="mobile-home-hero-actions">
+            <Button className="h-11 rounded-2xl px-4 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
+              <Search className="h-4 w-4" />
+              Cari parfum
+            </Button>
+            <Button variant="outline" className="h-11 rounded-2xl bg-white/88 px-4 text-xs" onClick={() => navigate('/mobile/bespoke')}>
+              <WandSparkles className="h-4 w-4" />
+              Custom
+            </Button>
+          </div>
 
           <div className="mobile-home-hero-strip">
             <div>
@@ -238,23 +241,6 @@ export const MobileStorefrontContent = ({ active = true }) => {
           </section>
         ) : null}
 
-        <section className="mobile-card p-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
-              <BookOpenText className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-amber-700">Artikel</p>
-              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Baca cerita aroma dan proses studio.</h2>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Panduan singkat, catatan material, dan cerita di balik parfum Solivagant.</p>
-            </div>
-          </div>
-          <Button variant="outline" className="mt-4 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/articles')}>
-            Buka artikel
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </section>
-
         {!hasProducts ? (
           <section className="mobile-card overflow-hidden">
             <div className="bg-[linear-gradient(145deg,#050705,#111a11)] p-4 text-[#eef2e8]">
@@ -283,7 +269,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
         ) : null}
 
         {quickProducts.length ? (
-        <section id="mobile-products" className="space-y-3 scroll-mt-4">
+        <section id="mobile-products" className="mobile-home-products-section scroll-mt-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase text-amber-700">Belanja sekarang</p>
@@ -294,9 +280,9 @@ export const MobileStorefrontContent = ({ active = true }) => {
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="mobile-home-product-rail" aria-label="Produk pilihan">
           {quickProducts.map((product, index) => (
-            <article key={product.id} className="mobile-card mobile-commerce-product-card min-w-0 overflow-hidden p-2">
+            <article key={product.id} className="mobile-home-product-card mobile-card mobile-commerce-product-card">
               <button
                 type="button"
                 onPointerDown={captureOutgoingScrollTop}
@@ -307,7 +293,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
                 className="block w-full text-left"
               >
                 <div className="relative">
-                  <ProductVisual product={product} className="aspect-[4/5] rounded-2xl" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 44vw, 198px" imageFit="cover" />
+                  <ProductVisual product={product} className="mobile-home-product-visual" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 60vw, 238px" imageFit="cover" />
                   <div className="mobile-commerce-chip absolute left-2 top-2 max-w-[calc(100%-16px)] truncate bg-white/90 px-2 py-1 text-[9px] uppercase shadow-sm">
                     {getProductCategoryLabel(product)}
                   </div>
@@ -315,8 +301,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
                     {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
                   </div>
                 </div>
-                <div className="mt-2 flex min-h-[148px] flex-col">
-                  <div className="min-h-[54px] min-w-0">
+                <div className="mt-2 flex min-h-[126px] flex-col">
+                  <div className="min-h-[50px] min-w-0">
                     <h3 className="mobile-line-clamp-2 min-h-[30px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
                     <p className="mobile-line-clamp-1 mt-1 min-h-[16px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
                   </div>
@@ -329,12 +315,10 @@ export const MobileStorefrontContent = ({ active = true }) => {
                     </div>
                   </div>
                   <div className="mt-auto pt-2">
-                    <div className="flex min-h-[24px] flex-wrap gap-1 overflow-hidden">
+                    <div className="flex min-h-[24px] gap-1 overflow-hidden">
                       {getProductSizeLabels(product).map((size) => (
                         <span key={size} className="mobile-commerce-chip max-w-full truncate px-2 py-1 text-[9px]">{size}</span>
                       ))}
-                    </div>
-                    <div className="mt-1.5 flex min-h-[22px] flex-wrap gap-1 overflow-hidden">
                       <span className="mobile-commerce-muted-chip max-w-full truncate px-2 py-1 text-[9px] uppercase">
                         {getProductPrimaryTag(product)}
                       </span>
@@ -369,6 +353,23 @@ export const MobileStorefrontContent = ({ active = true }) => {
         <section className="mobile-card p-4">
           <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
+              <BookOpenText className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase text-amber-700">Artikel</p>
+              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Baca cerita aroma dan proses studio.</h2>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Panduan singkat, catatan material, dan cerita di balik parfum Solivagant.</p>
+            </div>
+          </div>
+          <Button variant="outline" className="mt-4 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/articles')}>
+            Buka artikel
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </section>
+
+        <section className="mobile-card p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
               <ClipboardCheck className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -382,24 +383,6 @@ export const MobileStorefrontContent = ({ active = true }) => {
             <ArrowRight className="h-4 w-4" />
           </Button>
         </section>
-
-        {categories.length ? (
-        <section className="mobile-family-strip">
-          <div className="mobile-segment-scroll flex gap-5 overflow-x-auto px-1 pb-2 pr-4">
-            {categories.slice(0, 8).map((category) => (
-              <div key={category.name} className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(category.name)}`)}
-                  className="mobile-family-link"
-                >
-                  {category.name}
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-        ) : null}
 
         <section className="mobile-card p-4">
           <div className="flex items-start gap-3">

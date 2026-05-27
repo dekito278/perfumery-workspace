@@ -3101,27 +3101,27 @@
   align-items: center;
   justify-content: flex-start;
   max-width: 448px;
-  min-height: 82px;
-  margin: 0 auto 12px;
+  min-height: 66px;
+  margin: 0 auto 8px;
 }
 
 .mobile-commerce-app .mobile-commerce-brand {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
-  height: 82px;
-  min-height: 82px;
+  height: 66px;
+  min-height: 66px;
   align-items: center;
   overflow: visible;
 }
 
 .mobile-commerce-brand-logo {
-  width: min(238px, calc(100vw - 28px));
-  height: 68px;
+  width: min(212px, calc(100vw - 28px));
+  height: 56px;
   max-width: none;
   object-fit: contain;
   object-position: left center;
-  transform: translateX(-3px) scale(1.16);
+  transform: translateX(-3px) scale(1.1);
   transform-origin: left center;
 }
 
@@ -3187,13 +3187,13 @@
 }
 
 .mobile-home-page {
-  gap: 14px;
+  gap: 12px;
 }
 
 .mobile-home-hero {
   position: relative;
   display: grid;
-  gap: 12px;
+  gap: 9px;
   overflow: hidden;
   border: 1px solid rgba(38, 61, 39, 0.18);
   border-radius: 18px;
@@ -3203,10 +3203,19 @@
   box-shadow: 0 22px 46px -34px rgba(24, 47, 27, 0.58);
 }
 
+.mobile-home-hero-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, 34%);
+  gap: 10px;
+  align-items: stretch;
+  padding: 13px 13px 0;
+}
+
 .mobile-home-hero-copy {
   position: relative;
   z-index: 1;
-  padding: 14px 14px 0;
+  min-width: 0;
+  padding: 0;
 }
 
 .mobile-home-kicker {
@@ -3227,36 +3236,36 @@
 }
 
 .mobile-home-hero h1 {
-  margin-top: 10px;
-  max-width: 15ch;
+  margin-top: 9px;
+  max-width: 12ch;
   color: #0b130c;
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  font-size: 27px;
+  font-size: 24px;
   font-weight: 650;
-  line-height: 1;
+  line-height: 0.98;
 }
 
 .mobile-home-hero-copy p {
-  margin-top: 8px;
-  max-width: 28ch;
+  margin-top: 7px;
+  max-width: 20ch;
   color: #526351;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 680;
-  line-height: 1.55;
+  line-height: 1.48;
 }
 
 .mobile-home-hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  padding: 0 13px;
 }
 
 .mobile-home-hero-product {
   position: relative;
   display: block;
-  min-height: 166px;
-  margin: 0 12px;
+  min-height: 100%;
+  margin: 0;
   overflow: hidden;
   border: 1px solid rgba(38, 61, 39, 0.14);
   border-radius: 16px;
@@ -3267,22 +3276,23 @@
 
 .mobile-home-hero-visual {
   width: 100%;
-  min-height: 166px;
-  aspect-ratio: 16 / 8.7;
+  height: 100%;
+  min-height: 178px;
+  aspect-ratio: 3 / 4;
   border-radius: 16px;
 }
 
 .mobile-home-product-overlay {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
-  left: 10px;
+  right: 7px;
+  bottom: 7px;
+  left: 7px;
   display: grid;
-  gap: 3px;
+  gap: 2px;
   border: 1px solid rgba(255, 255, 255, 0.46);
   border-radius: 14px;
   background: rgba(11, 19, 12, 0.76);
-  padding: 10px 11px;
+  padding: 8px 8px;
   color: #fffdf8;
   backdrop-filter: blur(12px);
 }
@@ -3304,13 +3314,13 @@
 }
 
 .mobile-home-product-overlay strong {
-  font-size: 14px;
+  font-size: 11px;
   line-height: 1.15;
 }
 
 .mobile-home-product-overlay small {
   color: #f3c38a;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 850;
 }
 
@@ -3326,9 +3336,9 @@
 .mobile-home-hero-strip div {
   display: grid;
   min-width: 0;
-  gap: 3px;
+  gap: 2px;
   background: rgba(255, 253, 248, 0.78);
-  padding: 10px 8px;
+  padding: 8px 8px;
   text-align: center;
 }
 
@@ -3354,9 +3364,9 @@
 .mobile-home-mood-row {
   display: flex;
   gap: 8px;
-  margin-inline: -14px;
+  margin-inline: -12px;
   overflow-x: auto;
-  padding: 0 14px 2px;
+  padding: 0 12px 2px;
   scrollbar-width: none;
 }
 
@@ -3391,6 +3401,38 @@
   color: #92400e;
   font-size: 11px;
   font-weight: 850;
+}
+
+.mobile-home-products-section {
+  display: grid;
+  gap: 10px;
+}
+
+.mobile-home-product-rail {
+  display: flex;
+  gap: 10px;
+  margin-inline: -12px;
+  overflow-x: auto;
+  padding: 0 12px 2px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.mobile-home-product-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-home-product-card {
+  width: min(64vw, 238px);
+  flex: 0 0 min(64vw, 238px);
+  overflow: hidden;
+  padding: 8px;
+  scroll-snap-align: start;
+}
+
+.mobile-home-product-visual {
+  aspect-ratio: 4 / 4.7;
+  border-radius: 14px;
 }
 
 .mobile-commerce-panel,
