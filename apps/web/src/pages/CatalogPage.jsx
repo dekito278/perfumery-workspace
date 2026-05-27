@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, SlidersHorizontal, ShoppingBag } from 'lucide-react';
@@ -18,6 +18,7 @@ const CatalogPage = () => {
   const [lastAddedSlug, setLastAddedSlug] = useState('');
   const [activeCategory, setActiveCategory] = useState('Semua');
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(8);
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
     return getPublicFragranceCatalog(visible).slice(0, 16);
@@ -47,6 +48,12 @@ const CatalogPage = () => {
       return matchesCategory && (!query || searchable.includes(query));
     });
   }, [activeCategory, products, searchTerm]);
+  const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
+
+  useEffect(() => {
+    setVisibleCount(8);
+  }, [activeCategory, searchTerm]);
+
   const handleAddToCart = (product) => {
     addItem(product, 1);
     setLastAddedSlug(product.slug);
@@ -74,7 +81,7 @@ const CatalogPage = () => {
       <main className="solivagant-editorial-home">
         <PublicHeader />
 
-        <section className="editorial-page-hero">
+        <section className="editorial-page-hero editorial-page-hero--compact">
           <p className="editorial-eyebrow">FRAGRANCE COLLECTION</p>
           <h1>Fragrance Collection</h1>
           <p>
@@ -115,7 +122,7 @@ const CatalogPage = () => {
             </Link>
           </div>
           <div className="editorial-product-grid">
-            {filteredProducts.map((product, index) => (
+            {visibleProducts.map((product, index) => (
               <article key={product.id || product.slug} className="editorial-product-card">
                 <div className="editorial-product-card__media">
                   <ProductVisual product={product} className="editorial-product-card__visual" imageFit="cover" priority={index < 2} />
@@ -158,6 +165,15 @@ const CatalogPage = () => {
               </article>
             ))}
           </div>
+          {visibleProducts.length < filteredProducts.length ? (
+            <div className="editorial-load-more">
+              <button type="button" className="editorial-button" onClick={() => setVisibleCount((current) => current + 8)}>
+                Tampilkan lebih banyak
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <span>{visibleProducts.length} dari {filteredProducts.length} produk</span>
+            </div>
+          ) : null}
           {!filteredProducts.length ? (
             <div className="editorial-empty-state">
               <p className="editorial-eyebrow">NO MATCH</p>

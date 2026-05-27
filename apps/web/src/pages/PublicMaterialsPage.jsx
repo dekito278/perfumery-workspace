@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -18,7 +18,9 @@ const PublicMaterialsPage = () => {
   const [liveMaterials, setLiveMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [visibleCount, setVisibleCount] = useState(8);
   const materials = liveMaterials;
+  const visibleMaterials = useMemo(() => materials.slice(0, visibleCount), [materials, visibleCount]);
 
   useEffect(() => {
     let active = true;
@@ -57,7 +59,7 @@ const PublicMaterialsPage = () => {
       <main className="solivagant-editorial-home">
         <PublicHeader />
 
-        <section className="editorial-page-hero">
+        <section className="editorial-page-hero editorial-page-hero--compact">
           <p className="editorial-eyebrow">PUBLIC RAW MATERIAL ARCHIVE</p>
           <h1>Raw Material Archive</h1>
           <p>Raw materials from the studio library, presented as sensory notes, origin cues, and formulation stories.</p>
@@ -74,7 +76,7 @@ const PublicMaterialsPage = () => {
             </div>
           ) : null}
           <div className="editorial-material-grid">
-            {materials.map((material) => (
+            {visibleMaterials.map((material) => (
               <article key={`${material.name}-${material.origin}`} className="editorial-material-card">
                 <span>{material.family}</span>
                 <h3>{material.name}</h3>
@@ -88,6 +90,14 @@ const PublicMaterialsPage = () => {
               </article>
             ))}
           </div>
+          {visibleMaterials.length < materials.length ? (
+            <div className="editorial-load-more">
+              <button type="button" className="editorial-button" onClick={() => setVisibleCount((current) => current + 8)}>
+                Tampilkan lebih banyak
+              </button>
+              <span>{visibleMaterials.length} dari {materials.length} material</span>
+            </div>
+          ) : null}
         </section>
 
         <footer className="editorial-footer">

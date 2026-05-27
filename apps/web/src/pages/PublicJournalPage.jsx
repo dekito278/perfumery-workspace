@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { BookOpenText, CalendarDays } from 'lucide-react';
@@ -23,6 +23,8 @@ const PublicJournalPage = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [visibleCount, setVisibleCount] = useState(8);
+  const visibleArticles = useMemo(() => articles.slice(0, visibleCount), [articles, visibleCount]);
 
   useEffect(() => {
     let active = true;
@@ -61,7 +63,7 @@ const PublicJournalPage = () => {
       <main className="solivagant-editorial-home">
         <PublicHeader />
 
-        <section className="editorial-page-hero">
+        <section className="editorial-page-hero editorial-page-hero--compact">
           <p className="editorial-eyebrow">JOURNAL / EDITORIAL</p>
           <h1>Journal</h1>
           <p>Field notes on scent memory, raw materials, atelier process, and the stories behind SOLIVAGANT perfume objects.</p>
@@ -88,7 +90,7 @@ const PublicJournalPage = () => {
             </div>
           ) : null}
           <div className="editorial-journal-grid editorial-journal-grid--wide">
-            {articles.map((article) => (
+            {visibleArticles.map((article) => (
               <article key={article.id}>
                 <span>{getJournalCategoryLabel(article.category)}</span>
                 <h3>{article.title}</h3>
@@ -103,6 +105,14 @@ const PublicJournalPage = () => {
               </article>
             ))}
           </div>
+          {visibleArticles.length < articles.length ? (
+            <div className="editorial-load-more">
+              <button type="button" className="editorial-button" onClick={() => setVisibleCount((current) => current + 8)}>
+                Tampilkan lebih banyak
+              </button>
+              <span>{visibleArticles.length} dari {articles.length} artikel</span>
+            </div>
+          ) : null}
         </section>
 
         <footer className="editorial-footer">

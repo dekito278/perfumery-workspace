@@ -39,6 +39,8 @@ const checkoutCourierOptions = [
   { courierCode: 'anteraja', label: 'ANTERAJA' },
 ];
 
+const scentDirectionPrompts = ['Woody', 'Floral', 'Fresh', 'Gourmand', 'Smoky', 'Clean musk'];
+
 const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
   ...labels,
   [courier.courierCode]: courier.label,
@@ -71,6 +73,8 @@ const optionMatchesValue = (option = {}, value = '') => {
 const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', label, onClick }) => (
   <button
     type="button"
+    aria-label={label || children}
+    aria-pressed={active}
     className={`editorial-bespoke-option${active ? ' is-active' : ''}`}
     onClick={onClick}
   >
@@ -90,31 +94,45 @@ const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', 
   </button>
 );
 
-const BespokeBottlePreview = ({ bottle, cap, label, size, material }) => {
+const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, material }) => {
   const isStone = /batu|stone/i.test(`${cap?.label || ''} ${cap?.value || ''}`);
   const isAcrylic = /akrilik|acrylic/i.test(`${cap?.label || ''} ${cap?.value || ''}`);
   const isSquare = /square|kotak/i.test(`${bottle?.label || ''} ${bottle?.value || ''}`);
-  const visualImage = cap?.imageUrl || bottle?.imageUrl || label?.imageUrl || size?.imageUrl;
+  const sizeText = `${size?.label || ''} ${size?.value || ''}`;
+  const isLarge = /100|large|besar/i.test(sizeText);
+  const isSmall = /15|mini|small|kecil/i.test(sizeText);
+  const activeOption = {
+    bottle,
+    cap,
+    label,
+    material,
+    size,
+  }[activeGroup];
+  const visualImage = activeOption?.imageUrl || bottle?.imageUrl || cap?.imageUrl || label?.imageUrl || size?.imageUrl;
+  const activeLabel = getOptionDisplayValue(activeOption, 'Pilihan aktif');
 
   return (
     <div className="editorial-bespoke-preview">
       <div className="editorial-bespoke-preview__visual">
         {visualImage ? (
-          <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Bespoke bottle option'} loading="lazy" decoding="async" />
-        ) : (
-          <div className="editorial-bespoke-preview__mockup" aria-hidden="true">
-            <span className={`editorial-bespoke-preview__bottle${isSquare ? ' is-square' : ''}`} />
-            <span className={`editorial-bespoke-preview__cap${isStone ? ' is-stone' : ''}${isAcrylic ? ' is-acrylic' : ''}`} />
-            <span className="editorial-bespoke-preview__label">{label?.label || 'Label'}</span>
-          </div>
-        )}
+          <img className="editorial-bespoke-preview__backdrop" src={visualImage} alt={activeLabel} loading="lazy" decoding="async" />
+        ) : null}
+        <div className="editorial-bespoke-preview__mockup" aria-hidden="true">
+          <span className={`editorial-bespoke-preview__bottle${isSquare ? ' is-square' : ''}${isLarge ? ' is-large' : ''}${isSmall ? ' is-small' : ''}`} />
+          <span className={`editorial-bespoke-preview__cap${isStone ? ' is-stone' : ''}${isAcrylic ? ' is-acrylic' : ''}`} />
+          <span className="editorial-bespoke-preview__label">{label?.label || 'Label'}</span>
+        </div>
+        <div className="editorial-bespoke-preview__focus">
+          <span>Preview fokus</span>
+          <strong>{activeLabel}</strong>
+        </div>
       </div>
       <div className="editorial-bespoke-preview__meta">
-        <span>{size?.label || 'Ukuran'}</span>
-        <span>{bottle?.label || 'Botol'}</span>
-        <span>{cap?.label || 'Cap'}</span>
-        <span>{label?.label || 'Label'}</span>
-        {material ? <span>{material.label}</span> : null}
+        <span className={activeGroup === 'size' ? 'is-active' : ''}>{size?.label || 'Ukuran'}</span>
+        <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle?.label || 'Botol'}</span>
+        <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap?.label || 'Cap'}</span>
+        <span className={activeGroup === 'label' ? 'is-active' : ''}>{label?.label || 'Label'}</span>
+        {material ? <span className={activeGroup === 'material' ? 'is-active' : ''}>{material.label}</span> : null}
       </div>
     </div>
   );
@@ -144,6 +162,7 @@ const BespokePage = () => {
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
   const [activeChoiceGroup, setActiveChoiceGroup] = useState('size');
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [form, setForm] = useState({
     customerName: '',
     contact: '',
@@ -608,7 +627,7 @@ const BespokePage = () => {
       <main className="solivagant-editorial-home">
         <PublicHeader />
 
-        <section className="editorial-page-hero editorial-page-hero--split">
+        <section className="editorial-page-hero editorial-page-hero--split editorial-page-hero--compact">
           <div>
             <p className="editorial-eyebrow">BESPOKE PERFUME CONSULTATION</p>
             <h1>Bespoke Perfume Consultation</h1>
@@ -622,30 +641,52 @@ const BespokePage = () => {
           </ol>
         </section>
 
-        <section className="editorial-section editorial-bespoke editorial-section--compact">
-          <div>
-            <p className="editorial-eyebrow">LIVE BRIEF</p>
-            <h2>Custom request yang masuk ke order studio.</h2>
-            <p>
-              Pilihan botol, label, material, dan pembayaran mengikuti pengaturan bespoke yang aktif, sehingga request yang masuk siap diproses sebagai order.
-            </p>
-            <div className="editorial-bespoke-summary">
-              <p className="editorial-eyebrow">REQUEST SUMMARY</p>
-              <dl>
-                <div><dt>Nama parfum</dt><dd>{form.perfumeName || 'Belum diisi'}</dd></div>
-                <div><dt>Aroma</dt><dd>{form.scentDescription || 'Belum diisi'}</dd></div>
-                <div><dt>Botol</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                <div><dt>Subtotal custom</dt><dd>{formatRupiah(estimatedTotal)}</dd></div>
-                {discountAmount ? <div><dt>Voucher</dt><dd>-{formatRupiah(discountAmount)}</dd></div> : null}
-                <div><dt>Ongkir</dt><dd>{shippingFee ? formatRupiah(shippingFee) : 'Belum dipilih'}</dd></div>
-                <div><dt>Total bayar</dt><dd>{formatRupiah(totalDue)}</dd></div>
-              </dl>
+        <section className="editorial-section editorial-bespoke-flow editorial-section--compact">
+          <form className="editorial-form editorial-form--bespoke" onSubmit={submitRequest}>
+            <div className="editorial-bespoke-stage">
+              <div className="editorial-bespoke-stage__head">
+                <p className="editorial-eyebrow">DESIGN FIRST</p>
+                <h2>Mulai dari aroma dan bentuk botol.</h2>
+                <p>Pilih arah scent, ukuran, botol, cap, label, dan material dulu. Data checkout diisi setelah desainnya terasa pas.</p>
+              </div>
+              <div className="editorial-bespoke-brief-grid">
+                <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--name">
+                  <span>Nama parfum</span>
+                  <input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder="Contoh: Rain Letter, Nocturne 03" />
+                  <small>Nama bisa sementara, nanti masih bisa disempurnakan saat proses studio.</small>
+                </label>
+                <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--scent">
+                  <span>Scent direction</span>
+                  <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder="Ceritakan mood aroma, notes favorit, atau memori yang ingin dibawa." />
+                  <div className="editorial-bespoke-prompt-chips" aria-label="Scent direction shortcuts">
+                    {scentDirectionPrompts.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => updateField('scentDescription', form.scentDescription.trim() ? `${form.scentDescription.trim()}, ${prompt}` : prompt)}
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </label>
+                <fieldset className="editorial-bespoke-brief-card editorial-bespoke-occasion">
+                  <legend>Occasion</legend>
+                  <div className="editorial-bespoke-occasion-grid">
+                    {bespokeOccasionOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={form.occasion === option ? 'is-active' : ''}
+                        onClick={() => updateField('occasion', option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
             </div>
-          </div>
-          <form className="editorial-form" onSubmit={submitRequest}>
-            <label>Nama parfum / project name<input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder="A working name for the custom scent" /></label>
-            <label>Scent direction<textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder="Woody, floral, aquatic, gourmand, smoky..." /></label>
-            <label>Occasion<select value={form.occasion} onChange={(event) => updateField('occasion', event.target.value)}>{bespokeOccasionOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
             <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact">
               <div className="editorial-bespoke-choice-panel__head">
                 <p className="editorial-eyebrow">VISUAL CUSTOMIZER</p>
@@ -653,6 +694,7 @@ const BespokePage = () => {
               </div>
               <div className="editorial-bespoke-customizer">
                 <BespokeBottlePreview
+                  activeGroup={activeChoice.key}
                   bottle={selectedBottle}
                   cap={selectedCap}
                   label={selectedLabel}
@@ -695,115 +737,146 @@ const BespokePage = () => {
                 </div>
               </div>
             </div>
-            <label>Name<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Your name" /></label>
-            <label>Email / WhatsApp<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="name@example.com / +62..." /></label>
-            <label>Delivery address<textarea rows="4" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
-            <div className="editorial-voucher-panel">
-              <div>
-                <p className="editorial-eyebrow">ONGKIR</p>
-                <strong>Pilih area dan layanan pengiriman</strong>
+
+            <div className="editorial-bespoke-next">
+              <div className="editorial-bespoke-summary">
+                <p className="editorial-eyebrow">REQUEST SUMMARY</p>
+                <dl>
+                  <div><dt>Nama parfum</dt><dd>{form.perfumeName || 'Belum diisi'}</dd></div>
+                  <div><dt>Aroma</dt><dd>{form.scentDescription || 'Belum diisi'}</dd></div>
+                  <div><dt>Botol</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
+                  <div><dt>Subtotal custom</dt><dd>{formatRupiah(estimatedTotal)}</dd></div>
+                </dl>
               </div>
-              <div className="editorial-inline-field">
-                <input
-                  type="text"
-                  value={destinationSearch}
-                  onChange={(event) => updateDestinationSearch(event.target.value)}
-                  placeholder="Kecamatan / kota tujuan"
-                />
-                <button type="button" className="editorial-button" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
-                  {shippingLoading ? 'Mencari...' : 'Cari'}
-                  <Search className="h-4 w-4" />
+              <div className="editorial-bespoke-next__action">
+                <p>Sudah cocok dengan desainnya?</p>
+                <button type="button" className="editorial-button editorial-button--primary" onClick={() => setCheckoutOpen(true)}>
+                  Lanjut ke checkout
+                  <CreditCard className="h-4 w-4" />
                 </button>
               </div>
-              <label className="editorial-select-shell">
-                <span>{selectedCourier ? courierLabels[selectedCourier] : 'Pilih kurir pengiriman'}</span>
-                <ChevronDown className="h-4 w-4" />
-                <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
-                  <option value="">Pilih kurir</option>
-                  {checkoutCourierOptions.map((courier) => (
-                    <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" className="editorial-button" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
-                {shippingLoading ? 'Menghitung...' : 'Tampilkan ongkir'}
-              </button>
-              {selectedDestination ? <p className="editorial-helper-text">Area: {selectedDestination.label}</p> : null}
-              {destinationOptions.length && !selectedDestination ? (
-                <div className="editorial-option-grid">
-                  {destinationOptions.map((destination) => (
-                    <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)}>
-                      {destination.label}
+            </div>
+
+            {checkoutOpen ? (
+              <div className="editorial-bespoke-checkout">
+                <div className="editorial-bespoke-stage__head">
+                  <p className="editorial-eyebrow">CHECKOUT</p>
+                  <h2>Data kontak, pengiriman, dan pembayaran.</h2>
+                  <p>Bagian ini baru muncul setelah desain dipilih, supaya proses awal tetap fokus ke perfume ritualnya.</p>
+                </div>
+                <div className="editorial-bespoke-checkout__fields">
+                  <label>Name<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Your name" /></label>
+                  <label>Email / WhatsApp<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="name@example.com / +62..." /></label>
+                  <label>Delivery address<textarea rows="4" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
+                </div>
+                <div className="editorial-voucher-panel">
+                  <div>
+                    <p className="editorial-eyebrow">ONGKIR</p>
+                    <strong>Pilih area dan layanan pengiriman</strong>
+                  </div>
+                  <div className="editorial-inline-field">
+                    <input
+                      type="text"
+                      value={destinationSearch}
+                      onChange={(event) => updateDestinationSearch(event.target.value)}
+                      placeholder="Kecamatan / kota tujuan"
+                    />
+                    <button type="button" className="editorial-button" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
+                      {shippingLoading ? 'Mencari...' : 'Cari'}
+                      <Search className="h-4 w-4" />
                     </button>
-                  ))}
+                  </div>
+                  <label className="editorial-select-shell">
+                    <span>{selectedCourier ? courierLabels[selectedCourier] : 'Pilih kurir pengiriman'}</span>
+                    <ChevronDown className="h-4 w-4" />
+                    <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
+                      <option value="">Pilih kurir</option>
+                      {checkoutCourierOptions.map((courier) => (
+                        <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type="button" className="editorial-button" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
+                    {shippingLoading ? 'Menghitung...' : 'Tampilkan ongkir'}
+                  </button>
+                  {selectedDestination ? <p className="editorial-helper-text">Area: {selectedDestination.label}</p> : null}
+                  {destinationOptions.length && !selectedDestination ? (
+                    <div className="editorial-option-grid">
+                      {destinationOptions.map((destination) => (
+                        <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)}>
+                          {destination.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {visibleShippingOptions.length ? (
+                    <div className="editorial-option-grid">
+                      {visibleShippingOptions.map((rate) => {
+                        const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
+                        return (
+                          <button
+                            key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
+                            type="button"
+                            className={active ? 'is-active' : ''}
+                            onClick={() => setSelectedShipping(rate)}
+                          >
+                            {courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}
+                            {' / '}
+                            {formatRupiah(rate.cost)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  {selectedShipping?.promotionApplied ? <p className="editorial-helper-text">{selectedShipping.promotionLabel}</p> : null}
+                  {shippingError ? <p className="editorial-helper-text editorial-helper-text--warning">{shippingError}</p> : null}
                 </div>
-              ) : null}
-              {visibleShippingOptions.length ? (
-                <div className="editorial-option-grid">
-                  {visibleShippingOptions.map((rate) => {
-                    const active = selectedShipping?.courierCode === rate.courierCode && selectedShipping?.service === rate.service;
-                    return (
-                      <button
-                        key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
-                        type="button"
-                        className={active ? 'is-active' : ''}
-                        onClick={() => setSelectedShipping(rate)}
-                      >
-                        {courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}
-                        {' / '}
-                        {formatRupiah(rate.cost)}
+                <div className="editorial-voucher-panel">
+                  <div>
+                    <p className="editorial-eyebrow">VOUCHER</p>
+                    <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}</strong>
+                  </div>
+                  <div className="editorial-inline-field">
+                    <input
+                      type="text"
+                      value={voucher.inputCode}
+                      onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
+                      placeholder="Kode voucher"
+                    />
+                    <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={voucher.loading}>
+                      {voucher.loading ? 'Cek...' : 'Pakai'}
+                      <BadgePercent className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {voucher.appliedVoucher ? (
+                    <div className="editorial-voucher-applied">
+                      <span>Diskon voucher</span>
+                      <strong>-{formatRupiah(discountAmount)}</strong>
+                      <button type="button" className="editorial-icon-button" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                        <X className="h-4 w-4" />
                       </button>
-                    );
-                  })}
+                    </div>
+                  ) : voucher.message ? (
+                    <p className="editorial-helper-text editorial-helper-text--warning">{voucher.message}</p>
+                  ) : null}
                 </div>
-              ) : null}
-              {selectedShipping?.promotionApplied ? <p className="editorial-helper-text">{selectedShipping.promotionLabel}</p> : null}
-              {shippingError ? <p className="editorial-helper-text editorial-helper-text--warning">{shippingError}</p> : null}
-            </div>
-            <div className="editorial-voucher-panel">
-              <div>
-                <p className="editorial-eyebrow">VOUCHER</p>
-                <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}</strong>
-              </div>
-              <div className="editorial-inline-field">
-                <input
-                  type="text"
-                  value={voucher.inputCode}
-                  onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                  placeholder="Kode voucher"
-                />
-                <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={voucher.loading}>
-                  {voucher.loading ? 'Cek...' : 'Pakai'}
-                  <BadgePercent className="h-4 w-4" />
+                <div className="editorial-cart-summary">
+                  <div className="editorial-cart-summary__row"><span>Subtotal custom</span><strong>{formatRupiah(estimatedTotal)}</strong></div>
+                  {discountAmount ? <div className="editorial-cart-summary__row"><span>Voucher</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
+                  <div className="editorial-cart-summary__row"><span>Ongkir</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
+                  <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{formatRupiah(totalDue)}</strong></div>
+                </div>
+                <label>Payment<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
+                <label className="editorial-checkbox-row">
+                  <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
+                  Saya memahami bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
+                </label>
+                <button type="submit" className="editorial-button editorial-button--primary" disabled={saving}>
+                  {saving ? 'Saving request...' : (isManualPayment ? 'Buat order & upload bukti' : 'Buat order & bayar')}
+                  {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </button>
               </div>
-              {voucher.appliedVoucher ? (
-                <div className="editorial-voucher-applied">
-                  <span>Diskon voucher</span>
-                  <strong>-{formatRupiah(discountAmount)}</strong>
-                  <button type="button" className="editorial-icon-button" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : voucher.message ? (
-                <p className="editorial-helper-text editorial-helper-text--warning">{voucher.message}</p>
-              ) : null}
-            </div>
-            <div className="editorial-cart-summary">
-              <div className="editorial-cart-summary__row"><span>Subtotal custom</span><strong>{formatRupiah(estimatedTotal)}</strong></div>
-              {discountAmount ? <div className="editorial-cart-summary__row"><span>Voucher</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
-              <div className="editorial-cart-summary__row"><span>Ongkir</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
-              <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{formatRupiah(totalDue)}</strong></div>
-            </div>
-            <label>Payment<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
-            <label className="editorial-checkbox-row">
-              <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
-              Saya memahami bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
-            </label>
-            <button type="submit" className="editorial-button editorial-button--primary" disabled={saving}>
-              {saving ? 'Saving request...' : (isManualPayment ? 'Buat order & upload bukti' : 'Buat order & bayar')}
-              {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
-            </button>
+            ) : null}
           </form>
         </section>
 

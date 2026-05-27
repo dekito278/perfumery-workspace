@@ -111,7 +111,7 @@ const PublicTrackingPage = () => {
       <main className="solivagant-editorial-home">
         <PublicHeader />
 
-        <section className="editorial-page-hero editorial-page-hero--split">
+        <section className="editorial-page-hero editorial-page-hero--split editorial-page-hero--compact">
           <div>
             <p className="editorial-eyebrow">CUSTOMER ORDER TRACKING</p>
             <h1>Track Your Order</h1>
