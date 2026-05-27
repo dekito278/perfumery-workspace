@@ -49,6 +49,26 @@ const formatNumber = (value, digits = 0) => new Intl.NumberFormat('id-ID', {
   maximumFractionDigits: digits,
 }).format(Number(value || 0));
 
+const getFormulaItemDilutionPercent = (item) => {
+  const percent = Number(
+    item?.dilution_percent
+    ?? item?.dilution_percentage
+    ?? item?.dilutionPercentage
+    ?? item?.concentration_percent
+    ?? 0,
+  );
+
+  return Number.isFinite(percent) && percent > 0 && percent < 100 ? percent : null;
+};
+
+const getFormulaItemDilutionSolventName = (item) => String(
+  item?.dilution_solvent_name
+  || item?.dilutionSolventName
+  || item?.dilution_solvent?.name
+  || item?.expand?.dilution_solvent_id?.name
+  || '',
+).trim();
+
 const buildBatchProductKey = ({ bottleMl, concentration, formulaId, lossPercent = 0, targetMl }) => [
   formulaId || 'formula',
   `${formatQuantity(targetMl, 2)}ml`,
@@ -81,7 +101,7 @@ const MetricCard = ({ label, value, helper, tone = 'neutral' }) => (
   </div>
 );
 
-const fieldClass = 'h-11 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300';
+const fieldClass = 'h-11 w-full min-w-0 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300';
 
 const BatchProductionPage = () => {
   const navigate = useNavigate();
@@ -177,10 +197,18 @@ const BatchProductionPage = () => {
       const percentage = totalFormulaGrams > 0 ? (formulaGram / totalFormulaGrams) * 100 : 0;
       const batchGram = (targetValue * percentage) / 100;
       const unitPrice = Number(item.unit_price || 0);
+      const dilutionPercent = getFormulaItemDilutionPercent(item);
+      const dilutionSolventName = getFormulaItemDilutionSolventName(item);
+      const activeBatchGram = dilutionPercent ? batchGram * (dilutionPercent / 100) : batchGram;
+      const carrierBatchGram = dilutionPercent ? Math.max(batchGram - activeBatchGram, 0) : 0;
       return {
         ...item,
+        activeBatchGram,
         batchGram,
+        carrierBatchGram,
         cost: calculateIngredientCost(batchGram, unitPrice),
+        dilutionPercent,
+        dilutionSolventName,
         percentage,
         rowKey: item.id || `${item.item_id || 'material'}-${index}`,
         unitPrice,
@@ -406,24 +434,24 @@ const BatchProductionPage = () => {
               </div>
             ) : null}
 
-            <section className="rounded-3xl border bg-white p-5 shadow-sm">
-              <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
-                <label className="grid gap-2">
+            <section className="overflow-hidden rounded-3xl border bg-white p-5 shadow-sm">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.35fr)_minmax(160px,0.65fr)_minmax(160px,0.65fr)_minmax(220px,0.85fr)]">
+                <label className="grid min-w-0 gap-2">
                   <span className="text-xs font-bold uppercase text-muted-foreground">Formula</span>
                   <select value={selectedFormulaId} onChange={(event) => setSelectedFormulaId(event.target.value)} className={fieldClass}>
                     <option value="">Select formula</option>
                     {formulas.map((formula) => <option key={formula.id} value={formula.id}>{formula.name} ({formula.code})</option>)}
                   </select>
                 </label>
-                <label className="grid gap-2">
+                <label className="grid min-w-0 gap-2">
                   <span className="text-xs font-bold uppercase text-muted-foreground">Batch volume</span>
                   <input value={targetMl} onChange={(event) => setTargetMl(event.target.value)} inputMode="decimal" className={fieldClass} />
                 </label>
-                <label className="grid gap-2">
+                <label className="grid min-w-0 gap-2">
                   <span className="text-xs font-bold uppercase text-muted-foreground">Dilution %</span>
                   <input value={retailInputs.formulaPercentage} onChange={(event) => updateRetailInput('formulaPercentage', event.target.value)} inputMode="decimal" className={fieldClass} />
                 </label>
-                <label className="grid gap-2">
+                <label className="grid min-w-0 gap-2">
                   <span className="text-xs font-bold uppercase text-muted-foreground">Solvent</span>
                   <select value={selectedSolventId} onChange={(event) => setSelectedSolventId(event.target.value)} className={fieldClass}>
                     <option value="">Select solvent</option>
@@ -592,12 +620,13 @@ const BatchProductionPage = () => {
                 </div>
                 <StatusChip tone={concentrateRows.length ? 'success' : 'neutral'}>{concentrateRows.length} materials</StatusChip>
               </div>
-              <div className="mt-4 overflow-hidden rounded-2xl border">
-                <table className="w-full text-left text-sm">
+              <div className="mt-4 overflow-x-auto rounded-2xl border">
+                <table className="min-w-[920px] w-full text-left text-sm">
                   <thead className="bg-[#fbfaf7] text-xs uppercase text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3">Material</th>
                       <th className="px-4 py-3">%</th>
+                      <th className="px-4 py-3">Dilution</th>
                       <th className="px-4 py-3">Batch qty</th>
                       <th className="px-4 py-3 text-right">Cost</th>
                     </tr>
@@ -605,14 +634,33 @@ const BatchProductionPage = () => {
                   <tbody className="divide-y">
                     {concentrateRows.length ? concentrateRows.map((item) => (
                       <tr key={item.rowKey}>
-                        <td className="px-4 py-3 font-bold">{item.name || item.item_name || 'Material'}</td>
+                        <td className="px-4 py-3">
+                          <div className="font-bold">{item.name || item.item_name || 'Material'}</div>
+                          {item.dilutionPercent ? (
+                            <div className="mt-1 text-xs font-semibold text-emerald-700">Formula memakai diluted material</div>
+                          ) : null}
+                        </td>
                         <td className="px-4 py-3 font-semibold">{formatNumber(item.percentage, 2)}%</td>
+                        <td className="px-4 py-3">
+                          {item.dilutionPercent ? (
+                            <div>
+                              <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                                {formatNumber(item.dilutionPercent, 2)}%{item.dilutionSolventName ? ` in ${item.dilutionSolventName}` : ''}
+                              </span>
+                              <div className="mt-1 text-xs font-semibold text-muted-foreground">
+                                Active {formatNumber(item.activeBatchGram, 2)} ml / carrier {formatNumber(item.carrierBatchGram, 2)} ml
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="inline-flex rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-bold text-muted-foreground">Neat</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-semibold">{formatNumber(item.batchGram, 2)} ml</td>
                         <td className="px-4 py-3 text-right font-bold">{formatPrice(item.cost)}</td>
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan="4" className="px-4 py-8 text-center text-sm font-semibold text-muted-foreground">Formula belum punya material rows yang bisa dihitung.</td>
+                        <td colSpan="5" className="px-4 py-8 text-center text-sm font-semibold text-muted-foreground">Formula belum punya material rows yang bisa dihitung.</td>
                       </tr>
                     )}
                   </tbody>

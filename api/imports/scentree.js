@@ -193,6 +193,24 @@ const buildShortDescription = ({ title, classificationPath, uses, comments }) =>
 	return parts.join(' ').trim();
 };
 
+const readRequestBody = async (req) => {
+	if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+		return req.body;
+	}
+
+	if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+		return JSON.parse(req.body.toString('utf8') || '{}');
+	}
+
+	const chunks = [];
+	for await (const chunk of req) {
+		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+	}
+
+	const rawBody = Buffer.concat(chunks).toString('utf8');
+	return rawBody ? JSON.parse(rawBody) : {};
+};
+
 const importScentreeByUrl = async (url) => {
 	const parsedUrl = new URL(String(url || '').trim());
 	if (!SCENTREE_HOSTS.has(parsedUrl.hostname)) {
@@ -268,7 +286,8 @@ module.exports = async (req, res) => {
 	}
 
 	try {
-		const url = String(req.body?.url || '').trim();
+		const body = await readRequestBody(req);
+		const url = String(body?.url || '').trim();
 		if (!url) {
 			res.statusCode = 400;
 			res.end(JSON.stringify({ message: 'URL is required' }));

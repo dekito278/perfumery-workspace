@@ -75,6 +75,14 @@ const normalizeWorkbookCodeForForm = (preferredValue, fallbackValue = '') => {
   return '';
 };
 
+const buildImportedSourceSnapshot = (sourceKey, imported, targetUrl) => ({
+  ...imported,
+  source: imported?.source || sourceKey,
+  source_kind: imported?.source_kind || sourceKey,
+  source_url: imported?.source_url || imported?.url || targetUrl,
+  url: imported?.url || imported?.source_url || targetUrl,
+});
+
 const displayGuidanceNumber = (value, suffix = '') => {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue) || numericValue <= 0) {
@@ -356,7 +364,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
-      appendSourceSnapshot('scentree', imported);
+      appendSourceSnapshot('scentree', buildImportedSourceSnapshot('scentree', imported, scentreeUrl.trim()));
       setInferenceLines([
         imported.classification_path?.length ? `ScenTree path: ${imported.classification_path.join(' > ')}` : 'ScenTree path tidak tersedia.',
         imported.volatility ? `Volatility: ${imported.volatility}` : 'Volatility tidak tersedia di ScenTree.',
@@ -412,7 +420,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
-      appendSourceSnapshot('perfumersworld', imported);
+      appendSourceSnapshot('perfumersworld', buildImportedSourceSnapshot('perfumersworld', imported, perfumersWorldUrl.trim()));
       setPendingWorkbookBulkImport(imported.workbook_code ? imported : null);
       setInferenceLines([
         imported.workbook_code ? `Workbook code: ${imported.workbook_code}` : 'Workbook code tidak tersedia di PerfumersWorld.',
@@ -467,7 +475,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
       }));
 
       setSuggestedDescription(imported.description || material?.description || '');
-      appendSourceSnapshot('tgsc', imported);
+      appendSourceSnapshot('tgsc', buildImportedSourceSnapshot('tgsc', imported, tgscUrl.trim()));
       setInferenceLines([
         imported.cas_number ? `CAS: ${imported.cas_number}` : 'CAS tidak tersedia di TGSC.',
         imported.odor_type ? `Odor type: ${imported.odor_type}` : 'Odor type tidak tersedia di TGSC.',

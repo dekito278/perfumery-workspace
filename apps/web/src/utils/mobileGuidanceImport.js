@@ -45,10 +45,13 @@ const sanitizeImportedGuidance = (imported = {}) => ({
 
 export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
   const normalizedImported = sanitizeImportedGuidance(imported);
+  const importedWorkbookCode = normalizedImported.workbook_code || null;
   const importedWithTarget = {
     ...normalizedImported,
     source_kind: normalizedImported.source_kind || sourceType,
     source: normalizedImported.source || sourceType,
+    source_url: normalizedImported.source_url || normalizedImported.url || null,
+    url: normalizedImported.url || normalizedImported.source_url || null,
     target_raw_material_id: material.id || null,
     target_raw_material_name: material.name || null,
   };
@@ -58,7 +61,7 @@ export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
   };
   const fieldLocks = {
     ...(material.guidance_reference_profile?.field_locks || {}),
-    workbook_code: Boolean(material.workbook_code),
+    workbook_code: Boolean(importedWorkbookCode || material.workbook_code),
     cas_number: Boolean(normalizedImported.cas_number || material.cas_number),
     reference_abc_primary_family: Boolean(normalizedImported.reference_abc_primary_family || material.reference_abc_primary_family),
     reference_impact: Boolean(hasPositiveNumber(normalizedImported.reference_impact) || hasPositiveNumber(material.reference_impact)),
@@ -68,7 +71,7 @@ export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
   };
 
   return {
-    workbook_code: material.workbook_code || null,
+    workbook_code: material.workbook_code || importedWorkbookCode || null,
     cas_number: normalizedImported.cas_number || material.cas_number || null,
     ifra_limit: preferPositiveNumber(normalizedImported.ifra_limit, material.ifra_limit),
     reference_abc_primary_family: normalizedImported.reference_abc_primary_family || material.reference_abc_primary_family || null,

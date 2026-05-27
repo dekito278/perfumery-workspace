@@ -530,7 +530,7 @@ const sendJson = (res, statusCode, payload) => {
 const readJsonBody = async (req) => {
 	const chunks = [];
 	for await (const chunk of req) {
-		chunks.push(chunk);
+		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
 	}
 
 	const rawBody = Buffer.concat(chunks).toString('utf8');
