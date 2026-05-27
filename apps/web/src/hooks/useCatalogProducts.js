@@ -6,11 +6,16 @@ import {
   prefetchCatalogProducts,
 } from '@/services/productCatalogService.js';
 
-export const useCatalogProducts = ({ editableOnly = false } = {}) => {
+export const useCatalogProducts = ({ editableOnly = false, active = true } = {}) => {
   const [products, setProducts] = useState(() => (editableOnly ? [] : getLocalCatalogProducts()));
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(active);
 
   useEffect(() => {
+    if (!active) {
+      setLoading(false);
+      return undefined;
+    }
+
     let isMounted = true;
     const syncProducts = async ({ force = false } = {}) => {
       if (isMounted) {
@@ -56,7 +61,7 @@ export const useCatalogProducts = ({ editableOnly = false } = {}) => {
       window.removeEventListener('storage', refreshProducts);
       window.removeEventListener('dekito:products-updated', refreshProducts);
     };
-  }, [editableOnly]);
+  }, [active, editableOnly]);
 
   Object.defineProperty(products, 'loading', {
     configurable: true,

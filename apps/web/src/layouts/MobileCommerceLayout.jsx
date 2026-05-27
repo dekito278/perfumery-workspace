@@ -36,7 +36,13 @@ const MobileCommerceLayout = ({ children }) => {
   useMobileFormEnhancements();
   useMobileTouchFeedback();
   const ownerTapRef = useRef({ count: 0, lastTapAt: 0 });
-  useMobileCommercePrefetch();
+  const shouldPrefetchCommerceData = [
+    '/mobile/dashboard',
+    '/mobile/catalog',
+    '/mobile/products',
+    '/mobile/cart',
+  ].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  useMobileCommercePrefetch({ prefetchCommerceData: shouldPrefetchCommerceData });
 
   const openOwnerAccess = () => {
     const now = Date.now();

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const fieldSelector = 'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])';
 
@@ -14,8 +14,15 @@ const getFields = (field) => {
 };
 
 export const useMobileFormEnhancements = (enabled = true) => {
+  const pendingInvalidFocusTimersRef = useRef([]);
+
   useEffect(() => {
     if (!enabled || typeof document === 'undefined') return undefined;
+
+    const clearPendingInvalidFocusTimers = () => {
+      pendingInvalidFocusTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+      pendingInvalidFocusTimersRef.current = [];
+    };
 
     const syncEnterKeyHint = (field) => {
       if (!(field instanceof HTMLElement)) return;
@@ -71,10 +78,12 @@ export const useMobileFormEnhancements = (enabled = true) => {
       if (!(field instanceof HTMLElement) || !field.matches(fieldSelector)) return;
       field.setAttribute('aria-invalid', 'true');
       field.closest('[data-mobile-field]')?.classList.add('mobile-field-has-error');
-      window.setTimeout(() => {
+      const timerId = window.setTimeout(() => {
+        pendingInvalidFocusTimersRef.current = pendingInvalidFocusTimersRef.current.filter((id) => id !== timerId);
         field.focus({ preventScroll: true });
         field.scrollIntoView({ block: 'center', behavior: 'smooth' });
       }, 0);
+      pendingInvalidFocusTimersRef.current.push(timerId);
     };
 
     document.querySelectorAll('.mobile-app textarea').forEach(resizeTextarea);
@@ -84,6 +93,7 @@ export const useMobileFormEnhancements = (enabled = true) => {
     document.addEventListener('invalid', handleInvalid, true);
 
     return () => {
+      clearPendingInvalidFocusTimers();
       document.removeEventListener('focusin', handleFocusIn);
       document.removeEventListener('input', handleInput);
       document.removeEventListener('keydown', handleKeyDown);

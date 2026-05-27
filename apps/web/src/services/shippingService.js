@@ -1,6 +1,6 @@
 import {
   applyShippingPromotionToRates,
-  getShippingPromotionSettingsAsync,
+  getShippingPromotionSettings,
 } from '@/services/shippingPromotionService.js';
 
 export const SHIPPING_STORAGE_KEY = 'solivagant.checkout.shipping.v1';
@@ -52,7 +52,7 @@ export const getShippingRates = async ({
   return applyShippingPromotionToRates(
     rates,
     promotionDestination,
-    await getShippingPromotionSettingsAsync(),
+    getShippingPromotionSettings(),
     { subtotal },
   );
 };

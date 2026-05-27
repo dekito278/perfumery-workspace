@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -418,6 +418,20 @@ const MobileFormulaComposerWorkspace = ({
   const [highlightedRowKey, setHighlightedRowKey] = useState('');
   const [finderScrollRef, finderScrollHandlers] = useHorizontalDragScroll();
   const compositionBoardRef = useRef(null);
+  const composerTimeoutsRef = useRef([]);
+
+  const scheduleComposerTimeout = useCallback((callback, delay) => {
+    const timeoutId = window.setTimeout(() => {
+      composerTimeoutsRef.current = composerTimeoutsRef.current.filter((id) => id !== timeoutId);
+      callback();
+    }, delay);
+    composerTimeoutsRef.current.push(timeoutId);
+  }, []);
+
+  useEffect(() => () => {
+    composerTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    composerTimeoutsRef.current = [];
+  }, []);
 
   useEffect(() => {
     onOverlayOpenChange?.(Boolean(dilutionItem) || guidanceOpen);
@@ -486,23 +500,23 @@ const MobileFormulaComposerWorkspace = ({
     setHighlightedRowKey(targetItem.row_key);
     setCompositionVisible((current) => Math.max(current, targetIndex + 1, COMPOSER_PAGE_SIZE));
 
-    window.setTimeout(() => {
+    scheduleComposerTimeout(() => {
       const targetElement = document.querySelector(`[data-mobile-composition-row="${targetItem.row_key}"]`);
       targetElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetElement?.querySelector?.('input')?.focus?.({ preventScroll: true });
     }, 80);
 
-    window.setTimeout(() => {
+    scheduleComposerTimeout(() => {
       setHighlightedRowKey((current) => (current === targetItem.row_key ? '' : current));
     }, 2600);
-  }, [composition, focusMaterialId]);
+  }, [composition, focusMaterialId, scheduleComposerTimeout]);
 
   const handleAddMaterial = (material) => {
     pendingFocusMaterialIdRef.current = material?.id || '';
     onAddMaterial(material);
     setFinderQuery('');
     setTab('composition');
-    window.setTimeout(() => {
+    scheduleComposerTimeout(() => {
       compositionBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 0);
   };

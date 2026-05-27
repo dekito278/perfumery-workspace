@@ -10,9 +10,20 @@ const canVibrate = () => (
   && typeof navigator.vibrate === 'function'
 );
 
+const hasActiveUserGesture = () => {
+  if (typeof navigator === 'undefined' || !navigator.userActivation) return true;
+  return navigator.userActivation.isActive === true;
+};
+
 const vibrate = (pattern) => {
   if (!isAndroidDevice() || !canVibrate()) return;
-  navigator.vibrate(pattern);
+  if (!hasActiveUserGesture()) return;
+
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Some embedded/devtool mobile frames expose vibrate but reject it before a real tap.
+  }
 };
 
 export const triggerMobileHaptic = (tone = 'light') => {

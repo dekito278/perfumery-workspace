@@ -72,16 +72,21 @@ export const MobileArticlesContent = ({ active = true }) => {
   }, []);
 
   useEffect(() => {
+    if (!active) return undefined;
+
     loadArticles();
-  }, [loadArticles]);
+    return undefined;
+  }, [active, loadArticles]);
 
   useEffect(() => {
+    if (!active) return undefined;
+
     window.addEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadArticles);
 
     return () => {
       window.removeEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadArticles);
     };
-  }, [loadArticles]);
+  }, [active, loadArticles]);
 
   const categoryOptions = useMemo(() => [
     { value: 'all', label: 'Semua' },

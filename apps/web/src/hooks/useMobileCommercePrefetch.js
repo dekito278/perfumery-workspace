@@ -9,7 +9,8 @@ const homeImageUrls = [
   '/brand/home/raw-material-library.jpg',
 ];
 
-let hasPrefetchedMobileCommerce = false;
+let hasPrefetchedMobileCommerceImages = false;
+let hasPrefetchedMobileCommerceData = false;
 
 const preloadImage = (src) => {
   if (typeof window === 'undefined' || !src) return;
@@ -19,23 +20,32 @@ const preloadImage = (src) => {
 };
 
 const schedulePrefetch = (callback) => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return () => {};
 
   if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(callback, { timeout: 1200 });
-    return;
+    const requestId = window.requestIdleCallback(callback, { timeout: 1200 });
+    return () => window.cancelIdleCallback?.(requestId);
   }
 
-  window.setTimeout(callback, 250);
+  const timeoutId = window.setTimeout(callback, 250);
+  return () => window.clearTimeout(timeoutId);
 };
 
-export const useMobileCommercePrefetch = () => {
+export const useMobileCommercePrefetch = ({ prefetchCommerceData = true } = {}) => {
   useEffect(() => {
-    if (hasPrefetchedMobileCommerce) return;
-    hasPrefetchedMobileCommerce = true;
-
-    schedulePrefetch(() => {
+    return schedulePrefetch(() => {
+      if (hasPrefetchedMobileCommerceImages) return;
+      hasPrefetchedMobileCommerceImages = true;
       homeImageUrls.forEach(preloadImage);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!prefetchCommerceData || hasPrefetchedMobileCommerceData) return;
+
+    return schedulePrefetch(() => {
+      if (hasPrefetchedMobileCommerceData) return;
+      hasPrefetchedMobileCommerceData = true;
 
       void Promise.all([
         prefetchCatalogProducts(),
@@ -49,5 +59,5 @@ export const useMobileCommercePrefetch = () => {
         preloadImage(getOptimizedProductImageUrl(firstProductImage, 720));
       });
     });
-  }, []);
+  }, [prefetchCommerceData]);
 };

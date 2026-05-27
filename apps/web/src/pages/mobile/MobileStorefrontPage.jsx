@@ -60,9 +60,9 @@ export const MobileStorefrontContent = ({ active = true }) => {
   const latestScrollTopRef = useRef(0);
   const lastScrollAtRef = useRef(0);
   const hasUserScrollIntentRef = useRef(false);
-  const catalogProducts = useCatalogProducts();
+  const catalogProducts = useCatalogProducts({ active });
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
-  const categories = useStorefrontCategories(products);
+  const categories = useStorefrontCategories(products, { active });
   const homeProducts = useMemo(() => products.filter((product) => product.featured).slice(0, 3), [products]);
   const quickProducts = useMemo(() => (homeProducts.length ? homeProducts : products).slice(0, 4), [homeProducts, products]);
   const heroProduct = quickProducts[0];

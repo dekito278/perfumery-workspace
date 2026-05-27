@@ -31,11 +31,16 @@ const mergeCategories = (managedCategories, products) => {
   });
 };
 
-export const useStorefrontCategories = (products = []) => {
+export const useStorefrontCategories = (products = [], { active = true } = {}) => {
   const [managedCategories, setManagedCategories] = useState(() => getLocalStorefrontCategories());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(active);
 
   useEffect(() => {
+    if (!active) {
+      setLoading(false);
+      return undefined;
+    }
+
     let isMounted = true;
 
     const syncCategories = async ({ force = false } = {}) => {
@@ -81,7 +86,7 @@ export const useStorefrontCategories = (products = []) => {
       window.removeEventListener(STOREFRONT_CATEGORY_UPDATED_EVENT, refreshCategories);
       window.removeEventListener('dekito:products-updated', refreshCategories);
     };
-  }, []);
+  }, [active]);
 
   const categories = useMemo(() => mergeCategories(managedCategories, products), [managedCategories, products]);
 

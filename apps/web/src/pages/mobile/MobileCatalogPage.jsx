@@ -111,9 +111,9 @@ export const MobileCatalogContent = ({ active = true }) => {
   const hasUserScrollIntentRef = useRef(false);
   const [virtualRowHeight, setVirtualRowHeight] = useState(MOBILE_CATALOG_ESTIMATED_ROW_HEIGHT);
   const [virtualRows, setVirtualRows] = useState({ start: 0, end: 8 });
-  const catalogProducts = useCatalogProducts();
+  const catalogProducts = useCatalogProducts({ active });
   const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
-  const categories = useStorefrontCategories(products);
+  const categories = useStorefrontCategories(products, { active });
   const scentFamilies = useMemo(() => (
     categories.filter((item) => !commerceCategoryNames.has(String(item.name || '').toLowerCase()))
   ), [categories]);
