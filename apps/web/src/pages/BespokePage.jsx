@@ -55,11 +55,6 @@ const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. 
   return fallback;
 };
 
-const formatOptionPrice = (option) => {
-  const price = Number(option?.price || 0);
-  return price > 0 ? formatRupiah(price) : 'Included';
-};
-
 const getOptionKey = (option = {}) => String(option.id || option.value || option.label || '').trim();
 
 const getOptionDisplayValue = (option = {}, fallback = '') => String(option.label || option.value || fallback || '').trim();
@@ -73,7 +68,7 @@ const optionMatchesValue = (option = {}, value = '') => {
   ].map((item) => String(item || '').trim()).includes(currentValue);
 };
 
-const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', label, onClick, price }) => (
+const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', label, onClick }) => (
   <button
     type="button"
     className={`editorial-bespoke-option${active ? ' is-active' : ''}`}
@@ -91,7 +86,6 @@ const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', 
     <span className="editorial-bespoke-option__body">
       <strong>{label || children}</strong>
       {description ? <small>{description}</small> : null}
-      {price !== undefined ? <em>{price}</em> : null}
     </span>
   </button>
 );
@@ -149,6 +143,7 @@ const BespokePage = () => {
   const [selectedShipping, setSelectedShipping] = useState(null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState('');
+  const [activeChoiceGroup, setActiveChoiceGroup] = useState('size');
   const [form, setForm] = useState({
     customerName: '',
     contact: '',
@@ -201,6 +196,82 @@ const BespokePage = () => {
     : shippingOptions;
 
   const updateField = useCallback((key, value) => setForm((current) => ({ ...current, [key]: value })), []);
+  const noneMaterialOption = useMemo(() => ({
+    id: 'none',
+    label: 'Tanpa add-on',
+    value: '',
+    description: 'Tanpa tambahan material eksotis.',
+  }), []);
+  const bespokeChoiceGroups = useMemo(() => [
+    {
+      key: 'size',
+      tabLabel: 'Ukuran',
+      eyebrow: 'UKURAN',
+      title: 'Size selection',
+      field: 'size',
+      selected: selectedSize,
+      options: bottleSizeOptions,
+    },
+    {
+      key: 'bottle',
+      tabLabel: 'Botol',
+      eyebrow: 'BOTOL',
+      title: 'Bottle type',
+      field: 'bottleType',
+      selected: selectedBottle,
+      options: bottleTypeOptions,
+    },
+    {
+      key: 'cap',
+      tabLabel: 'Cap',
+      eyebrow: 'CAP',
+      title: 'Cap design',
+      field: 'capDesign',
+      selected: selectedCap,
+      options: capDesignOptions,
+    },
+    {
+      key: 'label',
+      tabLabel: 'Label',
+      eyebrow: 'LABEL',
+      title: 'Label design',
+      field: 'labelDesign',
+      selected: selectedLabel,
+      options: labelDesignOptions,
+    },
+    {
+      key: 'material',
+      tabLabel: 'Material',
+      eyebrow: 'MATERIAL',
+      title: 'Material add-on',
+      field: 'exoticMaterial',
+      selected: selectedMaterial || noneMaterialOption,
+      options: [noneMaterialOption, ...exoticMaterialOptions],
+    },
+  ], [
+    bottleSizeOptions,
+    bottleTypeOptions,
+    capDesignOptions,
+    exoticMaterialOptions,
+    labelDesignOptions,
+    noneMaterialOption,
+    selectedBottle,
+    selectedCap,
+    selectedLabel,
+    selectedMaterial,
+    selectedSize,
+  ]);
+  const activeChoice = bespokeChoiceGroups.find((group) => group.key === activeChoiceGroup) || bespokeChoiceGroups[0];
+  const isNoneMaterialOption = useCallback((option) => getOptionKey(option) === getOptionKey(noneMaterialOption), [noneMaterialOption]);
+  const isActiveChoiceOption = useCallback((group, option) => {
+    if (group.key === 'material' && isNoneMaterialOption(option)) {
+      return !form.exoticMaterial;
+    }
+    return getOptionKey(group.selected) === getOptionKey(option);
+  }, [form.exoticMaterial, isNoneMaterialOption]);
+  const selectChoiceOption = useCallback((group, option) => {
+    updateField(group.field, group.key === 'material' && isNoneMaterialOption(option) ? '' : getOptionKey(option));
+  }, [isNoneMaterialOption, updateField]);
 
   const resetShipping = useCallback(({ keepSearch = true, keepCourier = true } = {}) => {
     setSelectedDestination(null);
@@ -575,117 +646,53 @@ const BespokePage = () => {
             <label>Nama parfum / project name<input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder="A working name for the custom scent" /></label>
             <label>Scent direction<textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder="Woody, floral, aquatic, gourmand, smoky..." /></label>
             <label>Occasion<select value={form.occasion} onChange={(event) => updateField('occasion', event.target.value)}>{bespokeOccasionOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-            <div className="editorial-bespoke-choice-panel">
+            <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact">
               <div className="editorial-bespoke-choice-panel__head">
                 <p className="editorial-eyebrow">VISUAL CUSTOMIZER</p>
-                <h3>Pilih opsi dengan preview, bukan dropdown.</h3>
+                <h3>Pilih kategori, lalu tentukan visualnya.</h3>
               </div>
-              <BespokeBottlePreview
-                bottle={selectedBottle}
-                cap={selectedCap}
-                label={selectedLabel}
-                material={selectedMaterial}
-                size={selectedSize}
-              />
-            </div>
-            <div className="editorial-bespoke-choice-group">
-              <div>
-                <p className="editorial-eyebrow">UKURAN</p>
-                <h3>Size selection</h3>
-              </div>
-              <div className="editorial-bespoke-option-grid editorial-bespoke-option-grid--compact">
-                {bottleSizeOptions.map((option) => (
-                  <BespokeOptionCard
-                    key={option.value}
-                    active={getOptionKey(selectedSize) === getOptionKey(option)}
-                    imageUrl={option.imageUrl}
-                    label={option.label}
-                    onClick={() => updateField('size', getOptionKey(option))}
-                    price={formatOptionPrice(option)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="editorial-bespoke-choice-group">
-              <div>
-                <p className="editorial-eyebrow">BOTOL</p>
-                <h3>Bottle type</h3>
-              </div>
-              <div className="editorial-bespoke-option-grid">
-                {bottleTypeOptions.map((option) => (
-                  <BespokeOptionCard
-                    key={option.value}
-                    active={getOptionKey(selectedBottle) === getOptionKey(option)}
-                    description={option.description}
-                    imageUrl={option.imageUrl}
-                    label={option.label}
-                    onClick={() => updateField('bottleType', getOptionKey(option))}
-                    price={formatOptionPrice(option)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="editorial-bespoke-choice-group">
-              <div>
-                <p className="editorial-eyebrow">CAP</p>
-                <h3>Cap design</h3>
-              </div>
-              <div className="editorial-bespoke-option-grid">
-                {capDesignOptions.map((option) => (
-                  <BespokeOptionCard
-                    key={option.value}
-                    active={getOptionKey(selectedCap) === getOptionKey(option)}
-                    description={option.description}
-                    imageUrl={option.imageUrl}
-                    label={option.label}
-                    onClick={() => updateField('capDesign', getOptionKey(option))}
-                    price={formatOptionPrice(option)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="editorial-bespoke-choice-group">
-              <div>
-                <p className="editorial-eyebrow">LABEL</p>
-                <h3>Label design</h3>
-              </div>
-              <div className="editorial-bespoke-option-grid">
-                {labelDesignOptions.map((option) => (
-                  <BespokeOptionCard
-                    key={option.value}
-                    active={getOptionKey(selectedLabel) === getOptionKey(option)}
-                    description={option.description}
-                    imageUrl={option.imageUrl}
-                    label={option.label}
-                    onClick={() => updateField('labelDesign', getOptionKey(option))}
-                    price={formatOptionPrice(option)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="editorial-bespoke-choice-group">
-              <div>
-                <p className="editorial-eyebrow">MATERIAL</p>
-                <h3>Material add-on</h3>
-              </div>
-              <div className="editorial-bespoke-option-grid">
-                <BespokeOptionCard
-                  active={!form.exoticMaterial}
-                  label="Tanpa add-on"
-                  onClick={() => updateField('exoticMaterial', '')}
-                  price="Included"
+              <div className="editorial-bespoke-customizer">
+                <BespokeBottlePreview
+                  bottle={selectedBottle}
+                  cap={selectedCap}
+                  label={selectedLabel}
+                  material={selectedMaterial}
+                  size={selectedSize}
                 />
-                {exoticMaterialOptions.map((option) => (
-                  <BespokeOptionCard
-                    key={option.value}
-                    active={getOptionKey(selectedMaterial) === getOptionKey(option)}
-                    description={option.description}
-                    imageUrl={option.imageUrl}
-                    label={option.label}
-                    onClick={() => updateField('exoticMaterial', getOptionKey(option))}
-                    price={formatOptionPrice(option)}
-                  />
-                ))}
+                <div className="editorial-bespoke-customizer__controls">
+                  <div className="editorial-bespoke-tabs" role="tablist" aria-label="Bespoke option groups">
+                    {bespokeChoiceGroups.map((group) => (
+                      <button
+                        key={group.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeChoice.key === group.key}
+                        className={activeChoice.key === group.key ? 'is-active' : ''}
+                        onClick={() => setActiveChoiceGroup(group.key)}
+                      >
+                        {group.tabLabel}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="editorial-bespoke-choice-group editorial-bespoke-choice-group--inside">
+                    <div>
+                      <p className="editorial-eyebrow">{activeChoice.eyebrow}</p>
+                      <h3>{activeChoice.title}</h3>
+                    </div>
+                    <div className={`editorial-bespoke-option-grid${activeChoice.key === 'size' ? ' editorial-bespoke-option-grid--compact' : ''}`}>
+                      {activeChoice.options.map((option) => (
+                        <BespokeOptionCard
+                          key={getOptionKey(option) || option.label}
+                          active={isActiveChoiceOption(activeChoice, option)}
+                          description={option.description}
+                          imageUrl={option.imageUrl}
+                          label={option.label}
+                          onClick={() => selectChoiceOption(activeChoice, option)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <label>Name<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Your name" /></label>
