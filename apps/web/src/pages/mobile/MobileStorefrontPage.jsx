@@ -66,6 +66,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
   const homeProducts = useMemo(() => products.filter((product) => product.featured).slice(0, 3), [products]);
   const quickProducts = useMemo(() => (homeProducts.length ? homeProducts : products).slice(0, 4), [homeProducts, products]);
   const heroProduct = quickProducts[0];
+  const featuredCategoryNames = useMemo(() => categories.slice(0, 3).map((category) => category.name), [categories]);
   const productsLoading = Boolean(catalogProducts.loading);
   const hasProducts = products.length > 0;
   const captureOutgoingScrollTop = useCallback(() => {
@@ -141,90 +142,101 @@ export const MobileStorefrontContent = ({ active = true }) => {
         <meta name="description" content="Solivagant storefront with featured perfumes, scent categories, and bespoke perfume consultation." />
       </Helmet>
       ) : null}
-      <main className="mobile-page">
-        <section className="mobile-soft-card mobile-commerce-hero overflow-hidden">
-          <div className="grid grid-cols-[minmax(0,1fr)_126px] gap-3 p-3">
-            <div className="min-w-0">
-              <div className="mobile-commerce-chip max-w-full gap-1.5 px-2.5 py-1 text-[9px] uppercase shadow-sm">
-                <ShoppingBag className="h-3 w-3 shrink-0" />
-                <span className="truncate">{productsLoading ? 'Memuat katalog' : `${products.length || 0} parfum`}</span>
-              </div>
-              <h1 className="mt-2 text-[22px] font-bold leading-[1.02] text-[#0b130c]">
-                Belanja parfum Solivagant.
-              </h1>
-              <p className="mt-2 line-clamp-2 text-xs font-semibold leading-relaxed text-[#526351]">
-                Pilih aroma ready stock, custom aroma, atau cek progress order.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Button className="h-11 rounded-2xl px-3 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
-                  <ShoppingBag className="h-4 w-4" />
-                  Belanja
-                </Button>
-                <Button variant="outline" className="h-11 rounded-2xl bg-white px-3 text-xs" onClick={() => navigate('/mobile/bespoke')}>
-                  Custom
-                </Button>
-              </div>
+      <main className="mobile-page mobile-home-page">
+        <section className="mobile-home-hero">
+          <div className="mobile-home-hero-copy">
+            <div className="mobile-home-kicker">
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>{productsLoading ? 'Memuat katalog' : `${products.length || 0} parfum`}</span>
             </div>
-            {heroProduct ? (
-              <button
-                type="button"
-                onPointerDown={captureOutgoingScrollTop}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
-                }}
-                onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
-                className="mobile-commerce-panel min-w-0 p-2 text-left"
-              >
-                <ProductVisual product={heroProduct} className="aspect-square rounded-xl" bottleClassName="left-4 top-4 h-14 w-7 rounded-[0.85rem]" label={false} priority sizes="126px" imageFit="cover" />
-                <div className="mt-2">
-                  <h2 className="truncate text-xs font-bold text-[#0b130c]">{heroProduct.name}</h2>
-                  <p className="mt-0.5 truncate text-[10px] font-bold text-amber-700">{heroProduct.price}</p>
-                </div>
-              </button>
-            ) : (
-              <div className="mobile-commerce-panel overflow-hidden p-0">
-                <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="h-full min-h-[156px] w-full object-cover object-[58%_34%]" loading="eager" decoding="async" width="232" height="312" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
-              </div>
-            )}
+            <h1>Temukan aroma yang terasa seperti kamu.</h1>
+            <p>
+              Ready stock, custom ritual, dan status order dibuat dekat dari satu layar.
+            </p>
+            <div className="mobile-home-hero-actions">
+              <Button className="h-12 rounded-2xl px-4 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
+                <Search className="h-4 w-4" />
+                Cari parfum
+              </Button>
+              <Button variant="outline" className="h-12 rounded-2xl bg-white/88 px-4 text-xs" onClick={() => navigate('/mobile/bespoke')}>
+                <WandSparkles className="h-4 w-4" />
+                Custom
+              </Button>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 border-t border-[#263d27]/10 p-3 pt-2">
-            <div className="mobile-commerce-panel flex items-center justify-center gap-1.5 border-0 bg-white/78 px-2 py-2">
-              <Sparkles className="h-3.5 w-3.5 text-[#263d27]" />
-              <span className="text-[10px] font-bold uppercase leading-tight text-[#526351]">Ready</span>
+
+          {heroProduct ? (
+            <button
+              type="button"
+              onPointerDown={captureOutgoingScrollTop}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
+              }}
+              onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
+              className="mobile-home-hero-product"
+            >
+              <ProductVisual product={heroProduct} className="mobile-home-hero-visual" label={false} priority sizes="(max-width: 448px) 88vw, 394px" imageFit="contain" />
+              <div className="mobile-home-product-overlay">
+                <span>{heroProduct.featured ? 'Pilihan hari ini' : getProductPrimaryTag(heroProduct)}</span>
+                <strong>{heroProduct.name}</strong>
+                <small>{heroProduct.price}</small>
+              </div>
+            </button>
+          ) : (
+            <div className="mobile-home-hero-product">
+              <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="mobile-home-hero-visual object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="480" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
+              <div className="mobile-home-product-overlay">
+                <span>Atelier</span>
+                <strong>Custom scent ritual</strong>
+                <small>Pre-order 7-14 hari</small>
+              </div>
             </div>
-            <div className="mobile-commerce-panel flex items-center justify-center gap-1.5 border-0 bg-white/78 px-2 py-2">
-              <WandSparkles className="h-3.5 w-3.5 text-[#263d27]" />
-              <span className="text-[10px] font-bold uppercase leading-tight text-[#526351]">Custom</span>
+          )}
+
+          <div className="mobile-home-hero-strip">
+            <div>
+              <span>Ready</span>
+              <strong>{hasProducts ? 'Tersedia' : 'Segera'}</strong>
             </div>
-            <div className="mobile-commerce-panel flex items-center justify-center gap-1.5 border-0 bg-white/78 px-2 py-2">
-              <ClipboardCheck className="h-3.5 w-3.5 text-[#263d27]" />
-              <span className="text-[10px] font-bold uppercase leading-tight text-[#526351]">Order</span>
+            <div>
+              <span>Custom</span>
+              <strong>Brief</strong>
+            </div>
+            <div>
+              <span>Order</span>
+              <strong>Lacak</strong>
             </div>
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => navigate('/mobile/catalog')} className="mobile-commerce-choice flex min-h-[88px] flex-col justify-between">
-            <Search className="h-4 w-4 text-[#263d27]" />
-            <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Cari parfum</span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Katalog <ArrowRight className="h-3 w-3" /></span>
+        <section className="mobile-home-action-rail" aria-label="Aksi cepat">
+          <button type="button" onClick={() => navigate('/mobile/catalog')}>
+            <Search className="h-4 w-4" />
+            <span>Cari parfum</span>
           </button>
-          <button type="button" onClick={() => navigate('/mobile/catalog?segment=limited')} className="mobile-commerce-choice flex min-h-[88px] flex-col justify-between">
-            <Sparkles className="h-4 w-4 text-[#263d27]" />
-            <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Drop terbatas</span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Lihat <ArrowRight className="h-3 w-3" /></span>
+          <button type="button" onClick={() => navigate('/mobile/catalog?segment=limited')}>
+            <Sparkles className="h-4 w-4" />
+            <span>Drop terbatas</span>
           </button>
-          <button type="button" onClick={() => navigate('/mobile/bespoke')} className="mobile-commerce-choice flex min-h-[88px] flex-col justify-between">
-            <WandSparkles className="h-4 w-4 text-[#263d27]" />
-            <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Custom aroma</span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Brief <ArrowRight className="h-3 w-3" /></span>
+          <button type="button" onClick={() => navigate('/mobile/bespoke')}>
+            <WandSparkles className="h-4 w-4" />
+            <span>Custom aroma</span>
           </button>
-          <button type="button" onClick={() => navigate('/mobile/customer')} className="mobile-commerce-choice flex min-h-[88px] flex-col justify-between">
-            <ClipboardCheck className="h-4 w-4 text-[#263d27]" />
-            <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Cek order</span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Lacak <ArrowRight className="h-3 w-3" /></span>
+          <button type="button" onClick={() => navigate('/mobile/customer')}>
+            <ClipboardCheck className="h-4 w-4" />
+            <span>Cek order</span>
           </button>
         </section>
+
+        {featuredCategoryNames.length ? (
+          <section className="mobile-home-mood-row" aria-label="Mood parfum">
+            {featuredCategoryNames.map((name) => (
+              <button key={name} type="button" onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(name)}`)}>
+                {name}
+              </button>
+            ))}
+          </section>
+        ) : null}
 
         <section className="mobile-card p-4">
           <div className="flex items-start gap-3">
