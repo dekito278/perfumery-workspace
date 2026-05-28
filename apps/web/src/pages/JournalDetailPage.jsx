@@ -94,11 +94,11 @@ const JournalDetailPage = () => {
       return;
     }
 
-    navigate('/journal');
+    navigate('/studio/journal');
   };
 
   const handleCopyLink = async () => {
-    const path = publicPath || `/journal/${post.id}`;
+    const path = publicPath || `/studio/journal/${post.id}`;
     const url = `${window.location.origin}${path}`;
 
     try {
@@ -139,7 +139,7 @@ const JournalDetailPage = () => {
               </Button>
               <Button
                 type="button"
-                onClick={() => navigate(`/journal/${post.id}/edit`, { state: { from: `/journal/${post.id}` } })}
+                onClick={() => navigate(`/studio/journal/${post.id}/edit`, { state: { from: `/studio/journal/${post.id}` } })}
                 className="h-10 w-fit gap-2 rounded-2xl px-4"
               >
                 <Pencil className="h-4 w-4" />
@@ -231,7 +231,7 @@ const JournalDetailPage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate(`/journal/${post.id}/edit`, { state: { from: `/journal/${post.id}` } })}
+                    onClick={() => navigate(`/studio/journal/${post.id}/edit`, { state: { from: `/studio/journal/${post.id}` } })}
                     className="h-10 rounded-2xl bg-white"
                   >
                     <Pencil className="mr-2 h-4 w-4" />

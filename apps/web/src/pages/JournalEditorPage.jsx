@@ -77,7 +77,7 @@ const JournalEditorPage = () => {
         setFormState(post ? toEditorState(post) : createEmptyPost(queryFormulaId, linkedFormula?.name));
       } catch (error) {
         toast.error('Failed to load journal editor');
-        navigate('/journal');
+        navigate('/studio/journal');
       } finally {
         if (active) {
           setLoading(false);
@@ -110,7 +110,7 @@ const JournalEditorPage = () => {
       return;
     }
 
-    navigate('/journal');
+    navigate('/studio/journal');
   };
 
   const handleSubmit = async (event) => {
@@ -136,7 +136,7 @@ const JournalEditorPage = () => {
         : await createJournalPost(payload);
 
       toast.success(isEditMode ? 'Artikel berhasil diperbarui' : 'Artikel berhasil disimpan');
-      navigate(`/journal/${savedPost.id}`);
+      navigate(`/studio/journal/${savedPost.id}`);
     } catch (error) {
       toast.error(isEditMode ? 'Artikel belum bisa diperbarui' : 'Artikel belum bisa disimpan');
     } finally {

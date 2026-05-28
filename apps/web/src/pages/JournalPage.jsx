@@ -148,7 +148,7 @@ const JournalPage = () => {
         <div className="min-w-0">
           <button
             type="button"
-            onClick={() => navigate(`/journal/${post.id}`)}
+            onClick={() => navigate(`/studio/journal/${post.id}`)}
             className="text-left text-sm font-semibold text-[#111827] transition hover:text-primary"
           >
             {post.title}
@@ -264,7 +264,7 @@ const JournalPage = () => {
           description="Simpan tulisan tentang pengalaman meracik, catatan accord, material note, eksperimen, dan ide produk dalam satu rak kerja."
           action="Artikel baru"
           actionIcon={Plus}
-          onAction={() => navigate('/journal/new')}
+          onAction={() => navigate('/studio/journal/new')}
         />
 
         <div className="list-summary-grid mt-5 md:grid-cols-3">
@@ -372,7 +372,7 @@ const JournalPage = () => {
               description="Mulai dari satu catatan kecil: accord yang sedang diuji, pengalaman meracik, material yang menarik, atau ide produk yang belum sempat dikerjakan."
               action="Artikel baru"
               actionIcon={Plus}
-              onAction={() => navigate('/journal/new')}
+              onAction={() => navigate('/studio/journal/new')}
             />
           ) : filteredPosts.length === 0 ? (
             <NoResultsState searchTerm={searchTerm} onClearFilters={handleClearFilters} />
@@ -381,7 +381,7 @@ const JournalPage = () => {
               <DataTable
                 columns={columns}
                 data={paginatedPosts}
-                onEdit={(post) => navigate(`/journal/${post.id}/edit`)}
+                onEdit={(post) => navigate(`/studio/journal/${post.id}/edit`)}
                 actions={(post) => {
                   const publicPath = getJournalPublicPath(post);
 
@@ -412,7 +412,7 @@ const JournalPage = () => {
                       <div className="min-w-0">
                         <button
                           type="button"
-                          onClick={() => navigate(`/journal/${post.id}`)}
+                          onClick={() => navigate(`/studio/journal/${post.id}`)}
                           className="text-left text-base font-bold leading-snug text-[#111827]"
                         >
                           {post.title}
@@ -430,7 +430,7 @@ const JournalPage = () => {
                         type="button"
                         variant="outline"
                         className="col-span-2 h-9 rounded-xl sm:col-span-1"
-                        onClick={() => navigate(`/journal/${post.id}/edit`)}
+                        onClick={() => navigate(`/studio/journal/${post.id}/edit`)}
                       >
                         Edit
                       </Button>
@@ -451,7 +451,7 @@ const JournalPage = () => {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => navigate(`/journal/${post.id}`)}
+                        onClick={() => navigate(`/studio/journal/${post.id}`)}
                         className="h-9 rounded-xl bg-white text-xs font-bold"
                       >
                         Detail

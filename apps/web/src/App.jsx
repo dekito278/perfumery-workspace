@@ -1,6 +1,6 @@
 
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
-import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType } from 'react-router-dom';
+import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
@@ -92,6 +92,7 @@ const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
 const CustomersPage = lazyRoute(() => import('@/pages/CustomersPage.jsx'));
 const ShipmentsPage = lazyRoute(() => import('@/pages/ShipmentsPage.jsx'));
 const BriefsPage = lazyRoute(() => import('@/pages/BriefsPage.jsx'));
+const JournalPage = lazyRoute(() => import('@/pages/JournalPage.jsx'));
 const JournalEditorPage = lazyRoute(() => import('@/pages/JournalEditorPage.jsx'));
 const JournalDetailPage = lazyRoute(() => import('@/pages/JournalDetailPage.jsx'));
 const PublicJournalArticlePage = lazyRoute(() => import('@/pages/PublicJournalArticlePage.jsx'));
@@ -259,6 +260,20 @@ const RootRedirect = () => {
   }
 
   return <HomePage />;
+};
+
+const LegacyJournalRedirect = ({ mode = 'detail' }) => {
+  const { id } = useParams();
+
+  if (mode === 'new') {
+    return <Navigate to="/studio/journal/new" replace />;
+  }
+
+  if (!id) {
+    return <Navigate to="/studio/journal" replace />;
+  }
+
+  return <Navigate to={mode === 'edit' ? `/studio/journal/${id}/edit` : `/studio/journal/${id}`} replace />;
 };
 
 const MobileBrowserRedirect = () => {
@@ -753,19 +768,39 @@ function AppRoutes() {
             <BriefsPage />
           </ProtectedRoute>
         } />
-        <Route path="/journal/new" element={
+        <Route path="/studio/journal" element={
+          <ProtectedRoute>
+            <JournalPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/studio/journal/new" element={
           <ProtectedRoute>
             <JournalEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/studio/journal/:id/edit" element={
+          <ProtectedRoute>
+            <JournalEditorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/studio/journal/:id" element={
+          <ProtectedRoute>
+            <JournalDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/journal/new" element={
+          <ProtectedRoute>
+            <LegacyJournalRedirect mode="new" />
           </ProtectedRoute>
         } />
         <Route path="/journal/:id/edit" element={
           <ProtectedRoute>
-            <JournalEditorPage />
+            <LegacyJournalRedirect mode="edit" />
           </ProtectedRoute>
         } />
         <Route path="/journal/:id" element={
           <ProtectedRoute>
-            <JournalDetailPage />
+            <LegacyJournalRedirect />
           </ProtectedRoute>
         } />
         <Route path="/briefs/new" element={
