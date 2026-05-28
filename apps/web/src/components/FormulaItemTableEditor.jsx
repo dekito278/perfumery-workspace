@@ -119,7 +119,7 @@ const FormulaItemTableEditor = ({
         </div>
       ) : null}
 
-      <div className="shrink-0 border-b border-[#ddd3bf] bg-[#f3ecdd] px-4 py-2.5 max-md:hidden">
+      <div className="sticky top-0 z-20 shrink-0 border-b border-[#ddd3bf] bg-[#f3ecdd] px-4 py-2.5 max-md:hidden">
         <div className="grid grid-cols-[38px_minmax(0,2.7fr)_96px_92px_minmax(0,1.5fr)_44px] gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
           <span>No.</span>
           <span>Raw material</span>

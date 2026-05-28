@@ -1861,7 +1861,7 @@ const EditFormulaPage = () => {
                         />
                       </div>
 
-                      <div className="max-h-[10.75rem] overflow-y-auto px-3 py-3">
+                      <div className="max-h-[18rem] overflow-y-auto px-3 py-3">
                         <FormulaMaterialLibrary
                           materials={filteredLibraryMaterials}
                           activeRowIndex={activeRowIndex}
@@ -1890,7 +1890,7 @@ const EditFormulaPage = () => {
                       />
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-4 max-h-[32rem] overflow-y-auto pr-1">
                       <FormulaItemTableEditor
                         items={formulaItems}
                         rawMaterials={rawMaterials}
