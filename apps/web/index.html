@@ -6,13 +6,6 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<link rel="apple-touch-icon" href="/icons/icon-192.png" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-1290-2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-1179-2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-1284-2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-1170-2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-1125-2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-828-1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
-		<link rel="apple-touch-startup-image" href="/splash/apple-splash-750-1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 		<meta name="theme-color" content="#263d27" />
 		<meta name="robots" content="index,follow" />
@@ -30,171 +23,182 @@
 		<title>SOLIVAGANT - Artisan Perfumery Atelier</title>
 		<style>
 			html {
-				background: #070906;
+				background: #f7f8f2;
 			}
 
 			body {
 				margin: 0;
-				background: #070906;
+				background: #f7f8f2;
 			}
 
 			.app-boot-fallback {
 				min-height: 100vh;
-				display: grid;
-				place-items: center;
-				overflow: hidden;
+				box-sizing: border-box;
+				display: flex;
+				align-items: stretch;
 				padding: 24px;
-				background:
-					radial-gradient(circle at 70% 40%, rgba(183, 155, 99, 0.18), transparent 34%),
-					linear-gradient(115deg, rgba(7, 9, 6, 0.96), rgba(18, 27, 18, 0.98));
-				color: #f6f0e3;
+				background: linear-gradient(180deg, #f7f8f2 0%, #ffffff 100%);
+				color: #263d27;
 				font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-				text-align: center;
 			}
 
-			.app-boot-fallback::before {
-				content: "";
-				position: fixed;
-				inset: 0;
-				opacity: 0.13;
-				pointer-events: none;
-				background-image:
-					linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-					linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-				background-size: 42px 42px;
-				mix-blend-mode: screen;
+			.app-boot-shell {
+				width: min(100%, 1180px);
+				margin: auto;
+				display: grid;
+				gap: 18px;
 			}
 
-			.app-boot-fallback h1 {
-				position: relative;
-				margin: 0;
-				color: #f6f0e3;
-				font-family: Georgia, "Times New Roman", serif;
-				font-size: clamp(3.3rem, 8vw, 8rem);
-				font-weight: 500;
-				letter-spacing: 0.08em;
+			.app-boot-status {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				border: 1px solid rgba(38, 61, 39, 0.12);
+				border-radius: 18px;
+				background: rgba(255, 255, 255, 0.86);
+				padding: 16px;
+				box-shadow: 0 24px 58px -46px rgba(24, 47, 27, 0.36);
 			}
 
-			.app-boot-fallback h2 {
-				position: relative;
-				max-width: 820px;
-				margin: 18px auto 0;
-				color: #f6f0e3;
-				font-family: Georgia, "Times New Roman", serif;
-				font-size: clamp(2.25rem, 5vw, 5.5rem);
-				font-weight: 500;
-				letter-spacing: 0;
-				line-height: 0.98;
+			.app-boot-spinner {
+				width: 34px;
+				height: 34px;
+				flex: 0 0 auto;
+				border: 3px solid rgba(38, 61, 39, 0.14);
+				border-top-color: #263d27;
+				border-radius: 999px;
+				animation: app-boot-spin 0.9s linear infinite;
 			}
 
 			.app-boot-fallback p {
-				position: relative;
 				margin: 0;
-				font-size: 14px;
+				color: #5e6a5d;
+				font-size: 12px;
 				font-weight: 700;
-				letter-spacing: 0.18em;
+				letter-spacing: 0.16em;
 				text-transform: uppercase;
+			}
+
+			.app-boot-fallback h1,
+			.app-boot-fallback h2,
+			.app-boot-fallback h3 {
+				margin: 0;
+				letter-spacing: 0;
+			}
+
+			.app-boot-fallback h1 {
+				margin-top: 4px;
+				color: #0b130c;
+				font-size: 22px;
+				font-weight: 700;
 			}
 
 			.app-boot-fallback .app-boot-description {
-				max-width: 680px;
-				margin: 18px auto 0;
-				color: rgba(246, 240, 227, 0.72);
-				font-size: 16px;
+				margin-top: 4px;
+				color: #6b7280;
+				font-size: 13px;
 				font-weight: 600;
 				letter-spacing: 0;
-				line-height: 1.7;
+				line-height: 1.45;
 				text-transform: none;
 			}
 
-			.app-boot-structure {
-				position: relative;
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: center;
-				gap: 8px;
-				margin: 22px auto 0;
-				padding: 0;
-				list-style: none;
-			}
-
-			.app-boot-structure li {
-				border: 1px solid rgba(246, 240, 227, 0.16);
-				border-radius: 999px;
-				background: rgba(246, 240, 227, 0.06);
-				padding: 7px 11px;
-				color: rgba(246, 240, 227, 0.68);
-				font-size: 11px;
-				font-weight: 800;
-				letter-spacing: 0.12em;
-				text-transform: uppercase;
-			}
-
-			.app-boot-links {
-				position: relative;
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: center;
-				gap: 12px;
-				margin-top: 26px;
-			}
-
-			.app-boot-links a {
-				display: inline-flex;
-				min-height: 44px;
-				align-items: center;
-				border: 1px solid rgba(246, 240, 227, 0.24);
-				border-radius: 8px;
-				padding: 0 16px;
-				color: #f6f0e3;
-				font-size: 13px;
-				font-weight: 800;
-				text-decoration: none;
-			}
-
-			.app-boot-links a:first-child {
-				background: #f6f0e3;
-				color: #0b100b;
-			}
-
-			.app-boot-sections {
-				position: relative;
+			.app-boot-layout {
 				display: grid;
-				grid-template-columns: repeat(4, minmax(0, 1fr));
-				gap: 14px;
-				max-width: 1120px;
-				margin: 30px auto 0;
-				text-align: left;
+				gap: 18px;
+				grid-template-columns: 260px minmax(0, 1fr);
 			}
 
-			.app-boot-sections article {
-				border: 1px solid rgba(246, 240, 227, 0.14);
-				border-radius: 8px;
-				background: rgba(246, 240, 227, 0.055);
+			.app-boot-panel,
+			.app-boot-sidebar {
+				border: 1px solid rgba(38, 61, 39, 0.12);
+				border-radius: 20px;
+				background: rgba(255, 255, 255, 0.78);
 				padding: 18px;
+				box-shadow: 0 22px 52px -46px rgba(24, 47, 27, 0.32);
 			}
 
-			.app-boot-sections h3 {
-				margin: 0;
-				color: #f6f0e3;
-				font-family: Georgia, "Times New Roman", serif;
-				font-size: 22px;
-				font-weight: 500;
+			.app-boot-sidebar {
+				display: grid;
+				gap: 12px;
+				align-content: start;
 			}
 
-			.app-boot-sections p {
-				margin-top: 10px;
-				color: rgba(246, 240, 227, 0.66);
-				font-size: 13px;
-				font-weight: 600;
-				letter-spacing: 0;
-				line-height: 1.55;
-				text-transform: none;
+			.app-boot-panel {
+				display: grid;
+				gap: 18px;
 			}
 
-			@media (max-width: 900px) {
-				.app-boot-sections {
+			.app-boot-row,
+			.app-boot-grid {
+				display: grid;
+				gap: 12px;
+			}
+
+			.app-boot-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+			}
+
+			.app-boot-skeleton {
+				display: grid;
+				gap: 10px;
+				border-radius: 16px;
+				background: rgba(238, 242, 232, 0.72);
+				padding: 14px;
+			}
+
+			.app-boot-line {
+				height: 12px;
+				border-radius: 999px;
+				background: linear-gradient(90deg, rgba(210, 218, 202, 0.65), rgba(255, 255, 255, 0.9), rgba(210, 218, 202, 0.65));
+				background-size: 240% 100%;
+				animation: app-boot-shimmer 1.35s ease-in-out infinite;
+			}
+
+			.app-boot-line.short {
+				width: 42%;
+			}
+
+			.app-boot-line.medium {
+				width: 68%;
+			}
+
+			.app-boot-line.tall {
+				height: 44px;
+				border-radius: 14px;
+			}
+
+			@keyframes app-boot-spin {
+				to { transform: rotate(360deg); }
+			}
+
+			@keyframes app-boot-shimmer {
+				0% { background-position: 120% 0; }
+				100% { background-position: -120% 0; }
+			}
+
+			@media (max-width: 760px) {
+				.app-boot-fallback {
+					padding: 16px;
+				}
+
+				.app-boot-layout {
 					grid-template-columns: 1fr;
+				}
+
+				.app-boot-sidebar {
+					display: none;
+				}
+
+				.app-boot-grid {
+					grid-template-columns: 1fr;
+				}
+			}
+
+			@media (prefers-reduced-motion: reduce) {
+				.app-boot-spinner,
+				.app-boot-line {
+					animation: none;
 				}
 			}
 		</style>
@@ -202,43 +206,15 @@
 	<body>
 		<div id="root">
 			<noscript>
-				<main class="app-boot-fallback" aria-label="SOLIVAGANT public storefront">
-					<div>
-						<p>Artisan Perfumery Atelier</p>
-						<h1>SOLIVAGANT</h1>
-						<h2>Fragrance as a memory object.</h2>
-						<p class="app-boot-description">SOLIVAGANT is an artisan perfume atelier by Dekito. The interactive storefront requires JavaScript for product browsing, cart, checkout, and order tracking.</p>
-						<section class="app-boot-sections" aria-label="Public storefront previews">
-							<article>
-								<h3>Fragrance Collection</h3>
-								<p>Quiet perfume objects with notes, concentration, size variants, price, and customer-facing availability.</p>
-							</article>
-							<article>
-								<h3>Bespoke Consultation</h3>
-								<p>Request parfum custom through Aroma, Preferensi, Botol, Ongkir, and Bayar. Pre-order 7-14 hari.</p>
-							</article>
-							<article>
-								<h3>Raw Material Archive</h3>
-								<p>Public storytelling for origins, olfactive families, sensory texture, mood, and usage stories.</p>
-							</article>
-							<article>
-								<h3>Journal</h3>
-								<p>Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture.</p>
-							</article>
+				<main class="app-boot-fallback" aria-label="Solivagant app requires JavaScript">
+					<div class="app-boot-shell">
+						<section class="app-boot-status">
+							<div>
+								<p>App initialization</p>
+								<h1>JavaScript diperlukan</h1>
+								<p class="app-boot-description">Aktifkan JavaScript untuk membuka storefront, studio, cart, checkout, dan tracking order.</p>
+							</div>
 						</section>
-						<ul class="app-boot-structure" aria-label="Public storefront sections">
-							<li>Fragrance collection</li>
-							<li>Bespoke ritual</li>
-							<li>Raw material archive</li>
-							<li>Journal</li>
-						</ul>
-						<div class="app-boot-links">
-							<a href="/">Homepage</a>
-							<a href="/catalog">Collection</a>
-							<a href="/bespoke">Bespoke</a>
-							<a href="/materials">Materials</a>
-							<a href="/journal">Journal</a>
-						</div>
 					</div>
 				</main>
 			</noscript>
@@ -476,24 +452,43 @@
 					if (!root) return;
 
 					var content = getFallbackContent();
-					var items = content.items.map(function (item) {
-						return '<li>' + escapeHtml(item) + '</li>';
-					}).join('');
-					var links = getBootLinks().map(function (link) {
-						return '<a href="' + escapeHtml(link.href) + '">' + escapeHtml(link.label) + '</a>';
-					}).join('');
 
 					root.innerHTML = [
-						'<main class="app-boot-fallback" aria-label="SOLIVAGANT public storefront">',
-						'  <div>',
-						'    <p>' + escapeHtml(content.eyebrow) + '</p>',
-						'    <h1>' + escapeHtml(content.title) + '</h1>',
-						'    <h2>' + escapeHtml(content.headline) + '</h2>',
-						'    <p class="app-boot-description">' + escapeHtml(content.description) + '</p>',
-						'    <ul class="app-boot-structure" aria-label="Storefront sections">' + items + '</ul>',
-						'    <div class="app-boot-links">',
-						links,
-						'    </div>',
+						'<main class="app-boot-fallback" aria-label="Solivagant app initialization" role="status" aria-live="polite" aria-busy="true">',
+						'  <div class="app-boot-shell">',
+						'    <section class="app-boot-status">',
+						'      <span class="app-boot-spinner" aria-hidden="true"></span>',
+						'      <div>',
+						'        <p>App initialization</p>',
+						'        <h1>Loading workspace</h1>',
+						'        <p class="app-boot-description">Menyiapkan halaman, data, dan shell aplikasi.</p>',
+						'      </div>',
+						'    </section>',
+						'    <section class="app-boot-layout" aria-hidden="true">',
+						'      <aside class="app-boot-sidebar">',
+						'        <div class="app-boot-line medium"></div>',
+						'        <div class="app-boot-line tall"></div>',
+						'        <div class="app-boot-line tall"></div>',
+						'        <div class="app-boot-line tall"></div>',
+						'      </aside>',
+						'      <div class="app-boot-panel">',
+						'        <div class="app-boot-skeleton">',
+						'          <div class="app-boot-line short"></div>',
+						'          <div class="app-boot-line medium"></div>',
+						'          <div class="app-boot-line"></div>',
+						'        </div>',
+						'        <div class="app-boot-grid">',
+						'          <div class="app-boot-skeleton"><div class="app-boot-line short"></div><div class="app-boot-line medium"></div></div>',
+						'          <div class="app-boot-skeleton"><div class="app-boot-line short"></div><div class="app-boot-line medium"></div></div>',
+						'          <div class="app-boot-skeleton"><div class="app-boot-line short"></div><div class="app-boot-line medium"></div></div>',
+						'        </div>',
+						'        <div class="app-boot-skeleton">',
+						'          <div class="app-boot-line"></div>',
+						'          <div class="app-boot-line"></div>',
+						'          <div class="app-boot-line medium"></div>',
+						'        </div>',
+						'      </div>',
+						'    </section>',
 						'  </div>',
 						'</main>',
 					].join('');
@@ -550,9 +545,15 @@
 
 					root.innerHTML = [
 						'<div class="app-boot-fallback" role="alert">',
-						'  <div>',
-						'    <p>App cache perlu direset.</p>',
+						'  <div class="app-boot-shell">',
+						'    <section class="app-boot-status">',
+						'      <div>',
+						'        <p>App recovery</p>',
+						'        <h1>Cache perlu direset</h1>',
+						'        <p class="app-boot-description">Refresh otomatis belum berhasil. Reset cache aplikasi untuk memuat versi terbaru.</p>',
+						'      </div>',
 						'    <button type="button" data-reset-app-cache style="margin-top:16px;min-height:44px;border:0;border-radius:14px;background:#263d27;color:white;padding:0 18px;font-weight:800;">Reset app cache</button>',
+						'    </section>',
 						'  </div>',
 						'</div>',
 					].join('');

@@ -25,6 +25,7 @@ import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
 import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
 import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
+import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
 
 const LAZY_ROUTE_RECOVERY_KEY = 'solivagant.lazy-route-recovered';
 const LAZY_IMPORT_RETRY_DELAY_MS = 350;
@@ -244,11 +245,36 @@ const RouteFallback = () => {
     );
   }
 
+  if (pathname === '/mobile' || pathname.startsWith('/mobile/')) {
+    return (
+      <MobileLoadingState
+        eyebrow="App initialization"
+        title="Loading workspace..."
+        subtitle="Menyiapkan halaman dan data mobile."
+        className="min-h-screen"
+      />
+    );
+  }
+
   return (
     <div className="grid min-h-screen place-items-center bg-[#f7f8f2] px-4 text-center">
-      <div>
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
-        <p className="mt-4 text-sm font-bold text-[#263d27]">Loading...</p>
+      <div className="w-full max-w-xl rounded-[24px] border border-[#263d27]/10 bg-white/85 p-5 text-left shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#263d27]/15 border-t-[#263d27]" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">App initialization</p>
+            <h1 className="mt-1 text-xl font-bold text-[#0b130c]">Loading workspace...</h1>
+          </div>
+        </div>
+        <div className="mt-5 space-y-3" aria-hidden="true">
+          <div className="h-3 w-2/3 animate-pulse rounded-full bg-[#dce4d5]" />
+          <div className="h-3 w-full animate-pulse rounded-full bg-[#eef2e8]" />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="h-20 animate-pulse rounded-2xl bg-[#eef2e8]" />
+            <div className="h-20 animate-pulse rounded-2xl bg-[#eef2e8]" />
+            <div className="h-20 animate-pulse rounded-2xl bg-[#eef2e8]" />
+          </div>
+        </div>
       </div>
     </div>
   );

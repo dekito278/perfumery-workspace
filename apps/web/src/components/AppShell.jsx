@@ -99,7 +99,13 @@ const AppShell = ({ children }) => {
 
   const isActive = (item) => {
     const paths = [item.path, ...(item.aliases || [])];
-    return paths.some((path) => location.pathname === path || location.pathname.startsWith(path + '/'));
+    return paths.some((path) => {
+      if (location.pathname === path) {
+        return true;
+      }
+
+      return path !== '/studio' && location.pathname.startsWith(path + '/');
+    });
   };
 
   const toggleSection = (sectionId) => {
