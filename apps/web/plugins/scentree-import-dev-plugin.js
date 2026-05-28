@@ -202,8 +202,8 @@ const mapScentreeFamilyToWorkbookFamily = (classificationPath) => {
 const extractFirstNumber = (html, expressions) => {
 	for (const expression of expressions) {
 		const match = html.match(expression);
-		const value = Number(String(match?.[1] || '').replace(',', '.'));
-		if (Number.isFinite(value)) {
+		const value = normalizeNumber(match?.[1]);
+		if (value !== null) {
 			return value;
 		}
 	}
