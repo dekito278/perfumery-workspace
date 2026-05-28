@@ -23,7 +23,7 @@ const parseOptionalNumber = (value) => {
     return null;
   }
 
-  const numericValue = Number(value);
+  const numericValue = Number(String(value).trim().replace(',', '.'));
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
@@ -764,7 +764,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
                     id="quick-guidance-impact"
                     type="number"
                     min="0"
-                    step="0.1"
+                    step="any"
                     value={formData.reference_impact}
                     onChange={(event) => setFormData((current) => ({ ...current, reference_impact: event.target.value }))}
                     placeholder="0.0"
@@ -784,7 +784,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
                     id="quick-guidance-life"
                     type="number"
                     min="0"
-                    step="0.1"
+                    step="any"
                     value={formData.reference_life_hours}
                     onChange={(event) => setFormData((current) => ({ ...current, reference_life_hours: event.target.value }))}
                     placeholder="0.0"
@@ -807,7 +807,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
                     type="number"
                     min="0"
                     max="100"
-                    step="0.1"
+                    step="any"
                     value={formData.reference_use_level_typical_percent}
                     onChange={(event) => setFormData((current) => ({ ...current, reference_use_level_typical_percent: event.target.value }))}
                     placeholder="0.0"
@@ -828,7 +828,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
                     type="number"
                     min="0"
                     max="100"
-                    step="0.1"
+                    step="any"
                     value={formData.reference_use_level_max_percent}
                     onChange={(event) => setFormData((current) => ({ ...current, reference_use_level_max_percent: event.target.value }))}
                     placeholder="0.0"
@@ -850,7 +850,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
                   type="number"
                   min="0"
                   max="100"
-                  step="0.1"
+                  step="any"
                   value={formData.ifra_limit}
                   onChange={(event) => setFormData((current) => ({ ...current, ifra_limit: event.target.value }))}
                   placeholder="Optional IFRA limit"
