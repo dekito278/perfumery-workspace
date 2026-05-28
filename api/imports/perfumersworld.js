@@ -21,6 +21,8 @@ const decodeHtmlEntities = (value) => String(value || '')
 	.replace(/\s+/g, ' ')
 	.trim();
 
+const stripHtmlToText = (html) => decodeHtmlEntities(html);
+
 const normalizeNumber = (value) => {
 	if (value === null || value === undefined || value === '') {
 		return null;
@@ -40,6 +42,25 @@ const extractFirstNumber = (html, expressions) => {
 	}
 
 	return null;
+};
+
+const extractPlainSection = (plainText, label, nextLabels = []) => {
+	const source = String(plainText || '');
+	const labelMatch = source.match(new RegExp(`(?:^|\\s)${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`, 'i'));
+	if (!labelMatch || labelMatch.index === undefined) {
+		return '';
+	}
+
+	const startIndex = labelMatch.index + labelMatch[0].length;
+	const remainder = source.slice(startIndex);
+	const endIndexes = nextLabels
+		.map((nextLabel) => {
+			const nextMatch = remainder.match(new RegExp(`(?:^|\\s)${nextLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`, 'i'));
+			return nextMatch?.index;
+		})
+		.filter((index) => Number.isFinite(index) && index >= 0);
+	const endIndex = endIndexes.length ? Math.min(...endIndexes) : remainder.length;
+	return remainder.slice(0, endIndex).replace(/\s+/g, ' ').trim();
 };
 
 const mapPerfumersWorldFamily = (text) => {
@@ -82,6 +103,31 @@ const extractUsageBlockPercent = (html, label) => {
 	return normalizeNumber(lastMatch?.[1]);
 };
 
+const extractUsagePercent = (html, plainText, label) => {
+	const fromHtml = extractUsageBlockPercent(html, label);
+	if (fromHtml !== null) {
+		return fromHtml;
+	}
+
+	const labelMatch = String(plainText || '').match(new RegExp(`([0-9]+(?:[.,][0-9]+)?)\\s*%\\s*${label}`, 'i'));
+	return normalizeNumber(labelMatch?.[1]);
+};
+
+const extractPerfumersWorldPrice = (plainText) => {
+	const match = String(plainText || '').match(/US\$\s*([0-9]+(?:[.,][0-9]+)?)\s*\/\s*(gram|g|ml)/i);
+	const amount = normalizeNumber(match?.[1]);
+	if (amount === null) {
+		return { value: null, unit: null, label: null };
+	}
+
+	const unit = match?.[2]?.toLowerCase() === 'g' ? 'gram' : match?.[2]?.toLowerCase();
+	return {
+		value: amount,
+		unit,
+		label: `US$ ${match[1]} /${unit}`,
+	};
+};
+
 const readRequestBody = async (req) => {
 	if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
 		return req.body;
@@ -119,15 +165,30 @@ const importPerfumersWorldByUrl = async (url) => {
 	}
 
 	const html = await response.text();
+	const plainText = stripHtmlToText(html);
 	const title = decodeHtmlEntities(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '');
-	const sku = decodeHtmlEntities(html.match(/<h5><small>\s*SKU\s*<\/small>\s*([A-Z0-9-]+)<\/h5>/i)?.[1] || '');
-	const casNumber = decodeHtmlEntities(html.match(/<td>\s*CAS No\.\s*<\/td>\s*<td>\s*([0-9]{2,7}-[0-9]{2}-[0-9])\s*<\/td>/i)?.[1] || '');
-	const odourText = decodeHtmlEntities(html.match(/Odou?r=>\s*([\s\S]*?)Perfume-Uses=>/i)?.[1] || '');
-	const perfumeUsesText = decodeHtmlEntities(html.match(/Perfume-Uses=>\s*([\s\S]*?)Blends-well-with=>/i)?.[1] || '');
-	const impact = extractFirstNumber(html, [/Relative\s+Odou?r\s+Impact[\s\S]{0,200}?<span[^>]*pull-right[^>]*>\s*([0-9]+(?:[.,][0-9]+)?)\s*<\/span>/i]);
-	const lifeHours = extractFirstNumber(html, [/Odou?r\s+Life\s+on\s+a\s+smelling\s+strip[\s\S]{0,200}?<span[^>]*pull-right[^>]*>\s*([0-9]+(?:[.,][0-9]+)?)\s*hrs?/i]);
-	const useLevelTypical = extractUsageBlockPercent(html, 'Average');
-	const useLevelMax = extractUsageBlockPercent(html, 'Maximum');
+	const sku = decodeHtmlEntities(html.match(/<h5[^>]*>\s*<small[^>]*>\s*SKU\s*<\/small>\s*([A-Z0-9-]+)\s*<\/h5>/i)?.[1] || '')
+		|| decodeHtmlEntities(plainText.match(/\bSKU\s*:?\s*([A-Z0-9-]+)/i)?.[1] || '');
+	const casNumber = decodeHtmlEntities(html.match(/<td[^>]*>\s*CAS No\.\s*<\/td>\s*<td[^>]*>\s*([0-9]{2,7}-[0-9]{2}-[0-9])\s*<\/td>/i)?.[1] || '')
+		|| decodeHtmlEntities(plainText.match(/\bCAS No\.?\s*([0-9]{2,7}-[0-9]{2}-[0-9])\b/i)?.[1] || '');
+	const odourText = decodeHtmlEntities(html.match(/Odou?r=>\s*([\s\S]*?)Perfume-Uses=>/i)?.[1] || '')
+		|| extractPlainSection(plainText, 'Odour', ['Synonyms', 'Description', 'Regulatory']);
+	const perfumeUsesText = decodeHtmlEntities(html.match(/Perfume-Uses=>\s*([\s\S]*?)Blends-well-with=>/i)?.[1] || '')
+		|| extractPlainSection(plainText, 'Perfumery Applications', ['Application Suitability', 'Information']);
+	const impact = extractFirstNumber(html, [
+		/Relative\s+Odou?r\s+Impact[\s\S]{0,200}?<span[^>]*pull-right[^>]*>\s*([0-9]+(?:[.,][0-9]+)?)\s*<\/span>/i,
+	]) ?? extractFirstNumber(plainText, [
+		/Relative\s+Odou?r\s+Impact\s+([0-9]+(?:[.,][0-9]+)?)/i,
+	]);
+	const lifeHours = extractFirstNumber(html, [
+		/Odou?r\s+Life\s+on\s+a\s+smelling\s+strip[\s\S]{0,200}?<span[^>]*pull-right[^>]*>\s*([0-9]+(?:[.,][0-9]+)?)\s*hrs?/i,
+	]) ?? extractFirstNumber(plainText, [
+		/Odou?r\s+Life\s+on\s+a\s+smelling\s+strip\s+([0-9]+(?:[.,][0-9]+)?)\s*hrs?/i,
+		/Odou?r\s+Life\s*\(\s*Smelling\s+Strip\s*\)\s+([0-9]+(?:[.,][0-9]+)?)\s*hrs?/i,
+	]);
+	const useLevelTypical = extractUsagePercent(html, plainText, 'Average');
+	const useLevelMax = extractUsagePercent(html, plainText, 'Maximum');
+	const price = extractPerfumersWorldPrice(plainText);
 	const ifraText = decodeHtmlEntities(html.match(/DOCUMENTATION\s+IFRA\s+Status[\s\S]{0,120}/i)?.[0] || '');
 
 	if (!title && !sku && !casNumber) {
@@ -156,6 +217,9 @@ const importPerfumersWorldByUrl = async (url) => {
 		reference_life_hours_source: lifeHours !== null ? 'explicit' : null,
 		reference_use_level_typical_percent: useLevelTypical,
 		reference_use_level_max_percent: useLevelMax,
+		pw_price: price.value,
+		pw_price_unit: price.unit,
+		pw_price_label: price.label,
 		description: buildDescription({ title, odourText, perfumeUsesText }),
 		odour: odourText || null,
 		perfume_uses: perfumeUsesText || null,

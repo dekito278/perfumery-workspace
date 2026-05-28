@@ -1762,11 +1762,13 @@ const EditFormulaPage = () => {
                       <FormulaMaterialLibrary
                         materials={filteredLibraryMaterials}
                         activeRowIndex={activeRowIndex}
+                        searchQuery={materialLibraryQuery}
                         currentRowItemId={formulaItems[activeRowIndex]?.item_id}
                         selectedRawMaterialIdsSet={selectedRawMaterialIdsSet}
                         mobile
                         onSelect={(itemId) => handleMobileLibraryPick(itemId)}
                         onDoubleSelect={handleLibraryDoubleClick}
+                        onCreateMissingMaterial={handleCreateMissingMaterial}
                         getDisabledState={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds }) => (
                           selectedIds.has(material.id) && currentRowItemId !== material.id
                         )}
@@ -1863,10 +1865,12 @@ const EditFormulaPage = () => {
                         <FormulaMaterialLibrary
                           materials={filteredLibraryMaterials}
                           activeRowIndex={activeRowIndex}
+                          searchQuery={materialLibraryQuery}
                           currentRowItemId={formulaItems[activeRowIndex]?.item_id}
                           selectedRawMaterialIdsSet={selectedRawMaterialIdsSet}
                           onSelect={(itemId) => handleLibrarySelect(itemId)}
                           onDoubleSelect={handleLibraryDoubleClick}
+                          onCreateMissingMaterial={handleCreateMissingMaterial}
                           getDisabledState={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds }) => (
                             selectedIds.has(material.id) && currentRowItemId !== material.id
                           )}

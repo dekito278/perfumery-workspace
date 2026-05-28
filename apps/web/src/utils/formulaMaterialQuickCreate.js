@@ -58,13 +58,22 @@ const normalizeOptionalQuickField = (value) => {
   return normalized || '';
 };
 
+const normalizeOptionalQuickNumber = (value) => {
+  const normalized = String(value || '').trim().replace(/\./g, '').replace(',', '.');
+  if (!normalized) return 0;
+  const numericValue = Number(normalized);
+  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : 0;
+};
+
 export const buildQuickRawMaterialPayload = (name, details = {}) => {
   const casNumber = normalizeOptionalQuickField(details.cas_number);
   const workbookCode = normalizeOptionalQuickField(details.workbook_code);
   const category = normalizeOptionalQuickField(details.category);
+  const costPerUnit = normalizeOptionalQuickNumber(details.cost_per_unit);
   const missing = [
     casNumber ? '' : 'CAS',
     workbookCode ? '' : 'workbook',
+    costPerUnit > 0 ? '' : 'price',
     'impact',
     'life',
     'reference data',
@@ -73,11 +82,11 @@ export const buildQuickRawMaterialPayload = (name, details = {}) => {
   return {
     name: normalizeQuickMaterialName(name),
     type: 'raw_material',
-    unit: 'g',
+    unit: 'ml',
     category,
     stock_quantity: 0,
     minimum_stock: 0,
-    cost_per_unit: 0,
+    cost_per_unit: costPerUnit,
     data_status: 'active',
     cas_number: casNumber,
     workbook_code: workbookCode,

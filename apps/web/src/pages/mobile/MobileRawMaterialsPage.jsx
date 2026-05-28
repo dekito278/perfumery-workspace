@@ -624,7 +624,7 @@ const MobileRawMaterialsPage = () => {
         <div className="grid gap-3 pb-2">
           <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={guidanceForm.url} onChange={(event) => setGuidanceForm((current) => ({ ...current, url: event.target.value }))} className="h-10 rounded-xl bg-white text-xs" placeholder="https://..." /></div>
           <div className="space-y-1"><Label className="text-xs">Source</Label><MobileSegmentedControl options={GUIDANCE_SOURCE_OPTIONS} value={guidanceForm.sourceType} onChange={(sourceType) => setGuidanceForm((current) => ({ ...current, sourceType }))} /></div>
-          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 3).join(' · ')} /> : null}
+          {guidanceSummary.length ? <MobileInlineNotice tone="success" title="Guidance imported" description={guidanceSummary.slice(0, 6).join(' · ')} /> : null}
           {guidanceState === 'error' ? <MobileInlineNotice tone="error" title="Import failed" description="Check the URL and try again." /> : null}
           {guidanceState === 'success' ? <MobileInlineNotice tone="success" title="Insights updated" description="Material guidance is ready to use." /> : null}
         </div>

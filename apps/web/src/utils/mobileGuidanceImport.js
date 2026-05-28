@@ -31,6 +31,16 @@ const preferPositiveNumber = (nextValue, currentValue) => (
   hasPositiveNumber(nextValue) ? Number(nextValue) : hasPositiveNumber(currentValue) ? Number(currentValue) : null
 );
 
+const isSyntheticWorkbookCode = (value) => /^RAW-(?:MANUAL|[A-Z0-9]+)/i.test(String(value || '').trim());
+
+const preferImportedWorkbookCode = (importedWorkbookCode, currentWorkbookCode) => {
+  if (importedWorkbookCode) {
+    return importedWorkbookCode;
+  }
+
+  return currentWorkbookCode && !isSyntheticWorkbookCode(currentWorkbookCode) ? currentWorkbookCode : null;
+};
+
 const sanitizeImportedGuidance = (imported = {}) => ({
   ...imported,
   reference_impact: hasPositiveNumber(imported.reference_impact) ? Number(imported.reference_impact) : null,
@@ -46,6 +56,7 @@ const sanitizeImportedGuidance = (imported = {}) => ({
 export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
   const normalizedImported = sanitizeImportedGuidance(imported);
   const importedWorkbookCode = normalizedImported.workbook_code || null;
+  const nextWorkbookCode = preferImportedWorkbookCode(importedWorkbookCode, material.workbook_code);
   const importedWithTarget = {
     ...normalizedImported,
     source_kind: normalizedImported.source_kind || sourceType,
@@ -61,7 +72,7 @@ export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
   };
   const fieldLocks = {
     ...(material.guidance_reference_profile?.field_locks || {}),
-    workbook_code: Boolean(importedWorkbookCode || material.workbook_code),
+    workbook_code: Boolean(nextWorkbookCode),
     cas_number: Boolean(normalizedImported.cas_number || material.cas_number),
     reference_abc_primary_family: Boolean(normalizedImported.reference_abc_primary_family || material.reference_abc_primary_family),
     reference_impact: Boolean(hasPositiveNumber(normalizedImported.reference_impact) || hasPositiveNumber(material.reference_impact)),
@@ -71,7 +82,7 @@ export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
   };
 
   return {
-    workbook_code: material.workbook_code || importedWorkbookCode || null,
+    workbook_code: nextWorkbookCode,
     cas_number: normalizedImported.cas_number || material.cas_number || null,
     ifra_limit: preferPositiveNumber(normalizedImported.ifra_limit, material.ifra_limit),
     reference_abc_primary_family: normalizedImported.reference_abc_primary_family || material.reference_abc_primary_family || null,
@@ -90,8 +101,11 @@ export const summarizeImportedGuidance = ({ sourceType, imported }) => {
     `${sourceLabel} imported`,
     imported.workbook_code ? `Workbook ${imported.workbook_code}` : null,
     imported.cas_number ? `CAS ${imported.cas_number}` : null,
+    imported.pw_price_label ? `Price ${imported.pw_price_label}` : null,
     hasPositiveNumber(imported.reference_impact) ? `Impact ${imported.reference_impact}` : null,
     hasPositiveNumber(imported.reference_life_hours) ? `Life ${imported.reference_life_hours}h` : null,
     hasPositiveNumber(imported.substantivity_hours) ? `Substantivity ${imported.substantivity_hours}h` : null,
+    hasPositiveNumber(imported.reference_use_level_typical_percent) ? `Typical ${imported.reference_use_level_typical_percent}%` : null,
+    hasPositiveNumber(imported.reference_use_level_max_percent) ? `Max ${imported.reference_use_level_max_percent}%` : null,
   ].filter(Boolean);
 };

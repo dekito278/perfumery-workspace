@@ -746,11 +746,13 @@ const CreateFormulaPage = () => {
                       <FormulaMaterialLibrary
                         materials={filteredLibraryMaterials}
                         activeRowIndex={activeRowIndex}
+                        searchQuery={materialLibraryQuery}
                         currentRowItemId={formulaItems[activeRowIndex]?.item_id}
                         selectedRawMaterialIdsSet={selectedRawMaterialIdsSet}
                         mobile
                         onSelect={(itemId) => handleMobileLibraryPick(itemId)}
                         onDoubleSelect={handleLibraryDoubleClick}
+                        onCreateMissingMaterial={handleCreateMissingMaterial}
                         getDisabledState={({ material, selectedRawMaterialIdsSet: selectedIds }) => selectedIds.has(material.id)}
                         getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
                           const selectedInFormula = selectedIds.has(material.id);
@@ -843,10 +845,12 @@ const CreateFormulaPage = () => {
                     <FormulaMaterialLibrary
                       materials={filteredLibraryMaterials}
                       activeRowIndex={activeRowIndex}
+                      searchQuery={materialLibraryQuery}
                       currentRowItemId={formulaItems[activeRowIndex]?.item_id}
                       selectedRawMaterialIdsSet={selectedRawMaterialIdsSet}
                       onSelect={(itemId) => handleLibrarySelect(itemId)}
                       onDoubleSelect={handleLibraryDoubleClick}
+                      onCreateMissingMaterial={handleCreateMissingMaterial}
                       getDisabledState={({ material, selectedRawMaterialIdsSet: selectedIds }) => selectedIds.has(material.id)}
                       getBadgeLabel={({ material, currentRowItemId, selectedRawMaterialIdsSet: selectedIds, activeRowIndex, mobile }) => {
                         const selectedInFormula = selectedIds.has(material.id);

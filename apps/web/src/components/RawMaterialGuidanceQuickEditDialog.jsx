@@ -428,6 +428,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
         imported.reference_life_hours !== null && imported.reference_life_hours !== undefined ? `Life: ${imported.reference_life_hours} h` : 'Life tidak tersedia di PerfumersWorld.',
         imported.reference_use_level_typical_percent !== null && imported.reference_use_level_typical_percent !== undefined ? `Typical use level: ${imported.reference_use_level_typical_percent}%` : 'Typical use level tidak tersedia di PerfumersWorld.',
         imported.reference_use_level_max_percent !== null && imported.reference_use_level_max_percent !== undefined ? `Max use level: ${imported.reference_use_level_max_percent}%` : 'Max use level tidak tersedia di PerfumersWorld.',
+        imported.pw_price_label ? `PerfumersWorld price: ${imported.pw_price_label}` : 'Harga PerfumersWorld tidak tersedia.',
         imported.ifra_notes ? `IFRA: ${imported.ifra_notes}` : 'IFRA numeric limit tidak tersedia langsung di halaman PerfumersWorld.',
         imported.workbook_code ? `Saat disimpan, workbook ${imported.workbook_code} akan disinkronkan ke semua raw material dengan workbook code yang sama.` : 'Workbook code belum terbaca, jadi sinkronisasi massal tidak akan dijalankan.',
       ]);
