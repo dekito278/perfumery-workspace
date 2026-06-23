@@ -12,7 +12,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ChevronDown,
-  ClipboardList,
   NotebookPen,
   LibraryBig,
   ShoppingBag,
@@ -70,7 +69,6 @@ const AppShell = ({ children }) => {
       icon: Beaker,
       items: [
         { path: '/studio', label: 'Dasbor', icon: Home, aliases: ['/dashboard'] },
-        { path: '/briefs', label: 'Briefs', icon: ClipboardList },
         { path: '/studio/journal', label: 'Journal', icon: BookOpenText },
         { path: '/raw-materials', label: 'Material', icon: LibraryBig },
         { path: '/formulas', label: 'Formulas', icon: Beaker },

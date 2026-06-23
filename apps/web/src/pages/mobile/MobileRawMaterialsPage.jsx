@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
+import { FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -22,8 +22,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
-import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
+
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 import {
   GUIDANCE_SOURCE_OPTIONS,
@@ -150,21 +149,13 @@ const MobileRawMaterialsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const briefId = searchParams.get('briefId') || '';
-  const activeBriefId = UUID_PATTERN.test(briefId) ? briefId : '';
   const initialAction = searchParams.get('action') || '';
   const { fetchMaterialsPage, updateMaterial, deleteMaterial } = useRawMaterials();
-  const { getBriefs } = useBriefs();
-  const { deleteBriefMaterialShortlistItem, getBriefMaterialShortlist, upsertBriefMaterialShortlist } = useBriefMaterialShortlists();
   const loadTokenRef = useRef(0);
   const [materials, setMaterials] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [guidanceLoading, setGuidanceLoading] = useState(false);
-  const [briefContext, setBriefContext] = useState(null);
-  const [shortlistItems, setShortlistItems] = useState([]);
-  const [shortlistLoading, setShortlistLoading] = useState(false);
-  const [savingShortlistId, setSavingShortlistId] = useState('');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [referenceFilter, setReferenceFilter] = useState('all');
@@ -185,7 +176,6 @@ const MobileRawMaterialsPage = () => {
     low_stock_threshold: '',
     cost_per_unit: '',
   });
-  const shortlistMaterialIds = useMemo(() => new Set(shortlistItems.map((item) => item.raw_material_id).filter(Boolean)), [shortlistItems]);
 
   useEffect(() => {
     if (initialAction === 'add') {
@@ -283,32 +273,6 @@ const MobileRawMaterialsPage = () => {
   }, [loadMaterials]);
 
   useEffect(() => setVisibleCount(MOBILE_PAGE_SIZE), [debouncedQuery, referenceFilter, cleanupFilter]);
-
-  const refreshShortlist = useCallback(async () => {
-    if (!activeBriefId) {
-      setBriefContext(null);
-      setShortlistItems([]);
-      return;
-    }
-
-    setShortlistLoading(true);
-    try {
-      const [briefRows, shortlistRows] = await Promise.all([
-        getBriefs(),
-        getBriefMaterialShortlist(activeBriefId),
-      ]);
-      setBriefContext((briefRows || []).find((brief) => brief.id === activeBriefId) || null);
-      setShortlistItems(shortlistRows || []);
-    } catch (error) {
-      toast.error('Failed to load brief picker');
-    } finally {
-      setShortlistLoading(false);
-    }
-  }, [activeBriefId, getBriefMaterialShortlist, getBriefs]);
-
-  useEffect(() => {
-    refreshShortlist();
-  }, [refreshShortlist]);
 
   const openGuidance = (material) => {
     setGuidanceTarget(material);
@@ -422,67 +386,15 @@ const MobileRawMaterialsPage = () => {
     }
   };
 
-  const handleToggleBriefMaterial = async (material) => {
-    if (!activeBriefId || !material?.id) {
-      if (material?.id) {
-        navigate(`/mobile/formulas/new?materialIds=${material.id}`);
-      }
-      return;
-    }
-
-    const existingItem = shortlistItems.find((item) => item.raw_material_id === material.id);
-    setSavingShortlistId(material.id);
-    try {
-      if (existingItem) {
-        await deleteBriefMaterialShortlistItem(existingItem.id);
-        setShortlistItems((current) => current.filter((item) => item.id !== existingItem.id));
-        triggerMobileHaptic('success');
-        toast.success('Removed from brief shortlist');
-      } else {
-        const nextItems = await upsertBriefMaterialShortlist(activeBriefId, [{
-          raw_material_id: material.id,
-          role: 'candidate',
-        }]);
-        setShortlistItems(nextItems || []);
-        triggerMobileHaptic('success');
-        toast.success('Added to brief shortlist');
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to update shortlist');
-    } finally {
-      setSavingShortlistId('');
-    }
-  };
-
   return (
     <MobileAuthenticatedLayout>
       <Helmet><title>Mobile Materials - Solivagant</title></Helmet>
         <main className="mobile-page space-y-3">
         <MobileTopBar
           title="Materials"
-          subtitle={activeBriefId ? (briefContext?.title || 'Brief picker') : undefined}
+          subtitle={undefined}
           action={<Button type="button" size="icon" onClick={() => navigate('/mobile/raw-materials/new', { state: getMobileFromState(location) })} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl"><Plus className="h-5 w-5" /></Button>}
         />
-        {activeBriefId ? (
-          <section className="mobile-soft-card p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase text-amber-700">Brief material picker</div>
-                <h2 className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{briefContext?.title || 'Linked brief'}</h2>
-                <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{shortlistItems.length} selected candidates</p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={shortlistLoading}
-                onClick={() => navigate(`/mobile/briefs/${activeBriefId}`)}
-                className="h-10 shrink-0 rounded-xl bg-white px-3 text-xs font-bold"
-              >
-                Done
-              </Button>
-            </div>
-          </section>
-        ) : null}
         <div className="mobile-material-search-panel">
           <MobileSearchBar value={query} onChange={setQuery} placeholder="Search material, CAS, supplier..." disabled={loading} />
           <MobileFilterChips options={cleanupOptions} value={cleanupFilter} onChange={setCleanupFilter} className="flex-nowrap overflow-x-auto mobile-segment-scroll" />
@@ -532,14 +444,12 @@ const MobileRawMaterialsPage = () => {
                   key={material.id}
                   material={material}
                   onOpen={() => navigate(`/mobile/raw-material/${material.id}`, { state: getMobileFromState(location) })}
-                  onAddToFormula={() => activeBriefId ? handleToggleBriefMaterial(material) : openStockEditor(material)}
+                  onAddToFormula={() => openStockEditor(material)}
                   onArchive={() => handleToggleArchiveMaterial(material)}
                   onDelete={() => setDeleteTarget(material)}
                   onOpenGuidance={() => openGuidance(material)}
-                  addActionActive={shortlistMaterialIds.has(material.id)}
-                  addActionDisabled={savingShortlistId === material.id}
-                  addActionIcon={activeBriefId ? (shortlistMaterialIds.has(material.id) ? Check : Plus) : PackageCheck}
-                  addActionLabel={activeBriefId ? (shortlistMaterialIds.has(material.id) ? 'Picked' : 'Pick') : 'Stock'}
+                  addActionIcon={PackageCheck}
+                  addActionLabel="Stock"
                 />
               ))}
             </div>

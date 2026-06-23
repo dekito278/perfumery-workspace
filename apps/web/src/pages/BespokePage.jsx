@@ -440,6 +440,7 @@ const BespokePage = () => {
       labelDesign: labelDesignOptions.some((option) => optionMatchesValue(option, current.labelDesign)) ? current.labelDesign : (getOptionKey(defaultLabel) || ''),
       exoticMaterial: current.exoticMaterial && exoticMaterialOptions.some((option) => optionMatchesValue(option, current.exoticMaterial)) ? current.exoticMaterial : '',
     }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- defaults are derived from the option arrays already in deps
   }, [bottleSizeOptions, bottleTypeOptions, capDesignOptions, labelDesignOptions, exoticMaterialOptions, defaultSize.value, defaultBottle.value, defaultCap.value, defaultLabel.value]);
 
   const validateForm = () => {

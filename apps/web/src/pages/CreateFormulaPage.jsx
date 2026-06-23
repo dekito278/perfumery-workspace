@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, Save, ClipboardList } from 'lucide-react';
+import { AlertCircle, ChevronLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,6 @@ import FormulaScaleTool from '@/components/FormulaScaleTool.jsx';
 import RawMaterialGuidanceQuickEditDialog from '@/components/RawMaterialGuidanceQuickEditDialog.jsx';
 import FormulaMaterialQuickCreateDialog from '@/components/FormulaMaterialQuickCreateDialog.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
-import { useBriefProjects } from '@/hooks/useBriefProjects.js';
 import {
   composerSectionClass,
   mapComposerItemsForSubmit,
@@ -33,7 +31,7 @@ import { calculateTotalGrams } from '@/utils/formulaCalculations.js';
 import { validateGramAmount } from '@/utils/validation.js';
 import { formatGramAmount } from '@/utils/formatting.js';
 import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
-import { buildComposerItemsFromMaterialIds, buildComposerItemsFromProjectStageItems } from '@/utils/formulaPipeline.js';
+import { buildComposerItemsFromMaterialIds } from '@/utils/formulaPipeline.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 
@@ -41,10 +39,6 @@ const CreateFormulaPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { createFormula, loading } = useFormulas();
-  const { getBriefs, updateBrief } = useBriefs();
-  const { getBriefProjectByBriefId, getBriefProjectStageItems, updateBriefProject } = useBriefProjects();
-  const briefId = searchParams.get('briefId') || '';
-  const projectId = searchParams.get('projectId') || '';
   const seedMaterialIdsKey = String(searchParams.get('materialIds') || '');
   const seedMaterialIds = useMemo(
     () => [...new Set(
@@ -73,9 +67,6 @@ const CreateFormulaPage = () => {
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
   const [needsGuidanceMaterialId, setNeedsGuidanceMaterialId] = useState('');
-  const [briefContext, setBriefContext] = useState(null);
-  const [projectContext, setProjectContext] = useState(null);
-  const [projectStageItems, setProjectStageItems] = useState([]);
   const isMobile = useIsMobile();
   const composer = useFormulaComposer({
     rawMaterials,
@@ -120,45 +111,11 @@ const CreateFormulaPage = () => {
       setLoadingData(true);
       try {
         const materialsData = await getRawMaterialOptions();
-        let resolvedBrief = null;
-        let resolvedProject = null;
-        let resolvedProjectStageMap = new Map();
-
-        if (briefId) {
-          const briefs = await getBriefs();
-          resolvedBrief = briefs.find((brief) => brief.id === briefId) || null;
-          try {
-            resolvedProject = projectId
-              ? { ...(await getBriefProjectByBriefId(briefId) || {}), id: projectId }
-              : await getBriefProjectByBriefId(briefId);
-            resolvedProjectStageMap = resolvedProject?.id ? await getBriefProjectStageItems(resolvedProject.id) : new Map();
-          } catch (projectError) {
-            console.error('Formula create project layer unavailable:', projectError);
-          }
-        }
-
-        const resolvedProjectStageItems = resolvedProject?.id
-          ? ['top', 'middle', 'base']
-              .flatMap((stage) => resolvedProjectStageMap.get(stage) || [])
-              .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual')
-          : [];
 
         if (active) {
           setRawMaterials(materialsData);
-          setBriefContext(resolvedBrief);
-          setProjectContext(resolvedProject);
-          setProjectStageItems(resolvedProjectStageItems);
 
-          if (resolvedBrief) {
-            setNotes((current) => current || resolvedBrief.mood_story || '');
-          }
-
-          if (resolvedBrief) {
-            setName((current) => current || `${resolvedBrief.title} formula`);
-          }
-          if (resolvedProjectStageItems.length) {
-            replaceFormulaItems(buildComposerItemsFromProjectStageItems(resolvedProjectStageItems, materialsData, new Map()));
-          } else if (seedMaterialIds.length) {
+          if (seedMaterialIds.length) {
             replaceFormulaItems(buildComposerItemsFromMaterialIds(seedMaterialIds, materialsData));
           }
         }
@@ -176,7 +133,7 @@ const CreateFormulaPage = () => {
     return () => {
       active = false;
     };
-  }, [briefId, getBriefProjectByBriefId, getBriefProjectStageItems, getBriefs, projectId, replaceFormulaItems, seedMaterialIds]);
+  }, [replaceFormulaItems, seedMaterialIds]);
 
   const handleMobileLibraryPick = (itemId) => {
     handleLibraryDoubleClick(itemId);
@@ -290,24 +247,6 @@ const CreateFormulaPage = () => {
         notes: notes || null,
       }, itemsForSubmit);
 
-      if (briefContext && briefContext.formula_id !== createdFormula.id) {
-        await updateBrief(briefContext.id, {
-          ...briefContext,
-          formula_id: createdFormula.id,
-        });
-      }
-
-      if (projectContext?.id) {
-        try {
-          await updateBriefProject(projectContext.id, {
-            status: 'ready_for_formula',
-            current_stage: 'formula',
-          });
-        } catch (projectError) {
-          console.error('Failed to update project after formula creation:', projectError);
-        }
-      }
-
       toast.success('Formula created successfully');
       navigate(`/formulas/${createdFormula.id}`);
     } catch (error) {
@@ -352,28 +291,20 @@ const CreateFormulaPage = () => {
     }
 
     if (!metadataConfirmed) {
-      navigate(briefContext ? `/briefs/${briefContext.id}` : '/formulas');
+      navigate('/formulas');
       return;
     }
 
     setMetadataDialogOpen(false);
   };
 
-  const isStandaloneFormula = !briefId && !projectId && seedMaterialIds.length === 0;
-  const compositionModeTitle = projectStageItems.length
-    ? 'Compose from project stages'
-    : seedMaterialIds.length
-      ? 'Compose from shortlisted materials'
-      : briefContext
-        ? 'Compose from brief intent'
-        : 'Standalone formula';
-  const compositionModeDescription = projectStageItems.length
-    ? 'This formula starts from project stage picks. Use the library below to refine or rebalance the selected structure.'
-    : seedMaterialIds.length
-      ? 'This formula starts from shortlisted materials chosen in the library workspace. Use the composer below to refine the structure.'
-      : briefContext
-        ? 'This formula is linked to a brief. Keep the composition anchored to the story, audience, and performance target below.'
-        : 'No brief is required here. Name the formula, choose materials from the library, set grams, and save it as an independent formula.';
+  const isStandaloneFormula = seedMaterialIds.length === 0;
+  const compositionModeTitle = seedMaterialIds.length
+    ? 'Compose from selected materials'
+    : 'Standalone formula';
+  const compositionModeDescription = seedMaterialIds.length
+    ? 'This formula starts from materials chosen in the library workspace. Use the composer below to refine the structure.'
+    : 'Name the formula, choose materials from the library, set grams, and save it as an independent formula.';
 
   return (
     <AuthenticatedLayout>
@@ -390,9 +321,7 @@ const CreateFormulaPage = () => {
           open={metadataDialogOpen}
           onOpenChange={handleMetadataDialogChange}
           title={isStandaloneFormula ? 'Create standalone formula' : 'Create formula'}
-          description={isStandaloneFormula
-            ? 'Isi identitas formula, lalu susun komposisi langsung dari material library tanpa membuat brief.'
-            : 'Isi identitas formula dulu sebelum mulai menyusun komposisinya.'}
+          description="Isi identitas formula dulu sebelum mulai menyusun komposisinya."
           name={name}
           code={code}
           category={category}
@@ -412,11 +341,11 @@ const CreateFormulaPage = () => {
         <div className="mb-4 shrink-0">
           <Button
             variant="ghost"
-            onClick={() => navigate(briefContext ? `/briefs/${briefContext.id}` : '/formulas')}
+            onClick={() => navigate('/formulas')}
             className="gap-2 mb-4 h-9"
           >
             <ChevronLeft className="w-4 h-4" />
-            {briefContext ? 'Back to brief board' : 'Back to formulas'}
+            Back to formulas
           </Button>
         </div>
 
@@ -507,79 +436,20 @@ const CreateFormulaPage = () => {
                   {compositionModeDescription}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {briefContext ? (
-                  <Button variant="outline" className="rounded-2xl" onClick={() => navigate(`/briefs/${briefContext.id}`)}>
-                    <ClipboardList className="mr-2 h-4 w-4" />
-                    Open brief board
-                  </Button>
-                ) : null}
-              </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              {briefContext ? (
-                <div className="rounded-[22px] border bg-white/85 p-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="rounded-full">{briefContext.title}</Badge>
-                    {briefContext.status ? <Badge variant="outline" className="rounded-full capitalize">{briefContext.status}</Badge> : null}
-                  </div>
-                  {briefContext.mood_story ? (
-                    <p className="mt-3 text-sm text-muted-foreground">{briefContext.mood_story}</p>
-                  ) : null}
-                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-                    {briefContext.audience_usage ? <div>Audience: {briefContext.audience_usage}</div> : null}
-                    {briefContext.performance_target ? <div>Performance: {briefContext.performance_target}</div> : null}
-                    {briefContext.budget_direction ? <div>Budget: {briefContext.budget_direction}</div> : null}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="rounded-[22px] border bg-white/85 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-sm font-semibold">Formula source</div>
-                  <Badge variant="outline" className="rounded-full">
-                    {projectStageItems.length ? 'Stage preload' : seedMaterialIds.length ? 'Shortlist preload' : briefContext ? 'Direct composition' : 'Standalone'}
-                  </Badge>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {projectStageItems.length
-                    ? `${projectStageItems.length} stage-selected materials were loaded into the composer as a starting structure.`
-                    : seedMaterialIds.length
-                      ? `${seedMaterialIds.length} shortlisted materials were loaded into the composer as a starting structure.`
-                      : briefContext
-                        ? 'No stage preload was selected. You can still compose directly from the raw material library while keeping this formula linked to the brief.'
-                        : 'No brief or preload is attached. This formula will be saved as a standalone composition.'}
-                </p>
+            <div className="rounded-[22px] border bg-white/85 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-sm font-semibold">Formula source</div>
+                <Badge variant="outline" className="rounded-full">
+                  {seedMaterialIds.length ? 'Material preload' : 'Standalone'}
+                </Badge>
               </div>
-
-              {projectContext ? (
-                <div className="rounded-[22px] border bg-white/85 p-4 lg:col-span-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-semibold">Project stage summary</div>
-                    <Badge variant="outline" className="rounded-full capitalize">
-                      {projectContext.current_stage || 'top'}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {projectStageItems.length
-                      ? `${projectStageItems.length} selected stage materials were loaded into the composer.`
-                      : 'No stage materials have been selected yet in the project board.'}
-                  </p>
-                  {projectStageItems.length ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {['top', 'middle', 'base'].map((stage) => {
-                        const stageCount = projectStageItems.filter((item) => item.stage === stage).length;
-                        return (
-                          <Badge key={stage} variant="secondary" className="rounded-full capitalize">
-                            {stage} {stageCount}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
+              <p className="mt-2 text-sm text-muted-foreground">
+                {seedMaterialIds.length
+                  ? `${seedMaterialIds.length} materials were loaded into the composer as a starting structure.`
+                  : 'This formula will be saved as a standalone composition.'}
+              </p>
             </div>
           </div>
 

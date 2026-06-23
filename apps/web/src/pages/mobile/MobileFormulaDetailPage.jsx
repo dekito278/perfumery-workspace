@@ -86,7 +86,6 @@ const MobileFormulaDetailPage = () => {
     formula,
     handleExportPdf,
     items,
-    linkedBriefs,
     loading,
     rawMaterialsById,
     totalCost,
@@ -207,7 +206,7 @@ const MobileFormulaDetailPage = () => {
             </div>
             {[
               ['Version', formula.version || '-'],
-              ['Linked brief', linkedBriefs?.[0]?.title || 'Standalone formula'],
+              ['Type', 'Standalone formula'],
               ['Last updated', formatDate(formula.updated || formula.created)],
               ['Notes', formula.notes || '-'],
             ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}

@@ -29,7 +29,7 @@ const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicat
     </div>
     <div className="mt-3 flex flex-wrap gap-1.5">
       <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">
-        {pipeline.briefCount ? `Brief ${pipeline.briefCount}` : 'Standalone'}
+        Standalone
       </span>
       <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-bold text-[#6b7280]">Logs {pipeline.validationCount || 0}</span>
       {pipeline.actionNeededCount ? <MobileStatusBadge status="action_needed">Action {pipeline.actionNeededCount}</MobileStatusBadge> : null}

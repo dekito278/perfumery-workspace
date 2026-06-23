@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
+
 import { getBespokeItem, getOrderById, updateOrderBespokeProductionStatus, updateOrderProductionLinks } from '@/services/orderService.js';
 import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { FORMULA_CATEGORIES, FORMULA_STATUSES } from '@/utils/constants.js';
@@ -63,7 +63,6 @@ const buildFormulaCode = (source = '') => {
 const MobileCreateFormulaPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const briefId = searchParams.get('briefId') || '';
   const source = searchParams.get('source') || '';
   const orderId = searchParams.get('orderId') || '';
   const nameParam = searchParams.get('name') || '';
@@ -71,10 +70,8 @@ const MobileCreateFormulaPage = () => {
   const seedMaterialIdsParam = searchParams.get('materialIds') || '';
   const seedMaterialIds = useMemo(() => String(seedMaterialIdsParam).split(',').map((value) => value.trim()).filter(Boolean), [seedMaterialIdsParam]);
   const { createFormula, loading } = useFormulas();
-  const { getBriefs, updateBrief } = useBriefs();
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [briefContext, setBriefContext] = useState(null);
   const [orderContext, setOrderContext] = useState(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -102,23 +99,15 @@ const MobileCreateFormulaPage = () => {
     const loadMaterials = async () => {
       setLoadingData(true);
       try {
-        const [rows, briefRows] = await Promise.all([
+        const [rows] = await Promise.all([
           getRawMaterialOptions(),
-          briefId ? getBriefs() : Promise.resolve([]),
         ]);
         const linkedOrder = source === 'order' && orderId ? await getOrderById(orderId) : null;
         const orderItem = linkedOrder ? getBespokeItem(linkedOrder) : null;
         const baseRows = rows || [];
-        const linkedBrief = briefRows.find((brief) => brief.id === briefId) || null;
         if (!active) return;
         setRawMaterials(baseRows);
-        setBriefContext(linkedBrief);
         setOrderContext(linkedOrder);
-        if (linkedBrief) {
-          setName((current) => current || `${linkedBrief.title} formula`);
-          setCode((current) => current || buildFormulaCode(linkedBrief.title));
-          setNotes((current) => current || linkedBrief.mood_story || linkedBrief.description || '');
-        }
         if (linkedOrder) {
           const customer = linkedOrder.customerName || linkedOrder.customerCode || 'Customer';
           const aroma = orderItem?.preferredNotes || orderItem?.notes || orderItem?.mood || 'Bespoke perfume';
@@ -161,7 +150,7 @@ const MobileCreateFormulaPage = () => {
     };
     loadMaterials();
     return () => { active = false; };
-  }, [briefId, getBriefs, nameParam, notesParam, orderId, seedMaterialIds, source]);
+  }, [nameParam, notesParam, orderId, seedMaterialIds, source]);
 
   const rawMaterialsById = useMemo(() => new Map(rawMaterials.map((material) => [material.id, material])), [rawMaterials]);
   const totalGrams = useMemo(() => items.reduce((sum, item) => sum + parseLocalizedNumber(item.gram_amount), 0), [items]);
@@ -264,12 +253,6 @@ const MobileCreateFormulaPage = () => {
     if (!validate()) return;
     try {
       const created = await createFormula({ name, code, category, version: version || null, status, notes: notes || null }, buildItemsForSubmit(itemsWithInsights));
-      if (briefContext && briefContext.formula_id !== created.id) {
-        await updateBrief(briefContext.id, {
-          ...briefContext,
-          formula_id: created.id,
-        });
-      }
       if (orderContext) {
         await updateOrderProductionLinks(orderContext.id || orderContext.orderNumber, {
           ...orderContext.productionLinks,
@@ -300,20 +283,6 @@ const MobileCreateFormulaPage = () => {
         <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />
         {loadingData ? <MobileLoadingState eyebrow="Formula composer" title="Loading composer..." subtitle="Preparing material guidance." className="min-h-[calc(100dvh-260px)]" /> : (
           <>
-            {briefContext ? (
-              <section className="mobile-soft-card p-3">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800">
-                    <ClipboardList className="h-5 w-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-bold uppercase text-amber-700">Brief linked</div>
-                    <h2 className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{briefContext.title}</h2>
-                    <p className="mt-1 mobile-line-clamp-2 text-[11px] font-semibold text-[#6b7280]">{briefContext.mood_story || briefContext.description || 'Formula will be attached to this brief after create.'}</p>
-                  </div>
-                </div>
-              </section>
-            ) : null}
             {orderContext ? (
               <section className="mobile-soft-card p-3">
                 <div className="flex items-start gap-3">
@@ -340,7 +309,7 @@ const MobileCreateFormulaPage = () => {
                   <MobileStatusBadge status="loaded" />
                 </div>
                 <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
-                  Material pilihan brief sudah masuk composition board. Atur gram, dilution, lalu simpan formula.
+                  Material pilihan sudah masuk composition board. Atur gram, dilution, lalu simpan formula.
                 </p>
               </section>
             ) : null}
@@ -363,7 +332,7 @@ const MobileCreateFormulaPage = () => {
                 <div data-mobile-field className="mobile-form-field space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="mobile-formula-code" className="text-xs">Formula code</Label>
-                    <button type="button" onClick={() => setCode(buildFormulaCode(name || briefContext?.title))} className="text-[11px] font-bold text-amber-700">Generate</button>
+                    <button type="button" onClick={() => setCode(buildFormulaCode(name))} className="text-[11px] font-bold text-amber-700">Generate</button>
                   </div>
                   <Input id="mobile-formula-code" value={code} onChange={(event) => setCode(event.target.value)} className="h-10 rounded-xl bg-white text-xs" required />
                   <p className="mobile-form-helper text-xs font-medium text-[#6b7280]">Gunakan kode singkat yang mudah dicari.</p>

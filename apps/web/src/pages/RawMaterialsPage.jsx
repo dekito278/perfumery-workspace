@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Home, Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
@@ -19,16 +19,13 @@ import RemapRawMaterialCategoriesModal from '@/components/RemapRawMaterialCatego
 import RawMaterialsDeleteDependencySummary from '@/components/raw-materials/RawMaterialsDeleteDependencySummary.jsx';
 import RawMaterialsSummaryCards from '@/components/raw-materials/RawMaterialsSummaryCards.jsx';
 import RawMaterialsToolbar from '@/components/raw-materials/RawMaterialsToolbar.jsx';
-import RawMaterialsShortlistWorkspace from '@/components/raw-materials/RawMaterialsShortlistWorkspace.jsx';
 import RawMaterialMobileCard from '@/components/raw-materials/RawMaterialMobileCard.jsx';
 import { createRawMaterialsColumns } from '@/components/raw-materials/RawMaterialsTableConfig.jsx';
 import { useRawMaterialsPage } from '@/hooks/useRawMaterialsPage.js';
 
 const RawMaterialsPage = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const briefId = searchParams.get('briefId') || '';
-  const page = useRawMaterialsPage({ briefId, navigate });
+  const page = useRawMaterialsPage({ navigate });
   const columns = useMemo(
     () => createRawMaterialsColumns({
       categoryColorMap: page.categoryColorMap,
@@ -59,29 +56,12 @@ const RawMaterialsPage = () => {
 
         <PageHeader
           title="Materials"
-          description={briefId
-            ? 'Pilih kandidat bahan untuk brief ini, beri peran struktural, lalu kirim langsung ke formula wizard.'
-            : 'Review material coverage, vendor metadata, dilution readiness, and workbook reference guidance from one master library.'}
+          description="Review material coverage, vendor metadata, dilution readiness, and workbook reference guidance from one master library."
           action="Add material"
           actionIcon={Plus}
           onAction={() => page.setAddModalOpen(true)}
         />
 
-        {briefId ? (
-          <RawMaterialsShortlistWorkspace
-            briefContext={page.briefContext}
-            shortlistLoading={page.shortlistLoading}
-            shortlistItems={page.shortlistItems}
-            shortlistRoles={page.shortlistRoles}
-            selectedMaterialIds={page.selectedMaterialIds}
-            shortlistMaterialIds={page.shortlistMaterialIds}
-            handleSaveSelectionToShortlist={page.handleSaveSelectionToShortlist}
-            handleRemoveShortlistItem={page.handleRemoveShortlistItem}
-            handleUpdateShortlistRole={page.handleUpdateShortlistRole}
-            openFormulaWizard={page.openFormulaWizard}
-            navigateToBriefBoard={() => navigate(page.briefContext ? `/briefs/${page.briefContext.id}` : '/briefs')}
-          />
-        ) : null}
 
         <RawMaterialsSummaryCards
           summaryLoading={page.summaryLoading}
@@ -94,28 +74,16 @@ const RawMaterialsPage = () => {
           practicalMergeCandidateCount={page.practicalMergeCandidateCount}
         />
 
-        {page.summaryError || page.shortlistError ? (
+        {page.summaryError ? (
           <div className="mb-5 grid gap-3">
-            {page.summaryError ? (
-              <StateBlock
-                tone="error"
-                title="Material summary could not be refreshed"
-                description={page.summaryError}
-                action={page.summaryLoading ? '' : 'Retry summary'}
-                onAction={page.summaryLoading ? null : page.loadSummary}
-                className="bg-rose-50/80 p-5"
-              />
-            ) : null}
-            {page.shortlistError ? (
-              <StateBlock
-                tone="error"
-                title="Shortlist workspace could not be loaded"
-                description={page.shortlistError}
-                action={page.shortlistLoading ? '' : 'Retry shortlist'}
-                onAction={page.shortlistLoading ? null : page.refreshShortlist}
-                className="bg-rose-50/80 p-5"
-              />
-            ) : null}
+            <StateBlock
+              tone="error"
+              title="Material summary could not be refreshed"
+              description={page.summaryError}
+              action={page.summaryLoading ? '' : 'Retry summary'}
+              onAction={page.summaryLoading ? null : page.loadSummary}
+              className="bg-rose-50/80 p-5"
+            />
           </div>
         ) : null}
 

@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FolderTree, Droplets, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
-import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
 import { getRawMaterialDeletionDependencies, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { getRawMaterialCategories } from '@/services/rawMaterialCategoriesService.js';
 import { ensureReferenceLinksForRawMaterials } from '@/services/materialReferenceService.js';
@@ -22,7 +20,6 @@ const hasPositiveReferenceValue = (value) => {
   return Number.isFinite(numericValue) && numericValue > 0;
 };
 
-export const shortlistRoles = ['candidate', 'hero', 'support', 'bridge', 'base'];
 
 export const REFERENCE_STATUS_LABELS = {
   approved_pw: 'PW',
@@ -47,10 +44,8 @@ export const getReferenceStatusBadgeClassName = (status) => {
   }
 };
 
-export const useRawMaterialsPage = ({ briefId, navigate }) => {
+export const useRawMaterialsPage = ({ navigate }) => {
   const { fetchMaterials, fetchMaterialsPage, fetchMaterialsSummary, fetchMaterialsReferenceSummary, deleteMaterial } = useRawMaterials();
-  const { getBriefs } = useBriefs();
-  const { getBriefMaterialShortlist, upsertBriefMaterialShortlist, deleteBriefMaterialShortlistItem } = useBriefMaterialShortlists();
 
   const [materials, setMaterials] = useState([]);
   const [remapMaterials, setRemapMaterials] = useState([]);
@@ -62,10 +57,6 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [summaryError, setSummaryError] = useState('');
-  const [shortlistError, setShortlistError] = useState('');
-  const [briefContext, setBriefContext] = useState(null);
-  const [shortlistItems, setShortlistItems] = useState([]);
-  const [shortlistLoading, setShortlistLoading] = useState(false);
   const [matchedReferenceCount, setMatchedReferenceCount] = useState(0);
   const [ifraReferenceCount, setIfraReferenceCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,8 +83,8 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     [materials, selectedMaterialIds]
   );
   const shortlistMaterialIds = useMemo(
-    () => shortlistItems.map((item) => item.raw_material_id).filter(Boolean),
-    [shortlistItems]
+    () => [],
+    []
   );
   const isBulkDeleting = deletingId === 'bulk';
   const showInitialLoading = loading && materials.length === 0 && totalMaterials === 0;
@@ -167,23 +158,6 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     }
   }, []);
 
-  const refreshShortlist = useCallback(async () => {
-    if (!briefId) {
-      return;
-    }
-
-    setShortlistLoading(true);
-    setShortlistError('');
-    try {
-      const shortlist = await getBriefMaterialShortlist(briefId);
-      setShortlistItems(shortlist);
-    } catch (error) {
-      setShortlistError(error.message || 'Shortlist workspace could not be loaded.');
-      toast.error('Failed to load shortlist workspace');
-    } finally {
-      setShortlistLoading(false);
-    }
-  }, [briefId, getBriefMaterialShortlist]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadMaterials(), loadCategories(), loadSummary()]);
@@ -194,33 +168,6 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     loadSummary();
   }, [loadCategories, loadSummary]);
 
-  useEffect(() => {
-    const loadBriefContext = async () => {
-      if (!briefId) {
-        setBriefContext(null);
-        setShortlistItems([]);
-        return;
-      }
-
-      setShortlistLoading(true);
-      setShortlistError('');
-      try {
-        const [briefs, shortlist] = await Promise.all([
-          getBriefs(),
-          getBriefMaterialShortlist(briefId),
-        ]);
-        setBriefContext(briefs.find((item) => item.id === briefId) || null);
-        setShortlistItems(shortlist);
-      } catch (error) {
-        setShortlistError(error.message || 'Shortlist workspace could not be loaded.');
-        toast.error('Failed to load shortlist workspace');
-      } finally {
-        setShortlistLoading(false);
-      }
-    };
-
-    loadBriefContext();
-  }, [briefId, getBriefMaterialShortlist, getBriefs]);
 
   useEffect(() => {
     const loadRemapMaterials = async () => {
@@ -420,69 +367,18 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     setGuidanceEditorOpen(true);
   }, [getMaterialGuidanceDetails]);
 
-  const handleSaveSelectionToShortlist = useCallback(async () => {
-    if (!briefId || !selectedMaterials.length) {
-      return;
-    }
-
-    try {
-      await upsertBriefMaterialShortlist(
-        briefId,
-        selectedMaterials.map((material) => ({
-          raw_material_id: material.id,
-          role: 'candidate',
-        }))
-      );
-      toast.success('Materials added to shortlist');
-      await refreshShortlist();
-    } catch (error) {
-      toast.error(error.message || 'Failed to save shortlist');
-    }
-  }, [briefId, refreshShortlist, selectedMaterials, upsertBriefMaterialShortlist]);
-
-  const handleRemoveShortlistItem = useCallback(async (itemId) => {
-    try {
-      await deleteBriefMaterialShortlistItem(itemId);
-      toast.success('Removed from shortlist');
-      await refreshShortlist();
-    } catch (error) {
-      toast.error(error.message || 'Failed to remove shortlist item');
-    }
-  }, [deleteBriefMaterialShortlistItem, refreshShortlist]);
-
-  const handleUpdateShortlistRole = useCallback(async (itemId, role) => {
-    const shortlistItem = shortlistItems.find((item) => item.id === itemId);
-    if (!briefId || !shortlistItem) {
-      return;
-    }
-
-    try {
-      await upsertBriefMaterialShortlist(briefId, [{
-        raw_material_id: shortlistItem.raw_material_id,
-        role,
-        note: shortlistItem.note || null,
-      }]);
-      toast.success('Shortlist role updated');
-      await refreshShortlist();
-    } catch (error) {
-      toast.error(error.message || 'Failed to update shortlist role');
-    }
-  }, [briefId, refreshShortlist, shortlistItems, upsertBriefMaterialShortlist]);
 
   const openFormulaWizard = useCallback((materialIds) => {
     const uniqueIds = [...new Set((materialIds || []).filter(Boolean))];
     if (!uniqueIds.length) {
-      toast.error('Select or shortlist materials first');
+      toast.error('Select materials first');
       return;
     }
 
     const nextSearch = new URLSearchParams();
-    if (briefId) {
-      nextSearch.set('briefId', briefId);
-    }
     nextSearch.set('materialIds', uniqueIds.join(','));
     navigate(`/formulas/new?${nextSearch.toString()}`);
-  }, [briefId, navigate]);
+  }, [navigate]);
 
   const confirmDelete = useCallback(async () => {
     const materialsToDelete = selectedMaterial ? [selectedMaterial] : selectedMaterials;
@@ -594,10 +490,6 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     summaryLoading,
     loadError,
     summaryError,
-    shortlistError,
-    briefContext,
-    shortlistItems,
-    shortlistLoading,
     matchedReferenceCount,
     ifraReferenceCount,
     searchTerm,
@@ -647,9 +539,6 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     handleToggleAllMaterials,
     handleBulkDelete,
     clearSelection,
-    handleSaveSelectionToShortlist,
-    handleRemoveShortlistItem,
-    handleUpdateShortlistRole,
     openFormulaWizard,
     confirmDelete,
     getMaterialGuidanceDetails,
@@ -658,12 +547,10 @@ export const useRawMaterialsPage = ({ briefId, navigate }) => {
     handleFilterChange,
     handleClearFilters,
     hasActiveFilters,
-    shortlistRoles,
     loadMaterials,
     loadSummary,
     loadCategories,
     refreshAll,
-    refreshShortlist,
     refreshReferenceStatusMap,
     fetchMaterials,
   };

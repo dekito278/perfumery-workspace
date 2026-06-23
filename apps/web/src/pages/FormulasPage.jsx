@@ -3,13 +3,11 @@ import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FileUp, ClipboardList, Pencil, Trash2 } from 'lucide-react';
+import { RefreshCw, Home, Plus, Beaker, Eye, Copy, FileUp, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
-import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import SearchBar from '@/components/SearchBar.jsx';
@@ -31,9 +29,7 @@ const FormulasPage = () => {
   const location = useLocation();
   const { getFormulas, duplicateFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
-  const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
-  const { getBriefMaterialShortlistsByBriefIds } = useBriefMaterialShortlists();
   const [formulas, setFormulas] = useState([]);
   const [formulaMetrics, setFormulaMetrics] = useState({});
   const [pipelineByFormulaId, setPipelineByFormulaId] = useState({});
@@ -55,8 +51,7 @@ const FormulasPage = () => {
       const data = await getFormulas();
       setFormulas(data);
 
-      const [briefs, validationLogs, metricEntries] = await Promise.all([
-        getBriefs(),
+      const [validationLogs, metricEntries] = await Promise.all([
         getValidationLogs(),
         Promise.all(
           data.map(async (formula) => {
@@ -74,19 +69,6 @@ const FormulasPage = () => {
 
       setFormulaMetrics(Object.fromEntries(metricEntries));
 
-      const briefsByFormulaId = new Map();
-      briefs.forEach((brief) => {
-        if (!brief.formula_id) {
-          return;
-        }
-
-        const current = briefsByFormulaId.get(brief.formula_id) || [];
-        current.push(brief);
-        briefsByFormulaId.set(brief.formula_id, current);
-      });
-
-      const shortlistByBriefId = await getBriefMaterialShortlistsByBriefIds(briefs.map((brief) => brief.id));
-
       const validationCountsByFormulaId = validationLogs.reduce((accumulator, log) => {
         const current = accumulator.get(log.formula_id) || { total: 0, actionNeeded: 0 };
         current.total += 1;
@@ -99,16 +81,9 @@ const FormulasPage = () => {
 
       const nextPipelineByFormulaId = {};
       data.forEach((formula) => {
-        const linkedBriefs = briefsByFormulaId.get(formula.id) || [];
-        const shortlistCount = linkedBriefs.reduce(
-          (sum, brief) => sum + Number(shortlistByBriefId.get(brief.id)?.length || 0),
-          0
-        );
         const validationSummary = validationCountsByFormulaId.get(formula.id) || { total: 0, actionNeeded: 0 };
 
         nextPipelineByFormulaId[formula.id] = {
-          briefCount: linkedBriefs.length,
-          shortlistCount,
           validationCount: validationSummary.total,
           actionNeededCount: validationSummary.actionNeeded,
         };
@@ -121,7 +96,7 @@ const FormulasPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getBriefMaterialShortlistsByBriefIds, getBriefs, getFormulaItems, getFormulas, getValidationLogs]);
+  }, [getFormulaItems, getFormulas, getValidationLogs]);
 
   const handleImportSuccess = async (createdFormula) => {
     await loadFormulas();
@@ -263,20 +238,12 @@ const FormulasPage = () => {
       label: 'Pipeline',
       render: (row) => {
         const pipeline = pipelineByFormulaId[row.id] || {
-          briefCount: 0,
-          shortlistCount: 0,
           validationCount: 0,
           actionNeededCount: 0,
         };
 
         return (
           <div className="flex min-w-[250px] flex-wrap gap-1.5">
-            <Badge variant={pipeline.briefCount ? 'secondary' : 'outline'} className="text-[10px]">
-              {pipeline.briefCount ? `Brief ${pipeline.briefCount}` : 'Standalone'}
-            </Badge>
-            <Badge variant={pipeline.shortlistCount ? 'secondary' : 'outline'} className="text-[10px]">
-              Shortlist {pipeline.shortlistCount}
-            </Badge>
             <Badge variant={pipeline.validationCount ? 'secondary' : 'outline'} className="text-[10px]">
               Logs {pipeline.validationCount}
             </Badge>
@@ -348,20 +315,13 @@ const FormulasPage = () => {
 
         <PageHeader
           title="Formulas"
-          description="Buat formula mandiri langsung dari material library, atau mulai dari brief kalau memang perlu project direction dan shortlist."
+          description="Buat formula mandiri langsung dari material library."
           action="New formula"
           actionIcon={Beaker}
           onAction={() => navigate('/formulas/new')}
-          secondaryAction="Start from brief"
-          secondaryActionIcon={ClipboardList}
-          onSecondaryAction={() => navigate('/briefs')}
         />
 
         <div className="mb-6 flex flex-wrap gap-2">
-          <Button variant="outline" className="rounded-xl bg-white/80" onClick={() => navigate('/briefs')}>
-            <ClipboardList className="mr-2 h-4 w-4" />
-            Brief workspace
-          </Button>
           <Button variant="outline" className="rounded-xl bg-white/80" onClick={() => setImportModalOpen(true)}>
             <FileUp className="mr-2 h-4 w-4" />
             Import PDF
@@ -423,7 +383,7 @@ const FormulasPage = () => {
           <StudioLoadingState
             eyebrow="Loading formulas"
             title="Preparing formula library"
-            description="Mengambil formula, metric komposisi, brief link, dan validation log."
+            description="Mengambil formula, metric komposisi, dan validation log."
           />
         ) : loadError && formulas.length === 0 ? (
           <StateBlock
@@ -479,12 +439,6 @@ const FormulasPage = () => {
                       </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-1.5">
-                      <Badge variant={pipeline.briefCount ? 'secondary' : 'outline'} className="text-[10px]">
-                        {pipeline.briefCount ? `Brief ${pipeline.briefCount}` : 'Standalone'}
-                      </Badge>
-                      <Badge variant={pipeline.shortlistCount ? 'secondary' : 'outline'} className="text-[10px]">
-                        Shortlist {pipeline.shortlistCount || 0}
-                      </Badge>
                       <Badge variant={pipeline.validationCount ? 'secondary' : 'outline'} className="text-[10px]">
                         Logs {pipeline.validationCount || 0}
                       </Badge>

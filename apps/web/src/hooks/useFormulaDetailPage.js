@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useBriefProjects } from '@/hooks/useBriefProjects.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
@@ -37,15 +35,10 @@ export const useFormulaDetailPage = (id) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { createFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
-  const { getBriefs } = useBriefs();
-  const { getBriefProjectByBriefId, getBriefProjectStageItems } = useBriefProjects();
   const { getValidationLogs } = useValidationLogs();
   const [formula, setFormula] = useState(null);
   const [items, setItems] = useState([]);
   const [rawMaterialsById, setRawMaterialsById] = useState(new Map());
-  const [linkedBriefs, setLinkedBriefs] = useState([]);
-  const [linkedProject, setLinkedProject] = useState(null);
-  const [linkedProjectStageItems, setLinkedProjectStageItems] = useState([]);
   const [validationLogs, setValidationLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [validationLoading, setValidationLoading] = useState(true);
@@ -54,33 +47,6 @@ export const useFormulaDetailPage = (id) => {
   const [isCreatingPacedRevision, setIsCreatingPacedRevision] = useState(false);
   const pacePriorityMode = normalizePacePriorityMode(searchParams.get(PACE_PRIORITY_QUERY_KEY));
 
-  useEffect(() => {
-    const loadProjectContext = async () => {
-      if (!linkedBriefs.length) {
-        setLinkedProject(null);
-        setLinkedProjectStageItems([]);
-        return;
-      }
-
-      try {
-        const project = await getBriefProjectByBriefId(linkedBriefs[0].id);
-        const stageMap = project?.id ? await getBriefProjectStageItems(project.id) : new Map();
-        const selectedItems = project?.id
-          ? ['top', 'middle', 'base']
-              .flatMap((stage) => stageMap.get(stage) || [])
-              .filter((item) => item.selection_state === 'selected' || item.selection_state === 'manual')
-          : [];
-        setLinkedProject(project);
-        setLinkedProjectStageItems(selectedItems);
-      } catch (error) {
-        console.error('Failed to load linked project context:', error);
-        setLinkedProject(null);
-        setLinkedProjectStageItems([]);
-      }
-    };
-
-    loadProjectContext();
-  }, [getBriefProjectByBriefId, getBriefProjectStageItems, linkedBriefs]);
 
   const loadFormulaDetails = useCallback(async () => {
     setLoading(true);
@@ -135,15 +101,6 @@ export const useFormulaDetailPage = (id) => {
     }
   }, [getValidationLogs, id]);
 
-  const loadLinkedBriefs = useCallback(async () => {
-    try {
-      const briefs = await getBriefs();
-      setLinkedBriefs(briefs.filter((brief) => brief.formula_id === id));
-    } catch {
-      toast.error('Failed to load linked briefs');
-    }
-  }, [getBriefs, id]);
-
   useEffect(() => {
     loadFormulaDetails();
   }, [loadFormulaDetails]);
@@ -151,10 +108,6 @@ export const useFormulaDetailPage = (id) => {
   useEffect(() => {
     loadFormulaValidationLogs();
   }, [loadFormulaValidationLogs]);
-
-  useEffect(() => {
-    loadLinkedBriefs();
-  }, [loadLinkedBriefs]);
 
   const totalGrams = useMemo(() => calculateTotalAmount(items), [items]);
   const totalPercentage = useMemo(() => items.reduce((sum, item) => sum + (item.percentage || 0), 0), [items]);
@@ -297,9 +250,6 @@ export const useFormulaDetailPage = (id) => {
     itemReferenceLinksMap,
     items,
     legacyAccordCount,
-    linkedBriefs,
-    linkedProject,
-    linkedProjectStageItems,
     loading,
     location,
     maxUseAdvisoryCount,

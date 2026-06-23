@@ -41,9 +41,6 @@ const FormulaDetailPage = () => {
     itemReferenceLinksMap,
     items,
     legacyAccordCount,
-    linkedBriefs,
-    linkedProject,
-    linkedProjectStageItems,
     loading,
     maxUseAdvisoryCount,
     navigate,
@@ -151,9 +148,6 @@ const FormulaDetailPage = () => {
                 variant="outline"
                 onClick={() => {
                   const nextSearchParams = new URLSearchParams();
-                  if (linkedBriefs[0]) {
-                    nextSearchParams.set('briefId', linkedBriefs[0].id);
-                  }
                   nextSearchParams.set(PACE_PRIORITY_QUERY_KEY, pacePriorityMode);
                   navigate(`/formulas/${id}/edit?${nextSearchParams.toString()}`);
                 }}
@@ -248,78 +242,6 @@ const FormulaDetailPage = () => {
             </DetailSection>
           ) : null}
 
-          <DetailSection title={linkedBriefs.length ? 'Brief context' : 'Standalone formula'}>
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm text-muted-foreground">
-                  {linkedBriefs.length
-                    ? 'Brief memberi arah sebelum evaluasi. Link formula ini ke brief supaya revision notes tidak kehilangan tujuan awal.'
-                    : 'Formula ini berdiri sendiri tanpa brief. Anda tetap bisa edit komposisi, buat PACE revision, dan lanjut validasi langsung dari formula.'}
-                </div>
-                <Button variant="outline" className="rounded-xl" onClick={() => navigate(`/briefs?formulaId=${id}`)}>
-                  {linkedBriefs.length ? 'Open brief workspace' : 'Create related brief'}
-                </Button>
-              </div>
-
-              {linkedBriefs.length ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {linkedBriefs.map((brief) => (
-                    <div key={brief.id} className="rounded-xl border bg-card p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-semibold">{brief.title}</div>
-                        <Badge variant="outline" className="capitalize text-[10px]">
-                          {brief.status || 'draft'}
-                        </Badge>
-                      </div>
-                      {brief.mood_story ? (
-                        <p className="mt-3 text-sm text-muted-foreground">{brief.mood_story}</p>
-                      ) : null}
-                      {brief.performance_target ? (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Performance: {brief.performance_target}
-                        </p>
-                      ) : null}
-                      <div className="mt-3 text-xs text-muted-foreground">
-                        Updated {formatDate(brief.updated || brief.created)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-                  No brief is linked. This formula can stay standalone, or you can create a related brief later for project direction.
-                </div>
-              )}
-
-              {linkedProject ? (
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-semibold">Project stage summary</div>
-                    <Badge variant="outline" className="capitalize text-[10px]">
-                      {linkedProject.current_stage || 'top'}
-                    </Badge>
-                  </div>
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {linkedProjectStageItems.length
-                      ? `${linkedProjectStageItems.length} project stage materials shaped this formula before adjustment.`
-                      : 'This brief project does not have selected stage materials yet.'}
-                  </div>
-                  {linkedProjectStageItems.length ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {['top', 'middle', 'base'].map((stage) => {
-                        const stageCount = linkedProjectStageItems.filter((item) => item.stage === stage).length;
-                        return (
-                          <Badge key={stage} variant="secondary" className="capitalize text-[10px]">
-                            {stage} {stageCount}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </DetailSection>
 
           <DetailSection title="Journal links">
             <div className="space-y-4">

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, ClipboardList, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
+import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -10,13 +10,13 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import SummaryMetricCardMobile from '@/components/mobile/SummaryMetricCardMobile.jsx';
 import ActivityCardMobile from '@/components/mobile/ActivityCardMobile.jsx';
 import FormulaCardMobile from '@/components/mobile/FormulaCardMobile.jsx';
-import BriefCardMobile from '@/components/mobile/BriefCardMobile.jsx';
+
 import DeleteConfirmationDialog from '@/components/mobile-ui/DeleteConfirmationDialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
+
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { useOrders } from '@/hooks/useOrders.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -135,16 +135,13 @@ const MobileDashboardPage = () => {
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary } = useRawMaterials();
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
-  const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
   const { orders } = useOrders();
   const catalogProducts = useCatalogProducts();
   const [materials, setMaterials] = useState([]);
   const [formulas, setFormulas] = useState([]);
-  const [briefs, setBriefs] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loadedSections, setLoadedSections] = useState({
-    briefs: false,
     formulas: false,
     logs: false,
     materials: false,
@@ -157,39 +154,31 @@ const MobileDashboardPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState('');
   const [productMenuOpen, setProductMenuOpen] = useState(false);
-  const dataSnapshotRef = useRef({ briefs: [], formulas: [], logs: [], materials: [] });
+  const dataSnapshotRef = useRef({ formulas: [], logs: [], materials: [] });
 
   useEffect(() => {
-    dataSnapshotRef.current = { briefs, formulas, logs, materials };
-  }, [briefs, formulas, logs, materials]);
+    dataSnapshotRef.current = { formulas, logs, materials };
+  }, [formulas, logs, materials]);
 
   const loadData = useCallback(async (isActive = () => true) => {
     const snapshot = dataSnapshotRef.current;
     setSyncing(true);
-    if (!snapshot.formulas.length && !snapshot.briefs.length) {
+    if (!snapshot.formulas.length) {
       setLoading(true);
     }
     try {
-      const [formulaRows, briefRows] = await Promise.all([
+      const [formulaRows] = await Promise.all([
         runWithFallback(getFormulas, 'Formulas', snapshot.formulas, 3000),
-        runWithFallback(getBriefs, 'Briefs', snapshot.briefs, 3000),
       ]);
 
       if (!isActive()) return;
-      const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
-        if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
-        return map;
-      }, new Map());
       setFormulas(formulaRows || []);
-      setBriefs(briefRows || []);
       setLoadedSections((current) => ({
         ...current,
-        briefs: true,
         formulas: true,
       }));
       setMetrics({});
       setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
-        briefCount: briefsByFormulaId.get(formula.id) || 0,
         validationCount: 0,
         actionNeededCount: 0,
       }])));
@@ -218,7 +207,6 @@ const MobileDashboardPage = () => {
         materials: true,
       }));
       setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
-        briefCount: briefsByFormulaId.get(formula.id) || 0,
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
     } catch (error) {
@@ -227,7 +215,7 @@ const MobileDashboardPage = () => {
       if (isActive()) setLoading(false);
       if (isActive()) setSyncing(false);
     }
-  }, [fetchMaterialsSummary, getBriefs, getFormulas, getValidationLogs]);
+  }, [fetchMaterialsSummary, getFormulas, getValidationLogs]);
 
   useEffect(() => {
     let active = true;
@@ -235,9 +223,7 @@ const MobileDashboardPage = () => {
     return () => { active = false; };
   }, [loadData]);
 
-  const activeBriefs = useMemo(() => briefs.filter((brief) => ['draft', 'active'].includes(brief.status || 'draft')), [briefs]);
   const draftFormulas = useMemo(() => sortByUpdated(formulas.filter((formula) => (formula.status || 'draft') === 'draft')).slice(0, MOBILE_ACTIVITY_LIMIT), [formulas]);
-  const recentBriefs = useMemo(() => sortByUpdated(briefs).slice(0, MOBILE_ACTIVITY_LIMIT), [briefs]);
   const formulasById = useMemo(() => new Map(formulas.map((formula) => [formula.id, formula])), [formulas]);
   const actionNeededLogs = useMemo(() => logs.filter((log) => log.status === 'action_needed'), [logs]);
   const missingGuidanceMaterials = useMemo(() => materials.filter((material) => !hasGuidanceCoverage(material)), [materials]);
@@ -249,7 +235,6 @@ const MobileDashboardPage = () => {
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
     ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula updated', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
-    ...briefs.map((brief) => ({ id: `brief-${brief.id}`, title: brief.title, meta: 'Brief updated', date: brief.updated || brief.created, path: `/mobile/briefs/${brief.id}` })),
     ...logs.map((log) => ({
       id: `validation-${log.id}`,
       title: formulasById.get(log.formula_id)?.name || 'Validation log',
@@ -257,7 +242,7 @@ const MobileDashboardPage = () => {
       date: log.tested_at || log.updated || log.created,
       path: log.formula_id ? `/mobile/formulas/${log.formula_id}` : '/mobile/validation',
     })),
-  ]).slice(0, MOBILE_ACTIVITY_LIMIT), [briefs, formulas, formulasById, logs]);
+  ]).slice(0, MOBILE_ACTIVITY_LIMIT), [formulas, formulasById, logs]);
 
   const handleDuplicate = async (formula) => {
     setDuplicatingId(formula.id);
@@ -299,10 +284,10 @@ const MobileDashboardPage = () => {
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase text-amber-700">Workspace</div>
               <h1 className="mt-1 text-2xl font-bold leading-tight text-[#142116]">
-                {syncing && !formulas.length && !briefs.length ? 'Syncing studio' : attentionCount ? 'Ada yang perlu dicek' : 'Studio ready'}
+                {syncing && !formulas.length ? 'Syncing studio' : attentionCount ? 'Ada yang perlu dicek' : 'Studio ready'}
               </h1>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#68736a]">
-                {getDisplayName(currentUser)} / {syncing ? 'data sedang disegarkan' : `${activeBriefs.length} brief aktif, ${draftFormulas.length} draft formula`}
+                {getDisplayName(currentUser)} / {syncing ? 'data sedang disegarkan' : `${draftFormulas.length} draft formula`}
               </p>
             </div>
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-amber-700 shadow-sm">
@@ -364,7 +349,6 @@ const MobileDashboardPage = () => {
           </section>
 
             <section className="grid grid-cols-2 gap-3">
-              <SummaryMetricCardMobile icon={ClipboardList} label="Active Briefs" value={loadedSections.briefs ? activeBriefs.length : '-'} to="/mobile/briefs" />
               <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={loadedSections.formulas ? formulas.length : '-'} tone="blue" to="/mobile/formulas" />
               <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={loadedSections.materials ? materials.length : '-'} tone="green" to="/mobile/raw-materials" />
               <SummaryMetricCardMobile icon={ClipboardCheck} label="Validations" value={loadedSections.logs ? logs.length : '-'} tone="rose" to="/mobile/validation" />
@@ -395,7 +379,6 @@ const MobileDashboardPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowTile icon={Beaker} label="Formula" helper="Create or revise" tone="blue" to="/mobile/formulas" />
-                <WorkflowTile icon={ClipboardList} label="Briefs" helper="Project direction" tone="amber" to="/mobile/briefs" />
                 <WorkflowTile icon={Calculator} label="Batch" helper="Scale grams" to="/mobile/batches" />
                 <WorkflowTile icon={Factory} label="Costing" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
                 <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
@@ -411,7 +394,6 @@ const MobileDashboardPage = () => {
               </div>
               <div className="mt-4 grid gap-3">
                 {[
-                  ['Active briefs', activeBriefs.length, Math.max(briefs.length, 1)],
                   ['Draft formulas', draftFormulas.length, Math.max(formulas.length, 1)],
                   ['Action-needed validation', actionNeededLogs.length, Math.max(logs.length, 1)],
                 ].map(([label, value, total]) => (
@@ -464,13 +446,6 @@ const MobileDashboardPage = () => {
                   onEdit={() => navigate(`/mobile/formulas/${formula.id}/edit`, { state: getMobileFromState(location) })}
                   onDelete={() => setDeleteTarget(formula)}
                 />
-              ))}
-            </section>
-
-            <section className="space-y-3">
-              <div className="flex items-center justify-between"><h2 className="text-base font-bold">Brief updates</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/briefs')}>View all</Button></div>
-              {recentBriefs.slice(0, 2).map((brief) => (
-                <BriefCardMobile key={brief.id} brief={brief} linkedFormula={formulasById.get(brief.formula_id)} onOpen={() => navigate(`/mobile/briefs/${brief.id}`, { state: getMobileFromState(location) })} />
               ))}
             </section>
 

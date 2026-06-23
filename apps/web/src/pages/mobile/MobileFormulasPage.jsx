@@ -16,7 +16,7 @@ import FormulaCardMobile from '@/components/mobile/FormulaCardMobile.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useFormulas } from '@/hooks/useFormulas.js';
 import { useFormulaItems } from '@/hooks/useFormulaItems.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
+
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import { getReferenceMatchStatusMap } from '@/services/materialReferenceService.js';
 import { getRawMaterialOptions } from '@/services/rawMaterialsService.js';
@@ -39,7 +39,6 @@ const statusOptions = [
   { value: 'published_product', label: 'Published' },
   { value: 'validated', label: 'Valid' },
   { value: 'standalone', label: 'Solo' },
-  { value: 'linked', label: 'Brief' },
 ];
 
 const MobileFormulasPage = () => {
@@ -48,7 +47,6 @@ const MobileFormulasPage = () => {
   const [searchParams] = useSearchParams();
   const { getFormulas, duplicateFormula, deleteFormula } = useFormulas();
   const { getFormulaItems } = useFormulaItems();
-  const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
   const [formulas, setFormulas] = useState([]);
   const [metrics, setMetrics] = useState({});
@@ -70,14 +68,9 @@ const MobileFormulasPage = () => {
 
   const loadPipeline = useCallback(async (formulaRows = []) => {
     try {
-      const [briefRows, logRows] = await Promise.all([
-        runWithTimeout(getBriefs(), [], 4500),
+      const [logRows] = await Promise.all([
         runWithTimeout(getValidationLogs(), [], 4500),
       ]);
-      const briefsByFormulaId = (briefRows || []).reduce((map, brief) => {
-        if (brief.formula_id) map.set(brief.formula_id, (map.get(brief.formula_id) || 0) + 1);
-        return map;
-      }, new Map());
       const logsByFormulaId = (logRows || []).reduce((map, log) => {
         if (!log.formula_id) return map;
         const current = map.get(log.formula_id) || { validationCount: 0, actionNeededCount: 0 };
@@ -87,13 +80,12 @@ const MobileFormulasPage = () => {
         return map;
       }, new Map());
       setPipeline(Object.fromEntries((formulaRows || []).map((formula) => [formula.id, {
-        briefCount: briefsByFormulaId.get(formula.id) || 0,
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
     } catch (error) {
       console.warn('Formula pipeline badges are delayed:', error);
     }
-  }, [getBriefs, getValidationLogs]);
+  }, [getValidationLogs]);
 
   const loadFormulas = useCallback(async () => {
     setLoading(true);
@@ -149,8 +141,7 @@ const MobileFormulasPage = () => {
     const searched = filterByText(formulas, query, ['name', 'code', 'category', 'status']);
     return sortByUpdated(searched).filter((formula) => {
       if (status === 'all') return true;
-      if (status === 'standalone') return !pipeline[formula.id]?.briefCount;
-      if (status === 'linked') return Boolean(pipeline[formula.id]?.briefCount);
+      if (status === 'standalone') return true;
       if (status === 'validated') return Boolean(pipeline[formula.id]?.validationCount);
       return (formula.status || 'draft') === status;
     });

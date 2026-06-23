@@ -1019,21 +1019,6 @@ export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
     });
     const mergedData = buildMergedRawMaterialData(masterRecord, duplicateRecord);
 
-    await moveRowsByRawMaterialId({
-      supabase,
-      table: 'brief_material_shortlists',
-      duplicateId,
-      masterId,
-      conflictColumns: ['brief_id'],
-    });
-
-    await moveRowsByRawMaterialId({
-      supabase,
-      table: 'brief_project_stage_items',
-      duplicateId,
-      masterId,
-      conflictColumns: ['project_id', 'stage'],
-    });
 
     await mergeReferenceLinksIntoMaster({ masterId, duplicateId, supabase });
     await mergeManualReferenceProfilesIntoMaster({ masterId, duplicateId, supabase });

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calculator, ChevronRight, FileUp, FlaskConical, Plus, WandSparkles } from 'lucide-react';
+import { Calculator, ChevronRight, FileUp, FlaskConical, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 
 const actions = [
-  { label: 'New Brief', path: '/mobile/briefs/new', icon: WandSparkles },
   { label: 'New Formula', path: '/mobile/formulas/new', icon: FlaskConical },
   { label: 'Batch Calculator', path: '/mobile/batches', icon: Calculator },
   { label: 'Production Costing', path: '/mobile/production-costing', icon: Calculator },

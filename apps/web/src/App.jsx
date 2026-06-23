@@ -92,13 +92,12 @@ const OrdersPage = lazyRoute(() => import('@/pages/OrdersPage.jsx'));
 const OrderDetailPage = lazyRoute(() => import('@/pages/OrderDetailPage.jsx'));
 const CustomersPage = lazyRoute(() => import('@/pages/CustomersPage.jsx'));
 const ShipmentsPage = lazyRoute(() => import('@/pages/ShipmentsPage.jsx'));
-const BriefsPage = lazyRoute(() => import('@/pages/BriefsPage.jsx'));
+
 const JournalPage = lazyRoute(() => import('@/pages/JournalPage.jsx'));
 const JournalEditorPage = lazyRoute(() => import('@/pages/JournalEditorPage.jsx'));
 const JournalDetailPage = lazyRoute(() => import('@/pages/JournalDetailPage.jsx'));
 const PublicJournalArticlePage = lazyRoute(() => import('@/pages/PublicJournalArticlePage.jsx'));
-const BriefEditorPage = lazyRoute(() => import('@/pages/BriefEditorPage.jsx'));
-const BriefDetailPage = lazyRoute(() => import('@/pages/BriefDetailPage.jsx'));
+
 const RawMaterialsPage = lazyRoute(() => import('@/pages/RawMaterialsPage.jsx'));
 const RawMaterialAuditPage = lazyRoute(() => import('@/pages/RawMaterialAuditPage.jsx'));
 const RawMaterialDetailPage = lazyRoute(() => import('@/pages/RawMaterialDetailPage.jsx'));
@@ -125,9 +124,7 @@ const MobileOrderDetailPage = lazyRoute(() => import('@/pages/mobile/MobileOrder
 const MobileFulfillmentPage = lazyRoute(() => import('@/pages/mobile/MobileFulfillmentPage.jsx'));
 const MobileCustomersPage = lazyRoute(() => import('@/pages/mobile/MobileCustomersPage.jsx'));
 const MobileDashboardPage = lazyRoute(() => import('@/pages/mobile/MobileDashboardPage.jsx'));
-const MobileBriefsPage = lazyRoute(() => import('@/pages/mobile/MobileBriefsPage.jsx'));
-const MobileBriefEditorPage = lazyRoute(() => import('@/pages/mobile/MobileBriefEditorPage.jsx'));
-const MobileBriefDetailPage = lazyRoute(() => import('@/pages/mobile/MobileBriefDetailPage.jsx'));
+
 const MobileJournalPage = lazyRoute(() => import('@/pages/mobile/MobileJournalPage.jsx'));
 const MobileJournalEditorPage = lazyRoute(() => import('@/pages/mobile/MobileJournalEditorPage.jsx'));
 const MobileJournalDetailPage = lazyRoute(() => import('@/pages/mobile/MobileJournalDetailPage.jsx'));
@@ -149,7 +146,7 @@ const desktopProtectedRoutePrefixes = [
   '/studio',
   '/dashboard',
   '/authenticator',
-  '/briefs',
+
   '/raw-materials',
   '/raw-material',
   '/raw-material-audit',
@@ -343,7 +340,7 @@ const mobileDetailPatterns = [
   /^\/mobile\/products\/[^/]+$/,
   /^\/mobile\/articles\/[^/]+$/,
   /^\/mobile\/studio\/orders\/[^/]+$/,
-  /^\/mobile\/briefs\/[^/]+$/,
+
   /^\/mobile\/journal\/[^/]+$/,
   /^\/mobile\/raw-material\/[^/]+$/,
   /^\/mobile\/formulas\/[^/]+$/,
@@ -555,41 +552,6 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
-        <Route path="/mobile/briefs" element={
-          <ProtectedRoute>
-            <MobileBriefsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/mobile/brief" element={
-          <ProtectedRoute>
-            <Navigate to="/mobile/briefs" replace />
-          </ProtectedRoute>
-        } />
-        <Route path="/mobile/drip" element={
-          <ProtectedRoute>
-            <Navigate to="/mobile/briefs" replace />
-          </ProtectedRoute>
-        } />
-        <Route path="/mobile/studio/briefs" element={
-          <ProtectedRoute>
-            <Navigate to="/mobile/briefs" replace />
-          </ProtectedRoute>
-        } />
-        <Route path="/mobile/briefs/new" element={
-          <ProtectedRoute>
-            <MobileBriefEditorPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/mobile/briefs/:id/edit" element={
-          <ProtectedRoute>
-            <MobileBriefEditorPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/mobile/briefs/:id" element={
-          <ProtectedRoute>
-            <MobileBriefDetailPage />
-          </ProtectedRoute>
-        } />
 
         <Route path="/mobile/journal" element={
           <ProtectedRoute>
@@ -789,12 +751,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
-        <Route path="/briefs" element={
-          <ProtectedRoute>
-            <BriefsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/studio/journal" element={
+<Route path="/studio/journal" element={
           <ProtectedRoute>
             <JournalPage />
           </ProtectedRoute>
@@ -827,21 +784,6 @@ function AppRoutes() {
         <Route path="/journal/:id" element={
           <ProtectedRoute>
             <LegacyJournalRedirect />
-          </ProtectedRoute>
-        } />
-        <Route path="/briefs/new" element={
-          <ProtectedRoute>
-            <BriefEditorPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/briefs/:id/edit" element={
-          <ProtectedRoute>
-            <BriefEditorPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/briefs/:id" element={
-          <ProtectedRoute>
-            <BriefDetailPage />
           </ProtectedRoute>
         } />
         

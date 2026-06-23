@@ -1,14 +1,12 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, ClipboardList, FileCheck2, Layers3, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
+import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, FileCheck2, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
-import { useBriefs } from '@/hooks/useBriefs.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
-import { useBriefMaterialShortlists } from '@/hooks/useBriefMaterialShortlists.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useOrders } from '@/hooks/useOrders.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -105,20 +103,16 @@ const DashboardPage = () => {
   const { currentUser } = useAuth();
   const { fetchMaterialsSummary } = useRawMaterials();
   const { getFormulas } = useFormulas();
-  const { getBriefs } = useBriefs();
   const { getValidationLogs } = useValidationLogs();
-  const { getBriefMaterialShortlistsByBriefIds } = useBriefMaterialShortlists();
   const catalogProducts = useCatalogProducts();
   const { orders, summary: orderSummary } = useOrders();
 
   const [materials, setMaterials] = useState([]);
   const [formulas, setFormulas] = useState([]);
-  const [briefs, setBriefs] = useState([]);
   const [validationLogs, setValidationLogs] = useState([]);
   const [orderAuditLogs, setOrderAuditLogs] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [auditFilters, setAuditFilters] = useState({ admin: 'all', event: 'all', query: '' });
-  const [pipelineSummary, setPipelineSummary] = useState({ shortlistCount: 0 });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [healthChecking, setHealthChecking] = useState('');
@@ -135,31 +129,22 @@ const DashboardPage = () => {
       const results = await Promise.allSettled([
         runWithRetry(() => fetchMaterialsSummary()),
         runWithRetry(() => getFormulas()),
-        runWithRetry(() => getBriefs()),
         runWithRetry(() => getValidationLogs()),
         runWithRetry(() => getAllOrderAuditLogs()),
         runWithRetry(() => getVouchers()),
       ]);
 
-      const [materialsResult, formulasResult, briefsResult, validationLogsResult, orderAuditLogsResult, vouchersResult] = results;
-      const loaderLabels = ['materials', 'formulas', 'briefs', 'validation logs', 'order audit logs', 'vouchers'];
+      const [materialsResult, formulasResult, validationLogsResult, orderAuditLogsResult, vouchersResult] = results;
+      const loaderLabels = ['materials', 'formulas', 'validation logs', 'order audit logs', 'vouchers'];
       const failedRequests = results
         .map((result, index) => ({ result, label: loaderLabels[index] }))
         .filter(({ result }) => result.status === 'rejected');
 
       setMaterials(materialsResult.status === 'fulfilled' ? materialsResult.value : []);
       setFormulas(formulasResult.status === 'fulfilled' ? formulasResult.value : []);
-      setBriefs(briefsResult.status === 'fulfilled' ? briefsResult.value : []);
       setValidationLogs(validationLogsResult.status === 'fulfilled' ? validationLogsResult.value : []);
       setOrderAuditLogs(orderAuditLogsResult.status === 'fulfilled' ? orderAuditLogsResult.value : []);
       setVouchers(vouchersResult.status === 'fulfilled' ? vouchersResult.value : []);
-
-      const briefRows = briefsResult.status === 'fulfilled' ? briefsResult.value : [];
-      const shortlistMap = await getBriefMaterialShortlistsByBriefIds(briefRows.map((brief) => brief.id));
-      const shortlistCount = [...shortlistMap.values()].reduce((sum, items) => sum + items.length, 0);
-      setPipelineSummary({
-        shortlistCount,
-      });
 
       if (failedRequests.length) {
         console.error('Dashboard data loaders failed:', failedRequests.map(({ result }) => result.reason));
@@ -180,7 +165,7 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchMaterialsSummary, getBriefMaterialShortlistsByBriefIds, getBriefs, getFormulas, getValidationLogs]);
+  }, [fetchMaterialsSummary, getFormulas, getValidationLogs]);
 
   useEffect(() => {
     loadDashboardData();
@@ -193,10 +178,6 @@ const DashboardPage = () => {
   const formulasInProgress = useMemo(
     () => formulas.filter((formula) => formula.status === 'draft' || formula.status === 'active'),
     [formulas]
-  );
-  const activeBriefs = useMemo(
-    () => briefs.filter((brief) => brief.status === 'draft' || brief.status === 'active'),
-    [briefs]
   );
   const actionNeededLogs = useMemo(
     () => validationLogs.filter((log) => log.status === 'action_needed'),
@@ -423,10 +404,6 @@ const DashboardPage = () => {
     () => [...formulas].sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5),
     [formulas]
   );
-  const recentBriefs = useMemo(
-    () => [...briefs].sort((a, b) => new Date(b.updated || b.created || 0) - new Date(a.updated || a.created || 0)).slice(0, 5),
-    [briefs]
-  );
   const guidanceGapPreview = missingGuidanceMaterials.slice(0, 5);
   const validationPreview = actionNeededLogs.slice(0, 5);
   const formulasById = useMemo(
@@ -439,20 +416,6 @@ const DashboardPage = () => {
     || 'Solivagant';
 
   const summaryCards = [
-    {
-      icon: ClipboardList,
-      label: 'Active briefs',
-      count: activeBriefs.length,
-      color: 'text-violet-600',
-      onClick: () => navigate('/briefs'),
-    },
-    {
-      icon: Layers3,
-      label: 'Shortlist entries',
-      count: pipelineSummary.shortlistCount,
-      color: 'text-amber-600',
-      onClick: () => navigate('/briefs'),
-    },
     {
       icon: Beaker,
       label: 'Formulas needing work',
@@ -482,7 +445,7 @@ const DashboardPage = () => {
         <title>Studio - Solivagant</title>
         <meta
           name="description"
-          content="Track formulation progress, guidance coverage, brief activity, and validation follow-up from one perfumery workspace."
+          content="Track formulation progress, guidance coverage, formula activity, and validation follow-up from one perfumery workspace."
         />
       </Helmet>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -638,7 +601,7 @@ const DashboardPage = () => {
                   </div>
                   <h2 className="mt-4 text-xl font-bold">Formula, material, dan validasi</h2>
                   <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
-                    Area kerja inti perfumery untuk brief, library material, composer, costing, dan validation follow-up.
+                    Area kerja inti perfumery untuk library material, composer, costing, dan validation follow-up.
                   </p>
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] px-4 py-3 text-right">
@@ -646,7 +609,7 @@ const DashboardPage = () => {
                   <div className="text-2xl font-bold">{actionNeededLogs.length}</div>
                 </div>
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/formulas')}>
                   <Beaker className="h-4 w-4" />
                   Formulas
@@ -654,10 +617,6 @@ const DashboardPage = () => {
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/raw-materials')}>
                   <Package className="h-4 w-4" />
                   Materials
-                </Button>
-                <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/briefs')}>
-                  <ClipboardList className="h-4 w-4" />
-                  Briefs
                 </Button>
                 <Button variant="outline" className="h-12 rounded-2xl justify-start gap-2 bg-white" onClick={() => navigate('/validation')}>
                   <NotebookPen className="h-4 w-4" />
@@ -897,32 +856,6 @@ const DashboardPage = () => {
 
         <DashboardSection title="In progress">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <RecentActivityList
-              title="Brief terbaru"
-              items={recentBriefs}
-              columns={[
-                {
-                  key: 'title',
-                  render: (item) => (
-                    <span className="text-sm font-medium truncate">{item.title}</span>
-                  ),
-                  className: 'flex-1',
-                },
-                {
-                  key: 'status',
-                  render: (item) => (
-                    <span className="text-xs text-muted-foreground capitalize">{item.status || 'draft'}</span>
-                  ),
-                  className: 'text-right',
-                },
-              ]}
-              emptyMessage="No briefs yet"
-              onRowClick={(item) => navigate(`/briefs/${item.id}`, {
-                state: { from: `${location.pathname}${location.search}` },
-              })}
-              isLoading={loading}
-            />
-
             <RecentActivityList
               title="Formula terbaru"
               items={recentFormulas}
