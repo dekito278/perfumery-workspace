@@ -1,73 +1,63 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, SlidersHorizontal, ShoppingBag } from 'lucide-react';
-import { toast } from 'sonner';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
-import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-
-const getDescription = (product) => product.subtitle || product.description || product.notes || product.mood || 'A quiet Solivagant composition for skin, atmosphere, and ritual.';
 
 const CatalogPage = () => {
   const allProducts = useCatalogProducts();
-  const { addItem, summary } = useCart();
-  const [lastAddedSlug, setLastAddedSlug] = useState('');
-  const [activeCategory, setActiveCategory] = useState('Semua');
+  const [searchParams] = useSearchParams();
+  const initialFamily = searchParams.get('family') || '';
+  const [activeCategory, setActiveCategory] = useState(initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All');
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(12);
+  const revealRef = useScrollReveal();
+
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
-    return getPublicFragranceCatalog(visible).slice(0, 16);
+    return getPublicFragranceCatalog(visible);
   }, [allProducts]);
+
   const catalogCategories = useMemo(() => [
-    'Semua',
-    ...Array.from(new Set(products.map((product) => product.publicCategory).filter(Boolean))),
+    'All',
+    ...Array.from(new Set(products.map((p) => p.publicCategory || p.category).filter(Boolean))),
   ], [products]);
+
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return products.filter((product) => {
-      const matchesCategory = activeCategory === 'Semua' || product.publicCategory === activeCategory;
+      const cat = product.publicCategory || product.category || '';
+      const matchesCategory = activeCategory === 'All' || cat === activeCategory;
+      if (!matchesCategory) return false;
+      if (!query) return true;
       const searchable = [
-        product.name,
-        product.subtitle,
-        product.description,
-        product.notes,
-        product.mood,
-        product.character,
-        product.category,
-        product.publicCategory,
-        product.concentration,
-        ...(product.topNotes || []),
-        ...(product.heartNotes || []),
-        ...(product.baseNotes || []),
+        product.name, product.subtitle, product.description,
+        product.notes, product.mood, product.category,
+        ...(product.topNotes || []), ...(product.heartNotes || []), ...(product.baseNotes || []),
       ].join(' ').toLowerCase();
-      return matchesCategory && (!query || searchable.includes(query));
+      return searchable.includes(query);
     });
   }, [activeCategory, products, searchTerm]);
+
   const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
 
-  useEffect(() => {
-    setVisibleCount(8);
-  }, [activeCategory, searchTerm]);
+  useEffect(() => { setVisibleCount(12); }, [activeCategory, searchTerm]);
 
-  const handleAddToCart = (product) => {
-    addItem(product, 1);
-    setLastAddedSlug(product.slug);
-    toast.success(`${product.name} masuk ke keranjang`, {
-      description: 'Cart desktop sudah diperbarui. Kamu bisa lanjut belanja atau cek keranjang.',
-      action: {
-        label: 'Lihat cart',
-        onClick: () => { window.location.href = '/cart'; },
-      },
-    });
-    window.setTimeout(() => {
-      setLastAddedSlug((current) => (current === product.slug ? '' : current));
-    }, 1800);
-  };
+  // Sync family param from homepage mood cards
+  useEffect(() => {
+    if (initialFamily) {
+      const capitalized = initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1);
+      if (catalogCategories.includes(capitalized)) {
+        setActiveCategory(capitalized);
+      }
+    }
+  }, [initialFamily, catalogCategories]);
 
   return (
     <>
@@ -75,118 +65,83 @@ const CatalogPage = () => {
         <title>Fragrance Collection - SOLIVAGANT</title>
         <meta name="description" content="Explore the SOLIVAGANT fragrance collection by perfumer Dekito." />
         <meta property="og:title" content="Fragrance Collection - SOLIVAGANT" />
-        <meta property="og:description" content="Public SOLIVAGANT fragrance objects with notes pyramid, concentration, sizes, price, and atelier stories." />
+        <meta property="og:description" content="Public SOLIVAGANT fragrance objects with notes, sizes, and pricing." />
       </Helmet>
 
-      <main className="solivagant-editorial-home">
+      <main className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
 
-        <section className="editorial-page-hero editorial-page-hero--compact">
-          <p className="editorial-eyebrow">FRAGRANCE COLLECTION</p>
-          <h1>Fragrance Collection</h1>
-          <p>
-            Limited perfume objects and quiet daily signatures composed from raw materials, memory, and the tactile rhythm of the atelier.
-          </p>
+        <section className="catalog-hero">
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">FRAGRANCE COLLECTION</p>
+          <h1 className="hero-animate-text hero-animate-text--d2">Collection</h1>
+          <p className="hero-animate-text hero-animate-text--d3">Limited perfume objects and quiet daily signatures from the atelier.</p>
         </section>
 
-        <section className="editorial-section editorial-section--compact">
-          <div className="editorial-catalog-toolbar" aria-label="Catalog filters">
-            <div className="editorial-category-filter" role="list" aria-label="Product categories">
+        <section className="catalog-section">
+          {/* Toolbar: category pills + search */}
+          <div className="catalog-toolbar">
+            <div className="catalog-pills" role="list" aria-label="Filter by category">
               {catalogCategories.map((category) => (
                 <button
                   key={category}
                   type="button"
-                  className={category === activeCategory ? 'is-active' : ''}
+                  className={`catalog-pill ${category === activeCategory ? 'is-active' : ''}`}
                   onClick={() => setActiveCategory(category)}
                 >
                   {category}
                 </button>
               ))}
             </div>
-            <label className="editorial-search-field">
-              <span>Cari notes, mood, produk</span>
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Cari notes, mood, produk"
-              />
-            </label>
-            <button type="button" className="editorial-filter-button" aria-label="Apply catalog filters">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filter
-            </button>
-            <Link to="/cart" className="editorial-cart-status">
-              <ShoppingBag className="h-4 w-4" />
-              {summary.quantity ? `${summary.quantity} item di cart` : 'Cart kosong'}
-            </Link>
+            <input
+              type="search"
+              className="catalog-search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search notes, mood, name..."
+            />
           </div>
-          <div className="editorial-product-grid">
-            {visibleProducts.map((product, index) => (
-              <article key={product.id || product.slug} className="editorial-product-card">
-                <div className="editorial-product-card__media">
-                  <ProductVisual product={product} className="editorial-product-card__visual" imageFit="cover" priority={index < 2} />
-                  <span className="editorial-product-badge">{product.badge}</span>
-                </div>
-                <div className="editorial-product-card__body">
-                  <span>{product.category || 'Atelier'}</span>
-                  <h3>{product.name}</h3>
-                  <p>{getDescription(product)}</p>
-                  <div className="editorial-product-pills">
-                    <span>{product.publicStatus || product.availability}</span>
-                    <span>{product.sizeVariants?.[0]?.size || product.size || '30 ml'}</span>
+
+          {/* Image-first product grid */}
+          {filteredProducts.length ? (
+            <div className="catalog-grid" data-reveal data-stagger-children>
+              {visibleProducts.map((product, index) => (
+                <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="catalog-card card-lift img-hover-zoom">
+                  <ProductVisual
+                    product={product}
+                    className="catalog-card__visual"
+                    imageFit="cover"
+                    priority={index < 4}
+                    label={false}
+                  />
+                  <div className="catalog-card__info">
+                    <span className="catalog-card__category">{product.category || 'Atelier'}</span>
+                    <h3>{product.name}</h3>
+                    <span className="catalog-card__price">{product.price || `Rp ${(product.priceNumber || 0).toLocaleString('id-ID')}`}</span>
                   </div>
-                  <dl>
-                    <div>
-                      <dt>Notes</dt>
-                      <dd>{product.notes || 'Orris, woods, clean musk'}</dd>
-                    </div>
-                    <div>
-                      <dt>Size / price</dt>
-                      <dd>{product.sizeVariants?.[0]?.size || product.size || '30 ml'} / {product.price || 'Rp 289.000'}</dd>
-                    </div>
-                  </dl>
-                  <div className="editorial-product-card__actions">
-                    <Link to={`/catalog/${product.slug}`}>View Details</Link>
-                    <button
-                      type="button"
-                      className={lastAddedSlug === product.slug ? 'is-added' : ''}
-                      onClick={() => handleAddToCart(product)}
-                    >
-                      {lastAddedSlug === product.slug ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4" />
-                          Added
-                        </>
-                      ) : 'Add to Cart'}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-          {visibleProducts.length < filteredProducts.length ? (
-            <div className="editorial-load-more">
-              <button type="button" className="editorial-button" onClick={() => setVisibleCount((current) => current + 8)}>
-                Tampilkan lebih banyak
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              <span>{visibleProducts.length} dari {filteredProducts.length} produk</span>
+                </Link>
+              ))}
             </div>
-          ) : null}
-          {!filteredProducts.length ? (
-            <div className="editorial-empty-state">
+          ) : (
+            <div className="catalog-empty">
               <p className="editorial-eyebrow">NO MATCH</p>
               <h2>No fragrance matches this filter.</h2>
-              <button type="button" className="editorial-button" onClick={() => { setActiveCategory('Semua'); setSearchTerm(''); }}>Reset Catalog</button>
+              <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
+                Reset Catalog
+              </button>
+            </div>
+          )}
+
+          {visibleProducts.length < filteredProducts.length ? (
+            <div className="catalog-load-more">
+              <button type="button" className="editorial-button" onClick={() => setVisibleCount((c) => c + 12)}>
+                Show more <ArrowRight className="h-4 w-4" />
+              </button>
+              <span>{visibleProducts.length} of {filteredProducts.length}</span>
             </div>
           ) : null}
         </section>
 
-        <footer className="editorial-footer">
-          <span>SOLIVAGANT by Dekito</span>
-          <Link to="/bespoke">Book Bespoke Consultation <ArrowRight className="h-4 w-4" /></Link>
-        </footer>
+        <StorefrontFooter />
       </main>
     </>
   );

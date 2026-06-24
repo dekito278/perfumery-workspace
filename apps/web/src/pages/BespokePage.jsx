@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { BadgePercent, Check, CheckCircle2, ChevronDown, CreditCard, Search, X } from 'lucide-react';
+import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { bespokeOccasionOptions } from '@/data/storefront.js';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
@@ -139,6 +141,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 };
 
 const BespokePage = () => {
+  const revealRef = useScrollReveal();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
@@ -625,26 +628,25 @@ const BespokePage = () => {
         <meta name="description" content="Request a SOLIVAGANT custom perfume consultation through aroma, bottle choices, delivery data, and payment." />
       </Helmet>
 
-      <main className="solivagant-editorial-home">
+      <main className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
 
-        <section className="editorial-page-hero editorial-page-hero--split editorial-page-hero--compact">
-          <div>
-            <p className="editorial-eyebrow">BESPOKE PERFUME CONSULTATION</p>
-            <h1>Bespoke Perfume Consultation</h1>
-            <p className="editorial-product-detail__price">Request parfum custom / Pre-order 7-14 hari</p>
-            <p>Ceritakan arah aroma, pilih detail botol, lalu buat request. Setelah submit, kamu akan diarahkan ke instruksi pembayaran.</p>
+        <section className="bespoke-hero">
+          <div className="bespoke-hero__copy">
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">BESPOKE CONSULTATION</p>
+            <h1 className="hero-animate-text hero-animate-text--d2">Your Scent, Composed</h1>
+            <p className="hero-animate-text hero-animate-text--d3">Describe your aroma direction, choose bottle details, and submit your request. Custom perfumes are crafted within 7–14 days.</p>
           </div>
-          <ol className="editorial-steps editorial-steps--panel">
+          <ol className="bespoke-hero__steps hero-animate-fade">
             {steps.map((step, index) => (
-              <li key={step}><Check className="h-4 w-4" />{index + 1}. {step}</li>
+              <li key={step}><span>{index + 1}</span>{step}</li>
             ))}
           </ol>
         </section>
 
-        <section className="editorial-section editorial-bespoke-flow editorial-section--compact">
+        <section className="editorial-section editorial-bespoke-flow editorial-section--compact" data-reveal>
           <form className="editorial-form editorial-form--bespoke" onSubmit={submitRequest}>
-            <div className="editorial-bespoke-stage">
+            <div className="editorial-bespoke-stage" data-reveal>
               <div className="editorial-bespoke-stage__head">
                 <p className="editorial-eyebrow">DESIGN FIRST</p>
                 <h2>Mulai dari aroma dan bentuk botol.</h2>
@@ -688,7 +690,7 @@ const BespokePage = () => {
                 </fieldset>
               </div>
             </div>
-            <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact">
+            <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact" data-reveal>
               <div className="editorial-bespoke-choice-panel__head">
                 <p className="editorial-eyebrow">VISUAL CUSTOMIZER</p>
                 <h3>Pilih kategori, lalu tentukan visualnya.</h3>
@@ -739,7 +741,7 @@ const BespokePage = () => {
               </div>
             </div>
 
-            <div className="editorial-bespoke-next">
+            <div className="editorial-bespoke-next" data-reveal>
               <div className="editorial-bespoke-summary">
                 <p className="editorial-eyebrow">REQUEST SUMMARY</p>
                 <dl>
@@ -759,7 +761,7 @@ const BespokePage = () => {
             </div>
 
             {checkoutOpen ? (
-              <div className="editorial-bespoke-checkout">
+              <div className="editorial-bespoke-checkout" data-reveal>
                 <div className="editorial-bespoke-stage__head">
                   <p className="editorial-eyebrow">CHECKOUT</p>
                   <h2>Data kontak, pengiriman, dan pembayaran.</h2>
@@ -881,10 +883,7 @@ const BespokePage = () => {
           </form>
         </section>
 
-        <footer className="editorial-footer">
-          <span>SOLIVAGANT by Dekito</span>
-          <Link to="/catalog">Explore Collection</Link>
-        </footer>
+        <StorefrontFooter />
       </main>
     </>
   );

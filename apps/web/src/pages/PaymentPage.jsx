@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
-import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, updateOrderPaymentStatus } from '@/services/orderService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -828,13 +829,14 @@ const PaymentPageContent = ({ isMobile }) => {
       <Helmet>
         <title>Payment - Solivagant</title>
       </Helmet>
-      <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
-        <StorefrontHeader backLabel="Keranjang" onBack={() => navigate('/cart')} actions={[{ to: '/home', label: 'Beranda' }]} />
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="solivagant-editorial-home">
+        <PublicHeader />
+        <section className="tracking-content" style={{ paddingTop: 'var(--space-block)' }}>
           {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} onProofSubmitted={setSession} />
           ) : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </section>
+        <StorefrontFooter />
       </main>
     </>
   );

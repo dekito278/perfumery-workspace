@@ -1,435 +1,155 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  BookOpenText,
-  ClipboardCheck,
-  Gem,
-  Leaf,
-  PackagePlus,
-  Search,
-  ShoppingBag,
-  Sparkles,
-  UserRound,
-  WandSparkles,
-} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import {
-  perfumerProfile,
-} from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { useMobileRenderSectionMonitor } from '@/hooks/useMobileRenderSectionMonitor.js';
-import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
-import {
-  getProductLowStock,
-  getVisibleProductTags,
-  isProductVisibleInStorefront,
-} from '@/services/productCatalogService.js';
-import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
-import { getMobileFromState, getMobileScrollTop } from '@/hooks/useMobileBackNavigation.js';
+import { useSiteImages } from '@/hooks/useSiteImages.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
+import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 
-const mobileNotes = [
-  { icon: Sparkles, label: 'Luxury' },
-  { icon: Leaf, label: 'Fine notes' },
-  { icon: Gem, label: 'Personal' },
+const moodCategories = [
+  { name: 'Quiet & Minimal', family: 'Fresh' },
+  { name: 'Warm & Nostalgic', family: 'Gourmand' },
+  { name: 'Dark & Moody', family: 'Woody' },
+  { name: 'Soft & Romantic', family: 'Floral' },
 ];
 
-const mobileHomeAssets = {
-  rawMaterialLibrary: '/brand/home/raw-material-library.jpg',
-  perfumerPipettes: '/brand/home/perfumer-pipettes.jpg',
-};
-const PRODUCT_NAVIGATION_SCROLL_SETTLE_MS = 1000;
-
-const getProductCategoryLabel = (product) => product?.category || 'Solivagant';
-const getProductStockLabel = (product) => (Number(product?.stock || 0) > 0 ? `${Number(product.stock)} pcs` : 'Habis');
-const getProductSizeLabels = (product) => {
-  const variantSizes = (product?.variants || []).map((variant) => variant?.size).filter(Boolean);
-  return (variantSizes.length ? variantSizes : [product?.size || '30 ml']).slice(0, 2);
-};
-const getProductPrimaryTag = (product) => getVisibleProductTags(product).find(Boolean) || (product?.featured ? 'Pilihan' : 'Aroma khas');
+const getArticleExcerpt = (article) =>
+  article?.excerpt || String(article?.content || '').replace(/[`*_>#-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 100);
 
 export const MobileStorefrontContent = ({ active = true }) => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const outgoingScrollTopRef = useRef(0);
-  const initialScrollTopRef = useRef(0);
-  const stableScrollTopRef = useRef(0);
-  const latestScrollTopRef = useRef(0);
-  const lastScrollAtRef = useRef(0);
-  const hasUserScrollIntentRef = useRef(false);
   const catalogProducts = useCatalogProducts({ active });
-  const products = useMemo(() => catalogProducts.filter(isProductVisibleInStorefront), [catalogProducts]);
-  const categories = useStorefrontCategories(products, { active });
-  const homeProducts = useMemo(() => products.filter((product) => product.featured).slice(0, 3), [products]);
-  const quickProducts = useMemo(() => (homeProducts.length ? homeProducts : products).slice(0, 4), [homeProducts, products]);
-  const heroProduct = quickProducts[0];
-  const featuredCategoryNames = useMemo(() => categories.slice(0, 3).map((category) => category.name), [categories]);
-  const productsLoading = Boolean(catalogProducts.loading);
-  const hasProducts = products.length > 0;
-  const captureOutgoingScrollTop = useCallback(() => {
-    if (!hasUserScrollIntentRef.current) {
-      outgoingScrollTopRef.current = initialScrollTopRef.current;
-      return;
-    }
+  const { images: siteImages } = useSiteImages();
+  const [articles, setArticles] = useState([]);
 
-    const currentScrollTop = getMobileScrollTop();
-    const scrollIsSettled = Date.now() - lastScrollAtRef.current > PRODUCT_NAVIGATION_SCROLL_SETTLE_MS;
-    if (scrollIsSettled) {
-      stableScrollTopRef.current = currentScrollTop;
-      latestScrollTopRef.current = currentScrollTop;
-    }
-    outgoingScrollTopRef.current = scrollIsSettled ? currentScrollTop : stableScrollTopRef.current;
-  }, []);
+  const visibleProducts = useMemo(
+    () => catalogProducts.filter(isProductVisibleInStorefront),
+    [catalogProducts]
+  );
+  const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
+  const collection = publicCatalog.slice(0, 4);
 
-  React.useEffect(() => {
-    if (!active) return undefined;
-
-    initialScrollTopRef.current = getMobileScrollTop();
-    stableScrollTopRef.current = initialScrollTopRef.current;
-    latestScrollTopRef.current = stableScrollTopRef.current;
-    outgoingScrollTopRef.current = stableScrollTopRef.current;
-    hasUserScrollIntentRef.current = false;
-    let timeoutId = 0;
-    const markUserScrollIntent = () => {
-      hasUserScrollIntentRef.current = true;
-    };
-    const updateStableScrollTop = () => {
-      latestScrollTopRef.current = getMobileScrollTop();
-      lastScrollAtRef.current = Date.now();
-      window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        stableScrollTopRef.current = latestScrollTopRef.current;
-      }, PRODUCT_NAVIGATION_SCROLL_SETTLE_MS);
-    };
-
-    window.addEventListener('wheel', markUserScrollIntent, { passive: true });
-    window.addEventListener('touchmove', markUserScrollIntent, { passive: true });
-    window.addEventListener('keydown', markUserScrollIntent);
-    window.addEventListener('scroll', updateStableScrollTop, { passive: true });
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.removeEventListener('wheel', markUserScrollIntent);
-      window.removeEventListener('touchmove', markUserScrollIntent);
-      window.removeEventListener('keydown', markUserScrollIntent);
-      window.removeEventListener('scroll', updateStableScrollTop);
-    };
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    getPublishedJournalPosts()
+      .then((posts) => { if (!cancelled) setArticles(posts.slice(0, 3)); })
+      .catch(() => { if (!cancelled) setArticles([]); });
+    return () => { cancelled = true; };
   }, [active]);
-  const handleStaticImageError = (source) => {
-    logMobileRenderIssue('image-load-failed', {
-      source,
-    }, {
-      throttleKey: `image-load-failed:${source}`,
-    });
-  };
-
-  useMobileRenderSectionMonitor({
-    active,
-    loading: productsLoading,
-    section: 'mobile-home-featured-products',
-    visibleCount: quickProducts.length,
-    expectedCount: products.length,
-    reason: products.length ? 'no-home-products' : 'no-products',
-  });
 
   return (
     <>
       {active ? (
-      <Helmet>
-        <title>Solivagant - Beranda</title>
-        <meta name="description" content="Solivagant storefront with featured perfumes, scent categories, and bespoke perfume consultation." />
-      </Helmet>
+        <Helmet>
+          <title>SOLIVAGANT - Artisan Perfumery</title>
+          <meta name="description" content="SOLIVAGANT artisan perfumery atelier by Dekito. Quiet olfactive works crafted from raw materials, memory, and personal ritual." />
+        </Helmet>
       ) : null}
-      <main className="mobile-page mobile-home-page">
-        <section className="mobile-home-hero">
-          <div className="mobile-home-hero-stage">
-            <div className="mobile-home-hero-copy">
-              <div className="mobile-home-kicker">
-                <ShoppingBag className="h-3.5 w-3.5" />
-                <span>{productsLoading ? 'Memuat katalog' : `${products.length || 0} parfum`}</span>
-              </div>
-              <h1>Temukan aroma yang terasa seperti kamu.</h1>
-              <p>
-                Ready stock, custom ritual, dan status order dekat dari satu layar.
-              </p>
-            </div>
 
-            {heroProduct ? (
-              <button
-                type="button"
-                onPointerDown={captureOutgoingScrollTop}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
-                }}
-                onClick={() => navigate(`/mobile/products/${heroProduct.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
-                className="mobile-home-hero-product"
-              >
-                <ProductVisual product={heroProduct} className="mobile-home-hero-visual" label={false} priority sizes="(max-width: 448px) 36vw, 150px" imageFit="cover" />
-                <div className="mobile-home-product-overlay">
-                  <span>{heroProduct.featured ? 'Hari ini' : getProductPrimaryTag(heroProduct)}</span>
-                  <strong>{heroProduct.name}</strong>
-                  <small>{heroProduct.price}</small>
-                </div>
-              </button>
-            ) : (
-              <div className="mobile-home-hero-product">
-                <img src={mobileHomeAssets.perfumerPipettes} alt="Dekito, Solivagant perfumer" className="mobile-home-hero-visual object-cover object-[58%_34%]" loading="eager" decoding="async" width="640" height="480" onError={() => handleStaticImageError('home-perfumer-pipettes')} />
-                <div className="mobile-home-product-overlay">
-                  <span>Atelier</span>
-                  <strong>Custom scent ritual</strong>
-                  <small>Pre-order 7-14 hari</small>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mobile-home-hero-actions">
-            <Button className="h-11 rounded-2xl px-4 text-xs shadow-lg shadow-[#263d27]/16" onClick={() => navigate('/mobile/catalog')}>
-              <Search className="h-4 w-4" />
-              Cari parfum
-            </Button>
-            <Button variant="outline" className="h-11 rounded-2xl bg-white/88 px-4 text-xs" onClick={() => navigate('/mobile/bespoke')}>
-              <WandSparkles className="h-4 w-4" />
-              Custom
-            </Button>
-          </div>
-
-          <div className="mobile-home-hero-strip">
-            <div>
-              <span>Ready</span>
-              <strong>{hasProducts ? 'Tersedia' : 'Segera'}</strong>
-            </div>
-            <div>
-              <span>Custom</span>
-              <strong>Brief</strong>
-            </div>
-            <div>
-              <span>Order</span>
-              <strong>Lacak</strong>
-            </div>
+      <main className="mobile-page m-editorial-page">
+        {/* Hero — fullscreen image */}
+        <section className="m-editorial-hero">
+          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery" className="m-editorial-hero__image" loading="eager" />
+          <div className="m-editorial-hero__overlay">
+            <p className="m-editorial-eyebrow">ARTISAN PERFUMERY ATELIER</p>
+            <h1>Fragrance as a memory object.</h1>
+            <p className="m-editorial-hero__lede">Quiet olfactive works from raw materials, memory, and ritual.</p>
+            <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
+              Explore Collection <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </section>
 
-        <section className="mobile-home-action-rail" aria-label="Aksi cepat">
-          <button type="button" onClick={() => navigate('/mobile/catalog')}>
-            <Search className="h-4 w-4" />
-            <span>Cari parfum</span>
-          </button>
-          <button type="button" onClick={() => navigate('/mobile/catalog?segment=limited')}>
-            <Sparkles className="h-4 w-4" />
-            <span>Drop terbatas</span>
-          </button>
-          <button type="button" onClick={() => navigate('/mobile/bespoke')}>
-            <WandSparkles className="h-4 w-4" />
-            <span>Custom aroma</span>
-          </button>
-          <button type="button" onClick={() => navigate('/mobile/customer')}>
-            <ClipboardCheck className="h-4 w-4" />
-            <span>Cek order</span>
-          </button>
-        </section>
+        {/* Collection — image-first cards */}
+        {collection.length ? (
+          <section className="m-editorial-section">
+            <div className="m-editorial-section__head">
+              <p className="m-editorial-eyebrow">COLLECTION</p>
+              <h2>Current fragrances</h2>
+            </div>
+            <div className="m-editorial-product-grid">
+              {collection.map((product) => (
+                <Link key={product.slug} to={`/mobile/products/${product.slug}`} className="m-editorial-product-card">
+                  <ProductVisual product={product} className="m-editorial-product-card__visual" imageFit="cover" label={false} sizes="(max-width: 480px) 45vw, 200px" />
+                  <div className="m-editorial-product-card__info">
+                    <span className="m-editorial-product-card__category">{product.category}</span>
+                    <h3>{product.name}</h3>
+                    <span className="m-editorial-product-card__price">{product.price}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="m-editorial-section__action">
+              <Link to="/mobile/catalog">View all <ArrowRight className="h-3.5 w-3.5" /></Link>
+            </div>
+          </section>
+        ) : null}
 
-        {featuredCategoryNames.length ? (
-          <section className="mobile-home-mood-row" aria-label="Mood parfum">
-            {featuredCategoryNames.map((name) => (
-              <button key={name} type="button" onClick={() => navigate(`/mobile/catalog?category=${encodeURIComponent(name)}`)}>
-                {name}
-              </button>
+        {/* Mood categories */}
+        <section className="m-editorial-section">
+          <div className="m-editorial-section__head">
+            <p className="m-editorial-eyebrow">EXPLORE BY MOOD</p>
+            <h2>Find your direction</h2>
+          </div>
+          <div className="m-editorial-mood-grid">
+            {moodCategories.map((mood) => (
+              <Link key={mood.name} to={`/mobile/catalog?category=${mood.family}`} className="m-editorial-mood-card">
+                <div className="m-editorial-mood-card__visual" data-family={mood.family.toLowerCase()}>
+                  <span>{mood.family}</span>
+                </div>
+                <h3>{mood.name}</h3>
+              </Link>
             ))}
+          </div>
+        </section>
+
+        {/* Statement block */}
+        <section className="m-editorial-statement">
+          <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer at work" className="m-editorial-statement__image" loading="lazy" />
+          <div className="m-editorial-statement__overlay">
+            <p className="m-editorial-eyebrow">THE ATELIER</p>
+            <h2>Fragrance as personal atmosphere.</h2>
+            <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/bespoke')}>
+              Book Bespoke <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </section>
+
+        {/* Journal preview */}
+        {articles.length ? (
+          <section className="m-editorial-section">
+            <div className="m-editorial-section__head">
+              <p className="m-editorial-eyebrow">JOURNAL</p>
+              <h2>Field notes</h2>
+            </div>
+            <div className="m-editorial-journal-list">
+              {articles.map((article) => (
+                <Link key={article.id} to={getJournalPublicPath(article)} className="m-editorial-journal-card">
+                  <span className="m-editorial-journal-card__category">{getJournalCategoryLabel(article.category)}</span>
+                  <h3>{article.title}</h3>
+                  <p>{getArticleExcerpt(article)}</p>
+                </Link>
+              ))}
+            </div>
+            <div className="m-editorial-section__action">
+              <Link to="/mobile/articles">Read journal <ArrowRight className="h-3.5 w-3.5" /></Link>
+            </div>
           </section>
         ) : null}
-
-        {!hasProducts ? (
-          <section className="mobile-card overflow-hidden">
-            <div className="bg-[linear-gradient(145deg,#050705,#111a11)] p-4 text-[#eef2e8]">
-              <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-14 w-40 rounded-2xl object-contain" loading="lazy" decoding="async" width="160" height="56" onError={() => handleStaticImageError('solivagant-logo')} />
-              <div className="mt-5 h-px w-20 bg-[#8d7a4f]" />
-              <h2 className="mt-4 text-xl font-bold leading-tight">{productsLoading ? 'Memuat koleksi parfum.' : 'Atelier parfum sedang disiapkan.'}</h2>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
-                {productsLoading
-                  ? 'Sebentar, kami sedang mengambil daftar parfum terbaru.'
-                  : 'Produk akan tampil setelah ditambahkan dari Studio. Untuk sekarang, customer bisa mulai dari request bespoke.'}
-              </p>
-            </div>
-            {!productsLoading ? (
-            <div className="grid grid-cols-2 gap-2 p-3">
-              <Button className="rounded-2xl gap-2" onClick={() => navigate('/mobile/bespoke')}>
-                  Custom
-                <WandSparkles className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/login')}>
-                Tambah produk
-                <PackagePlus className="h-4 w-4" />
-              </Button>
-            </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        {quickProducts.length ? (
-        <section id="mobile-products" className="mobile-home-products-section scroll-mt-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase text-amber-700">Belanja sekarang</p>
-              <h2 className="text-base font-bold leading-tight">Produk pilihan</h2>
-            </div>
-            <Button variant="ghost" className="h-11 px-2 text-xs gap-1" onClick={() => navigate('/mobile/catalog')}>
-              Lihat semua
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <div className="mobile-home-product-rail" aria-label="Produk pilihan">
-          {quickProducts.map((product, index) => (
-            <article key={product.id} className="mobile-home-product-card mobile-card mobile-commerce-product-card">
-              <button
-                type="button"
-                onPointerDown={captureOutgoingScrollTop}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') captureOutgoingScrollTop();
-                }}
-                onClick={() => navigate(`/mobile/products/${product.slug}`, { state: getMobileFromState(location, outgoingScrollTopRef.current) })}
-                className="block w-full text-left"
-              >
-                <div className="relative">
-                  <ProductVisual product={product} className="mobile-home-product-visual" bottleClassName="left-4 top-4 h-16 w-8 rounded-[1rem]" label={false} priority={index === 0} sizes="(max-width: 448px) 60vw, 238px" imageFit="cover" />
-                  <div className="mobile-commerce-chip absolute left-2 top-2 max-w-[calc(100%-16px)] truncate bg-white/90 px-2 py-1 text-[9px] uppercase shadow-sm">
-                    {getProductCategoryLabel(product)}
-                  </div>
-                  <div className="absolute bottom-2 left-2 max-w-[calc(100%-16px)] truncate rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white shadow-sm">
-                    {product.featured ? 'Pilihan' : getProductPrimaryTag(product)}
-                  </div>
-                </div>
-                <div className="mt-2 flex min-h-[126px] flex-col">
-                  <div className="min-h-[50px] min-w-0">
-                    <h3 className="mobile-line-clamp-2 min-h-[30px] text-[13px] font-bold leading-tight text-[#0b130c]">{product.name}</h3>
-                    <p className="mobile-line-clamp-1 mt-1 min-h-[16px] text-[11px] font-semibold leading-snug text-[#6b7280]">{product.notes || product.mood || getProductCategoryLabel(product)}</p>
-                  </div>
-                  <div className="mt-2 grid min-h-8 grid-cols-[minmax(0,1fr)_58px] items-start gap-1.5">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-bold text-[#0b130c]">{product.price}</div>
-                    </div>
-                    <div className={`grid h-6 w-[58px] place-items-center rounded-full px-1.5 text-center text-[9px] font-bold leading-tight ${getProductLowStock(product) ? 'bg-rose-50 text-rose-700' : 'bg-[#f7f8f2] text-[#6b7280]'}`}>
-                      {getProductStockLabel(product)}
-                    </div>
-                  </div>
-                  <div className="mt-auto pt-2">
-                    <div className="flex min-h-[24px] gap-1 overflow-hidden">
-                      {getProductSizeLabels(product).map((size) => (
-                        <span key={size} className="mobile-commerce-chip max-w-full truncate px-2 py-1 text-[9px]">{size}</span>
-                      ))}
-                      <span className="mobile-commerce-muted-chip max-w-full truncate px-2 py-1 text-[9px] uppercase">
-                        {getProductPrimaryTag(product)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </article>
-          ))}
-          </div>
-        </section>
-        ) : null}
-
-        <section className="mobile-card overflow-hidden">
-          <div className="grid grid-cols-[minmax(0,1fr)_104px] gap-3 p-4">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-amber-700">Shortcut custom</p>
-              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Buat aroma dari cerita kamu.</h2>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Isi brief singkat untuk mood, occasion, ukuran, dan budget.</p>
-              <Button className="mt-3 h-11 rounded-2xl gap-2 px-3 text-xs" onClick={() => navigate('/mobile/bespoke')}>
-                Mulai custom
-                <WandSparkles className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="relative overflow-hidden rounded-[16px] bg-[#eef2e8]">
-              <img src={mobileHomeAssets.perfumerPipettes} alt="Solivagant bespoke perfume consultation" className="absolute inset-0 h-full w-full object-cover object-[58%_34%]" loading="lazy" decoding="async" width="208" height="260" onError={() => handleStaticImageError('home-bespoke-shortcut')} />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(38,61,39,0.3))]" />
-            </div>
-          </div>
-        </section>
-
-        <section className="mobile-card p-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
-              <BookOpenText className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-amber-700">Artikel</p>
-              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Baca cerita aroma dan proses studio.</h2>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Panduan singkat, catatan material, dan cerita di balik parfum Solivagant.</p>
-            </div>
-          </div>
-          <Button variant="outline" className="mt-4 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/articles')}>
-            Buka artikel
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </section>
-
-        <section className="mobile-card p-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
-              <ClipboardCheck className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-amber-700">Cek order</p>
-              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">Pantau pembayaran dan pengiriman.</h2>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Masukkan kode customer untuk melihat progress order dan invoice.</p>
-            </div>
-          </div>
-          <Button variant="outline" className="mt-4 h-11 w-full rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/customer')}>
-            Buka cek order
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </section>
-
-        <section className="mobile-card p-4">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[#eef2e8] text-[#263d27]">
-              <UserRound className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-amber-700">Perfumer</p>
-              <h2 className="mt-1 text-lg font-bold leading-tight text-[#0b130c]">{perfumerProfile.name}</h2>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{perfumerProfile.intro}</p>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {mobileNotes.map((note) => {
-              const Icon = note.icon;
-
-              return (
-                <div key={note.label} className="mobile-commerce-panel flex items-center justify-center gap-1.5 bg-[#f7f8f2] px-2 py-2">
-                  <Icon className="h-3.5 w-3.5 text-[#263d27]" />
-                  <span className="text-[10px] font-bold uppercase leading-tight text-[#526351]">{note.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="mobile-card overflow-hidden bg-[#050705] text-[#eef2e8]">
-          <div className="relative aspect-[16/9] min-h-[184px]">
-            <img src={mobileHomeAssets.rawMaterialLibrary} alt="Solivagant raw material library" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" width="640" height="360" onError={() => handleStaticImageError('home-raw-material-library')} />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,5,0.08),rgba(5,7,5,0.82))]" />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c6d5bf]">Di balik atelier</p>
-              <h2 className="mt-2 text-lg font-bold leading-tight">Bahan asli, proses studio nyata.</h2>
-            </div>
-          </div>
-        </section>
       </main>
     </>
   );
 };
 
-const MobileStorefrontPage = () => {
-  return (
-    <MobileCommerceLayout>
-      <MobileStorefrontContent />
-    </MobileCommerceLayout>
-  );
-};
+const MobileStorefrontPage = () => (
+  <MobileCommerceLayout>
+    <MobileStorefrontContent />
+  </MobileCommerceLayout>
+);
 
 export default MobileStorefrontPage;

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { findPublicFragrance, getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
@@ -16,10 +18,9 @@ const relatedFor = (product, catalog) => {
     .map((slug) => catalog.find((item) => item.slug === slug))
     .filter(Boolean);
   const contextual = catalog
-    .filter((item) => item.slug !== product.slug && !explicit.some((related) => related.slug === item.slug))
-    .slice(0, Math.max(0, 3 - explicit.length));
-
-  return [...explicit, ...contextual].slice(0, 3);
+    .filter((item) => item.slug !== product.slug && !explicit.some((r) => r.slug === item.slug))
+    .slice(0, Math.max(0, 4 - explicit.length));
+  return [...explicit, ...contextual].slice(0, 4);
 };
 
 const PublicProductDetailPage = () => {
@@ -30,6 +31,7 @@ const PublicProductDetailPage = () => {
   const product = findPublicFragrance(slug, visibleProducts);
   const { addItem } = useCart();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
+  const revealRef = useScrollReveal();
 
   if (!product) {
     return <Navigate to="/not-found" replace />;
@@ -40,15 +42,14 @@ const PublicProductDetailPage = () => {
     setLastAddedSlug(item.slug);
     toast.success(`${item.name} masuk ke keranjang`, {
       description: 'Cart desktop sudah diperbarui.',
-      action: {
-        label: 'Lihat cart',
-        onClick: () => { window.location.href = '/cart'; },
-      },
+      action: { label: 'Lihat cart', onClick: () => { window.location.href = '/cart'; } },
     });
     window.setTimeout(() => {
       setLastAddedSlug((current) => (current === item.slug ? '' : current));
     }, 1800);
   };
+
+  const related = relatedFor(product, catalog);
 
   return (
     <>
@@ -57,91 +58,94 @@ const PublicProductDetailPage = () => {
         <meta name="description" content={`${product.name}: ${product.story}`} />
       </Helmet>
 
-      <main className="solivagant-editorial-home">
+      <main className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
 
-        <section className="editorial-section editorial-product-detail">
-          <div className="editorial-featured__visual">
-            <ProductVisual product={product} className="editorial-featured__product" priority />
+        {/* Breadcrumb */}
+        <nav className="pdp-breadcrumb hero-animate-fade" aria-label="Breadcrumb">
+          <Link to="/catalog">Collection</Link>
+          <ChevronRight className="h-3 w-3" />
+          <span>{product.name}</span>
+        </nav>
+
+        {/* Product detail — large image + info */}
+        <section className="pdp-main">
+          <div className="pdp-gallery img-hover-zoom hero-animate-image">
+            <ProductVisual product={product} className="pdp-gallery__image" imageFit="cover" priority label={false} />
           </div>
-          <div className="editorial-featured__copy">
-            <div className="editorial-detail-kicker">
-              <p className="editorial-eyebrow">{product.category}</p>
-              <span>{product.badge}</span>
-              <span>{product.publicStatus || product.availability}</span>
+          <div className="pdp-info">
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
+            <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
+            <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
+            <p className="pdp-story hero-animate-text hero-animate-text--d4">{product.story}</p>
+
+            {/* Notes pyramid */}
+            <div className="pdp-notes" data-reveal>
+              <div className="pdp-notes__row">
+                <span className="pdp-notes__label">Top</span>
+                <span className="pdp-notes__values">{product.topNotes.join(', ')}</span>
+              </div>
+              <div className="pdp-notes__row">
+                <span className="pdp-notes__label">Heart</span>
+                <span className="pdp-notes__values">{product.heartNotes.join(', ')}</span>
+              </div>
+              <div className="pdp-notes__row">
+                <span className="pdp-notes__label">Base</span>
+                <span className="pdp-notes__values">{product.baseNotes.join(', ')}</span>
+              </div>
             </div>
-            <h1>{product.name}</h1>
-            <p className="editorial-product-detail__price">{product.price}</p>
-            <p>{product.story}</p>
-            <div className="editorial-notes-grid">
-              <div><span>Top</span><p>{product.topNotes.join(', ')}</p></div>
-              <div><span>Heart</span><p>{product.heartNotes.join(', ')}</p></div>
-              <div><span>Base</span><p>{product.baseNotes.join(', ')}</p></div>
-            </div>
-            <div className="editorial-feature-list">
+
+            {/* Meta details */}
+            <div className="pdp-meta" data-reveal>
               <span>{product.mood}</span>
               <span>{product.concentration}</span>
-              <span>{product.sizeVariants.map((variant) => variant.size).join(' / ')}</span>
-              <span>{product.price}</span>
+              <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span>
             </div>
+
             {product.materialHighlights?.length ? (
-              <>
-                <p className="editorial-eyebrow">PUBLIC RAW MATERIAL HIGHLIGHTS</p>
-              <div className="editorial-feature-list" aria-label="Public raw material highlights">
-                {product.materialHighlights.map((material) => (
-                  <span key={material}>{material}</span>
-                ))}
+              <div className="pdp-materials" data-reveal>
+                <p className="editorial-eyebrow">RAW MATERIAL HIGHLIGHTS</p>
+                <div className="pdp-meta">
+                  {product.materialHighlights.map((m) => <span key={m}>{m}</span>)}
+                </div>
               </div>
-              </>
             ) : null}
-            <div className="editorial-actions">
-              <button type="button" className="editorial-button editorial-button--primary" onClick={() => handleAddToCart(product)}>
-                {lastAddedSlug === product.slug ? 'Added to Cart' : 'Add to Cart'}
-                {lastAddedSlug === product.slug ? <CheckCircle2 className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+
+            <div className="pdp-actions" data-reveal>
+              <button type="button" className="pdp-add-btn" onClick={() => handleAddToCart(product)}>
+                {lastAddedSlug === product.slug ? (
+                  <><CheckCircle2 className="h-4 w-4" /> Added to Cart</>
+                ) : (
+                  <><ShoppingBag className="h-4 w-4" /> Add to Cart &mdash; {product.price}</>
+                )}
               </button>
-              <Link to="/catalog" className="editorial-button">Back to Collection</Link>
             </div>
           </div>
         </section>
 
-        <section className="editorial-section editorial-section--compact">
-          <div className="editorial-section-heading">
-            <p className="editorial-eyebrow">RELATED FRAGRANCES</p>
-            <h2>Other quiet signatures.</h2>
-          </div>
-          <div className="editorial-product-grid editorial-product-grid--three">
-            {relatedFor(product, catalog).map((item) => (
-              <article key={item.slug} className="editorial-product-card">
-                <ProductVisual product={item} className="editorial-product-card__visual" imageFit="cover" />
-                <div className="editorial-product-card__body">
-                  <span>{item.category}</span>
-                  <h3>{item.name}</h3>
-                  <p>{item.character || item.subtitle}</p>
-                  <div className="editorial-product-card__actions">
-                    <Link to={`/catalog/${item.slug}`}>View Details</Link>
-                    <button
-                      type="button"
-                      className={lastAddedSlug === item.slug ? 'is-added' : ''}
-                      onClick={() => handleAddToCart(item)}
-                    >
-                      {lastAddedSlug === item.slug ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4" />
-                          Added
-                        </>
-                      ) : 'Add to Cart'}
-                    </button>
+        {/* Related products */}
+        {related.length ? (
+          <section className="pdp-related" data-reveal>
+            <div className="home-section__head">
+              <p className="editorial-eyebrow">YOU MAY ALSO LIKE</p>
+              <h2>Other quiet signatures</h2>
+            </div>
+            <div className="catalog-grid catalog-grid--four" data-reveal data-stagger-children>
+              {related.map((item) => (
+                <Link key={item.slug} to={`/catalog/${item.slug}`} className="catalog-card card-lift img-hover-zoom">
+                  <ProductVisual product={item} className="catalog-card__visual" imageFit="cover" label={false} />
+                  <div className="catalog-card__info">
+                    <span className="catalog-card__category">{item.category}</span>
+                    <h3>{item.name}</h3>
+                    <span className="catalog-card__price">{item.price}</span>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <footer className="editorial-footer">
-          <span>SOLIVAGANT by Dekito</span>
-          <Link to="/bespoke">Book Bespoke Consultation <ArrowRight className="h-4 w-4" /></Link>
-        </footer>
+        <StorefrontFooter />
       </main>
     </>
   );

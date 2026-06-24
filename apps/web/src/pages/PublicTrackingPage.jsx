@@ -3,16 +3,18 @@ import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ExternalLink, Search } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { buildCourierTrackingSearchUrl, getPublicTrackingOrder } from '@/services/publicTrackingService.js';
 import { formatDate } from '@/utils/formatting.js';
 
 const steps = [
-  { key: 'pending_payment', label: 'Order received' },
-  { key: 'paid', label: 'Payment confirmed' },
-  { key: 'processing', label: 'In preparation' },
-  { key: 'packing', label: 'Packed' },
-  { key: 'shipped', label: 'Shipped' },
-  { key: 'delivered', label: 'Delivered' },
+  { key: 'pending_payment', label: 'Order diterima' },
+  { key: 'paid', label: 'Pembayaran dikonfirmasi' },
+  { key: 'processing', label: 'Sedang disiapkan' },
+  { key: 'packing', label: 'Dikemas' },
+  { key: 'shipped', label: 'Dikirim' },
+  { key: 'delivered', label: 'Diterima' },
 ];
 
 const statusLabels = {
@@ -54,6 +56,7 @@ const describeOrder = (order) => {
 };
 
 const PublicTrackingPage = () => {
+  const revealRef = useScrollReveal();
   const { code = '' } = useParams();
   const navigate = useNavigate();
   const [lookup, setLookup] = useState(code);
@@ -104,74 +107,98 @@ const PublicTrackingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Track Your Order - SOLIVAGANT</title>
-        <meta name="description" content="Customer-facing SOLIVAGANT order tracking." />
+        <title>Lacak Pesanan - SOLIVAGANT</title>
+        <meta name="description" content="Lacak status pesanan SOLIVAGANT." />
       </Helmet>
 
-      <main className="solivagant-editorial-home">
+      <main className="solivagant-editorial-home" ref={revealRef}>
         <PublicHeader />
 
-        <section className="editorial-page-hero editorial-page-hero--split editorial-page-hero--compact">
-          <div>
-            <p className="editorial-eyebrow">CUSTOMER ORDER TRACKING</p>
-            <h1>Track Your Order</h1>
-            <p>{describeOrder(order)}</p>
-          </div>
-          <form className="editorial-form editorial-form--compact" onSubmit={submitLookup}>
-            <label>
-              Order number / resi
-              <input
-                type="text"
-                value={lookup}
-                onChange={(event) => setLookup(event.target.value)}
-                placeholder="DKT-XXXXX atau nomor resi"
-              />
-            </label>
-            <button type="submit" className="editorial-button editorial-button--primary" disabled={loading || !lookup.trim()}>
+        <section className="cart-hero">
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">LACAK PESANAN</p>
+          <h1 className="hero-animate-text hero-animate-text--d2">Lacak Pesanan</h1>
+          <p className="hero-animate-text hero-animate-text--d3">{describeOrder(order)}</p>
+        </section>
+
+        <section className="tracking-content" data-reveal>
+          {/* Search form */}
+          <form className="tracking-search" onSubmit={submitLookup}>
+            <input
+              type="text"
+              value={lookup}
+              onChange={(event) => setLookup(event.target.value)}
+              placeholder="Nomor order (DKT-XXXXX) atau nomor resi"
+            />
+            <button type="submit" disabled={loading || !lookup.trim()}>
               <Search className="h-4 w-4" />
-              {loading ? 'Checking...' : 'Track Order'}
+              {loading ? 'Mencari...' : 'Lacak'}
             </button>
           </form>
-        </section>
 
-        <section className="editorial-section editorial-section--compact">
-          <div className="editorial-tracking-preview editorial-tracking-preview--wide">
-            <p className="editorial-eyebrow">{order ? 'PUBLIC ORDER STATUS' : 'ORDER LOOKUP'}</p>
-            <h2>{order ? `${order.orderNumber} / ${order.customerName}` : (searched ? 'Order not found yet.' : 'Masukkan nomor order untuk mulai.')}</h2>
-            {!order && !searched ? (
-              <p className="editorial-notice">Gunakan nomor order dari halaman pembayaran atau nomor resi yang diberikan setelah pengiriman.</p>
-            ) : null}
-            <div className="editorial-timeline">
-              {steps.map((item, index) => (
-                <span key={item.key} className={index < completeCount ? 'is-complete' : ''}>{item.label}</span>
-              ))}
-            </div>
-            {error ? <p className="editorial-form-error">{error}</p> : null}
+          {/* Timeline */}
+          <div className="tracking-card">
             {order ? (
-              <div className="editorial-checkout-fields">
-                <span>Status order: {formatStatus(order.status)}</span>
-                <span>Status pembayaran: {formatStatus(order.paymentStatus)}</span>
-                <span>Status pengiriman: {formatStatus(order.shipmentStatus, 'Belum dikirim')}</span>
-                <span>Item: {order.itemCount || '-'}</span>
-                <span>Dibuat: {order.createdAt ? formatDate(order.createdAt) : '-'}</span>
-                <span>Update: {order.updatedAt ? formatDate(order.updatedAt) : '-'}</span>
-                <span>Kurir: {order.courierName || 'Belum tersedia'}</span>
-                <span>Resi: {order.trackingNumber || 'Belum tersedia'}</span>
+              <>
+                <div className="tracking-card__header">
+                  <p className="editorial-eyebrow">STATUS PESANAN</p>
+                  <h2>{order.orderNumber}</h2>
+                  <span className="tracking-card__customer">{order.customerName}</span>
+                </div>
+
+                <div className="tracking-timeline">
+                  {steps.map((item, index) => (
+                    <div key={item.key} className={`tracking-step${index < completeCount ? ' is-complete' : ''}`}>
+                      <span className="tracking-step__dot" />
+                      <span className="tracking-step__label">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="tracking-details">
+                  <div className="tracking-detail-row">
+                    <span>Status order</span><strong>{formatStatus(order.status)}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Pembayaran</span><strong>{formatStatus(order.paymentStatus)}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Pengiriman</span><strong>{formatStatus(order.shipmentStatus, 'Belum dikirim')}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Item</span><strong>{order.itemCount || '-'}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Dibuat</span><strong>{order.createdAt ? formatDate(order.createdAt) : '-'}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Update terakhir</span><strong>{order.updatedAt ? formatDate(order.updatedAt) : '-'}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Kurir</span><strong>{order.courierName || 'Belum tersedia'}</strong>
+                  </div>
+                  <div className="tracking-detail-row">
+                    <span>Nomor resi</span><strong>{order.trackingNumber || 'Belum tersedia'}</strong>
+                  </div>
+                </div>
+
+                {courierUrl ? (
+                  <a href={courierUrl} target="_blank" rel="noreferrer" className="tracking-courier-link">
+                    Buka tracking kurir <ExternalLink className="h-4 w-4" />
+                  </a>
+                ) : null}
+              </>
+            ) : (
+              <div className="tracking-card__empty">
+                <p className="editorial-eyebrow">{searched ? 'TIDAK DITEMUKAN' : 'CARI PESANAN'}</p>
+                <h2>{searched ? 'Order belum ditemukan' : 'Masukkan nomor order'}</h2>
+                <p>{searched ? 'Pastikan nomor order atau resi sudah benar.' : 'Gunakan nomor order dari halaman pembayaran atau nomor resi.'}</p>
               </div>
-            ) : null}
-            {courierUrl ? (
-              <a href={courierUrl} target="_blank" rel="noreferrer" className="editorial-button editorial-button--primary">
-                Open courier tracking
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            ) : null}
+            )}
+            {error ? <p className="checkout-notice is-error" style={{ marginTop: '16px' }}>{error}</p> : null}
           </div>
         </section>
 
-        <footer className="editorial-footer">
-          <span>SOLIVAGANT by Dekito</span>
-          <Link to="/cart">View Cart</Link>
-        </footer>
+        <StorefrontFooter />
       </main>
     </>
   );

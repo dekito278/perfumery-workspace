@@ -62,8 +62,8 @@ const MobileCommerceLayout = ({ children }) => {
     <div className={cn('mobile-app mobile-commerce-app', keyboardActive && 'mobile-keyboard-active')}>
       <div className="mobile-app-shell" data-mobile-primary-scroller="true">
         <header className="mobile-commerce-header">
-          <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand" aria-label="Solivagant owner access">
-            <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mobile-commerce-brand-logo" loading="eager" decoding="async" width="238" height="68" />
+          <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand m-editorial-brand" aria-label="Solivagant owner access">
+            <span className="m-editorial-wordmark">SOLIVAGANT</span>
           </button>
         </header>
         {children}

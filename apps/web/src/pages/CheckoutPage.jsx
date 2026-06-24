@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import { BadgePercent, ChevronDown, CreditCard, Search, ShoppingBag, X } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 
@@ -73,177 +75,212 @@ const CheckoutPage = () => {
       <main className="solivagant-editorial-home">
         <PublicHeader />
 
-        <section className="editorial-page-hero">
-          <p className="editorial-eyebrow">SECURE CHECKOUT</p>
+        <section className="cart-hero">
+          <p className="editorial-eyebrow">CHECKOUT</p>
           <h1>Checkout</h1>
-          <p>Lengkapi kontak, alamat, ongkir, dan metode pembayaran. Setelah order dibuat, kamu akan diarahkan ke instruksi pembayaran yang sesuai.</p>
+          <p>Lengkapi data pengiriman dan pembayaran untuk menyelesaikan pesanan.</p>
         </section>
 
-        <section className="editorial-section editorial-checkout-page editorial-section--compact">
-          <form className="editorial-form" onSubmit={submitCheckout}>
-            <p className="editorial-eyebrow">CUSTOMER INFORMATION</p>
+        <section className="checkout-layout">
+          {/* Checkout form */}
+          <form className="checkout-form" onSubmit={submitCheckout}>
             {!items.length ? (
-              <div className="editorial-empty-state editorial-empty-state--inline">
+              <div className="cart-empty">
                 <ShoppingBag className="h-8 w-8" />
-                <p>Keranjang masih kosong. Tambahkan produk ready stock sebelum checkout.</p>
-                <Link to="/catalog" className="editorial-button editorial-button--primary">Explore Collection</Link>
+                <h2>Keranjang kosong</h2>
+                <p>Tambahkan produk sebelum checkout.</p>
+                <Link to="/catalog" className="cart-empty__cta">Explore Collection</Link>
               </div>
             ) : null}
-            <label>
-              Customer code
-              <div className="editorial-inline-field">
-                <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional untuk pembeli lama" />
-                <button type="button" className="editorial-button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
-                  {lookupLoading ? 'Checking' : 'Load'}
-                </button>
-              </div>
-            </label>
-            <label>
-              Full name
-              <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" />
-            </label>
-            <label>
-              WhatsApp
-              <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" />
-            </label>
-            <label>
-              Shipping address
-              <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="4" placeholder="Alamat lengkap pengiriman" />
-            </label>
-            <label>
-              Courier
-              <span className={`editorial-select-shell ${selectedCourier ? 'is-selected' : ''}`}>
-                <span>{selectedCourier ? courierLabels[selectedCourier] || selectedCourier.toUpperCase() : 'Pilih kurir'}</span>
-                <ChevronDown className="h-4 w-4" />
-                <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir">
-                  <option value="">Pilih kurir</option>
-                  {checkoutCourierOptions.map((courier) => (
-                    <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
-                  ))}
-                </select>
-              </span>
-            </label>
-            {showAreaSearch || shippingError || destinationOptions.length ? (
-              <label>
-                Area ongkir
-                <div className="editorial-inline-field">
-                  <input type="text" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" />
-                  <button
-                    type="button"
-                    className="editorial-button"
-                    disabled={shippingLoading || !selectedCourier}
-                    onClick={() => autoCalculateShipping({ searchText: destinationSearch || deliveryAddress, autoSelectBest: true })}
-                  >
-                    <Search className="h-4 w-4" />
-                    Cari
+
+            {/* Customer info */}
+            <fieldset className="checkout-fieldset">
+              <legend className="editorial-eyebrow">INFORMASI PEMBELI</legend>
+              <label className="checkout-field">
+                <span>Customer code</span>
+                <div className="checkout-field__inline">
+                  <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional untuk pembeli lama" />
+                  <button type="button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
+                    {lookupLoading ? 'Cek...' : 'Load'}
                   </button>
                 </div>
               </label>
-            ) : null}
-            {shippingLoading ? <p className="editorial-notice">Mencari ongkir...</p> : null}
-            {shippingNotice ? <p className="editorial-notice editorial-notice--success">{shippingNotice}</p> : null}
-            {shippingError ? <p className="editorial-form-error">{shippingError}</p> : null}
-            {destinationOptions.length ? (
-              <div className="editorial-option-grid">
-                {destinationOptions.slice(0, 4).map((destination) => (
-                  <button key={destination.id || destination.label} type="button" onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
-                    {destination.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {visibleShippingOptions.length ? (
-              <div className="editorial-option-grid">
-                {visibleShippingOptions.map((rate) => (
-                  <button
-                    key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
-                    type="button"
-                    className={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost ? 'is-active' : ''}
-                    onClick={() => setSelectedShipping(rate)}
-                  >
-                    {rate.service} / {formatTotal(rate.cost)}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {selectedDestination ? <p className="editorial-notice editorial-notice--success">Area: {selectedDestination.label}</p> : null}
-            <div className="editorial-voucher-panel">
-              <div>
-                <p className="editorial-eyebrow">VOUCHER</p>
-                <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}</strong>
-              </div>
-              <div className="editorial-inline-field">
-                <input
-                  type="text"
-                  value={voucher.inputCode}
-                  onChange={(event) => voucher.setInputCode(event.target.value)}
-                  placeholder="Kode voucher"
-                  disabled={!items.length || voucher.loading}
-                />
-                <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
-                  <BadgePercent className="h-4 w-4" />
-                  {voucher.loading ? 'Cek' : 'Pakai'}
-                </button>
-              </div>
-              {voucher.message ? <p className={voucher.appliedVoucher ? 'editorial-notice editorial-notice--success' : 'editorial-form-error'}>{voucher.message}</p> : null}
-              {voucher.appliedVoucher ? (
-                <button type="button" className="editorial-text-button" onClick={voucher.removeVoucher}>
-                  <X className="h-4 w-4" />
-                  Hapus voucher
-                </button>
+              <label className="checkout-field">
+                <span>Nama lengkap</span>
+                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" />
+              </label>
+              <label className="checkout-field">
+                <span>WhatsApp</span>
+                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" />
+              </label>
+              <label className="checkout-field">
+                <span>Alamat pengiriman</span>
+                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder="Alamat lengkap pengiriman" />
+              </label>
+            </fieldset>
+
+            {/* Shipping */}
+            <fieldset className="checkout-fieldset">
+              <legend className="editorial-eyebrow">PENGIRIMAN</legend>
+              <label className="checkout-field">
+                <span>Kurir</span>
+                <div className="checkout-select-wrap">
+                  <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir">
+                    <option value="">Pilih kurir</option>
+                    {checkoutCourierOptions.map((courier) => (
+                      <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </label>
+              {showAreaSearch || shippingError || destinationOptions.length ? (
+                <label className="checkout-field">
+                  <span>Area tujuan</span>
+                  <div className="checkout-field__inline">
+                    <input type="text" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" />
+                    <button
+                      type="button"
+                      disabled={shippingLoading || !selectedCourier}
+                      onClick={() => autoCalculateShipping({ searchText: destinationSearch || deliveryAddress, autoSelectBest: true })}
+                    >
+                      <Search className="h-4 w-4" /> Cari
+                    </button>
+                  </div>
+                </label>
               ) : null}
-            </div>
-            <label>
-              Payment
-              <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
-                {checkoutPaymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>{method.label}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Delivery notes
-              <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="3" placeholder="Catatan pengiriman opsional" />
-            </label>
-            <div className="editorial-checkout-fields">
-              <span>Subtotal: {formatTotal(summary.subtotal)}</span>
-              <span>Ongkir: {selectedShipping ? formatTotal(shippingFee) : 'Belum dipilih'}</span>
-              <span>Voucher: {voucher.appliedVoucher ? voucher.appliedVoucher.code : '-'}</span>
-              <span>Diskon: {discountAmount ? `-${formatTotal(discountAmount)}` : '-'}</span>
-              <span>Total: {formatTotal(totalDue)}</span>
-            </div>
-            {!canSubmitCheckout && items.length ? <p className="editorial-form-error">Lengkapi: {missingFields || 'data checkout'}.</p> : null}
-            <button type="submit" className="editorial-button editorial-button--primary" disabled={!items.length || saving}>
-              {saving ? 'Saving order...' : 'Place Order'}
+              {shippingLoading ? <p className="checkout-notice">Mencari ongkir...</p> : null}
+              {shippingNotice ? <p className="checkout-notice is-success">{shippingNotice}</p> : null}
+              {shippingError ? <p className="checkout-notice is-error">{shippingError}</p> : null}
+              {destinationOptions.length ? (
+                <div className="checkout-options">
+                  {destinationOptions.slice(0, 4).map((destination) => (
+                    <button key={destination.id || destination.label} type="button" onClick={() => loadShippingRates(destination, { autoSelectCheapest: true })}>
+                      {destination.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {visibleShippingOptions.length ? (
+                <div className="checkout-options">
+                  {visibleShippingOptions.map((rate) => (
+                    <button
+                      key={`${rate.courierCode}-${rate.service}-${rate.cost}`}
+                      type="button"
+                      className={selectedShipping?.service === rate.service && selectedShipping?.cost === rate.cost ? 'is-active' : ''}
+                      onClick={() => setSelectedShipping(rate)}
+                    >
+                      {rate.service} / {formatTotal(rate.cost)}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {selectedDestination ? <p className="checkout-notice is-success">Area: {selectedDestination.label}</p> : null}
+            </fieldset>
+
+            {/* Voucher */}
+            <fieldset className="checkout-fieldset">
+              <legend className="editorial-eyebrow">VOUCHER</legend>
+              <div className="cart-voucher" style={{ marginTop: 0, paddingTop: 0, border: 'none' }}>
+                <label className="cart-voucher__label">
+                  {voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}
+                </label>
+                <div className="cart-voucher__input">
+                  <input
+                    type="text"
+                    value={voucher.inputCode}
+                    onChange={(event) => voucher.setInputCode(event.target.value)}
+                    placeholder="Kode voucher"
+                    disabled={!items.length || voucher.loading}
+                  />
+                  <button type="button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
+                    <BadgePercent className="h-4 w-4" />
+                    {voucher.loading ? 'Cek...' : 'Pakai'}
+                  </button>
+                </div>
+                {voucher.message ? <p className={`cart-voucher__msg${voucher.appliedVoucher ? ' is-success' : ''}`}>{voucher.message}</p> : null}
+                {voucher.appliedVoucher ? (
+                  <button type="button" className="cart-voucher__remove" onClick={voucher.removeVoucher}>
+                    <X className="h-3.5 w-3.5" /> Hapus voucher
+                  </button>
+                ) : null}
+              </div>
+            </fieldset>
+
+            {/* Payment */}
+            <fieldset className="checkout-fieldset">
+              <legend className="editorial-eyebrow">PEMBAYARAN</legend>
+              <label className="checkout-field">
+                <span>Metode pembayaran</span>
+                <div className="checkout-select-wrap">
+                  <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
+                    {checkoutPaymentMethods.map((method) => (
+                      <option key={method.id} value={method.id}>{method.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </label>
+              <label className="checkout-field">
+                <span>Catatan pengiriman</span>
+                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder="Opsional" />
+              </label>
+            </fieldset>
+
+            {/* Submit */}
+            {!canSubmitCheckout && items.length ? <p className="checkout-notice is-error">Lengkapi: {missingFields || 'data checkout'}.</p> : null}
+            <button type="submit" className="checkout-submit" disabled={!items.length || saving}>
               <CreditCard className="h-4 w-4" />
+              {saving ? 'Memproses...' : 'Buat Pesanan'}
             </button>
           </form>
 
-          <aside className="editorial-cart-preview">
-            <p className="editorial-eyebrow">ORDER SUMMARY</p>
-            <h2>{items.length ? 'Selected works.' : 'No item selected.'}</h2>
+          {/* Order summary sidebar */}
+          <aside className="cart-summary">
+            <p className="editorial-eyebrow">RINGKASAN PESANAN</p>
+            <h2>{items.length ? 'Produk yang dipilih' : 'Belum ada produk'}</h2>
+
             {items.map((item) => (
-              <div key={item.slug} className="editorial-cart-line">
-                <ProductVisual product={item} className="editorial-cart-line__image" imageFit="cover" />
-                <div>
-                  <strong>{item.name}</strong>
-                  <span>{item.size} / Qty {item.quantity}</span>
+              <div key={item.slug} className="checkout-summary-line">
+                <div className="checkout-summary-line__image">
+                  <ProductVisual product={item} imageFit="cover" />
                 </div>
-                <strong>{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
+                <div className="checkout-summary-line__info">
+                  <strong>{item.name}</strong>
+                  <span>{item.size} · Qty {item.quantity}</span>
+                </div>
+                <strong className="checkout-summary-line__price">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
               </div>
             ))}
-            {voucher.discountAmount ? (
-              <div className="editorial-subtotal"><span>Voucher {voucher.appliedVoucher?.code}</span><strong>-{formatTotal(voucher.discountAmount)}</strong></div>
-            ) : null}
-            <div className="editorial-subtotal"><span>Total</span><strong>{formatTotal(totalDue)}</strong></div>
-            <Link to="/cart" className="editorial-button">Return to Cart</Link>
+
+            <div className="cart-totals" style={{ marginTop: items.length ? '20px' : '0' }}>
+              <div className="cart-totals__row">
+                <span>Subtotal</span>
+                <strong>{formatTotal(summary.subtotal)}</strong>
+              </div>
+              {shippingFee ? (
+                <div className="cart-totals__row">
+                  <span>Ongkir</span>
+                  <strong>{formatTotal(shippingFee)}</strong>
+                </div>
+              ) : null}
+              {voucher.discountAmount ? (
+                <div className="cart-totals__row cart-totals__row--discount">
+                  <span>Voucher {voucher.appliedVoucher?.code}</span>
+                  <strong>-{formatTotal(voucher.discountAmount)}</strong>
+                </div>
+              ) : null}
+              <div className="cart-totals__row" style={{ paddingTop: '12px', borderTop: `1px solid var(--editorial-border)`, marginTop: '8px' }}>
+                <span style={{ fontWeight: 700, color: 'var(--editorial-charcoal)' }}>Total</span>
+                <strong style={{ fontSize: '1.05rem' }}>{formatTotal(totalDue)}</strong>
+              </div>
+            </div>
+
+            <Link to="/cart" className="cart-actions__secondary" style={{ marginTop: '20px' }}>Kembali ke Cart</Link>
           </aside>
         </section>
 
-        <footer className="editorial-footer">
-          <span>SOLIVAGANT by Dekito</span>
-          <Link to="/track-order">Track Order</Link>
-        </footer>
+        <StorefrontFooter />
       </main>
     </>
   );

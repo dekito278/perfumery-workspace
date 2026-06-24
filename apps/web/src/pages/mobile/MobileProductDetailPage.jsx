@@ -1,121 +1,79 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CheckCircle2, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import ProductGallery from '@/components/storefront/ProductGallery.jsx';
+import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
+import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-
-const NoteColumn = ({ title, notes }) => (
-  <div className="mobile-commerce-panel bg-[#f7f8f2] p-3">
-    <div className="text-[10px] font-bold uppercase text-[#8b949e]">{title}</div>
-    <div className="mt-2 space-y-1">
-      {notes.map((note) => (
-        <div key={note} className="text-xs font-bold text-[#0b130c]">{note}</div>
-      ))}
-    </div>
-  </div>
-);
-
-const MobileProductDetailSkeleton = () => (
-  <MobileCommerceLayout>
-    <main className="mobile-page">
-      <div className="mobile-card h-12 animate-pulse bg-white" />
-      <div className="mobile-catalog-skeleton aspect-square rounded-[18px]" />
-      <section className="mobile-card p-4" aria-busy="true">
-        <div className="mobile-catalog-skeleton h-7 w-3/4 rounded-full" />
-        <div className="mobile-catalog-skeleton mt-3 h-4 w-full rounded-full" />
-        <div className="mobile-catalog-skeleton mt-2 h-4 w-5/6 rounded-full" />
-        <div className="mobile-catalog-skeleton mt-5 h-24 rounded-2xl" />
-      </section>
-      <section className="mobile-card p-4">
-        <div className="mobile-catalog-skeleton h-5 w-36 rounded-full" />
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
-          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
-          <div className="mobile-catalog-skeleton h-24 rounded-2xl" />
-        </div>
-      </section>
-    </main>
-  </MobileCommerceLayout>
-);
 
 const MobileProductDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const handleBack = useMobileBackNavigation('/mobile/catalog');
   const { slug } = useParams();
-  const products = useCatalogProducts();
+  const allProducts = useCatalogProducts();
+  const visibleProducts = useMemo(() => allProducts.filter(isProductVisibleInStorefront), [allProducts]);
+  const catalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
   const previewProduct = location.state?.previewMode && location.state?.previewProduct?.slug === slug
     ? location.state.previewProduct
     : null;
-  const product = previewProduct || products.find((item) => item.slug === slug && isProductVisibleInStorefront(item));
+  const product = previewProduct || catalog.find((p) => p.slug === slug);
   const previewMode = Boolean(previewProduct);
   const previewBackTo = location.state?.previewBackTo || '/mobile/studio/products?view=new';
   const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [cartPromptOpen, setCartPromptOpen] = useState(false);
   const [lastAddedItem, setLastAddedItem] = useState(null);
+
   const selectedVariant = useMemo(() => {
     const variants = Array.isArray(product?.variants) ? product.variants : [];
-    return variants.find((variant) => (variant.id || variant.size) === selectedVariantId) || variants[0] || null;
+    return variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
   }, [product, selectedVariantId]);
 
-  if (!product && products.loading) {
-    return <MobileProductDetailSkeleton />;
+  if (!product && allProducts.loading) {
+    return (
+      <MobileCommerceLayout>
+        <main className="mobile-page m-editorial-page">
+          <div className="m-editorial-pdp-skeleton" />
+        </main>
+      </MobileCommerceLayout>
+    );
   }
 
   if (!product) {
     return (
       <MobileCommerceLayout>
-        <Helmet>
-          <title>Produk tidak ditemukan - Solivagant</title>
-        </Helmet>
-        <main className="mobile-page space-y-4">
-          <MobileTopBar
-            title="Produk tidak ditemukan"
-            subtitle="Produk mungkin belum publish atau stok katalog sedang diperbarui."
-            eyebrow="Katalog"
-            onBack={handleBack}
-            action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
-          />
-          <MobileStatePanel
-            tone="empty"
-            title="Produk belum tersedia"
-            description="Kembali ke katalog untuk melihat produk yang sedang aktif."
-            action="Buka katalog"
-            onAction={() => navigate('/mobile/catalog')}
-          />
+        <Helmet><title>Not found - SOLIVAGANT</title></Helmet>
+        <main className="mobile-page m-editorial-page">
+          <div className="m-editorial-empty">
+            <p className="m-editorial-eyebrow">NOT FOUND</p>
+            <h2>This fragrance doesn't exist.</h2>
+            <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
+              Back to Collection <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </main>
       </MobileCommerceLayout>
     );
   }
 
   const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
-  const selectedCompareAt = Number(selectedVariant?.compareAtPriceNumber || 0);
   const selectedStock = Number(selectedVariant?.stock ?? product.stock ?? 0);
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
   const soldOut = selectedStock <= 0;
-  const lowStock = selectedStock > 0 && selectedStock <= 5;
+
   const addSelectedVariant = () => {
-    if (previewMode) {
-      toast.error('Preview draft belum bisa masuk keranjang');
-      return;
-    }
-    if (selectedStock <= 0) {
-      toast.error('Stok varian ini sedang habis');
-      return;
-    }
+    if (previewMode) { toast.error('Preview — cart disabled'); return; }
+    if (soldOut) { toast.error('Out of stock'); return; }
     addItem({
       ...product,
       cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
@@ -125,179 +83,158 @@ const MobileProductDetailPage = () => {
       priceNumber: selectedPrice,
       maxStock: selectedStock,
     }, 1);
-    setLastAddedItem({
-      name: product.name,
-      size: selectedSize,
-      price: formatRupiah(selectedPrice),
-    });
-    toast.success(`${product.name} masuk keranjang`);
+    setLastAddedItem({ name: product.name, size: selectedSize, price: formatRupiah(selectedPrice) });
+    toast.success(`${product.name} added to cart`);
     setCartPromptOpen(true);
   };
+
+  // Related products
+  const related = catalog.filter((p) => p.slug !== product.slug).slice(0, 4);
 
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>{product.name} - Solivagant</title>
-        <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
+        <title>{product.name} - SOLIVAGANT</title>
+        <meta name="description" content={`${product.name}: ${product.story || product.description}`} />
       </Helmet>
-      <main className="mobile-page mobile-product-detail-page">
-        <MobileTopBar
-          title={product.name}
-          subtitle={previewMode ? 'Preview admin' : product.category}
-          eyebrow={previewMode ? 'Preview draft' : 'Produk'}
-          onBack={previewMode ? () => navigate(previewBackTo) : handleBack}
-          action={<ShoppingBag className="h-5 w-5 text-[#263d27]" />}
-        />
 
-        <ProductGallery product={product} visualClassName="aspect-square rounded-[18px]" compact priority />
+      <main className="mobile-page m-editorial-page m-editorial-pdp">
+        {/* Back button */}
+        <nav className="m-editorial-pdp__nav">
+          <button type="button" onClick={previewMode ? () => navigate(previewBackTo) : handleBack} className="m-editorial-pdp__back">
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+        </nav>
 
-        <section className="mobile-card p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-2xl font-bold leading-tight text-[#0b130c]">{product.name}</h2>
-              {previewMode ? (
-                <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-800">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <div>
-                    <div className="text-xs font-bold">Mode preview admin</div>
-                    <p className="mt-1 text-[11px] font-semibold leading-relaxed">Data ini belum tentu sudah tersimpan atau publish. Aksi cart dimatikan.</p>
-                  </div>
-                </div>
-              ) : null}
-              <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">{product.description}</p>
+        {/* Large product image */}
+        <div className="m-editorial-pdp__gallery">
+          <ProductVisual product={product} className="m-editorial-pdp__image" imageFit="cover" priority label={false} sizes="100vw" />
+        </div>
+
+        {/* Product info */}
+        <div className="m-editorial-pdp__info">
+          <p className="m-editorial-eyebrow">{product.category}</p>
+          <h1>{product.name}</h1>
+          <p className="m-editorial-pdp__price">{product.price}</p>
+
+          {previewMode ? (
+            <div className="m-editorial-pdp__preview-badge">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>Admin preview — cart disabled</span>
             </div>
-            <div className="shrink-0 text-right">
-              {selectedCompareAt > selectedPrice ? <div className="text-xs font-bold text-[#9ca3af] line-through">{formatRupiah(selectedCompareAt)}</div> : null}
-              <div className="text-base font-bold text-[#0b130c]">{formatRupiah(selectedPrice)}</div>
-              <div className="text-[10px] font-bold uppercase text-[#8b949e]">{selectedSize}</div>
+          ) : null}
+
+          <p className="m-editorial-pdp__story">{product.story || product.description}</p>
+
+          {/* Notes */}
+          <div className="m-editorial-pdp__notes">
+            <div className="m-editorial-pdp__notes-row">
+              <span className="m-editorial-pdp__notes-label">Top</span>
+              <span className="m-editorial-pdp__notes-values">{product.topNotes?.join(', ')}</span>
+            </div>
+            <div className="m-editorial-pdp__notes-row">
+              <span className="m-editorial-pdp__notes-label">Heart</span>
+              <span className="m-editorial-pdp__notes-values">{product.heartNotes?.join(', ')}</span>
+            </div>
+            <div className="m-editorial-pdp__notes-row">
+              <span className="m-editorial-pdp__notes-label">Base</span>
+              <span className="m-editorial-pdp__notes-values">{product.baseNotes?.join(', ')}</span>
             </div>
           </div>
-          <div className="mobile-commerce-panel mt-4 bg-[#fbfaf7]">
-            <label className="text-[10px] font-bold uppercase text-[#6b7280]" htmlFor="mobile-product-variant">Ukuran</label>
-            <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+
+          {/* Variant selector */}
+          {product.variants?.length > 1 ? (
+            <div className="m-editorial-pdp__variants">
+              <label className="m-editorial-eyebrow" htmlFor="m-variant-select">SIZE</label>
               <select
-                id="mobile-product-variant"
+                id="m-variant-select"
                 value={selectedVariantKey}
-                onChange={(event) => setSelectedVariantId(event.target.value)}
-                className="mobile-commerce-control h-12 min-w-0 px-3 text-sm font-bold text-[#0b130c]"
+                onChange={(e) => setSelectedVariantId(e.target.value)}
+                className="m-editorial-pdp__variant-select"
               >
-                {product.variants.map((variant) => {
-                  const variantKey = variant.id || variant.size;
-                  const stock = Number(variant.stock || 0);
-                  return (
-                    <option key={variantKey} value={variantKey}>
-                      {variant.size} - {formatRupiah(variant.priceNumber)} {stock <= 0 ? '(Habis)' : ''}
-                    </option>
-                  );
+                {product.variants.map((v) => {
+                  const key = v.id || v.size;
+                  const stock = Number(v.stock || 0);
+                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{stock <= 0 ? ' (Sold out)' : ''}</option>;
                 })}
               </select>
-              <div className="mobile-commerce-panel border-0 bg-white px-3 py-2 text-right">
-                <div className="text-sm font-bold text-[#263d27]">{selectedStock}</div>
-                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stok</div>
-              </div>
             </div>
-            <div className={`mt-3 rounded-[14px] px-3 py-2 text-xs font-bold ${soldOut ? 'bg-rose-50 text-rose-700' : lowStock ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
-              {soldOut ? 'Varian ini sedang habis.' : lowStock ? `Stok varian ini mau habis, tinggal ${selectedStock}.` : 'Stok tersedia, siap masuk keranjang.'}
-            </div>
-            <Button className="mt-3 h-12 w-full rounded-2xl gap-2" onClick={addSelectedVariant} disabled={selectedStock <= 0 || previewMode}>
-              {previewMode ? 'Preview saja' : 'Masukkan keranjang'}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#6b7280]">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-              Siap dipesan selama stok tersedia
-            </div>
-          </div>
-        </section>
+          ) : null}
 
-        <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#263d27]" />
-            <h2 className="text-base font-bold text-[#0b130c]">Catatan aroma</h2>
+          {/* Meta */}
+          <div className="m-editorial-pdp__meta">
+            {product.mood ? <span>{product.mood}</span> : null}
+            {product.concentration ? <span>{product.concentration}</span> : null}
+            {product.sizeVariants?.length ? <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span> : null}
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <NoteColumn title="Pembuka" notes={product.topNotes} />
-            <NoteColumn title="Tengah" notes={product.heartNotes} />
-            <NoteColumn title="Dasar" notes={product.baseNotes} />
-          </div>
-        </section>
+        </div>
 
-        <button
-          type="button"
-          onClick={previewMode ? () => navigate(previewBackTo, { replace: true }) : handleBack}
-          className="mobile-card flex w-full items-center justify-between p-3 text-left text-sm font-bold text-[#0b130c]"
-        >
-          {previewMode ? 'Kembali ke editor' : 'Kembali ke katalog'}
-          <ShoppingBag className="h-4 w-4 text-[#263d27]" />
-        </button>
-
-        <section className="mobile-card border border-[#263d27]/15 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[#eef2e8] text-[#263d27]">
-                <PackageCheck className="h-4 w-4" />
-              </span>
-              <div className="min-w-0">
-                <div className="truncate text-sm font-bold text-[#0b130c]">{selectedSize}</div>
-                <div className="text-xs font-semibold text-[#6b7280]">{formatRupiah(selectedPrice)}</div>
-              </div>
+        {/* Related */}
+        {related.length ? (
+          <section className="m-editorial-section m-editorial-pdp__related">
+            <div className="m-editorial-section__head">
+              <p className="m-editorial-eyebrow">YOU MAY ALSO LIKE</p>
             </div>
-            <Button className="h-11 shrink-0 rounded-2xl gap-2 px-4" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
-              {previewMode ? 'Preview' : 'Tambah'}
-              <ShoppingBag className="h-4 w-4" />
-            </Button>
-          </div>
-        </section>
+            <div className="m-editorial-product-grid">
+              {related.map((item) => (
+                <Link key={item.slug} to={`/mobile/products/${item.slug}`} className="m-editorial-product-card">
+                  <ProductVisual product={item} className="m-editorial-product-card__visual" imageFit="cover" label={false} sizes="(max-width: 480px) 45vw, 200px" />
+                  <div className="m-editorial-product-card__info">
+                    <span className="m-editorial-product-card__category">{item.category}</span>
+                    <h3>{item.name}</h3>
+                    <span className="m-editorial-product-card__price">{item.price}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Sticky add-to-cart bar */}
         <StickyBottomActionBar
           fixed
           reserveSpace
-          aria-label="Aksi produk"
-          className="mobile-product-action-bar"
-          contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+          aria-label="Product action"
+          className="m-editorial-pdp__sticky-bar"
+          contentClassName="m-editorial-pdp__sticky-content"
         >
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-[#8b949e]">{selectedSize}</p>
-              <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatRupiah(selectedPrice)}</p>
-              <p className={`truncate text-[10px] font-bold ${soldOut ? 'text-rose-700' : lowStock ? 'text-amber-700' : 'text-emerald-700'}`}>
-                {soldOut ? 'Stok habis' : lowStock ? `Sisa ${selectedStock}` : 'Siap masuk keranjang'}
-              </p>
+          <div className="m-editorial-pdp__sticky-inner">
+            <div className="m-editorial-pdp__sticky-info">
+              <span className="m-editorial-pdp__sticky-name">{product.name}</span>
+              <span className="m-editorial-pdp__sticky-price">{formatRupiah(selectedPrice)}</span>
             </div>
-            <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
+            <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
               <ShoppingBag className="h-4 w-4" />
-              {previewMode ? 'Preview' : 'Tambah'}
-            </Button>
+              {previewMode ? 'Preview' : soldOut ? 'Sold out' : 'Add to Cart'}
+            </button>
           </div>
         </StickyBottomActionBar>
       </main>
+
       <MobileBottomSheet
         open={cartPromptOpen}
         onOpenChange={setCartPromptOpen}
-        title="Produk masuk keranjang"
-        description="Geser turun untuk menutup, atau lanjut ke checkout."
+        title="Added to cart"
+        description="Continue shopping or proceed to checkout."
         footer={(
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white" onClick={() => setCartPromptOpen(false)}>
-              Lanjut belanja
+              Continue
             </Button>
             <Button className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/cart')}>
-              Lanjut bayar
-              <ArrowRight className="h-4 w-4" />
+              Checkout <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}
       >
-        <div className="grid h-11 w-11 place-items-center rounded-[14px] bg-[#263d27] text-white">
-          <ShoppingBag className="h-5 w-5" />
-        </div>
         {lastAddedItem ? (
-            <div className="mobile-commerce-panel mt-4">
-              <div className="text-sm font-bold text-[#0b130c]">{lastAddedItem.name}</div>
-              <div className="mt-1 flex items-center justify-between text-xs font-bold text-[#6b7280]">
-                <span>{lastAddedItem.size}</span>
-                <span>{lastAddedItem.price}</span>
-              </div>
+          <div className="m-editorial-pdp__cart-confirm">
+            <CheckCircle2 className="h-5 w-5" />
+            <div>
+              <strong>{lastAddedItem.name}</strong>
+              <span>{lastAddedItem.size} — {lastAddedItem.price}</span>
             </div>
+          </div>
         ) : null}
       </MobileBottomSheet>
     </MobileCommerceLayout>

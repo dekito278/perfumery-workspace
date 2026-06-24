@@ -3,16 +3,18 @@ import { Helmet } from 'react-helmet';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays, Copy, ExternalLink, Share2, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
-import { Button } from '@/components/ui/button.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
+import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   getJournalCategoryBadgeClassName,
   getJournalCategoryLabel,
   getJournalStatusBadgeClassName,
   getPublishedJournalPostBySlug,
 } from '@/services/journalPostsSupabaseService.js';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { formatDate } from '@/utils/formatting.js';
 
 const getReadingMinutes = (content) => {
@@ -62,8 +64,119 @@ const toAbsoluteUrl = (value, origin) => {
   return origin ? `${origin}${path}` : path;
 };
 
+/* ─── Mobile article view (unchanged Tailwind-based layout) ─── */
+const MobileArticleView = ({ post, loading, failed, slug, title, description, canonicalUrl, shareImageUrl, publishedDate, modifiedDate, tags, readingMinutes, jsonLd, copyArticleLink, copyState }) => (
+  <MobileCommerceLayout>
+    <Helmet>
+      <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={canonicalUrl} />
+      <meta property="og:type" content="article" />
+      <meta property="og:site_name" content="Solivagant" />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:image" content={shareImageUrl} />
+      <meta property="og:image:alt" content={post?.cover_image_url ? post.title : 'Solivagant perfumery journal'} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={shareImageUrl} />
+      {post?.category ? <meta property="article:section" content={getJournalCategoryLabel(post.category)} /> : null}
+      {publishedDate ? <meta property="article:published_time" content={publishedDate} /> : null}
+      {modifiedDate ? <meta property="article:modified_time" content={modifiedDate} /> : null}
+      {tags.map((tag) => <meta key={tag} property="article:tag" content={tag} />)}
+      {jsonLd ? <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> : null}
+    </Helmet>
+
+    <main className="mobile-page pb-8 text-[#111827]">
+      <header className="mx-auto mb-4 flex w-full max-w-[448px] items-center justify-between gap-3 rounded-[22px] border border-[#d8d5ca] bg-white/90 px-3 py-2.5 shadow-sm">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <Link to="/mobile/articles" className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-[#eef2e8]">
+              <ArrowLeft className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</span>
+              <span className="block truncate text-sm font-extrabold text-[#263d27]">Article</span>
+            </span>
+          </Link>
+          <Link to="/mobile/catalog" className="shrink-0 rounded-2xl border border-[#d8d5ca] bg-[#f7f8f2] px-3 py-2 text-xs font-bold text-[#263d27]">
+            Belanja
+          </Link>
+        </div>
+      </header>
+
+      {loading ? (
+        <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/80 px-4 text-center">
+          <div>
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
+            <p className="mt-4 text-sm font-bold text-[#263d27]">Loading article...</p>
+          </div>
+        </section>
+      ) : failed ? (
+        <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/85 px-4 py-12 text-center shadow-sm">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</p>
+            <h1 className="mt-3 text-3xl font-bold text-[#111827]">Article not available</h1>
+            <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
+              Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
+            </p>
+            <Link to="/mobile/articles" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke artikel
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <article className="mx-auto box-border w-full max-w-[448px] overflow-hidden pb-8">
+          <header className="rounded-[28px] border border-[#d8d5ca] bg-white/90 p-4 shadow-sm">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className={`rounded-full text-xs ${getJournalCategoryBadgeClassName(post.category)}`}>
+                {getJournalCategoryLabel(post.category)}
+              </Badge>
+              <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName('published')}`}>
+                Published
+              </Badge>
+            </div>
+            <h1 className="mt-4 text-[2rem] font-black leading-[1.05] text-[#111827]">{post.title}</h1>
+            {post.excerpt ? <p className="mt-4 text-sm font-semibold leading-7 text-[#5f665e]">{post.excerpt}</p> : null}
+            <div className="mt-5 grid gap-2 text-xs font-bold text-[#6b7280]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
+                <CalendarDays className="h-4 w-4 text-[#263d27]" />
+                {formatDate(post.published_at || post.updated || post.created)}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
+                <Timer className="h-4 w-4 text-[#263d27]" />
+                {readingMinutes} min read
+              </span>
+            </div>
+            {tags.length ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {tags.map((tag) => <span key={tag} className="rounded-full bg-white/85 px-3 py-1 text-xs font-bold text-[#6b7280]">{tag}</span>)}
+              </div>
+            ) : null}
+          </header>
+          <JournalCoverFrame post={post} className="mt-4 rounded-[26px] border-[#d8d5ca]" imageClassName="aspect-[4/3]" eager />
+          <div className="mt-4 grid w-full max-w-full gap-4 pb-8">
+            <section className="box-border w-full min-w-0 max-w-full rounded-[26px] bg-white/90 px-4 py-5 shadow-sm ring-1 ring-[#d8d5ca]/70">
+              {post.content ? <JournalMarkdownContent content={post.content} mobile /> : (
+                <p className="mx-auto max-w-3xl rounded-2xl border border-dashed border-[#d8d5ca] bg-white/75 p-6 text-center text-sm font-medium text-[#6b7280]">
+                  Artikel ini belum memiliki isi.
+                </p>
+              )}
+            </section>
+          </div>
+        </article>
+      )}
+    </main>
+  </MobileCommerceLayout>
+);
+
+/* ─── Desktop article view (editorial design system) ─── */
 const PublicJournalArticlePage = ({ mobile = false }) => {
   const { slug } = useParams();
+  const revealRef = useScrollReveal();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -77,28 +190,18 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
       setFailed(false);
       try {
         const publishedPost = await getPublishedJournalPostBySlug(slug);
-        if (!active) {
-          return;
-        }
-
+        if (!active) return;
         setPost(publishedPost);
         setFailed(!publishedPost);
       } catch (error) {
-        if (active) {
-          setFailed(true);
-        }
+        if (active) setFailed(true);
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     };
 
     loadPost();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [slug]);
 
   const tags = Array.isArray(post?.tags) ? post.tags.filter(Boolean) : [];
@@ -119,17 +222,11 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
     image: [shareImageUrl],
     datePublished: publishedDate,
     dateModified: modifiedDate,
-    author: {
-      '@type': 'Organization',
-      name: 'Solivagant',
-    },
+    author: { '@type': 'Organization', name: 'Solivagant' },
     publisher: {
       '@type': 'Organization',
       name: 'Solivagant',
-      logo: {
-        '@type': 'ImageObject',
-        url: toAbsoluteUrl('/brand/solivagant-logo.png', siteOrigin),
-      },
+      logo: { '@type': 'ImageObject', url: toAbsoluteUrl('/brand/solivagant-logo.png', siteOrigin) },
     },
     mainEntityOfPage: canonicalUrl,
   } : null;
@@ -145,7 +242,31 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
     }
   };
 
-  const page = (
+  /* Mobile rendering delegates to the separated component */
+  if (mobile) {
+    return (
+      <MobileArticleView
+        post={post}
+        loading={loading}
+        failed={failed}
+        slug={slug}
+        title={title}
+        description={description}
+        canonicalUrl={canonicalUrl}
+        shareImageUrl={shareImageUrl}
+        publishedDate={publishedDate}
+        modifiedDate={modifiedDate}
+        tags={tags}
+        readingMinutes={readingMinutes}
+        jsonLd={jsonLd}
+        copyArticleLink={copyArticleLink}
+        copyState={copyState}
+      />
+    );
+  }
+
+  /* Desktop — editorial design system */
+  return (
     <>
       <Helmet>
         <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
@@ -169,153 +290,119 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
         {jsonLd ? <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> : null}
       </Helmet>
 
-      <main className={`${mobile ? 'mobile-page pb-8 text-[#111827]' : 'min-h-screen bg-[#f7f8f2] text-[#111827]'}`}>
-        <header className={mobile ? 'mx-auto mb-4 flex w-full max-w-[448px] items-center justify-between gap-3 rounded-[22px] border border-[#d8d5ca] bg-white/90 px-3 py-2.5 shadow-sm' : 'border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]'}>
-          <div className={mobile ? 'flex min-w-0 flex-1 items-center gap-3' : 'mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8'}>
-            <Link to={mobile ? '/mobile/articles' : '/home'} className="flex min-w-0 items-center gap-3">
-              {mobile ? (
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-[#eef2e8]">
-                  <ArrowLeft className="h-4 w-4" />
-                </span>
-              ) : (
-                <img src="/brand/solivagant-logo.png" alt="Solivagant" className="h-11 w-32 rounded-xl object-contain" />
-              )}
-              {mobile ? (
-                <span className="min-w-0">
-                  <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</span>
-                  <span className="block truncate text-sm font-extrabold text-[#263d27]">Article</span>
-                </span>
-              ) : null}
-            </Link>
-            <Link to={mobile ? '/mobile/catalog' : '/catalog'} className={mobile ? 'shrink-0 rounded-2xl border border-[#d8d5ca] bg-[#f7f8f2] px-3 py-2 text-xs font-bold text-[#263d27]' : 'rounded-2xl border border-white/15 bg-white/8 px-4 py-2 text-sm font-bold text-[#eef2e8]'}>
-              {mobile ? 'Belanja' : 'Catalog'}
-            </Link>
-          </div>
-        </header>
+      <main className="solivagant-editorial-home" ref={revealRef}>
+        <PublicHeader />
 
         {loading ? (
-          <section className={`${mobile ? 'mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/80 px-4 text-center' : 'grid min-h-[60vh] place-items-center px-4 text-center'}`}>
-            <div>
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
-              <p className="mt-4 text-sm font-bold text-[#263d27]">Loading article...</p>
-            </div>
+          <section className="notfound-content">
+            <div className="reveal-divider" style={{ width: 40, margin: '0 auto 20px' }} />
+            <p className="editorial-eyebrow">LOADING</p>
+            <h1 style={{ fontSize: 'var(--text-section)' }}>Memuat artikel...</h1>
           </section>
         ) : failed ? (
-          <section className={`${mobile ? 'mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/85 px-4 py-12 text-center shadow-sm' : 'mx-auto grid min-h-[60vh] max-w-2xl place-items-center px-4 py-16 text-center sm:px-6'}`}>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</p>
-              <h1 className="mt-3 text-3xl font-bold text-[#111827]">Article not available</h1>
-              <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
-                Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
-              </p>
-              <Link to={mobile ? '/mobile/articles' : '/home'} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
-                <ArrowLeft className="h-4 w-4" />
-                {mobile ? 'Kembali ke artikel' : 'Back to Solivagant'}
+          <section className="notfound-content">
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JOURNAL</p>
+            <h1 className="hero-animate-text hero-animate-text--d2">Article not available</h1>
+            <p className="hero-animate-text hero-animate-text--d3">Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.</p>
+            <div className="notfound-actions hero-animate-text hero-animate-text--d4">
+              <Link to="/home" className="editorial-button editorial-button--primary">
+                <ArrowLeft className="h-4 w-4" /> Back to Solivagant
               </Link>
             </div>
           </section>
         ) : (
-          <article className={mobile ? 'mx-auto box-border w-full max-w-[448px] overflow-hidden pb-8' : 'mx-auto box-border w-full max-w-6xl overflow-hidden px-4 py-8 sm:px-6 sm:py-12 lg:px-8'}>
-            <header className={mobile ? 'rounded-[28px] border border-[#d8d5ca] bg-white/90 p-4 shadow-sm' : 'border-b border-[#d8d5ca] pb-8 sm:pb-10'}>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className={`rounded-full text-xs ${getJournalCategoryBadgeClassName(post.category)}`}>
+          <>
+            {/* Article header */}
+            <header className="journal-article-header" data-reveal>
+              <div className="journal-article-header__badges">
+                <span className="journal-article-badge journal-article-badge--category">
                   {getJournalCategoryLabel(post.category)}
-                </Badge>
-                <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName('published')}`}>
+                </span>
+                <span className="journal-article-badge journal-article-badge--status">
                   Published
-                </Badge>
+                </span>
               </div>
 
-              <h1 className={mobile ? 'mt-4 text-[2rem] font-black leading-[1.05] text-[#111827]' : 'mt-5 max-w-4xl text-4xl font-bold leading-tight text-[#111827] sm:text-6xl'}>
-                {post.title}
-              </h1>
+              <h1 className="hero-animate-text hero-animate-text--d1">{post.title}</h1>
 
               {post.excerpt ? (
-                <p className={mobile ? 'mt-4 text-sm font-semibold leading-7 text-[#5f665e]' : 'mt-5 max-w-3xl text-base font-medium leading-8 text-[#5f665e] sm:text-xl'}>
-                  {post.excerpt}
-                </p>
+                <p className="journal-article-header__excerpt hero-animate-text hero-animate-text--d2">{post.excerpt}</p>
               ) : null}
 
-              <div className={mobile ? 'mt-5 grid gap-2 text-xs font-bold text-[#6b7280]' : 'mt-6 flex flex-wrap gap-3 text-sm font-semibold text-[#6b7280]'}>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
-                  <CalendarDays className="h-4 w-4 text-[#263d27]" />
+              <div className="journal-article-header__meta hero-animate-text hero-animate-text--d3">
+                <span className="journal-article-meta-pill">
+                  <CalendarDays />
                   {formatDate(post.published_at || post.updated || post.created)}
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
-                  <Timer className="h-4 w-4 text-[#263d27]" />
+                <span className="journal-article-meta-pill">
+                  <Timer />
                   {readingMinutes} min read
                 </span>
               </div>
 
               {tags.length ? (
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-white/85 px-3 py-1 text-xs font-bold text-[#6b7280]">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="journal-article-header__tags hero-animate-fade">
+                  {tags.map((tag) => <span key={tag} className="journal-article-tag">{tag}</span>)}
                 </div>
               ) : null}
             </header>
 
-            <JournalCoverFrame
-              post={post}
-              className={mobile ? 'mt-4 rounded-[26px] border-[#d8d5ca]' : 'mt-8 rounded-[28px] border-[#d8d5ca]'}
-              imageClassName={mobile ? 'aspect-[4/3]' : 'aspect-[16/8]'}
-              eager
-            />
+            {/* Cover image */}
+            <div className="journal-article-cover" data-reveal="scale">
+              <JournalCoverFrame
+                post={post}
+                className="img-hover-zoom"
+                imageClassName="aspect-[16/8]"
+                eager
+              />
+            </div>
 
-            <div className={mobile ? 'mt-4 grid w-full max-w-full gap-4 pb-8' : 'mt-9 grid w-full max-w-full gap-8 pb-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start'}>
-              <section className={mobile ? 'box-border w-full min-w-0 max-w-full rounded-[26px] bg-white/90 px-4 py-5 shadow-sm ring-1 ring-[#d8d5ca]/70' : 'box-border w-full min-w-0 max-w-full rounded-[28px] bg-white/60 px-4 py-6 ring-1 ring-[#d8d5ca]/70 sm:px-8 sm:py-9 lg:bg-transparent lg:px-0 lg:py-0 lg:ring-0'}>
+            {/* Body + sidebar */}
+            <div className="journal-article-layout">
+              <section className="journal-article-body" data-reveal>
                 {post.content ? (
-                  <JournalMarkdownContent content={post.content} mobile={mobile} />
+                  <JournalMarkdownContent content={post.content} />
                 ) : (
-                  <p className="mx-auto max-w-3xl rounded-2xl border border-dashed border-[#d8d5ca] bg-white/75 p-6 text-center text-sm font-medium text-[#6b7280]">
-                    Artikel ini belum memiliki isi.
-                  </p>
+                  <div className="editorial-empty-state">
+                    <p className="editorial-eyebrow">NO CONTENT</p>
+                    <h2>Artikel ini belum memiliki isi.</h2>
+                  </div>
                 )}
               </section>
 
-              <aside className={mobile ? 'w-full min-w-0 max-w-full' : 'w-full min-w-0 max-w-full lg:sticky lg:top-6'}>
-                <div className="box-border w-full max-w-full overflow-hidden rounded-[24px] border border-[#d8d5ca] bg-white shadow-sm">
-                  <div className="aspect-[1.91/1] overflow-hidden bg-[#f7f8f2]">
-                    <img src={shareImageUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" width="1200" height="630" />
+              <aside className="journal-article-sidebar" data-reveal="right">
+                <div className="journal-article-share">
+                  <div className="journal-article-share__image">
+                    <img src={shareImageUrl} alt="" loading="lazy" decoding="async" width="1200" height="630" />
                   </div>
-                  <div className="space-y-4 p-4">
-                    <div>
-                      <div className="inline-flex items-center gap-1.5 rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
-                        <Share2 className="h-3.5 w-3.5" />
-                        Share preview
-                      </div>
-                      <h2 className="mt-3 line-clamp-3 text-sm font-bold leading-snug text-[#111827]">{title}</h2>
-                      <p className="mt-2 line-clamp-4 text-xs font-medium leading-5 text-[#6b7280]">{description}</p>
-                    </div>
-                    <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2 text-[11px] font-semibold text-[#6b7280]">
-                      <span className="block truncate">{canonicalUrl}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white text-xs font-bold" onClick={copyArticleLink}>
-                        <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  <div className="journal-article-share__body">
+                    <span className="journal-article-share__label">
+                      <Share2 /> Share preview
+                    </span>
+                    <h2>{title}</h2>
+                    <p className="journal-article-share__desc">{description}</p>
+                    <div className="journal-article-share__url">{canonicalUrl}</div>
+                    <div className="journal-article-share__actions">
+                      <button type="button" onClick={copyArticleLink}>
+                        <Copy />
                         {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Failed' : 'Copy'}
-                      </Button>
-                      <Button asChild variant="outline" className="h-10 rounded-2xl bg-white text-xs font-bold">
-                        <a href={canonicalUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                          Open
-                        </a>
-                      </Button>
+                      </button>
+                      <a href={canonicalUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink />
+                        Open
+                      </a>
                     </div>
                   </div>
                 </div>
               </aside>
             </div>
-          </article>
+          </>
         )}
+
+        <StorefrontFooter />
       </main>
     </>
   );
-
-  return mobile ? <MobileCommerceLayout>{page}</MobileCommerceLayout> : page;
 };
 
 export default PublicJournalArticlePage;
