@@ -133,11 +133,11 @@ export const MobileArticlesContent = ({ active = true }) => {
       <main className="mobile-page mobile-articles-page">
         <section className="mobile-soft-card overflow-hidden">
           <div className="p-4">
-            <div className="inline-flex min-h-[28px] items-center gap-1.5 rounded-full bg-white/85 px-3 py-1 text-[10px] font-bold uppercase text-[#263d27] shadow-sm">
+            <div className="inline-flex min-h-[28px] items-center gap-1.5 rounded-full bg-white/85 px-3 py-1 text-[10px] font-bold uppercase text-[#1b1a16] shadow-sm">
               <BookOpenText className="h-3.5 w-3.5" />
               Journal
             </div>
-            <h1 className="mt-3 text-[24px] font-black leading-tight text-[#0b130c]">
+            <h1 className="mt-3 text-[24px] font-black leading-tight text-[#1b1a16]">
               Artikel parfum Solivagant.
             </h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#526351]">
@@ -185,7 +185,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                     <Badge variant="outline" className={`rounded-full text-[10px] ${getJournalCategoryBadgeClassName(featuredPost.category)}`}>
                       {getJournalCategoryLabel(featuredPost.category)}
                     </Badge>
-                    <h2 className="mt-3 text-xl font-black leading-tight text-[#0b130c]">
+                    <h2 className="mt-3 text-xl font-black leading-tight text-[#1b1a16]">
                       {featuredPost.title || 'Artikel Solivagant'}
                     </h2>
                     <p className="mt-2 line-clamp-3 text-sm font-semibold leading-relaxed text-[#6b7280]">
@@ -201,7 +201,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                         {getReadingMinutes(featuredPost)} menit
                       </span>
                     </div>
-                    <span className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-white">
+                    <span className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[#1b1a16] px-4 text-xs font-bold text-white">
                       Baca artikel
                       <ArrowRight className="h-4 w-4" />
                     </span>
@@ -223,7 +223,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                     <Badge variant="outline" className={`rounded-full text-[10px] ${getJournalCategoryBadgeClassName(post.category)}`}>
                       {getJournalCategoryLabel(post.category)}
                     </Badge>
-                    <h3 className="mt-2 line-clamp-2 text-base font-black leading-tight text-[#0b130c]">
+                    <h3 className="mt-2 line-clamp-2 text-base font-black leading-tight text-[#1b1a16]">
                       {post.title || 'Artikel Solivagant'}
                     </h3>
                     <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-[#6b7280]">

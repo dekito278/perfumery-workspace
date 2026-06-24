@@ -93,15 +93,15 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
       <header className="mx-auto mb-4 flex w-full max-w-[448px] items-center justify-between gap-3 rounded-[22px] border border-[#d8d5ca] bg-white/90 px-3 py-2.5 shadow-sm">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Link to="/mobile/articles" className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-[#eef2e8]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#1b1a16] text-[#fffaf0]">
               <ArrowLeft className="h-4 w-4" />
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</span>
-              <span className="block truncate text-sm font-extrabold text-[#263d27]">Article</span>
+              <span className="block truncate text-sm font-extrabold text-[#1b1a16]">Article</span>
             </span>
           </Link>
-          <Link to="/mobile/catalog" className="shrink-0 rounded-2xl border border-[#d8d5ca] bg-[#f7f8f2] px-3 py-2 text-xs font-bold text-[#263d27]">
+          <Link to="/mobile/catalog" className="shrink-0 rounded-2xl border border-[#d8d5ca] bg-[#f7f1e5] px-3 py-2 text-xs font-bold text-[#1b1a16]">
             Belanja
           </Link>
         </div>
@@ -110,8 +110,8 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
       {loading ? (
         <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/80 px-4 text-center">
           <div>
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#263d27]/20 border-t-[#263d27]" />
-            <p className="mt-4 text-sm font-bold text-[#263d27]">Loading article...</p>
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#e5decf]/20 border-t-[#1b1a16]" />
+            <p className="mt-4 text-sm font-bold text-[#1b1a16]">Loading article...</p>
           </div>
         </section>
       ) : failed ? (
@@ -122,7 +122,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
             <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
               Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
             </p>
-            <Link to="/mobile/articles" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#263d27] px-5 py-3 text-sm font-bold text-[#eef2e8]">
+            <Link to="/mobile/articles" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#1b1a16] px-5 py-3 text-sm font-bold text-[#fffaf0]">
               <ArrowLeft className="h-4 w-4" />
               Kembali ke artikel
             </Link>
@@ -143,11 +143,11 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
             {post.excerpt ? <p className="mt-4 text-sm font-semibold leading-7 text-[#5f665e]">{post.excerpt}</p> : null}
             <div className="mt-5 grid gap-2 text-xs font-bold text-[#6b7280]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
-                <CalendarDays className="h-4 w-4 text-[#263d27]" />
+                <CalendarDays className="h-4 w-4 text-[#1b1a16]" />
                 {formatDate(post.published_at || post.updated || post.created)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
-                <Timer className="h-4 w-4 text-[#263d27]" />
+                <Timer className="h-4 w-4 text-[#1b1a16]" />
                 {readingMinutes} min read
               </span>
             </div>

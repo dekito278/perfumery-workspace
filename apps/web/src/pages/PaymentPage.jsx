@@ -153,7 +153,7 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   const displayedSubtotalAfterVoucher = subtotalAfterVoucher || fallbackProductsSubtotal;
 
   return (
-    <div className={`mt-4 rounded-2xl border border-[#263d27]/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#263d27]`}>
+    <div className={`mt-4 rounded-2xl border border-[#e5decf]/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#1b1a16]`}>
       <div className="flex justify-between gap-3">
         <span>Subtotal produk</span>
         <span>{formatTotal(productsSubtotal)}</span>
@@ -177,7 +177,7 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
         </div>
       ) : null}
       {shippingPromotionLabel ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
-      <div className="mt-3 flex justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-[#0b130c]">
+      <div className="mt-3 flex justify-between gap-3 border-t border-[#e5decf]/10 pt-3 text-[#1b1a16]">
         <span>Total bayar</span>
         <span>{formatTotal(session.amount)}</span>
       </div>
@@ -202,7 +202,7 @@ const PaymentFrame = ({ session, compact = false }) => {
       icon: <Loader2 className="h-4 w-4 animate-spin" />,
       title: 'Memuat panel pembayaran',
       description: 'Sebentar ya, Solivagant sedang membuka sesi pembayaran aman.',
-      className: 'border-[#263d27]/10 bg-[#eef2e8] text-[#263d27]',
+      className: 'border-[#e5decf]/10 bg-[#f7f1e5] text-[#1b1a16]',
     },
     ready: {
       icon: <CheckCircle2 className="h-4 w-4" />,
@@ -228,54 +228,54 @@ const PaymentFrame = ({ session, compact = false }) => {
   };
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#263d27]/15 bg-white shadow-sm'}>
-      <div className={compact ? 'border-b border-[#263d27]/10 bg-[#eef2e8] p-4' : 'border-b border-[#263d27]/10 bg-[#eef2e8] p-5'}>
+    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#e5decf]/15 bg-white shadow-sm'}>
+      <div className={compact ? 'border-b border-[#e5decf]/10 bg-[#f7f1e5] p-4' : 'border-b border-[#e5decf]/10 bg-[#f7f1e5] p-5'}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Checkout aman</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f695f]">Checkout aman</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
               Order tersimpan. Selesaikan pembayaran di panel ini tanpa meninggalkan nuansa Solivagant.
             </p>
           </div>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#1b1a16]">
             <ShieldCheck className="h-5 w-5" />
           </span>
         </div>
-        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-[#263d27]' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
+        <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-[#1b1a16]' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+            <div className="text-[10px] uppercase text-[#6f695f]">Order</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+            <div className="text-[10px] uppercase text-[#6f695f]">Customer</div>
             <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-[#6f7d61]">Total</div>
+            <div className="text-[10px] uppercase text-[#6f695f]">Total</div>
             <div className="mt-1">{formatTotal(session.amount)}</div>
           </div>
           {session.paymentStatus ? (
             <div className="rounded-2xl bg-white/80 px-4 py-3">
-              <div className="text-[10px] uppercase text-[#6f7d61]">Status</div>
+              <div className="text-[10px] uppercase text-[#6f695f]">Status</div>
               <div className="mt-1 truncate">{paymentStatusLabels[session.paymentStatus] || session.paymentStatus}</div>
             </div>
           ) : null}
         </div>
         <PaymentTotalBreakdown session={session} compact={compact} />
         {customerCode ? (
-          <div className={compact ? 'mt-4 rounded-2xl border border-[#263d27]/15 bg-white p-4' : 'mt-5 rounded-2xl border border-[#263d27]/15 bg-white p-5'}>
+          <div className={compact ? 'mt-4 rounded-2xl border border-[#e5decf]/15 bg-white p-4' : 'mt-5 rounded-2xl border border-[#e5decf]/15 bg-white p-5'}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Kode customer</div>
-                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-[#263d27]' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-[#263d27]'}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f695f]">Kode customer</div>
+                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-[#1b1a16]' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-[#1b1a16]'}>
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
                   Simpan kode ini untuk cek order dan belanja berikutnya tanpa isi ulang data.
                 </p>
               </div>
-              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-[#f7f8f2] gap-2" onClick={copyCustomerCode}>
+              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-[#f7f1e5] gap-2" onClick={copyCustomerCode}>
                 <Copy className="h-4 w-4" />
                 Salin kode
               </Button>
@@ -290,14 +290,14 @@ const PaymentFrame = ({ session, compact = false }) => {
               {expiresAtLabel ? <p className="mt-2 text-[11px] font-bold uppercase opacity-80">Batas bayar: {expiresAtLabel}</p> : null}
             </div>
             {customerCode ? (
-              <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-[#263d27]">
+              <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-[#1b1a16]">
                 Lacak order
               </Link>
             ) : null}
           </div>
         </div>
       </div>
-      <div className="border-b border-[#263d27]/10 bg-white px-4 py-3">
+      <div className="border-b border-[#e5decf]/10 bg-white px-4 py-3">
         <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${statusCopy.className}`}>
           <span className="mt-0.5 shrink-0">{statusCopy.icon}</span>
           <div>
@@ -317,13 +317,13 @@ const PaymentFrame = ({ session, compact = false }) => {
           onError={() => setFrameStatus('failed')}
         />
       </div>
-      <div className={compact ? 'grid gap-2 border-t border-[#263d27]/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-[#263d27]/10 bg-[#fbfaf7] p-4'}>
+      <div className={compact ? 'grid gap-2 border-t border-[#e5decf]/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-[#e5decf]/10 bg-[#fbfaf7] p-4'}>
         <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
           Kalau panel pembayaran tidak termuat oleh browser, gunakan tombol cadangan ini.
         </p>
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
-            <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#263d27]">
+            <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-[#1b1a16]">
               Lacak order
             </Link>
           ) : null}
@@ -398,17 +398,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   };
 
   return (
-    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#263d27]/15 bg-white shadow-sm'}>
-      <div className={compact ? 'border-b border-[#263d27]/10 bg-[#eef2e8] p-4' : 'border-b border-[#263d27]/10 bg-[#eef2e8] p-5'}>
+    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-[#e5decf]/15 bg-white shadow-sm'}>
+      <div className={compact ? 'border-b border-[#e5decf]/10 bg-[#f7f1e5] p-4' : 'border-b border-[#e5decf]/10 bg-[#f7f1e5] p-5'}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f7d61]">Transfer manual</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f695f]">Transfer manual</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
               Transfer sesuai total bayar ke rekening di bawah, lalu wajib upload bukti transfer di halaman ini. Order baru masuk pengecekan admin setelah bukti transfer terkirim.
             </p>
           </div>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#1b1a16]">
             <CreditCard className="h-5 w-5" />
           </span>
         </div>
@@ -416,15 +416,15 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+                <div className="text-[10px] uppercase text-[#6f695f]">Order</div>
                 <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+                <div className="text-[10px] uppercase text-[#6f695f]">Customer</div>
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-[#6f7d61]">Total transfer</div>
+                <div className="text-[10px] uppercase text-[#6f695f]">Total transfer</div>
                 <div className="mt-1">{formatTotal(session.amount)}</div>
               </div>
             </div>
@@ -435,11 +435,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
 
       <div className={compact ? 'grid gap-3 p-4' : 'grid gap-4 p-5 lg:grid-cols-[1fr_0.8fr]'}>
         {customerCode ? (
-          <div className={compact ? 'rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] p-4' : 'rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] p-5 lg:col-span-2'}>
+          <div className={compact ? 'rounded-2xl border border-[#e5decf]/15 bg-[#f7f1e5] p-4' : 'rounded-2xl border border-[#e5decf]/15 bg-[#f7f1e5] p-5 lg:col-span-2'}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Kode customer</div>
-                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-[#263d27]' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-[#263d27]'}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f695f]">Kode customer</div>
+                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-[#1b1a16]' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-[#1b1a16]'}>
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
@@ -454,29 +454,29 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
-          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Rekening tujuan</div>
+        <div className="rounded-2xl border border-[#e5decf]/10 bg-[#fbfaf7] p-4">
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f695f]">Rekening tujuan</div>
           <div className="mt-3 grid gap-3">
             <div className="rounded-2xl bg-white p-4">
               <div className="text-xs font-bold uppercase text-muted-foreground">Bank</div>
-              <div className="mt-1 text-xl font-bold text-[#263d27]">{transfer.bankName}</div>
+              <div className="mt-1 text-xl font-bold text-[#1b1a16]">{transfer.bankName}</div>
             </div>
-            <button type="button" onClick={() => copyValue('Nomor rekening', transfer.accountNumber)} className="rounded-2xl border border-[#263d27]/10 bg-white p-4 text-left">
+            <button type="button" onClick={() => copyValue('Nomor rekening', transfer.accountNumber)} className="rounded-2xl border border-[#e5decf]/10 bg-white p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-bold uppercase text-muted-foreground">Nomor rekening</div>
-                  <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-[#263d27]">{transfer.accountNumber}</div>
+                  <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-[#1b1a16]">{transfer.accountNumber}</div>
                 </div>
-                <Copy className="h-4 w-4 text-[#263d27]" />
+                <Copy className="h-4 w-4 text-[#1b1a16]" />
               </div>
             </button>
-            <button type="button" onClick={() => copyValue('Nama rekening', transfer.accountName)} className="rounded-2xl border border-[#263d27]/10 bg-white p-4 text-left">
+            <button type="button" onClick={() => copyValue('Nama rekening', transfer.accountName)} className="rounded-2xl border border-[#e5decf]/10 bg-white p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-bold uppercase text-muted-foreground">Atas nama</div>
-                  <div className="mt-1 text-lg font-bold text-[#0b130c]">{transfer.accountName}</div>
+                  <div className="mt-1 text-lg font-bold text-[#1b1a16]">{transfer.accountName}</div>
                 </div>
-                <Copy className="h-4 w-4 text-[#263d27]" />
+                <Copy className="h-4 w-4 text-[#1b1a16]" />
               </div>
             </button>
           </div>
@@ -495,7 +495,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             Salin total transfer
           </Button>
           {customerCode && hasSubmittedProof ? (
-            <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-4 text-sm font-bold text-[#263d27]">
+            <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#e5decf]/15 bg-white px-4 text-sm font-bold text-[#1b1a16]">
               Lacak order
             </Link>
           ) : null}
@@ -508,15 +508,15 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         </div>
 
         {compact ? (
-          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f7d61]">Ringkasan order</div>
-            <div className="mt-3 grid gap-2 text-xs font-bold text-[#263d27]">
-              <div className="rounded-2xl bg-[#eef2e8] px-4 py-3">
-                <div className="text-[10px] uppercase text-[#6f7d61]">Order</div>
+          <div className="rounded-2xl border border-[#e5decf]/10 bg-white p-4">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6f695f]">Ringkasan order</div>
+            <div className="mt-3 grid gap-2 text-xs font-bold text-[#1b1a16]">
+              <div className="rounded-2xl bg-[#f7f1e5] px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f695f]">Order</div>
                 <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
               </div>
-              <div className="rounded-2xl bg-[#eef2e8] px-4 py-3">
-                <div className="text-[10px] uppercase text-[#6f7d61]">Customer</div>
+              <div className="rounded-2xl bg-[#f7f1e5] px-4 py-3">
+                <div className="text-[10px] uppercase text-[#6f695f]">Customer</div>
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
             </div>
@@ -524,17 +524,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </div>
         ) : null}
 
-        <div id="mobile-payment-proof-section" className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+        <div id="mobile-payment-proof-section" className="rounded-2xl border border-[#e5decf]/10 bg-white p-4">
           <div className="flex items-start gap-3">
             <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-2xl ${hasSubmittedProof ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
               {hasSubmittedProof ? <FileCheck2 className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-xs font-bold uppercase text-[#6f7d61]">Bukti transfer</div>
+                <div className="text-xs font-bold uppercase text-[#6f695f]">Bukti transfer</div>
                 {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">Wajib</span> : null}
               </div>
-              <p className="mt-1 text-sm font-semibold leading-relaxed text-[#263d27]">
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-[#1b1a16]">
                 {proofStatus === 'rejected'
                   ? 'Bukti sebelumnya ditolak. Upload ulang bukti transfer yang jelas.'
                   : hasSubmittedProof
@@ -548,12 +548,12 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 </div>
               ) : null}
               {session.paymentProofFileName ? (
-                <div className="mt-2 truncate rounded-xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
+                <div className="mt-2 truncate rounded-xl bg-[#f7f1e5] px-3 py-2 text-xs font-bold text-[#1b1a16]">
                   {session.paymentProofFileName}
                 </div>
               ) : null}
               {session.paymentProofUploadedAt ? (
-                <div className="mt-1 text-[11px] font-semibold text-[#6f7d61]">
+                <div className="mt-1 text-[11px] font-semibold text-[#6f695f]">
                   Dikirim {formatDateTime(session.paymentProofUploadedAt)}
                 </div>
               ) : null}
@@ -571,11 +571,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 disabled={uploadingProof}
                 required={needsProofUpload}
                 aria-required={needsProofUpload}
-                className="block w-full rounded-2xl border border-[#263d27]/15 bg-[#fbfaf7] px-3 py-2 text-sm font-semibold text-[#263d27] file:mr-3 file:rounded-xl file:border-0 file:bg-[#263d27] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#eef2e8]"
+                className="block w-full rounded-2xl border border-[#e5decf]/15 bg-[#fbfaf7] px-3 py-2 text-sm font-semibold text-[#1b1a16] file:mr-3 file:rounded-xl file:border-0 file:bg-[#1b1a16] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#fffaf0]"
               />
             </label>
             {proofFile ? (
-              <div className="truncate text-xs font-semibold text-[#6f7d61]">
+              <div className="truncate text-xs font-semibold text-[#6f695f]">
                 {proofFile.name}
               </div>
             ) : null}
@@ -595,7 +595,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
 
 const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }) => (
   <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
-    <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+    <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
     <h1 className={isMobile ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>
@@ -607,14 +607,14 @@ const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }
         : 'Mulai dari cart agar Solivagant bisa membuat order dan membuka panel pembayaran.'}
     </p>
     <div className="mt-5 flex justify-center gap-2">
-      <Link to={isMobile ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl bg-[#263d27] px-5 text-sm font-bold text-[#eef2e8]">
+      <Link to={isMobile ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl bg-[#1b1a16] px-5 text-sm font-bold text-[#fffaf0]">
         Buka katalog
       </Link>
-      <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
+      <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-[#1b1a16]">
         Lacak order
       </Link>
       {orderNumber && onRefresh ? (
-        <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-[#263d27]">
+        <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-[#1b1a16]">
           <RefreshCw className="h-4 w-4" />
           Refresh
         </button>
@@ -625,7 +625,7 @@ const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }
 
 const MobilePaymentSkeleton = () => (
   <section className="mobile-card overflow-hidden p-0" aria-busy="true">
-    <div className="border-b border-[#263d27]/10 bg-[#eef2e8] p-4">
+    <div className="border-b border-[#e5decf]/10 bg-[#f7f1e5] p-4">
       <div className="mobile-catalog-skeleton h-4 w-32 rounded-full" />
       <div className="mobile-catalog-skeleton mt-3 h-7 w-56 rounded-full" />
       <div className="mt-4 grid gap-2">
@@ -804,12 +804,12 @@ const PaymentPageContent = ({ isMobile }) => {
               reserveSpace
               aria-label="Aksi pembayaran"
               className="mobile-payment-action-bar"
-              contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+              contentClassName="rounded-2xl border-[#e5decf]/10 bg-white/95"
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? 'Transfer manual' : 'Pembayaran DOKU'}</p>
-                  <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(session.amount)}</p>
+                  <p className="truncate text-lg font-bold leading-tight text-[#1b1a16]">{formatTotal(session.amount)}</p>
                   <p className="truncate text-[10px] font-bold text-amber-700">{paymentStatusLabels[session.paymentStatus || 'pending'] || 'Menunggu pembayaran'}</p>
                 </div>
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={openPrimaryPaymentAction}>
