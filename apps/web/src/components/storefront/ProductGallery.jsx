@@ -37,7 +37,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
             <button
               type="button"
               onClick={() => goToImage(-1)}
-              className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-[#263d27] shadow-sm backdrop-blur"
+              className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-[#1b1a16] shadow-sm backdrop-blur"
               aria-label="Previous product image"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -45,7 +45,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
             <button
               type="button"
               onClick={() => goToImage(1)}
-              className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-[#263d27] shadow-sm backdrop-blur"
+              className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/88 text-[#1b1a16] shadow-sm backdrop-blur"
               aria-label="Next product image"
             >
               <ChevronRight className="h-5 w-5" />
@@ -73,7 +73,7 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
               onClick={() => setActiveIndex(index)}
               className={cn(
                 'h-16 w-16 shrink-0 overflow-hidden rounded-2xl border bg-white',
-                index === activeIndex ? 'border-[#263d27] ring-2 ring-[#263d27]/18' : 'border-[#e5e7eb]'
+                index === activeIndex ? 'border-[#e5decf] ring-2 ring-[#1b1a16]/18' : 'border-[#e5e7eb]'
               )}
               aria-label={`Select product image ${index + 1}`}
             >

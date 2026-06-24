@@ -29,20 +29,20 @@ const StorefrontHeader = ({
   );
 
   return (
-    <section className={cn('border-b border-[#263d27]/15 bg-[#050705] text-[#eef2e8]', className)}>
+    <section className={cn('border-b border-[#e5decf]/15 bg-[#050705] text-[#fffaf0]', className)}>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         {backLabel ? (
           onBack ? (
-            <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
+            <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm font-bold text-[#fffaf0]">
               {backContent}
             </button>
           ) : (
-            <Link to={backTo || '/home'} className="inline-flex items-center gap-2 text-sm font-bold text-[#eef2e8]">
+            <Link to={backTo || '/home'} className="inline-flex items-center gap-2 text-sm font-bold text-[#fffaf0]">
               {backContent}
             </Link>
           )
         ) : showLogo ? (
-          <Link to="/home" className="inline-flex items-center gap-2 rounded-2xl bg-[#eef2e8] px-3 py-2 shadow-sm shadow-black/20">
+          <Link to="/home" className="inline-flex items-center gap-2 rounded-2xl bg-[#f7f1e5] px-3 py-2 shadow-sm shadow-black/20">
             <img
               src="/brand/solivagant-logo.png"
               alt="Solivagant"
@@ -52,7 +52,7 @@ const StorefrontHeader = ({
               width="24"
               height="24"
             />
-            <span className="text-sm font-bold tracking-[0.12em] text-[#0b130c]">Solivagant</span>
+            <span className="text-sm font-bold tracking-[0.12em] text-[#1b1a16]">Solivagant</span>
           </Link>
         ) : <span aria-hidden="true" />}
 
@@ -77,8 +77,8 @@ const StorefrontHeader = ({
             );
             const actionClassName = cn(
               action.iconOnly
-                ? 'grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/8 text-[#eef2e8]'
-                : 'inline-flex h-10 items-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-4 text-sm font-bold text-[#eef2e8]',
+                ? 'grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/8 text-[#fffaf0]'
+                : 'inline-flex h-10 items-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-4 text-sm font-bold text-[#fffaf0]',
               action.className
             );
 

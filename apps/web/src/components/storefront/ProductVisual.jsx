@@ -102,14 +102,14 @@ const ProductVisual = ({
       ) : (
         <>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(238,242,232,0.12),transparent_38%)]" />
-          <div className="absolute bottom-4 left-4 rounded-2xl bg-white/10 px-3 py-2 text-[10px] font-bold uppercase text-[#eef2e8] shadow-sm backdrop-blur">
+          <div className="absolute bottom-4 left-4 rounded-2xl bg-white/10 px-3 py-2 text-[10px] font-bold uppercase text-[#fffaf0] shadow-sm backdrop-blur">
             Solivagant
           </div>
         </>
       )}
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
       {label && product ? (
-        <div className="absolute bottom-3 right-3 rounded-2xl bg-white/12 px-3 py-2 text-right text-[#eef2e8] shadow-sm backdrop-blur">
+        <div className="absolute bottom-3 right-3 rounded-2xl bg-white/12 px-3 py-2 text-right text-[#fffaf0] shadow-sm backdrop-blur">
           <div className="text-[10px] font-bold uppercase text-[#b7c6b1]">{product?.category}</div>
           <div className="text-xs font-bold">{product?.size}</div>
         </div>

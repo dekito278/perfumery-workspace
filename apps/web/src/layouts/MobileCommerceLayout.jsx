@@ -71,7 +71,7 @@ const MobileCommerceLayout = ({ children }) => {
       {isAuthenticated ? (
         <Link
           to="/mobile/studio"
-          className="mobile-studio-floating-link inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/16 bg-white/95 px-3 text-xs font-bold text-[#263d27] shadow-sm backdrop-blur"
+          className="mobile-studio-floating-link inline-flex h-10 items-center gap-2 rounded-2xl border border-[#e5decf]/16 bg-white/95 px-3 text-xs font-bold text-[#1b1a16] shadow-sm backdrop-blur"
           aria-label="Kembali ke dashboard Studio"
         >
           <Beaker className="h-4 w-4" />
@@ -92,7 +92,7 @@ const MobileCommerceLayout = ({ children }) => {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative flex h-[52px] flex-col items-center justify-center gap-0.5 rounded-[14px] text-[9.5px] font-bold transition',
-                active ? 'bg-[#eef2e8] text-[#263d27]' : 'text-[#8b949e]'
+                active ? 'bg-[#f7f1e5] text-[#1b1a16]' : 'text-[#8b949e]'
               )}
             >
               <Icon className="h-[19px] w-[19px]" />
