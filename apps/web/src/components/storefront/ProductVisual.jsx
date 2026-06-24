@@ -48,7 +48,7 @@ const ProductVisual = ({
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-2xl bg-[#050705]', className)}
+      className={cn('relative overflow-hidden rounded-2xl bg-[#121110]', className)}
       style={{ background: getFallbackGradient(product) }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_14%,rgba(255,255,255,0.34),transparent_34%),linear-gradient(180deg,rgba(5,7,5,0.02),rgba(5,7,5,0.36))]" />

@@ -405,7 +405,7 @@ const ProductManagementPage = () => {
             </div>
 
             <Tabs defaultValue="utama" className="mt-5">
-              <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-[#f7f8f2] p-1 lg:grid-cols-4">
+              <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-[#fffaf0] p-1 lg:grid-cols-4">
                 <TabsTrigger value="utama" className="rounded-xl text-xs font-bold">Utama</TabsTrigger>
                 <TabsTrigger value="commercial" className="rounded-xl text-xs font-bold">Harga & stok</TabsTrigger>
                 <TabsTrigger value="media" className="rounded-xl text-xs font-bold">Media</TabsTrigger>
@@ -610,9 +610,9 @@ const ProductManagementPage = () => {
                   <div className="text-xs font-bold uppercase text-amber-700">Corrections</div>
                   <div className="mt-1 text-2xl font-bold text-amber-800">{stockCorrectionHistory.length}</div>
                 </div>
-                <div className="rounded-2xl bg-[#eef2e8] px-4 py-3">
-                  <div className="text-xs font-bold uppercase text-[#263d27]">Avg threshold</div>
-                  <div className="mt-1 text-2xl font-bold text-[#263d27]">
+                <div className="rounded-2xl bg-[#f7f1e5] px-4 py-3">
+                  <div className="text-xs font-bold uppercase text-[#1b1a16]">Avg threshold</div>
+                  <div className="mt-1 text-2xl font-bold text-[#1b1a16]">
                     {customProducts.length ? Math.round(customProducts.reduce((sum, product) => sum + getProductRestockThreshold(product), 0) / customProducts.length) : 0}
                   </div>
                 </div>
@@ -632,7 +632,7 @@ const ProductManagementPage = () => {
                 <p className="mt-4 rounded-2xl bg-[#fbfaf7] px-4 py-3 text-sm font-semibold text-muted-foreground">Semua custom product masih di atas restock threshold.</p>
               )}
               <div className="mt-5 border-t pt-4">
-                <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+                <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                   <Clock3 className="h-4 w-4" />
                   Riwayat koreksi stok
                 </div>
@@ -644,7 +644,7 @@ const ProductManagementPage = () => {
                           <div className="text-sm font-bold text-[#1f2937]">{event.productName}</div>
                           <p className="mt-1 text-xs font-semibold text-muted-foreground">{event.note || 'Manual stock correction'}</p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{event.previousStock} -&gt; {event.nextStock}</span>
+                        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{event.previousStock} -&gt; {event.nextStock}</span>
                       </div>
                     </div>
                   ))}
@@ -692,7 +692,7 @@ const ProductManagementPage = () => {
                   key={filter.key}
                   type="button"
                   onClick={() => setProductStatusFilter(filter.key)}
-                  className={`inline-flex h-9 items-center gap-2 rounded-2xl border px-3 text-xs font-bold transition ${productStatusFilter === filter.key ? 'border-[#263d27] bg-[#263d27] text-white' : 'bg-white text-[#344054]'}`}
+                  className={`inline-flex h-9 items-center gap-2 rounded-2xl border px-3 text-xs font-bold transition ${productStatusFilter === filter.key ? 'border-[#1b1a16] bg-[#1b1a16] text-white' : 'bg-white text-[#344054]'}`}
                 >
                   {filter.key === 'all' ? <Filter className="h-3.5 w-3.5" /> : null}
                   {filter.label}
@@ -724,7 +724,7 @@ const ProductManagementPage = () => {
                           </p>
                           <div className="mt-2 flex flex-wrap gap-1">
                             {product.variants.slice(0, 4).map((variant) => (
-                              <span key={variant.id || variant.size} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
+                              <span key={variant.id || variant.size} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#f7f1e5] text-[#1b1a16]'}`}>
                                 {variant.size}: {variant.stock}
                               </span>
                             ))}

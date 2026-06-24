@@ -29,12 +29,12 @@ const renderInline = (text) => {
     } else if (token.startsWith('*')) {
       parts.push(<em key={key}>{token.slice(1, -1)}</em>);
     } else if (token.startsWith('`')) {
-      parts.push(<code key={key} className="rounded-md bg-[#ece8df] px-1.5 py-0.5 text-[0.9em] font-semibold text-[#263d27]">{token.slice(1, -1)}</code>);
+      parts.push(<code key={key} className="rounded-md bg-[#ece8df] px-1.5 py-0.5 text-[0.9em] font-semibold text-[#1b1a16]">{token.slice(1, -1)}</code>);
     } else {
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       const href = normalizeHref(linkMatch?.[2]);
       parts.push(
-        <a key={key} href={href} target="_blank" rel="noreferrer" className="font-bold text-[#263d27] underline decoration-[#8d7a4f]/40 underline-offset-4">
+        <a key={key} href={href} target="_blank" rel="noreferrer" className="font-bold text-[#1b1a16] underline decoration-[#8d7a4f]/40 underline-offset-4">
           {linkMatch?.[1] || href}
         </a>
       );

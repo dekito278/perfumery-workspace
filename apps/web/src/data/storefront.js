@@ -2,22 +2,22 @@ export const storefrontCategories = [
   {
     name: 'Fresh',
     description: 'Citrus, aquatic, and clean daily wear.',
-    accent: 'bg-[#eef2e8] text-[#263d27] border-[#263d27]/15',
+    accent: 'bg-[#f7f1e5] text-[#1b1a16] border-[#1b1a16]/15',
   },
   {
     name: 'Floral',
     description: 'Soft petals, jasmine, rose, and powdery musk.',
-    accent: 'bg-[#f4f2ec] text-[#263d27] border-[#263d27]/15',
+    accent: 'bg-[#f4f2ec] text-[#1b1a16] border-[#1b1a16]/15',
   },
   {
     name: 'Woody',
     description: 'Sandalwood, cedar, vetiver, and warm drydown.',
-    accent: 'bg-[#e7ebe1] text-[#263d27] border-[#263d27]/15',
+    accent: 'bg-[#e7ebe1] text-[#1b1a16] border-[#1b1a16]/15',
   },
   {
     name: 'Gourmand',
     description: 'Vanilla, tonka, coffee, and edible warmth.',
-    accent: 'bg-[#f7f8f2] text-[#263d27] border-[#263d27]/15',
+    accent: 'bg-[#fffaf0] text-[#1b1a16] border-[#1b1a16]/15',
   },
 ];
 

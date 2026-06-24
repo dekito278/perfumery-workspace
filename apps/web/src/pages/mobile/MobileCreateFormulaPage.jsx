@@ -286,11 +286,11 @@ const MobileCreateFormulaPage = () => {
             {orderContext ? (
               <section className="mobile-soft-card p-3">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                     <ClipboardList className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Order handoff</div>
+                    <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Order handoff</div>
                     <h2 className="mt-0.5 truncate text-sm font-bold text-[#1f2937]">{orderContext.orderNumber}</h2>
                     <p className="mt-1 mobile-line-clamp-2 text-[11px] font-semibold text-[#6b7280]">
                       Formula will be linked back to {orderContext.customerName || 'this customer'} after create.

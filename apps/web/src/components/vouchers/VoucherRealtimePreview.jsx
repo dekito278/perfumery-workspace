@@ -6,7 +6,7 @@ const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(Number(val
 
 const Metric = ({ label, value, helper, tone = 'neutral' }) => {
   const tones = {
-    neutral: 'bg-white text-[#0b130c] ring-[#e5e7eb]',
+    neutral: 'bg-white text-[#1b1a16] ring-[#e5e7eb]',
     amber: 'bg-amber-50 text-amber-900 ring-amber-100',
     emerald: 'bg-emerald-50 text-emerald-900 ring-emerald-100',
     rose: 'bg-rose-50 text-rose-800 ring-rose-100',
@@ -44,11 +44,11 @@ const VoucherRealtimePreview = ({ preview, className = '' }) => {
   };
 
   return (
-    <section className={`rounded-2xl border border-[#e5e7eb] bg-[#f7f8f2] p-4 ${className}`}>
+    <section className={`rounded-2xl border border-[#e5e7eb] bg-[#fffaf0] p-4 ${className}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[10px] font-bold uppercase text-amber-700">Preview real-time</div>
-          <h3 className="mt-1 text-base font-bold text-[#0b130c]">Simulasi aturan voucher</h3>
+          <h3 className="mt-1 text-base font-bold text-[#1b1a16]">Simulasi aturan voucher</h3>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
             Estimasi dihitung dari produk Studio yang eligible, masing-masing 1 item.
           </p>
@@ -90,7 +90,7 @@ const VoucherRealtimePreview = ({ preview, className = '' }) => {
           <div key={rule.key} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-xs font-semibold ring-1 ring-[#e5e7eb]">
             <div className="flex min-w-0 items-center gap-2">
               {rule.pass ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" /> : <AlertCircle className="h-4 w-4 shrink-0 text-amber-700" />}
-              <span className="truncate font-bold text-[#0b130c]">{rule.label}</span>
+              <span className="truncate font-bold text-[#1b1a16]">{rule.label}</span>
             </div>
             <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${rule.pass ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
               {getRuleDetail(rule)}

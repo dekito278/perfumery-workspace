@@ -396,8 +396,8 @@ const MobileFulfillmentPage = () => {
           <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
             {searchedOrders.length} order tampil. Scan barcode/resi atau ketik nama customer untuk lompat cepat.
           </p>
-          <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-white/78 p-3">
-            <label className="flex items-center gap-2 text-xs font-bold text-[#263d27]">
+          <div className="mt-3 rounded-2xl border border-[#1b1a16]/10 bg-white/78 p-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-[#1b1a16]">
               <Checkbox checked={allSearchedSelected} onCheckedChange={(checked) => toggleSearchedSelection(Boolean(checked))} />
               Pilih semua yang tampil
             </label>
@@ -456,7 +456,7 @@ const MobileFulfillmentPage = () => {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-[#0b130c]">Antrean siap</h2>
+            <h2 className="text-base font-bold text-[#1b1a16]">Antrean siap</h2>
             <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Semua order</Button>
           </div>
 
@@ -472,7 +472,7 @@ const MobileFulfillmentPage = () => {
                   <div className="flex min-w-0 gap-2">
                     <Checkbox checked={selectedOrderSet.has(orderKey)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} className="mt-0.5 shrink-0" />
                     <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-[#0b130c]">{order.orderNumber}</h3>
+                    <h3 className="truncate text-sm font-bold text-[#1b1a16]">{order.orderNumber}</h3>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
                     <p className="mt-1 text-[10px] font-bold uppercase text-[#9ca3af]">{formatDate(order.createdAt)}</p>
                     </div>
@@ -498,9 +498,9 @@ const MobileFulfillmentPage = () => {
                     </div>
                   ))}
                   {getOrderVoucherSnapshot(order) ? (
-                    <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#eef2e8] px-3 py-2">
-                      <span className="min-w-0 truncate text-xs font-bold text-[#263d27]">Voucher {getOrderVoucherSnapshot(order).code}</span>
-                      <span className="shrink-0 text-[10px] font-bold text-[#263d27]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</span>
+                    <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f7f1e5] px-3 py-2">
+                      <span className="min-w-0 truncate text-xs font-bold text-[#1b1a16]">Voucher {getOrderVoucherSnapshot(order).code}</span>
+                      <span className="shrink-0 text-[10px] font-bold text-[#1b1a16]">-{formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</span>
                     </div>
                   ) : null}
                 </div>
@@ -553,7 +553,7 @@ const MobileFulfillmentPage = () => {
                   <div>
                     <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} items</div>
                     <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
-                    {getOrderVoucherSnapshot(order) ? <div className="text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div> : null}
+                    {getOrderVoucherSnapshot(order) ? <div className="text-[11px] font-bold text-[#1b1a16]">Hemat {formatTotal(getOrderVoucherSnapshot(order).discountAmount)}</div> : null}
                   </div>
                   <Button
                     type="button"

@@ -51,7 +51,7 @@ const CustomersPage = () => {
             <span className="text-sm font-bold text-amber-700">Format kode: SOLIxxxxx</span>
           </div>
           <div className="mt-5 overflow-hidden rounded-2xl border">
-            <div className="hidden grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto] gap-3 bg-[#f7f8f2] px-4 py-3 text-xs font-bold uppercase text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto] gap-3 bg-[#fffaf0] px-4 py-3 text-xs font-bold uppercase text-muted-foreground lg:grid">
               <span>Customer</span>
               <span>Kontak</span>
               <span>Alamat</span>
@@ -62,7 +62,7 @@ const CustomersPage = () => {
             {customers.map((customer) => (
               <article key={customer.id || customer.customerCode} className="grid gap-3 border-t bg-white px-4 py-4 text-sm font-semibold lg:grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto] lg:items-center">
                 <div>
-                  <div className="font-bold text-[#0b130c]">{customer.customerName}</div>
+                  <div className="font-bold text-[#1b1a16]">{customer.customerName}</div>
                   {customer.persistence === 'local' ? <div className="mt-1 text-xs font-bold uppercase text-stone-500">Fallback lokal</div> : null}
                 </div>
                 <div className="text-muted-foreground">{customer.contact}</div>

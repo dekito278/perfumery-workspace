@@ -740,8 +740,8 @@ const OrderDetailPage = () => {
                 const done = activeStep >= index;
                 return (
                   <div key={step} className="min-w-0">
-                    <div className={`h-2 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-                    <div className={`mt-1 truncate text-[10px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-muted-foreground'}`}>{statusLabels[step]}</div>
+                    <div className={`h-2 rounded-full ${done ? 'bg-[#1b1a16]' : 'bg-stone-200'}`} />
+                    <div className={`mt-1 truncate text-[10px] font-bold uppercase ${done ? 'text-[#1b1a16]' : 'text-muted-foreground'}`}>{statusLabels[step]}</div>
                   </div>
                 );
               })}
@@ -755,7 +755,7 @@ const OrderDetailPage = () => {
         </section>
 
         {voucherSnapshot ? (
-          <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4 text-sm font-bold text-[#263d27] shadow-sm">
+          <section className="mb-5 rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-4 text-sm font-bold text-[#1b1a16] shadow-sm">
             <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Subtotal produk</span>{formatTotal(getOrderProductsSubtotal(order))}</div>
               <div><span className="block text-[10px] uppercase text-[#6b7280]">Voucher {voucherSnapshot.code}</span>-{formatTotal(voucherSnapshot.discountAmount)}</div>
@@ -766,50 +766,50 @@ const OrderDetailPage = () => {
         ) : null}
 
         <section className="mb-5 grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
-          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+          <div className="rounded-2xl border border-[#1b1a16]/10 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
               <Clipboard className="h-4 w-4" />
               Tugas berikutnya
             </div>
-            <h2 className="mt-2 text-xl font-bold text-[#0b130c]">{nextOperationalTask.title}</h2>
+            <h2 className="mt-2 text-xl font-bold text-[#1b1a16]">{nextOperationalTask.title}</h2>
             <p className="mt-1 text-sm font-semibold leading-relaxed text-muted-foreground">{nextOperationalTask.helper}</p>
           </div>
-          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[#1b1a16]/10 bg-white p-4 shadow-sm">
             <div className="text-xs font-bold uppercase text-muted-foreground">Pembayaran</div>
             <div className="mt-2 flex flex-wrap gap-2">
               <StatusChip tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
               <StatusChip tone={paymentProofToneByStatus[paymentProofStatus] || 'warning'}>{paymentProofStatusLabels[paymentProofStatus] || paymentProofStatus}</StatusChip>
             </div>
-            <p className="mt-3 text-sm font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</p>
+            <p className="mt-3 text-sm font-bold text-[#1b1a16]">{formatTotal(order.subtotal)}</p>
           </div>
-          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[#1b1a16]/10 bg-white p-4 shadow-sm">
             <div className="text-xs font-bold uppercase text-muted-foreground">Fulfillment</div>
             <div className="mt-2 flex flex-wrap gap-2">
               <StatusChip tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
               {order.trackingNumber ? <StatusChip tone="success">Resi siap</StatusChip> : <StatusChip tone="warning">Butuh resi</StatusChip>}
             </div>
-            <p className="mt-3 truncate text-sm font-bold text-[#0b130c]">{order.courierName || 'Kurir belum diisi'}</p>
+            <p className="mt-3 truncate text-sm font-bold text-[#1b1a16]">{order.courierName || 'Kurir belum diisi'}</p>
           </div>
-          <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[#1b1a16]/10 bg-white p-4 shadow-sm">
             <div className="text-xs font-bold uppercase text-muted-foreground">{bespoke ? 'Bespoke' : 'Customer'}</div>
             {bespoke ? (
               <>
                 <StatusChip tone="primary" className="mt-2">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip>
-                <p className="mt-3 truncate text-sm font-bold text-[#0b130c]">{bespokeSummary?.bottle}</p>
+                <p className="mt-3 truncate text-sm font-bold text-[#1b1a16]">{bespokeSummary?.bottle}</p>
               </>
             ) : (
               <>
-                <p className="mt-2 truncate text-sm font-bold text-[#0b130c]">{order.customerName}</p>
+                <p className="mt-2 truncate text-sm font-bold text-[#1b1a16]">{order.customerName}</p>
                 <p className="mt-1 truncate text-xs font-semibold text-muted-foreground">{order.contact || order.customerCode || '-'}</p>
               </>
             )}
           </div>
         </section>
 
-        <section className="mb-5 rounded-2xl border border-[#263d27]/10 bg-white p-4 shadow-sm">
+        <section className="mb-5 rounded-2xl border border-[#1b1a16]/10 bg-white p-4 shadow-sm">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <div className="text-xs font-bold uppercase text-[#263d27]">Panel aksi</div>
+              <div className="text-xs font-bold uppercase text-[#1b1a16]">Panel aksi</div>
               <p className="mt-1 text-sm font-semibold text-muted-foreground">
                 Jalur cepat untuk pekerjaan harian: konfirmasi payment, mulai packing, cetak resi, dan follow-up customer.
               </p>
@@ -846,7 +846,7 @@ const OrderDetailPage = () => {
         <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
           <div className="grid gap-5">
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <UserRound className="h-4 w-4" />
                 Customer & alamat
               </div>
@@ -855,21 +855,21 @@ const OrderDetailPage = () => {
                   <div className="text-xs font-bold uppercase text-muted-foreground">Customer</div>
                   <h2 className="mt-1 text-xl font-bold">{order.customerName}</h2>
                   <p className="mt-1 text-sm font-semibold text-muted-foreground">{order.contact}</p>
-                  {order.customerCode ? <p className="mt-3 w-fit rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{order.customerCode}</p> : null}
+                  {order.customerCode ? <p className="mt-3 w-fit rounded-full bg-[#f7f1e5] px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">{order.customerCode}</p> : null}
                 </div>
                 <div className="rounded-2xl bg-[#fbfaf7] p-4">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Pengiriman</div>
                   <p className="mt-1 text-sm font-semibold leading-relaxed text-[#1f2937]">{address || order.notes || '-'}</p>
-                  {area ? <p className="mt-2 text-sm font-bold text-[#263d27]">{area}</p> : null}
+                  {area ? <p className="mt-2 text-sm font-bold text-[#1b1a16]">{area}</p> : null}
                   {shipping ? <p className="mt-1 text-xs font-semibold text-muted-foreground">{shipping}</p> : null}
                 </div>
               </div>
             </section>
 
             {bespoke ? (
-              <section className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-5 shadow-sm">
+              <section className="rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                     <Sparkles className="h-4 w-4" />
                     Bespoke brief
                   </div>
@@ -880,22 +880,22 @@ const OrderDetailPage = () => {
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="rounded-2xl bg-white px-4 py-3">
                     <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Botol</span>
-                    <span className="mt-1 block truncate text-sm font-bold text-[#0b130c]">{bespokeSummary?.bottle}</span>
+                    <span className="mt-1 block truncate text-sm font-bold text-[#1b1a16]">{bespokeSummary?.bottle}</span>
                   </div>
                   <div className="rounded-2xl bg-white px-4 py-3 md:col-span-2">
                     <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Cap / label</span>
-                    <span className="mt-1 block truncate text-sm font-bold text-[#0b130c]">{bespokeSummary?.design}</span>
+                    <span className="mt-1 block truncate text-sm font-bold text-[#1b1a16]">{bespokeSummary?.design}</span>
                   </div>
                 </div>
                 {bespokeSummary?.aroma ? (
                   <p className="mt-3 line-clamp-2 text-sm font-semibold leading-relaxed text-[#1f2937]">{bespokeSummary.aroma}</p>
                 ) : null}
                 <details className="mt-3 rounded-2xl bg-white/70 px-4 py-3">
-                  <summary className="cursor-pointer select-none text-xs font-bold text-[#263d27]">Buka detail brief lengkap</summary>
-                  <div className="mt-3 grid gap-2 border-t border-[#263d27]/10 pt-3 sm:grid-cols-2">
+                  <summary className="cursor-pointer select-none text-xs font-bold text-[#1b1a16]">Buka detail brief lengkap</summary>
+                  <div className="mt-3 grid gap-2 border-t border-[#1b1a16]/10 pt-3 sm:grid-cols-2">
                     {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                       <p key={label} className="text-xs font-semibold text-muted-foreground">
-                        <span className="block text-[10px] font-bold uppercase text-[#263d27]">{label}</span>
+                        <span className="block text-[10px] font-bold uppercase text-[#1b1a16]">{label}</span>
                         {value}
                       </p>
                     ))}
@@ -906,16 +906,16 @@ const OrderDetailPage = () => {
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                   <FileCheck2 className="h-4 w-4" />
                   Timeline bukti pembayaran
                 </div>
-                <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{proofTimeline.length} event</span>
+                <span className="rounded-full bg-[#f7f1e5] px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">{proofTimeline.length} event</span>
               </div>
               {proofTimeline.length ? (
                 <div className="grid gap-3">
                   {proofTimeline.map((event) => (
-                    <article key={event.id} className="rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-3">
+                    <article key={event.id} className="rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] p-3">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -924,7 +924,7 @@ const OrderDetailPage = () => {
                           </div>
                           <div className="mt-1 text-xs font-semibold text-muted-foreground">{formatDate(event.at)} / {event.actor}</div>
                         </div>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">Percobaan {event.attempt}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">Percobaan {event.attempt}</span>
                       </div>
                       <div className="mt-3 grid gap-2 text-xs font-semibold text-muted-foreground">
                         {event.previousStatus ? <div>Sebelumnya: <span className="text-[#1f2937]">{paymentProofStatusLabels[event.previousStatus] || event.previousStatus}</span></div> : null}
@@ -944,7 +944,7 @@ const OrderDetailPage = () => {
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                   <CreditCard className="h-4 w-4" />
                   Payment
                 </div>
@@ -985,7 +985,7 @@ const OrderDetailPage = () => {
                   </Button>
                 ) : null}
               </div>
-              <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] p-4">
+              <div className="mt-4 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1000,7 +1000,7 @@ const OrderDetailPage = () => {
                         : 'Belum ada file bukti transfer untuk order ini.'}
                     </p>
                     {order.paymentProofFileName ? (
-                      <div className="mt-2 truncate rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#263d27]">
+                      <div className="mt-2 truncate rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#1b1a16]">
                         {order.paymentProofFileName}
                       </div>
                     ) : null}
@@ -1031,7 +1031,7 @@ const OrderDetailPage = () => {
                   </button>
                 ) : null}
                 {paymentProofPreviewUrl && !paymentProofIsImage ? (
-                  <button type="button" onClick={openPaymentProof} className="mt-4 flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-left text-sm font-bold text-[#263d27]">
+                  <button type="button" onClick={openPaymentProof} className="mt-4 flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-left text-sm font-bold text-[#1b1a16]">
                     <FileCheck2 className="h-5 w-5" />
                     File siap dibuka di tab baru
                   </button>
@@ -1040,7 +1040,7 @@ const OrderDetailPage = () => {
             </section>
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <Truck className="h-4 w-4" />
                 Pengiriman & fulfillment
               </div>
@@ -1068,7 +1068,7 @@ const OrderDetailPage = () => {
             </section>
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <PackageCheck className="h-4 w-4" />
                 Item
               </div>
@@ -1081,7 +1081,7 @@ const OrderDetailPage = () => {
                     <span className="min-w-0">
                       <span className="block truncate font-bold">{item.name}</span>
                       {item.size ? <span className="text-xs text-muted-foreground">{item.size}</span> : null}
-                      {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
+                      {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-[#1b1a16]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
                     </span>
                     <span className="text-right">x{item.quantity || 1}</span>
                     <span className="text-right font-bold text-amber-700">
@@ -1096,13 +1096,13 @@ const OrderDetailPage = () => {
                   );
                 })}
                 {voucherSnapshot ? (
-                  <div className="grid grid-cols-[1fr_80px_120px] gap-3 border-b bg-[#eef2e8] px-4 py-3 text-sm font-semibold last:border-b-0">
+                  <div className="grid grid-cols-[1fr_80px_120px] gap-3 border-b bg-[#f7f1e5] px-4 py-3 text-sm font-semibold last:border-b-0">
                     <span className="min-w-0">
-                      <span className="block truncate font-bold text-[#263d27]">Voucher {voucherSnapshot.code}</span>
-                      <span className="text-xs text-[#51624b]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
+                      <span className="block truncate font-bold text-[#1b1a16]">Voucher {voucherSnapshot.code}</span>
+                      <span className="text-xs text-[#6f695f]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
                     </span>
                     <span className="text-right">-</span>
-                    <span className="text-right font-bold text-[#263d27]">-{formatTotal(voucherSnapshot.discountAmount)}</span>
+                    <span className="text-right font-bold text-[#1b1a16]">-{formatTotal(voucherSnapshot.discountAmount)}</span>
                   </div>
                 ) : null}
               </div>
@@ -1111,7 +1111,7 @@ const OrderDetailPage = () => {
 
           <aside className="grid content-start gap-5">
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <Clipboard className="h-4 w-4" />
                 Aksi cepat
               </div>
@@ -1139,7 +1139,7 @@ const OrderDetailPage = () => {
             </section>
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <MessageCircle className="h-4 w-4" />
                 Template customer
               </div>
@@ -1164,7 +1164,7 @@ const OrderDetailPage = () => {
             </section>
 
             <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <NotebookPen className="h-4 w-4" />
                 Catatan internal
               </div>
@@ -1180,11 +1180,11 @@ const OrderDetailPage = () => {
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <ShieldCheck className="h-4 w-4" />
                 Log audit admin
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{auditLogs.length} log</span>
+              <span className="rounded-full bg-[#f7f1e5] px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">{auditLogs.length} log</span>
             </div>
             <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_150px_150px]">
               <input
@@ -1224,18 +1224,18 @@ const OrderDetailPage = () => {
                             {formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'Sistem'}
                           </div>
                         </div>
-                        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{log.actorEmail || 'system'}</span>
+                        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{log.actorEmail || 'system'}</span>
                       </div>
                       {changes.length ? (
                         <div className="mt-3 grid gap-2">
                           {changes.map((change) => {
                             const importantChange = importantAuditKeys.includes(change.key);
                             return (
-                            <div key={change.key} className={`rounded-2xl border bg-white px-3 py-2 ${importantChange ? 'border-amber-200 ring-1 ring-amber-100' : 'border-[#263d27]/10'}`}>
-                              <div className={`text-[10px] font-bold uppercase ${importantChange ? 'text-amber-800' : 'text-[#263d27]'}`}>{change.label}</div>
+                            <div key={change.key} className={`rounded-2xl border bg-white px-3 py-2 ${importantChange ? 'border-amber-200 ring-1 ring-amber-100' : 'border-[#1b1a16]/10'}`}>
+                              <div className={`text-[10px] font-bold uppercase ${importantChange ? 'text-amber-800' : 'text-[#1b1a16]'}`}>{change.label}</div>
                               <div className="mt-1 grid gap-2 text-xs font-semibold text-muted-foreground sm:grid-cols-2">
                                 <span className="min-w-0 rounded-xl bg-[#f8f7f4] px-2 py-1">Sebelum: <span className="text-[#1f2937]">{change.before}</span></span>
-                                <span className="min-w-0 rounded-xl bg-[#eef2e8] px-2 py-1">Sesudah: <span className="text-[#1f2937]">{change.after}</span></span>
+                                <span className="min-w-0 rounded-xl bg-[#f7f1e5] px-2 py-1">Sesudah: <span className="text-[#1f2937]">{change.after}</span></span>
                               </div>
                             </div>
                             );
@@ -1259,17 +1259,17 @@ const OrderDetailPage = () => {
 
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <History className="h-4 w-4" />
                 Log fulfillment
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{timeline.length} event</span>
+              <span className="rounded-full bg-[#f7f1e5] px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">{timeline.length} event</span>
             </div>
             <div className="grid gap-3">
               {timeline.map((entry, index) => (
                 <div key={`${entry.status}-${entry.at}-${index}`} className="grid grid-cols-[28px_1fr] gap-3">
                   <div className="flex flex-col items-center">
-                    <span className="h-3 w-3 rounded-full bg-[#263d27]" />
+                    <span className="h-3 w-3 rounded-full bg-[#1b1a16]" />
                     {index < timeline.length - 1 ? <span className="mt-1 h-full min-h-8 w-px bg-[#d9ded3]" /> : null}
                   </div>
                   <div className="rounded-2xl bg-[#fbfaf7] px-3 py-2">
@@ -1290,11 +1290,11 @@ const OrderDetailPage = () => {
 
           <section className="rounded-2xl border bg-white/90 p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#263d27]">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#1b1a16]">
                 <CreditCard className="h-4 w-4" />
                 Log pembayaran
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">{paymentLogs.length} log</span>
+              <span className="rounded-full bg-[#f7f1e5] px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">{paymentLogs.length} log</span>
             </div>
             {paymentLogs.length ? (
               <div className="grid gap-3">

@@ -256,22 +256,22 @@ const RouteFallback = () => {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#f7f8f2] px-4 text-center">
-      <div className="w-full max-w-xl rounded-[24px] border border-[#263d27]/10 bg-white/85 p-5 text-left shadow-sm">
+    <div className="grid min-h-screen place-items-center bg-[#fffaf0] px-4 text-center">
+      <div className="w-full max-w-xl rounded-[24px] border border-[#1b1a16]/10 bg-white/85 p-5 text-left shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#263d27]/15 border-t-[#263d27]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1b1a16]/15 border-t-[#1b1a16]" />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">App initialization</p>
-            <h1 className="mt-1 text-xl font-bold text-[#0b130c]">Loading workspace...</h1>
+            <h1 className="mt-1 text-xl font-bold text-[#1b1a16]">Loading workspace...</h1>
           </div>
         </div>
         <div className="mt-5 space-y-3" aria-hidden="true">
           <div className="h-3 w-2/3 animate-pulse rounded-full bg-[#dce4d5]" />
-          <div className="h-3 w-full animate-pulse rounded-full bg-[#eef2e8]" />
+          <div className="h-3 w-full animate-pulse rounded-full bg-[#f7f1e5]" />
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="h-20 animate-pulse rounded-2xl bg-[#eef2e8]" />
-            <div className="h-20 animate-pulse rounded-2xl bg-[#eef2e8]" />
-            <div className="h-20 animate-pulse rounded-2xl bg-[#eef2e8]" />
+            <div className="h-20 animate-pulse rounded-2xl bg-[#f7f1e5]" />
+            <div className="h-20 animate-pulse rounded-2xl bg-[#f7f1e5]" />
+            <div className="h-20 animate-pulse rounded-2xl bg-[#f7f1e5]" />
           </div>
         </div>
       </div>

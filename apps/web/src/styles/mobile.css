@@ -7,12 +7,12 @@
   --mobile-motion-slow: 240ms;
   --mobile-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --mobile-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
-  --mobile-shadow-press: 0 10px 22px -18px rgba(24, 47, 27, 0.42);
+  --mobile-shadow-press: 0 10px 22px -18px rgba(27, 26, 22, 0.42);
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: clip;
-  background: #f7f8f2;
-  color: #0b130c;
+  background: #fffaf0;
+  color: #1b1a16;
   font-size: 13.5px;
   line-height: 1.42;
   -webkit-font-smoothing: antialiased;
@@ -229,7 +229,7 @@
 .pwa-standalone,
 .pwa-standalone body {
   min-height: 100dvh;
-  background: #f7f8f2;
+  background: #fffaf0;
 }
 
 .pwa-standalone .mobile-app {
@@ -637,8 +637,8 @@
   margin: 0 auto;
   border-radius: 999px;
   background:
-    radial-gradient(circle at center, #eef2e8 0 42%, transparent 43%),
-    conic-gradient(from 0deg, rgba(38, 61, 39, 0.15), rgba(38, 61, 39, 0.82), rgba(5, 7, 5, 0.22), rgba(38, 61, 39, 0.15));
+    radial-gradient(circle at center, #f7f1e5 0 42%, transparent 43%),
+    conic-gradient(from 0deg, rgba(176, 139, 79, 0.15), rgba(176, 139, 79, 0.82), rgba(27, 26, 22, 0.22), rgba(176, 139, 79, 0.15));
   animation: mobile-loader-pulse 1.8s ease-in-out infinite;
 }
 
@@ -768,6 +768,11 @@
   right: max(14px, calc((100vw - 430px) / 2 + 14px));
   bottom: calc(var(--mobile-nav-bottom) + var(--mobile-nav-height) + 14px);
   z-index: 45;
+  transition: bottom 0.2s ease;
+}
+
+:has(.m-editorial-pdp__sticky-bar) .mobile-studio-floating-link {
+  bottom: calc(var(--mobile-nav-bottom) + var(--mobile-nav-height) + 70px);
 }
 
 .mobile-fab {
@@ -884,7 +889,7 @@
   max-height: min(86svh, 720px);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
-  background: #f7f8f2;
+  background: #fffaf0;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   transform: translateZ(0);
   will-change: bottom, height, max-height;
@@ -1004,7 +1009,7 @@
   max-height: var(--mobile-fullscreen-modal-height, 100dvh);
   overflow: hidden;
   padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px calc(env(safe-area-inset-bottom, 0px) + 16px);
-  background: #f7f8f2;
+  background: #fffaf0;
   transform: translateZ(0);
   will-change: bottom, height;
   transition:
@@ -1124,7 +1129,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 14px;
-  background: #263d27;
+  background: #1b1a16;
   color: white;
 }
 
@@ -1157,7 +1162,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 14px;
-  background: #263d27;
+  background: #1b1a16;
   color: white;
   font-size: 13px;
   font-weight: 800;

@@ -20,7 +20,7 @@ const steps = [
 const StepCard = ({ icon: Icon, label, text }) => (
   <article className="rounded-2xl border border-[#e5e7eb] bg-white p-3">
     <div className="flex items-start gap-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">
@@ -219,7 +219,7 @@ const SetupContent = ({ mobile = false }) => {
               Start setup, scan the QR, then verify the current code from your authenticator app.
             </p>
           </div>
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
             <ShieldCheck className="h-4 w-4" />
           </span>
         </div>
@@ -273,13 +273,13 @@ const SetupContent = ({ mobile = false }) => {
       <section className={setupSectionClassName}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase text-[#263d27]">Password</div>
+            <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Password</div>
             <h2 className="mt-1 text-base font-bold text-[#1f2937]">Ubah password login</h2>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
               Ganti password account studio dari aplikasi. Setelah berhasil, gunakan password baru untuk login berikutnya.
             </p>
           </div>
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
             <KeyRound className="h-4 w-4" />
           </span>
         </div>
@@ -316,7 +316,7 @@ const SetupContent = ({ mobile = false }) => {
           <Button
             type="submit"
             disabled={changingPassword || newPassword.length < 8 || newPassword !== newPasswordConfirm}
-            className="h-12 w-full rounded-2xl bg-[#263d27] text-white hover:bg-[#1f3020]"
+            className="h-12 w-full rounded-2xl bg-[#1b1a16] text-white hover:bg-[#1f3020]"
           >
             {changingPassword ? 'Saving...' : 'Ubah password'}
           </Button>

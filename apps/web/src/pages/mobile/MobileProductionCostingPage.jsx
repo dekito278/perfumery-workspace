@@ -207,7 +207,7 @@ const MobileProductionCostingPage = () => {
           <>
             <section className="mobile-soft-card p-4">
               <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">Costing task</div>
-              <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">
+              <h1 className="mt-1 text-2xl font-bold text-[#1b1a16]">
                 {activeTab === 'retail' ? 'Set bottle price from actual COGS.' : 'Build a bulk quotation.'}
               </h1>
               <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">

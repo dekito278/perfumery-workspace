@@ -90,18 +90,18 @@ const ShippingPromotionPage = () => {
       </Helmet>
 
       <div className="page-container space-y-6">
-        <section className="rounded-3xl border border-[#263d27]/10 bg-[#eef2e8] p-5 shadow-sm md:p-6">
+        <section className="rounded-3xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-5 shadow-sm md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#263d27]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#1b1a16]">
                 <Truck className="h-4 w-4" />
                 Ongkir checkout
               </div>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#0b130c]">Aturan gratis ongkir dan subsidi area</h1>
-              <p className="mt-2 text-sm font-medium leading-6 text-[#51624b]">
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#1b1a16]">Aturan gratis ongkir dan subsidi area</h1>
+              <p className="mt-2 text-sm font-medium leading-6 text-[#6f695f]">
                 Atur promo ongkir dari satu tempat. Checkout produk, mobile checkout, dan bespoke akan memakai nominal akhir yang sama.
               </p>
-              <p className="mt-1 text-xs font-bold text-[#6f7d61]">
+              <p className="mt-1 text-xs font-bold text-[#6f695f]">
                 Area Pulau Jawa dibaca dari provinsi tujuan: Banten, DKI Jakarta, Jawa Barat, Jawa Tengah, DI Yogyakarta, dan Jawa Timur.
               </p>
             </div>
@@ -109,7 +109,7 @@ const ShippingPromotionPage = () => {
               type="button"
               onClick={() => updateSetting('enabled', !settings.enabled)}
               className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition ${
-                settings.enabled ? 'bg-[#263d27] text-white' : 'bg-white text-[#51624b]'
+                settings.enabled ? 'bg-[#1b1a16] text-white' : 'bg-white text-[#6f695f]'
               }`}
             >
               {settings.enabled ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
@@ -119,9 +119,9 @@ const ShippingPromotionPage = () => {
         </section>
 
         <form onSubmit={handleSave} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-3xl border border-[#263d27]/10 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#0b130c]">
-              <BadgePercent className="h-4 w-4 text-[#263d27]" />
+          <section className="rounded-3xl border border-[#1b1a16]/10 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#1b1a16]">
+              <BadgePercent className="h-4 w-4 text-[#1b1a16]" />
               Pilih pola promo
             </div>
 
@@ -134,12 +134,12 @@ const ShippingPromotionPage = () => {
                     type="button"
                     onClick={() => updateSetting('preset', preset)}
                     className={`rounded-2xl border p-4 text-left transition ${
-                      active ? 'border-[#263d27] bg-[#eef2e8]' : 'border-[#263d27]/10 bg-[#fbfaf7] hover:border-[#263d27]/30'
+                      active ? 'border-[#1b1a16] bg-[#f7f1e5]' : 'border-[#1b1a16]/10 bg-[#fbfaf7] hover:border-[#1b1a16]/30'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-bold text-[#0b130c]">{shippingPromotionPresetLabels[preset]}</span>
-                      {active ? <span className="rounded-full bg-[#263d27] px-2.5 py-1 text-[10px] font-bold uppercase text-white">Dipakai</span> : null}
+                      <span className="text-sm font-bold text-[#1b1a16]">{shippingPromotionPresetLabels[preset]}</span>
+                      {active ? <span className="rounded-full bg-[#1b1a16] px-2.5 py-1 text-[10px] font-bold uppercase text-white">Dipakai</span> : null}
                     </div>
                     <p className="mt-1 text-xs font-semibold leading-5 text-[#6b7280]">{presetDescriptions[preset]}</p>
                   </button>
@@ -149,22 +149,22 @@ const ShippingPromotionPage = () => {
           </section>
 
           <aside className="space-y-4">
-            <section className="rounded-3xl border border-[#263d27]/10 bg-white p-5 shadow-sm">
-              <div className="text-sm font-bold text-[#0b130c]">Nominal</div>
+            <section className="rounded-3xl border border-[#1b1a16]/10 bg-white p-5 shadow-sm">
+              <div className="text-sm font-bold text-[#1b1a16]">Nominal</div>
               <div className="mt-4 grid gap-3">
                 <label className="grid gap-2">
-                  <span className="text-xs font-bold uppercase text-[#6f7d61]">Minimal belanja</span>
+                  <span className="text-xs font-bold uppercase text-[#6f695f]">Minimal belanja</span>
                   <input
                     type="number"
                     min="0"
                     step="1000"
                     value={settings.minimumSubtotal}
                     onChange={(event) => updateSetting('minimumSubtotal', Number(event.target.value || 0))}
-                    className="h-12 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#263d27]"
+                    className="h-12 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#1b1a16]"
                   />
                 </label>
                 <label className={`grid gap-2 ${needsJavaAmount ? '' : 'opacity-50'}`}>
-                  <span className="text-xs font-bold uppercase text-[#6f7d61]">Maksimal Pulau Jawa</span>
+                  <span className="text-xs font-bold uppercase text-[#6f695f]">Maksimal Pulau Jawa</span>
                   <input
                     type="number"
                     min="0"
@@ -172,11 +172,11 @@ const ShippingPromotionPage = () => {
                     value={settings.javaAmount}
                     onChange={(event) => updateSetting('javaAmount', Number(event.target.value || 0))}
                     disabled={!needsJavaAmount}
-                    className="h-12 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#263d27] disabled:cursor-not-allowed"
+                    className="h-12 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#1b1a16] disabled:cursor-not-allowed"
                   />
                 </label>
                 <label className={`grid gap-2 ${needsOtherAmount ? '' : 'opacity-50'}`}>
-                  <span className="text-xs font-bold uppercase text-[#6f7d61]">Diskon luar Jawa / semua area</span>
+                  <span className="text-xs font-bold uppercase text-[#6f695f]">Diskon luar Jawa / semua area</span>
                   <input
                     type="number"
                     min="0"
@@ -184,57 +184,57 @@ const ShippingPromotionPage = () => {
                     value={settings.otherAmount}
                     onChange={(event) => updateSetting('otherAmount', Number(event.target.value || 0))}
                     disabled={!needsOtherAmount}
-                    className="h-12 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#263d27] disabled:cursor-not-allowed"
+                    className="h-12 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#1b1a16] disabled:cursor-not-allowed"
                   />
                 </label>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-[#263d27]/10 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-bold text-[#0b130c]">
-                <CalendarDays className="h-4 w-4 text-[#263d27]" />
+            <section className="rounded-3xl border border-[#1b1a16]/10 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1b1a16]">
+                <CalendarDays className="h-4 w-4 text-[#1b1a16]" />
                 Periode promo
               </div>
               <div className="mt-4 grid gap-3">
                 <label className="grid gap-2">
-                  <span className="text-xs font-bold uppercase text-[#6f7d61]">Tanggal mulai</span>
+                  <span className="text-xs font-bold uppercase text-[#6f695f]">Tanggal mulai</span>
                   <input
                     type="date"
                     value={settings.startsAt}
                     onChange={(event) => updateSetting('startsAt', event.target.value)}
-                    className="h-12 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#263d27]"
+                    className="h-12 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#1b1a16]"
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-xs font-bold uppercase text-[#6f7d61]">Tanggal selesai</span>
+                  <span className="text-xs font-bold uppercase text-[#6f695f]">Tanggal selesai</span>
                   <input
                     type="date"
                     value={settings.endsAt}
                     onChange={(event) => updateSetting('endsAt', event.target.value)}
-                    className="h-12 rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#263d27]"
+                    className="h-12 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-[#1b1a16]"
                   />
                 </label>
-                <p className="rounded-2xl bg-[#eef2e8] px-3 py-2 text-xs font-semibold leading-5 text-[#51624b]">
+                <p className="rounded-2xl bg-[#f7f1e5] px-3 py-2 text-xs font-semibold leading-5 text-[#6f695f]">
                   Kosongkan tanggal jika promo ingin aktif terus selama toggle masih aktif.
                 </p>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-[#263d27]/10 bg-[#fbfaf7] p-5 shadow-sm">
-              <div className="text-sm font-bold text-[#0b130c]">Preview checkout</div>
-              <p className="mt-2 text-sm font-semibold leading-6 text-[#51624b]">{preview}</p>
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-[#263d27]">
+            <section className="rounded-3xl border border-[#1b1a16]/10 bg-[#fbfaf7] p-5 shadow-sm">
+              <div className="text-sm font-bold text-[#1b1a16]">Preview checkout</div>
+              <p className="mt-2 text-sm font-semibold leading-6 text-[#6f695f]">{preview}</p>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-[#1b1a16]">
                 <div className="rounded-2xl bg-white p-3">
-                  <div className="uppercase text-[#6f7d61]">Jawa</div>
+                  <div className="uppercase text-[#6f695f]">Jawa</div>
                   <div className="mt-1">{needsJavaAmount ? formatRupiah(settings.javaAmount) : settings.enabled ? 'Gratis / normal' : 'Normal'}</div>
                 </div>
                 <div className="rounded-2xl bg-white p-3">
-                  <div className="uppercase text-[#6f7d61]">Luar Jawa</div>
+                  <div className="uppercase text-[#6f695f]">Luar Jawa</div>
                   <div className="mt-1">{needsOtherAmount ? `Potong ${formatRupiah(settings.otherAmount)}` : settings.enabled && settings.preset === SHIPPING_PROMOTION_PRESETS.FREE_ALL ? 'Gratis' : 'Normal'}</div>
                 </div>
               </div>
-              <div className="mt-2 rounded-2xl bg-white p-3 text-xs font-bold text-[#263d27]">
-                <div className="uppercase text-[#6f7d61]">Syarat</div>
+              <div className="mt-2 rounded-2xl bg-white p-3 text-xs font-bold text-[#1b1a16]">
+                <div className="uppercase text-[#6f695f]">Syarat</div>
                 <div className="mt-1">{Number(settings.minimumSubtotal || 0) > 0 ? `Minimal ${formatRupiah(settings.minimumSubtotal)}` : 'Tanpa minimal belanja'}</div>
               </div>
             </section>

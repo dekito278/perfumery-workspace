@@ -40,10 +40,11 @@ const HomePage = () => {
   const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
   const heroProducts = publicCatalog.slice(0, 6);
   const collectionProducts = publicCatalog.slice(0, 8);
-  const heroHasRealImages = heroProducts.some((p) => {
+  const heroProductHasImage = useCallback((p) => {
     const img = String(p?.images?.[0] || p?.imageUrl || '').trim();
     return img && !img.endsWith('.svg');
-  });
+  }, []);
+  const heroHasRealImages = heroProducts.filter(heroProductHasImage).length >= Math.ceil(heroProducts.length / 2);
 
   // Hero slideshow auto-advance
   useEffect(() => {
@@ -98,12 +99,16 @@ const HomePage = () => {
             <>
               {heroProducts.map((product, i) => (
                 <div key={product.id} className={`home-hero__slide ${i === heroIndex ? 'home-hero__slide--active' : ''}`}>
-                  <ProductVisual
-                    product={product}
-                    className="home-hero__slide-image"
-                    imageFit="cover"
-                    priority={i === 0}
-                  />
+                  {heroProductHasImage(product) ? (
+                    <ProductVisual
+                      product={product}
+                      className="home-hero__slide-image"
+                      imageFit="cover"
+                      priority={i === 0}
+                    />
+                  ) : (
+                    <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt={product.name} className="home-hero__slide-image" style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                  )}
                 </div>
               ))}
               <div className="home-hero__overlay">

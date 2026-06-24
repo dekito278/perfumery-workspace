@@ -193,7 +193,7 @@ const MobileRawMaterialEditorPage = () => {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Dedicated flow</div>
-              <h1 className="text-lg font-bold leading-tight text-[#0b130c]">{isEditing ? 'Update the material record carefully.' : 'Create the material record first.'}</h1>
+              <h1 className="text-lg font-bold leading-tight text-[#1b1a16]">{isEditing ? 'Update the material record carefully.' : 'Create the material record first.'}</h1>
               <p className="mt-1 text-xs leading-relaxed text-[#6b7280]">
                 {isEditing ? 'Long material edits live on this page so the save action stays stable while typing.' : 'Add identity, stock, and reference fields here. Guidance import stays available from the material detail.'}
               </p>
@@ -204,7 +204,7 @@ const MobileRawMaterialEditorPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-4">
             <div className="text-[10px] font-bold uppercase text-[#647260]">Identity</div>
-            <h2 className="text-base font-bold text-[#0b130c]">Material basics</h2>
+            <h2 className="text-base font-bold text-[#1b1a16]">Material basics</h2>
           </div>
           <div className="grid gap-4">
             <MaterialField label="Material name">
@@ -247,7 +247,7 @@ const MobileRawMaterialEditorPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-4">
             <div className="text-[10px] font-bold uppercase text-[#647260]">Stock setup</div>
-            <h2 className="text-base font-bold text-[#0b130c]">Inventory guardrails</h2>
+            <h2 className="text-base font-bold text-[#1b1a16]">Inventory guardrails</h2>
           </div>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-3">
@@ -272,7 +272,7 @@ const MobileRawMaterialEditorPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-4">
             <div className="text-[10px] font-bold uppercase text-[#647260]">Reference guidance</div>
-            <h2 className="text-base font-bold text-[#0b130c]">Safety and usage hints</h2>
+            <h2 className="text-base font-bold text-[#1b1a16]">Safety and usage hints</h2>
           </div>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-3">
@@ -300,7 +300,7 @@ const MobileRawMaterialEditorPage = () => {
         <section className="mobile-card p-4">
           <div className="mb-4">
             <div className="text-[10px] font-bold uppercase text-[#647260]">Review</div>
-            <h2 className="text-base font-bold text-[#0b130c]">Cleanup status and notes</h2>
+            <h2 className="text-base font-bold text-[#1b1a16]">Cleanup status and notes</h2>
           </div>
           <div className="grid gap-4">
             <MaterialField label="Cleanup status">

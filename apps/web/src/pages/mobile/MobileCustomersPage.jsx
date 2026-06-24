@@ -63,13 +63,13 @@ const MobileCustomersPage = () => {
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.contact}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{customer.deliveryArea || customer.deliveryAddress || 'Belum ada alamat'}</p>
                 </div>
-                <button type="button" onClick={() => copyCode(customer)} className="mobile-interactive mobile-pressable shrink-0 rounded-2xl bg-[#263d27] px-3 py-2 text-xs font-bold text-[#eef2e8]">
+                <button type="button" onClick={() => copyCode(customer)} className="mobile-interactive mobile-pressable shrink-0 rounded-2xl bg-[#1b1a16] px-3 py-2 text-xs font-bold text-[#f7f1e5]">
                   {customer.customerCode}
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-[#f8f7f4] p-3 text-xs font-semibold text-[#6b7280]">
-                <p><strong className="block text-[10px] uppercase text-[#263d27]">Order</strong>{customer.orderCount}</p>
-                <p><strong className="block text-[10px] uppercase text-[#263d27]">Order terakhir</strong>{formatDate(customer.lastOrderAt)}</p>
+                <p><strong className="block text-[10px] uppercase text-[#1b1a16]">Order</strong>{customer.orderCount}</p>
+                <p><strong className="block text-[10px] uppercase text-[#1b1a16]">Order terakhir</strong>{formatDate(customer.lastOrderAt)}</p>
               </div>
               <Button type="button" variant="outline" className="mobile-interactive mobile-pressable mt-3 w-full rounded-2xl gap-2 bg-white" onClick={() => copyCode(customer)}>
                 <Clipboard className="h-4 w-4" />

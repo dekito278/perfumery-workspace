@@ -480,7 +480,7 @@ const MobileDashboardPage = () => {
                 }}
                 className="mobile-card flex items-center gap-3 p-3 text-left"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="min-w-0">

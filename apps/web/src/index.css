@@ -129,7 +129,7 @@
   }
   
   body {
-    background: linear-gradient(180deg, #f7f8f2 0%, #eef2e8 100%);
+    background: linear-gradient(180deg, #fffaf0 0%, #f7f1e5 100%);
     color: hsl(var(--foreground));
     font-family: "DM Sans", sans-serif;
     font-size: var(--text-base);

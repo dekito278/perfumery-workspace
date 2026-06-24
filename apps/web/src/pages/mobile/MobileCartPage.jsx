@@ -53,7 +53,7 @@ const MobileCartPage = () => {
                 {items.length ? formatTotal(voucher.subtotalAfterDiscount) : 'Mulai belanja'}
               </div>
               {items.length && voucher.discountAmount ? (
-                <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#183522' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
+                <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#1b1a16' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
               ) : null}
               <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: '#6f695f' }}>
                 {items.length ? 'Cek item di sini, lalu lanjutkan untuk isi pengiriman dan pembayaran.' : 'Pilih parfum ready stock atau mulai request aroma custom.'}
@@ -132,7 +132,7 @@ const MobileCartPage = () => {
               <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 10, border: '1px solid #e5decf', background: '#f7f1e5', padding: '8px 12px' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1b1a16', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{voucher.appliedVoucher.code} diterapkan</div>
-                  <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: '#183522' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
+                  <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: '#1b1a16' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
                 </div>
                 <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-lg" style={{ color: '#6f695f' }} onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-4 w-4" />
@@ -157,7 +157,7 @@ const MobileCartPage = () => {
                   <p style={{ marginTop: 4, fontSize: '0.78rem', lineHeight: 1.4, color: '#6f695f', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.notes}</p>
                   <p style={{ marginTop: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#b08b4f' }}>{item.price} / {item.size}</p>
                   {hasLineDiscount ? (
-                    <p style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#183522' }}>
+                    <p style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#1b1a16' }}>
                       Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
                     </p>
                   ) : null}
@@ -176,7 +176,7 @@ const MobileCartPage = () => {
                   ) : null}
                   <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1b1a16' }}>{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
                   {hasLineDiscount ? (
-                    <div style={{ marginTop: 2, fontSize: '0.65rem', fontWeight: 600, color: '#183522' }}>-{formatTotal(discountedLine.discount)}</div>
+                    <div style={{ marginTop: 2, fontSize: '0.65rem', fontWeight: 600, color: '#1b1a16' }}>-{formatTotal(discountedLine.discount)}</div>
                   ) : null}
                 </div>
               </div>
@@ -256,7 +256,7 @@ const MobileCartPage = () => {
               <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6f695f' }}>{summary.quantity} item</p>
                 <p style={{ fontSize: '1.1rem', fontWeight: 700, lineHeight: 1.2, color: '#1b1a16', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatTotal(voucher.subtotalAfterDiscount)}</p>
-                {voucher.discountAmount ? <p style={{ fontSize: '0.65rem', fontWeight: 600, color: '#183522', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hemat {formatTotal(voucher.discountAmount)}</p> : null}
+                {voucher.discountAmount ? <p style={{ fontSize: '0.65rem', fontWeight: 600, color: '#1b1a16', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hemat {formatTotal(voucher.discountAmount)}</p> : null}
               </div>
               <Button type="button" className="h-12 rounded-xl gap-2 px-4" style={{ background: '#1b1a16', color: '#fffaf0' }} onClick={() => navigate('/mobile/checkout')}>
                 <PackageCheck className="h-4 w-4" />

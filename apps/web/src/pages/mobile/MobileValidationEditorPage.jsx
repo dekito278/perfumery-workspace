@@ -54,12 +54,12 @@ const createEmptyLog = (formulaId = 'none') => ({
 const ValidationStepSection = ({ icon: Icon, eyebrow, title, description, children }) => (
   <section className="mobile-card p-4">
     <div className="mb-4 flex items-start gap-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef7ed] text-[#263d27]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef7ed] text-[#1b1a16]">
         <Icon className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div className="text-[10px] font-bold uppercase tracking-wide text-[#647260]">{eyebrow}</div>
-        <h2 className="text-base font-bold leading-tight text-[#0b130c]">{title}</h2>
+        <h2 className="text-base font-bold leading-tight text-[#1b1a16]">{title}</h2>
         {description ? <p className="mt-1 text-xs leading-relaxed text-[#6b7280]">{description}</p> : null}
       </div>
     </div>
@@ -191,7 +191,7 @@ const MobileValidationEditorPage = () => {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Flow khusus</div>
-              <h1 className="text-lg font-bold leading-tight text-[#0b130c]">Catat keputusan validasi tanpa modal yang sempit.</h1>
+              <h1 className="text-lg font-bold leading-tight text-[#1b1a16]">Catat keputusan validasi tanpa modal yang sempit.</h1>
               <p className="mt-1 text-xs leading-relaxed text-[#6b7280]">
                 Isi formula, catatan, konteks tes, dan hasil. Tombol aksi tetap konsisten di bawah.
               </p>
@@ -220,7 +220,7 @@ const MobileValidationEditorPage = () => {
                     onClick={() => setSelectorOpen(true)}
                     className="mobile-interactive mobile-pressable mobile-card w-full p-4 text-left text-sm font-bold"
                   >
-                    <span className="block text-[#0b130c]">{selectedFormula?.name || 'Pilih formula'}</span>
+                    <span className="block text-[#1b1a16]">{selectedFormula?.name || 'Pilih formula'}</span>
                     <span className="mt-1 block text-xs font-medium text-[#6b7280]">{selectedFormula?.code || 'Wajib sebelum simpan'}</span>
                   </button>
                 </div>

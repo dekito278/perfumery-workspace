@@ -474,17 +474,17 @@ const MobileVoucherManagementPage = () => {
         <section className="mobile-card space-y-4 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-base font-bold text-[#0b130c]">Analytics voucher</h2>
+              <h2 className="text-base font-bold text-[#1b1a16]">Analytics voucher</h2>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">Penggunaan, revenue, top voucher, dan top customer.</p>
             </div>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
               <BadgePercent className="h-4 w-4" />
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+            <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-[#8b949e]">Penggunaan</div>
-              <div className="mt-1 text-lg font-bold text-[#0b130c]">{voucherAnalytics.totalUsage}</div>
+              <div className="mt-1 text-lg font-bold text-[#1b1a16]">{voucherAnalytics.totalUsage}</div>
             </div>
             <div className="rounded-2xl bg-amber-50 px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-amber-700">Diskon</div>
@@ -492,11 +492,11 @@ const MobileVoucherManagementPage = () => {
             </div>
             <div className="rounded-2xl bg-white px-3 py-2 ring-1 ring-[#e5e7eb]">
               <div className="text-[10px] font-bold uppercase text-[#8b949e]">Sebelum diskon</div>
-              <div className="mt-1 text-sm font-bold text-[#0b130c]">{formatTotal(voucherAnalytics.revenueBeforeDiscount)}</div>
+              <div className="mt-1 text-sm font-bold text-[#1b1a16]">{formatTotal(voucherAnalytics.revenueBeforeDiscount)}</div>
             </div>
-            <div className="rounded-2xl bg-[#eef2e8] px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-[#263d27]">Sesudah diskon</div>
-              <div className="mt-1 text-sm font-bold text-[#263d27]">{formatTotal(voucherAnalytics.revenueAfterDiscount)}</div>
+            <div className="rounded-2xl bg-[#f7f1e5] px-3 py-2">
+              <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Sesudah diskon</div>
+              <div className="mt-1 text-sm font-bold text-[#1b1a16]">{formatTotal(voucherAnalytics.revenueAfterDiscount)}</div>
             </div>
           </div>
           <div className="grid gap-3">
@@ -504,9 +504,9 @@ const MobileVoucherManagementPage = () => {
               <div className="text-[10px] font-bold uppercase text-[#6b7280]">Top voucher</div>
               <div className="mt-2 grid gap-2">
                 {voucherAnalytics.topVouchers.slice(0, 3).map((item, index) => (
-                  <div key={item.key} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f7f8f2] px-3 py-2 text-xs font-bold">
+                  <div key={item.key} className="flex items-center justify-between gap-2 rounded-2xl bg-[#fffaf0] px-3 py-2 text-xs font-bold">
                     <span className="min-w-0 truncate">#{index + 1} {item.label}</span>
-                    <span className="shrink-0 text-[#263d27]">{item.count}x</span>
+                    <span className="shrink-0 text-[#1b1a16]">{item.count}x</span>
                   </div>
                 ))}
                 {!voucherAnalytics.topVouchers.length ? <p className="text-xs font-semibold text-[#6b7280]">Belum ada voucher terpakai.</p> : null}
@@ -516,9 +516,9 @@ const MobileVoucherManagementPage = () => {
               <div className="text-[10px] font-bold uppercase text-[#6b7280]">Top customer</div>
               <div className="mt-2 grid gap-2">
                 {voucherAnalytics.topCustomers.slice(0, 3).map((item, index) => (
-                  <div key={item.key} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f7f8f2] px-3 py-2 text-xs font-bold">
+                  <div key={item.key} className="flex items-center justify-between gap-2 rounded-2xl bg-[#fffaf0] px-3 py-2 text-xs font-bold">
                     <span className="min-w-0 truncate">#{index + 1} {item.label}</span>
-                    <span className="shrink-0 text-[#263d27]">{item.count}x</span>
+                    <span className="shrink-0 text-[#1b1a16]">{item.count}x</span>
                   </div>
                 ))}
                 {!voucherAnalytics.topCustomers.length ? <p className="text-xs font-semibold text-[#6b7280]">Belum ada customer memakai voucher.</p> : null}
@@ -546,7 +546,7 @@ const MobileVoucherManagementPage = () => {
                     key={filter.key}
                     type="button"
                     onClick={() => setStatusFilter(filter.key)}
-                    className={`min-h-10 shrink-0 rounded-2xl border px-3 text-xs font-bold ${selected ? 'border-[#263d27] bg-[#263d27] text-white' : 'border-[#e5e7eb] bg-white text-[#263d27]'}`}
+                    className={`min-h-10 shrink-0 rounded-2xl border px-3 text-xs font-bold ${selected ? 'border-[#1b1a16] bg-[#1b1a16] text-white' : 'border-[#e5e7eb] bg-white text-[#1b1a16]'}`}
                   >
                     {filter.label} ({statusCounts[filter.key] || 0})
                   </button>
@@ -564,10 +564,10 @@ const MobileVoucherManagementPage = () => {
               <article key={voucher.id || voucher.code} className="mobile-card space-y-3 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="truncate text-lg font-bold tracking-[0.08em] text-[#0b130c]">{voucher.code}</h3>
+                    <h3 className="truncate text-lg font-bold tracking-[0.08em] text-[#1b1a16]">{voucher.code}</h3>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${status.className}`}>{status.label}</span>
-                      <span className="rounded-full bg-[#f7f8f2] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{voucher.discountType}</span>
+                      <span className="rounded-full bg-[#fffaf0] px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{voucher.discountType}</span>
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
@@ -586,28 +586,28 @@ const MobileVoucherManagementPage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#263d27]">
-                  <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#1b1a16]">
+                  <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Diskon</span>
                     {voucher.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? `${voucher.discountValue}%` : formatTotal(voucher.discountValue)}
                   </div>
-                  <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Minimum</span>
                     {voucher.minimumOrder ? formatTotal(voucher.minimumOrder) : 'Tanpa minimum'}
                   </div>
-                  <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Qty minimum</span>
                     {voucher.minimumQuantity ? `${voucher.minimumQuantity} item` : 'Tanpa minimum'}
                   </div>
-                  <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Expiry</span>
                     <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDate(voucher.expiresAt)}</span>
                   </div>
-                  <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Usage</span>
                     {limitLabel}
                   </div>
-                  <div className="col-span-2 rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                  <div className="col-span-2 rounded-2xl bg-[#fffaf0] px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Berlaku untuk</span>
                     {getVoucherRestrictionLabel(voucher)}
                   </div>
@@ -638,7 +638,7 @@ const MobileVoucherManagementPage = () => {
           <div className="mobile-card space-y-3 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-base font-bold text-[#0b130c]">Laporan penggunaan</h2>
+                <h2 className="text-base font-bold text-[#1b1a16]">Laporan penggunaan</h2>
                 <p className="mt-1 text-xs font-semibold text-[#6b7280]">Kode, order, customer, diskon, dan waktu dipakai.</p>
               </div>
               <div className="shrink-0 rounded-2xl bg-emerald-50 px-3 py-2 text-right text-xs font-bold text-emerald-800">
@@ -661,23 +661,23 @@ const MobileVoucherManagementPage = () => {
             <article key={entry.id || `${entry.voucherCode}-${entry.orderNumber}-${entry.usedAt}`} className="mobile-card space-y-3 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="truncate text-base font-bold tracking-[0.08em] text-[#0b130c]">{entry.voucherCode}</h3>
+                  <h3 className="truncate text-base font-bold tracking-[0.08em] text-[#1b1a16]">{entry.voucherCode}</h3>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{entry.orderNumber || '-'}</p>
                 </div>
-                <div className="shrink-0 rounded-2xl bg-[#f7f8f2] px-3 py-2 text-right text-xs font-bold text-[#263d27]">
+                <div className="shrink-0 rounded-2xl bg-[#fffaf0] px-3 py-2 text-right text-xs font-bold text-[#1b1a16]">
                   {entry.discountAmount ? formatTotal(entry.discountAmount) : '-'}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#263d27]">
-                <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+              <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#1b1a16]">
+                <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                   <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Customer</span>
                   <span className="block truncate">{entry.customerName || '-'}</span>
                 </div>
-                <div className="rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                <div className="rounded-2xl bg-[#fffaf0] px-3 py-2">
                   <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Kode customer</span>
                   <span className="block truncate">{entry.customerCode || '-'}</span>
                 </div>
-                <div className="col-span-2 rounded-2xl bg-[#f7f8f2] px-3 py-2">
+                <div className="col-span-2 rounded-2xl bg-[#fffaf0] px-3 py-2">
                   <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Waktu dipakai</span>
                   {formatDateTime(entry.usedAt)}
                 </div>

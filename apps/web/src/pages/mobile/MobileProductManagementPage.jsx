@@ -139,7 +139,7 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
               {product.variants.slice(0, 3).map((variant) => (
-                <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#eef2e8] text-[#263d27]'}`}>
+                <span key={variant.id || variant.size} className={`rounded-full px-2 py-1 text-[10px] font-bold ${variant.stock > 0 && variant.stock <= 5 ? 'bg-rose-50 text-rose-700' : 'bg-[#f7f1e5] text-[#1b1a16]'}`}>
                   {variant.size}: {variant.stock}
                 </span>
               ))}
@@ -150,7 +150,7 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
               <button
                 type="button"
                 onClick={() => onOpenBatch(formulaId)}
-                className="mobile-interactive mobile-pressable mt-2 text-[10px] font-bold uppercase text-[#263d27]"
+                className="mobile-interactive mobile-pressable mt-2 text-[10px] font-bold uppercase text-[#1b1a16]"
               >
                 View source batch
               </button>
@@ -461,7 +461,7 @@ const MobileProductManagementPage = () => {
         <MobileTopBar title="Produk" subtitle={`${products.length} item katalog`} eyebrow="Admin Studio" action={<PackagePlus className="h-5 w-5 text-amber-700" />} />
 
         <section className="mobile-card p-2">
-          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-[#f7f8f2] p-1">
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-[#fffaf0] p-1">
             {[
               ['new', 'Tambah'],
               ['list', 'Daftar'],
@@ -471,7 +471,7 @@ const MobileProductManagementPage = () => {
                 key={view}
                 type="button"
                 onClick={() => updateView(view)}
-                className={`h-10 rounded-xl text-[11px] font-bold transition ${activeView === view ? 'bg-white text-[#263d27] shadow-sm' : 'text-[#7a8377]'}`}
+                className={`h-10 rounded-xl text-[11px] font-bold transition ${activeView === view ? 'bg-white text-[#1b1a16] shadow-sm' : 'text-[#7a8377]'}`}
               >
                 {label}
               </button>
@@ -485,7 +485,7 @@ const MobileProductManagementPage = () => {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">{form.id ? 'Edit produk' : 'Produk baru'}</div>
-                <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{form.name || 'Buat item katalog'}</h1>
+                <h1 className="mt-1 text-2xl font-bold text-[#1b1a16]">{form.name || 'Buat item katalog'}</h1>
                 {hasUnsavedChanges ? (
                   <div className="mt-2 w-fit rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-700">Belum disimpan</div>
                 ) : null}
@@ -501,11 +501,11 @@ const MobileProductManagementPage = () => {
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="rounded-2xl bg-white px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Harga</div>
-                <div className="mt-1 truncate text-xs font-bold text-[#263d27]">{formatRupiah(primaryVariantPrice)}</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#1b1a16]">{formatRupiah(primaryVariantPrice)}</div>
               </div>
               <div className="rounded-2xl bg-white px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stok</div>
-                <div className="mt-1 truncate text-xs font-bold text-[#263d27]">{totalVariantStock || Number(form.stock || 0)}</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#1b1a16]">{totalVariantStock || Number(form.stock || 0)}</div>
               </div>
               <div className="rounded-2xl bg-white px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Status</div>
@@ -581,7 +581,7 @@ const MobileProductManagementPage = () => {
                     <div className="mt-1 text-xs font-bold text-[#1f2937]">{formatRupiah(batchDetails.cogsPerBottle)}</div>
                   </div>
                 </div>
-                <div className="mt-2 text-[10px] font-bold uppercase text-[#263d27]">
+                <div className="mt-2 text-[10px] font-bold uppercase text-[#1b1a16]">
                   Stok awal {batchDetails.initialStock || 0} botol
                 </div>
               </div>
@@ -819,7 +819,7 @@ const MobileProductManagementPage = () => {
                 key={filter.key}
                 type="button"
                 onClick={() => setProductStatusFilter(filter.key)}
-                className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-2xl border px-3 text-[11px] font-bold ${productStatusFilter === filter.key ? 'border-[#263d27] bg-[#263d27] text-white' : 'border-[#e5e7eb] bg-white text-[#344054]'}`}
+                className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-2xl border px-3 text-[11px] font-bold ${productStatusFilter === filter.key ? 'border-[#1b1a16] bg-[#1b1a16] text-white' : 'border-[#e5e7eb] bg-white text-[#344054]'}`}
               >
                 {filter.key === 'all' ? <Filter className="h-3.5 w-3.5" /> : null}
                 {filter.label}

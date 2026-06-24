@@ -213,7 +213,7 @@ const FormulaMaterialQuickCreateDialog = ({
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={loading || !name}
-            className="rounded-2xl bg-[#263d27] text-white hover:bg-[#1d2f1e]"
+            className="rounded-2xl bg-[#1b1a16] text-white hover:bg-[#1d2f1e]"
             onClick={(event) => {
               event.preventDefault();
               onConfirm?.(details);

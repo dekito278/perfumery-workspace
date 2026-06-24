@@ -95,8 +95,8 @@ const LoginPage = () => {
         <title>Login - Solivagant</title>
         <meta name="description" content="Sign in to your Solivagant account to manage materials, formulas, and validation work." />
       </Helmet>
-      <div className="flex min-h-screen items-center justify-center bg-[#050705] p-4">
-        <Card className="w-full max-w-md border-white/10 bg-[#f7f8f2] shadow-2xl shadow-black/40">
+      <div className="flex min-h-screen items-center justify-center bg-[#121110] p-4">
+        <Card className="w-full max-w-md border-white/10 bg-[#fffaf0] shadow-2xl shadow-black/40">
           <CardHeader className="space-y-1">
             <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mb-5 h-16 w-auto rounded-2xl object-contain" />
             <CardTitle className="text-2xl font-bold">Welcome back, Solivagant</CardTitle>

@@ -6,10 +6,10 @@ export const STOREFRONT_CATEGORY_LAST_VALID_STORAGE_KEY = 'dekito.storefront.cat
 export const STOREFRONT_CATEGORY_UPDATED_EVENT = 'dekito:storefront-categories-updated';
 
 const ACCENT_CLASSES = [
-  'bg-[#eef2e8] text-[#263d27] border-[#263d27]/15',
-  'bg-[#f4f2ec] text-[#263d27] border-[#263d27]/15',
-  'bg-[#e7ebe1] text-[#263d27] border-[#263d27]/15',
-  'bg-[#f7f8f2] text-[#263d27] border-[#263d27]/15',
+  'bg-[#f7f1e5] text-[#1b1a16] border-[#1b1a16]/15',
+  'bg-[#f4f2ec] text-[#1b1a16] border-[#1b1a16]/15',
+  'bg-[#e7ebe1] text-[#1b1a16] border-[#1b1a16]/15',
+  'bg-[#fffaf0] text-[#1b1a16] border-[#1b1a16]/15',
 ];
 
 const DEFAULT_SCENT_FAMILIES = [

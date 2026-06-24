@@ -246,7 +246,7 @@ const AppShell = ({ children }) => {
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[86vw] max-w-sm border-r-0 bg-[#eef2e8] p-0">
+                <SheetContent side="left" className="w-[86vw] max-w-sm border-r-0 bg-[#f7f1e5] p-0">
                   <div className="flex h-full flex-col p-5">
                     <Link to="/studio" className="app-brand" onClick={() => setMobileMenuOpen(false)}>
                       <span className="app-brand-icon">

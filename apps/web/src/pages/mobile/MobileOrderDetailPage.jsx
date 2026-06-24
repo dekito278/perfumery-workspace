@@ -692,10 +692,10 @@ const MobileOrderDetailPage = () => {
         <section className="mobile-soft-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase text-[#263d27]">Status saat ini</div>
-              <h1 className="mt-1 text-2xl font-bold text-[#0b130c]">{statusLabels[order.status] || order.status}</h1>
+              <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Status saat ini</div>
+              <h1 className="mt-1 text-2xl font-bold text-[#1b1a16]">{statusLabels[order.status] || order.status}</h1>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.quantity} item / {formatTotal(order.subtotal)}</p>
-              {voucherSnapshot ? <p className="mt-1 text-xs font-bold text-[#263d27]">Voucher {voucherSnapshot.code}: hemat {formatTotal(voucherSnapshot.discountAmount)}</p> : null}
+              {voucherSnapshot ? <p className="mt-1 text-xs font-bold text-[#1b1a16]">Voucher {voucherSnapshot.code}: hemat {formatTotal(voucherSnapshot.discountAmount)}</p> : null}
             </div>
             <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
               {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
@@ -706,8 +706,8 @@ const MobileOrderDetailPage = () => {
               const done = activeStep >= index;
               return (
                 <div key={step} className="flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-                  <div className={`truncate text-[10px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>{statusLabels[step]}</div>
+                  <span className={`h-2.5 w-2.5 rounded-full ${done ? 'bg-[#1b1a16]' : 'bg-stone-200'}`} />
+                  <div className={`truncate text-[10px] font-bold uppercase ${done ? 'text-[#1b1a16]' : 'text-[#8b949e]'}`}>{statusLabels[step]}</div>
                 </div>
               );
             })}
@@ -732,7 +732,7 @@ const MobileOrderDetailPage = () => {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-bold uppercase text-amber-700">Tugas berikutnya</div>
-              <h2 className="mt-0.5 text-base font-bold text-[#0b130c]">{nextOrderTask.label}</h2>
+              <h2 className="mt-0.5 text-base font-bold text-[#1b1a16]">{nextOrderTask.label}</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{nextOrderTask.helper}</p>
             </div>
           </div>
@@ -740,7 +740,7 @@ const MobileOrderDetailPage = () => {
 
         {orderSection === 'task' ? <>
         <section className="mobile-card p-3">
-          <div className="mb-3 text-[10px] font-bold uppercase text-[#263d27]">Aksi cepat</div>
+          <div className="mb-3 text-[10px] font-bold uppercase text-[#1b1a16]">Aksi cepat</div>
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100" onClick={() => quickShipmentUpdate('shipped')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
               <Send className="h-5 w-5" />
@@ -774,13 +774,13 @@ const MobileOrderDetailPage = () => {
         </section>
 
         <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
             <UserRound className="h-4 w-4" />
             Customer
           </div>
-          <h2 className="text-lg font-bold text-[#0b130c]">{order.customerName}</h2>
+          <h2 className="text-lg font-bold text-[#1b1a16]">{order.customerName}</h2>
           <p className="mt-1 text-sm font-semibold text-[#6b7280]">{order.contact}</p>
-          {order.customerCode ? <p className="mt-2 w-fit rounded-full bg-[#eef2e8] px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">{order.customerCode}</p> : null}
+          {order.customerCode ? <p className="mt-2 w-fit rounded-full bg-[#f7f1e5] px-3 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{order.customerCode}</p> : null}
           {noteRows.length ? (
             <div className="mt-3 grid gap-2">
               {noteRows.map((row) => (
@@ -796,18 +796,18 @@ const MobileOrderDetailPage = () => {
 
         {orderSection === 'payment' ? <>
         <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
             <CreditCard className="h-4 w-4" />
             Pembayaran
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-[#f8f7f4] p-3">
               <div className="text-[10px] font-bold uppercase text-[#6b7280]">Provider</div>
-              <div className="mt-1 text-sm font-bold text-[#0b130c]">{order.paymentProvider || 'manual'}</div>
+              <div className="mt-1 text-sm font-bold text-[#1b1a16]">{order.paymentProvider || 'manual'}</div>
             </div>
             <div className="rounded-2xl bg-[#f8f7f4] p-3">
               <div className="text-[10px] font-bold uppercase text-[#6b7280]">Referensi</div>
-              <div className="mt-1 truncate text-sm font-bold text-[#0b130c]">{order.paymentReference || '-'}</div>
+              <div className="mt-1 truncate text-sm font-bold text-[#1b1a16]">{order.paymentReference || '-'}</div>
             </div>
           </div>
           {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
@@ -828,7 +828,7 @@ const MobileOrderDetailPage = () => {
               Sinkron status DOKU
             </Button>
           ) : null}
-          <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#f8f7f4] p-3">
+          <div className="mt-3 rounded-2xl border border-[#1b1a16]/10 bg-[#f8f7f4] p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-[10px] font-bold uppercase text-[#6b7280]">Bukti transfer</div>
@@ -846,7 +846,7 @@ const MobileOrderDetailPage = () => {
               </Button>
             </div>
             {order.paymentProofFileName ? (
-              <div className="mt-3 truncate rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#263d27]">
+              <div className="mt-3 truncate rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#1b1a16]">
                 {order.paymentProofFileName}
               </div>
             ) : null}
@@ -884,7 +884,7 @@ const MobileOrderDetailPage = () => {
               </button>
             ) : null}
             {paymentProofPreviewUrl && !paymentProofIsImage ? (
-              <button type="button" onClick={openPaymentProof} className="mt-3 flex w-full items-center gap-2 rounded-2xl border bg-white px-3 py-2 text-left text-xs font-bold text-[#263d27]">
+              <button type="button" onClick={openPaymentProof} className="mt-3 flex w-full items-center gap-2 rounded-2xl border bg-white px-3 py-2 text-left text-xs font-bold text-[#1b1a16]">
                 <FileCheck2 className="h-4 w-4" />
                 File siap dibuka
               </button>
@@ -894,11 +894,11 @@ const MobileOrderDetailPage = () => {
 
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
               <FileCheck2 className="h-4 w-4" />
               Timeline bukti
             </div>
-            <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{proofTimeline.length} event</span>
+            <span className="rounded-full bg-[#f7f1e5] px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{proofTimeline.length} event</span>
           </div>
           {proofTimeline.length ? (
             <div className="grid gap-2">
@@ -906,7 +906,7 @@ const MobileOrderDetailPage = () => {
                 <article key={event.id} className="rounded-2xl bg-[#f8f7f4] px-3 py-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-[#0b130c]">{event.label}</div>
+                      <div className="text-xs font-bold text-[#1b1a16]">{event.label}</div>
                       <div className="mt-1 text-[10px] font-semibold text-[#6b7280]">{formatDate(event.at)} / {event.actor}</div>
                     </div>
                     <StatusChip size="sm" tone={paymentProofToneByStatus[event.status] || 'warning'}>
@@ -932,7 +932,7 @@ const MobileOrderDetailPage = () => {
 
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
               <PackageCheck className="h-4 w-4" />
               Link inventory
             </div>
@@ -944,12 +944,12 @@ const MobileOrderDetailPage = () => {
             <div className="grid gap-2">
               {order.inventoryEvents.map((event, index) => (
                 <div key={`${event.productId}-${event.variantId}-${index}`} className="rounded-2xl bg-[#f8f7f4] px-3 py-2">
-                  <div className="text-xs font-bold text-[#0b130c]">{event.productName}</div>
+                  <div className="text-xs font-bold text-[#1b1a16]">{event.productName}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">
                     {event.direction === 'in' || event.type === 'restore' ? '+' : '-'}{event.quantity} stok {event.size ? `/ ${event.size}` : ''} / {formatDate(event.at)}
                   </div>
                   {event.batchKey || event.formulaId || event.sku ? (
-                    <div className="mt-1 text-[10px] font-semibold text-[#263d27]">
+                    <div className="mt-1 text-[10px] font-semibold text-[#1b1a16]">
                       {[event.batchKey ? `Batch ${event.batchKey}` : '', event.formulaId ? `Formula ${event.formulaId}` : '', event.sku ? `SKU ${event.sku}` : ''].filter(Boolean).join(' / ')}
                     </div>
                   ) : null}
@@ -965,7 +965,7 @@ const MobileOrderDetailPage = () => {
         </section>
 
         <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
             <MessageCircle className="h-4 w-4" />
             Template notifikasi
           </div>
@@ -1005,11 +1005,11 @@ const MobileOrderDetailPage = () => {
         {orderSection === 'fulfillment' ? <>
         <section className="mobile-card p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
               <History className="h-4 w-4" />
               Log payment DOKU
             </div>
-            <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+            <span className="rounded-full bg-[#f7f1e5] px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">
               {paymentLogs.length} log
             </span>
           </div>
@@ -1019,7 +1019,7 @@ const MobileOrderDetailPage = () => {
                 <article key={log.id} className="rounded-2xl bg-[#f8f7f4] p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-[#0b130c]">
+                      <div className="text-xs font-bold text-[#1b1a16]">
                         {log.transactionStatus || 'Callback'}
                         {log.mappedPaymentStatus ? ` / ${paymentStatusLabels[log.mappedPaymentStatus] || log.mappedPaymentStatus}` : ''}
                       </div>
@@ -1045,7 +1045,7 @@ const MobileOrderDetailPage = () => {
         </section>
 
         <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
             <Truck className="h-4 w-4" />
             Pengiriman / Resi
           </div>
@@ -1128,7 +1128,7 @@ const MobileOrderDetailPage = () => {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-bold text-[#0b130c]">Item</h2>
+          <h2 className="text-base font-bold text-[#1b1a16]">Item</h2>
           {discountedItemLines.map((line) => {
             const item = line.item;
             const hasDiscount = line.discount > 0;
@@ -1136,9 +1136,9 @@ const MobileOrderDetailPage = () => {
             <article key={`${order.orderNumber}-${item.slug || item.name}`} className="mobile-card p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-[#0b130c]">{item.name}</h3>
+                  <h3 className="text-sm font-bold text-[#1b1a16]">{item.name}</h3>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">Qty {item.quantity} / {item.size || '-'}</p>
-                  {hasDiscount ? <p className="mt-1 text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</p> : null}
+                  {hasDiscount ? <p className="mt-1 text-[11px] font-bold text-[#1b1a16]">Diskon voucher -{formatTotal(line.discount)}</p> : null}
                 </div>
                 <div className="shrink-0 text-right text-sm font-bold text-amber-700">
                   {hasDiscount ? (
@@ -1153,13 +1153,13 @@ const MobileOrderDetailPage = () => {
             );
           })}
           {voucherSnapshot ? (
-            <article className="mobile-card border border-[#263d27]/10 bg-[#eef2e8] p-3">
+            <article className="mobile-card border border-[#1b1a16]/10 bg-[#f7f1e5] p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-[#263d27]">Voucher {voucherSnapshot.code}</h3>
-                  <p className="mt-1 text-xs font-semibold text-[#51624b]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</p>
+                  <h3 className="text-sm font-bold text-[#1b1a16]">Voucher {voucherSnapshot.code}</h3>
+                  <p className="mt-1 text-xs font-semibold text-[#6f695f]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</p>
                 </div>
-                <div className="shrink-0 text-sm font-bold text-[#263d27]">-{formatTotal(voucherSnapshot.discountAmount)}</div>
+                <div className="shrink-0 text-sm font-bold text-[#1b1a16]">-{formatTotal(voucherSnapshot.discountAmount)}</div>
               </div>
             </article>
           ) : null}
@@ -1167,8 +1167,8 @@ const MobileOrderDetailPage = () => {
         </> : null}
 
         {orderSection === 'production' && bespoke ? (
-          <section className="mobile-card border border-[#263d27]/10 bg-[#eef2e8] p-4">
-            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <section className="mobile-card border border-[#1b1a16]/10 bg-[#f7f1e5] p-4">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
               <Sparkles className="h-4 w-4" />
               Bespoke brief
             </div>
@@ -1186,11 +1186,11 @@ const MobileOrderDetailPage = () => {
         {orderSection === 'production' && bespoke ? (
           <section className="mobile-card p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
                 <Sparkles className="h-4 w-4" />
             Produksi bespoke
               </div>
-              <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+              <span className="rounded-full bg-[#f7f1e5] px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">
                 {bespokeProductionStatusLabels[bespokeProductionStatus] || bespokeProductionStatus}
               </span>
             </div>
@@ -1199,8 +1199,8 @@ const MobileOrderDetailPage = () => {
                 const done = bespokeProductionStep >= index;
                 return (
                   <div key={step} className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-                    <div className={`truncate text-[10px] font-bold uppercase ${done ? 'text-[#263d27]' : 'text-[#8b949e]'}`}>
+                    <span className={`h-2.5 w-2.5 rounded-full ${done ? 'bg-[#1b1a16]' : 'bg-stone-200'}`} />
+                    <div className={`truncate text-[10px] font-bold uppercase ${done ? 'text-[#1b1a16]' : 'text-[#8b949e]'}`}>
                       {bespokeProductionStatusLabels[step]}
                     </div>
                   </div>
@@ -1219,7 +1219,7 @@ const MobileOrderDetailPage = () => {
               <div className="mt-3 grid gap-2">
                 {order.bespokeProductionTimeline.map((entry, index) => (
                   <div key={`${entry.status}-${entry.at}-${index}`} className="rounded-2xl bg-[#f8f7f4] px-3 py-2">
-                    <div className="text-xs font-bold text-[#0b130c]">{entry.label}</div>
+                    <div className="text-xs font-bold text-[#1b1a16]">{entry.label}</div>
                     <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{formatDate(entry.at)}</div>
                   </div>
                 ))}
@@ -1229,7 +1229,7 @@ const MobileOrderDetailPage = () => {
         ) : null}
 
         {orderSection === 'production' ? <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
             <Sparkles className="h-4 w-4" />
             Link produksi
           </div>
@@ -1293,7 +1293,7 @@ const MobileOrderDetailPage = () => {
         </section> : null}
 
         {orderSection === 'production' ? <section className="mobile-card p-4">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
             <NotebookPen className="h-4 w-4" />
             Catatan internal
           </div>
@@ -1312,16 +1312,16 @@ const MobileOrderDetailPage = () => {
 
         {orderSection === 'history' ? <>
         <section className="mobile-card p-4">
-          <h2 className="text-base font-bold text-[#0b130c]">Status timeline</h2>
+          <h2 className="text-base font-bold text-[#1b1a16]">Status timeline</h2>
           <div className="mt-3 grid gap-3">
             {timeline.map((entry, index) => (
               <div key={`${entry.status}-${entry.at}-${index}`} className="grid grid-cols-[28px_1fr] gap-3">
                 <div className="flex flex-col items-center">
-                  <span className="h-3 w-3 rounded-full bg-[#263d27]" />
+                  <span className="h-3 w-3 rounded-full bg-[#1b1a16]" />
                   {index < timeline.length - 1 ? <span className="mt-1 h-full min-h-8 w-px bg-[#d9ded3]" /> : null}
                 </div>
                 <div className="rounded-2xl bg-[#f8f7f4] px-3 py-2">
-                  <div className="text-xs font-bold text-[#0b130c]">{entry.label}</div>
+                  <div className="text-xs font-bold text-[#1b1a16]">{entry.label}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{formatDate(entry.at)}</div>
                   {entry.note ? <div className="mt-1 text-xs font-semibold text-[#1f2937]">{entry.note}</div> : null}
                 </div>

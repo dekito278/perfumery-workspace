@@ -250,7 +250,7 @@ const PaymentExperiencePanel = ({ compact = false, order }) => {
             <span className="rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase">{state.label}</span>
             {state.action ? <span className="text-[10px] font-bold uppercase opacity-75">{state.action}</span> : null}
           </div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-2 font-bold text-[#0b130c]`}>{state.title}</h4>
+          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-2 font-bold text-[#1b1a16]`}>{state.title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{state.description}</p>
         </div>
       </div>
@@ -370,27 +370,27 @@ const PaymentTaskPanel = ({
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">Aksi pembayaran</div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#0b130c]`}>{title}</h4>
+          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#1b1a16]`}>{title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">{description}</p>
 
           <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
             <div className="rounded-2xl bg-white/85 px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-amber-700">Order</div>
-              <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{order.orderNumber}</div>
+              <div className="mt-1 truncate text-xs font-bold text-[#1b1a16]">{order.orderNumber}</div>
             </div>
             <div className="rounded-2xl bg-white/85 px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-amber-700">Total bayar</div>
-              <div className="mt-1 text-sm font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</div>
+              <div className="mt-1 text-sm font-bold text-[#1b1a16]">{formatTotal(order.subtotal)}</div>
             </div>
             {dokuPayment ? (
               <div className="rounded-2xl bg-white/85 px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-amber-700">Batas link</div>
-                <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{expiresAt ? formatDate(expiresAt) : 'Sekitar 1 jam'}</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#1b1a16]">{expiresAt ? formatDate(expiresAt) : 'Sekitar 1 jam'}</div>
               </div>
             ) : (
               <div className="rounded-2xl bg-white/85 px-3 py-2">
                 <div className="text-[10px] font-bold uppercase text-amber-700">Rekening</div>
-                <div className="mt-1 truncate text-xs font-bold text-[#0b130c]">{transfer.bankName} {transfer.accountNumber}</div>
+                <div className="mt-1 truncate text-xs font-bold text-[#1b1a16]">{transfer.bankName} {transfer.accountNumber}</div>
                 <div className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">A/N {transfer.accountName}</div>
               </div>
             )}
@@ -398,23 +398,23 @@ const PaymentTaskPanel = ({
 
           <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
             {manualPayment ? (
-              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
+              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1b1a16] px-4 text-xs font-bold text-[#f7f1e5]">
                 <Upload className="h-4 w-4" />
                 Upload bukti transfer
               </Link>
             ) : dokuExpired ? (
-              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8] disabled:opacity-60">
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1b1a16] px-4 text-xs font-bold text-[#f7f1e5] disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 Buat link DOKU baru
               </button>
             ) : (
-              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
+              <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1b1a16] px-4 text-xs font-bold text-[#f7f1e5]">
                 <CreditCard className="h-4 w-4" />
                 Bayar sekarang
               </Link>
             )}
             {dokuPayment && order.paymentUrl && !dokuExpired ? (
-              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27] disabled:opacity-60">
+              <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#1b1a16]/15 bg-white px-4 text-xs font-bold text-[#1b1a16] disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 Perbarui link
               </button>
@@ -445,13 +445,13 @@ const OrderTimeline = ({ order, compact = false }) => {
   return (
     <div className={compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'}>
       {timeline.map((step, index) => (
-        <div key={step.key} className={`rounded-2xl border px-3 py-3 ${step.done ? 'border-[#263d27]/20 bg-white' : 'border-stone-200 bg-stone-50'} ${step.current ? 'ring-2 ring-[#263d27]/15' : ''}`}>
+        <div key={step.key} className={`rounded-2xl border px-3 py-3 ${step.done ? 'border-[#1b1a16]/20 bg-white' : 'border-stone-200 bg-stone-50'} ${step.current ? 'ring-2 ring-[#1b1a16]/15' : ''}`}>
           <div className="flex items-start gap-3">
-            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-[#263d27] text-white' : 'bg-stone-200 text-stone-500'}`}>
+            <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.done ? 'bg-[#1b1a16] text-white' : 'bg-stone-200 text-stone-500'}`}>
               {index + 1}
             </span>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-[#0b130c]">{step.label}</div>
+              <div className="text-xs font-bold text-[#1b1a16]">{step.label}</div>
               <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{step.detail}</p>
             </div>
           </div>
@@ -467,7 +467,7 @@ const VoucherSummary = ({ order, compact = false }) => {
 
   const shippingFee = getOrderShippingFee(order);
   return (
-    <div className={`mt-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#263d27]`}>
+    <div className={`mt-3 rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-[#1b1a16]`}>
       <div className="flex justify-between gap-3">
         <span>Subtotal produk</span>
         <span>{formatTotal(getOrderProductsSubtotal(order))}</span>
@@ -517,7 +517,7 @@ const OrderItems = ({ order, compact = false }) => {
               </span>
             </div>
             {hasDiscount ? (
-              <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-[#263d27]">
+              <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-[#1b1a16]">
                 <span>Setelah voucher: {formatTotal(line.discountedUnitPrice)} / item</span>
                 <span>-{formatTotal(line.discount)}</span>
               </div>
@@ -535,8 +535,8 @@ const BespokeDetailPanel = ({ item, compact = false }) => {
   if (!rows.length) return null;
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl bg-[#eef2e8]`}>
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27] sm:text-xs">
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl bg-[#f7f1e5]`}>
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16] sm:text-xs">
         <Sparkles className="h-3.5 w-3.5" />
         Bespoke detail
       </div>
@@ -544,7 +544,7 @@ const BespokeDetailPanel = ({ item, compact = false }) => {
         {rows.map(([label, value]) => (
           <div key={label} className={`${compact ? 'grid grid-cols-[68px_1fr] gap-2 text-xs leading-snug' : 'rounded-xl bg-white/70 px-3 py-2 text-sm'} font-semibold`}>
             <span className={`${compact ? 'text-[#6b7280]' : 'block text-[10px] font-bold uppercase text-muted-foreground'}`}>{label}</span>
-            <span className={`${compact ? 'text-[#1f2937]' : 'mt-1 block text-[#0b130c]'}`}>{value}</span>
+            <span className={`${compact ? 'text-[#1f2937]' : 'mt-1 block text-[#1b1a16]'}`}>{value}</span>
           </div>
         ))}
       </div>
@@ -558,13 +558,13 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
   const activeStep = getBespokeProductionStep(currentStatus);
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#263d27]/10 bg-[#fbfaf7]`}>
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7]`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27] sm:text-xs">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16] sm:text-xs">
           <Sparkles className="h-3.5 w-3.5" />
           Bespoke production
         </div>
-        <span className="rounded-full bg-[#eef2e8] px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+        <span className="rounded-full bg-[#f7f1e5] px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">
           {bespokeProductionStatusLabels[currentStatus] || currentStatus}
         </span>
       </div>
@@ -573,8 +573,8 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
           const done = activeStep >= index;
           return (
             <div key={step} className="min-w-0">
-              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-[#263d27]' : 'bg-stone-200'}`} />
-              <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-[#263d27]' : 'text-muted-foreground'}`}>
+              <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-[#1b1a16]' : 'bg-stone-200'}`} />
+              <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-[#1b1a16]' : 'text-muted-foreground'}`}>
                 {bespokeProductionStatusLabels[step]}
               </div>
             </div>
@@ -593,9 +593,9 @@ const ShipmentPanel = ({ order, compact = false }) => {
   });
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#263d27]/10 bg-white`}>
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#1b1a16]/10 bg-white`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27] sm:text-xs">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16] sm:text-xs">
           <Truck className="h-3.5 w-3.5" />
           Shipment
         </div>
@@ -605,41 +605,41 @@ const ShipmentPanel = ({ order, compact = false }) => {
         {order.courierName ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-muted-foreground">Kurir</div>
-            <div className="mt-1 text-[#0b130c]">{order.courierName}</div>
+            <div className="mt-1 text-[#1b1a16]">{order.courierName}</div>
           </div>
         ) : null}
         {order.trackingNumber ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-muted-foreground">Resi</div>
-            <div className="mt-1 text-[#0b130c]">{order.trackingNumber}</div>
+            <div className="mt-1 text-[#1b1a16]">{order.trackingNumber}</div>
           </div>
         ) : null}
         {order.shippedAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-muted-foreground">Tanggal kirim</div>
-            <div className="mt-1 text-[#0b130c]">{formatDate(order.shippedAt)}</div>
+            <div className="mt-1 text-[#1b1a16]">{formatDate(order.shippedAt)}</div>
           </div>
         ) : null}
         {order.deliveredAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
             <div className="text-[10px] font-bold uppercase text-muted-foreground">Delivered</div>
-            <div className="mt-1 text-[#0b130c]">{formatDate(order.deliveredAt)}</div>
+            <div className="mt-1 text-[#1b1a16]">{formatDate(order.deliveredAt)}</div>
           </div>
         ) : null}
       </div>
       {order.trackingUrl ? (
-        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-3 text-xs font-bold text-[#eef2e8]">
+        <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1b1a16] px-3 text-xs font-bold text-[#f7f1e5]">
           <ExternalLink className="h-4 w-4" />
           Track resi
         </a>
       ) : null}
       {!order.trackingUrl && courierSearchUrl ? (
-        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-3 text-xs font-bold text-[#eef2e8]">
+        <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1b1a16] px-3 text-xs font-bold text-[#f7f1e5]">
           <ExternalLink className="h-4 w-4" />
           Cari resi kurir
         </a>
       ) : null}
-      <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-3 text-xs font-bold text-[#263d27]">
+      <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#1b1a16]/15 bg-white px-3 text-xs font-bold text-[#1b1a16]">
         <ExternalLink className="h-4 w-4" />
         Tracking publik
       </a>
@@ -662,8 +662,8 @@ const SelfServiceActions = ({
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
     : 'inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold';
-  const outlineClass = `${buttonClass} border border-[#263d27]/15 bg-white text-[#263d27]`;
-  const primaryClass = `${buttonClass} bg-[#263d27] text-[#eef2e8]`;
+  const outlineClass = `${buttonClass} border border-[#1b1a16]/15 bg-white text-[#1b1a16]`;
+  const primaryClass = `${buttonClass} bg-[#1b1a16] text-[#f7f1e5]`;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
     courierName: order.courierName,
     trackingNumber: order.trackingNumber,
@@ -732,20 +732,20 @@ const ReorderPaymentPanel = ({
   const voucherChanged = draft.originalVoucherSnapshot && !draft.voucherSnapshot;
 
   return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#263d27]/14 bg-[#eef2e8]`}>
+    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-[#1b1a16]/14 bg-[#f7f1e5]`}>
       <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-white text-[#1b1a16]">
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#263d27]">Reorder</div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#0b130c]`}>Pilih pembayaran</h4>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-[#51624b]">
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1b1a16]">Reorder</div>
+          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-[#1b1a16]`}>Pilih pembayaran</h4>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6f695f]">
             Item, alamat, dan ongkir mengikuti order lama. Pilih Manual atau DOKU untuk membuat order baru.
           </p>
 
           {draft.checkingVoucher ? (
-            <div className="mt-3 flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs font-bold text-[#263d27]">
+            <div className="mt-3 flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs font-bold text-[#1b1a16]">
               <Loader2 className="h-4 w-4 animate-spin" />
               Mengecek voucher lama...
             </div>
@@ -764,16 +764,16 @@ const ReorderPaymentPanel = ({
 
           <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
             <div className="rounded-2xl bg-white px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-[#6f7d61]">Subtotal produk</div>
-              <div className="mt-1 text-xs font-bold text-[#0b130c]">{formatTotal(draft.productSubtotal)}</div>
+              <div className="text-[10px] font-bold uppercase text-[#6f695f]">Subtotal produk</div>
+              <div className="mt-1 text-xs font-bold text-[#1b1a16]">{formatTotal(draft.productSubtotal)}</div>
             </div>
             <div className="rounded-2xl bg-white px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-[#6f7d61]">Ongkir lama</div>
-              <div className="mt-1 text-xs font-bold text-[#0b130c]">{formatTotal(draft.shippingFee)}</div>
+              <div className="text-[10px] font-bold uppercase text-[#6f695f]">Ongkir lama</div>
+              <div className="mt-1 text-xs font-bold text-[#1b1a16]">{formatTotal(draft.shippingFee)}</div>
             </div>
             <div className="rounded-2xl bg-white px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-[#6f7d61]">Total baru</div>
-              <div className="mt-1 text-sm font-bold text-[#0b130c]">{formatTotal(draft.totalDue)}</div>
+              <div className="text-[10px] font-bold uppercase text-[#6f695f]">Total baru</div>
+              <div className="mt-1 text-sm font-bold text-[#1b1a16]">{formatTotal(draft.totalDue)}</div>
             </div>
           </div>
 
@@ -788,12 +788,12 @@ const ReorderPaymentPanel = ({
                     if (!active) toast.success(`${method.label} dipilih`);
                     setSelectedPaymentMethod(method.id);
                   }}
-                  className={`rounded-2xl border px-3 py-3 text-left ${active ? 'border-[#263d27] bg-white text-[#0b130c]' : 'border-[#263d27]/10 bg-white/70 text-[#6b7280]'}`}
+                  className={`rounded-2xl border px-3 py-3 text-left ${active ? 'border-[#1b1a16] bg-white text-[#1b1a16]' : 'border-[#1b1a16]/10 bg-white/70 text-[#6b7280]'}`}
                 >
                   <div className="text-sm font-bold">{method.label}</div>
                   <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
                   {method.accountNumber && active ? (
-                    <div className="mt-2 rounded-xl bg-[#eef2e8] px-3 py-2 text-[11px] font-bold text-[#263d27]">
+                    <div className="mt-2 rounded-xl bg-[#f7f1e5] px-3 py-2 text-[11px] font-bold text-[#1b1a16]">
                       {method.bankName} {method.accountNumber} / A.N {method.accountName}
                     </div>
                   ) : null}
@@ -803,11 +803,11 @@ const ReorderPaymentPanel = ({
           </div>
 
           <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
-            <button type="button" onClick={() => onSubmit(draft.order, selectedPaymentMethod)} disabled={submitting || draft.checkingVoucher} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8] disabled:opacity-60">
+            <button type="button" onClick={() => onSubmit(draft.order, selectedPaymentMethod)} disabled={submitting || draft.checkingVoucher} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#1b1a16] px-4 text-xs font-bold text-[#f7f1e5] disabled:opacity-60">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
               {isManual ? 'Pakai transfer manual' : 'Buat link DOKU'}
             </button>
-            <button type="button" onClick={onCancel} disabled={submitting} className="flex h-11 items-center justify-center rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27] disabled:opacity-60">
+            <button type="button" onClick={onCancel} disabled={submitting} className="flex h-11 items-center justify-center rounded-2xl border border-[#1b1a16]/15 bg-white px-4 text-xs font-bold text-[#1b1a16] disabled:opacity-60">
               Batal
             </button>
           </div>
@@ -1246,7 +1246,7 @@ const CustomerPortalPage = () => {
         </Helmet>
         <main className="mobile-page space-y-4">
           <section className="mobile-soft-card overflow-hidden">
-            <div className="relative overflow-hidden bg-[#050705] p-4 text-[#eef2e8]">
+            <div className="relative overflow-hidden bg-[#121110] p-4 text-[#f7f1e5]">
               <div className="absolute -right-8 top-0 h-28 w-28 rounded-full border border-white/10" />
               <div className="absolute right-6 top-10 h-16 w-16 rounded-full border border-[#d6c68a]/20" />
               <div className="relative">
@@ -1267,7 +1267,7 @@ const CustomerPortalPage = () => {
                   value={customerCode}
                   onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
                   placeholder="SOLI09232"
-                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#263d27]"
+                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#1b1a16]"
                 />
                 <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Cek kode customer">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -1284,7 +1284,7 @@ const CustomerPortalPage = () => {
                 </Button>
               </div>
               {lastCustomerCode ? (
-                <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-[#263d27] underline underline-offset-4">
+                <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-[#1b1a16] underline underline-offset-4">
                   Terakhir dipakai: {lastCustomerCode}
                 </button>
               ) : null}
@@ -1299,25 +1299,25 @@ const CustomerPortalPage = () => {
           ) : portal?.requiresSecurity ? (
             <section className="mobile-card p-4">
               <div className="flex items-start gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                   <KeyRound className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-[#263d27]">Cek keamanan</div>
-                  <h2 className="mt-1 text-lg font-bold text-[#0b130c]">Dashboard terlindungi</h2>
+                  <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Cek keamanan</div>
+                  <h2 className="mt-1 text-lg font-bold text-[#1b1a16]">Dashboard terlindungi</h2>
                   <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">Jawab pertanyaan keamanan untuk membuka dashboard.</p>
                 </div>
               </div>
               <form onSubmit={unlockPortal} className="mt-4 grid gap-3">
-                <div className="rounded-2xl bg-[#f7f8f2] p-3">
+                <div className="rounded-2xl bg-[#fffaf0] p-3">
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pertanyaan</div>
-                  <div className="mt-1 text-sm font-bold text-[#0b130c]">{portal.customer.securityQuestion}</div>
+                  <div className="mt-1 text-sm font-bold text-[#1b1a16]">{portal.customer.securityQuestion}</div>
                 </div>
                 <input
                   value={securityAnswer}
                   onChange={(event) => setSecurityAnswer(event.target.value)}
                   placeholder="Jawaban"
-                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]"
+                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#1b1a16]"
                 />
                 <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
                   {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
@@ -1330,22 +1330,22 @@ const CustomerPortalPage = () => {
               <section className="mobile-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Selamat datang kembali</div>
-                    <h2 className="mt-1 truncate text-lg font-bold text-[#0b130c]">{portal.customer.customerName}</h2>
+                    <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Selamat datang kembali</div>
+                    <h2 className="mt-1 truncate text-lg font-bold text-[#1b1a16]">{portal.customer.customerName}</h2>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.contact}</p>
                   </div>
-                  <button type="button" onClick={copyCode} className="shrink-0 rounded-2xl bg-[#263d27] px-3 py-2 text-xs font-bold tracking-[0.12em] text-[#eef2e8]">
+                  <button type="button" onClick={copyCode} className="shrink-0 rounded-2xl bg-[#1b1a16] px-3 py-2 text-xs font-bold tracking-[0.12em] text-[#f7f1e5]">
                     {portal.customer.customerCode}
                   </button>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-3 text-center">
-                    <div className="text-sm font-bold text-[#0b130c]">{portal.orders.length}</div>
+                  <div className="rounded-2xl border border-[#1b1a16]/10 bg-[#fffaf0] p-3 text-center">
+                    <div className="text-sm font-bold text-[#1b1a16]">{portal.orders.length}</div>
                     <div className="text-[10px] font-bold uppercase text-[#6b7280]">Orders</div>
                   </div>
-                  <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-3 text-center">
-                    <div className="text-sm font-bold text-[#263d27]">{activeOrders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Active</div>
+                  <div className="rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-3 text-center">
+                    <div className="text-sm font-bold text-[#1b1a16]">{activeOrders.length}</div>
+                    <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Active</div>
                   </div>
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-center">
                     <div className="truncate text-xs font-bold text-amber-800">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
@@ -1357,25 +1357,25 @@ const CustomerPortalPage = () => {
               <section className="mobile-card p-3">
                 <button type="button" onClick={() => setSecurityFormOpen((open) => !open)} className="flex w-full items-center justify-between gap-3 text-left">
                   <span className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                       <ShieldCheck className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-bold text-[#0b130c]">{portal.customer.securityEnabledAt ? 'Dashboard protected' : 'Protect dashboard'}</span>
+                      <span className="block text-sm font-bold text-[#1b1a16]">{portal.customer.securityEnabledAt ? 'Dashboard protected' : 'Protect dashboard'}</span>
                       <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">Pertanyaan keamanan opsional.</span>
                     </span>
                   </span>
-                  <span className="shrink-0 rounded-full bg-[#f7f8f2] px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">
+                  <span className="shrink-0 rounded-full bg-[#fffaf0] px-3 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">
                     {securityFormOpen ? 'Close' : 'Open'}
                   </span>
                 </button>
                 {securityFormOpen ? (
                   <form onSubmit={saveSecurity} className="mt-3 grid gap-2 border-t border-[#e5e7eb] pt-3">
                     {portal.customer.securityEnabledAt ? (
-                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Current answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Current answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#1b1a16]" />
                     ) : null}
-                    <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder="Pertanyaan keamanan" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
-                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#263d27]" />
+                    <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder="Pertanyaan keamanan" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#1b1a16]" />
+                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-[#1b1a16]" />
                     <Button type="submit" className="h-11 rounded-2xl gap-2" disabled={savingSecurity}>
                       {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                       Simpan proteksi
@@ -1385,7 +1385,7 @@ const CustomerPortalPage = () => {
               </section>
 
               <section className="space-y-3">
-                <h2 className="text-base font-bold text-[#0b130c]">Progres order</h2>
+                <h2 className="text-base font-bold text-[#1b1a16]">Progres order</h2>
                 {portal.orders.map((order) => {
                   const bespoke = isBespokeOrder(order);
                   const bespokeItem = getBespokeItem(order);
@@ -1394,7 +1394,7 @@ const CustomerPortalPage = () => {
                       <div className="border-b border-[#e5e7eb] bg-white p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h3 className="text-base font-bold text-[#0b130c]">{order.orderNumber}</h3>
+                            <h3 className="text-base font-bold text-[#1b1a16]">{order.orderNumber}</h3>
                             <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
@@ -1408,7 +1408,7 @@ const CustomerPortalPage = () => {
                       <div className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="text-[10px] font-bold uppercase text-[#6b7280]">{bespoke ? 'Parfum custom' : 'Item order'}</div>
-                        <div className="text-sm font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</div>
+                        <div className="text-sm font-bold text-[#1b1a16]">{formatTotal(order.subtotal)}</div>
                       </div>
                       <div className="mt-3">
                         <OrderItems order={order} compact />
@@ -1425,8 +1425,8 @@ const CustomerPortalPage = () => {
                       />
                       <PaymentProofPanel order={order} compact />
                       <ShipmentPanel order={order} compact />
-                      <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-3">
-                        <div className="text-[10px] font-bold uppercase text-[#263d27]">Self-service</div>
+                      <div className="mt-3 rounded-2xl border border-[#1b1a16]/10 bg-[#fffaf0] p-3">
+                        <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Self-service</div>
                         <SelfServiceActions
                           compact
                           isMobileRoute={isMobileRoute}
@@ -1466,7 +1466,7 @@ const CustomerPortalPage = () => {
           ) : (
             <section className="mobile-card p-5 text-center">
               {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
-              <h2 className="mt-3 text-lg font-bold text-[#0b130c]">{searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}</h2>
+              <h2 className="mt-3 text-lg font-bold text-[#1b1a16]">{searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                 {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
               </p>
@@ -1501,13 +1501,13 @@ const CustomerPortalPage = () => {
         <title>Cek Order - Solivagant</title>
         <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
       </Helmet>
-      <main className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
+      <main className="min-h-screen bg-[#fffaf0] text-[#1b1a16]">
         <StorefrontHeader backTo="/home" backLabel="Beranda" actions={[{ to: '/catalog', label: 'Katalog' }]} />
 
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
           <div className="space-y-5">
-            <div className="rounded-[28px] border border-[#263d27]/10 bg-white/70 p-6 shadow-sm">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#263d27]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
+            <div className="rounded-[28px] border border-[#1b1a16]/10 bg-white/70 p-6 shadow-sm">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#1b1a16]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">
                 <UserRound className="h-4 w-4" />
                 Portal customer
               </div>
@@ -1524,7 +1524,7 @@ const CustomerPortalPage = () => {
                   value={customerCode}
                   onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
                   placeholder="SOLI09232"
-                  className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#263d27]"
+                  className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#1b1a16]"
                 />
                 <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -1541,11 +1541,11 @@ const CustomerPortalPage = () => {
             {portal?.requiresSecurity ? (
               <section className="rounded-2xl border bg-white p-5 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-[#263d27]">Cek keamanan</div>
+                    <div className="text-xs font-bold uppercase text-[#1b1a16]">Cek keamanan</div>
                     <h2 className="mt-1 text-2xl font-bold">Dashboard terlindungi</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
                       Customer ini sudah mengaktifkan pertanyaan keamanan. Jawab dulu untuk membuka dashboard.
@@ -1553,7 +1553,7 @@ const CustomerPortalPage = () => {
                   </div>
                 </div>
                 <form onSubmit={unlockPortal} className="mt-5 grid gap-3">
-                  <div className="rounded-2xl bg-[#f7f8f2] p-4">
+                  <div className="rounded-2xl bg-[#fffaf0] p-4">
                     <div className="text-xs font-bold uppercase text-muted-foreground">Pertanyaan</div>
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
@@ -1561,7 +1561,7 @@ const CustomerPortalPage = () => {
                     value={securityAnswer}
                     onChange={(event) => setSecurityAnswer(event.target.value)}
                     placeholder="Jawaban"
-                    className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                    className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#1b1a16]"
                   />
                   <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
                     {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
@@ -1574,20 +1574,20 @@ const CustomerPortalPage = () => {
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase text-[#263d27]">Selamat datang kembali</div>
+                      <div className="text-xs font-bold uppercase text-[#1b1a16]">Selamat datang kembali</div>
                       <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
                       <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.contact}</p>
                     </div>
-                    <button type="button" onClick={copyCode} className="rounded-2xl bg-[#263d27] px-5 py-4 text-center text-xl font-bold tracking-[0.16em] text-[#eef2e8]">
+                    <button type="button" onClick={copyCode} className="rounded-2xl bg-[#1b1a16] px-5 py-4 text-center text-xl font-bold tracking-[0.16em] text-[#f7f1e5]">
                       {portal.customer.customerCode}
                     </button>
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
+                    <div className="rounded-2xl border border-[#1b1a16]/10 bg-[#fffaf0] p-4">
                       <div className="text-xs font-bold uppercase text-muted-foreground">Order</div>
                       <div className="mt-1 text-2xl font-bold">{portal.orders.length}</div>
                     </div>
-                    <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
+                    <div className="rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-4">
                       <div className="text-xs font-bold uppercase text-muted-foreground">Aktif</div>
                       <div className="mt-1 text-2xl font-bold">{activeOrders.length}</div>
                     </div>
@@ -1601,7 +1601,7 @@ const CustomerPortalPage = () => {
                 <section className="rounded-2xl border bg-white p-4 shadow-sm">
                   <button type="button" onClick={() => setSecurityFormOpen((open) => !open)} className="flex w-full items-center justify-between gap-4 text-left">
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                         <ShieldCheck className="h-5 w-5" />
                       </span>
                       <span>
@@ -1609,7 +1609,7 @@ const CustomerPortalPage = () => {
                         <span className="mt-0.5 block text-sm font-semibold text-muted-foreground">Tambahkan pertanyaan keamanan hanya jika diperlukan.</span>
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-full bg-[#f7f8f2] px-4 py-2 text-xs font-bold uppercase text-[#263d27]">
+                    <span className="shrink-0 rounded-full bg-[#fffaf0] px-4 py-2 text-xs font-bold uppercase text-[#1b1a16]">
                       {securityFormOpen ? 'Tutup' : 'Buka'}
                     </span>
                   </button>
@@ -1620,20 +1620,20 @@ const CustomerPortalPage = () => {
                           value={currentSecurityAnswer}
                           onChange={(event) => setCurrentSecurityAnswer(event.target.value)}
                           placeholder="Jawaban saat ini"
-                          className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                          className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#1b1a16]"
                         />
                       ) : null}
                       <input
                         value={securityQuestion}
                         onChange={(event) => setSecurityQuestion(event.target.value)}
                         placeholder="Contoh: siapa nama hewan peliharaan saya?"
-                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#1b1a16]"
                       />
                       <input
                         value={newSecurityAnswer}
                         onChange={(event) => setNewSecurityAnswer(event.target.value)}
                         placeholder="Jawaban"
-                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+                        className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#1b1a16]"
                       />
                       <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingSecurity}>
                         {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
@@ -1683,10 +1683,10 @@ const CustomerPortalPage = () => {
                             />
                             <PaymentProofPanel order={order} />
                             <ShipmentPanel order={order} />
-                            <div className="mt-4 rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
+                            <div className="mt-4 rounded-2xl border border-[#1b1a16]/10 bg-[#fffaf0] p-4">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <div className="text-xs font-bold uppercase text-[#263d27]">Self-service</div>
+                                  <div className="text-xs font-bold uppercase text-[#1b1a16]">Self-service</div>
                                   <p className="mt-1 text-sm font-semibold text-muted-foreground">Kelola bukti bayar, invoice, tracking, dan reorder dari sini.</p>
                                 </div>
                               </div>
@@ -1726,9 +1726,9 @@ const CustomerPortalPage = () => {
                 </section>
               </>
             ) : (
-              <section className="overflow-hidden rounded-[28px] border border-[#263d27]/10 bg-white shadow-sm">
+              <section className="overflow-hidden rounded-[28px] border border-[#1b1a16]/10 bg-white shadow-sm">
                 <div className="grid gap-0 lg:grid-cols-[1fr_0.9fr]">
-                  <div className="grid min-h-[236px] place-items-center border-b border-[#263d27]/10 bg-[#fbfaf7] px-6 py-8 text-center lg:border-b-0 lg:border-r">
+                  <div className="grid min-h-[236px] place-items-center border-b border-[#1b1a16]/10 bg-[#fbfaf7] px-6 py-8 text-center lg:border-b-0 lg:border-r">
                     <StateBlock
                       className="border-0 bg-transparent p-0 shadow-none"
                       icon={searched ? Search : ShoppingBag}
@@ -1736,16 +1736,16 @@ const CustomerPortalPage = () => {
                       description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
                     />
                   </div>
-                  <div className="grid content-center gap-3 bg-[#eef2e8] p-5">
+                  <div className="grid content-center gap-3 bg-[#f7f1e5] p-5">
                     {[
                       ['1', 'Masukkan kode SOLI', 'Kode muncul setelah checkout pertama atau dari halaman sukses order.'],
                       ['2', 'Cek pembayaran dan produksi', 'Status bayar, bukti transfer, custom progress, dan resi tampil di satu tempat.'],
                       ['3', 'Reorder lebih cepat', 'Order lama bisa dipakai lagi tanpa mengulang data dari awal.'],
                     ].map(([step, title, description]) => (
-                      <div key={step} className="flex gap-3 rounded-2xl bg-white/82 p-3 shadow-sm shadow-[#263d27]/5">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-[#263d27] text-xs font-bold text-[#eef2e8]">{step}</span>
+                      <div key={step} className="flex gap-3 rounded-2xl bg-white/82 p-3 shadow-sm shadow-[#1b1a16]/5">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-[#1b1a16] text-xs font-bold text-[#f7f1e5]">{step}</span>
                         <span>
-                          <span className="block text-sm font-bold text-[#0b130c]">{title}</span>
+                          <span className="block text-sm font-bold text-[#1b1a16]">{title}</span>
                           <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#667264]">{description}</span>
                         </span>
                       </div>

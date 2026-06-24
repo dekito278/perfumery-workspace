@@ -193,7 +193,7 @@ const BatchStepHero = ({ activeStep, batchStatus, savedBatch, selectedFormula })
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">{copy.eyebrow}</div>
-          <h2 className="mt-0.5 text-lg font-bold leading-tight text-[#0b130c]">{copy.title}</h2>
+          <h2 className="mt-0.5 text-lg font-bold leading-tight text-[#1b1a16]">{copy.title}</h2>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{copy.description}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <MobileStatusBadge status={batchStatus} className="h-6 px-2.5 text-[10px]" />
@@ -926,7 +926,7 @@ const MobileBatchesPage = () => {
                     Deducted rows are locked by the batch record so material stock is only cut once.
                   </p>
                 </div>
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
                   <ScrollText className="h-4 w-4" />
                 </span>
               </div>

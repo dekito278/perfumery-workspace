@@ -349,11 +349,11 @@ const MobileOrdersPage = () => {
 
         <section className="mobile-card p-3">
           <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
               <CreditCard className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-[10px] font-bold uppercase text-[#263d27]">Flow pembayaran DOKU</div>
+              <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Flow pembayaran DOKU</div>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                 Checkout reserve stok sekali untuk mencegah oversell. Jika payment gagal, expired, refunded, atau order dibatalkan, stok dikembalikan otomatis.
               </p>
@@ -394,8 +394,8 @@ const MobileOrdersPage = () => {
           <p className="mt-2 text-[11px] font-semibold text-[#6b7280]">
             {filteredOrders.length} order tampil. Scanner hardware bisa kirim Enter untuk langsung buka hasil tunggal.
           </p>
-          <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-3">
-            <label className="flex items-center gap-2 text-xs font-bold text-[#263d27]">
+          <div className="mt-3 rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-[#1b1a16]">
               <Checkbox checked={allFilteredSelected} onCheckedChange={(checked) => toggleFilteredSelection(Boolean(checked))} />
               Pilih semua yang tampil
             </label>
@@ -468,7 +468,7 @@ const MobileOrdersPage = () => {
                   <h2 className="truncate text-sm font-bold text-[#1f2937]">{order.orderNumber}</h2>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
-                  {order.customerCode ? <p className="mt-1 text-[10px] font-bold uppercase text-[#263d27]">{order.customerCode}</p> : null}
+                  {order.customerCode ? <p className="mt-1 text-[10px] font-bold uppercase text-[#1b1a16]">{order.customerCode}</p> : null}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
@@ -499,7 +499,7 @@ const MobileOrdersPage = () => {
                   <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-2 rounded-2xl bg-[#f8f7f4] px-3 py-2 text-xs font-semibold text-[#1f2937]">
                     <span className="min-w-0">
                       <span className="block truncate">{item.name} x{item.quantity}</span>
-                      {hasDiscount ? <span className="mt-0.5 block text-[10px] font-bold text-[#263d27]">Diskon -{formatTotal(line.discount)}</span> : null}
+                      {hasDiscount ? <span className="mt-0.5 block text-[10px] font-bold text-[#1b1a16]">Diskon -{formatTotal(line.discount)}</span> : null}
                     </span>
                     <span className="shrink-0 text-right text-amber-700">
                       {hasDiscount ? (
@@ -513,7 +513,7 @@ const MobileOrdersPage = () => {
                   );
                 })}
                 {voucherSnapshot ? (
-                  <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#eef2e8] px-3 py-2 text-xs font-bold text-[#263d27]">
+                  <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f7f1e5] px-3 py-2 text-xs font-bold text-[#1b1a16]">
                     <span className="min-w-0 truncate">Voucher {voucherSnapshot.code}</span>
                     <span className="shrink-0">-{formatTotal(voucherSnapshot.discountAmount)}</span>
                   </div>
@@ -556,33 +556,33 @@ const MobileOrdersPage = () => {
                   >
                     {Object.entries(paymentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
-                  <span className="grid h-10 place-items-center rounded-2xl bg-[#f8f7f4] px-3 text-[10px] font-bold uppercase text-[#263d27]">
+                  <span className="grid h-10 place-items-center rounded-2xl bg-[#f8f7f4] px-3 text-[10px] font-bold uppercase text-[#1b1a16]">
                     {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                   </span>
                 </div>
               </div>
               {bespoke ? (
-                <div className="mt-3 rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-3">
-                  <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase text-[#263d27]">
+                <div className="mt-3 rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-3">
+                  <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase text-[#1b1a16]">
                     <Sparkles className="h-3.5 w-3.5" />
                     Bespoke brief
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-2xl bg-white px-3 py-2">
                       <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Botol</span>
-                      <span className="mt-1 block truncate text-xs font-bold text-[#0b130c]">{bespokeSummary?.bottle}</span>
+                      <span className="mt-1 block truncate text-xs font-bold text-[#1b1a16]">{bespokeSummary?.bottle}</span>
                     </div>
                     <div className="rounded-2xl bg-white px-3 py-2">
                       <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Cap</span>
-                      <span className="mt-1 block truncate text-xs font-bold text-[#0b130c]">{bespokeItem?.capDesign || '-'}</span>
+                      <span className="mt-1 block truncate text-xs font-bold text-[#1b1a16]">{bespokeItem?.capDesign || '-'}</span>
                     </div>
                   </div>
                   {bespokeSummary?.aroma ? (
                     <p className="mt-2 line-clamp-2 text-xs font-semibold leading-relaxed text-[#1f2937]">{bespokeSummary.aroma}</p>
                   ) : null}
                   <details className="mt-2">
-                    <summary className="cursor-pointer select-none text-xs font-bold text-[#263d27]">Buka detail brief</summary>
-                    <div className="mt-3 grid gap-2 border-t border-[#263d27]/10 pt-3">
+                    <summary className="cursor-pointer select-none text-xs font-bold text-[#1b1a16]">Buka detail brief</summary>
+                    <div className="mt-3 grid gap-2 border-t border-[#1b1a16]/10 pt-3">
                       {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                         <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
                           <span className="text-[#6b7280]">{label}</span>
@@ -597,7 +597,7 @@ const MobileOrdersPage = () => {
                 <div>
                   <div className="text-[10px] font-bold uppercase text-[#6b7280]">{order.quantity} item</div>
                   <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
-                  {voucherSnapshot ? <div className="text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
+                  {voucherSnapshot ? <div className="text-[11px] font-bold text-[#1b1a16]">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
                 </div>
                 <select value={order.status} onChange={(event) => updateStatus(order.id || order.orderNumber, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

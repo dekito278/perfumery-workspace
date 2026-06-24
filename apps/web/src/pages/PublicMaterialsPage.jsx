@@ -21,7 +21,7 @@ const getFamilyStyle = (family) => {
   for (const [k, v] of Object.entries(FAMILY_COLORS)) {
     if (key.includes(k)) return v;
   }
-  return { bg: '#eef1e7', accent: '#183522' };
+  return { bg: '#f7f1e5', accent: '#1b1a16' };
 };
 
 const toPublicMaterial = (material = {}) => ({

@@ -255,7 +255,7 @@ const VoucherManagementPage = () => {
             </div>
 
             <Tabs defaultValue="rules" className="mt-5">
-              <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-[#f7f8f2] p-1">
+              <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-[#fffaf0] p-1">
                 <TabsTrigger value="rules" className="rounded-xl text-xs font-bold">Aturan</TabsTrigger>
                 <TabsTrigger value="eligibility" className="rounded-xl text-xs font-bold">Eligibility</TabsTrigger>
                 <TabsTrigger value="preview" className="rounded-xl text-xs font-bold">Preview</TabsTrigger>
@@ -379,7 +379,7 @@ const VoucherManagementPage = () => {
                     className="rounded-2xl border bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-amber-300"
                   />
                 </label>
-                <p className="rounded-2xl bg-[#f7f8f2] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+                <p className="rounded-2xl bg-[#fffaf0] px-4 py-3 text-xs font-semibold leading-relaxed text-muted-foreground">
                   Jika produk atau kategori diisi, voucher hanya memotong subtotal dan menghitung quantity item yang cocok.
                 </p>
               </TabsContent>
@@ -428,11 +428,11 @@ const VoucherManagementPage = () => {
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-bold tracking-[0.08em] text-[#0b130c]">{voucher.code}</h3>
+                          <h3 className="text-lg font-bold tracking-[0.08em] text-[#1b1a16]">{voucher.code}</h3>
                           <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${status.className}`}>{status.label}</span>
-                          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#263d27]">{voucher.discountType}</span>
+                          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{voucher.discountType}</span>
                         </div>
-                        <div className="mt-3 grid gap-2 text-sm font-semibold text-[#263d27] sm:grid-cols-2">
+                        <div className="mt-3 grid gap-2 text-sm font-semibold text-[#1b1a16] sm:grid-cols-2">
                           <div className="rounded-2xl bg-white px-3 py-2">
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Diskon</span>
                             {voucher.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? `${voucher.discountValue}%` : formatTotal(voucher.discountValue)}
@@ -499,22 +499,22 @@ const VoucherManagementPage = () => {
                 Ringkasan performa penggunaan, revenue sebelum/sesudah diskon, top voucher, dan top customer.
               </p>
             </div>
-            <div className="rounded-2xl bg-[#eef2e8] px-4 py-2 text-xs font-bold text-[#263d27]">
+            <div className="rounded-2xl bg-[#f7f1e5] px-4 py-2 text-xs font-bold text-[#1b1a16]">
               Diskon total {formatTotal(voucherAnalytics.totalDiscount)}
             </div>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-[#263d27]/10 bg-[#f7f8f2] p-4">
+            <div className="rounded-2xl border border-[#1b1a16]/10 bg-[#fffaf0] p-4">
               <div className="text-xs font-bold uppercase text-muted-foreground">Total penggunaan</div>
-              <div className="mt-1 text-3xl font-bold text-[#0b130c]">{voucherAnalytics.totalUsage}</div>
+              <div className="mt-1 text-3xl font-bold text-[#1b1a16]">{voucherAnalytics.totalUsage}</div>
             </div>
-            <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+            <div className="rounded-2xl border border-[#1b1a16]/10 bg-white p-4">
               <div className="text-xs font-bold uppercase text-muted-foreground">Revenue sebelum diskon</div>
-              <div className="mt-1 text-2xl font-bold text-[#0b130c]">{formatTotal(voucherAnalytics.revenueBeforeDiscount)}</div>
+              <div className="mt-1 text-2xl font-bold text-[#1b1a16]">{formatTotal(voucherAnalytics.revenueBeforeDiscount)}</div>
             </div>
-            <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] p-4">
+            <div className="rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-4">
               <div className="text-xs font-bold uppercase text-muted-foreground">Revenue sesudah diskon</div>
-              <div className="mt-1 text-2xl font-bold text-[#263d27]">{formatTotal(voucherAnalytics.revenueAfterDiscount)}</div>
+              <div className="mt-1 text-2xl font-bold text-[#1b1a16]">{formatTotal(voucherAnalytics.revenueAfterDiscount)}</div>
             </div>
             <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
               <div className="text-xs font-bold uppercase text-amber-800">Selisih diskon</div>
@@ -528,7 +528,7 @@ const VoucherManagementPage = () => {
                 {voucherAnalytics.topVouchers.slice(0, 5).map((item, index) => (
                   <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
                     <span className="min-w-0 truncate"><span className="mr-2 text-muted-foreground">#{index + 1}</span>{item.label}</span>
-                    <span className="shrink-0 text-right text-[#263d27]">{item.count}x / {formatTotal(item.discountTotal)}</span>
+                    <span className="shrink-0 text-right text-[#1b1a16]">{item.count}x / {formatTotal(item.discountTotal)}</span>
                   </div>
                 ))}
                 {!voucherAnalytics.topVouchers.length ? <p className="text-sm font-semibold text-muted-foreground">Belum ada voucher terpakai.</p> : null}
@@ -540,7 +540,7 @@ const VoucherManagementPage = () => {
                 {voucherAnalytics.topCustomers.slice(0, 5).map((item, index) => (
                   <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
                     <span className="min-w-0 truncate"><span className="mr-2 text-muted-foreground">#{index + 1}</span>{item.label}</span>
-                    <span className="shrink-0 text-right text-[#263d27]">{item.count}x / {formatTotal(item.revenueAfterDiscount)}</span>
+                    <span className="shrink-0 text-right text-[#1b1a16]">{item.count}x / {formatTotal(item.revenueAfterDiscount)}</span>
                   </div>
                 ))}
                 {!voucherAnalytics.topCustomers.length ? <p className="text-sm font-semibold text-muted-foreground">Belum ada customer memakai voucher.</p> : null}
@@ -558,7 +558,7 @@ const VoucherManagementPage = () => {
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="rounded-2xl bg-[#f7f8f2] px-4 py-2 text-xs font-bold text-[#263d27]">
+              <div className="rounded-2xl bg-[#fffaf0] px-4 py-2 text-xs font-bold text-[#1b1a16]">
                 {usageStats.count} penggunaan / {formatTotal(usageStats.discountTotal)}
               </div>
               <label className="relative block sm:w-72">
@@ -576,7 +576,7 @@ const VoucherManagementPage = () => {
           {filteredUsageReport.length ? (
             <div className="mt-5 overflow-hidden rounded-2xl border">
               <table className="min-w-full divide-y text-sm">
-                <thead className="bg-[#f7f8f2] text-left text-[11px] font-bold uppercase text-muted-foreground">
+                <thead className="bg-[#fffaf0] text-left text-[11px] font-bold uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Kode</th>
                     <th className="px-4 py-3">Order</th>
@@ -588,13 +588,13 @@ const VoucherManagementPage = () => {
                 <tbody className="divide-y bg-white">
                   {filteredUsageReport.map((entry) => (
                     <tr key={entry.id || `${entry.voucherCode}-${entry.orderNumber}-${entry.usedAt}`}>
-                      <td className="px-4 py-3 font-bold tracking-[0.08em] text-[#0b130c]">{entry.voucherCode}</td>
-                      <td className="px-4 py-3 font-semibold text-[#263d27]">{entry.orderNumber || '-'}</td>
+                      <td className="px-4 py-3 font-bold tracking-[0.08em] text-[#1b1a16]">{entry.voucherCode}</td>
+                      <td className="px-4 py-3 font-semibold text-[#1b1a16]">{entry.orderNumber || '-'}</td>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-[#263d27]">{entry.customerName || '-'}</div>
+                        <div className="font-semibold text-[#1b1a16]">{entry.customerName || '-'}</div>
                         {entry.customerCode ? <div className="text-xs font-semibold text-muted-foreground">{entry.customerCode}</div> : null}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[#263d27]">
+                      <td className="px-4 py-3 text-right font-bold text-[#1b1a16]">
                         {entry.discountAmount ? formatTotal(entry.discountAmount) : '-'}
                       </td>
                       <td className="px-4 py-3 font-semibold text-muted-foreground">{formatDateTime(entry.usedAt)}</td>

@@ -127,7 +127,7 @@ const MobileBespokeSettingsPage = () => {
 
         <section className="mobile-soft-card p-4">
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#263d27]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#1b1a16]">
               <SlidersHorizontal className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
@@ -146,7 +146,7 @@ const MobileBespokeSettingsPage = () => {
                   setActiveCollection(item.key);
                   resetForm();
                 }}
-                className={`min-h-[48px] rounded-2xl border px-3 py-2 text-left text-xs font-bold ${activeCollection === item.key ? 'border-[#263d27] bg-[#eef2e8] text-[#263d27]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'}`}
+                className={`min-h-[48px] rounded-2xl border px-3 py-2 text-left text-xs font-bold ${activeCollection === item.key ? 'border-[#1b1a16] bg-[#f7f1e5] text-[#1b1a16]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'}`}
               >
                 {item.title}
               </button>

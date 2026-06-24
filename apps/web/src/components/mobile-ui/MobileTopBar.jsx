@@ -26,8 +26,8 @@ const MobileTopBar = ({
       </Button>
     ) : null}
     <div className="min-w-0 flex-1">
-      {eyebrow ? <div className="text-[10px] font-bold uppercase text-[#263d27]">{eyebrow}</div> : null}
-      <h1 className="truncate text-[22px] font-bold leading-tight text-[#0b130c] mobile-top-bar-title">{title}</h1>
+      {eyebrow ? <div className="text-[10px] font-bold uppercase text-[#1b1a16]">{eyebrow}</div> : null}
+      <h1 className="truncate text-[22px] font-bold leading-tight text-[#1b1a16] mobile-top-bar-title">{title}</h1>
       {subtitle ? <p className="mt-0.5 truncate text-xs font-medium text-[#6b7280]">{subtitle}</p> : null}
     </div>
     {action ? <div className="mobile-top-bar-action shrink-0">{action}</div> : null}

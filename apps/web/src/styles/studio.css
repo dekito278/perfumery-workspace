@@ -109,7 +109,7 @@
   }
 .materials-desk-tab-trigger[data-state="active"] {
     background: linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(249, 238, 218, 0.92));
-    color: #263d27;
+    color: #1b1a16;
     box-shadow: 0 10px 24px -18px rgba(24, 47, 27, 0.42);
   }
 .materials-desk-tab-content {
@@ -140,7 +140,7 @@
 .materials-desk-mode-pill-active {
     border-color: rgba(38, 61, 39, 0.42);
     background: linear-gradient(180deg, rgba(249, 251, 246, 0.98), rgba(232, 238, 226, 0.92));
-    color: #263d27;
+    color: #1b1a16;
     transform: translateY(-1px);
     box-shadow: 0 10px 24px -18px rgba(24, 47, 27, 0.42);
   }
@@ -255,8 +255,8 @@
     flex: 0 0 auto;
     place-items: center;
     border-radius: 1rem;
-    background: #263d27;
-    color: #f7f8f2;
+    background: #1b1a16;
+    color: #fffaf0;
     box-shadow: 0 16px 34px -26px rgba(24, 47, 27, 0.54);
   }
 .studio-loading-eyebrow {
@@ -321,8 +321,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 1rem;
-    background: #050705;
-    color: #eef2e8;
+    background: #121110;
+    color: #f7f1e5;
     box-shadow: inset 0 0 0 1px rgba(38, 61, 39, 0.34);
   }
 .app-brand-title {

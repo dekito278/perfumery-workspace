@@ -519,14 +519,14 @@ const DashboardPage = () => {
                     <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/85">
                       <Icon className="h-5 w-5" />
                     </span>
-                    <span className="rounded-2xl bg-white/85 px-3 py-1 text-xl font-bold text-[#0b130c]">{item.count}</span>
+                    <span className="rounded-2xl bg-white/85 px-3 py-1 text-xl font-bold text-[#1b1a16]">{item.count}</span>
                   </div>
-                  <h2 className="mt-4 text-base font-bold text-[#0b130c]">{item.label}</h2>
+                  <h2 className="mt-4 text-base font-bold text-[#1b1a16]">{item.label}</h2>
                   <p className="mt-1 min-h-[40px] text-xs font-semibold leading-relaxed opacity-80">{item.helper}</p>
                   <div className="mt-3 grid gap-2">
                     {item.rows.map((row) => (
                       <button key={row.id} type="button" onClick={row.onClick} className="rounded-2xl bg-white/85 px-3 py-2 text-left transition hover:bg-white">
-                        <div className="truncate text-xs font-bold text-[#0b130c]">{row.title}</div>
+                        <div className="truncate text-xs font-bold text-[#1b1a16]">{row.title}</div>
                         <div className="mt-0.5 truncate text-[11px] font-semibold opacity-75">{row.helper}</div>
                       </button>
                     ))}
@@ -721,12 +721,12 @@ const DashboardPage = () => {
                         <div className="text-sm font-bold">{log.orderNumber || '-'}</div>
                         <div className="mt-1 text-xs font-semibold text-muted-foreground">{formatDate(log.createdAt)} / {log.actorName || log.actorEmail || 'System'}</div>
                       </div>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#263d27]">{auditActionLabels[log.action] || log.action}</span>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">{auditActionLabels[log.action] || log.action}</span>
                     </div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                       {changes.slice(0, 2).map((change) => (
                         <div key={change.key} className="rounded-xl bg-white px-3 py-2 text-xs font-semibold">
-                          <div className="font-bold uppercase text-[#263d27]">{change.label}</div>
+                          <div className="font-bold uppercase text-[#1b1a16]">{change.label}</div>
                           <div className="mt-1 text-muted-foreground">Before: <span className="text-[#1f2937]">{change.before}</span></div>
                           <div className="text-muted-foreground">After: <span className="text-[#1f2937]">{change.after}</span></div>
                         </div>
@@ -751,7 +751,7 @@ const DashboardPage = () => {
                   </span>
                   <div>
                     <div className="text-xs font-bold uppercase text-muted-foreground">Order reliability</div>
-                    <h2 className="mt-1 text-xl font-bold text-[#0b130c]">
+                    <h2 className="mt-1 text-xl font-bold text-[#1b1a16]">
                       {opsHealth.hasCriticalIssues ? 'Ada item yang perlu dicek sebelum follow-up' : 'Order flow terlihat sehat'}
                     </h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
@@ -773,7 +773,7 @@ const DashboardPage = () => {
               <div className="mt-5 grid gap-3 sm:grid-cols-4">
                 <div className="rounded-2xl bg-white px-4 py-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Local sync</div>
-                  <div className="mt-1 text-2xl font-bold text-[#0b130c]">{opsHealth.syncQueue.length}</div>
+                  <div className="mt-1 text-2xl font-bold text-[#1b1a16]">{opsHealth.syncQueue.length}</div>
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Pending DOKU</div>
@@ -785,7 +785,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3">
                   <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>
-                  <div className="mt-1 text-2xl font-bold text-[#263d27]">{opsHealth.shipmentNeedsResi.length}</div>
+                  <div className="mt-1 text-2xl font-bold text-[#1b1a16]">{opsHealth.shipmentNeedsResi.length}</div>
                 </div>
               </div>
               {opsHealth.syncQueue.length ? (
@@ -793,7 +793,7 @@ const DashboardPage = () => {
                   {opsHealth.syncQueue.slice(0, 3).map((item) => (
                     <div key={item.id || item.orderNumber} className="rounded-2xl border border-white bg-white/90 px-4 py-3 text-sm font-semibold">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-bold text-[#0b130c]">{item.orderNumber}</span>
+                        <span className="font-bold text-[#1b1a16]">{item.orderNumber}</span>
                         <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${item.severity === 'critical' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}`}>{item.action}</span>
                       </div>
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.reason}</p>
@@ -809,7 +809,7 @@ const DashboardPage = () => {
                   <div className="text-xs font-bold uppercase text-muted-foreground">External services</div>
                   <h2 className="mt-1 text-xl font-bold">DOKU & shipping health</h2>
                 </div>
-                <span className="rounded-full bg-[#eef2e8] px-3 py-1 text-xs font-bold uppercase text-[#263d27]">
+                <span className="rounded-full bg-[#f7f1e5] px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">
                   {serviceHealth.lastCheckedAt ? 'Checked' : 'Manual'}
                 </span>
               </div>

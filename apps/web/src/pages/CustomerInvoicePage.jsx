@@ -70,7 +70,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
 
   return (
   <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-[28px] border bg-white shadow-sm'} overflow-hidden`}>
-    <div className="border-b border-[#e5e7eb] bg-[#050705] p-5 text-[#eef2e8] sm:p-7">
+    <div className="border-b border-[#e5e7eb] bg-[#121110] p-5 text-[#f7f1e5] sm:p-7">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase">
@@ -91,22 +91,22 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">Customer</div>
-          <div className="mt-1 text-base font-bold text-[#0b130c]">{customer.customerName}</div>
+          <div className="mt-1 text-base font-bold text-[#1b1a16]">{customer.customerName}</div>
           <div className="mt-1 text-sm font-semibold text-[#6b7280]">{customer.contact}</div>
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pembayaran</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <CreditCard className="h-4 w-4 text-[#263d27]" />
-            <span className="text-base font-bold text-[#0b130c]">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</span>
+            <CreditCard className="h-4 w-4 text-[#1b1a16]" />
+            <span className="text-base font-bold text-[#1b1a16]">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</div>
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pengiriman</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Truck className="h-4 w-4 text-[#263d27]" />
-            <span className="text-base font-bold text-[#0b130c]">{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus || 'Belum dikirim'}</span>
+            <Truck className="h-4 w-4 text-[#1b1a16]" />
+            <span className="text-base font-bold text-[#1b1a16]">{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus || 'Belum dikirim'}</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">
             {order.trackingNumber ? `${order.courierName || 'Kurir'} / ${order.trackingNumber}` : order.courierName || 'Resi akan muncul setelah dikirim'}
@@ -128,9 +128,9 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
           return (
             <div key={`${order.orderNumber}-${item.slug || item.name}`} className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
               <span className="min-w-0">
-                <span className="block truncate font-bold text-[#0b130c]">{item.name}</span>
+                <span className="block truncate font-bold text-[#1b1a16]">{item.name}</span>
                 {item.size ? <span className="mt-0.5 block text-xs text-[#6b7280]">{item.size}</span> : null}
-                {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-[#263d27]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
+                {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-[#1b1a16]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
               </span>
               <span className="text-right text-[#1f2937]">{item.quantity || 1}</span>
               <span className="hidden text-right text-[#1f2937] sm:block">
@@ -153,47 +153,47 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
           );
         })}
         {voucherSnapshot ? (
-          <div className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] bg-[#eef2e8] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
+          <div className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] bg-[#f7f1e5] px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
             <span className="min-w-0">
-              <span className="block truncate font-bold text-[#263d27]">Voucher {voucherSnapshot.code}</span>
-              <span className="mt-0.5 block text-xs text-[#51624b]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
+              <span className="block truncate font-bold text-[#1b1a16]">Voucher {voucherSnapshot.code}</span>
+              <span className="mt-0.5 block text-xs text-[#6f695f]">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
             </span>
-            <span className="text-right text-[#263d27]">1</span>
-            <span className="hidden text-right text-[#263d27] sm:block">Diskon</span>
-            <span className="text-right font-bold text-[#263d27]">-{formatTotal(voucherSnapshot.discountAmount)}</span>
+            <span className="text-right text-[#1b1a16]">1</span>
+            <span className="hidden text-right text-[#1b1a16] sm:block">Diskon</span>
+            <span className="text-right font-bold text-[#1b1a16]">-{formatTotal(voucherSnapshot.discountAmount)}</span>
           </div>
         ) : null}
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
-        <div className="rounded-2xl bg-[#eef2e8] p-4 text-xs font-semibold leading-relaxed text-[#263d27]">
+        <div className="rounded-2xl bg-[#f7f1e5] p-4 text-xs font-semibold leading-relaxed text-[#1b1a16]">
           Simpan invoice ini sebagai bukti order. Status payment dan pengiriman akan mengikuti update DOKU, admin, dan kurir.
           <div className="mt-3 flex flex-wrap gap-2">
             {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
-              <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#263d27] px-4 text-xs font-bold text-[#eef2e8]">
+              <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1b1a16] px-4 text-xs font-bold text-[#f7f1e5]">
                 <CreditCard className="h-4 w-4" />
                 Lanjut bayar
               </Link>
             ) : null}
             {order.trackingUrl && order.trackingNumber ? (
-              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
+              <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#1b1a16]/15 bg-white px-4 text-xs font-bold text-[#1b1a16]">
                 <ExternalLink className="h-4 w-4" />
                 Lacak resi
               </a>
             ) : null}
             {!order.trackingUrl && courierSearchUrl ? (
-              <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
+              <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#1b1a16]/15 bg-white px-4 text-xs font-bold text-[#1b1a16]">
                 <ExternalLink className="h-4 w-4" />
                 Cari resi kurir
               </a>
             ) : null}
-            <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#263d27]/15 bg-white px-4 text-xs font-bold text-[#263d27]">
+            <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[#1b1a16]/15 bg-white px-4 text-xs font-bold text-[#1b1a16]">
               <ExternalLink className="h-4 w-4" />
               Tracking publik
             </a>
           </div>
         </div>
-        <div className="rounded-2xl border border-[#263d27]/10 bg-white p-4">
+        <div className="rounded-2xl border border-[#1b1a16]/10 bg-white p-4">
           <div className="flex items-center justify-between text-sm font-semibold text-[#6b7280]">
             <span>Total item</span>
             <span>{order.quantity}</span>
@@ -204,7 +204,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
                 <span>Subtotal produk</span>
                 <span>{formatTotal(productsSubtotal)}</span>
               </div>
-              <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#263d27]">
+              <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#1b1a16]">
                 <span>Voucher {voucherSnapshot.code}</span>
                 <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
               </div>
@@ -235,8 +235,8 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
             </>
           ) : null}
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
-            <span className="text-sm font-bold uppercase text-[#263d27]">Total bayar</span>
-            <span className="text-xl font-bold text-[#0b130c]">{formatTotal(order.subtotal)}</span>
+            <span className="text-sm font-bold uppercase text-[#1b1a16]">Total bayar</span>
+            <span className="text-xl font-bold text-[#1b1a16]">{formatTotal(order.subtotal)}</span>
           </div>
         </div>
       </div>
@@ -314,7 +314,7 @@ const CustomerInvoicePage = () => {
   const content = (
     <main className={isMobileRoute ? 'mobile-page space-y-4' : 'mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8'}>
       <div className={isMobileRoute ? 'flex items-center justify-between gap-3' : 'mb-5 flex items-center justify-between gap-4'}>
-        <Link to={dashboardPath} className="inline-flex items-center gap-2 text-sm font-bold text-[#263d27]">
+        <Link to={dashboardPath} className="inline-flex items-center gap-2 text-sm font-bold text-[#1b1a16]">
           <ArrowLeft className="h-4 w-4" />
           Dashboard
         </Link>
@@ -329,11 +329,11 @@ const CustomerInvoicePage = () => {
       {!portal ? (
         <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
               <FileText className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-[#0b130c]">Invoice</h1>
+              <h1 className="text-xl font-bold text-[#1b1a16]">Invoice</h1>
               <p className="mt-1 text-xs font-semibold text-[#6b7280]">Masukkan kode customer untuk membuka invoice {orderNumber}.</p>
             </div>
           </div>
@@ -342,7 +342,7 @@ const CustomerInvoicePage = () => {
               value={customerCode}
               onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
               placeholder="SOLI09232"
-              className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#263d27]"
+              className="h-12 rounded-2xl border px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-[#1b1a16]"
             />
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -354,12 +354,12 @@ const CustomerInvoicePage = () => {
       ) : portal.requiresSecurity ? (
         <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-xs font-bold uppercase text-[#263d27]">Cek keamanan</div>
-              <h1 className="mt-1 text-xl font-bold text-[#0b130c]">Buka invoice</h1>
+              <div className="text-xs font-bold uppercase text-[#1b1a16]">Cek keamanan</div>
+              <h1 className="mt-1 text-xl font-bold text-[#1b1a16]">Buka invoice</h1>
               <p className="mt-2 text-sm font-semibold text-[#6b7280]">{portal.customer.securityQuestion}</p>
             </div>
           </div>
@@ -368,7 +368,7 @@ const CustomerInvoicePage = () => {
               value={securityAnswer}
               onChange={(event) => setSecurityAnswer(event.target.value)}
               placeholder="Jawaban"
-              className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#263d27]"
+              className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-[#1b1a16]"
             />
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
               {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
@@ -401,7 +401,7 @@ const CustomerInvoicePage = () => {
   return (
     <>
       <Helmet><title>Invoice {orderNumber} - Solivagant</title></Helmet>
-      <div className="min-h-screen bg-[#f7f8f2] text-[#0b130c]">
+      <div className="min-h-screen bg-[#fffaf0] text-[#1b1a16]">
         {content}
       </div>
     </>
