@@ -42,134 +42,141 @@ const MobileCartPage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet><title>Keranjang - Solivagant</title></Helmet>
-      <main className="mobile-page mobile-cart-page">
-        <section className="mobile-soft-card p-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_86px] gap-3">
-            <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase text-amber-700">{items.length ? 'Subtotal' : 'Keranjang'}</div>
-              <div className="mt-1 text-3xl font-bold leading-tight text-[#1f2937]">{items.length ? formatTotal(voucher.subtotalAfterDiscount) : 'Mulai belanja'}</div>
+      <main className="mobile-page mobile-cart-page" style={{ background: '#fffaf0' }}>
+        <section style={{ padding: '20px 16px', borderBottom: '1px solid #e5decf' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 86px', gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b08b4f' }}>
+                {items.length ? 'Subtotal' : 'Keranjang'}
+              </div>
+              <div style={{ marginTop: 4, fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.15, color: '#1b1a16', fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                {items.length ? formatTotal(voucher.subtotalAfterDiscount) : 'Mulai belanja'}
+              </div>
               {items.length && voucher.discountAmount ? (
-                <div className="mt-1 text-[11px] font-bold text-[#263d27]">Hemat {formatTotal(voucher.discountAmount)}</div>
+                <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#183522' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
               ) : null}
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
+              <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: '#6f695f' }}>
                 {items.length ? 'Cek item di sini, lalu lanjutkan untuk isi pengiriman dan pembayaran.' : 'Pilih parfum ready stock atau mulai request aroma custom.'}
               </p>
             </div>
             {featuredCartItems[0] ? (
               <ProductVisual
                 product={featuredCartItems[0].product}
-                className="h-[86px] rounded-[16px]"
+                className="h-[86px] rounded-[12px]"
                 label={false}
                 priority
                 sizes="86px"
               />
             ) : (
-              <div className="grid h-[86px] place-items-center rounded-[16px] border border-[#263d27]/10 bg-white/78 text-[#263d27]">
-                <ShoppingBag className="h-6 w-6" />
+              <div style={{ height: 86, display: 'grid', placeItems: 'center', borderRadius: 12, border: '1px solid #e5decf', background: '#f7f1e5', color: '#6f695f' }}>
+                <ShoppingBag style={{ width: 24, height: 24 }} />
               </div>
             )}
           </div>
           {items.length ? (
-            <div className="mt-3 grid gap-2">
+            <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
               {featuredCartItems.map(({ item, product }) => (
-                <div key={item.slug} className="mobile-commerce-panel flex items-center justify-between gap-3 bg-white/70 px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <ProductVisual product={product} className="h-10 w-10 shrink-0 rounded-[12px]" label={false} sizes="40px" />
-                    <div className="min-w-0"><p className="truncate text-xs font-bold">{item.name}</p><p className="mt-0.5 text-[10px] font-bold uppercase text-[#8b949e]">{item.size} / x{item.quantity}</p></div>
+                <div key={item.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#f7f1e5', borderRadius: 10, padding: '8px 12px' }}>
+                  <div style={{ display: 'flex', minWidth: 0, alignItems: 'center', gap: 8 }}>
+                    <ProductVisual product={product} className="h-10 w-10 shrink-0 rounded-[8px]" label={false} sizes="40px" />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '0.78rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1b1a16' }}>{item.name}</p>
+                      <p style={{ marginTop: 2, fontSize: '0.65rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6f695f' }}>{item.size} / x{item.quantity}</p>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
                     {discountedLineMap.get(item.slug)?.discount ? (
-                      <div className="text-[10px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLineMap.get(item.slug).originalTotal)}</div>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 500, color: '#9ca3af', textDecoration: 'line-through' }}>{formatTotal(discountedLineMap.get(item.slug).originalTotal)}</div>
                     ) : null}
-                    <div className="text-xs font-bold text-[#263d27]">{formatTotal(discountedLineMap.get(item.slug)?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1b1a16' }}>{formatTotal(discountedLineMap.get(item.slug)?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
                   </div>
                 </div>
               ))}
             </div>
           ) : null}
           {items.length ? (
-            <Button type="button" className="mt-4 h-12 w-full rounded-2xl gap-2" onClick={() => navigate('/mobile/checkout')}><PackageCheck className="h-4 w-4" />Lanjut bayar</Button>
+            <Button type="button" className="mt-4 h-12 w-full rounded-xl gap-2" style={{ background: '#1b1a16', color: '#fffaf0' }} onClick={() => navigate('/mobile/checkout')}><PackageCheck className="h-4 w-4" />Lanjut bayar</Button>
           ) : (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
+            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: '#1b1a16', color: '#fffaf0' }} onClick={() => navigate('/mobile/catalog')}>
                 <ShoppingBag className="h-4 w-4" />
                 Belanja
               </Button>
-              <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/bespoke')}>
+              <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: '#e5decf', background: '#fffaf0', color: '#1b1a16' }} onClick={() => navigate('/mobile/bespoke')}>
                 Custom
               </Button>
             </div>
           )}
         </section>
         {items.length ? (
-          <section className="mobile-card p-3">
-            <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#eef2e8] text-[#263d27]">
-                <BadgePercent className="h-4 w-4" />
+          <section style={{ padding: '16px', borderBottom: '1px solid #e5decf' }}>
+            <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
+              <span style={{ display: 'grid', height: 36, width: 36, flexShrink: 0, placeItems: 'center', borderRadius: 10, background: '#f7f1e5', color: '#b08b4f' }}>
+                <BadgePercent style={{ width: 16, height: 16 }} />
               </span>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-bold text-[#0b130c]">Voucher</h2>
-                <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">Masukkan kode promo sebelum lanjut checkout.</p>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1b1a16' }}>Voucher</h2>
+                <p style={{ marginTop: 4, fontSize: '0.72rem', lineHeight: 1.5, color: '#6f695f' }}>Masukkan kode promo sebelum lanjut checkout.</p>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 8 }}>
               <input
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
                 placeholder="Kode voucher"
-                className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase"
+                style={{ height: 48, padding: '0 12px', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', border: '1px solid #e5decf', borderRadius: 10, background: '#f7f1e5', color: '#1b1a16', outline: 'none' }}
               />
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={voucher.applyVoucher}>Pakai</Button>
+              <Button type="button" variant="outline" className="h-12 rounded-xl px-4 text-xs font-bold" style={{ borderColor: '#e5decf', color: '#1b1a16' }} onClick={voucher.applyVoucher}>Pakai</Button>
             </div>
             {voucher.appliedVoucher ? (
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/14 bg-[#eef2e8] px-3 py-2">
-                <div className="min-w-0">
-                  <div className="truncate text-xs font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
-                  <div className="mt-0.5 text-[11px] font-semibold text-[#51624b]">Hemat {formatTotal(voucher.discountAmount)}</div>
+              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 10, border: '1px solid #e5decf', background: '#f7f1e5', padding: '8px 12px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1b1a16', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{voucher.appliedVoucher.code} diterapkan</div>
+                  <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: '#183522' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-lg" style={{ color: '#6f695f' }} onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : voucher.message ? (
-              <p className="mt-2 rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{voucher.message}</p>
+              <p style={{ marginTop: 8, borderRadius: 10, background: '#f7f1e5', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: '#b08b4f' }}>{voucher.message}</p>
             ) : null}
           </section>
         ) : null}
-        <section className="grid gap-3">
+        <section style={{ display: 'grid', gap: 0 }}>
           {items.map((item) => {
             const discountedLine = discountedLineMap.get(item.slug);
             const hasLineDiscount = Boolean(discountedLine?.discount);
 
             return (
-            <article key={item.slug} className="mobile-card p-3">
-              <div className="grid grid-cols-[76px_minmax(0,1fr)_42px] items-start gap-3">
-                <ProductVisual product={getCartItemProduct(item)} className="h-[76px] rounded-[16px]" label={false} sizes="76px" />
-                <div className="min-w-0">
-                  <h2 className="mobile-line-clamp-2 text-sm font-bold leading-tight">{item.name}</h2>
-                  <p className="mt-1 mobile-line-clamp-2 text-xs font-semibold leading-snug text-[#6b7280]">{item.notes}</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.price} / {item.size}</p>
+            <article key={item.slug} style={{ padding: '16px', borderBottom: '1px solid #e5decf' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '76px minmax(0,1fr) 42px', alignItems: 'start', gap: 12 }}>
+                <ProductVisual product={getCartItemProduct(item)} className="h-[76px] rounded-[10px]" label={false} sizes="76px" />
+                <div style={{ minWidth: 0 }}>
+                  <h2 style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3, color: '#1b1a16', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.name}</h2>
+                  <p style={{ marginTop: 4, fontSize: '0.78rem', lineHeight: 1.4, color: '#6f695f', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.notes}</p>
+                  <p style={{ marginTop: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#b08b4f' }}>{item.price} / {item.size}</p>
                   {hasLineDiscount ? (
-                    <p className="mt-1 text-[11px] font-bold text-[#263d27]">
+                    <p style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: '#183522' }}>
                       Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
                     </p>
                   ) : null}
                 </div>
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-[14px] border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
+                <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-[10px]" style={{ borderColor: '#e5decf', background: '#fffaf0', color: '#6f695f' }} onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <div className="inline-flex items-center rounded-[14px] border border-[#263d27]/10 bg-white p-1">
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
-                  <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 10, border: '1px solid #e5decf', background: '#fffaf0', padding: 4 }}>
+                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
+                  <span style={{ display: 'grid', height: 32, minWidth: 40, placeItems: 'center', fontSize: '0.875rem', fontWeight: 600 }}>{item.quantity}</span>
+                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
-                <div className="text-right">
+                <div style={{ textAlign: 'right' }}>
                   {hasLineDiscount ? (
-                    <div className="text-[11px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 500, color: '#9ca3af', textDecoration: 'line-through' }}>{formatTotal(discountedLine.originalTotal)}</div>
                   ) : null}
-                  <div className="text-sm font-bold text-[#263d27]">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1b1a16' }}>{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
                   {hasLineDiscount ? (
-                    <div className="mt-0.5 text-[10px] font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
+                    <div style={{ marginTop: 2, fontSize: '0.65rem', fontWeight: 600, color: '#183522' }}>-{formatTotal(discountedLine.discount)}</div>
                   ) : null}
                 </div>
               </div>
@@ -177,41 +184,42 @@ const MobileCartPage = () => {
             );
           })}
           {!items.length ? (
-            <section className="mobile-card p-4">
-              <StateBlock
-                className="border-0 bg-transparent p-0"
-                icon={ShoppingBag}
-                title="Keranjang kosong"
-                description="Pilih parfum ready stock, mulai custom, atau lihat rekomendasi kecil di bawah."
-              />
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/bespoke')}>
+            <section style={{ padding: 20, textAlign: 'center' }}>
+              <div style={{ display: 'grid', placeItems: 'center', padding: '24px 0' }}>
+                <ShoppingBag style={{ width: 32, height: 32, color: '#e5decf', marginBottom: 12 }} />
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1b1a16', fontFamily: 'Georgia, "Times New Roman", serif' }}>Keranjang kosong</h2>
+                <p style={{ marginTop: 6, fontSize: '0.82rem', lineHeight: 1.5, color: '#6f695f', maxWidth: 260 }}>
+                  Pilih parfum ready stock, mulai custom, atau lihat rekomendasi di bawah.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
+                <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: '#e5decf', color: '#1b1a16' }} onClick={() => navigate('/mobile/bespoke')}>
                   <Sparkles className="h-4 w-4" />
                   Mulai custom
                 </Button>
-                <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
+                <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: '#1b1a16', color: '#fffaf0' }} onClick={() => navigate('/mobile/catalog')}>
                   <ShoppingBag className="h-4 w-4" />
                   Buka katalog
                 </Button>
               </div>
               {recommendedProducts.length ? (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-sm font-bold text-[#0b130c]">Rekomendasi cepat</h2>
-                    <span className="text-[10px] font-bold uppercase text-amber-700">Ready stock</span>
+                <div style={{ marginTop: 24, textAlign: 'left' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1b1a16' }}>Rekomendasi</h2>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#b08b4f' }}>Ready stock</span>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     {recommendedProducts.map((product) => (
                       <button
                         key={product.id || product.slug}
                         type="button"
                         onClick={() => navigate(`/mobile/products/${product.slug}`)}
-                        className="mobile-commerce-choice min-w-0 p-2 text-left"
+                        style={{ minWidth: 0, padding: 0, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                       >
-                        <ProductVisual product={product} className="h-24 rounded-[14px]" label={false} sizes="44vw" />
-                        <div className="mt-2 min-w-0">
-                          <div className="mobile-line-clamp-2 text-xs font-bold leading-tight text-[#0b130c]">{product.name}</div>
-                          <div className="mt-1 truncate text-[11px] font-bold text-[#263d27]">{product.price}</div>
+                        <ProductVisual product={product} className="h-28 rounded-[10px]" label={false} sizes="44vw" />
+                        <div style={{ marginTop: 8, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: '#1b1a16', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</div>
+                          <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 500, color: '#6f695f' }}>{product.price}</div>
                         </div>
                       </button>
                     ))}
@@ -222,16 +230,16 @@ const MobileCartPage = () => {
           ) : null}
         </section>
         {items.length ? (
-          <section className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => navigate('/mobile/catalog')} className="mobile-commerce-choice flex min-h-[82px] flex-col justify-between">
-              <ShoppingBag className="h-4 w-4 text-[#263d27]" />
-              <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Tambah aroma</span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Katalog <ArrowRight className="h-3 w-3" /></span>
+          <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 16px' }}>
+            <button type="button" onClick={() => navigate('/mobile/catalog')} style={{ display: 'flex', minHeight: 78, flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e5decf', borderRadius: 12, padding: 14, background: '#f7f1e5', cursor: 'pointer', textAlign: 'left' }}>
+              <ShoppingBag style={{ width: 16, height: 16, color: '#6f695f' }} />
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: '#1b1a16' }}>Tambah aroma</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#b08b4f' }}>Katalog <ArrowRight style={{ width: 12, height: 12 }} /></span>
             </button>
-            <button type="button" onClick={() => navigate('/mobile/bespoke')} className="mobile-commerce-choice flex min-h-[82px] flex-col justify-between">
-              <Sparkles className="h-4 w-4 text-[#263d27]" />
-              <span className="text-left text-xs font-bold leading-tight text-[#0b130c]">Custom aroma</span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-amber-700">Brief <ArrowRight className="h-3 w-3" /></span>
+            <button type="button" onClick={() => navigate('/mobile/bespoke')} style={{ display: 'flex', minHeight: 78, flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e5decf', borderRadius: 12, padding: 14, background: '#f7f1e5', cursor: 'pointer', textAlign: 'left' }}>
+              <Sparkles style={{ width: 16, height: 16, color: '#6f695f' }} />
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: '#1b1a16' }}>Custom aroma</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#b08b4f' }}>Brief <ArrowRight style={{ width: 12, height: 12 }} /></span>
             </button>
           </section>
         ) : null}
@@ -241,15 +249,16 @@ const MobileCartPage = () => {
             reserveSpace
             aria-label="Aksi keranjang"
             className="mobile-cart-action-bar"
-            contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+            contentClassName="rounded-xl"
+            style={{ borderColor: '#e5decf' }}
           >
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase text-[#8b949e]">{summary.quantity} item</p>
-                <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(voucher.subtotalAfterDiscount)}</p>
-                {voucher.discountAmount ? <p className="truncate text-[10px] font-bold text-emerald-700">Hemat {formatTotal(voucher.discountAmount)}</p> : null}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'center', gap: 12, background: 'rgba(255,250,240,0.97)', borderRadius: 12, padding: '4px 4px 4px 12px' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6f695f' }}>{summary.quantity} item</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 700, lineHeight: 1.2, color: '#1b1a16', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatTotal(voucher.subtotalAfterDiscount)}</p>
+                {voucher.discountAmount ? <p style={{ fontSize: '0.65rem', fontWeight: 600, color: '#183522', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hemat {formatTotal(voucher.discountAmount)}</p> : null}
               </div>
-              <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={() => navigate('/mobile/checkout')}>
+              <Button type="button" className="h-12 rounded-xl gap-2 px-4" style={{ background: '#1b1a16', color: '#fffaf0' }} onClick={() => navigate('/mobile/checkout')}>
                 <PackageCheck className="h-4 w-4" />
                 Lanjut bayar
               </Button>

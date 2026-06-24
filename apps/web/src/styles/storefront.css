@@ -7506,15 +7506,15 @@
 
 /* mobile commerce surfaces */
 .mobile-commerce-app {
-  --buyer-radius-card: 14px;
-  --buyer-radius-inner: 12px;
-  --buyer-border: rgba(38, 61, 39, 0.12);
-  --buyer-border-strong: rgba(38, 61, 39, 0.18);
-  --buyer-surface: rgba(255, 255, 255, 0.98);
-  --buyer-surface-soft: #f7f8f2;
-  --buyer-surface-tint: #eef2e8;
-  --buyer-shadow-card: 0 14px 34px -28px rgba(24, 47, 27, 0.42);
-  --buyer-shadow-lifted: 0 18px 42px -32px rgba(24, 47, 27, 0.5);
+  --buyer-radius-card: 12px;
+  --buyer-radius-inner: 10px;
+  --buyer-border: rgba(229, 222, 207, 0.8);
+  --buyer-border-strong: rgba(229, 222, 207, 1);
+  --buyer-surface: rgba(255, 250, 240, 0.98);
+  --buyer-surface-soft: #f7f1e5;
+  --buyer-surface-tint: #f7f1e5;
+  --buyer-shadow-card: 0 8px 24px -20px rgba(27, 26, 22, 0.18);
+  --buyer-shadow-lifted: 0 12px 32px -24px rgba(27, 26, 22, 0.24);
 }
 
 .mobile-commerce-app .mobile-app-shell {
@@ -7841,10 +7841,10 @@
 
 .mobile-commerce-choice.is-active,
 .mobile-commerce-app [data-active="true"].mobile-commerce-choice {
-  border-color: rgba(38, 61, 39, 0.42);
+  border-color: rgba(176, 139, 79, 0.4);
   background: var(--buyer-surface-tint);
-  color: #263d27;
-  box-shadow: 0 12px 28px -24px rgba(38, 61, 39, 0.54);
+  color: #1b1a16;
+  box-shadow: 0 8px 20px -18px rgba(27, 26, 22, 0.3);
 }
 
 .mobile-commerce-control {
@@ -7859,8 +7859,8 @@
 
 .mobile-commerce-control:focus,
 .mobile-commerce-control:focus-within {
-  border-color: rgba(38, 61, 39, 0.38);
-  box-shadow: 0 0 0 4px rgba(38, 61, 39, 0.08);
+  border-color: rgba(176, 139, 79, 0.5);
+  box-shadow: 0 0 0 4px rgba(176, 139, 79, 0.1);
 }
 
 .mobile-commerce-courier-select {
@@ -7882,10 +7882,10 @@
 }
 
 .mobile-commerce-courier-select.is-selected {
-  border-color: rgba(38, 61, 39, 0.44);
-  background: #263d27;
-  color: #fff;
-  box-shadow: 0 16px 32px -24px rgba(38, 61, 39, 0.66);
+  border-color: rgba(27, 26, 22, 0.5);
+  background: #1b1a16;
+  color: #fffaf0;
+  box-shadow: 0 10px 24px -18px rgba(27, 26, 22, 0.5);
 }
 
 .mobile-commerce-courier-select select {
@@ -7911,7 +7911,7 @@
 
 .mobile-commerce-chip {
   background: var(--buyer-surface-tint);
-  color: #263d27;
+  color: #1b1a16;
 }
 
 .mobile-commerce-muted-chip {

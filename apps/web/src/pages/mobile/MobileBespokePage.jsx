@@ -122,11 +122,11 @@ const CapMockup = ({ cap, bottle, label }) => {
   return (
     <div className="mobile-commerce-panel relative aspect-square w-full overflow-hidden bg-[#f8f7f4] p-0">
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#d8c8a4]/50 to-transparent" />
-      <div className={`absolute left-1/2 top-[24%] h-[44%] w-[27%] -translate-x-1/2 border border-[#263d27]/20 bg-white shadow-sm ${isSquare ? 'rounded-xl' : 'rounded-b-[24px] rounded-t-xl'}`} />
-      <div className="absolute left-1/2 top-[14%] h-[16%] w-[36%] -translate-x-1/2 rounded-xl border border-[#263d27]/20 bg-[#1f2937] shadow-sm" />
+      <div className={`absolute left-1/2 top-[24%] h-[44%] w-[27%] -translate-x-1/2 border border-[#e5decf]/20 bg-white shadow-sm ${isSquare ? 'rounded-xl' : 'rounded-b-[24px] rounded-t-xl'}`} />
+      <div className="absolute left-1/2 top-[14%] h-[16%] w-[36%] -translate-x-1/2 rounded-xl border border-[#e5decf]/20 bg-[#1f2937] shadow-sm" />
       {isStone ? <div className="absolute left-1/2 top-[10%] h-[18%] w-[42%] -translate-x-1/2 rounded-[18px] bg-[radial-gradient(circle_at_30%_25%,#f9fafb,#8b8a7c_45%,#2f352f)] shadow-md" /> : null}
       {isAcrylic ? <div className="absolute left-1/2 top-[10%] h-[18%] w-[42%] -translate-x-1/2 rounded-xl bg-[linear-gradient(135deg,rgba(245,158,11,.85),rgba(236,72,153,.75),rgba(59,130,246,.8))] shadow-md" /> : null}
-      <div className="absolute left-1/2 top-[47%] min-w-10 -translate-x-1/2 rounded-lg border border-[#263d27]/10 bg-[#eef2e8] px-2 py-1 text-center text-[9px] font-bold text-[#263d27]">{label?.label || 'Label'}</div>
+      <div className="absolute left-1/2 top-[47%] min-w-10 -translate-x-1/2 rounded-lg border border-[#e5decf]/10 bg-[#f7f1e5] px-2 py-1 text-center text-[9px] font-bold text-[#1b1a16]">{label?.label || 'Label'}</div>
       <div className="mobile-commerce-chip absolute bottom-3 left-3 bg-white/80 px-2.5 py-1 text-[10px]">{bottle?.label || 'Botol'}</div>
       <div className="mobile-commerce-chip absolute bottom-3 right-3 bg-white/80 px-2.5 py-1 text-[10px]">{cap?.label}</div>
     </div>
@@ -447,21 +447,21 @@ const MobileBespokePage = () => {
             value={form.perfumeName}
             onChange={(event) => updateField('perfumeName', event.target.value)}
             placeholder="Nama parfum, contoh: After Rain"
-            className="mobile-commerce-control h-12 px-3 text-sm font-semibold text-[#0b130c]"
+            className="mobile-commerce-control h-12 px-3 text-sm font-semibold text-[#1b1a16]"
           />
           <textarea
             value={form.scentDescription}
             onChange={(event) => updateField('scentDescription', event.target.value)}
             placeholder="Contoh: bersih, dewasa, woody, sedikit vanila, tidak terlalu manis."
             rows={3}
-            className="mobile-commerce-control min-h-[96px] w-full resize-none px-3 py-3 text-sm font-semibold leading-relaxed text-[#0b130c]"
+            className="mobile-commerce-control min-h-[96px] w-full resize-none px-3 py-3 text-sm font-semibold leading-relaxed text-[#1b1a16]"
           />
           <div className="grid grid-cols-4 gap-1.5">
             {['Bersih', 'Woody', 'Vanila', 'Segar'].map((item) => (
               <button
                 key={item}
                 type="button"
-                className="mobile-commerce-choice px-2 py-2 text-center text-[10px] font-bold text-[#263d27]"
+                className="mobile-commerce-choice px-2 py-2 text-center text-[10px] font-bold text-[#1b1a16]"
                 onClick={() => updateField('scentDescription', `${form.scentDescription}${form.scentDescription.trim() ? ', ' : ''}${item}`)}
               >
                 {item}
@@ -476,7 +476,7 @@ const MobileBespokePage = () => {
                 onClick={() => updateField('occasion', option)}
                 className={cn(
                   'h-9 shrink-0 rounded-full border px-3 text-[11px] font-bold transition',
-                  form.occasion === option ? 'border-[#263d27]/30 bg-[#eef2e8] text-[#263d27]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                  form.occasion === option ? 'border-[#e5decf]/30 bg-[#f7f1e5] text-[#1b1a16]' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
                 )}
               >
                 {option}
@@ -501,7 +501,7 @@ const MobileBespokePage = () => {
           </div>
           {exoticMaterialOptions.length ? (
             <div className="grid gap-2">
-              <div className="text-[10px] font-bold uppercase text-[#263d27]">Material eksotis</div>
+              <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Material eksotis</div>
               <div className="grid grid-cols-2 gap-2">
                 <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>Tanpa tambahan</OptionButton>
                 {exoticMaterialOptions.map((option) => (
@@ -525,14 +525,14 @@ const MobileBespokePage = () => {
         <div className="grid gap-3">
           <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3">
             <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
-            <div className="grid content-start gap-2 text-xs font-bold text-[#263d27]">
-              <div className="rounded-2xl bg-[#eef2e8] px-3 py-2">{selectedBottleType?.label || 'Botol'}</div>
+            <div className="grid content-start gap-2 text-xs font-bold text-[#1b1a16]">
+              <div className="rounded-2xl bg-[#f7f1e5] px-3 py-2">{selectedBottleType?.label || 'Botol'}</div>
               <div className="rounded-2xl bg-white px-3 py-2">{selectedCap?.label || 'Cap'}</div>
               <div className="rounded-2xl bg-white px-3 py-2">{selectedLabel?.label || 'Label'}</div>
             </div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-[#263d27]">Botol</div>
+            <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Botol</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {bottleTypeOptions.map((option) => (
                 <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} onClick={() => updateField('bottleType', option.value)}>{option.label}</OptionButton>
@@ -540,7 +540,7 @@ const MobileBespokePage = () => {
             </div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-[#263d27]">Cap</div>
+            <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Cap</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {capDesignOptions.map((option) => (
                 <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('capDesign', option.value)}>{option.label}</OptionButton>
@@ -548,7 +548,7 @@ const MobileBespokePage = () => {
             </div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-[#263d27]">Label</div>
+            <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Label</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {labelDesignOptions.map((option) => (
                 <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('labelDesign', option.value)}>{option.label}</OptionButton>
@@ -602,11 +602,11 @@ const MobileBespokePage = () => {
               {shippingLoading ? 'Menghitung...' : selectedDestination ? 'Tampilkan ongkir' : 'Cari ongkir'}
             </Button>
           </div>
-          {selectedDestination ? <p className="rounded-2xl bg-[#eef2e8] px-3 py-2 text-[11px] font-bold text-[#263d27]">Area: {selectedDestination.label}</p> : null}
+          {selectedDestination ? <p className="rounded-2xl bg-[#f7f1e5] px-3 py-2 text-[11px] font-bold text-[#1b1a16]">Area: {selectedDestination.label}</p> : null}
           {destinationOptions.length && !selectedDestination ? (
             <div className="grid gap-2">
               {destinationOptions.map((destination) => (
-                <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="mobile-commerce-choice px-3 py-2 text-xs font-bold text-[#263d27]">{destination.label}</button>
+                <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="mobile-commerce-choice px-3 py-2 text-xs font-bold text-[#1b1a16]">{destination.label}</button>
               ))}
             </div>
           ) : null}
@@ -618,7 +618,7 @@ const MobileBespokePage = () => {
                   <button key={`${rate.courierCode}-${rate.service}-${rate.cost}`} type="button" onClick={() => setSelectedShipping(rate)} className={cn('mobile-commerce-choice px-3 py-3', active ? 'is-active' : '')}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-bold text-[#1f2937]">{courierLabels[rate.courierCode] || rate.courierName} {rate.serviceLabel || rate.service}</span>
-                      <span className="shrink-0 text-right text-sm font-bold text-[#263d27]">
+                      <span className="shrink-0 text-right text-sm font-bold text-[#1b1a16]">
                         {rate.promotionApplied && Number(rate.originalCost || 0) > Number(rate.cost || 0) ? (
                           <span className="block text-[10px] text-[#8a9280] line-through">{formatRupiah(rate.originalCost)}</span>
                         ) : null}
@@ -644,14 +644,14 @@ const MobileBespokePage = () => {
       description: 'Cek ringkasan lalu pilih metode pembayaran.',
       render: () => (
         <div className="grid gap-3">
-          <div className="mobile-commerce-summary p-4 text-xs font-bold text-[#263d27]">
+          <div className="mobile-commerce-summary p-4 text-xs font-bold text-[#1b1a16]">
             <div className="flex justify-between gap-3"><span>Nama parfum</span><span>{form.perfumeName || '-'}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Custom perfume</span><span>Dikonfirmasi Studio</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Voucher</span><span>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
-            <div className="mt-3 flex items-end justify-between gap-3 border-t border-[#263d27]/10 pt-3 text-sm text-[#0b130c]">
+            <div className="mt-3 flex items-end justify-between gap-3 border-t border-[#e5decf]/10 pt-3 text-sm text-[#1b1a16]">
               <span>Total transfer</span>
-              <span className="text-base text-[#263d27]">{formatRupiah(totalDue)}</span>
+              <span className="text-base text-[#1b1a16]">{formatRupiah(totalDue)}</span>
             </div>
             {discountAmount ? (
               <div className="mt-1 flex justify-between gap-3 text-[11px] text-emerald-700">
@@ -662,8 +662,8 @@ const MobileBespokePage = () => {
             <p className="mt-3 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{budgetSummary}</p>
           </div>
           <div className="mobile-commerce-panel p-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0b130c]">
-              <Ticket className="h-3.5 w-3.5 text-[#263d27]" />
+            <div className="flex items-center gap-2 text-xs font-bold text-[#1b1a16]">
+              <Ticket className="h-3.5 w-3.5 text-[#1b1a16]" />
               Voucher
             </div>
             <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
@@ -671,19 +671,19 @@ const MobileBespokePage = () => {
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
                 placeholder="Kode voucher"
-                className="mobile-commerce-control h-11 min-w-0 px-3 text-xs font-bold uppercase text-[#0b130c]"
+                className="mobile-commerce-control h-11 min-w-0 px-3 text-xs font-bold uppercase text-[#1b1a16]"
               />
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white px-3 text-[11px] font-bold" onClick={voucher.applyVoucher} disabled={voucher.loading}>
                 {voucher.loading ? 'Cek...' : 'Pakai'}
               </Button>
             </div>
             {voucher.appliedVoucher ? (
-              <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-[#263d27]/15 bg-[#eef2e8] px-3 py-2">
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-[#e5decf]/15 bg-[#f7f1e5] px-3 py-2">
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
-                  <div className="mt-0.5 text-[10px] font-semibold text-[#51624b]">Total transfer sudah disesuaikan voucher.</div>
+                  <div className="truncate text-xs font-bold text-[#1b1a16]">{voucher.appliedVoucher.code} diterapkan</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-[#6f695f]">Total transfer sudah disesuaikan voucher.</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-[#1b1a16]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -696,11 +696,11 @@ const MobileBespokePage = () => {
             return (
               <button key={method.id} type="button" onClick={() => updateField('paymentMethod', method.id)} className={cn('mobile-commerce-choice px-4 py-4', active ? 'is-active' : 'text-[#6b7280]')}>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold text-[#0b130c]">{method.label}</span>
-                  {active ? <span className="rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                  <span className="text-sm font-bold text-[#1b1a16]">{method.label}</span>
+                  {active ? <span className="rounded-full bg-[#1b1a16] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
                 </div>
                 <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
-                {method.accountNumber ? <div className="mobile-commerce-panel mt-3 border-0 bg-white/80 px-3 py-2 text-[11px] font-bold text-[#263d27]">{method.bankName} {method.accountNumber} / A/N {method.accountName}</div> : null}
+                {method.accountNumber ? <div className="mobile-commerce-panel mt-3 border-0 bg-white/80 px-3 py-2 text-[11px] font-bold text-[#1b1a16]">{method.bankName} {method.accountNumber} / A/N {method.accountName}</div> : null}
               </button>
             );
           })}
@@ -714,14 +714,14 @@ const MobileBespokePage = () => {
             <span
               className={cn(
                 'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-white transition',
-                form.preorderAcknowledged ? 'border-[#263d27] bg-[#263d27]' : 'border-[#263d27]/24 bg-white'
+                form.preorderAcknowledged ? 'border-[#e5decf] bg-[#1b1a16]' : 'border-[#e5decf]/24 bg-white'
               )}
               aria-hidden="true"
             >
               {form.preorderAcknowledged ? <Check className="h-4 w-4" /> : null}
             </span>
             <span>
-              <span className="block text-sm font-bold text-[#0b130c]">Konfirmasi pre-order</span>
+              <span className="block text-sm font-bold text-[#1b1a16]">Konfirmasi pre-order</span>
               <span className="mt-1 block text-[11px] font-semibold leading-relaxed">
                 Saya memahami bahwa bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
               </span>
@@ -944,26 +944,26 @@ const MobileBespokePage = () => {
             <Sparkles className="h-3.5 w-3.5" />
             Brief custom
           </div>
-          <h1 className="mt-1.5 text-lg font-bold leading-tight text-[#0b130c]">Request parfum custom.</h1>
+          <h1 className="mt-1.5 text-lg font-bold leading-tight text-[#1b1a16]">Request parfum custom.</h1>
           <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
             Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat.
           </p>
-          <div className="mt-2 inline-flex rounded-full bg-[#263d27] px-2.5 py-1 text-[10px] font-bold uppercase text-white">
+          <div className="mt-2 inline-flex rounded-full bg-[#1b1a16] px-2.5 py-1 text-[10px] font-bold uppercase text-white">
             Pre-order / 7-14 hari
           </div>
           {referenceProduct ? (
-            <div className="mobile-commerce-panel mt-3 border-0 p-3 text-xs font-bold text-[#0b130c]">
-              Referensi aroma: <span className="text-[#263d27]">{referenceProduct.name}</span>
+            <div className="mobile-commerce-panel mt-3 border-0 p-3 text-xs font-bold text-[#1b1a16]">
+              Referensi aroma: <span className="text-[#1b1a16]">{referenceProduct.name}</span>
             </div>
           ) : null}
         </section>
 
         <section className="mobile-bespoke-wizard mobile-card overflow-hidden">
-          <header className="border-b border-[#263d27]/10 bg-white px-3 py-2.5">
+          <header className="border-b border-[#e5decf]/10 bg-white px-3 py-2.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#263d27]">Langkah {step + 1} dari {flowSteps.length}</p>
-                <h2 className="mt-1 text-base font-bold text-[#0b130c]">{activeStep.title}</h2>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#1b1a16]">Langkah {step + 1} dari {flowSteps.length}</p>
+                <h2 className="mt-1 text-base font-bold text-[#1b1a16]">{activeStep.title}</h2>
                 <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{activeStep.description}</p>
               </div>
               <span className="mobile-commerce-chip shrink-0 px-2.5 py-1 text-[10px]">{completion}%</span>
@@ -976,15 +976,15 @@ const MobileBespokePage = () => {
                   onClick={() => setStep(index)}
                   className={cn(
                     'h-7 shrink-0 rounded-full px-2.5 text-[10px] font-bold transition',
-                    index === step ? 'bg-[#263d27] text-white' : item.isComplete() ? 'bg-[#eef2e8] text-[#263d27]' : 'bg-[#f8f7f4] text-[#6b7280]'
+                    index === step ? 'bg-[#1b1a16] text-white' : item.isComplete() ? 'bg-[#f7f1e5] text-[#1b1a16]' : 'bg-[#f8f7f4] text-[#6b7280]'
                   )}
                 >
                   {item.shortLabel}
                 </button>
               ))}
             </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#eef2e8]">
-              <div className="h-full rounded-full bg-[#263d27]" style={{ width: `${((step + 1) / flowSteps.length) * 100}%` }} />
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#f7f1e5]">
+              <div className="h-full rounded-full bg-[#1b1a16]" style={{ width: `${((step + 1) / flowSteps.length) * 100}%` }} />
             </div>
           </header>
 
@@ -998,13 +998,13 @@ const MobileBespokePage = () => {
           <section className="mobile-card p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-[#0b130c]">Brief ringkas</h2>
-                <p className="mt-1 text-xs font-bold leading-relaxed text-[#263d27]">{form.perfumeName || 'Nama parfum belum diisi.'}</p>
+                <h2 className="text-sm font-bold text-[#1b1a16]">Brief ringkas</h2>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-[#1b1a16]">{form.perfumeName || 'Nama parfum belum diisi.'}</p>
                 <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{form.scentDescription || 'Aroma belum diisi.'}</p>
               </div>
               <div className="shrink-0 text-right">
                 <div className="text-[10px] font-bold uppercase text-[#8b949e]">Pre-order</div>
-                <div className="text-sm font-bold text-[#263d27]">7-14 hari</div>
+                <div className="text-sm font-bold text-[#1b1a16]">7-14 hari</div>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-[#6b7280]">
@@ -1021,19 +1021,19 @@ const MobileBespokePage = () => {
                 <CheckCircle2 className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-base font-bold text-[#0b130c]">Ringkasan request</h2>
+                <h2 className="text-base font-bold text-[#1b1a16]">Ringkasan request</h2>
                 <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
-                  <p><strong className="text-[#0b130c]">Pembeli:</strong> {submittedRequest.customerName}</p>
-                  <p><strong className="text-[#0b130c]">Kode customer:</strong> {submittedRequest.customerCode || '-'}</p>
-                  <p><strong className="text-[#0b130c]">Studio order:</strong> {submittedRequest.orderNumber}</p>
-                  <p><strong className="text-[#0b130c]">Kontak:</strong> {submittedRequest.contact}</p>
-                  <p><strong className="text-[#0b130c]">Nama parfum:</strong> {submittedRequest.perfumeName || '-'}</p>
-                  <p><strong className="text-[#0b130c]">Aroma:</strong> {submittedRequest.scentDescription}</p>
-                  <p><strong className="text-[#0b130c]">Botol:</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
-                  {submittedRequest.exoticMaterial ? <p><strong className="text-[#0b130c]">Material:</strong> {submittedRequest.exoticMaterial}</p> : null}
-                  <p><strong className="text-[#0b130c]">Budget:</strong> {submittedRequest.budget}</p>
-                  <p><strong className="text-[#0b130c]">Ongkir:</strong> {submittedRequest.shipping || '-'}</p>
-                  <p><strong className="text-[#0b130c]">Pre-order:</strong> 7-14 hari setelah brief dikonfirmasi</p>
+                  <p><strong className="text-[#1b1a16]">Pembeli:</strong> {submittedRequest.customerName}</p>
+                  <p><strong className="text-[#1b1a16]">Kode customer:</strong> {submittedRequest.customerCode || '-'}</p>
+                  <p><strong className="text-[#1b1a16]">Studio order:</strong> {submittedRequest.orderNumber}</p>
+                  <p><strong className="text-[#1b1a16]">Kontak:</strong> {submittedRequest.contact}</p>
+                  <p><strong className="text-[#1b1a16]">Nama parfum:</strong> {submittedRequest.perfumeName || '-'}</p>
+                  <p><strong className="text-[#1b1a16]">Aroma:</strong> {submittedRequest.scentDescription}</p>
+                  <p><strong className="text-[#1b1a16]">Botol:</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
+                  {submittedRequest.exoticMaterial ? <p><strong className="text-[#1b1a16]">Material:</strong> {submittedRequest.exoticMaterial}</p> : null}
+                  <p><strong className="text-[#1b1a16]">Budget:</strong> {submittedRequest.budget}</p>
+                  <p><strong className="text-[#1b1a16]">Ongkir:</strong> {submittedRequest.shipping || '-'}</p>
+                  <p><strong className="text-[#1b1a16]">Pre-order:</strong> 7-14 hari setelah brief dikonfirmasi</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>
@@ -1062,17 +1062,17 @@ const MobileBespokePage = () => {
           reserveSpace
           aria-label="Aksi request custom"
           className="mobile-bespoke-action-bar"
-          contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+          contentClassName="rounded-2xl border-[#e5decf]/10 bg-white/95"
         >
           {step === flowSteps.length - 1 ? (
             <div className="grid gap-2">
-              <div className="rounded-2xl border border-[#263d27]/10 bg-[#eef2e8] px-3 py-2">
+              <div className="rounded-2xl border border-[#e5decf]/10 bg-[#f7f1e5] px-3 py-2">
                 <div className="flex items-end justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold uppercase text-[#6b7280]">Total transfer</p>
-                    <p className="text-lg font-bold leading-tight text-[#263d27]">{formatRupiah(totalDue)}</p>
+                    <p className="text-lg font-bold leading-tight text-[#1b1a16]">{formatRupiah(totalDue)}</p>
                   </div>
-                  <p className="shrink-0 text-[10px] font-bold uppercase text-[#263d27]">Siap dibayar</p>
+                  <p className="shrink-0 text-[10px] font-bold uppercase text-[#1b1a16]">Siap dibayar</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">

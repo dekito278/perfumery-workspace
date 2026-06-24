@@ -31,7 +31,7 @@ const CheckoutProgress = ({ steps }) => {
         </div>
         <span className="mobile-commerce-chip shrink-0 px-3 py-1 text-[10px] uppercase">{completedCount}/{steps.length} beres</span>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#eef2e8]"><div className="h-full rounded-full bg-[#263d27]" style={{ width: `${progressPercent}%` }} /></div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f7f1e5]"><div className="h-full rounded-full bg-[#b08b4f]" style={{ width: `${progressPercent}%` }} /></div>
     </section>
   );
 };
@@ -40,11 +40,11 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
   <section className="mobile-card p-3">
     <div className="flex items-start justify-between gap-3">
       <div className="flex min-w-0 gap-3">
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-2xl text-xs font-bold ${complete ? 'bg-[#263d27] text-white' : 'bg-amber-50 text-amber-800'}`}>
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-2xl text-xs font-bold ${complete ? 'bg-[#1b1a16] text-white' : 'bg-amber-50 text-amber-800'}`}>
           {step}
         </span>
         <div className="min-w-0">
-          <h2 className="text-sm font-bold text-[#0b130c]">{title}</h2>
+          <h2 className="text-sm font-bold text-[#1b1a16]">{title}</h2>
           {description ? <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{description}</p> : null}
         </div>
       </div>
@@ -152,12 +152,12 @@ const MobileCheckoutPage = () => {
           <div className="text-[10px] font-bold uppercase text-amber-700">Pembayaran</div>
           <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">Lengkapi pengiriman dan pembayaran.</h1>
           <div className="mt-3 flex items-end justify-between gap-3">
-            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</div><div className="mt-1 text-2xl font-bold text-[#263d27]">{formatTotal(totalDue)}</div></div>
+            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</div><div className="mt-1 text-2xl font-bold text-[#1b1a16]">{formatTotal(totalDue)}</div></div>
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>Edit keranjang</Button>
           </div>
           {discountAmount ? (
-            <div className="mt-3 rounded-2xl border border-[#263d27]/12 bg-white/82 px-3 py-2">
-              <div className="flex items-center justify-between gap-3 text-xs font-bold text-[#263d27]">
+            <div className="mt-3 rounded-2xl border border-[#e5decf]/12 bg-white/82 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-xs font-bold text-[#1b1a16]">
                 <span className="min-w-0 truncate">Voucher {voucher.appliedVoucher?.code}</span>
                 <span className="shrink-0">Hemat {formatTotal(discountAmount)}</span>
               </div>
@@ -170,7 +170,7 @@ const MobileCheckoutPage = () => {
             <p className="min-w-0 text-[11px] font-bold leading-snug text-[#6b7280]">
               {canSubmitCheckout ? 'Semua data siap.' : `Lengkapi: ${missingRequirements.map((item) => item.label).join(', ')}`}
             </p>
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${canSubmitCheckout ? 'bg-[#eef2e8] text-[#263d27]' : 'bg-amber-50 text-amber-800'}`}>
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${canSubmitCheckout ? 'bg-[#f7f1e5] text-[#1b1a16]' : 'bg-amber-50 text-amber-800'}`}>
               {canSubmitCheckout ? 'Siap' : `${missingRequirements.length} kurang`}
             </span>
           </div>
@@ -224,12 +224,12 @@ const MobileCheckoutPage = () => {
               </select>
             </label>
             {shippingLoading ? (
-              <p className="mobile-commerce-notice bg-[#f7f8f2] font-bold text-[#263d27]">
+              <p className="mobile-commerce-notice bg-[#f7f1e5] font-bold text-[#1b1a16]">
                 Mencari ongkir dari alamat pengiriman...
               </p>
             ) : null}
             {!showShippingAreaFallback && !selectedShipping ? (
-              <button type="button" onClick={() => setShowManualShippingArea(true)} className="w-fit text-left text-xs font-bold text-[#263d27] underline underline-offset-4">
+              <button type="button" onClick={() => setShowManualShippingArea(true)} className="w-fit text-left text-xs font-bold text-[#1b1a16] underline underline-offset-4">
                 Edit ongkir manual
               </button>
             ) : null}
@@ -251,14 +251,14 @@ const MobileCheckoutPage = () => {
               </div>
             ) : null}
             {selectedDestination ? (
-              <p className="mobile-commerce-notice bg-[#eef2e8] font-bold text-[#263d27]">
+              <p className="mobile-commerce-notice bg-[#f7f1e5] font-bold text-[#1b1a16]">
                 Area ongkir: {selectedDestination.label}
               </p>
             ) : null}
-            {shippingNotice ? <p className="mobile-commerce-notice bg-[#eef2e8] font-bold text-[#263d27]">{shippingNotice}</p> : null}
+            {shippingNotice ? <p className="mobile-commerce-notice bg-[#f7f1e5] font-bold text-[#1b1a16]">{shippingNotice}</p> : null}
             {showShippingAlternatives && destinationOptions.length ? (
               <div className="grid gap-2">
-                <div className="text-[10px] font-bold uppercase text-[#6f7d61]">Pilih area lain</div>
+                <div className="text-[10px] font-bold uppercase text-[#6f695f]">Pilih area lain</div>
                 {destinationOptions.map((destination) => <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="mobile-commerce-choice px-3 py-2 text-xs font-bold">{destination.label}</button>)}
               </div>
             ) : null}
@@ -282,26 +282,26 @@ const MobileCheckoutPage = () => {
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
-                    {active ? <span className="shrink-0 rounded-full bg-[#263d27] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                    {active ? <span className="shrink-0 rounded-full bg-[#1b1a16] px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
                   </div>
                   {rate.promotionApplied ? <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase text-emerald-700">{rate.promotionLabel}</div> : null}
                 </button>
               );
             }) : null}
             {selectedShipping ? (
-              <div className="mobile-commerce-panel border-[#263d27]/24 bg-[#eef2e8] p-3">
+              <div className="mobile-commerce-panel border-[#e5decf]/24 bg-[#f7f1e5] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-[#263d27]">Ongkir dipakai</div>
+                    <div className="text-[10px] font-bold uppercase text-[#1b1a16]">Ongkir dipakai</div>
                     <p className="mt-1 text-xs font-bold text-[#1f2937]">
                       {courierLabels[selectedShipping.courierCode] || selectedShipping.courierName} {selectedShipping.serviceLabel || selectedShipping.service} - {formatTotal(selectedShipping.cost)}
                     </p>
                     {selectedShipping.promotionApplied ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{selectedShipping.promotionLabel}</p> : null}
                     {selectedDestination ? (
-                      <p className="mt-1 text-[11px] font-semibold leading-snug text-[#51624b]">Area: {selectedDestination.label}</p>
+                      <p className="mt-1 text-[11px] font-semibold leading-snug text-[#6f695f]">Area: {selectedDestination.label}</p>
                     ) : null}
                   </div>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase text-[#263d27]">Auto</span>
+                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase text-[#1b1a16]">Auto</span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => setShowManualShippingArea(true)}>
@@ -330,7 +330,7 @@ const MobileCheckoutPage = () => {
           title="Voucher"
           description="Kode promo akan memotong subtotal produk sebelum ongkir."
           complete={Boolean(voucher.appliedVoucher)}
-          action={voucher.discountAmount ? <span className="shrink-0 text-xs font-bold text-[#263d27]">-{formatTotal(voucher.discountAmount)}</span> : null}
+          action={voucher.discountAmount ? <span className="shrink-0 text-xs font-bold text-[#1b1a16]">-{formatTotal(voucher.discountAmount)}</span> : null}
         >
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <input
@@ -345,12 +345,12 @@ const MobileCheckoutPage = () => {
               </Button>
             </div>
             {voucher.appliedVoucher ? (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#263d27]/14 bg-[#eef2e8] px-3 py-2">
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5decf]/14 bg-[#f7f1e5] px-3 py-2">
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-bold text-[#263d27]">{voucher.appliedVoucher.code} diterapkan</div>
-                  <div className="mt-0.5 text-[11px] font-semibold text-[#51624b]">Hemat {formatTotal(voucher.discountAmount)}</div>
+                  <div className="truncate text-xs font-bold text-[#1b1a16]">{voucher.appliedVoucher.code} diterapkan</div>
+                  <div className="mt-0.5 text-[11px] font-semibold text-[#6f695f]">Hemat {formatTotal(voucher.discountAmount)}</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#263d27]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-[#1b1a16]" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -382,13 +382,13 @@ const MobileCheckoutPage = () => {
               const hasLineDiscount = Boolean(discountedLine?.discount);
 
               return (
-              <div key={item.slug} className="mobile-commerce-panel bg-[#f8f7f4] p-3">
+              <div key={item.slug} className="mobile-commerce-panel bg-[#f7f1e5] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold">{item.name}</h3>
                     <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p>
                     {hasLineDiscount ? (
-                      <p className="mt-1 text-[11px] font-bold text-[#263d27]">
+                      <p className="mt-1 text-[11px] font-bold text-[#1b1a16]">
                         Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
                       </p>
                     ) : null}
@@ -397,13 +397,13 @@ const MobileCheckoutPage = () => {
                     {hasLineDiscount ? (
                       <div className="text-[11px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
                     ) : null}
-                    <p className="text-xs font-bold text-[#263d27]">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
+                    <p className="text-xs font-bold text-[#1b1a16]">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
                     {hasLineDiscount ? (
                       <div className="mt-0.5 text-[10px] font-bold text-emerald-700">-{formatTotal(discountedLine.discount)}</div>
                     ) : null}
                   </div>
                 </div>
-                <div className="mt-3 inline-flex items-center rounded-[14px] border border-[#263d27]/10 bg-white p-1">
+                <div className="mt-3 inline-flex items-center rounded-[14px] border border-[#e5decf]/10 bg-white p-1">
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
                   <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
@@ -411,7 +411,7 @@ const MobileCheckoutPage = () => {
               </div>
               );
             })}
-            <div className="mobile-commerce-summary px-3 py-3 text-xs font-bold text-[#263d27]">
+            <div className="mobile-commerce-summary px-3 py-3 text-xs font-bold text-[#1b1a16]">
               <div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatTotal(summary.subtotal)}</span></div>
               {discountAmount ? (
                 <div className="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
@@ -426,7 +426,7 @@ const MobileCheckoutPage = () => {
                 <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Subtotal setelah voucher</span><span>{formatTotal(discountedSubtotal)}</span></div>
               ) : null}
               <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
-              <div className="mt-3 border-t border-[#263d27]/10 pt-3 flex justify-between gap-3 text-sm text-[#0b130c]"><span>Total bayar</span><span>{formatTotal(totalDue)}</span></div>
+              <div className="mt-3 border-t border-[#e5decf]/10 pt-3 flex justify-between gap-3 text-sm text-[#1b1a16]"><span>Total bayar</span><span>{formatTotal(totalDue)}</span></div>
             </div>
           </CheckoutSection>
         </div>
@@ -435,12 +435,12 @@ const MobileCheckoutPage = () => {
           reserveSpace
           aria-label="Aksi pembayaran"
           className="mobile-checkout-action-bar"
-          contentClassName="rounded-2xl border-[#263d27]/10 bg-white/95"
+          contentClassName="rounded-2xl border-[#e5decf]/10 bg-white/95"
         >
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase text-[#8b949e]">{canSubmitCheckout ? 'Total bayar' : 'Lengkapi dulu'}</p>
-              <p className="truncate text-lg font-bold leading-tight text-[#263d27]">{formatTotal(totalDue)}</p>
+              <p className="truncate text-lg font-bold leading-tight text-[#1b1a16]">{formatTotal(totalDue)}</p>
               <p className={`truncate text-[10px] font-bold ${canSubmitCheckout ? 'text-emerald-700' : 'text-amber-700'}`}>
                 {canSubmitCheckout ? (discountAmount ? `Voucher -${formatTotal(discountAmount)}` : 'Siap dibayar') : missingRequirements.map((item) => item.label).join(', ')}
               </p>
