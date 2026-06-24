@@ -13,10 +13,10 @@ import { isProductVisibleInStorefront } from '@/services/productCatalogService.j
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 
 const moodCategories = [
-  { name: 'Quiet & Minimal', family: 'Fresh', description: 'Clean citrus, soft musk, and airy texture for effortless daily wear.', image: null },
-  { name: 'Warm & Nostalgic', family: 'Gourmand', description: 'Vanilla, tonka, and roasted warmth — comfort distilled into scent.', image: null },
-  { name: 'Dark & Moody', family: 'Woody', description: 'Cedar, vetiver, and mineral depth for structured presence.', image: null },
-  { name: 'Soft & Romantic', family: 'Floral', description: 'Rose, jasmine, and powdery musk — tender without being sweet.', image: null },
+  { name: 'Quiet & Minimal', family: 'Fresh', description: 'Clean citrus, soft musk, and airy texture for effortless daily wear.', siteImageKey: 'mood-fresh' },
+  { name: 'Warm & Nostalgic', family: 'Gourmand', description: 'Vanilla, tonka, and roasted warmth — comfort distilled into scent.', siteImageKey: 'mood-gourmand' },
+  { name: 'Dark & Moody', family: 'Woody', description: 'Cedar, vetiver, and mineral depth for structured presence.', siteImageKey: 'mood-woody' },
+  { name: 'Soft & Romantic', family: 'Floral', description: 'Rose, jasmine, and powdery musk — tender without being sweet.', siteImageKey: 'mood-floral' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -40,6 +40,10 @@ const HomePage = () => {
   const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
   const heroProducts = publicCatalog.slice(0, 6);
   const collectionProducts = publicCatalog.slice(0, 8);
+  const heroHasRealImages = heroProducts.some((p) => {
+    const img = String(p?.images?.[0] || p?.imageUrl || '').trim();
+    return img && !img.endsWith('.svg');
+  });
 
   // Hero slideshow auto-advance
   useEffect(() => {
@@ -90,7 +94,7 @@ const HomePage = () => {
 
         {/* ── 1. Hero Slideshow ── */}
         <section className="home-hero">
-          {heroProducts.length > 0 ? (
+          {heroProducts.length > 0 && heroHasRealImages ? (
             <>
               {heroProducts.map((product, i) => (
                 <div key={product.id} className={`home-hero__slide ${i === heroIndex ? 'home-hero__slide--active' : ''}`}>
@@ -117,9 +121,14 @@ const HomePage = () => {
             </>
           ) : (
             <>
-              <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery atelier" className="home-hero__slide-image home-hero__slide--active" />
-              <div className="home-hero__overlay">
-                <span className="home-hero__product-name">SOLIVAGANT</span>
+              <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery atelier" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+              <div className="home-hero__overlay home-hero__overlay--editorial">
+                <p className="home-hero__eyebrow">ARTISAN PERFUMERY ATELIER</p>
+                <h1 className="home-hero__title">Fragrance as a<br />memory object.</h1>
+                <p className="home-hero__subtitle">Quiet olfactive works from raw materials, memory, and ritual.</p>
+                <Link to="/catalog" className="home-hero__cta">
+                  EXPLORE COLLECTION <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
             </>
           )}
@@ -207,6 +216,9 @@ const HomePage = () => {
             </div>
             <div className="home-moods__panel">
               <div className="home-moods__panel-visual" data-family={moodCategories[activeMood].family.toLowerCase()}>
+                {siteImages[moodCategories[activeMood].siteImageKey] ? (
+                  <img src={siteImages[moodCategories[activeMood].siteImageKey]} alt={moodCategories[activeMood].name} className="home-moods__panel-image" />
+                ) : null}
                 <span className="home-moods__panel-family">{moodCategories[activeMood].family}</span>
               </div>
               <div className="home-moods__panel-body">

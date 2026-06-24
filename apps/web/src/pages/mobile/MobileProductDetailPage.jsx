@@ -8,6 +8,7 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
@@ -106,10 +107,8 @@ const MobileProductDetailPage = () => {
           </button>
         </nav>
 
-        {/* Large product image */}
-        <div className="m-editorial-pdp__gallery">
-          <ProductVisual product={product} className="m-editorial-pdp__image" imageFit="cover" priority label={false} sizes="100vw" />
-        </div>
+        {/* Product image gallery with swipe + zoom */}
+        <ProductGallery product={product} className="m-editorial-pdp__gallery" visualClassName="m-editorial-pdp__image" compact priority />
 
         {/* Product info */}
         <div className="m-editorial-pdp__info">

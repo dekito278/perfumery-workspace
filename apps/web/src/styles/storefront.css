@@ -4093,6 +4093,69 @@
   opacity: 0.75;
 }
 
+.home-hero__overlay--editorial {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 0 clamp(32px, 5vw, 80px) clamp(48px, 8vh, 96px);
+  background: linear-gradient(180deg, transparent 30%, rgba(27, 26, 22, 0.65));
+}
+
+.home-hero__eyebrow {
+  pointer-events: auto;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--editorial-brass);
+}
+
+.home-hero__title {
+  pointer-events: auto;
+  color: var(--editorial-paper);
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 5rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.08;
+  margin: 0;
+}
+
+.home-hero__subtitle {
+  pointer-events: auto;
+  color: rgba(255, 250, 240, 0.72);
+  font-family: var(--font-body);
+  font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.home-hero__cta {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px 28px;
+  border: 1px solid rgba(255, 250, 240, 0.35);
+  border-radius: 0;
+  color: var(--editorial-paper);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.home-hero__cta:hover {
+  background: rgba(255, 250, 240, 0.1);
+  border-color: rgba(255, 250, 240, 0.6);
+}
+
 .home-hero__counter {
   position: absolute;
   bottom: clamp(48px, 8vh, 96px);
@@ -4523,11 +4586,28 @@
 }
 
 .home-moods__panel-visual {
+  position: relative;
   flex: 1;
   display: grid;
   place-items: center;
   min-height: 240px;
+  overflow: hidden;
   transition: background 0.5s ease;
+}
+
+.home-moods__panel-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+  transition: opacity 0.4s ease, transform 0.6s ease;
+}
+
+.home-moods__panel-visual:hover .home-moods__panel-image {
+  opacity: 1;
+  transform: scale(1.03);
 }
 
 .home-moods__panel-visual[data-family="fresh"] {
@@ -4547,12 +4627,15 @@
 }
 
 .home-moods__panel-family {
+  position: relative;
+  z-index: 1;
   color: rgba(27, 26, 22, 0.18);
   font-family: var(--font-display);
   font-size: clamp(2.5rem, 4vw, 4rem);
   font-weight: 400;
   font-style: italic;
   letter-spacing: 0.04em;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.3);
 }
 
 .home-moods__panel-body {
