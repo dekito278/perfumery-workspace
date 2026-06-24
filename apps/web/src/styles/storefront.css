@@ -6951,6 +6951,7 @@
   position: relative;
   min-height: 85vh;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .m-editorial-hero__image {
@@ -7011,6 +7012,7 @@
   aspect-ratio: 3 / 4;
   width: 100%;
   overflow: hidden;
+  border-radius: 12px;
   background: var(--editorial-stone, #e5decf);
 }
 
@@ -7073,6 +7075,7 @@
   display: flex;
   align-items: flex-end;
   padding: 12px;
+  border-radius: 12px;
   background: var(--editorial-stone, #e5decf);
 }
 
@@ -7103,6 +7106,7 @@
   position: relative;
   min-height: 55vh;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .m-editorial-statement__image {
@@ -7311,6 +7315,7 @@
   aspect-ratio: 3 / 4;
   width: 100%;
   overflow: hidden;
+  border-radius: 12px;
   background: var(--editorial-stone, #e5decf);
 }
 

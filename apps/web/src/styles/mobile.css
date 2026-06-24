@@ -238,12 +238,9 @@
 
 .pwa-standalone .mobile-app-shell {
   min-height: 100dvh;
-  overflow-y: auto;
   overscroll-behavior-y: none;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 82px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
 }
 
 .mobile-app.mobile-keyboard-active .mobile-app-shell,
@@ -1219,7 +1216,7 @@
   }
 
   .pwa-standalone .mobile-app-shell {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
   }
 
   .mobile-card,
