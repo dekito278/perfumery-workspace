@@ -134,6 +134,7 @@ const MobileRawMaterialEditorPage = lazyRoute(() => import('@/pages/mobile/Mobil
 const MobileRawMaterialDetailPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialDetailPage.jsx'));
 const MobileRawMaterialAuditPage = lazyRoute(() => import('@/pages/mobile/MobileRawMaterialAuditPage.jsx'));
 const MobileCategoriesPage = lazyRoute(() => import('@/pages/mobile/MobileCategoriesPage.jsx'));
+const MobileSiteImagesPage = lazyRoute(() => import('@/pages/mobile/MobileSiteImagesPage.jsx'));
 const MobileFormulasPage = lazyRoute(() => import('@/pages/mobile/MobileFormulasPage.jsx'));
 const MobileCreateFormulaPage = lazyRoute(() => import('@/pages/mobile/MobileCreateFormulaPage.jsx'));
 const MobileEditFormulaPage = lazyRoute(() => import('@/pages/mobile/MobileEditFormulaPage.jsx'));
@@ -686,7 +687,12 @@ function AppRoutes() {
             <Navigate to="/mobile/validation" replace />
           </ProtectedRoute>
         } />
-        
+        <Route path="/mobile/studio/site-images" element={
+          <ProtectedRoute>
+            <MobileSiteImagesPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/studio" element={
           <ProtectedRoute>
             <DashboardPage />

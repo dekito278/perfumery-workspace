@@ -15,6 +15,7 @@ import {
   Store,
   Truck,
   UsersRound,
+  ImagePlus,
   WandSparkles,
 } from 'lucide-react';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
@@ -44,7 +45,7 @@ const navGroups = [
     label: 'Studio',
     icon: Beaker,
     description: 'Formula, material, dan workspace validasi.',
-    paths: ['/mobile/studio', '/mobile/journal', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation'],
+    paths: ['/mobile/studio', '/mobile/journal', '/mobile/formulas', '/mobile/batches', '/mobile/raw-materials', '/mobile/validation', '/mobile/studio/site-images'],
     items: [
       { path: '/mobile/studio', label: 'Dasbor', helper: 'Ringkasan Studio', icon: LayoutDashboard },
       { path: '/mobile/journal', label: 'Journal', helper: 'Artikel, accord, ide', icon: BookOpenText },
@@ -52,6 +53,7 @@ const navGroups = [
       { path: '/mobile/batches', label: 'Batches', helper: 'Produksi dan stok draft', icon: Calculator },
       { path: '/mobile/raw-materials', label: 'Material', helper: 'Library raw material', icon: LibraryBig },
       { path: '/mobile/validation', label: 'Validation', helper: 'Log testing dan feedback', icon: ClipboardCheck },
+      { path: '/mobile/studio/site-images', label: 'Site Images', helper: 'Hero, mood, dan banner', icon: ImagePlus },
     ],
   },
 ];
