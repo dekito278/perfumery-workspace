@@ -2214,7 +2214,7 @@
 .tracking-search input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid var(--editorial-border);
+  border: 1px solid rgba(27, 26, 22, 0.22);
   border-radius: 6px;
   background: #fff;
   font-family: var(--font-body);
@@ -2251,7 +2251,8 @@
   padding: 36px;
   border: 1px solid var(--editorial-border);
   border-radius: 8px;
-  background: rgba(255, 250, 240, 0.58);
+  background: rgba(255, 250, 240, 0.78);
+  border-color: rgba(27, 26, 22, 0.18);
 }
 
 .tracking-card__header h2 {
@@ -4516,17 +4517,18 @@
   display: grid;
   grid-template-columns: 1fr 1.4fr;
   gap: 0;
-  border: 1px solid var(--editorial-border);
+  border: 1px solid rgba(27, 26, 22, 0.2);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--editorial-paper);
+  background: #fff;
   min-height: 420px;
+  box-shadow: 0 2px 12px rgba(27, 26, 22, 0.08);
 }
 
 .home-moods__tabs {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--editorial-border);
+  border-right: 1px solid rgba(27, 26, 22, 0.18);
 }
 
 .home-moods__tab {
@@ -4536,7 +4538,7 @@
   flex: 1;
   padding: 24px 28px;
   border: none;
-  border-bottom: 1px solid var(--editorial-border);
+  border-bottom: 1px solid rgba(27, 26, 22, 0.18);
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -4640,7 +4642,7 @@
 
 .home-moods__panel-body {
   padding: 28px 32px;
-  border-top: 1px solid var(--editorial-border);
+  border-top: 1px solid rgba(27, 26, 22, 0.18);
 }
 
 .home-moods__panel-body h3 {
