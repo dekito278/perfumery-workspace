@@ -6,6 +6,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
+import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
@@ -23,7 +24,8 @@ const getArticleExcerpt = (article) =>
   article?.excerpt || String(article?.content || '').replace(/[`*_>#-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
 
 const HomePage = () => {
-  const catalogProducts = useCatalogProducts();
+  const fetchedProducts = useCatalogProducts();
+  const catalogProducts = fetchedProducts.length ? fetchedProducts : featuredProducts;
   const { images: siteImages } = useSiteImages();
   const [publishedArticles, setPublishedArticles] = useState([]);
   const [heroIndex, setHeroIndex] = useState(0);

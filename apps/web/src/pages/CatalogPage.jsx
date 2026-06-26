@@ -6,12 +6,14 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
+import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 const CatalogPage = () => {
-  const allProducts = useCatalogProducts();
+  const fetchedProducts = useCatalogProducts();
+  const allProducts = fetchedProducts.length ? fetchedProducts : featuredProducts;
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('family') || '';
   const [activeCategory, setActiveCategory] = useState(initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All');
