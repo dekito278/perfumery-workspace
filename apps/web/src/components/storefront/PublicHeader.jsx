@@ -26,7 +26,6 @@ const megaMenuColumns = [
     links: [
       { label: 'Raw Material Archive', to: '/materials' },
       { label: 'Journal', to: '/journal' },
-      { label: 'Scent Guide', to: '/journal' },
     ],
   },
 ];
@@ -140,7 +139,7 @@ const PublicHeader = () => {
               <div key={col.title} className="editorial-mega-menu__column">
                 <span className="editorial-mega-menu__heading">{col.title}</span>
                 {col.links.map((link) => (
-                  <Link key={link.to} to={link.to} role="menuitem" onClick={() => setMegaOpen(false)}>
+                  <Link key={`${col.title}-${link.label}`} to={link.to} role="menuitem" onClick={() => setMegaOpen(false)}>
                     {link.label}
                   </Link>
                 ))}
