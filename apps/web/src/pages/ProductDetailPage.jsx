@@ -74,7 +74,7 @@ const ProductDetailPage = () => {
         <title>{product.name} - Solivagant</title>
         <meta name="description" content={`${product.name}: ${product.notes}. ${product.description}`} />
       </Helmet>
-      <main className="min-h-screen bg-[#fffaf0] text-[#1b1a16]">
+      <main className="min-h-screen bg-editorial-paper text-editorial-charcoal">
         <StorefrontHeader
           backTo={previewMode ? previewBackTo : '/catalog'}
           backLabel={previewMode ? 'Kembali ke editor' : 'Katalog'}
@@ -84,7 +84,7 @@ const ProductDetailPage = () => {
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
           <ProductGallery product={product} visualClassName="min-h-[520px] rounded-[28px]" priority />
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#1b1a16]/15 bg-white px-3 py-1 text-xs font-bold uppercase text-[#1b1a16]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-editorial-charcoal/15 bg-white px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
               <Sparkles className="h-4 w-4" />
               {product.category}
             </div>
@@ -130,7 +130,7 @@ const ProductDetailPage = () => {
                       type="button"
                       onClick={() => setSelectedVariantId(variantKey)}
                       disabled={variantStock <= 0}
-                      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${active ? 'border-[#1b1a16] bg-[#f7f1e5] text-[#1b1a16] shadow-sm' : 'bg-white hover:border-[#1b1a16]/40'} disabled:cursor-not-allowed disabled:bg-[#fffaf0] disabled:text-muted-foreground disabled:opacity-70`}
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${active ? 'border-editorial-charcoal bg-editorial-ivory text-editorial-charcoal shadow-sm' : 'bg-white hover:border-editorial-charcoal/40'} disabled:cursor-not-allowed disabled:bg-editorial-paper disabled:text-muted-foreground disabled:opacity-70`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span>{variant.size}</span>
@@ -138,7 +138,7 @@ const ProductDetailPage = () => {
                       </div>
                       <div className="mt-2 flex items-center justify-between gap-2 text-xs font-semibold text-muted-foreground">
                         <span>{variantStock > 0 ? `${variantStock} tersisa` : 'Habis'}</span>
-                        {active ? <CheckCircle2 className="h-4 w-4 text-[#1b1a16]" /> : null}
+                        {active ? <CheckCircle2 className="h-4 w-4 text-editorial-charcoal" /> : null}
                       </div>
                     </button>
                   );
@@ -155,10 +155,10 @@ const ProductDetailPage = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-8 rounded-2xl border border-[#1b1a16]/15 bg-white p-4 shadow-sm">
+            <div className="mt-8 rounded-2xl border border-editorial-charcoal/15 bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#f7f1e5] text-[#1b1a16]">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
                     <PackageCheck className="h-5 w-5" />
                   </span>
                   <div>
@@ -170,10 +170,10 @@ const ProductDetailPage = () => {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link to="/cart" className="inline-flex h-12 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-[#1b1a16]">
+                  <Link to="/cart" className="inline-flex h-12 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
                     Lihat keranjang
                   </Link>
-                  <button type="button" onClick={addSelectedVariant} disabled={soldOut || previewMode} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#1b1a16] px-5 text-sm font-bold text-[#f7f1e5] disabled:opacity-50">
+                  <button type="button" onClick={addSelectedVariant} disabled={soldOut || previewMode} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-ivory disabled:opacity-50">
                     {previewMode ? 'Preview saja' : 'Masukkan keranjang'}
                     <ShoppingBag className="h-4 w-4" />
                   </button>

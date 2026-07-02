@@ -436,7 +436,7 @@ const ShipmentsPage = () => {
             <div className="grid gap-3 border-t pt-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white px-4 py-3">
                 <div className="text-xs font-bold uppercase text-muted-foreground">Siap proses</div>
-                <div className="mt-1 text-2xl font-bold text-[#1b1a16]">{readyToShipCount}</div>
+                <div className="mt-1 text-2xl font-bold text-editorial-charcoal">{readyToShipCount}</div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3">
                 <div className="text-xs font-bold uppercase text-muted-foreground">Label/resi</div>
@@ -444,7 +444,7 @@ const ShipmentsPage = () => {
               </div>
               <div className="rounded-2xl bg-white px-4 py-3">
                 <div className="text-xs font-bold uppercase text-muted-foreground">Butuh resi</div>
-                <div className="mt-1 text-2xl font-bold text-[#1b1a16]">{missingResiCount}</div>
+                <div className="mt-1 text-2xl font-bold text-editorial-charcoal">{missingResiCount}</div>
               </div>
             </div>
 

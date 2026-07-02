@@ -7,7 +7,7 @@ const toneClasses = {
   warning: 'border-amber-200 bg-amber-50 text-amber-800',
   danger: 'border-rose-200 bg-rose-50 text-rose-700',
   info: 'border-sky-200 bg-sky-50 text-sky-700',
-  primary: 'border-[#1b1a16]/20 bg-[#f7f1e5] text-[#1b1a16]',
+  primary: 'border-editorial-charcoal/20 bg-editorial-ivory text-editorial-charcoal',
 };
 
 export const getPaymentStatusTone = (status) => {

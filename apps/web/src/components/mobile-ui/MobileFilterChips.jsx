@@ -14,7 +14,7 @@ const MobileFilterChips = ({ options = [], value, onChange, className }) => (
             'mobile-interactive mobile-pressable h-8 shrink-0 whitespace-nowrap rounded-full border px-3 text-[11px] font-bold transition',
             active
               ? 'mobile-selected border-[#b08b4f] bg-[#b08b4f] text-white shadow-lg shadow-[#b08b4f]/20'
-              : 'border-[#e5decf] bg-white text-[#6f695f]'
+              : 'border-editorial-stone bg-white text-editorial-muted'
           )}
         >
           {option.label}

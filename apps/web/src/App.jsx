@@ -192,9 +192,9 @@ const isStorefrontRoute = (pathname) => (
 );
 
 const HomeRouteFallback = () => (
-  <main className="min-h-screen bg-[#f7f1e5] text-[#1b1a16]">
+  <main className="min-h-screen bg-editorial-ivory text-editorial-charcoal">
     <StorefrontHeader
-      className="border-[#1b1a16]/10 bg-[#f7f1e5] text-[#1b1a16]"
+      className="border-editorial-charcoal/10 bg-editorial-ivory text-editorial-charcoal"
       actions={[
         { to: '/catalog', label: 'Collection' },
         { to: '/bespoke', label: 'Bespoke' },
@@ -204,10 +204,10 @@ const HomeRouteFallback = () => (
     />
     <section className="mx-auto grid min-h-[68vh] max-w-6xl content-center px-6 py-16">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-[#b08b4f]">ARTISAN PERFUMERY ATELIER</p>
-      <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-[#1b1a16]">
+      <h1 className="mt-4 max-w-3xl font-serif text-6xl font-medium leading-none text-editorial-charcoal">
         Fragrance as a memory object.
       </h1>
-      <p className="mt-6 max-w-2xl text-lg leading-8 text-[#6f695f]">
+      <p className="mt-6 max-w-2xl text-lg leading-8 text-editorial-muted">
         SOLIVAGANT is an artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual.
       </p>
     </section>
@@ -256,22 +256,22 @@ const RouteFallback = () => {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#fffaf0] px-4 text-center">
-      <div className="w-full max-w-xl rounded-[24px] border border-[#1b1a16]/10 bg-white/85 p-5 text-left shadow-sm">
+    <div className="grid min-h-screen place-items-center bg-editorial-paper px-4 text-center">
+      <div className="w-full max-w-xl rounded-[24px] border border-editorial-charcoal/10 bg-white/85 p-5 text-left shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1b1a16]/15 border-t-[#1b1a16]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-editorial-charcoal/15 border-t-editorial-charcoal" />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">App initialization</p>
-            <h1 className="mt-1 text-xl font-bold text-[#1b1a16]">Loading workspace...</h1>
+            <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">Loading workspace...</h1>
           </div>
         </div>
         <div className="mt-5 space-y-3" aria-hidden="true">
           <div className="h-3 w-2/3 animate-pulse rounded-full bg-[#dce4d5]" />
-          <div className="h-3 w-full animate-pulse rounded-full bg-[#f7f1e5]" />
+          <div className="h-3 w-full animate-pulse rounded-full bg-editorial-ivory" />
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="h-20 animate-pulse rounded-2xl bg-[#f7f1e5]" />
-            <div className="h-20 animate-pulse rounded-2xl bg-[#f7f1e5]" />
-            <div className="h-20 animate-pulse rounded-2xl bg-[#f7f1e5]" />
+            <div className="h-20 animate-pulse rounded-2xl bg-editorial-ivory" />
+            <div className="h-20 animate-pulse rounded-2xl bg-editorial-ivory" />
+            <div className="h-20 animate-pulse rounded-2xl bg-editorial-ivory" />
           </div>
         </div>
       </div>

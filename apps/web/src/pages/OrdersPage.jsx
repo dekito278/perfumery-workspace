@@ -93,7 +93,7 @@ const OrderVoucherSummary = ({ order }) => {
   const shippingFee = getOrderShippingFee(order);
 
   return (
-    <div className="mt-2 rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] px-3 py-2 text-xs font-bold text-[#1b1a16]">
+    <div className="mt-2 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory px-3 py-2 text-xs font-bold text-editorial-charcoal">
       <div className="flex justify-between gap-3"><span>Subtotal produk</span><span>{formatTotal(getOrderProductsSubtotal(order))}</span></div>
       <div className="mt-1 flex justify-between gap-3"><span>Voucher {voucherSnapshot.code}</span><span>-{formatTotal(voucherSnapshot.discountAmount)}</span></div>
       <div className="mt-1 flex justify-between gap-3 text-muted-foreground"><span>Subtotal setelah voucher</span><span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span></div>
@@ -444,7 +444,7 @@ const OrdersPage = () => {
               />
             </div>
           ) : null}
-          <div className="mt-4 grid gap-3 rounded-2xl border border-[#1b1a16]/10 bg-[#fbfaf7] p-4 lg:grid-cols-[1fr_auto]">
+          <div className="mt-4 grid gap-3 rounded-2xl border border-editorial-charcoal/10 bg-[#fbfaf7] p-4 lg:grid-cols-[1fr_auto]">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -468,7 +468,7 @@ const OrdersPage = () => {
               ))}
             </div>
           </div>
-          <div className="mt-4 grid gap-3 rounded-2xl border border-[#1b1a16]/10 bg-[#f7f1e5] p-4 lg:grid-cols-[auto_1fr] lg:items-center">
+          <div className="mt-4 grid gap-3 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-4 lg:grid-cols-[auto_1fr] lg:items-center">
             <label className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-sm font-bold">
               <Checkbox checked={allVisibleSelected} onCheckedChange={(checked) => toggleVisibleSelection(Boolean(checked))} />
               Pilih tampilan
@@ -520,8 +520,8 @@ const OrdersPage = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-bold">{order.orderNumber}</h3>
                       <Checkbox checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
-                      {bespoke ? <StatusChip className="border-[#1b1a16]/20 bg-[#f7f1e5] text-[#1b1a16]">Bespoke</StatusChip> : null}
-                      {bespoke ? <StatusChip className="border-[#1b1a16]/10 bg-[#fffaf0] text-[#1b1a16]">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
+                      {bespoke ? <StatusChip className="border-editorial-charcoal/20 bg-editorial-ivory text-editorial-charcoal">Bespoke</StatusChip> : null}
+                      {bespoke ? <StatusChip className="border-editorial-charcoal/10 bg-editorial-paper text-editorial-charcoal">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
                       <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
                       <StatusChip icon={CreditCard} tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
                       <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
@@ -541,7 +541,7 @@ const OrdersPage = () => {
                         <div key={`${order.id}-${item.slug}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-sm font-semibold">
                           <span className="min-w-0">
                             <span className="block truncate">{item.name} x{item.quantity}</span>
-                            {hasDiscount ? <span className="mt-0.5 block text-[11px] font-bold text-[#1b1a16]">Diskon voucher -{formatTotal(line.discount)}</span> : null}
+                            {hasDiscount ? <span className="mt-0.5 block text-[11px] font-bold text-editorial-charcoal">Diskon voucher -{formatTotal(line.discount)}</span> : null}
                           </span>
                           <span className="shrink-0 text-right text-amber-700">
                             {hasDiscount ? (
@@ -557,15 +557,15 @@ const OrdersPage = () => {
                       <OrderVoucherSummary order={order} />
                     </div>
                     {bespoke ? (
-                      <div className="mt-3 rounded-2xl border border-[#1b1a16]/10 bg-white p-3">
+                      <div className="mt-3 rounded-2xl border border-editorial-charcoal/10 bg-white p-3">
                         <div className="grid gap-2 sm:grid-cols-3">
-                          <div className="rounded-2xl bg-[#f7f1e5] px-3 py-2">
-                            <span className="block text-[10px] font-bold uppercase text-[#1b1a16]">Botol</span>
-                            <span className="mt-1 block truncate text-xs font-bold text-[#1b1a16]">{bespokeSummary?.bottle}</span>
+                          <div className="rounded-2xl bg-editorial-ivory px-3 py-2">
+                            <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">Botol</span>
+                            <span className="mt-1 block truncate text-xs font-bold text-editorial-charcoal">{bespokeSummary?.bottle}</span>
                           </div>
                           <div className="rounded-2xl bg-[#f8f7f4] px-3 py-2 sm:col-span-2">
-                            <span className="block text-[10px] font-bold uppercase text-[#1b1a16]">Cap / label</span>
-                            <span className="mt-1 block truncate text-xs font-bold text-[#1b1a16]">{bespokeSummary?.design}</span>
+                            <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">Cap / label</span>
+                            <span className="mt-1 block truncate text-xs font-bold text-editorial-charcoal">{bespokeSummary?.design}</span>
                           </div>
                         </div>
                         {bespokeSummary?.aroma ? (
@@ -574,13 +574,13 @@ const OrdersPage = () => {
                           </p>
                         ) : null}
                         <details className="mt-2 group">
-                          <summary className="cursor-pointer select-none text-xs font-bold text-[#1b1a16]">
+                          <summary className="cursor-pointer select-none text-xs font-bold text-editorial-charcoal">
                             Buka detail brief
                           </summary>
-                          <div className="mt-3 grid gap-2 border-t border-[#1b1a16]/10 pt-3 sm:grid-cols-2">
+                          <div className="mt-3 grid gap-2 border-t border-editorial-charcoal/10 pt-3 sm:grid-cols-2">
                             {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                               <p key={label} className="text-xs font-semibold text-muted-foreground">
-                                <span className="block text-[10px] font-bold uppercase text-[#1b1a16]">{label}</span>
+                                <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
                                 {value}
                               </p>
                             ))}
@@ -590,17 +590,17 @@ const OrdersPage = () => {
                     ) : null}
                     {order.notes ? <p className="mt-3 text-sm font-semibold text-muted-foreground">Notes: {order.notes}</p> : null}
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#1b1a16]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-editorial-charcoal">
                         {order.paymentProvider || 'manual'} / {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                       </span>
                       {order.paymentReference ? <span className="rounded-full bg-white px-3 py-1 text-muted-foreground">Ref {order.paymentReference}</span> : null}
                       {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
                         <>
-                          <a href={`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex items-center gap-1 rounded-full bg-[#1b1a16] px-3 py-1 text-[#f7f1e5]">
+                          <a href={`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex items-center gap-1 rounded-full bg-editorial-charcoal px-3 py-1 text-editorial-ivory">
                             <CreditCard className="h-3.5 w-3.5" />
                             Lanjut bayar
                           </a>
-                          <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#1b1a16]">
+                          <a href={order.paymentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-editorial-charcoal">
                             <ExternalLink className="h-3.5 w-3.5" />
                             DOKU URL
                           </a>
@@ -640,7 +640,7 @@ const OrdersPage = () => {
                           type="button"
                           onClick={() => syncDokuStatus(order)}
                           disabled={syncingOrder === order.orderNumber}
-                          className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[#1b1a16] disabled:opacity-60"
+                          className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-editorial-charcoal disabled:opacity-60"
                         >
                           {syncingOrder === order.orderNumber ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                           Sync DOKU
@@ -652,7 +652,7 @@ const OrdersPage = () => {
                     <div className="rounded-2xl border bg-white p-3 text-right">
                       <div className="text-xs font-bold uppercase text-muted-foreground">{order.quantity} items</div>
                       <div className="text-xl font-bold">{formatTotal(order.subtotal)}</div>
-                      {voucherSnapshot ? <div className="mt-1 text-[11px] font-bold text-[#1b1a16]">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
+                      {voucherSnapshot ? <div className="mt-1 text-[11px] font-bold text-editorial-charcoal">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
                     </div>
                     <div className="rounded-2xl border bg-white p-3">
                       <div className="text-xs font-bold uppercase text-muted-foreground">Admin pembayaran</div>
