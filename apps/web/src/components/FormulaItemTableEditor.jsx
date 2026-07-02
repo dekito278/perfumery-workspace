@@ -337,7 +337,7 @@ const FormulaItemTableEditor = ({
                     : index === activeRowIndex
                     ? 'bg-[#fff6e6]'
                     : index === 0
-                      ? 'bg-[#fffaf0]'
+                      ? 'bg-editorial-paper'
                       : 'bg-white'
                 } cursor-pointer`}
               >
