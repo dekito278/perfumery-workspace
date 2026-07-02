@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, ChevronDown, X } from 'lucide-react';
+import { ShoppingBag, ChevronDown, X, Menu } from 'lucide-react';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -25,6 +25,7 @@ const megaMenuColumns = [
     title: 'Resources',
     links: [
       { label: 'Raw Material Archive', to: '/materials' },
+      { label: 'Journal', to: '/journal' },
       { label: 'Scent Guide', to: '/journal' },
     ],
   },
@@ -115,10 +116,22 @@ const PublicHeader = () => {
         <Link to="/journal">Journal</Link>
       </nav>
 
-      <Link to="/cart" className="editorial-cart-button" aria-label={`Cart, ${summary.quantity} item`}>
-        <ShoppingBag className="h-4 w-4" />
-        {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
-      </Link>
+      <div className="editorial-header__actions">
+        <button
+          type="button"
+          className="editorial-nav__hamburger"
+          onClick={toggleMega}
+          aria-expanded={megaOpen}
+          aria-haspopup="true"
+          aria-label={megaOpen ? 'Close menu' : 'Open menu'}
+        >
+          {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+        <Link to="/cart" className="editorial-cart-button" aria-label={`Cart, ${summary.quantity} item`}>
+          <ShoppingBag className="h-4 w-4" />
+          {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
+        </Link>
+      </div>
 
       {megaOpen && (
         <div className="editorial-mega-menu" role="menu">

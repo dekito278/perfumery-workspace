@@ -360,6 +360,31 @@
   transform: rotate(180deg);
 }
 
+.editorial-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+}
+
+/* Hamburger is desktop-hidden; shown below 900px where the inline nav collapses. */
+.editorial-nav__hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--editorial-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--editorial-charcoal);
+  cursor: pointer;
+}
+
+.editorial-nav__hamburger:hover {
+  border-color: var(--editorial-charcoal);
+}
+
 /* Mega-menu dropdown */
 .editorial-mega-menu {
   position: absolute;
@@ -5643,6 +5668,15 @@
 
   .editorial-nav {
     display: none;
+  }
+
+  .editorial-nav__hamburger {
+    display: inline-flex;
+  }
+
+  .editorial-mega-menu__inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 
   .editorial-hero,

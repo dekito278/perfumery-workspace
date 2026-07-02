@@ -17,6 +17,18 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Editorial storefront palette (mirrors --editorial-* tokens in styles/storefront.css).
+        // Registered so pages can use `text-editorial-charcoal` etc. instead of inline
+        // arbitrary hexes like `text-[#1b1a16]`; migrate the ~1500 inline hexes to these.
+        editorial: {
+          ivory: "#f7f1e5",
+          paper: "#fffaf0",
+          stone: "#e5decf",
+          charcoal: "#1b1a16",
+          muted: "#6f695f",
+          brass: "#b08b4f",
+          "brass-text": "#8a6a35",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

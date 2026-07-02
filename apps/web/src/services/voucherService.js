@@ -570,37 +570,6 @@ export const applyVoucherToSubtotalAsync = async ({ code, voucher, subtotal = 0,
   };
 };
 
-export const incrementVoucherUsage = async (idOrCode, amount = 1) => {
-  const targetCode = normalizeVoucherCode(idOrCode);
-  const usageAmount = Math.max(toAmount(amount), 1);
-  const voucher = await findVoucherByCodeAsync(targetCode || idOrCode);
-  if (!voucher) throw new Error('Voucher tidak ditemukan');
-  const nextUsageCount = toAmount(voucher.usageCount) + usageAmount;
-  if (voucher.usageLimitTotal > 0 && nextUsageCount > voucher.usageLimitTotal) {
-    throw new Error('Kuota voucher sudah habis');
-  }
-
-  const { data, error } = await supabase
-    .from(VOUCHER_TABLE)
-    .update({ usage_count: nextUsageCount })
-    .eq('id', voucher.id)
-    .select('*')
-    .single();
-
-  if (error) {
-    throw new Error(error.message || 'Gagal memperbarui pemakaian voucher');
-  }
-
-  const updatedVoucher = normalizeVoucher(data);
-  cacheVouchers(getCachedVouchers().map((item) => (
-    item.id === updatedVoucher.id || normalizeVoucherCode(item.code) === updatedVoucher.code
-      ? updatedVoucher
-      : item
-  )));
-  dispatchVoucherUpdated();
-  return updatedVoucher;
-};
-
 export const getVoucherUsageRecords = async () => {
   const { data, error } = await supabase
     .from(VOUCHER_USAGE_TABLE)
