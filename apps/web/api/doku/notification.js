@@ -150,9 +150,27 @@ const restoreInventoryForOrder = async (order, reason) => {
   return response.json();
 };
 
-const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => {
+const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidAmount = 0 }) => {
   const { restUrl, headers } = getSupabaseRestConfig();
   const currentOrder = await getOrderByInvoice(invoiceNumber);
+
+  const incomingStatus = statusPatch.paymentStatus;
+  const isTerminalCancel = ['failed', 'expired', 'refunded', 'cancelled'].includes(incomingStatus);
+
+  // Terminal-state guard: once an order is paid, a late or duplicate failure/expiry
+  // webhook must not flip it back to cancelled or release its stock.
+  if (currentOrder?.payment_status === 'paid' && isTerminalCancel) {
+    return { skipped: 'already_paid' };
+  }
+
+  // Amount verification: never mark an order paid for less than its stored total.
+  if (incomingStatus === 'paid') {
+    const expected = Math.round(Number(currentOrder?.subtotal || 0));
+    const paid = Math.round(Number(paidAmount || 0));
+    if (expected > 0 && paid > 0 && paid < expected) {
+      throw new Error(`DOKU amount mismatch for ${invoiceNumber}: paid ${paid} < expected ${expected}`);
+    }
+  }
 
   const endpoint = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}`;
   const response = await fetch(endpoint, {
@@ -173,11 +191,13 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => 
     throw new Error(`Failed to update order ${invoiceNumber}: ${await response.text()}`);
   }
 
-  if (statusPatch.paymentStatus === 'paid') {
+  // Only deduct once — guard against a second 'paid' webhook or an order whose
+  // inventory was already deducted at creation.
+  if (incomingStatus === 'paid' && !currentOrder?.inventory_deducted) {
     await deductInventoryForPaidOrder(currentOrder);
   }
 
-  if (['failed', 'expired', 'refunded'].includes(statusPatch.paymentStatus) && currentOrder?.inventory_deducted) {
+  if (isTerminalCancel && currentOrder?.inventory_deducted) {
     await restoreInventoryForOrder(currentOrder, `DOKU ${statusPatch.paymentStatus} stock released`);
   }
 };
@@ -322,6 +342,7 @@ export default async function handler(request, response) {
       invoiceNumber,
       statusPatch,
       paymentReference: payload?.transaction?.original_request_id || requestId,
+      paidAmount: Number(payload?.order?.amount || payload?.transaction?.amount || 0),
     });
 
     await insertPaymentLog({

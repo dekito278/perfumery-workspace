@@ -27,7 +27,8 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/studio\/customers$/, '/mobile/studio/customers'],
   [/^\/studio\/shipments$/, '/mobile/studio/fulfillment'],
   [/^\/dashboard$/, '/mobile/studio'],
-[/^\/journal$/, '/mobile/journal'],
+  // Public journal index → public mobile articles tab (NOT the protected studio journal).
+  [/^\/journal$/, '/mobile/articles'],
   [/^\/journal\/new$/, '/mobile/journal/new'],
   [/^\/journal\/([^/]+)\/edit$/, '/mobile/journal/$1/edit'],
   [/^\/journal\/([^/]+)$/, '/mobile/journal/$1'],

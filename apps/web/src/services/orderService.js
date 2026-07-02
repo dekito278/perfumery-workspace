@@ -69,7 +69,11 @@ const readOrders = () => {
 
 const writeOrders = (orders) => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  try {
+    window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  } catch (error) {
+    console.warn('Failed to persist orders locally:', error.message || error);
+  }
   window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
 };
 
@@ -86,7 +90,11 @@ const readLocalAuditLogs = () => {
 
 const writeLocalAuditLogs = (logs) => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(ORDER_AUDIT_LOGS_STORAGE_KEY, JSON.stringify(logs));
+  try {
+    window.localStorage.setItem(ORDER_AUDIT_LOGS_STORAGE_KEY, JSON.stringify(logs));
+  } catch (error) {
+    console.warn('Failed to persist order audit logs locally:', error.message || error);
+  }
   window.dispatchEvent(new CustomEvent('dekito:order-audit-updated'));
 };
 
@@ -1236,10 +1244,11 @@ export const createOrder = async (orderData) => {
     });
   } catch (error) {
     console.warn('Saving storefront order locally because database save failed:', error.message || error);
+    // Keep a local draft for recovery, but NEVER report a customer checkout as
+    // successful when the order never reached the database — otherwise the buyer
+    // can transfer money (manual/DOKU) for an order the merchant never sees.
     order = createLocalOrder(payload);
-    if (payload.payment_provider === 'doku') {
-      throw new Error(`Order ${order.orderNumber} tersimpan sebagai local draft karena database gagal. DOKU checkout diblokir sampai order berhasil sync ke Supabase.`);
-    }
+    throw new Error(`Order ${order.orderNumber} gagal tersimpan ke server. Coba lagi sebentar dan jangan lakukan pembayaran sampai order berhasil dibuat.`);
   }
 
   const inventoryEvents = await deductInventoryForOrder(order);

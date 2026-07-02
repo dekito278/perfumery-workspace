@@ -11,13 +11,18 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { buildWhatsAppCheckoutUrl } from '@/services/cartService.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 
+const NEWSLETTER_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const moodCategories = [
-  { name: 'Quiet & Minimal', family: 'Fresh', description: 'Clean citrus, soft musk, and airy texture for effortless daily wear.', siteImageKey: 'mood-fresh' },
-  { name: 'Warm & Nostalgic', family: 'Gourmand', description: 'Vanilla, tonka, and roasted warmth — comfort distilled into scent.', siteImageKey: 'mood-gourmand' },
-  { name: 'Dark & Moody', family: 'Woody', description: 'Cedar, vetiver, and mineral depth for structured presence.', siteImageKey: 'mood-woody' },
-  { name: 'Soft & Romantic', family: 'Floral', description: 'Rose, jasmine, and powdery musk — tender without being sweet.', siteImageKey: 'mood-floral' },
+  // `family` is the display label; `filter` is the real catalog category used in the link
+  // (the catalog has no "Fresh" category — those scents live under "Aquatic").
+  { name: 'Quiet & Minimal', family: 'Fresh', filter: 'aquatic', description: 'Clean citrus, soft musk, and airy texture for effortless daily wear.', siteImageKey: 'mood-fresh' },
+  { name: 'Warm & Nostalgic', family: 'Gourmand', filter: 'gourmand', description: 'Vanilla, tonka, and roasted warmth — comfort distilled into scent.', siteImageKey: 'mood-gourmand' },
+  { name: 'Dark & Moody', family: 'Woody', filter: 'woody', description: 'Cedar, vetiver, and mineral depth for structured presence.', siteImageKey: 'mood-woody' },
+  { name: 'Soft & Romantic', family: 'Floral', filter: 'floral', description: 'Rose, jasmine, and powdery musk — tender without being sweet.', siteImageKey: 'mood-floral' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -31,6 +36,22 @@ const HomePage = () => {
   const [heroIndex, setHeroIndex] = useState(0);
   const [activeMood, setActiveMood] = useState(0);
   const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterState, setNewsletterState] = useState({ status: 'idle', message: '' });
+
+  const handleNewsletterSubmit = useCallback((e) => {
+    e.preventDefault();
+    const trimmed = newsletterEmail.trim();
+    if (!NEWSLETTER_EMAIL_PATTERN.test(trimmed)) {
+      setNewsletterState({ status: 'error', message: 'Masukkan alamat email yang valid.' });
+      return;
+    }
+    const message = `Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: ${trimmed}`;
+    if (typeof window !== 'undefined') {
+      window.open(buildWhatsAppCheckoutUrl(message), '_blank', 'noopener,noreferrer');
+    }
+    setNewsletterEmail('');
+    setNewsletterState({ status: 'success', message: 'Terima kasih — lanjutkan di WhatsApp untuk konfirmasi langganan.' });
+  }, [newsletterEmail]);
   const revealRef = useScrollReveal();
   const heroTimerRef = useRef(null);
   const carouselRef = useRef(null);
@@ -231,7 +252,7 @@ const HomePage = () => {
               <div className="home-moods__panel-body">
                 <h3>{moodCategories[activeMood].name}</h3>
                 <p>{moodCategories[activeMood].description}</p>
-                <Link to={`/catalog?family=${moodCategories[activeMood].family.toLowerCase()}`} className="home-moods__panel-link">
+                <Link to={`/catalog?family=${moodCategories[activeMood].filter}`} className="home-moods__panel-link">
                   Shop {moodCategories[activeMood].name} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -269,17 +290,23 @@ const HomePage = () => {
             <p className="editorial-eyebrow">STAY CLOSE</p>
             <h2>Notes from the atelier, delivered quietly.</h2>
             <p className="home-newsletter__sub">New compositions, journal entries, and invitations to bespoke sessions — no noise, only signal.</p>
-            <form className="home-newsletter__form" onSubmit={(e) => { e.preventDefault(); setNewsletterEmail(''); }}>
+            <form className="home-newsletter__form" onSubmit={handleNewsletterSubmit} noValidate>
               <input
                 type="email"
                 placeholder="Your email address"
                 value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
+                onChange={(e) => { setNewsletterEmail(e.target.value); if (newsletterState.status === 'error') setNewsletterState({ status: 'idle', message: '' }); }}
                 className="home-newsletter__input"
+                aria-invalid={newsletterState.status === 'error' ? 'true' : undefined}
                 required
               />
               <button type="submit" className="home-newsletter__btn">Subscribe</button>
             </form>
+            {newsletterState.message ? (
+              <p className={`home-newsletter__feedback home-newsletter__feedback--${newsletterState.status}`} role={newsletterState.status === 'error' ? 'alert' : 'status'}>
+                {newsletterState.message}
+              </p>
+            ) : null}
           </div>
         </section>
 

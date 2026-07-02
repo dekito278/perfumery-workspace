@@ -40,17 +40,28 @@ const fulfillmentFilterLabels = {
   archive: 'Arsip',
 };
 
+// Signature of the server-side shipment fields, used to detect when an order was
+// updated elsewhere (e.g. bulk update + reload) so a stale draft can be re-seeded.
+const shipmentServerSignature = (order = {}) => [
+  order.shipmentStatus || '',
+  order.courierName || '',
+  order.trackingNumber || '',
+  order.trackingUrl || '',
+  order.packingNotes || '',
+].join('|');
+
 const buildShipmentDraft = (order = {}) => ({
   shipmentStatus: order.shipmentStatus || 'not_ready',
   courierName: order.courierName || '',
   trackingNumber: order.trackingNumber || '',
   trackingUrl: order.trackingUrl || '',
   packingNotes: order.packingNotes || '',
+  _basis: shipmentServerSignature(order),
 });
 
 const ShipmentsPage = () => {
   const navigate = useNavigate();
-  const { orders, summary, loading, reload, updatePaymentStatus } = useOrders();
+  const { orders, summary, loading, error: loadError, reload, updatePaymentStatus } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingOrder, setSavingOrder] = useState('');
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -112,7 +123,11 @@ const ShipmentsPage = () => {
       const nextDrafts = { ...current };
       shipmentOrders.forEach((order) => {
         const key = order.id || order.orderNumber;
-        if (!nextDrafts[key]) {
+        const existing = nextDrafts[key];
+        // Re-seed when there's no draft yet, or when the server order's shipment data
+        // changed since the draft was built — otherwise saving would push a stale
+        // shipmentStatus back over the fresh server state.
+        if (!existing || existing._basis !== shipmentServerSignature(order)) {
           nextDrafts[key] = buildShipmentDraft(order);
         }
       });
@@ -123,6 +138,12 @@ const ShipmentsPage = () => {
   useEffect(() => {
     setSelectedOrders((current) => current.filter((key) => shipmentOrders.some((order) => (order.id || order.orderNumber) === key)));
   }, [shipmentOrders]);
+
+  useEffect(() => {
+    if (loadError) {
+      toast.error(typeof loadError === 'string' ? loadError : 'Gagal memuat data pengiriman');
+    }
+  }, [loadError]);
 
   const updateDraft = (order, field, value) => {
     const key = order.id || order.orderNumber;
@@ -225,22 +246,30 @@ const ShipmentsPage = () => {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
-    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    await exportShippingLabelPdf(order);
-    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
-      const key = order.id || order.orderNumber;
-      const currentDraft = drafts[key] || buildShipmentDraft(order);
-      await updateOrderShipment(key, {
-        ...currentDraft,
-        shipmentStatus: 'packing',
-        packingNotes: currentDraft.packingNotes || 'Resi PDF dicetak dari Desktop Fulfillment.',
-      });
-      await reload();
-      setFulfillmentFilter('label_resi');
-      toast.success(`${order.orderNumber} resi PDF siap. Order masuk Label/resi.`);
-      return;
+    const key = order.id || order.orderNumber;
+    if (savingOrder === key) return; // guard against double-click
+    setSavingOrder(key);
+    try {
+      const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
+      await exportShippingLabelPdf(order);
+      if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+        const currentDraft = drafts[key] || buildShipmentDraft(order);
+        await updateOrderShipment(key, {
+          ...currentDraft,
+          shipmentStatus: 'packing',
+          packingNotes: currentDraft.packingNotes || 'Resi PDF dicetak dari Desktop Fulfillment.',
+        });
+        await reload();
+        setFulfillmentFilter('label_resi');
+        toast.success(`${order.orderNumber} resi PDF siap. Order masuk Label/resi.`);
+        return;
+      }
+      toast.success(`${order.orderNumber} resi PDF siap`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal membuat resi PDF');
+    } finally {
+      setSavingOrder('');
     }
-    toast.success(`${order.orderNumber} resi PDF siap`);
   };
 
   const copyPublicTrackingLink = async (order) => {
@@ -257,25 +286,33 @@ const ShipmentsPage = () => {
   };
 
   const exportSelectedShippingLabels = async () => {
-    const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
-    const printedCount = await exportShippingLabelsPdf(selectedShipmentOrders);
-    if (!printedCount) {
-      toast.error('Pilih order paid untuk cetak bulk resi');
-      return;
+    if (bulkSaving) return; // guard against double-click
+    setBulkSaving(true);
+    try {
+      const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
+      const printedCount = await exportShippingLabelsPdf(selectedShipmentOrders);
+      if (!printedCount) {
+        toast.error('Pilih order paid untuk cetak bulk resi');
+        return;
+      }
+      await Promise.all(selectedPrintableOrders.map((order) => {
+        if (hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)) return Promise.resolve();
+        const key = order.id || order.orderNumber;
+        const currentDraft = drafts[key] || buildShipmentDraft(order);
+        return updateOrderShipment(key, {
+          ...currentDraft,
+          shipmentStatus: 'packing',
+          packingNotes: currentDraft.packingNotes || 'Resi PDF dicetak dari Desktop Fulfillment.',
+        });
+      }));
+      await reload();
+      setFulfillmentFilter('label_resi');
+      toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal membuat bulk resi PDF');
+    } finally {
+      setBulkSaving(false);
     }
-    await Promise.all(selectedPrintableOrders.map((order) => {
-      if (hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)) return Promise.resolve();
-      const key = order.id || order.orderNumber;
-      const currentDraft = drafts[key] || buildShipmentDraft(order);
-      return updateOrderShipment(key, {
-        ...currentDraft,
-        shipmentStatus: 'packing',
-        packingNotes: currentDraft.packingNotes || 'Resi PDF dicetak dari Desktop Fulfillment.',
-      });
-    }));
-    await reload();
-    setFulfillmentFilter('label_resi');
-    toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 
   const bulkMarkPaid = async () => {
@@ -307,9 +344,16 @@ const ShipmentsPage = () => {
       toast.error('Tidak ada template WA untuk order terpilih');
       return;
     }
-    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    let copied = true;
+    try {
+      await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    } catch (error) {
+      copied = false;
+    }
     window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
-    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+    toast.success(copied
+      ? `${messages.length} pesan WA disalin, WA pertama dibuka`
+      : `WA pertama dibuka (${messages.length} pesan gagal disalin ke clipboard)`);
   };
 
   const bulkExportCsv = () => {

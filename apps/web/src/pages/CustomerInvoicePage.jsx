@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, ExternalLink, FileText, Loader2, Printer, Search, ShieldCheck, Truck } from 'lucide-react';
@@ -264,6 +264,8 @@ const CustomerInvoicePage = () => {
 
   const dashboardPath = `${isMobileRoute ? '/mobile/customer' : '/customer'}${customerCode ? `?code=${encodeURIComponent(customerCode)}` : ''}`;
 
+  const lastLoadedCodeRef = useRef('');
+
   const loadInvoice = useCallback(async (code) => {
     if (!code.trim()) {
       toast.error('Kode customer wajib diisi');
@@ -281,13 +283,18 @@ const CustomerInvoicePage = () => {
       return;
     }
 
+    // Avoid the setSearchParams() below re-triggering the effect into a duplicate fetch.
+    lastLoadedCodeRef.current = result.customer.customerCode;
     setPortal(result);
     setCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
   }, [setSearchParams]);
 
   useEffect(() => {
-    if (initialCode) loadInvoice(initialCode);
+    if (initialCode && lastLoadedCodeRef.current !== initialCode) {
+      lastLoadedCodeRef.current = initialCode;
+      loadInvoice(initialCode);
+    }
   }, [initialCode, loadInvoice]);
 
   const submitLookup = (event) => {

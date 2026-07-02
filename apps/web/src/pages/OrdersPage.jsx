@@ -129,6 +129,24 @@ const OrdersPage = () => {
     return orderFilterLabels[filter] ? filter : 'active';
   });
 
+  // Keep the active filter in sync with the URL so it survives refresh, is shareable,
+  // and responds to dashboard deep-links even when this page is already mounted.
+  useEffect(() => {
+    const urlFilter = new URLSearchParams(location.search).get('filter');
+    const nextFilter = orderFilterLabels[urlFilter] ? urlFilter : 'active';
+    setOrderFilter((prev) => (prev !== nextFilter ? nextFilter : prev));
+  }, [location.search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const current = params.get('filter') || '';
+    const desired = orderFilter === 'active' ? '' : orderFilter;
+    if (current === desired) return;
+    if (desired) params.set('filter', desired);
+    else params.delete('filter');
+    navigate({ search: params.toString() }, { replace: true });
+  }, [orderFilter, location.search, navigate]);
+
   const visibleOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
     const matchesFilter = (orderFilter === 'active' && isFrontQueueOrder(order))
@@ -181,8 +199,25 @@ const OrdersPage = () => {
   }, [orders]);
 
   const copyOrder = async (order) => {
-    await navigator.clipboard.writeText(order.checkoutDraft);
-    toast.success(`${order.orderNumber} disalin`);
+    const text = order.checkoutDraft || order.notes || order.orderNumber || '';
+    if (!text) {
+      toast.error('Tidak ada data order untuk disalin');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${order.orderNumber} disalin`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin order');
+    }
+  };
+
+  const handleDeleteOne = async (orderKey) => {
+    try {
+      await deleteOne(orderKey);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus order');
+    }
   };
 
   const copyPublicTrackingLink = async (order) => {
@@ -212,16 +247,24 @@ const OrdersPage = () => {
   };
 
   const updatePaymentAndNotify = async (order, paymentStatus) => {
-    await updatePaymentStatus(order.id || order.orderNumber, paymentStatus);
-    if (paymentStatus === 'paid') {
-      await prepareCustomerNotification({ ...order, paymentStatus: 'paid', status: 'paid' }, 'paid');
+    try {
+      await updatePaymentStatus(order.id || order.orderNumber, paymentStatus);
+      if (paymentStatus === 'paid') {
+        await prepareCustomerNotification({ ...order, paymentStatus: 'paid', status: 'paid' }, 'paid');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Gagal memperbarui status pembayaran');
     }
   };
 
   const updateStatusAndNotify = async (order, status) => {
-    await updateStatus(order.id || order.orderNumber, status);
-    if (['processing', 'shipped', 'completed'].includes(status)) {
-      await prepareCustomerNotification({ ...order, status }, status);
+    try {
+      await updateStatus(order.id || order.orderNumber, status);
+      if (['processing', 'shipped', 'completed'].includes(status)) {
+        await prepareCustomerNotification({ ...order, status }, status);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Gagal memperbarui status order');
     }
   };
 
@@ -632,7 +675,7 @@ const OrdersPage = () => {
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => exportShippingLabel(order)} disabled={!canExportShippingLabel(order)}><Download className="h-4 w-4" />Resi PDF</Button>
                       <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyPublicTrackingLink(order)}><ExternalLink className="h-4 w-4" />Tracking</Button>
-                      <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
+                      <Button type="button" variant="outline" className="rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => handleDeleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
                     </div>
                   </div>
                 </div>

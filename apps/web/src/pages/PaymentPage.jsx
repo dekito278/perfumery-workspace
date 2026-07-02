@@ -758,6 +758,12 @@ const PaymentPageContent = ({ isMobile }) => {
       }
 
       setSession(storedSession);
+    } catch (error) {
+      console.warn('Failed to restore payment session:', error.message || error);
+      // Fall back to any session we already had and tell the buyer, instead of
+      // silently showing an empty "no payment session" state.
+      setSession(storedSession);
+      toast.error('Gagal memuat sesi pembayaran. Coba muat ulang halaman.');
     } finally {
       setLoadingOrder(false);
     }

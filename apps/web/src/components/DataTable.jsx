@@ -78,7 +78,7 @@ const DataTable = ({
         <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="py-12 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={columns.length + (hasActions ? 1 : 0) + (selectable ? 1 : 0)} className="py-12 text-center text-sm text-muted-foreground">
                 {emptyMessage}
               </TableCell>
             </TableRow>

@@ -26,6 +26,10 @@ import {
 } from '@/utils/productionCostingExports.js';
 import { runWithTimeout } from '@/utils/asyncTimeout.js';
 
+// Sentinel so we can tell a genuine empty result apart from a timeout — costing must
+// never silently show Rp 0 because a slow request quietly resolved to an empty fallback.
+const REQUEST_TIMEOUT = Symbol('request-timeout');
+
 const importWorkbookActions = () => import('@/utils/workbookPdfExport.js');
 
 const normalizeRetailScenario = (scenario = {}, fallback = {}) => ({
@@ -58,9 +62,13 @@ export const useProductionCostPage = () => {
       setLoading(true);
       try {
         const [formulasData, rawMaterialsData] = await Promise.all([
-          runWithTimeout(getFormulas(), [], 8000),
-          runWithTimeout(getRawMaterialOptions(), [], 8000),
+          runWithTimeout(getFormulas(), REQUEST_TIMEOUT, 8000),
+          runWithTimeout(getRawMaterialOptions(), REQUEST_TIMEOUT, 8000),
         ]);
+
+        if (formulasData === REQUEST_TIMEOUT || rawMaterialsData === REQUEST_TIMEOUT) {
+          throw new Error('timeout');
+        }
 
         setFormulas(formulasData);
         setRawMaterials(rawMaterialsData);
@@ -168,6 +176,7 @@ export const useProductionCostPage = () => {
   }, [bulkScenarios]);
 
   useEffect(() => {
+    let cancelled = false;
     const loadFormulaProfile = async () => {
       if (!selectedFormulaId) {
         setFormulaProfile(null);
@@ -177,8 +186,14 @@ export const useProductionCostPage = () => {
 
       setProfileLoading(true);
       try {
-        const items = await runWithTimeout(getFormulaItems(selectedFormulaId), [], 8000);
+        const items = await runWithTimeout(getFormulaItems(selectedFormulaId), REQUEST_TIMEOUT, 8000);
+        // Ignore a stale response if the user already switched to another formula.
+        if (cancelled) return;
+        if (items === REQUEST_TIMEOUT) {
+          throw new Error('timeout');
+        }
         const referenceMaps = await buildFormulaItemReferenceMaps(items, rawMaterials);
+        if (cancelled) return;
 
         const enrichedItems = items.map((item) => {
           const sourceItem = resolveFormulaItemReference(item, referenceMaps);
@@ -203,17 +218,21 @@ export const useProductionCostPage = () => {
           totalMaterialCost,
           costPerMl: totalGrams > 0 ? totalMaterialCost / totalGrams : 0,
         });
-      } catch {
-        toast.error('Failed to load formula profile');
+      } catch (error) {
+        if (cancelled) return;
+        toast.error(error?.message === 'timeout'
+          ? 'Data formula lambat dimuat (timeout). Coba pilih ulang formula.'
+          : 'Failed to load formula profile');
         setFormulaProfile(null);
       } finally {
-        setProfileLoading(false);
+        if (!cancelled) setProfileLoading(false);
       }
     };
 
     if (!loading) {
       loadFormulaProfile();
     }
+    return () => { cancelled = true; };
   }, [selectedFormulaId, rawMaterials, loading]);
 
   const solventOptions = useMemo(

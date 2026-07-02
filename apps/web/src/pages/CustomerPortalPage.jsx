@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
@@ -845,6 +845,8 @@ const CustomerPortalPage = () => {
     portal?.orders?.filter((order) => !['completed', 'cancelled'].includes(order.status)) || []
   ), [portal]);
 
+  const lastLoadedCodeRef = useRef('');
+
   const loadPortalForCode = useCallback(async (code, { silent = false } = {}) => {
     if (!code.trim()) {
       if (!silent) toast.error('Customer code is required');
@@ -862,6 +864,9 @@ const CustomerPortalPage = () => {
       return;
     }
 
+    // Remember the resolved code so the setSearchParams() below (which updates the URL
+    // and re-triggers the effect) doesn't cause a duplicate fetch + duplicate toast.
+    lastLoadedCodeRef.current = result.customer.customerCode;
     setPortal(result);
     setSecurityAnswer('');
     setSecurityQuestion(result.customer.securityQuestion || '');
@@ -874,7 +879,8 @@ const CustomerPortalPage = () => {
   }, [setSearchParams]);
 
   useEffect(() => {
-    if (initialCode) {
+    if (initialCode && lastLoadedCodeRef.current !== initialCode) {
+      lastLoadedCodeRef.current = initialCode;
       loadPortalForCode(initialCode);
     }
   }, [initialCode, loadPortalForCode]);

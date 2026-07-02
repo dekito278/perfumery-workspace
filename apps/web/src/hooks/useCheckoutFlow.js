@@ -43,7 +43,12 @@ const readCheckoutDraft = () => {
 
 const writeCheckoutDraft = (draft) => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  try {
+    window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch (error) {
+    // Safari private mode / quota: don't throw on every checkout keystroke.
+    console.warn('Failed to persist checkout draft:', error.message || error);
+  }
 };
 
 const clearCheckoutDraft = () => {

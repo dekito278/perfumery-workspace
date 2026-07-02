@@ -95,6 +95,39 @@ const parseDokuExpiredDate = (value) => {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : '';
 };
 
+const getSupabaseRestConfig = () => {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing SUPABASE_URL/VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  return {
+    restUrl: `${supabaseUrl.replace(/\/$/, '')}/rest/v1`,
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json',
+    },
+  };
+};
+
+// Authoritative order total lives in storefront_orders.subtotal (set server-side at
+// order creation to the final amount due). Never trust the amount sent by the client.
+const getOrderAmountByInvoice = async (invoiceNumber) => {
+  const { restUrl, headers } = getSupabaseRestConfig();
+  const url = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}&select=order_number,subtotal,payment_status`;
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    throw new Error(`Failed to read order ${invoiceNumber}: ${await response.text()}`);
+  }
+
+  const rows = await response.json();
+  return rows?.[0] || null;
+};
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -113,16 +146,39 @@ export default async function handler(request, response) {
   try {
     const rawBody = await readBody(request);
     const input = rawBody ? JSON.parse(rawBody) : {};
-    const amount = Math.round(Number(input.amount || 0));
     const orderNumber = String(input.orderNumber || '').trim();
 
-    if (!orderNumber || amount <= 0) {
-      return jsonResponse(response, 400, { message: 'Order number and positive amount are required' });
+    if (!orderNumber) {
+      return jsonResponse(response, 400, { message: 'Order number is required' });
     }
 
-    const callbackBaseUrl = normalizeUrlBase(input.callbackBaseUrl || process.env.DOKU_CALLBACK_BASE_URL);
+    // SECURITY: derive the payable amount from the order stored server-side, never
+    // from the request body — otherwise anyone can pay an arbitrary amount for any order.
+    let order;
+    try {
+      order = await getOrderAmountByInvoice(orderNumber);
+    } catch (lookupError) {
+      console.error('DOKU checkout order lookup failed:', lookupError.message || lookupError);
+      return jsonResponse(response, 502, { message: 'Unable to verify order amount' });
+    }
+
+    if (!order) {
+      return jsonResponse(response, 404, { message: 'Order not found' });
+    }
+    if (order.payment_status === 'paid') {
+      return jsonResponse(response, 409, { message: 'Order is already paid' });
+    }
+
+    const amount = Math.round(Number(order.subtotal || 0));
+    if (amount <= 0) {
+      return jsonResponse(response, 422, { message: 'Order has no payable amount' });
+    }
+
+    // Base URLs must come from server env only; a client-supplied notification URL
+    // could redirect DOKU's payment webhooks away from us.
+    const callbackBaseUrl = normalizeUrlBase(process.env.DOKU_CALLBACK_BASE_URL);
     const callbackPath = normalizeCallbackPath(input.callbackPath);
-    const notificationBaseUrl = normalizeUrlBase(input.notificationBaseUrl || process.env.DOKU_NOTIFICATION_BASE_URL || callbackBaseUrl);
+    const notificationBaseUrl = normalizeUrlBase(process.env.DOKU_NOTIFICATION_BASE_URL || callbackBaseUrl);
     const lineItems = toDokuLineItems(input.items);
     const lineItemsTotal = lineItems.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
     if (lineItems.length && lineItemsTotal > 0 && lineItemsTotal < amount) {

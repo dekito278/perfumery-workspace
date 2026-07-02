@@ -43,6 +43,10 @@ const PublicHeader = () => {
 
   useEffect(() => {
     if (productsLoading || !items.length) return;
+    // Guard against an empty/failed catalog response wiping the whole cart:
+    // if we have no known-valid slugs, we can't distinguish stale items from
+    // items whose catalog simply hasn't loaded, so skip the cleanup entirely.
+    if (validCartSlugs.size === 0) return;
     items
       .filter((item) => !validCartSlugs.has(item.productSlug || item.slug) && !validCartSlugs.has(item.slug))
       .forEach((item) => removeItem(item.slug));

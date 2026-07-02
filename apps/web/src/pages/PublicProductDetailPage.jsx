@@ -23,17 +23,37 @@ const relatedFor = (product, catalog) => {
   return [...explicit, ...contextual].slice(0, 4);
 };
 
-const PublicProductDetailPage = () => {
-  const { slug = '' } = useParams();
+const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
+  const { slug: slugParam = '' } = useParams();
+  const slug = slugProp || slugParam;
   const studioProducts = useCatalogProducts();
   const visibleProducts = studioProducts.filter(isProductVisibleInStorefront);
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(slug, visibleProducts);
+  const productsLoading = Boolean(studioProducts.loading);
   const { addItem } = useCart();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
   const revealRef = useScrollReveal();
 
   if (!product) {
+    // Don't 404 while the catalog is still loading (cold cache / shared deep link):
+    // wait for the async fetch before deciding the product doesn't exist.
+    if (productsLoading) {
+      return (
+        <>
+          <PublicHeader />
+          <main
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            style={{ minHeight: '60vh', display: 'grid', placeItems: 'center', padding: '48px 24px' }}
+          >
+            <p className="editorial-eyebrow">Memuat produk…</p>
+          </main>
+          <StorefrontFooter />
+        </>
+      );
+    }
     return <Navigate to="/not-found" replace />;
   }
 

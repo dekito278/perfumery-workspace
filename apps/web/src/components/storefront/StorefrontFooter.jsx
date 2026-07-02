@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { buildWhatsAppCheckoutUrl } from '@/services/cartService.js';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const footerColumns = [
   {
@@ -28,13 +31,25 @@ const footerColumns = [
 const StorefrontFooter = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubscribe = (e) => {
     e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-      setEmail('');
+    const trimmed = email.trim();
+    if (!EMAIL_PATTERN.test(trimmed)) {
+      setError('Masukkan alamat email yang valid.');
+      return;
     }
+    // No mailing-list backend yet — route the request to the atelier's WhatsApp so it
+    // actually reaches a human instead of silently pretending to subscribe.
+    const message = `Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: ${trimmed}`;
+    const url = buildWhatsAppCheckoutUrl(message);
+    if (typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+    setError('');
+    setSubscribed(true);
+    setEmail('');
   };
 
   return (
@@ -59,15 +74,16 @@ const StorefrontFooter = () => {
         <div className="sf-footer__newsletter">
           <span className="sf-footer__column-title">Stay with the atelier</span>
           {subscribed ? (
-            <p className="sf-footer__subscribed">Thank you for subscribing.</p>
+            <p className="sf-footer__subscribed">Terima kasih — lanjutkan di WhatsApp untuk konfirmasi langganan.</p>
           ) : (
-            <form onSubmit={handleSubscribe} className="sf-footer__newsletter-form">
+            <form onSubmit={handleSubscribe} className="sf-footer__newsletter-form" noValidate>
               <input
                 type="email"
                 placeholder="Your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
                 required
+                aria-invalid={error ? 'true' : undefined}
                 className="sf-footer__newsletter-input"
               />
               <button type="submit" className="sf-footer__newsletter-btn" aria-label="Subscribe">
@@ -75,6 +91,7 @@ const StorefrontFooter = () => {
               </button>
             </form>
           )}
+          {error ? <p className="sf-footer__newsletter-error" role="alert">{error}</p> : null}
         </div>
       </div>
 

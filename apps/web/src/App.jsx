@@ -198,7 +198,7 @@ const HomeRouteFallback = () => (
       actions={[
         { to: '/catalog', label: 'Collection' },
         { to: '/bespoke', label: 'Bespoke' },
-        { to: '/articles', label: 'Journal' },
+        { to: '/journal', label: 'Journal' },
         { to: '/cart', label: 'Cart', icon: 'cart' },
       ]}
     />
@@ -438,11 +438,12 @@ function AppRoutes() {
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/catalog/:slug" element={<PublicProductDetailPage />} />
         <Route path="/products/:slug" element={<PublicProductDetailPage />} />
-        <Route path="/hug" element={<PublicProductDetailPage />} />
-        <Route path="/chant-nocturne" element={<PublicProductDetailPage />} />
-        <Route path="/jaipong" element={<PublicProductDetailPage />} />
-        <Route path="/porte-vers-le-paradis" element={<PublicProductDetailPage />} />
-        <Route path="/trace-daventure" element={<PublicProductDetailPage />} />
+        <Route path="/hug" element={<PublicProductDetailPage slug="hug-n-1" />} />
+        {/* Discontinued vanity links → send old bookmarks to the catalog instead of 404. */}
+        <Route path="/chant-nocturne" element={<Navigate to="/catalog" replace />} />
+        <Route path="/jaipong" element={<Navigate to="/catalog" replace />} />
+        <Route path="/porte-vers-le-paradis" element={<Navigate to="/catalog" replace />} />
+        <Route path="/trace-daventure" element={<Navigate to="/catalog" replace />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/materials" element={<PublicMaterialsPage />} />

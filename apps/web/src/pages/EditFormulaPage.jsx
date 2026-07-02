@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { AlertCircle, ChevronLeft, Save, ClipboardList, Sparkles } from 'lucide-react';
+import { AlertCircle, ChevronLeft, Save, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button';
@@ -397,6 +397,16 @@ const EditFormulaPage = () => {
         const hiddenLegacyAccordItems = itemsData.filter((item) => item.item_type === 'accord');
         setLegacyAccordItems(hiddenLegacyAccordItems);
 
+        // Legacy items store only `percentage` (no absolute grams). Convert them to grams
+        // via the formula's total batch amount so they aren't misread as raw gram values.
+        const formulaTotalAmount = Number(formulaData.total_amount || 0);
+        const legacyGramAmount = (item) => {
+          if (formulaTotalAmount > 0) {
+            return String((Number(item.percentage || 0) / 100) * formulaTotalAmount);
+          }
+          return String(item.percentage || 0);
+        };
+
         const formattedItems = itemsData
           .filter((item) => item.item_type !== 'accord')
           .map((item) => {
@@ -406,7 +416,7 @@ const EditFormulaPage = () => {
               item_id: item.item_id,
               gram_amount: item.grams !== null && item.grams !== undefined
                 ? String(item.grams)
-                : String(item.percentage || 0),
+                : legacyGramAmount(item),
               dilution_percent: item.dilution_percent?.toString() || '',
               dilution_solvent_id: item.dilution_solvent_id || '',
               dilution_solvent_name: item.dilution_solvent_id
@@ -1520,14 +1530,6 @@ const EditFormulaPage = () => {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Keep the brief as the intent anchor. Use project stage selections and direct materials to refine the formula directly in the composer.
                 </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {linkedBrief ? (
-                  <Button variant="outline" className="rounded-2xl" onClick={() => navigate(`/briefs/${linkedBrief.id}`)}>
-                    <ClipboardList className="mr-2 h-4 w-4" />
-                    Open brief board
-                  </Button>
-                ) : null}
               </div>
             </div>
 

@@ -16,7 +16,9 @@ const CatalogPage = () => {
   const allProducts = fetchedProducts.length ? fetchedProducts : featuredProducts;
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('family') || '';
-  const [activeCategory, setActiveCategory] = useState(initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All');
+  // Start at 'All'; the effect below promotes it to the URL family only when that
+  // family is a real catalog category, so an unknown ?family= never yields an empty list.
+  const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const revealRef = useScrollReveal();

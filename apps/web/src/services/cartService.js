@@ -55,7 +55,13 @@ const readCart = () => {
 
 const writeCart = (items) => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  try {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    // Safari private mode / storage quota — don't let a failed persist crash the
+    // add-to-cart action; the in-memory cart state still updates for this session.
+    console.warn('Failed to persist cart:', error.message || error);
+  }
   window.dispatchEvent(new CustomEvent('dekito:cart-updated'));
 };
 
