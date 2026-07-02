@@ -658,3 +658,34 @@ export const recordVoucherUsageForOrder = async ({
     voucher: updatedVoucher,
   };
 };
+
+// Release voucher quota reserved at order creation when the order is cancelled or its
+// payment fails/expires. Safe to call unconditionally (idempotent; no-op when the order
+// used no voucher) and never throws — a missing RPC (not deployed yet) or transient error
+// must not block the cancel/expire flow.
+export const releaseVoucherUsageForOrder = async ({ orderId = '', orderNumber = '' } = {}) => {
+  const orderIdValue = String(orderId || '').trim();
+  const orderNumberValue = String(orderNumber || '').trim();
+  if (!orderIdValue && !orderNumberValue) {
+    return { released: false, count: 0 };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('storefront_release_voucher_usage', {
+      p_order_id: isUuid(orderIdValue) ? orderIdValue : null,
+      p_order_number: orderNumberValue || null,
+    });
+    if (error) {
+      console.warn('Failed to release voucher usage:', error.message || error);
+      return { released: false, count: 0 };
+    }
+    const payload = Array.isArray(data) ? data[0] : data;
+    if (payload?.released) {
+      dispatchVoucherUpdated();
+    }
+    return { released: Boolean(payload?.released), count: toAmount(payload?.count) };
+  } catch (error) {
+    console.warn('Failed to release voucher usage:', error.message || error);
+    return { released: false, count: 0 };
+  }
+};

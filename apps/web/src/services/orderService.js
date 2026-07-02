@@ -1,6 +1,7 @@
 import supabase from '@/lib/supabaseClient.js';
 import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
+import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -1336,6 +1337,11 @@ export const updateOrderStatus = async (orderId, status) => {
       await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
     }
 
+    if (status === 'cancelled') {
+      // Give the reserved voucher quota back (no-op if the order used no voucher).
+      await releaseVoucherUsageForOrder({ orderId: currentOrder?.id, orderNumber: currentOrder?.orderNumber || orderId });
+    }
+
     await createOrderAuditLog({
       action: auditAction,
       currentOrder,
@@ -1813,6 +1819,11 @@ export const updateOrderPaymentStatus = async (orderId, {
       await markOrderInventoryRestored(orderId, currentOrder.inventoryEvents, restoreEvents);
       window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     }
+  }
+
+  if (INVENTORY_RESTORE_PAYMENT_STATUSES.includes(paymentStatus) || status === 'cancelled') {
+    // Release reserved voucher quota when payment fails/expires or the order is cancelled.
+    await releaseVoucherUsageForOrder({ orderId: currentOrder?.id, orderNumber: currentOrder?.orderNumber || orderId });
   }
 };
 

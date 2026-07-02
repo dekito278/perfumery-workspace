@@ -150,6 +150,25 @@ const restoreInventoryForOrder = async (order, reason) => {
   return response.json();
 };
 
+// Best-effort: return reserved voucher quota when a DOKU payment fails/expires.
+// Never throws — a missing RPC (not deployed yet) must not fail the webhook.
+const releaseVoucherUsageForOrder = async (order) => {
+  if (!order?.id && !order?.order_number) return;
+  try {
+    const { restUrl, headers } = getSupabaseRestConfig();
+    await fetch(`${restUrl}/rpc/storefront_release_voucher_usage`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        p_order_id: order.id || null,
+        p_order_number: order.order_number || null,
+      }),
+    });
+  } catch (error) {
+    console.warn('Failed to release voucher usage:', error.message || error);
+  }
+};
+
 const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidAmount = 0 }) => {
   const { restUrl, headers } = getSupabaseRestConfig();
   const currentOrder = await getOrderByInvoice(invoiceNumber);
@@ -199,6 +218,10 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
 
   if (isTerminalCancel && currentOrder?.inventory_deducted) {
     await restoreInventoryForOrder(currentOrder, `DOKU ${statusPatch.paymentStatus} stock released`);
+  }
+
+  if (isTerminalCancel) {
+    await releaseVoucherUsageForOrder(currentOrder);
   }
 };
 
