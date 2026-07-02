@@ -1367,12 +1367,12 @@ const CustomerPortalPage = () => {
                       <ShieldCheck className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-bold text-[#1b1a16]">{portal.customer.securityEnabledAt ? 'Dashboard protected' : 'Protect dashboard'}</span>
+                      <span className="block text-sm font-bold text-[#1b1a16]">{portal.customer.securityEnabledAt ? 'Dashboard terlindungi' : 'Proteksi dashboard'}</span>
                       <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">Pertanyaan keamanan opsional.</span>
                     </span>
                   </span>
                   <span className="shrink-0 rounded-full bg-[#fffaf0] px-3 py-1 text-[10px] font-bold uppercase text-[#1b1a16]">
-                    {securityFormOpen ? 'Close' : 'Open'}
+                    {securityFormOpen ? 'Tutup' : 'Buka'}
                   </span>
                 </button>
                 {securityFormOpen ? (

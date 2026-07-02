@@ -768,9 +768,9 @@ const BespokePage = () => {
                   <p>Bagian ini baru muncul setelah desain dipilih, supaya proses awal tetap fokus ke perfume ritualnya.</p>
                 </div>
                 <div className="editorial-bespoke-checkout__fields">
-                  <label>Name<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Your name" /></label>
-                  <label>Email / WhatsApp<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="name@example.com / +62..." /></label>
-                  <label>Delivery address<textarea rows="4" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
+                  <label>Nama<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama kamu" /></label>
+                  <label>Email / WhatsApp<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>
+                  <label>Alamat pengiriman<textarea rows="4" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
                 </div>
                 <div className="editorial-voucher-panel">
                   <div>
@@ -869,13 +869,13 @@ const BespokePage = () => {
                   <div className="editorial-cart-summary__row"><span>Ongkir</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
                   <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{formatRupiah(totalDue)}</strong></div>
                 </div>
-                <label>Payment<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
+                <label>Pembayaran<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
                 <label className="editorial-checkbox-row">
                   <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
                   Saya memahami bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
                 </label>
                 <button type="submit" className="editorial-button editorial-button--primary" disabled={saving}>
-                  {saving ? 'Saving request...' : (isManualPayment ? 'Buat order & upload bukti' : 'Buat order & bayar')}
+                  {saving ? 'Menyimpan...' : (isManualPayment ? 'Buat order & upload bukti' : 'Buat order & bayar')}
                   {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </button>
               </div>

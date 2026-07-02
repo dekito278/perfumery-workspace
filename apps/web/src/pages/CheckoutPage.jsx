@@ -36,18 +36,23 @@ const CheckoutPage = () => {
     customerCode, customerName, contact, deliveryAddress, notes, saving, lookupLoading,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
     shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod,
-    canSubmitCheckout, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
+    canSubmitCheckout, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
     setSelectedPaymentMethod, lookupCustomer, submitOrder,
   } = checkout;
   const visibleShippingOptions = useMemo(() => (
     selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : shippingOptions
   ), [selectedCourier, shippingOptions]);
+  // Keep in sync with canSubmitCheckout in useCheckoutFlow so the notice names every
+  // actually-missing field (previously omitted valid phone, destination, courier, payment).
   const missingFields = [
     !customerName.trim() ? 'nama' : '',
-    !contact.trim() ? 'kontak' : '',
+    !contact.trim() ? 'kontak' : (!validPhoneContact ? 'nomor WhatsApp yang valid' : ''),
     !deliveryAddress.trim() ? 'alamat' : '',
+    !selectedDestination ? 'tujuan pengiriman' : '',
+    !selectedCourier ? 'kurir' : '',
     !selectedShipping ? 'ongkir' : '',
+    !selectedPaymentMethod ? 'metode pembayaran' : '',
   ].filter(Boolean).join(', ');
 
   const handleCourierChange = (courierCode) => {

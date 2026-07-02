@@ -658,6 +658,7 @@ export const useCheckoutFlow = ({
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
+    validPhoneContact,
     setCustomerName,
     setContact,
     setDeliveryAddress: updateDeliveryAddress,

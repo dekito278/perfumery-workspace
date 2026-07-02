@@ -205,7 +205,7 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="editorial-empty-state editorial-empty-state--inline">
-              <p>Belum ada produk published. Publish produk dari Studio Products.</p>
+              <p>Koleksi baru sedang disiapkan. Nantikan rilis fragrance berikutnya.</p>
             </div>
           )}
         </section>
