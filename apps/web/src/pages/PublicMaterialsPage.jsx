@@ -10,7 +10,7 @@ const FAMILY_COLORS = {
   floral: { bg: '#f3e4ef', accent: '#8c4a7c' },
   woody: { bg: '#ede4d8', accent: '#7c5a3a' },
   gourmand: { bg: '#f0e8d8', accent: '#8c6a3a' },
-  citrus: { bg: '#f5f0d8', accent: '#7c7a3a' },
+  citrus: { bg: '#f5f0d8', accent: '#6b6930' },
   oriental: { bg: '#e8dce0', accent: '#6a4a5a' },
   aromatic: { bg: '#dce8e0', accent: '#3a6a5a' },
   musk: { bg: '#e8e4e0', accent: '#6a6058' },

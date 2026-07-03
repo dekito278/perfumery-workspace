@@ -449,7 +449,7 @@
 }
 
 .editorial-mega-menu__column a:hover {
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
 }
 
 .editorial-mega-menu__close {
@@ -532,7 +532,7 @@
 
 .sf-footer__column a:hover,
 .sf-footer__columns a:hover {
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
 }
 
 .sf-footer__columns {
@@ -929,7 +929,7 @@
 .journal-featured__category {
   display: inline-block;
   margin-bottom: 16px;
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
   font-size: var(--text-eyebrow);
   font-weight: 900;
   letter-spacing: 0.18em;
@@ -1007,7 +1007,7 @@
 }
 
 .journal-card__category {
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
   font-size: var(--text-eyebrow);
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -1310,7 +1310,7 @@
 
 .journal-article-badge--category {
   border-color: rgba(176, 139, 79, 0.3);
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
 }
 
 .journal-article-badge--status {
@@ -2020,7 +2020,7 @@
 
 .checkout-fieldset legend {
   padding: 0 8px;
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
   font-size: var(--text-eyebrow);
   font-weight: 900;
   letter-spacing: 0.18em;
@@ -4430,7 +4430,7 @@
 }
 
 .home-section__action a:hover {
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
 }
 
 /* ── 3. Horizontal Carousel ── */
@@ -4465,7 +4465,7 @@
 }
 
 .home-carousel__see-all:hover {
-  color: var(--editorial-brass);
+  color: var(--editorial-brass-text);
 }
 
 .home-carousel__wrapper {
