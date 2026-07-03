@@ -135,9 +135,15 @@ const HomePage = () => {
                 </div>
               ))}
               <div className="home-hero__overlay">
-                <Link to={`/catalog/${heroProducts[heroIndex]?.slug}`} className="home-hero__product-name hero-animate-text">
-                  {heroProducts[heroIndex]?.name}
-                </Link>
+                <div className="home-hero__caption">
+                  <span className="home-hero__caption-eyebrow">Featured fragrance</span>
+                  <Link to={`/catalog/${heroProducts[heroIndex]?.slug}`} className="home-hero__product-name hero-animate-text">
+                    {heroProducts[heroIndex]?.name}
+                  </Link>
+                  <Link to={`/catalog/${heroProducts[heroIndex]?.slug}`} className="home-hero__view">
+                    View fragrance <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
               <div className="home-hero__counter">
                 <span>{heroIndex + 1}/{heroProducts.length}</span>
@@ -196,7 +202,12 @@ const HomePage = () => {
                     />
                     <div className="home-carousel__card-info">
                       <h3>{product.name}</h3>
-                      <span className="home-carousel__card-perfumer">by Dekito</span>
+                      <div className="home-carousel__card-meta">
+                        <span className="home-carousel__card-perfumer">by Dekito</span>
+                        {(product.price || product.priceNumber) ? (
+                          <span className="home-carousel__card-price">{product.price || `Rp ${(product.priceNumber || 0).toLocaleString('id-ID')}`}</span>
+                        ) : null}
+                      </div>
                     </div>
                   </Link>
                 ))}
