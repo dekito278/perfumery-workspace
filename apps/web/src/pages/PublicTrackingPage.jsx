@@ -146,14 +146,18 @@ const PublicTrackingPage = () => {
                   <span className="tracking-card__customer">{order.customerName}</span>
                 </div>
 
-                <div className="tracking-timeline">
+                <ol className="tracking-timeline" aria-label="Progres pesanan">
                   {steps.map((item, index) => (
-                    <div key={item.key} className={`tracking-step${index < completeCount ? ' is-complete' : ''}`}>
-                      <span className="tracking-step__dot" />
-                      <span className="tracking-step__label">{item.label}</span>
-                    </div>
+                    <li
+                      key={item.key}
+                      className={`tracking-step${index < completeCount ? ' is-complete' : ''}`}
+                      aria-current={index === completeCount - 1 ? 'step' : undefined}
+                    >
+                      <span className="tracking-step__dot" aria-hidden="true" />
+                      <span className="tracking-step__label">{item.label}{index === completeCount - 1 ? ' (saat ini)' : ''}</span>
+                    </li>
                   ))}
-                </div>
+                </ol>
 
                 <div className="tracking-details">
                   <div className="tracking-detail-row">
