@@ -92,10 +92,10 @@ export const formatDate = (value) => {
   try {
     const date = new Date(value);
     if (isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   } catch {
     return 'N/A';

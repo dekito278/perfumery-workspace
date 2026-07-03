@@ -1049,15 +1049,19 @@
 }
 
 .journal-load-more button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 12px 32px;
   border: 1px solid var(--editorial-charcoal);
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   background: none;
   color: var(--editorial-charcoal);
   font-family: var(--font-body);
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
 }

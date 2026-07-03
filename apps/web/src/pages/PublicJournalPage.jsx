@@ -79,7 +79,7 @@ const PublicJournalPage = () => {
         <section className="journal-hero">
           <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JOURNAL / EDITORIAL</p>
           <h1 className="hero-animate-text hero-animate-text--d2">Catatan Atelier</h1>
-          <p className="hero-animate-text hero-animate-text--d3">On scent memory, raw materials, atelier process, and the stories behind SOLIVAGANT perfume objects.</p>
+          <p className="hero-animate-text hero-animate-text--d3">Tentang memori aroma, raw material, proses atelier, dan cerita di balik objek parfum SOLIVAGANT.</p>
         </section>
 
         {/* Category filter tabs */}
@@ -91,7 +91,7 @@ const PublicJournalPage = () => {
               className={`journal-tab${activeCategory === cat ? ' is-active' : ''}`}
               onClick={() => { setActiveCategory(cat); setVisibleCount(9); }}
             >
-              {cat}
+              {cat === 'All' ? 'Semua' : cat}
             </button>
           ))}
         </nav>
