@@ -18,6 +18,12 @@
   --editorial-brass-text: #8a6a35;
   --editorial-border: rgba(27, 26, 22, 0.13);
 
+  /* Radius system — one scale for the whole storefront so controls/cards/pills
+     stop mixing 0 / 4 / 6 / 8 / 10 / 999px arbitrarily. */
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-pill: 999px;
+
   /* Spacing system */
   --space-section: clamp(80px, 10vw, 140px);
   --space-block: clamp(40px, 5vw, 64px);
@@ -869,28 +875,32 @@
 }
 
 .journal-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 8px 18px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: none;
+  border: 1px solid var(--editorial-border);
+  border-radius: var(--radius-control);
+  background: transparent;
   color: var(--editorial-muted);
   font-family: var(--font-body);
   font-size: var(--text-caption);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-smooth);
 }
 
 .journal-tab:hover {
   color: var(--editorial-charcoal);
-  background: rgba(0, 0, 0, 0.03);
+  border-color: var(--editorial-charcoal);
 }
 
 .journal-tab.is-active {
   border-color: var(--editorial-charcoal);
-  color: var(--editorial-charcoal);
-  background: rgba(0, 0, 0, 0.04);
+  color: var(--editorial-ivory);
+  background: var(--editorial-charcoal);
 }
 
 .journal-content,
@@ -1903,14 +1913,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
-  border-radius: 6px;
-  background: var(--editorial-forest);
+  min-height: 52px;
+  padding: 16px;
+  border-radius: var(--radius-control);
+  background: var(--editorial-charcoal);
   color: var(--editorial-paper);
-  font-size: 0.85rem;
-  font-weight: 800;
+  font-size: var(--text-caption);
+  font-weight: 600;
   text-decoration: none;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   transition: opacity var(--duration-fast) var(--ease-smooth);
 }
 
@@ -2173,16 +2185,18 @@
   justify-content: center;
   gap: 10px;
   width: 100%;
+  min-height: 52px;
   padding: 16px;
   margin-top: 8px;
   border: none;
-  border-radius: 6px;
-  background: var(--editorial-forest);
+  border-radius: var(--radius-control);
+  background: var(--editorial-charcoal);
   color: var(--editorial-paper);
   font-family: var(--font-body);
-  font-size: 0.88rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: opacity var(--duration-fast) var(--ease-smooth);
 }
@@ -5212,7 +5226,7 @@
   align-items: center;
   min-height: 44px;
   border: 1px solid var(--editorial-border);
-  border-radius: 0;
+  border-radius: var(--radius-control);
   background: transparent;
   padding: 8px 18px;
   font-family: var(--font-body);
@@ -5547,19 +5561,24 @@
 .pdp-add-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   border: none;
+  border-radius: var(--radius-control);
   background: var(--editorial-charcoal);
   padding: 16px 36px;
+  min-height: 52px;
   font-family: var(--font-body);
   font-size: var(--text-caption);
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--editorial-ivory);
+  color: var(--editorial-paper);
   cursor: pointer;
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-smooth);
 }
+
+.pdp-add-btn:hover { opacity: 0.88; }
 
 .pdp-add-btn:hover {
   opacity: 0.85;
