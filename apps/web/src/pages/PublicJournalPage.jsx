@@ -98,13 +98,19 @@ const PublicJournalPage = () => {
 
         <section className="journal-content">
           {loading ? (
-            <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">MEMUAT</p>
-              <h2>Memuat journal...</h2>
+            <div className="journal-grid" aria-hidden="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skel-card">
+                  <div className="editorial-skel skel-card__img" style={{ aspectRatio: '16 / 10' }} />
+                  <div className="editorial-skel skel-line skel-line--sm" />
+                  <div className="editorial-skel skel-line skel-line--lg" />
+                  <div className="editorial-skel skel-line skel-line--md" />
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">ERROR</p>
+              <p className="editorial-eyebrow">GAGAL</p>
               <h2>{error}</h2>
             </div>
           ) : !filtered.length ? (

@@ -55,6 +55,17 @@ const CheckoutPage = () => {
     !selectedPaymentMethod ? 'metode pembayaran' : '',
   ].filter(Boolean).join(', ');
 
+  const [triedSubmit, setTriedSubmit] = useState(false);
+  const fieldErrors = {
+    customerName: !customerName.trim() ? 'Nama wajib diisi.' : '',
+    contact: !contact.trim() ? 'Nomor WhatsApp wajib diisi.' : (!validPhoneContact ? 'Nomor WhatsApp belum valid.' : ''),
+    deliveryAddress: !deliveryAddress.trim() ? 'Alamat pengiriman wajib diisi.' : '',
+  };
+  const handleSubmitAttempt = (event) => {
+    setTriedSubmit(true);
+    submitCheckout(event);
+  };
+
   const handleCourierChange = (courierCode) => {
     chooseShippingCourier(courierCode);
     if (!courierCode) return;
@@ -115,30 +126,33 @@ const CheckoutPage = () => {
 
         <section className="checkout-layout">
           {/* Checkout form */}
-          <form className="checkout-form" onSubmit={submitCheckout}>
+          <form className="checkout-form" onSubmit={handleSubmitAttempt} noValidate>
             {/* Customer info */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">INFORMASI PEMBELI</legend>
               <label className="checkout-field">
-                <span>Customer code</span>
+                <span>Kode customer</span>
                 <div className="checkout-field__inline">
                   <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional untuk pembeli lama" />
                   <button type="button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
-                    {lookupLoading ? 'Cek...' : 'Load'}
+                    {lookupLoading ? 'Cek...' : 'Muat'}
                   </button>
                 </div>
               </label>
               <label className="checkout-field">
                 <span>Nama lengkap</span>
-                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" />
+                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                {triedSubmit && fieldErrors.customerName ? <span className="checkout-field__error" role="alert">{fieldErrors.customerName}</span> : null}
               </label>
               <label className="checkout-field">
                 <span>WhatsApp</span>
-                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" />
+                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                {triedSubmit && fieldErrors.contact ? <span className="checkout-field__error" role="alert">{fieldErrors.contact}</span> : null}
               </label>
               <label className="checkout-field">
                 <span>Alamat pengiriman</span>
-                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder="Alamat lengkap pengiriman" />
+                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder="Alamat lengkap pengiriman" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                {triedSubmit && fieldErrors.deliveryAddress ? <span className="checkout-field__error" role="alert">{fieldErrors.deliveryAddress}</span> : null}
               </label>
             </fieldset>
 

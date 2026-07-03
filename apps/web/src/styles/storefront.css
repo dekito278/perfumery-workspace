@@ -2061,6 +2061,19 @@
   border-color: var(--editorial-forest);
 }
 
+.checkout-field input[aria-invalid="true"],
+.checkout-field textarea[aria-invalid="true"] {
+  border-color: #c0563c;
+  background: rgba(192, 86, 60, 0.04);
+}
+
+.checkout-field__error {
+  margin-top: 6px;
+  color: #c0563c;
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
 .checkout-field__inline {
   display: flex;
   gap: 8px;
@@ -8502,4 +8515,49 @@
     width: 17px;
     height: 17px;
   }
+}
+
+/* =====================================================
+   Loading skeletons (storefront grids)
+   ===================================================== */
+@keyframes editorial-skel-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.editorial-skel {
+  background: linear-gradient(
+    100deg,
+    rgba(27, 26, 22, 0.05) 30%,
+    rgba(27, 26, 22, 0.11) 50%,
+    rgba(27, 26, 22, 0.05) 70%
+  );
+  background-size: 200% 100%;
+  animation: editorial-skel-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-control);
+}
+
+.skel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skel-card__img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-card);
+}
+
+.skel-line {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.skel-line--sm { width: 40%; height: 10px; }
+.skel-line--md { width: 70%; }
+.skel-line--lg { width: 90%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-skel { animation: none; }
 }

@@ -22,6 +22,7 @@ const CatalogPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const revealRef = useScrollReveal();
+  const isLoading = Boolean(fetchedProducts.loading) && !fetchedProducts.length;
 
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
@@ -107,7 +108,17 @@ const CatalogPage = () => {
           </div>
 
           {/* Image-first product grid */}
-          {filteredProducts.length ? (
+          {isLoading ? (
+            <div className="catalog-grid" aria-hidden="true">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="skel-card">
+                  <div className="editorial-skel skel-card__img" />
+                  <div className="editorial-skel skel-line skel-line--sm" />
+                  <div className="editorial-skel skel-line skel-line--md" />
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length ? (
             <div className="catalog-grid" data-reveal data-stagger-children>
               {visibleProducts.map((product, index) => (
                 <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="catalog-card card-lift img-hover-zoom">

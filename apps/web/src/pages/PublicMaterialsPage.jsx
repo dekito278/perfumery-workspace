@@ -102,7 +102,18 @@ const PublicMaterialsPage = () => {
         </nav>
 
         <section className="materials-content">
-          {loading ? <p className="editorial-notice">Memuat raw material studio...</p> : null}
+          {loading ? (
+            <div className="materials-grid" aria-hidden="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skel-card" style={{ gap: '10px' }}>
+                  <div className="editorial-skel skel-line skel-line--sm" />
+                  <div className="editorial-skel skel-line skel-line--lg" style={{ height: '18px' }} />
+                  <div className="editorial-skel skel-line skel-line--md" />
+                  <div className="editorial-skel skel-line skel-line--lg" />
+                </div>
+              ))}
+            </div>
+          ) : null}
           {error ? <p className="editorial-notice">{error}</p> : null}
           {!loading && !filtered.length ? (
             <div className="editorial-empty-state">
