@@ -28,8 +28,8 @@ const CartPage = () => {
 
         <section className="cart-hero">
           <p className="editorial-eyebrow">KERANJANG</p>
-          <h1>Cart</h1>
-          <p>Review fragrance pilihanmu sebelum checkout.</p>
+          <h1>Keranjang</h1>
+          <p>Tinjau fragrance pilihanmu sebelum checkout.</p>
         </section>
 
         <section className="cart-layout">
@@ -39,9 +39,9 @@ const CartPage = () => {
               <div className="cart-empty">
                 <ShoppingBag className="h-10 w-10" />
                 <h2>Keranjang masih kosong</h2>
-                <p>Pilih fragrance dari collection, lalu item akan muncul di sini.</p>
+                <p>Pilih fragrance dari koleksi, lalu item akan muncul di sini.</p>
                 <Link to="/catalog" className="cart-empty__cta">
-                  Explore Collection <ArrowRight className="h-4 w-4" />
+                  Lihat Koleksi <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             ) : (

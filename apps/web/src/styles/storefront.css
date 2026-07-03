@@ -1635,14 +1635,16 @@
   align-items: center;
   gap: 8px;
   margin-top: 8px;
-  padding: 12px 28px;
-  border-radius: 999px;
-  background: var(--editorial-forest);
+  min-height: 48px;
+  padding: 14px 28px;
+  border-radius: var(--radius-control);
+  background: var(--editorial-charcoal);
   color: var(--editorial-paper);
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: var(--text-caption);
+  font-weight: 600;
   text-decoration: none;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   transition: opacity var(--duration-fast) var(--ease-smooth);
 }
 
@@ -1711,7 +1713,7 @@
   align-items: center;
   gap: 0;
   border: 1px solid var(--editorial-border);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   overflow: hidden;
 }
 
@@ -1767,7 +1769,7 @@
   top: 24px;
   padding: 32px;
   border: 1px solid var(--editorial-border);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   background: rgba(255, 250, 240, 0.58);
   align-self: start;
 }
@@ -1804,7 +1806,7 @@
   flex: 1;
   padding: 10px 14px;
   border: 1px solid var(--editorial-border);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   background: #fff;
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -1822,7 +1824,7 @@
   gap: 6px;
   padding: 10px 16px;
   border: 1px solid var(--editorial-charcoal);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   background: none;
   font-family: var(--font-body);
   font-size: 0.78rem;
@@ -1938,7 +1940,7 @@
   justify-content: center;
   padding: 12px;
   border: 1px solid var(--editorial-border);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   background: none;
   color: var(--editorial-charcoal);
   font-size: 0.82rem;
