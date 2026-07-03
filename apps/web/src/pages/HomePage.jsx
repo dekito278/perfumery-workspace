@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MessageCircle } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -11,10 +11,7 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import { buildWhatsAppCheckoutUrl } from '@/services/cartService.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
-
-const NEWSLETTER_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const moodCategories = [
   // `family` is the display label; `filter` is the real catalog category used in the link
@@ -35,23 +32,6 @@ const HomePage = () => {
   const [publishedArticles, setPublishedArticles] = useState([]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [activeMood, setActiveMood] = useState(0);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterState, setNewsletterState] = useState({ status: 'idle', message: '' });
-
-  const handleNewsletterSubmit = useCallback((e) => {
-    e.preventDefault();
-    const trimmed = newsletterEmail.trim();
-    if (!NEWSLETTER_EMAIL_PATTERN.test(trimmed)) {
-      setNewsletterState({ status: 'error', message: 'Masukkan alamat email yang valid.' });
-      return;
-    }
-    const message = `Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: ${trimmed}`;
-    if (typeof window !== 'undefined') {
-      window.open(buildWhatsAppCheckoutUrl(message), '_blank', 'noopener,noreferrer');
-    }
-    setNewsletterEmail('');
-    setNewsletterState({ status: 'success', message: 'Terima kasih — lanjutkan di WhatsApp untuk konfirmasi langganan.' });
-  }, [newsletterEmail]);
   const revealRef = useScrollReveal();
   const heroTimerRef = useRef(null);
   const carouselRef = useRef(null);
@@ -298,26 +278,17 @@ const HomePage = () => {
         <section className="home-newsletter" data-reveal>
           <img src={siteImages['home-newsletter'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant atelier" className="home-newsletter__bg" />
           <div className="home-newsletter__inner">
-            <p className="editorial-eyebrow">STAY CLOSE</p>
-            <h2>Notes from the atelier, delivered quietly.</h2>
-            <p className="home-newsletter__sub">New compositions, journal entries, and invitations to bespoke sessions — no noise, only signal.</p>
-            <form className="home-newsletter__form" onSubmit={handleNewsletterSubmit} noValidate>
-              <input
-                type="email"
-                placeholder="Your email address"
-                value={newsletterEmail}
-                onChange={(e) => { setNewsletterEmail(e.target.value); if (newsletterState.status === 'error') setNewsletterState({ status: 'idle', message: '' }); }}
-                className="home-newsletter__input"
-                aria-invalid={newsletterState.status === 'error' ? 'true' : undefined}
-                required
-              />
-              <button type="submit" className="home-newsletter__btn">Subscribe</button>
-            </form>
-            {newsletterState.message ? (
-              <p className={`home-newsletter__feedback home-newsletter__feedback--${newsletterState.status}`} role={newsletterState.status === 'error' ? 'alert' : 'status'}>
-                {newsletterState.message}
-              </p>
-            ) : null}
+            <p className="editorial-eyebrow">KOLABORASI</p>
+            <h2>Mari berkolaborasi dengan atelier.</h2>
+            <p className="home-newsletter__sub">Untuk kolaborasi, bespoke khusus, atau sekadar berbagi ide — hubungi Dekito langsung lewat WhatsApp.</p>
+            <a
+              href="https://wa.me/6287774026625?text=Halo%20Dekito%2C%20saya%20tertarik%20berkolaborasi%20dengan%20SOLIVAGANT."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="home-newsletter__wa"
+            >
+              <MessageCircle className="h-4 w-4" /> Hubungi WhatsApp Dekito
+            </a>
           </div>
         </section>
 

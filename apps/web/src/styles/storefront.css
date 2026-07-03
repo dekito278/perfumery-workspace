@@ -4892,9 +4892,34 @@
 
 .home-newsletter__sub {
   margin: 16px 0 0;
-  color: rgba(255, 250, 240, 0.55);
+  color: rgba(255, 250, 240, 0.7);
   font-size: var(--text-caption);
   line-height: 1.6;
+}
+
+.home-newsletter__wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding: 15px 28px;
+  border: 1px solid var(--editorial-brass);
+  border-radius: 999px;
+  background: var(--editorial-brass);
+  color: var(--editorial-paper);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.home-newsletter__wa:hover {
+  background: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .home-newsletter__feedback {
