@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MessageCircle } from 'lucide-react';
@@ -30,10 +30,8 @@ const HomePage = () => {
   const catalogProducts = fetchedProducts.length ? fetchedProducts : featuredProducts;
   const { images: siteImages } = useSiteImages();
   const [publishedArticles, setPublishedArticles] = useState([]);
-  const [heroIndex, setHeroIndex] = useState(0);
   const [activeMood, setActiveMood] = useState(0);
   const revealRef = useScrollReveal();
-  const heroTimerRef = useRef(null);
   const carouselRef = useRef(null);
 
   const visibleProducts = useMemo(
@@ -41,30 +39,7 @@ const HomePage = () => {
     [catalogProducts]
   );
   const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
-  const heroProducts = publicCatalog.slice(0, 6);
   const collectionProducts = publicCatalog.slice(0, 8);
-  const heroProductHasImage = useCallback((p) => {
-    const img = String(p?.images?.[0] || p?.imageUrl || '').trim();
-    return img && !img.endsWith('.svg');
-  }, []);
-  const heroHasRealImages = heroProducts.filter(heroProductHasImage).length >= Math.ceil(heroProducts.length / 2);
-
-  // Hero slideshow auto-advance
-  useEffect(() => {
-    if (heroProducts.length <= 1) return;
-    heroTimerRef.current = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroProducts.length);
-    }, 5000);
-    return () => clearInterval(heroTimerRef.current);
-  }, [heroProducts.length]);
-
-  const goToHeroSlide = useCallback((index) => {
-    setHeroIndex(index);
-    clearInterval(heroTimerRef.current);
-    heroTimerRef.current = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroProducts.length);
-    }, 5000);
-  }, [heroProducts.length]);
 
   // Journal articles
   useEffect(() => {
@@ -98,54 +73,15 @@ const HomePage = () => {
 
         {/* ── 1. Hero Slideshow ── */}
         <section className="home-hero">
-          {heroProducts.length > 0 && heroHasRealImages ? (
-            <>
-              {heroProducts.map((product, i) => (
-                <div key={product.id} className={`home-hero__slide ${i === heroIndex ? 'home-hero__slide--active' : ''}`}>
-                  {heroProductHasImage(product) ? (
-                    <ProductVisual
-                      product={product}
-                      className="home-hero__slide-image"
-                      imageFit="cover"
-                      priority={i === 0}
-                    />
-                  ) : (
-                    <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt={product.name} className="home-hero__slide-image" style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-                  )}
-                </div>
-              ))}
-              <div className="home-hero__overlay">
-                <div className="home-hero__caption">
-                  <span className="home-hero__caption-eyebrow">Featured fragrance</span>
-                  <Link to={`/catalog/${heroProducts[heroIndex]?.slug}`} className="home-hero__product-name hero-animate-text">
-                    {heroProducts[heroIndex]?.name}
-                  </Link>
-                  <Link to={`/catalog/${heroProducts[heroIndex]?.slug}`} className="home-hero__view">
-                    View fragrance <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </div>
-              <div className="home-hero__counter">
-                <span>{heroIndex + 1}/{heroProducts.length}</span>
-              </div>
-              <div className="home-hero__nav">
-                <button className="home-hero__nav-btn" onClick={() => goToHeroSlide((heroIndex - 1 + heroProducts.length) % heroProducts.length)} aria-label="Previous slide">&larr;</button>
-                <button className="home-hero__nav-btn" onClick={() => goToHeroSlide((heroIndex + 1) % heroProducts.length)} aria-label="Next slide">&rarr;</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery atelier" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
-              <div className="home-hero__overlay home-hero__overlay--editorial">
-                <p className="home-hero__eyebrow">ARTISAN PERFUMERY ATELIER</p>
-                <h1 className="home-hero__title">Fragrance as a<br />memory object.</h1>
-                <p className="home-hero__subtitle">Quiet olfactive works from raw materials, memory, and ritual.</p>
-                <Link to="/catalog" className="home-hero__cta">
-                  EXPLORE COLLECTION <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </>
-          )}
+          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery atelier" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+          <div className="home-hero__overlay home-hero__overlay--editorial">
+            <p className="home-hero__eyebrow">ARTISAN PERFUMERY ATELIER</p>
+            <h1 className="home-hero__title">Fragrance as a<br />memory object.</h1>
+            <p className="home-hero__subtitle">Quiet olfactive works from raw materials, memory, and ritual.</p>
+            <Link to="/catalog" className="home-hero__cta">
+              EXPLORE COLLECTION <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </section>
 
         {/* ── 2. Brand Mark + Tagline ── */}
