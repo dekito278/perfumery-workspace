@@ -244,11 +244,11 @@ const PaymentFrame = ({ session, compact = false }) => {
         </div>
         <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-editorial-charcoal' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Order</div>
+            <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Customer</div>
+            <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
             <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
@@ -416,11 +416,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Order</div>
+                <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
                 <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Customer</div>
+                <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
@@ -512,11 +512,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Ringkasan order</div>
             <div className="mt-3 grid gap-2 text-xs font-bold text-editorial-charcoal">
               <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Order</div>
+                <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
                 <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
               </div>
               <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Customer</div>
+                <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
             </div>

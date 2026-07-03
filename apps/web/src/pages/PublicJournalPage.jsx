@@ -78,7 +78,7 @@ const PublicJournalPage = () => {
 
         <section className="journal-hero">
           <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JOURNAL / EDITORIAL</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">Field Notes</h1>
+          <h1 className="hero-animate-text hero-animate-text--d2">Catatan Atelier</h1>
           <p className="hero-animate-text hero-animate-text--d3">On scent memory, raw materials, atelier process, and the stories behind SOLIVAGANT perfume objects.</p>
         </section>
 
@@ -99,7 +99,7 @@ const PublicJournalPage = () => {
         <section className="journal-content">
           {loading ? (
             <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">LOADING</p>
+              <p className="editorial-eyebrow">MEMUAT</p>
               <h2>Memuat journal...</h2>
             </div>
           ) : error ? (
@@ -109,7 +109,7 @@ const PublicJournalPage = () => {
             </div>
           ) : !filtered.length ? (
             <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">NO POSTS</p>
+              <p className="editorial-eyebrow">BELUM ADA</p>
               <h2>Belum ada artikel{activeCategory !== 'All' ? ` di kategori ${activeCategory}` : ''}.</h2>
             </div>
           ) : (
@@ -123,7 +123,7 @@ const PublicJournalPage = () => {
                     <p>{getExcerpt(featured)}</p>
                     <div className="journal-featured__meta">
                       <time>{formatDate(featured.published_at || featured.updated || featured.created)}</time>
-                      <span className="journal-featured__read">Read article <ArrowRight className="h-4 w-4" /></span>
+                      <span className="journal-featured__read">Baca artikel <ArrowRight className="h-4 w-4" /></span>
                     </div>
                   </div>
                 </Link>

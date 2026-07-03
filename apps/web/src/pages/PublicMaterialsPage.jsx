@@ -82,21 +82,21 @@ const PublicMaterialsPage = () => {
         <PublicHeader />
 
         <section className="materials-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">RAW MATERIAL ARCHIVE</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">The Library</h1>
-          <p className="hero-animate-text hero-animate-text--d3">Raw materials from the studio, presented as sensory notes, origin cues, and formulation stories.</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">ARSIP RAW MATERIAL</p>
+          <h1 className="hero-animate-text hero-animate-text--d2">Perpustakaan Material</h1>
+          <p className="hero-animate-text hero-animate-text--d3">Raw material dari studio, disajikan sebagai catatan sensorik, asal-usul, dan cerita formulasi.</p>
         </section>
 
         {/* Family filter */}
         <nav className="journal-tabs hero-animate-fade">
           {FAMILIES.map((fam) => (
             <button
-              key={fam}
+              key={fam === 'All' ? 'Semua' : fam}
               type="button"
               className={`journal-tab${activeFamily === fam ? ' is-active' : ''}`}
               onClick={() => { setActiveFamily(fam); setVisibleCount(12); }}
             >
-              {fam}
+              {fam === 'All' ? 'Semua' : fam}
             </button>
           ))}
         </nav>
@@ -106,7 +106,7 @@ const PublicMaterialsPage = () => {
           {error ? <p className="editorial-notice">{error}</p> : null}
           {!loading && !filtered.length ? (
             <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">NO MATERIALS</p>
+              <p className="editorial-eyebrow">BELUM ADA</p>
               <h2>Belum ada material{activeFamily !== 'All' ? ` di keluarga ${activeFamily}` : ''}.</h2>
             </div>
           ) : null}
@@ -130,9 +130,9 @@ const PublicMaterialsPage = () => {
           {visibleCount < filtered.length ? (
             <div className="journal-load-more">
               <button type="button" onClick={() => setVisibleCount((c) => c + 12)}>
-                Load more materials
+                Tampilkan lagi
               </button>
-              <span>{Math.min(visibleCount, filtered.length)} of {filtered.length}</span>
+              <span>{Math.min(visibleCount, filtered.length)} dari {filtered.length}</span>
             </div>
           ) : null}
         </section>

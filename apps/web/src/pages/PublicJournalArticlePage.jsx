@@ -97,8 +97,8 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
               <ArrowLeft className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</span>
-              <span className="block truncate text-sm font-extrabold text-editorial-charcoal">Article</span>
+              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Jurnal</span>
+              <span className="block truncate text-sm font-extrabold text-editorial-charcoal">Artikel</span>
             </span>
           </Link>
           <Link to="/mobile/catalog" className="shrink-0 rounded-2xl border border-[#d8d5ca] bg-editorial-ivory px-3 py-2 text-xs font-bold text-editorial-charcoal">
@@ -117,8 +117,8 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
       ) : failed ? (
         <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/85 px-4 py-12 text-center shadow-sm">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Journal</p>
-            <h1 className="mt-3 text-3xl font-bold text-[#111827]">Article not available</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Jurnal</p>
+            <h1 className="mt-3 text-3xl font-bold text-[#111827]">Artikel tidak tersedia</h1>
             <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
               Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
             </p>
@@ -296,13 +296,13 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
         {loading ? (
           <section className="notfound-content">
             <div className="reveal-divider" style={{ width: 40, margin: '0 auto 20px' }} />
-            <p className="editorial-eyebrow">LOADING</p>
+            <p className="editorial-eyebrow">MEMUAT</p>
             <h1 style={{ fontSize: 'var(--text-section)' }}>Memuat artikel...</h1>
           </section>
         ) : failed ? (
           <section className="notfound-content">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JOURNAL</p>
-            <h1 className="hero-animate-text hero-animate-text--d2">Article not available</h1>
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JURNAL</p>
+            <h1 className="hero-animate-text hero-animate-text--d2">Artikel tidak tersedia</h1>
             <p className="hero-animate-text hero-animate-text--d3">Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.</p>
             <div className="notfound-actions hero-animate-text hero-animate-text--d4">
               <Link to="/home" className="editorial-button editorial-button--primary">
@@ -364,7 +364,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                   <JournalMarkdownContent content={post.content} />
                 ) : (
                   <div className="editorial-empty-state">
-                    <p className="editorial-eyebrow">NO CONTENT</p>
+                    <p className="editorial-eyebrow">TANPA KONTEN</p>
                     <h2>Artikel ini belum memiliki isi.</h2>
                   </div>
                 )}

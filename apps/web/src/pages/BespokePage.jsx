@@ -648,7 +648,7 @@ const BespokePage = () => {
           <form className="editorial-form editorial-form--bespoke" onSubmit={submitRequest}>
             <div className="editorial-bespoke-stage" data-reveal>
               <div className="editorial-bespoke-stage__head">
-                <p className="editorial-eyebrow">DESIGN FIRST</p>
+                <p className="editorial-eyebrow">DESAIN DULU</p>
                 <h2>Mulai dari aroma dan bentuk botol.</h2>
                 <p>Pilih arah scent, ukuran, botol, cap, label, dan material dulu. Data checkout diisi setelah desainnya terasa pas.</p>
               </div>
@@ -659,9 +659,9 @@ const BespokePage = () => {
                   <small>Nama bisa sementara, nanti masih bisa disempurnakan saat proses studio.</small>
                 </label>
                 <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--scent">
-                  <span>Scent direction</span>
+                  <span>Arah aroma</span>
                   <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder="Ceritakan mood aroma, notes favorit, atau memori yang ingin dibawa." />
-                  <div className="editorial-bespoke-prompt-chips" aria-label="Scent direction shortcuts">
+                  <div className="editorial-bespoke-prompt-chips" aria-label="Pintasan arah aroma">
                     {scentDirectionPrompts.map((prompt) => (
                       <button
                         key={prompt}
@@ -674,7 +674,7 @@ const BespokePage = () => {
                   </div>
                 </label>
                 <fieldset className="editorial-bespoke-brief-card editorial-bespoke-occasion">
-                  <legend>Occasion</legend>
+                  <legend>Momen</legend>
                   <div className="editorial-bespoke-occasion-grid">
                     {bespokeOccasionOptions.map((option) => (
                       <button
@@ -692,7 +692,7 @@ const BespokePage = () => {
             </div>
             <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact" data-reveal>
               <div className="editorial-bespoke-choice-panel__head">
-                <p className="editorial-eyebrow">VISUAL CUSTOMIZER</p>
+                <p className="editorial-eyebrow">KUSTOMISASI VISUAL</p>
                 <h3>Pilih kategori, lalu tentukan visualnya.</h3>
               </div>
               <div className="editorial-bespoke-customizer">
@@ -743,7 +743,7 @@ const BespokePage = () => {
 
             <div className="editorial-bespoke-next" data-reveal>
               <div className="editorial-bespoke-summary">
-                <p className="editorial-eyebrow">REQUEST SUMMARY</p>
+                <p className="editorial-eyebrow">RINGKASAN PERMINTAAN</p>
                 <dl>
                   <div><dt>Nama parfum</dt><dd>{form.perfumeName || 'Belum diisi'}</dd></div>
                   <div><dt>Aroma</dt><dd>{form.scentDescription || 'Belum diisi'}</dd></div>
