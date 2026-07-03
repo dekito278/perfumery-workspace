@@ -21,7 +21,9 @@ const getFamilyStyle = (family) => {
   for (const [k, v] of Object.entries(FAMILY_COLORS)) {
     if (key.includes(k)) return v;
   }
-  return { bg: '#f7f1e5', accent: '#1b1a16' };
+  // Default falls back to the editorial brand palette (family colors above are
+  // intentionally off-palette scent-family theming and stay as-is).
+  return { bg: 'var(--editorial-ivory)', accent: 'var(--editorial-charcoal)' };
 };
 
 const toPublicMaterial = (material = {}) => ({

@@ -63,7 +63,7 @@ const FormulaItemTableEditor = ({
   return (
     <div className="overflow-visible rounded-[18px] border border-[#d7cfbf] bg-white shadow-sm">
       {activeItemInsight ? (
-        <div className="border-b border-[#e5dcc7] bg-[linear-gradient(180deg,#fffaf0_0%,#fffdf8_100%)] px-4 py-4">
+        <div className="border-b border-[#e5dcc7] px-4 py-4" style={{ background: 'linear-gradient(180deg, var(--editorial-paper) 0%, #fffdf8 100%)' }}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7b6d4f]">
