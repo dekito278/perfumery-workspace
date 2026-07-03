@@ -76,15 +76,15 @@ const CatalogPage = () => {
         <PublicHeader />
 
         <section className="catalog-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">FRAGRANCE COLLECTION</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">Collection</h1>
-          <p className="hero-animate-text hero-animate-text--d3">Limited perfume objects and quiet daily signatures from the atelier.</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KOLEKSI FRAGRANCE</p>
+          <h1 className="hero-animate-text hero-animate-text--d2">Koleksi</h1>
+          <p className="hero-animate-text hero-animate-text--d3">Objek parfum terbatas dan signature harian yang tenang dari atelier.</p>
         </section>
 
         <section className="catalog-section">
           {/* Toolbar: category pills + search */}
           <div className="catalog-toolbar">
-            <div className="catalog-pills" role="list" aria-label="Filter by category">
+            <div className="catalog-pills" role="list" aria-label="Filter berdasarkan kategori">
               {catalogCategories.map((category) => (
                 <button
                   key={category}
@@ -92,7 +92,7 @@ const CatalogPage = () => {
                   className={`catalog-pill ${category === activeCategory ? 'is-active' : ''}`}
                   onClick={() => setActiveCategory(category)}
                 >
-                  {category}
+                  {category === 'All' ? 'Semua' : category}
                 </button>
               ))}
             </div>
@@ -101,7 +101,7 @@ const CatalogPage = () => {
               className="catalog-search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search notes, mood, name..."
+              placeholder="Cari notes, mood, atau nama..."
               aria-label="Cari fragrance berdasarkan nama, notes, atau mood"
             />
           </div>
@@ -128,10 +128,10 @@ const CatalogPage = () => {
             </div>
           ) : (
             <div className="catalog-empty">
-              <p className="editorial-eyebrow">NO MATCH</p>
-              <h2>No fragrance matches this filter.</h2>
+              <p className="editorial-eyebrow">TIDAK ADA</p>
+              <h2>Tidak ada fragrance yang cocok dengan filter ini.</h2>
               <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
-                Reset Catalog
+                Reset Katalog
               </button>
             </div>
           )}
@@ -139,9 +139,9 @@ const CatalogPage = () => {
           {visibleProducts.length < filteredProducts.length ? (
             <div className="catalog-load-more">
               <button type="button" className="editorial-button" onClick={() => setVisibleCount((c) => c + 12)}>
-                Show more <ArrowRight className="h-4 w-4" />
+                Tampilkan lagi <ArrowRight className="h-4 w-4" />
               </button>
-              <span>{visibleProducts.length} of {filteredProducts.length}</span>
+              <span>{visibleProducts.length} dari {filteredProducts.length}</span>
             </div>
           ) : null}
         </section>

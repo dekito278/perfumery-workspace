@@ -84,7 +84,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
         {/* Breadcrumb */}
         <nav className="pdp-breadcrumb hero-animate-fade" aria-label="Breadcrumb">
-          <Link to="/catalog">Collection</Link>
+          <Link to="/catalog">Koleksi</Link>
           <ChevronRight className="h-3 w-3" />
           <span>{product.name}</span>
         </nav>
@@ -135,9 +135,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="pdp-actions" data-reveal>
               <button type="button" className="pdp-add-btn" onClick={() => handleAddToCart(product)}>
                 {lastAddedSlug === product.slug ? (
-                  <><CheckCircle2 className="h-4 w-4" /> Added to Cart</>
+                  <><CheckCircle2 className="h-4 w-4" /> Sudah di Keranjang</>
                 ) : (
-                  <><ShoppingBag className="h-4 w-4" /> Add to Cart &mdash; {product.price}</>
+                  <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {product.price}</>
                 )}
               </button>
             </div>
@@ -148,8 +148,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         {related.length ? (
           <section className="pdp-related" data-reveal>
             <div className="home-section__head">
-              <p className="editorial-eyebrow">YOU MAY ALSO LIKE</p>
-              <h2>Other quiet signatures</h2>
+              <p className="editorial-eyebrow">MUNGKIN KAMU SUKA</p>
+              <h2>Signature tenang lainnya</h2>
             </div>
             <div className="catalog-grid catalog-grid--four" data-reveal data-stagger-children>
               {related.map((item) => (

@@ -7,23 +7,23 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const footerColumns = [
   {
-    title: 'Shop',
+    title: 'Belanja',
     links: [
-      { label: 'All Fragrances', to: '/catalog' },
+      { label: 'Semua Fragrance', to: '/catalog' },
       { label: 'Bespoke Ritual', to: '/bespoke' },
     ],
   },
   {
     title: 'Info',
     links: [
-      { label: 'Raw Materials', to: '/materials' },
-      { label: 'Track Order', to: '/track-order' },
+      { label: 'Raw Material', to: '/materials' },
+      { label: 'Lacak Pesanan', to: '/track-order' },
     ],
   },
   {
-    title: 'Journal',
+    title: 'Jurnal',
     links: [
-      { label: 'Latest', to: '/journal' },
+      { label: 'Terbaru', to: '/journal' },
     ],
   },
 ];
@@ -57,7 +57,7 @@ const StorefrontFooter = () => {
       <div className="sf-footer__inner">
         <div className="sf-footer__brand">
           <Link to="/home" className="sf-footer__wordmark">SOLIVAGANT</Link>
-          <p className="sf-footer__tagline">Artisan Perfumery Atelier by Dekito</p>
+          <p className="sf-footer__tagline">Atelier Parfum Artisan oleh Dekito</p>
         </div>
 
         <div className="sf-footer__columns">
@@ -72,21 +72,21 @@ const StorefrontFooter = () => {
         </div>
 
         <div className="sf-footer__newsletter">
-          <span className="sf-footer__column-title">Stay with the atelier</span>
+          <span className="sf-footer__column-title">Tetap terhubung</span>
           {subscribed ? (
             <p className="sf-footer__subscribed">Terima kasih — lanjutkan di WhatsApp untuk konfirmasi langganan.</p>
           ) : (
             <form onSubmit={handleSubscribe} className="sf-footer__newsletter-form" noValidate>
               <input
                 type="email"
-                placeholder="Your email"
+                placeholder="Email kamu"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
                 required
                 aria-invalid={error ? 'true' : undefined}
                 className="sf-footer__newsletter-input"
               />
-              <button type="submit" className="sf-footer__newsletter-btn" aria-label="Subscribe">
+              <button type="submit" className="sf-footer__newsletter-btn" aria-label="Langganan">
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>

@@ -8,24 +8,24 @@ import { storefrontCategories } from '@/data/storefront.js';
 
 const megaMenuColumns = [
   {
-    title: 'Collection',
+    title: 'Koleksi',
     links: [
-      { label: 'All Fragrances', to: '/catalog' },
+      { label: 'Semua Fragrance', to: '/catalog' },
       { label: 'Bespoke Ritual', to: '/bespoke' },
     ],
   },
   {
-    title: 'By Family',
+    title: 'Berdasarkan Family',
     links: storefrontCategories.map((cat) => ({
       label: cat.name,
       to: `/catalog?family=${cat.name.toLowerCase()}`,
     })),
   },
   {
-    title: 'Resources',
+    title: 'Lainnya',
     links: [
-      { label: 'Raw Material Archive', to: '/materials' },
-      { label: 'Journal', to: '/journal' },
+      { label: 'Arsip Raw Material', to: '/materials' },
+      { label: 'Jurnal', to: '/journal' },
     ],
   },
 ];
@@ -98,11 +98,11 @@ const PublicHeader = () => {
 
   return (
     <header className={`editorial-header${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`} ref={menuRef}>
-      <Link to="/home" className="editorial-wordmark" aria-label="SOLIVAGANT home">
+      <Link to="/home" className="editorial-wordmark" aria-label="SOLIVAGANT beranda">
         SOLIVAGANT
       </Link>
 
-      <nav className="editorial-nav" aria-label="Public storefront navigation">
+      <nav className="editorial-nav" aria-label="Navigasi storefront">
         <button
           type="button"
           className="editorial-nav__trigger"
@@ -110,9 +110,9 @@ const PublicHeader = () => {
           aria-expanded={megaOpen}
           aria-haspopup="true"
         >
-          Shop <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
+          Belanja <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
         </button>
-        <Link to="/journal">Journal</Link>
+        <Link to="/journal">Jurnal</Link>
       </nav>
 
       <div className="editorial-header__actions">
@@ -122,11 +122,11 @@ const PublicHeader = () => {
           onClick={toggleMega}
           aria-expanded={megaOpen}
           aria-haspopup="true"
-          aria-label={megaOpen ? 'Close menu' : 'Open menu'}
+          aria-label={megaOpen ? 'Tutup menu' : 'Buka menu'}
         >
           {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <Link to="/cart" className="editorial-cart-button" aria-label={`Cart, ${summary.quantity} item`}>
+        <Link to="/cart" className="editorial-cart-button" aria-label={`Keranjang, ${summary.quantity} item`}>
           <ShoppingBag className="h-4 w-4" />
           {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
         </Link>
@@ -146,7 +146,7 @@ const PublicHeader = () => {
               </div>
             ))}
           </div>
-          <button type="button" className="editorial-mega-menu__close" onClick={() => setMegaOpen(false)} aria-label="Close menu">
+          <button type="button" className="editorial-mega-menu__close" onClick={() => setMegaOpen(false)} aria-label="Tutup menu">
             <X className="h-4 w-4" />
           </button>
         </div>

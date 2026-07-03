@@ -16,10 +16,10 @@ import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath
 const moodCategories = [
   // `family` is the display label; `filter` is the real catalog category used in the link
   // (the catalog has no "Fresh" category — those scents live under "Aquatic").
-  { name: 'Quiet & Minimal', family: 'Fresh', filter: 'aquatic', description: 'Clean citrus, soft musk, and airy texture for effortless daily wear.', siteImageKey: 'mood-fresh' },
-  { name: 'Warm & Nostalgic', family: 'Gourmand', filter: 'gourmand', description: 'Vanilla, tonka, and roasted warmth — comfort distilled into scent.', siteImageKey: 'mood-gourmand' },
-  { name: 'Dark & Moody', family: 'Woody', filter: 'woody', description: 'Cedar, vetiver, and mineral depth for structured presence.', siteImageKey: 'mood-woody' },
-  { name: 'Soft & Romantic', family: 'Floral', filter: 'floral', description: 'Rose, jasmine, and powdery musk — tender without being sweet.', siteImageKey: 'mood-floral' },
+  { name: 'Tenang & Minimal', family: 'Fresh', filter: 'aquatic', description: 'Citrus bersih, musk lembut, dan tekstur ringan untuk pemakaian harian.', siteImageKey: 'mood-fresh' },
+  { name: 'Hangat & Nostalgia', family: 'Gourmand', filter: 'gourmand', description: 'Vanila, tonka, dan kehangatan panggang — kenyamanan yang disuling jadi aroma.', siteImageKey: 'mood-gourmand' },
+  { name: 'Gelap & Moody', family: 'Woody', filter: 'woody', description: 'Cedar, vetiver, dan kedalaman mineral untuk kehadiran yang tegas.', siteImageKey: 'mood-woody' },
+  { name: 'Lembut & Romantis', family: 'Floral', filter: 'floral', description: 'Mawar, melati, dan musk powdery — lembut tanpa terlalu manis.', siteImageKey: 'mood-floral' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -61,9 +61,9 @@ const HomePage = () => {
     <>
       <Helmet>
         <title>SOLIVAGANT - Artisan Perfumery Atelier by Dekito</title>
-        <meta name="description" content="SOLIVAGANT is an artisan perfumery atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual." />
+        <meta name="description" content="SOLIVAGANT adalah atelier parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
         <meta property="og:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
-        <meta property="og:description" content="A refined editorial perfume house by perfumer Dekito." />
+        <meta property="og:description" content="Rumah parfum editorial oleh perfumer Dekito." />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="/brand/home/raw-material-library.jpg" />
       </Helmet>
@@ -73,13 +73,13 @@ const HomePage = () => {
 
         {/* ── 1. Hero Slideshow ── */}
         <section className="home-hero">
-          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery atelier" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
           <div className="home-hero__overlay home-hero__overlay--editorial">
-            <p className="home-hero__eyebrow">ARTISAN PERFUMERY ATELIER</p>
-            <h1 className="home-hero__title">Fragrance as a<br />memory object.</h1>
-            <p className="home-hero__subtitle">Quiet olfactive works from raw materials, memory, and ritual.</p>
+            <p className="home-hero__eyebrow">ATELIER PARFUM ARTISAN</p>
+            <h1 className="home-hero__title">Aroma sebagai<br />objek kenangan.</h1>
+            <p className="home-hero__subtitle">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
             <Link to="/catalog" className="home-hero__cta">
-              EXPLORE COLLECTION <ArrowRight className="h-4 w-4" />
+              LIHAT KOLEKSI <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>
@@ -88,9 +88,9 @@ const HomePage = () => {
         <section className="home-brandmark" data-reveal>
           <div className="home-brandmark__inner">
             <span className="home-brandmark__logo">SOLIVAGANT</span>
-            <h2 className="home-brandmark__tagline">Artisan perfumery crafted from memory, material, and personal ritual.</h2>
+            <h2 className="home-brandmark__tagline">Parfum artisan yang dirakit dari kenangan, material, dan ritual pribadi.</h2>
             <Link to="/catalog" className="home-brandmark__cta">
-              Explore the Collection <ArrowRight className="h-4 w-4" />
+              Lihat Koleksi <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>
@@ -99,14 +99,14 @@ const HomePage = () => {
         <section className="home-section home-section--flush" data-reveal>
           <div className="home-carousel__header">
             <div>
-              <p className="editorial-eyebrow">CURRENT COLLECTION</p>
-              <h2>Selected fragrances</h2>
+              <p className="editorial-eyebrow">KOLEKSI SAAT INI</p>
+              <h2>Fragrance pilihan</h2>
             </div>
-            <Link to="/catalog" className="home-carousel__see-all">See the Collection <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/catalog" className="home-carousel__see-all">Lihat Koleksi <ArrowRight className="h-4 w-4" /></Link>
           </div>
           {collectionProducts.length ? (
             <div className="home-carousel__wrapper">
-              <button className="home-carousel__arrow home-carousel__arrow--left" onClick={() => scrollCarousel('left')} aria-label="Scroll left">&larr;</button>
+              <button className="home-carousel__arrow home-carousel__arrow--left" onClick={() => scrollCarousel('left')} aria-label="Geser kiri">&larr;</button>
               <div className="home-carousel__track" ref={carouselRef}>
                 {collectionProducts.map((product, index) => (
                   <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="home-carousel__card card-lift img-hover-zoom">
@@ -119,7 +119,7 @@ const HomePage = () => {
                     <div className="home-carousel__card-info">
                       <h3>{product.name}</h3>
                       <div className="home-carousel__card-meta">
-                        <span className="home-carousel__card-perfumer">by Dekito</span>
+                        <span className="home-carousel__card-perfumer">oleh Dekito</span>
                         {(product.price || product.priceNumber) ? (
                           <span className="home-carousel__card-price">{product.price || `Rp ${(product.priceNumber || 0).toLocaleString('id-ID')}`}</span>
                         ) : null}
@@ -128,7 +128,7 @@ const HomePage = () => {
                   </Link>
                 ))}
               </div>
-              <button className="home-carousel__arrow home-carousel__arrow--right" onClick={() => scrollCarousel('right')} aria-label="Scroll right">&rarr;</button>
+              <button className="home-carousel__arrow home-carousel__arrow--right" onClick={() => scrollCarousel('right')} aria-label="Geser kanan">&rarr;</button>
             </div>
           ) : (
             <div className="editorial-empty-state editorial-empty-state--inline">
@@ -139,12 +139,12 @@ const HomePage = () => {
 
         {/* ── 4. Full-bleed Editorial Statement ── */}
         <section className="home-statement" data-reveal="scale">
-          <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer at work in the Solivagant atelier" className="home-statement__image" />
+          <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
           <div className="home-statement__overlay">
-            <h2>Feeling Over Formula.</h2>
-            <p>We don't chase trends or mass appeal. Every SOLIVAGANT fragrance is an atmosphere — composed from obsession, intuition, and the raw conviction that perfume should change how you carry yourself through a room.</p>
+            <h2>Rasa di Atas Formula.</h2>
+            <p>Kami tidak mengejar tren atau selera pasar. Setiap fragrance SOLIVAGANT adalah sebuah atmosfer — dirakit dari obsesi, intuisi, dan keyakinan bahwa parfum seharusnya mengubah cara kamu membawa diri di sebuah ruangan.</p>
             <Link to="/bespoke" className="home-statement__cta">
-              Book a Bespoke Consultation <ArrowRight className="h-4 w-4" />
+              Konsultasi Bespoke <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>
@@ -152,8 +152,8 @@ const HomePage = () => {
         {/* ── 5. Tabbed "Explore by Mood" ── */}
         <section className="home-section" data-reveal>
           <div className="home-section__head">
-            <p className="editorial-eyebrow">EXPLORE BY MOOD</p>
-            <h2>Find your scent direction</h2>
+            <p className="editorial-eyebrow">JELAJAHI BERDASARKAN MOOD</p>
+            <h2>Temukan arah aromamu</h2>
           </div>
           <div className="home-moods">
             <div className="home-moods__tabs">
@@ -179,7 +179,7 @@ const HomePage = () => {
                 <h3>{moodCategories[activeMood].name}</h3>
                 <p>{moodCategories[activeMood].description}</p>
                 <Link to={`/catalog?family=${moodCategories[activeMood].filter}`} className="home-moods__panel-link">
-                  Shop {moodCategories[activeMood].name} <ArrowRight className="h-4 w-4" />
+                  Belanja {moodCategories[activeMood].name} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -190,8 +190,8 @@ const HomePage = () => {
         {publishedArticles.length ? (
           <section className="home-section" data-reveal>
             <div className="home-section__head">
-              <p className="editorial-eyebrow">JOURNAL</p>
-              <h2>Field notes from the atelier</h2>
+              <p className="editorial-eyebrow">JURNAL</p>
+              <h2>Catatan dari atelier</h2>
             </div>
             <div className="home-journal-grid" data-reveal data-stagger-children>
               {publishedArticles.map((article) => (
@@ -199,19 +199,19 @@ const HomePage = () => {
                   <span className="home-journal-card__category">{getJournalCategoryLabel(article.category)}</span>
                   <h3>{article.title}</h3>
                   <p>{getArticleExcerpt(article)}</p>
-                  <span className="home-journal-card__read-more">Read More <ArrowRight className="h-3 w-3" /></span>
+                  <span className="home-journal-card__read-more">Baca Selengkapnya <ArrowRight className="h-3 w-3" /></span>
                 </Link>
               ))}
             </div>
             <div className="home-section__action">
-              <Link to="/journal">Read the journal <ArrowRight className="h-4 w-4" /></Link>
+              <Link to="/journal">Baca jurnal <ArrowRight className="h-4 w-4" /></Link>
             </div>
           </section>
         ) : null}
 
         {/* ── 7. Newsletter Section ── */}
         <section className="home-newsletter" data-reveal>
-          <img src={siteImages['home-newsletter'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant atelier" className="home-newsletter__bg" />
+          <img src={siteImages['home-newsletter'] || '/brand/home/raw-material-library.jpg'} alt="Atelier Solivagant" className="home-newsletter__bg" />
           <div className="home-newsletter__inner">
             <p className="editorial-eyebrow">KOLABORASI</p>
             <h2>Mari berkolaborasi dengan atelier.</h2>
