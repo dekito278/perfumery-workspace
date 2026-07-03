@@ -19,10 +19,15 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) return undefined;
 
-    const elements = container.querySelectorAll('[data-reveal]');
-    if (!elements.length) return;
+    const staggerChildren = (parent, step = 80) => {
+      Array.from(parent.children).forEach((child, i) => {
+        if (child.classList.contains('is-visible')) return;
+        child.style.transitionDelay = `${i * step}ms`;
+        child.classList.add('is-visible');
+      });
+    };
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -33,11 +38,7 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
 
             // Stagger children if flagged
             if (entry.target.hasAttribute('data-stagger-children')) {
-              const children = entry.target.children;
-              Array.from(children).forEach((child, i) => {
-                child.style.transitionDelay = `${i * 80}ms`;
-                child.classList.add('is-visible');
-              });
+              staggerChildren(entry.target);
             }
           }
         });
@@ -45,9 +46,24 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
       { threshold, rootMargin }
     );
 
-    elements.forEach((el) => observer.observe(el));
+    // (Re)scan the subtree: observe not-yet-revealed [data-reveal] nodes, and immediately
+    // reveal freshly-added children of stagger containers whose parent is already visible.
+    // Keeps content visible when a list changes (e.g. switching catalog category tabs)
+    // without a full remount — otherwise the new nodes stay opacity:0 until a page refresh.
+    const scan = () => {
+      container.querySelectorAll('[data-reveal]:not(.is-visible)').forEach((el) => observer.observe(el));
+      container.querySelectorAll('[data-stagger-children].is-visible').forEach((parent) => staggerChildren(parent, 40));
+    };
 
-    return () => observer.disconnect();
+    scan();
+
+    const mutationObserver = new MutationObserver(() => scan());
+    mutationObserver.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
   }, [threshold, rootMargin]);
 
   return containerRef;
