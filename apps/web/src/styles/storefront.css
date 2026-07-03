@@ -375,7 +375,7 @@
   width: 44px;
   height: 44px;
   border: 1px solid var(--editorial-border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
   color: var(--editorial-charcoal);
   cursor: pointer;
@@ -654,16 +654,33 @@
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
+/* Cart is a compact square icon button with a corner count badge — cleaner than the
+   wide bordered pill it inherited from .editorial-button. */
+.editorial-cart-button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 10px;
+}
+
 .editorial-cart-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
   display: inline-grid;
-  min-width: 20px;
-  height: 20px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  box-sizing: border-box;
   place-items: center;
   border-radius: 999px;
+  border: 2px solid var(--editorial-ivory);
   background: var(--editorial-forest);
   color: var(--editorial-paper);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 900;
+  line-height: 1;
 }
 
 .editorial-button:hover,
@@ -671,6 +688,10 @@
   transform: translateY(-1px);
   border-color: rgba(176, 139, 79, 0.48);
   box-shadow: 0 18px 38px -32px rgba(24, 53, 34, 0.7);
+}
+
+.editorial-cart-button:hover {
+  box-shadow: 0 10px 24px -16px rgba(27, 26, 22, 0.5);
 }
 
 .editorial-button--primary {
