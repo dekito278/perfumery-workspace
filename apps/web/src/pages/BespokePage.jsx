@@ -229,7 +229,7 @@ const BespokePage = () => {
       key: 'size',
       tabLabel: 'Ukuran',
       eyebrow: 'UKURAN',
-      title: 'Size selection',
+      title: 'Pilih ukuran',
       field: 'size',
       selected: selectedSize,
       options: bottleSizeOptions,
@@ -238,7 +238,7 @@ const BespokePage = () => {
       key: 'bottle',
       tabLabel: 'Botol',
       eyebrow: 'BOTOL',
-      title: 'Bottle type',
+      title: 'Jenis botol',
       field: 'bottleType',
       selected: selectedBottle,
       options: bottleTypeOptions,
@@ -247,7 +247,7 @@ const BespokePage = () => {
       key: 'cap',
       tabLabel: 'Cap',
       eyebrow: 'CAP',
-      title: 'Cap design',
+      title: 'Desain tutup',
       field: 'capDesign',
       selected: selectedCap,
       options: capDesignOptions,
@@ -256,7 +256,7 @@ const BespokePage = () => {
       key: 'label',
       tabLabel: 'Label',
       eyebrow: 'LABEL',
-      title: 'Label design',
+      title: 'Desain label',
       field: 'labelDesign',
       selected: selectedLabel,
       options: labelDesignOptions,
@@ -265,7 +265,7 @@ const BespokePage = () => {
       key: 'material',
       tabLabel: 'Material',
       eyebrow: 'MATERIAL',
-      title: 'Material add-on',
+      title: 'Add-on material',
       field: 'exoticMaterial',
       selected: selectedMaterial || noneMaterialOption,
       options: [noneMaterialOption, ...exoticMaterialOptions],
@@ -624,8 +624,8 @@ const BespokePage = () => {
   return (
     <>
       <Helmet>
-        <title>Bespoke Perfume Consultation - SOLIVAGANT</title>
-        <meta name="description" content="Request a SOLIVAGANT custom perfume consultation through aroma, bottle choices, delivery data, and payment." />
+        <title>Parfum Bespoke - SOLIVAGANT</title>
+        <meta name="description" content="Ajukan konsultasi parfum custom SOLIVAGANT lewat pilihan aroma, botol, data pengiriman, dan pembayaran." />
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
@@ -633,9 +633,9 @@ const BespokePage = () => {
 
         <section className="bespoke-hero">
           <div className="bespoke-hero__copy">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">BESPOKE CONSULTATION</p>
-            <h1 className="hero-animate-text hero-animate-text--d2">Your Scent, Composed</h1>
-            <p className="hero-animate-text hero-animate-text--d3">Describe your aroma direction, choose bottle details, and submit your request. Custom perfumes are crafted within 7–14 days.</p>
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KONSULTASI BESPOKE</p>
+            <h1 className="hero-animate-text hero-animate-text--d2">Racik Parfum Versimu</h1>
+            <p className="hero-animate-text hero-animate-text--d3">Ceritakan arah aromamu, pilih detail botol, lalu kirim permintaan. Parfum custom dikerjakan dalam 7–14 hari.</p>
           </div>
           <ol className="bespoke-hero__steps hero-animate-fade">
             {steps.map((step, index) => (
