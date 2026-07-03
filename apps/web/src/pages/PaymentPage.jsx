@@ -291,7 +291,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             </div>
             {customerCode ? (
               <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-editorial-charcoal">
-                Lacak order
+                Lacak pesanan
               </Link>
             ) : null}
           </div>
@@ -324,7 +324,7 @@ const PaymentFrame = ({ session, compact = false }) => {
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
             <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-editorial-charcoal">
-              Lacak order
+              Lacak pesanan
             </Link>
           ) : null}
           <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
@@ -496,7 +496,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </Button>
           {customerCode && hasSubmittedProof ? (
             <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-editorial-stone/15 bg-white px-4 text-sm font-bold text-editorial-charcoal">
-              Lacak order
+              Lacak pesanan
             </Link>
           ) : null}
           {customerCode && needsProofUpload ? (
@@ -611,7 +611,7 @@ const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }
         Buka katalog
       </Link>
       <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
-        Lacak order
+        Lacak pesanan
       </Link>
       {orderNumber && onRefresh ? (
         <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
