@@ -71,6 +71,33 @@ const CheckoutPage = () => {
     submitOrder();
   };
 
+  if (!items.length) {
+    return (
+      <>
+        <Helmet>
+          <title>Checkout - SOLIVAGANT</title>
+        </Helmet>
+        <main className="solivagant-editorial-home">
+          <PublicHeader />
+          <section className="cart-hero">
+            <p className="editorial-eyebrow">CHECKOUT</p>
+            <h1>Checkout</h1>
+            <p>Keranjang kamu masih kosong.</p>
+          </section>
+          <section className="checkout-layout">
+            <div className="cart-empty">
+              <ShoppingBag className="h-8 w-8" />
+              <h2>Keranjang kosong</h2>
+              <p>Tambahkan produk sebelum checkout.</p>
+              <Link to="/catalog" className="cart-empty__cta">Lihat Koleksi</Link>
+            </div>
+          </section>
+          <StorefrontFooter />
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -89,15 +116,6 @@ const CheckoutPage = () => {
         <section className="checkout-layout">
           {/* Checkout form */}
           <form className="checkout-form" onSubmit={submitCheckout}>
-            {!items.length ? (
-              <div className="cart-empty">
-                <ShoppingBag className="h-8 w-8" />
-                <h2>Keranjang kosong</h2>
-                <p>Tambahkan produk sebelum checkout.</p>
-                <Link to="/catalog" className="cart-empty__cta">Explore Collection</Link>
-              </div>
-            ) : null}
-
             {/* Customer info */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">INFORMASI PEMBELI</legend>

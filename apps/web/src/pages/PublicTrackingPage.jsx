@@ -128,6 +128,7 @@ const PublicTrackingPage = () => {
               value={lookup}
               onChange={(event) => setLookup(event.target.value)}
               placeholder="Nomor order (DKT-XXXXX) atau nomor resi"
+              aria-label="Nomor order atau nomor resi"
             />
             <button type="submit" disabled={loading || !lookup.trim()}>
               <Search className="h-4 w-4" />

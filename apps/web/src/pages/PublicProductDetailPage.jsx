@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
@@ -32,6 +32,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const product = findPublicFragrance(slug, visibleProducts);
   const productsLoading = Boolean(studioProducts.loading);
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
   const revealRef = useScrollReveal();
 
@@ -61,8 +62,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     addItem(item, 1);
     setLastAddedSlug(item.slug);
     toast.success(`${item.name} masuk ke keranjang`, {
-      description: 'Cart desktop sudah diperbarui.',
-      action: { label: 'Lihat cart', onClick: () => { window.location.href = '/cart'; } },
+      description: 'Keranjang sudah diperbarui.',
+      action: { label: 'Lihat cart', onClick: () => navigate('/cart') },
     });
     window.setTimeout(() => {
       setLastAddedSlug((current) => (current === item.slug ? '' : current));
@@ -103,15 +104,15 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="pdp-notes" data-reveal>
               <div className="pdp-notes__row">
                 <span className="pdp-notes__label">Top</span>
-                <span className="pdp-notes__values">{product.topNotes.join(', ')}</span>
+                <span className="pdp-notes__values">{(product.topNotes || []).join(', ')}</span>
               </div>
               <div className="pdp-notes__row">
                 <span className="pdp-notes__label">Heart</span>
-                <span className="pdp-notes__values">{product.heartNotes.join(', ')}</span>
+                <span className="pdp-notes__values">{(product.heartNotes || []).join(', ')}</span>
               </div>
               <div className="pdp-notes__row">
                 <span className="pdp-notes__label">Base</span>
-                <span className="pdp-notes__values">{product.baseNotes.join(', ')}</span>
+                <span className="pdp-notes__values">{(product.baseNotes || []).join(', ')}</span>
               </div>
             </div>
 
@@ -119,7 +120,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="pdp-meta" data-reveal>
               <span>{product.mood}</span>
               <span>{product.concentration}</span>
-              <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span>
+              <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
             </div>
 
             {product.materialHighlights?.length ? (

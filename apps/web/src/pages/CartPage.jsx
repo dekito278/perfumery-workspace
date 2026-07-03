@@ -52,7 +52,7 @@ const CartPage = () => {
                   </Link>
                   <div className="cart-line__info">
                     <Link to={`/catalog/${item.slug}`} className="cart-line__name">{item.name}</Link>
-                    <span className="cart-line__meta">{item.notes} · {item.size}</span>
+                    <span className="cart-line__meta">{[item.notes, item.size].filter(Boolean).join(' · ')}</span>
                     <span className="cart-line__price">{item.price}</span>
                   </div>
                   <div className="cart-line__qty">

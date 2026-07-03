@@ -55,7 +55,8 @@ const ProductVisual = ({
       <div className="absolute inset-0 flex items-center justify-center p-8">
         <img
           src="/brand/solivagant-logo.png"
-          alt={product?.name ? `${product.name} by Solivagant` : 'Solivagant'}
+          alt=""
+          aria-hidden="true"
           className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-150', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
@@ -69,7 +70,7 @@ const ProductVisual = ({
       {hasImage ? (
         <img
           src={optimizedImageUrl}
-          alt={product?.name || 'Solivagant product'}
+          alt={product?.name ? `${product.name}${product.category ? ` — ${product.category}` : ''}` : 'Solivagant fragrance'}
           className={cn(
             'absolute inset-0 h-full w-full transition-opacity duration-150',
             imageFit === 'cover' ? 'object-cover p-0' : 'object-contain p-3 sm:p-4',

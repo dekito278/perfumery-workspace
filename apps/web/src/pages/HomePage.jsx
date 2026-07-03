@@ -162,7 +162,6 @@ const HomePage = () => {
                   key={mood.name}
                   className={`home-moods__tab ${i === activeMood ? 'home-moods__tab--active' : ''}`}
                   onClick={() => setActiveMood(i)}
-                  onMouseEnter={() => setActiveMood(i)}
                 >
                   <span className="home-moods__tab-name">{mood.name}</span>
                   <ArrowRight className="home-moods__tab-arrow h-4 w-4" />

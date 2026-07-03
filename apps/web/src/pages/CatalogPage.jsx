@@ -102,6 +102,7 @@ const CatalogPage = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search notes, mood, name..."
+              aria-label="Cari fragrance berdasarkan nama, notes, atau mood"
             />
           </div>
 

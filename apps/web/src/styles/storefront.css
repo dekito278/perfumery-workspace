@@ -1722,8 +1722,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 44px;
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -5208,6 +5208,9 @@
 }
 
 .catalog-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   border: 1px solid var(--editorial-border);
   border-radius: 0;
   background: transparent;
