@@ -152,9 +152,9 @@ const PublicJournalPage = () => {
               {visibleCount < filtered.length ? (
                 <div className="journal-load-more">
                   <button type="button" onClick={() => setVisibleCount((c) => c + 9)}>
-                    Load more articles
+                    Tampilkan lagi
                   </button>
-                  <span>{Math.min(visibleCount, filtered.length)} of {filtered.length}</span>
+                  <span>{Math.min(visibleCount, filtered.length)} dari {filtered.length}</span>
                 </div>
               ) : null}
             </>

@@ -138,12 +138,36 @@ const restoreInventoryForOrder = async (order, reason) => {
   return response.json();
 };
 
+const releaseVoucherUsageForOrder = async (order) => {
+  if (!order?.id && !order?.order_number) return;
+  try {
+    const { restUrl, headers } = getSupabaseRestConfig();
+    await fetch(`${restUrl}/rpc/storefront_release_voucher_usage`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        p_order_id: order.id || null,
+        p_order_number: order.order_number || null,
+      }),
+    });
+  } catch (error) {
+    console.warn('Failed to release voucher usage:', error.message || error);
+  }
+};
+
 const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => {
   const { restUrl, headers } = getSupabaseRestConfig();
   const currentOrder = await getOrderByInvoice(invoiceNumber);
 
   if (!currentOrder) {
     throw new Error(`Order ${invoiceNumber} not found`);
+  }
+
+  const incomingStatus = statusPatch.paymentStatus;
+  const isTerminalCancel = ['failed', 'expired', 'refunded', 'cancelled'].includes(incomingStatus);
+
+  if (currentOrder.payment_status === 'paid' && isTerminalCancel) {
+    return { skipped: 'already_paid' };
   }
 
   const response = await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}`, {
@@ -164,12 +188,16 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => 
     throw new Error(`Failed to update order ${invoiceNumber}: ${await response.text()}`);
   }
 
-  if (statusPatch.paymentStatus === 'paid') {
+  if (incomingStatus === 'paid' && !currentOrder.inventory_deducted) {
     await deductInventoryForPaidOrder(currentOrder);
   }
 
-  if (['failed', 'expired', 'refunded'].includes(statusPatch.paymentStatus) && currentOrder?.inventory_deducted) {
-    await restoreInventoryForOrder(currentOrder, `DOKU status ${statusPatch.paymentStatus} stock released`);
+  if (isTerminalCancel && currentOrder?.inventory_deducted) {
+    await restoreInventoryForOrder(currentOrder, `DOKU status ${incomingStatus} stock released`);
+  }
+
+  if (isTerminalCancel) {
+    await releaseVoucherUsageForOrder(currentOrder);
   }
 };
 

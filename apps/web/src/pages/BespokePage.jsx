@@ -719,7 +719,7 @@ const BespokePage = () => {
                       </button>
                     ))}
                   </div>
-                  <div className="editorial-bespoke-choice-group editorial-bespoke-choice-group--inside">
+                  <div className="editorial-bespoke-choice-group editorial-bespoke-choice-group--inside" role="tabpanel" aria-label={activeChoice.title}>
                     <div>
                       <p className="editorial-eyebrow">{activeChoice.eyebrow}</p>
                       <h3>{activeChoice.title}</h3>

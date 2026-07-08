@@ -111,7 +111,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
         <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/80 px-4 text-center">
           <div>
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-editorial-stone/20 border-t-editorial-charcoal" />
-            <p className="mt-4 text-sm font-bold text-editorial-charcoal">Loading article...</p>
+            <p className="mt-4 text-sm font-bold text-editorial-charcoal">Memuat artikel...</p>
           </div>
         </section>
       ) : failed ? (
@@ -136,7 +136,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
                 {getJournalCategoryLabel(post.category)}
               </Badge>
               <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName('published')}`}>
-                Published
+                Terbit
               </Badge>
             </div>
             <h1 className="mt-4 text-[2rem] font-black leading-[1.05] text-[#111827]">{post.title}</h1>
@@ -148,7 +148,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
                 <Timer className="h-4 w-4 text-editorial-charcoal" />
-                {readingMinutes} min read
+                {readingMinutes} menit baca
               </span>
             </div>
             {tags.length ? (
@@ -306,7 +306,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
             <p className="hero-animate-text hero-animate-text--d3">Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.</p>
             <div className="notfound-actions hero-animate-text hero-animate-text--d4">
               <Link to="/home" className="editorial-button editorial-button--primary">
-                <ArrowLeft className="h-4 w-4" /> Back to Solivagant
+                <ArrowLeft className="h-4 w-4" /> Kembali ke Beranda
               </Link>
             </div>
           </section>
@@ -319,7 +319,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                   {getJournalCategoryLabel(post.category)}
                 </span>
                 <span className="journal-article-badge journal-article-badge--status">
-                  Published
+                  Terbit
                 </span>
               </div>
 
@@ -336,7 +336,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                 </span>
                 <span className="journal-article-meta-pill">
                   <Timer />
-                  {readingMinutes} min read
+                  {readingMinutes} menit baca
                 </span>
               </div>
 
@@ -377,7 +377,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                   </div>
                   <div className="journal-article-share__body">
                     <span className="journal-article-share__label">
-                      <Share2 /> Share preview
+                      <Share2 /> Pratinjau bagikan
                     </span>
                     <h2>{title}</h2>
                     <p className="journal-article-share__desc">{description}</p>
@@ -385,11 +385,11 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                     <div className="journal-article-share__actions">
                       <button type="button" onClick={copyArticleLink}>
                         <Copy />
-                        {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Failed' : 'Copy'}
+                        {copyState === 'copied' ? 'Tersalin' : copyState === 'failed' ? 'Gagal' : 'Salin'}
                       </button>
                       <a href={canonicalUrl} target="_blank" rel="noreferrer">
                         <ExternalLink />
-                        Open
+                        Buka
                       </a>
                     </div>
                   </div>

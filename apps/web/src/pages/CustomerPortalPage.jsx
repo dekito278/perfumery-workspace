@@ -597,7 +597,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
           <Truck className="h-3.5 w-3.5" />
-          Shipment
+          Pengiriman
         </div>
         <ShipmentBadge status={order.shipmentStatus} />
       </div>
@@ -622,7 +622,7 @@ const ShipmentPanel = ({ order, compact = false }) => {
         ) : null}
         {order.deliveredAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">Delivered</div>
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">Diterima</div>
             <div className="mt-1 text-editorial-charcoal">{formatDate(order.deliveredAt)}</div>
           </div>
         ) : null}
@@ -685,7 +685,7 @@ const SelfServiceActions = ({
       ) : null}
       <Link to={invoicePath(order.orderNumber)} className={outlineClass}>
         <FileText className="h-4 w-4" />
-        Download invoice
+        Unduh invoice
       </Link>
       {canTrackShipment(order) ? (
         <a href={order.trackingUrl} target="_blank" rel="noreferrer" className={primaryClass}>
@@ -849,7 +849,7 @@ const CustomerPortalPage = () => {
 
   const loadPortalForCode = useCallback(async (code, { silent = false } = {}) => {
     if (!code.trim()) {
-      if (!silent) toast.error('Customer code is required');
+      if (!silent) toast.error('Kode customer wajib diisi');
       return;
     }
 
@@ -875,7 +875,7 @@ const CustomerPortalPage = () => {
     setLastCustomerCode(result.customer.customerCode);
     writeLastCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
-    if (!silent) toast.success(`${result.customer.customerCode} loaded`);
+    if (!silent) toast.success(`${result.customer.customerCode} dimuat`);
   }, [setSearchParams]);
 
   useEffect(() => {
@@ -1258,7 +1258,7 @@ const CustomerPortalPage = () => {
               <div className="relative">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase text-[#cbd6c5]">
                   <ShoppingBag className="h-3.5 w-3.5" />
-                  Order tracker
+                  Lacak pesanan
                 </div>
                 <h1 className="mt-3 text-2xl font-bold leading-tight">Cek progress pesanan.</h1>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
@@ -1267,7 +1267,7 @@ const CustomerPortalPage = () => {
               </div>
             </div>
             <form onSubmit={loadPortal} className="grid gap-3 p-4">
-              <label className="text-[10px] font-bold uppercase text-[#6b7280]">Customer code</label>
+              <label className="text-[10px] font-bold uppercase text-[#6b7280]">Kode customer</label>
               <div className="grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={customerCode}
@@ -1347,15 +1347,15 @@ const CustomerPortalPage = () => {
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-3 text-center">
                     <div className="text-sm font-bold text-editorial-charcoal">{portal.orders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Orders</div>
+                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pesanan</div>
                   </div>
                   <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-3 text-center">
                     <div className="text-sm font-bold text-editorial-charcoal">{activeOrders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Active</div>
+                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Aktif</div>
                   </div>
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-center">
                     <div className="truncate text-xs font-bold text-amber-800">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
-                    <div className="text-[10px] font-bold uppercase text-amber-700">Latest</div>
+                    <div className="text-[10px] font-bold uppercase text-amber-700">Terbaru</div>
                   </div>
                 </div>
               </section>
@@ -1378,7 +1378,7 @@ const CustomerPortalPage = () => {
                 {securityFormOpen ? (
                   <form onSubmit={saveSecurity} className="mt-3 grid gap-2 border-t border-[#e5e7eb] pt-3">
                     {portal.customer.securityEnabledAt ? (
-                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Current answer" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
+                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Jawaban saat ini" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
                     ) : null}
                     <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder="Pertanyaan keamanan" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
                     <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />

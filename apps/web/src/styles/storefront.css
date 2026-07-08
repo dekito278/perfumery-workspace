@@ -3,6 +3,11 @@
   line-height: 1.15 !important;
 }
 
+:is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--editorial-brass, #b08b4f);
+  outline-offset: 2px;
+}
+
 /* lightweight desktop editorial storefront homepage */
 .solivagant-editorial-home {
   /* Color palette */
@@ -614,6 +619,15 @@
 
 /* Responsive mega-menu and footer */
 @media (max-width: 899px) {
+  .editorial-mega-menu::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: rgba(0, 0, 0, 0.35);
+    pointer-events: auto;
+  }
+
   .editorial-mega-menu__inner {
     grid-template-columns: 1fr;
     gap: 28px;
@@ -1239,10 +1253,13 @@
   }
 
   .journal-tabs {
+    position: relative;
     width: calc(100% - 40px);
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
   }
 
   .journal-tab {

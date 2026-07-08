@@ -119,10 +119,28 @@ const appendTimeline = (timeline, now) => {
   ];
 };
 
+const releaseVoucherUsageForOrder = async (order) => {
+  if (!order?.id && !order?.order_number) return;
+  try {
+    const { restUrl, headers } = getSupabaseRestConfig();
+    await fetch(`${restUrl}/rpc/storefront_release_voucher_usage`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        p_order_id: order.id || null,
+        p_order_number: order.order_number || null,
+      }),
+    });
+  } catch (error) {
+    console.warn('Failed to release voucher usage:', error.message || error);
+  }
+};
+
 const expireOrder = async (order, now) => {
   const { restUrl, headers } = getSupabaseRestConfig();
   const reason = 'Payment expired stock released automatically';
   const restoreEvents = await restoreInventoryForOrder(order, reason);
+  await releaseVoucherUsageForOrder(order);
   const response = await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(order.order_number)}`, {
     method: 'PATCH',
     headers: {

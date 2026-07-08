@@ -362,7 +362,7 @@ export const useCheckoutFlow = ({
 
   const lookupCustomer = async () => {
     if (!customerCode.trim()) {
-      toast.error('Customer code is required');
+      toast.error('Kode customer wajib diisi');
       return;
     }
 
@@ -370,7 +370,7 @@ export const useCheckoutFlow = ({
     const customer = await lookupCheckoutCustomerByCode(customerCode);
     setLookupLoading(false);
     if (!customer) {
-      toast.error('Customer code not found');
+      toast.error('Kode customer tidak ditemukan');
       return;
     }
 
@@ -385,7 +385,7 @@ export const useCheckoutFlow = ({
       setSecurityChallenge(customer);
       setSecurityAnswer('');
       setCustomerCode(customer.customerCode);
-      toast.info('Security question is required');
+      toast.info('Jawab pertanyaan keamanan untuk lanjut');
       return;
     }
 
@@ -407,7 +407,7 @@ export const useCheckoutFlow = ({
 
   const verifyCustomerSecurity = async () => {
     if (!securityChallenge?.customerCode || !securityAnswer.trim()) {
-      toast.error('Security answer is required');
+      toast.error('Jawaban keamanan wajib diisi');
       return;
     }
 
@@ -415,7 +415,7 @@ export const useCheckoutFlow = ({
     const customer = await lookupCheckoutCustomerByCode(securityChallenge.customerCode, securityAnswer);
     setLookupLoading(false);
     if (!customer || customer.requiresSecurity) {
-      toast.error('Security answer is incorrect');
+      toast.error('Jawaban keamanan salah');
       return;
     }
 
@@ -606,7 +606,7 @@ export const useCheckoutFlow = ({
       clearCheckoutDraft();
       (clearVoucher || clearAppliedVoucherCode)();
       setSubmittedOrder(order);
-      toast.success(`Order ${order.orderNumber} saved. Customer code: ${order.customerCode || customerCode}`);
+      toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
       onSuccess?.(order);
       navigate(paymentPath);
     } catch (error) {
@@ -658,7 +658,6 @@ export const useCheckoutFlow = ({
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
-    validPhoneContact,
     setCustomerName,
     setContact,
     setDeliveryAddress: updateDeliveryAddress,
