@@ -18,7 +18,6 @@ import BespokePage from '@/pages/BespokePage.jsx';
 import CartPage from '@/pages/CartPage.jsx';
 import CheckoutPage from '@/pages/CheckoutPage.jsx';
 import PublicTrackingPage from '@/pages/PublicTrackingPage.jsx';
-import PublicMaterialsPage from '@/pages/PublicMaterialsPage.jsx';
 import PublicJournalPage from '@/pages/PublicJournalPage.jsx';
 import NotFoundPage from '@/pages/NotFoundPage.jsx';
 import { isMobileBrowser, toMobilePath } from '@/utils/deviceRouting.js';
@@ -170,7 +169,6 @@ const storefrontRoutePrefixes = [
   '/products',
   '/articles',
   '/bespoke',
-  '/materials',
   '/journal',
   '/cart',
   '/checkout',
@@ -446,7 +444,6 @@ function AppRoutes() {
         <Route path="/trace-daventure" element={<Navigate to="/catalog" replace />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
-        <Route path="/materials" element={<PublicMaterialsPage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

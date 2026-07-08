@@ -24,8 +24,8 @@ const megaMenuColumns = [
   {
     title: 'Lainnya',
     links: [
-      { label: 'Arsip Raw Material', to: '/materials' },
       { label: 'Jurnal', to: '/journal' },
+      { label: 'Lacak Pesanan', to: '/track-order' },
     ],
   },
 ];
@@ -97,40 +97,42 @@ const PublicHeader = () => {
   const toggleMega = useCallback(() => setMegaOpen((prev) => !prev), []);
 
   return (
-    <header className={`editorial-header${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`} ref={menuRef}>
-      <Link to="/home" className="editorial-wordmark" aria-label="SOLIVAGANT beranda">
-        SOLIVAGANT
-      </Link>
-
-      <nav className="editorial-nav" aria-label="Navigasi storefront">
-        <button
-          type="button"
-          className="editorial-nav__trigger"
-          onClick={toggleMega}
-          aria-expanded={megaOpen}
-          aria-haspopup="true"
-        >
-          Belanja <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
-        </button>
-        <Link to="/journal">Jurnal</Link>
-      </nav>
-
-      <div className="editorial-header__actions">
-        <button
-          type="button"
-          className="editorial-nav__hamburger"
-          onClick={toggleMega}
-          aria-expanded={megaOpen}
-          aria-haspopup="true"
-          aria-label={megaOpen ? 'Tutup menu' : 'Buka menu'}
-        >
-          {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-        <Link to="/cart" className="editorial-cart-button" aria-label={`Keranjang, ${summary.quantity} item`}>
-          <ShoppingBag className="h-4 w-4" />
-          {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
+    <div ref={menuRef} className={`editorial-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
+      <header className="editorial-header">
+        <Link to="/home" className="editorial-wordmark" aria-label="SOLIVAGANT beranda">
+          SOLIVAGANT
         </Link>
-      </div>
+
+        <nav className="editorial-nav" aria-label="Navigasi storefront">
+          <button
+            type="button"
+            className="editorial-nav__trigger"
+            onClick={toggleMega}
+            aria-expanded={megaOpen}
+            aria-haspopup="true"
+          >
+            Belanja <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
+          </button>
+          <Link to="/journal">Jurnal</Link>
+        </nav>
+
+        <div className="editorial-header__actions">
+          <button
+            type="button"
+            className="editorial-nav__hamburger"
+            onClick={toggleMega}
+            aria-expanded={megaOpen}
+            aria-haspopup="true"
+            aria-label={megaOpen ? 'Tutup menu' : 'Buka menu'}
+          >
+            {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          <Link to="/cart" className="editorial-cart-button" aria-label={`Keranjang, ${summary.quantity} item`}>
+            <ShoppingBag className="h-4 w-4" />
+            {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
+          </Link>
+        </div>
+      </header>
 
       {megaOpen && (
         <div className="editorial-mega-menu" role="menu">
@@ -151,7 +153,7 @@ const PublicHeader = () => {
           </button>
         </div>
       )}
-    </header>
+    </div>
   );
 };
 

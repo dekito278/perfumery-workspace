@@ -13,7 +13,6 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/catalog\/([^/]+)$/, '/mobile/products/$1'],
   [/^\/track-order\/([^/]+)$/, '/mobile/customer?code=$1'],
   [/^\/track-order$/, '/mobile/customer'],
-  [/^\/materials$/, '/mobile/materials'],
   [/^\/bespoke$/, '/mobile/bespoke'],
   [/^\/cart$/, '/mobile/cart'],
   [/^\/checkout$/, '/mobile/checkout'],

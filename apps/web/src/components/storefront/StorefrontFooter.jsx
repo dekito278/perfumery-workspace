@@ -16,7 +16,6 @@ const footerColumns = [
   {
     title: 'Info',
     links: [
-      { label: 'Raw Material', to: '/materials' },
       { label: 'Lacak Pesanan', to: '/track-order' },
     ],
   },

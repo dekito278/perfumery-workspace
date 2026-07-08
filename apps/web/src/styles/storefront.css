@@ -272,15 +272,15 @@
 }
 
 /* --- Header scroll hide/show --- */
-.editorial-header {
-  transition: transform 0.4s var(--ease-out-expo), background-color 0.3s ease;
+.editorial-header-wrap {
+  transition: transform 0.4s var(--ease-out-expo);
 }
 
-.editorial-header.is-hidden {
+.editorial-header-wrap.is-hidden {
   transform: translateY(-100%);
 }
 
-.editorial-header.is-scrolled {
+.editorial-header-wrap.is-scrolled .editorial-header {
   background: rgba(247, 241, 229, 0.97);
   box-shadow: 0 1px 12px rgba(27, 26, 22, 0.06);
 }
@@ -299,10 +299,14 @@
    END ANIMATION SYSTEM
    ===================================================== */
 
-.editorial-header {
+.editorial-header-wrap {
   position: sticky;
   top: 0;
   z-index: 40;
+  width: 100%;
+}
+
+.editorial-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -619,19 +623,47 @@
 
 /* Responsive mega-menu and footer */
 @media (max-width: 899px) {
-  .editorial-mega-menu::before {
-    content: '';
+  .editorial-mega-menu {
     position: fixed;
-    inset: 0;
-    z-index: -1;
-    background: rgba(0, 0, 0, 0.35);
-    pointer-events: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    border-bottom: none;
+    background: var(--editorial-paper, #fffaf0);
+    backdrop-filter: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 80px;
+    animation: editorial-mega-mobile-enter 0.25s var(--ease-smooth);
+  }
+
+  @keyframes editorial-mega-mobile-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .editorial-mega-menu__inner {
     grid-template-columns: 1fr;
-    gap: 28px;
-    padding: 24px 0 32px;
+    gap: 32px;
+    padding: 24px 20px 48px;
+    width: 100%;
+  }
+
+  .editorial-mega-menu__column a {
+    display: block;
+    padding: 10px 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .editorial-mega-menu__heading {
+    margin-bottom: 8px;
+  }
+
+  .editorial-mega-menu__close {
+    display: none;
   }
 
   .sf-footer__inner {
@@ -5838,7 +5870,13 @@
 }
 
 @media (max-width: 899px) {
+  .editorial-header-wrap {
+    z-index: 51;
+  }
+
   .editorial-header {
+    position: relative;
+    z-index: 51;
     grid-template-columns: 1fr auto;
     padding: 14px 16px;
   }
