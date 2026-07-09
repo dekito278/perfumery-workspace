@@ -109,6 +109,7 @@ const BatchProductionPage = lazyRoute(() => import('@/pages/BatchProductionPage.
 const ProductionCostPage = lazyRoute(() => import('@/pages/ProductionCostPage.jsx'));
 const ValidationLogPage = lazyRoute(() => import('@/pages/ValidationLogPage.jsx'));
 const SiteImageManagerPage = lazyRoute(() => import('@/pages/SiteImageManagerPage.jsx'));
+const StoryEditorPage = lazyRoute(() => import('@/pages/StoryEditorPage.jsx'));
 const MobileLoginPage = lazyRoute(() => import('@/pages/mobile/MobileLoginPage.jsx'));
 const MobileCommerceTabsPage = lazyRoute(() => import('@/pages/mobile/MobileCommerceTabsPage.jsx'));
 const MobileProductDetailPage = lazyRoute(() => import('@/pages/mobile/MobileProductDetailPage.jsx'));
@@ -753,6 +754,12 @@ function AppRoutes() {
         <Route path="/studio/site-images" element={
           <ProtectedRoute>
             <SiteImageManagerPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/stories" element={
+          <ProtectedRoute>
+            <StoryEditorPage />
           </ProtectedRoute>
         } />
 

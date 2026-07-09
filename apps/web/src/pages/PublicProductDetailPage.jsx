@@ -6,7 +6,10 @@ import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
 import { findPublicFragrance, getPublicFragranceCatalog } from '@/data/publicStorefront.js';
+import { getProductStory } from '@/data/stories/index.js';
+import useProductStory from '@/hooks/useProductStory.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -31,6 +34,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(slug, visibleProducts);
   const productsLoading = Boolean(studioProducts.loading);
+  const { story: supabaseStory, loading: storyLoading } = useProductStory(slug);
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
@@ -71,6 +75,23 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   };
 
   const related = relatedFor(product, catalog);
+  const productStory = supabaseStory || getProductStory(slug);
+
+  if (storyLoading) {
+    return (
+      <>
+        <PublicHeader />
+        <main role="status" aria-live="polite" aria-busy="true" style={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
+          <p className="editorial-eyebrow">Memuat...</p>
+        </main>
+        <StorefrontFooter />
+      </>
+    );
+  }
+
+  if (productStory) {
+    return <ImmersiveProductPage product={product} story={productStory} />;
+  }
 
   return (
     <>
