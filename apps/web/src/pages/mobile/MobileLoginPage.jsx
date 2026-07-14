@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils.js';
 const MobileLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cancelMfaChallenge, login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const keyboardActive = useMobileKeyboardState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,6 +70,17 @@ const MobileLoginPage = () => {
     setAuthenticatorCode('');
     setAuthStep('password');
     await cancelMfaChallenge();
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    try {
+      await loginWithGoogle(`${window.location.origin}/mobile/studio`);
+    } catch (googleError) {
+      const message = googleError.message || 'Google sign-in failed';
+      setError(message);
+      toast.error(message);
+    }
   };
 
   const handlePasswordReset = async () => {
@@ -142,6 +153,12 @@ const MobileLoginPage = () => {
             </div>
             <Button type="submit" disabled={loading} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
               {loading ? 'Signing in...' : 'Sign in'}
+            </Button>
+            <div className="flex items-center gap-3 text-xs font-semibold text-[#9ca3af]">
+              <span className="h-px flex-1 bg-[#e5e7eb]" />atau<span className="h-px flex-1 bg-[#e5e7eb]" />
+            </div>
+            <Button type="button" variant="outline" onClick={handleGoogleSignIn} className="h-12 w-full rounded-2xl bg-white">
+              Masuk dengan Google
             </Button>
             <Button type="button" variant="ghost" disabled={resetLoading} onClick={handlePasswordReset} className="h-11 w-full rounded-2xl">
               {resetLoading ? 'Sending reset link...' : 'Forgot password?'}
