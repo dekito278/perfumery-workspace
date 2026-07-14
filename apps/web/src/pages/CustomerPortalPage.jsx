@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
@@ -820,6 +821,7 @@ const ReorderPaymentPanel = ({
 const CustomerPortalPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   const [customerCode, setCustomerCode] = useState(initialCode.toUpperCase());
@@ -884,6 +886,35 @@ const CustomerPortalPage = () => {
       loadPortalForCode(initialCode);
     }
   }, [initialCode, loadPortalForCode]);
+
+  // Google-signed-in customer: auto-open the portal for the code saved on their profile.
+  useEffect(() => {
+    const savedCode = currentUser?.user_metadata?.customer_code;
+    if (savedCode && !initialCode && lastLoadedCodeRef.current !== savedCode) {
+      lastLoadedCodeRef.current = savedCode;
+      setCustomerCode(savedCode);
+      loadPortalForCode(savedCode, { silent: true });
+    }
+  }, [currentUser, initialCode, loadPortalForCode]);
+
+  // Once a logged-in customer resolves a code, remember it on their profile so they
+  // never have to type it again. user_metadata is user-editable, so this is the same
+  // trust level as the existing code + security-question gate — not stronger.
+  useEffect(() => {
+    const code = portal?.customer?.customerCode;
+    if (code && currentUser && currentUser.user_metadata?.customer_code !== code) {
+      rememberCustomerCode(code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portal, currentUser]);
+
+  const signInGoogle = async () => {
+    try {
+      await loginWithGoogle(`${window.location.origin}${isMobileRoute ? '/mobile/customer' : '/customer'}`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal masuk dengan Google');
+    }
+  };
 
   const loadPortal = async (event) => {
     event?.preventDefault();
@@ -1297,6 +1328,17 @@ const CustomerPortalPage = () => {
               <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
                 Kode ini diberikan setelah checkout pertama.
               </p>
+              {currentUser ? (
+                <div className="flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-3 py-2 text-xs font-semibold text-editorial-charcoal">
+                  <span className="min-w-0 truncate">Masuk sebagai {currentUser.email}</span>
+                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={signInGoogle}>
+                  <UserRound className="h-4 w-4" />
+                  Masuk dengan Google
+                </Button>
+              )}
             </form>
           </section>
 
@@ -1540,6 +1582,17 @@ const CustomerPortalPage = () => {
               <p className="mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
                 Kode ini diberikan setelah checkout pertama. Simpan untuk order berikutnya.
               </p>
+              {currentUser ? (
+                <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-4 py-2 text-xs font-semibold text-editorial-charcoal">
+                  <span className="min-w-0 truncate">Masuk sebagai {currentUser.email}</span>
+                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-2xl gap-2 text-sm font-bold" onClick={signInGoogle}>
+                  <UserRound className="h-4 w-4" />
+                  Masuk dengan Google
+                </Button>
+              )}
             </form>
           </div>
 

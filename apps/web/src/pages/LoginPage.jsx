@@ -12,7 +12,7 @@ import { Helmet } from 'react-helmet';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cancelMfaChallenge, login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authenticatorCode, setAuthenticatorCode] = useState('');
@@ -68,6 +68,16 @@ const LoginPage = () => {
     setAuthenticatorCode('');
     setAuthStep('password');
     await cancelMfaChallenge();
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    try {
+      await loginWithGoogle(`${window.location.origin}/studio`);
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed');
+      toast.error(err.message || 'Google sign-in failed');
+    }
   };
 
   const handlePasswordReset = async () => {
@@ -166,6 +176,12 @@ const LoginPage = () => {
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign in'}
+              </Button>
+              <div className="flex items-center gap-3 py-1 text-xs font-semibold text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />atau<span className="h-px flex-1 bg-border" />
+              </div>
+              <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                Masuk dengan Google
               </Button>
               <Button type="button" variant="ghost" className="w-full" onClick={handlePasswordReset} disabled={resetLoading}>
                 {resetLoading ? 'Sending reset link...' : 'Forgot password?'}

@@ -8,6 +8,26 @@ const MFA_REMEMBER_STORAGE_KEY = 'solivagant.auth.mfa-remembered.v1';
 const MFA_REMEMBER_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const SESSION_EXPIRY_LEEWAY_SECONDS = 30;
 
+const ADMIN_EMAILS = String(import.meta.env.VITE_ADMIN_EMAILS || '')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+// Admin gate. When VITE_ADMIN_EMAILS is set it is authoritative: only those emails
+// are admin, regardless of login method — so the owner can sign in with Google
+// (Google verifies the email, so an allowlisted Google email is a strong gate) while
+// every other Google customer stays out. When the allowlist is empty we fall back to
+// legacy behaviour (any password login is admin) so the owner isn't locked out before
+// configuring it; Google customers are still excluded in that case.
+const isAdminUser = (user) => {
+  if (!user) return false;
+  const email = String(user.email || '').toLowerCase();
+  if (ADMIN_EMAILS.length > 0) {
+    return ADMIN_EMAILS.includes(email);
+  }
+  return user.app_metadata?.provider === 'email';
+};
+
 const getCachedSession = () => {
   if (typeof window === 'undefined' || !window.localStorage) {
     return null;
@@ -318,6 +338,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (redirectTo = window.location.href) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
+
+    if (error) {
+      console.error('Google login error:', error);
+      throw new Error(error.message || 'Google login failed');
+    }
+
+    return data;
+  };
+
+  const rememberCustomerCode = async (customerCode) => {
+    if (!customerCode) return;
+    const { error } = await supabase.auth.updateUser({ data: { customer_code: customerCode } });
+    if (error) {
+      console.warn('Failed to save customer code to profile:', error.message || error);
+    }
+  };
+
   const verifyMfaCode = async (code) => {
     const activeChallenge = mfaChallengeRef.current || mfaChallenge;
     if (!activeChallenge?.factorId || !activeChallenge?.challengeId) {
@@ -514,7 +556,10 @@ export const AuthProvider = ({ children }) => {
     disableAuthenticator,
     enrollAuthenticator,
     listAuthenticatorFactors,
+    isAdmin: !!session?.user && isAdminUser(session.user),
     login,
+    loginWithGoogle,
+    rememberCustomerCode,
     requestPasswordReset,
     signup,
     updatePassword,

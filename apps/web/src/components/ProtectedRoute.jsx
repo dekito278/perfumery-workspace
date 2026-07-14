@@ -6,7 +6,7 @@ import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import StudioLoadingState from '@/components/StudioLoadingState.jsx';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, initialLoading } = useAuth();
+  const { isAuthenticated, isAdmin, initialLoading } = useAuth();
   const location = useLocation();
 
   if (initialLoading) {
@@ -37,6 +37,13 @@ const ProtectedRoute = ({ children }) => {
   if (!isAuthenticated) {
     const loginPath = location.pathname.startsWith('/mobile') ? '/mobile/login' : '/login';
     return <Navigate to={loginPath} replace state={{ from: location }} />;
+  }
+
+  // Logged in but not an admin (e.g. a customer signed in with Google): keep them
+  // out of studio and send them to their portal instead.
+  if (!isAdmin) {
+    const portalPath = location.pathname.startsWith('/mobile') ? '/mobile/customer' : '/customer';
+    return <Navigate to={portalPath} replace />;
   }
 
   return children;
