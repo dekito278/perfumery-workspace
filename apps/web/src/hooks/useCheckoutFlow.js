@@ -9,7 +9,8 @@ import {
   MANUAL_TRANSFER_PAYMENT,
 } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
-import { lookupCheckoutCustomerByCode } from '@/services/customerService.js';
+import { getCustomerAccount, lookupCheckoutCustomerByCode } from '@/services/customerService.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import {
   applyVoucherToSubtotalAsync,
@@ -86,6 +87,7 @@ export const useCheckoutFlow = ({
   clearVoucher,
 }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const savedDraft = useMemo(() => readCheckoutDraft(), []);
   const [customerCode, setCustomerCode] = useState(savedDraft.customerCode || '');
   const [customerName, setCustomerName] = useState(savedDraft.customerName || '');
@@ -131,6 +133,23 @@ export const useCheckoutFlow = ({
     && selectedPaymentMethod
     && !saving
   );
+
+  // Prefill from the logged-in customer's saved account, without overriding a draft.
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    let cancelled = false;
+    (async () => {
+      const account = await getCustomerAccount();
+      if (cancelled || !account?.customer) return;
+      const c = account.customer;
+      if (c.customerCode) setCustomerCode((prev) => prev || c.customerCode);
+      if (c.customerName && c.customerName !== 'Customer') setCustomerName((prev) => prev || c.customerName);
+      if (c.contact && c.contact !== '-') setContact((prev) => prev || c.contact);
+      if (c.deliveryAddress) setDeliveryAddress((prev) => prev || c.deliveryAddress);
+    })();
+    return () => { cancelled = true; };
+  }, [currentUser]);
+
   useEffect(() => {
     writeCheckoutDraft({
       customerCode,
