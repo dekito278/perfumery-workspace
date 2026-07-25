@@ -10,6 +10,23 @@ const sanitizeName = (value) => String(value || 'bespoke-option')
   .replace(/^-+|-+$/g, '')
   || 'bespoke-option';
 
+// Remove bespoke option images from storage by public URL. Best-effort: non-bucket URLs are ignored
+// and errors are non-fatal. Mirrors deleteProductImages.
+export const deleteBespokeImages = async (urls = []) => {
+  const marker = `/${BESPOKE_IMAGES_BUCKET}/`;
+  const paths = (Array.isArray(urls) ? urls : [urls])
+    .map((url) => {
+      const str = String(url || '');
+      const idx = str.indexOf(marker);
+      if (idx === -1) return null;
+      return decodeURIComponent(str.slice(idx + marker.length).split('?')[0]);
+    })
+    .filter(Boolean);
+
+  if (!paths.length) return;
+  await supabase.storage.from(BESPOKE_IMAGES_BUCKET).remove(paths);
+};
+
 export const uploadBespokeOptionImage = async (file, collectionKey = 'bespoke', optionLabel = 'option') => {
   const uploadFile = await compressProductImage(file);
   const safeCollection = sanitizeName(collectionKey);
