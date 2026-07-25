@@ -205,6 +205,7 @@ const VoucherManagementPage = () => {
   };
 
   const removeVoucher = async (voucher) => {
+    if (!window.confirm(`Hapus voucher ${voucher.code} permanen? Kode ini akan lepas dari analitik pemakaian dan tidak bisa dikembalikan.`)) return;
     try {
       await deleteVoucher(voucher.id || voucher.code);
       if (draft.id === voucher.id || draft.code === voucher.code) {

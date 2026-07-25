@@ -543,12 +543,16 @@ export const useCheckoutFlow = ({
           audit: false,
         });
         if (voucherSnapshot?.code) {
-          await recordVoucherUsageForOrder({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            voucherSnapshot,
-            items,
-          });
+          try {
+            await recordVoucherUsageForOrder({
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              voucherSnapshot,
+              items,
+            });
+          } catch (voucherError) {
+            throw new Error(`Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Pesanan dibatalkan — silakan checkout ulang tanpa voucher tersebut.`);
+          }
         }
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
           paymentType: paymentMethodDetails.provider,
@@ -597,12 +601,16 @@ export const useCheckoutFlow = ({
         audit: false,
       });
       if (voucherSnapshot?.code) {
-        await recordVoucherUsageForOrder({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          voucherSnapshot,
-          items,
-        });
+        try {
+          await recordVoucherUsageForOrder({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            voucherSnapshot,
+            items,
+          });
+        } catch (voucherError) {
+          throw new Error(`Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Pesanan dibatalkan — silakan checkout ulang tanpa voucher tersebut.`);
+        }
       }
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentUrl: checkout.paymentUrl,

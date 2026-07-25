@@ -658,6 +658,25 @@ const PaymentPageContent = ({ isMobile }) => {
       return null;
     }
 
+    // The public RPC can omit payment_url, which used to make this mint a brand-new DOKU checkout on
+    // every page load (multiple live invoices for one order, double-charge risk). Re-check the
+    // authoritative order and reuse its existing, non-expired session before creating another.
+    const fullOrder = order.paymentUrl
+      ? order
+      : (await getOrderById(order.orderNumber).catch(() => null)) || order;
+    const existingExpiry = fullOrder.paymentExpiresAt ? new Date(fullOrder.paymentExpiresAt).getTime() : 0;
+    const stillValid = existingExpiry ? existingExpiry > Date.now() : Boolean(fullOrder.paymentUrl);
+    if (fullOrder.paymentUrl && stillValid) {
+      const reusedSession = buildDokuSessionFromCheckout(fullOrder, {
+        paymentUrl: fullOrder.paymentUrl,
+        invoiceNumber: fullOrder.orderNumber,
+        paymentExpiresAt: fullOrder.paymentExpiresAt || '',
+        paymentSessionId: fullOrder.paymentSessionId || '',
+      });
+      sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(reusedSession));
+      return reusedSession;
+    }
+
     try {
       const checkout = await createDokuCheckout({
         order,

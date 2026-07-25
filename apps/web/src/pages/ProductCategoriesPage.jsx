@@ -34,14 +34,20 @@ const ProductCategoriesPage = () => {
       await saveStorefrontCategory(categoryForm);
       setCategoryForm({ name: '', description: '' });
       toast.success('Product category saved');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyimpan kategori');
     } finally {
       setSavingCategory(false);
     }
   };
 
   const handleCategoryDelete = async (category) => {
-    await deleteStorefrontCategory(category.id);
-    toast.success('Product category removed');
+    try {
+      await deleteStorefrontCategory(category.id);
+      toast.success('Product category removed');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus kategori');
+    }
   };
 
   return (

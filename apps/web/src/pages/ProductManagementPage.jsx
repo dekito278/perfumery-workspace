@@ -293,6 +293,8 @@ const ProductManagementPage = () => {
       setForm(nextForm);
       setSavedFormSnapshot(snapshotProductForm(nextForm));
       toast.success(stockCorrection ? 'Produk tersimpan dan koreksi stok dicatat' : form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyimpan produk');
     } finally {
       setSavingProduct(false);
     }
@@ -342,17 +344,26 @@ const ProductManagementPage = () => {
   };
 
   const handleDelete = async (product) => {
-    await deleteCustomProduct(product.id);
-    if (form.id === product.id) resetForm();
-    toast.success('Produk dihapus dari katalog custom');
+    if (!window.confirm(`Hapus produk "${product.name || product.id}" dari katalog? Tindakan ini tidak bisa dibatalkan.`)) return;
+    try {
+      await deleteCustomProduct(product.id);
+      if (form.id === product.id) resetForm();
+      toast.success('Produk dihapus dari katalog custom');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus produk');
+    }
   };
 
   const handleResetAll = async () => {
     if (!confirmDiscardChanges()) return;
-    await resetCustomProducts();
-    setForm(emptyProduct);
-    setSavedFormSnapshot(snapshotProductForm(emptyProduct));
-    toast.success('Produk custom direset');
+    try {
+      await resetCustomProducts();
+      setForm(emptyProduct);
+      setSavedFormSnapshot(snapshotProductForm(emptyProduct));
+      toast.success('Produk custom direset');
+    } catch (error) {
+      toast.error(error.message || 'Gagal mereset produk');
+    }
   };
 
   return (

@@ -13,19 +13,14 @@ const ADMIN_EMAILS = String(import.meta.env.VITE_ADMIN_EMAILS || '')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
-// Admin gate. When VITE_ADMIN_EMAILS is set it is authoritative: only those emails
-// are admin, regardless of login method — so the owner can sign in with Google
-// (Google verifies the email, so an allowlisted Google email is a strong gate) while
-// every other Google customer stays out. When the allowlist is empty we fall back to
-// legacy behaviour (any password login is admin) so the owner isn't locked out before
-// configuring it; Google customers are still excluded in that case.
+// Admin gate. VITE_ADMIN_EMAILS is authoritative: only those emails are admin, regardless of login
+// method (Google verifies the email, so an allowlisted Google address is a strong gate). It fails
+// CLOSED — an empty/missing allowlist means nobody is admin, rather than the old fallback that made
+// any password login an admin (a missing env var + open Supabase signups was an instant-admin hole).
 const isAdminUser = (user) => {
   if (!user) return false;
   const email = String(user.email || '').toLowerCase();
-  if (ADMIN_EMAILS.length > 0) {
-    return ADMIN_EMAILS.includes(email);
-  }
-  return user.app_metadata?.provider === 'email';
+  return ADMIN_EMAILS.includes(email);
 };
 
 const getCachedSession = () => {
