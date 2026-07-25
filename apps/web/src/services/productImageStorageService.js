@@ -165,6 +165,23 @@ export const compressProductImage = async (file) => {
   return new File([bestBlob], `${sanitizeName(file.name)}.webp`, { type: 'image/webp' });
 };
 
+// Remove product images from storage by their public URL. Best-effort: URLs that don't point at our
+// bucket (e.g. externally-hosted images pasted into the form) are ignored, and errors are non-fatal.
+export const deleteProductImages = async (urls = []) => {
+  const marker = `/${PRODUCT_IMAGES_BUCKET}/`;
+  const paths = (Array.isArray(urls) ? urls : [urls])
+    .map((url) => {
+      const str = String(url || '');
+      const idx = str.indexOf(marker);
+      if (idx === -1) return null;
+      return decodeURIComponent(str.slice(idx + marker.length).split('?')[0]);
+    })
+    .filter(Boolean);
+
+  if (!paths.length) return;
+  await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(paths);
+};
+
 export const uploadProductImage = async (file, productName = 'product') => {
   const uploadFile = await compressProductImage(file);
 

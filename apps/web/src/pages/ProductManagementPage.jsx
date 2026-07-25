@@ -26,7 +26,7 @@ import {
   resetCustomProducts,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
-import { uploadProductImage } from '@/services/productImageStorageService.js';
+import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const emptyProduct = {
@@ -290,6 +290,13 @@ const ProductManagementPage = () => {
         price: formatRupiah(form.priceNumber),
       });
       const nextForm = toEditableProduct(product);
+      // Save-time reconciliation: drop storage files for images that were on the product before but
+      // are no longer referenced after this save, so removed/replaced images aren't orphaned.
+      const savedImages = new Set(product.images || []);
+      const removedImages = (previousProduct?.images || []).filter((url) => !savedImages.has(url));
+      if (removedImages.length) {
+        deleteProductImages(removedImages).catch((cleanupError) => console.warn('Product image cleanup skipped:', cleanupError.message || cleanupError));
+      }
       setForm(nextForm);
       setSavedFormSnapshot(snapshotProductForm(nextForm));
       toast.success(stockCorrection ? 'Produk tersimpan dan koreksi stok dicatat' : form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
@@ -347,6 +354,10 @@ const ProductManagementPage = () => {
     if (!window.confirm(`Hapus produk "${product.name || product.id}" dari katalog? Tindakan ini tidak bisa dibatalkan.`)) return;
     try {
       await deleteCustomProduct(product.id);
+      // The product is gone, so its images are orphaned — remove them from storage (best-effort).
+      if (product.images?.length) {
+        deleteProductImages(product.images).catch((cleanupError) => console.warn('Product image cleanup skipped:', cleanupError.message || cleanupError));
+      }
       if (form.id === product.id) resetForm();
       toast.success('Produk dihapus dari katalog custom');
     } catch (error) {
