@@ -17,12 +17,13 @@ I can't run them against your schema, so treat every one as a proposal to verify
 ## Apply order
 `01` first (04 depends on its `invoice_token` column). The rest are independent.
 
-## NOT drafted here — #2 `storefront_create_order` (the biggest one)
-Moving order creation server-side (so `subtotal` can't be client-set, and shipping is computed
-server-side) needs your product/variant/bespoke-option/voucher/shipping table schemas to recompute
-prices accurately. It's too schema-specific to draft blind. It's also the highest-value server fix and
-the right home for server-side shipping. Do it as a dedicated task — happy to build it if you point me
-at those table definitions.
+## #2 order creation — DESIGN in `05_create_order_design.md`
+The biggest fix (client-authoritative `subtotal`). Turns out it must be a **Node endpoint, not a SQL
+RPC**, because shipping comes from an external courier API a Postgres function can't call. `05` has the
+full design: recompute item/bespoke prices from the DB, shipping from the courier API + DB promo,
+voucher server-side, then insert + lock down the anon INSERT. Not drafted as runnable code because it's
+the money path and depends on your product/variant/voucher/shipping contracts — point me at those and
+I'll write the endpoint.
 
 ## Caveats that are really product decisions
 - **02 only protects NEW customers.** Existing `SOLI#####` codes stay short and enumerable; the real
