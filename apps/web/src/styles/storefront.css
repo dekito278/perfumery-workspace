@@ -6055,6 +6055,31 @@
 }
 
 /* Add to cart */
+.pdp-variants {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdp-variant-select {
+  width: 100%;
+  max-width: 320px;
+  padding: 12px 14px;
+  border: 1px solid rgba(31, 41, 55, 0.2);
+  border-radius: 14px;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.pdp-variant-select:focus-visible {
+  outline: 2px solid rgba(31, 48, 32, 0.6);
+  outline-offset: 2px;
+}
+
 .pdp-actions {
   margin-top: 36px;
 }

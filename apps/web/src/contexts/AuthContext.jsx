@@ -452,9 +452,28 @@ export const AuthProvider = ({ children }) => {
     return data?.totp || [];
   };
 
-  const disableAuthenticator = async (factorId) => {
+  const disableAuthenticator = async (factorId, code) => {
     if (!factorId) {
       throw new Error('Authenticator factor is required');
+    }
+
+    // Require a live TOTP code (proof of possession) before removing the second factor. Otherwise any
+    // lingering authenticated session could strip MFA with no proof the user holds the authenticator.
+    const trimmedCode = String(code || '').trim();
+    if (!/^\d{6}$/.test(trimmedCode)) {
+      throw new Error('Masukkan 6 digit kode authenticator untuk menonaktifkan');
+    }
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+    if (challengeError) {
+      throw new Error(challengeError.message || 'Gagal memverifikasi authenticator');
+    }
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challengeData.id,
+      code: trimmedCode,
+    });
+    if (verifyError) {
+      throw new Error('Kode authenticator salah');
     }
 
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
@@ -465,6 +484,21 @@ export const AuthProvider = ({ children }) => {
 
     clearRememberedMfaSession();
     setActiveMfaChallenge(null);
+    return true;
+  };
+
+  // Verify the user's CURRENT password (Supabase updateUser can't check the old password on its own).
+  // ponytail: re-sign-in is the only client-side way to prove the password; it refreshes the session
+  // to aal1. Acceptable for a self-service change the user is actively performing at the keyboard.
+  const reauthenticateWithPassword = async (password) => {
+    const email = sessionRef.current?.user?.email || currentUser?.email;
+    if (!email) {
+      throw new Error('Sesi tidak valid, silakan login ulang');
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password: String(password || '') });
+    if (error) {
+      throw new Error('Password saat ini salah');
+    }
     return true;
   };
 
@@ -570,6 +604,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin: !!session?.user && isAdminUser(session.user),
     login,
     loginWithGoogle,
+    reauthenticateWithPassword,
     rememberCustomerCode,
     requestPasswordReset,
     signup,

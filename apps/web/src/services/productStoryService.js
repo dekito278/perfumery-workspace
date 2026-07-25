@@ -108,6 +108,16 @@ export const deleteStory = async (productSlug) => {
     .delete()
     .eq('product_slug', productSlug);
   if (error) throw new Error(error.message);
+
+  // The row is gone, so its whole media folder is now orphaned — clear it (best-effort).
+  try {
+    const { data: files } = await supabase.storage.from(BUCKET).list(productSlug);
+    if (files?.length) {
+      await supabase.storage.from(BUCKET).remove(files.map((file) => `${productSlug}/${file.name}`));
+    }
+  } catch (cleanupError) {
+    console.warn('Story media cleanup skipped:', cleanupError.message || cleanupError);
+  }
 };
 
 export const uploadStoryMedia = async (productSlug, category, file) => {

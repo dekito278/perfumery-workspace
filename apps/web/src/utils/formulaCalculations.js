@@ -9,15 +9,27 @@ export const calculateTotalGrams = (items) => {
 
 export const calculatePercentages = (items, totalGrams) => {
   if (!items || items.length === 0 || totalGrams === 0) return [];
-  
-  return items.map(item => {
-    const gramAmount = parseFloat(item.gram_amount) || 0;
-    const percentage = (gramAmount / totalGrams) * 100;
-    return {
-      ...item,
-      percentage: Math.round(percentage * 10) / 10
-    };
-  });
+
+  // Largest-remainder rounding: round each to 1 decimal but hand the leftover 0.1s to the items with
+  // the biggest dropped fraction, so the percentages sum to exactly 100.0. Rounding each item
+  // independently drifts the total to 99.8 / 100.2, which is misleading for a perfumery composition.
+  const exact = items.map((item) => ((parseFloat(item.gram_amount) || 0) / totalGrams) * 100);
+  const floored = exact.map((value) => Math.floor(value * 10) / 10);
+  const flooredSum = floored.reduce((sum, value) => sum + value, 0);
+  let remainingTenths = Math.round((100 - flooredSum) * 10);
+  const order = exact
+    .map((value, index) => ({ index, frac: value * 10 - Math.floor(value * 10) }))
+    .sort((a, b) => b.frac - a.frac);
+  const bump = new Array(items.length).fill(0);
+  for (let i = 0; i < order.length && remainingTenths > 0; i += 1) {
+    bump[order[i].index] = 0.1;
+    remainingTenths -= 1;
+  }
+
+  return items.map((item, index) => ({
+    ...item,
+    percentage: Math.round((floored[index] + bump[index]) * 10) / 10,
+  }));
 };
 
 export const calculateEffectiveUnitCost = (purchasePrice, purchaseQuantity = 10) => {

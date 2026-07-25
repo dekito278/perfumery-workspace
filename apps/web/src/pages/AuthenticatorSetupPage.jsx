@@ -38,6 +38,7 @@ const SetupContent = ({ mobile = false }) => {
     disableAuthenticator,
     enrollAuthenticator,
     listAuthenticatorFactors,
+    reauthenticateWithPassword,
     updatePassword,
     verifyAuthenticatorEnrollment,
   } = useAuth();
@@ -45,7 +46,8 @@ const SetupContent = ({ mobile = false }) => {
   const [activeFactors, setActiveFactors] = useState([]);
   const [challengeId, setChallengeId] = useState('');
   const [code, setCode] = useState('');
-  const [disableConfirm, setDisableConfirm] = useState('');
+  const [disableCode, setDisableCode] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [loadingFactors, setLoadingFactors] = useState(false);
@@ -113,15 +115,15 @@ const SetupContent = ({ mobile = false }) => {
   };
 
   const handleDisableAuthenticator = async (factorId) => {
-    if (disableConfirm.trim().toUpperCase() !== 'DISABLE') {
-      toast.error('Type DISABLE first to confirm');
+    if (!/^\d{6}$/.test(disableCode.trim())) {
+      toast.error('Masukkan 6 digit kode authenticator untuk konfirmasi');
       return;
     }
 
     setDisabling(factorId);
     try {
-      await disableAuthenticator(factorId);
-      setDisableConfirm('');
+      await disableAuthenticator(factorId, disableCode.trim());
+      setDisableCode('');
       setFactor(null);
       setChallengeId('');
       setCode('');
@@ -147,9 +149,18 @@ const SetupContent = ({ mobile = false }) => {
       return;
     }
 
+    if (!currentPassword.trim()) {
+      toast.error('Masukkan password saat ini untuk konfirmasi');
+      return;
+    }
+
     setChangingPassword(true);
     try {
+      // Prove the user knows the current password before changing it — a lingering session shouldn't
+      // be able to silently reset the account password.
+      await reauthenticateWithPassword(currentPassword);
       await updatePassword(newPassword);
+      setCurrentPassword('');
       setNewPassword('');
       setNewPasswordConfirm('');
       toast.success('Password berhasil diubah');
@@ -286,6 +297,19 @@ const SetupContent = ({ mobile = false }) => {
 
         <form onSubmit={handlePasswordChange} className="mt-4 grid gap-3">
           <div className="space-y-2">
+            <Label htmlFor="current-password">Password saat ini</Label>
+            <Input
+              id="current-password"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="Password lama"
+              autoComplete="current-password"
+              className="h-12 rounded-2xl bg-white"
+              required
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="new-password">Password baru</Label>
             <Input
               id="new-password"
@@ -315,7 +339,7 @@ const SetupContent = ({ mobile = false }) => {
           </div>
           <Button
             type="submit"
-            disabled={changingPassword || newPassword.length < 8 || newPassword !== newPasswordConfirm}
+            disabled={changingPassword || !currentPassword.trim() || newPassword.length < 8 || newPassword !== newPasswordConfirm}
             className="h-12 w-full rounded-2xl bg-editorial-charcoal text-white hover:bg-[#1f3020]"
           >
             {changingPassword ? 'Saving...' : 'Ubah password'}
@@ -358,20 +382,22 @@ const SetupContent = ({ mobile = false }) => {
                 </div>
                 <div className="mt-3 grid gap-2">
                   <Label htmlFor={`disable-${activeFactor.id}`} className="text-xs">
-                    Ketik DISABLE untuk konfirmasi
+                    Masukkan 6 digit kode authenticator untuk konfirmasi
                   </Label>
                   <Input
                     id={`disable-${activeFactor.id}`}
-                    value={disableConfirm}
-                    onChange={(event) => setDisableConfirm(event.target.value)}
-                    placeholder="DISABLE"
-                    className="h-11 rounded-2xl bg-white font-bold uppercase"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={disableCode}
+                    onChange={(event) => setDisableCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    className="h-11 rounded-2xl bg-white text-center text-lg font-bold tracking-[0.35em]"
                   />
                   <Button
                     type="button"
                     variant="destructive"
                     className="h-11 rounded-2xl"
-                    disabled={disabling === activeFactor.id || disableConfirm.trim().toUpperCase() !== 'DISABLE'}
+                    disabled={disabling === activeFactor.id || !/^\d{6}$/.test(disableCode.trim())}
                     onClick={() => handleDisableAuthenticator(activeFactor.id)}
                   >
                     {disabling === activeFactor.id ? 'Disabling...' : 'Disable MFA'}

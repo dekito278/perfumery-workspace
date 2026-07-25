@@ -240,6 +240,8 @@ const StoryEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const [existingStories, setExistingStories] = useState([]);
   const [showAddSection, setShowAddSection] = useState(false);
+  // Section ids present at load — used on save to clean up media for sections the user removed.
+  const loadedSectionIdsRef = useRef([]);
 
   useEffect(() => {
     fetchAllStories().then(setExistingStories).catch(() => {});
@@ -250,9 +252,15 @@ const StoryEditorPage = () => {
     setLoading(true);
     fetchStory(selectedSlug)
       .then((row) => {
-        setStory(withSectionIds(row ? storyFromRow(row) : emptyStory(selectedSlug)));
+        const withIds = withSectionIds(row ? storyFromRow(row) : emptyStory(selectedSlug));
+        loadedSectionIdsRef.current = (withIds.sections || []).map((section) => section.id);
+        setStory(withIds);
       })
-      .catch(() => setStory(withSectionIds(emptyStory(selectedSlug))))
+      .catch(() => {
+        const withIds = withSectionIds(emptyStory(selectedSlug));
+        loadedSectionIdsRef.current = (withIds.sections || []).map((section) => section.id);
+        setStory(withIds);
+      })
       .finally(() => setLoading(false));
   }, [selectedSlug]);
 
@@ -310,6 +318,11 @@ const StoryEditorPage = () => {
     setSaving(true);
     try {
       await upsertStory(selectedSlug, story);
+      // Clean up media for sections removed since load so their files aren't orphaned in storage.
+      const currentIds = new Set((story.sections || []).map((section) => section.id));
+      const removedIds = loadedSectionIdsRef.current.filter((id) => id && !currentIds.has(id));
+      await Promise.all(removedIds.map((id) => deleteStoryMedia(selectedSlug, `section-${id}`).catch(() => {})));
+      loadedSectionIdsRef.current = [...currentIds];
       invalidateStoryCache(selectedSlug);
       toast.success('Story tersimpan!');
       fetchAllStories().then(setExistingStories).catch(() => {});

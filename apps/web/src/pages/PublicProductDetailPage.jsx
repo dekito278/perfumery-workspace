@@ -16,7 +16,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
   DEFAULT_SHARE_IMAGE,
   buildBreadcrumbJsonLd,
@@ -48,6 +48,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState('');
   const [showStickyBar, setShowStickyBar] = useState(false);
   const addBtnRef = useRef(null);
   const revealRef = useScrollReveal();
@@ -87,23 +88,39 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
     return <Navigate to="/not-found" replace />;
   }
 
-  // publicStatus is 'Available' only when total variant stock > 0; otherwise the product is out of
-  // stock. Guard here so desktop can't add a sold-out item and dead-end at checkout stock validation.
-  const soldOut = product.publicStatus !== 'Available';
+  // Pick the selected size variant (default the first), so desktop buyers can choose size and are
+  // charged that variant's price — matching mobile, instead of always the product default.
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
+  const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
+  const selectedStock = Number(selectedVariant?.stock ?? product.stock ?? 0);
+  const selectedSize = selectedVariant?.size || product.size;
+  const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
+  const selectedPriceLabel = selectedPrice > 0 ? formatRupiah(selectedPrice) : product.price;
+  // Out of stock when the selected variant has no stock (fall back to publicStatus if no variants).
+  const soldOut = variants.length ? selectedStock <= 0 : product.publicStatus !== 'Available';
 
-  const handleAddToCart = (item) => {
+  const handleAddToCart = () => {
     if (soldOut) {
-      toast.error(`${item.name} sedang habis`);
+      toast.error(`${product.name} sedang habis`);
       return;
     }
-    addItem(item, 1);
-    setLastAddedSlug(item.slug);
-    toast.success(`${item.name} masuk ke keranjang`, {
+    addItem({
+      ...product,
+      cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
+      variantId: selectedVariant?.id || '',
+      size: selectedSize,
+      price: selectedPriceLabel,
+      priceNumber: selectedPrice,
+      maxStock: selectedStock,
+    }, 1);
+    setLastAddedSlug(product.slug);
+    toast.success(`${product.name} (${selectedSize}) masuk ke keranjang`, {
       description: 'Keranjang sudah diperbarui.',
       action: { label: 'Lihat cart', onClick: () => navigate('/cart') },
     });
     window.setTimeout(() => {
-      setLastAddedSlug((current) => (current === item.slug ? '' : current));
+      setLastAddedSlug((current) => (current === product.slug ? '' : current));
     }, 1800);
   };
 
@@ -203,14 +220,36 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               </div>
             ) : null}
 
+            {variants.length > 1 ? (
+              <div className="pdp-variants" data-reveal>
+                <label className="editorial-eyebrow" htmlFor="pdp-variant-select">UKURAN</label>
+                <select
+                  id="pdp-variant-select"
+                  value={selectedVariantKey}
+                  onChange={(event) => setSelectedVariantId(event.target.value)}
+                  className="pdp-variant-select"
+                >
+                  {variants.map((v) => {
+                    const key = v.id || v.size;
+                    const stock = Number(v.stock || 0);
+                    return (
+                      <option key={key} value={key}>
+                        {v.size} — {formatRupiah(v.priceNumber)}{stock <= 0 ? ' (Habis)' : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            ) : null}
+
             <div className="pdp-actions" data-reveal>
-              <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart(product)} onMouseMove={magnetic} disabled={soldOut}>
+              <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
                 {soldOut ? (
                   <>Stok Habis</>
                 ) : lastAddedSlug === product.slug ? (
                   <><CheckCircle2 className="h-4 w-4" /> Sudah di Keranjang</>
                 ) : (
-                  <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {product.price}</>
+                  <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {selectedPriceLabel}</>
                 )}
               </button>
             </div>
@@ -251,13 +290,13 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             </div>
             <div className="pdp-sticky-bar__text">
               <span className="pdp-sticky-bar__name">{product.name}</span>
-              <span className="pdp-sticky-bar__price">{product.price}</span>
+              <span className="pdp-sticky-bar__price">{selectedPriceLabel}</span>
             </div>
           </div>
           <button
             type="button"
             className="pdp-add-btn magnetic-hover"
-            onClick={() => handleAddToCart(product)}
+            onClick={() => handleAddToCart()}
             onMouseMove={magnetic}
             tabIndex={showStickyBar ? 0 : -1}
             disabled={soldOut}
