@@ -9,8 +9,20 @@ all client numbers). DOKU then charges that stored value. A crafted anon insert 
 Postgres function can't call. So order creation must move to a **Node serverless endpoint** using the
 service-role key — the same pattern as `apps/web/api/doku/checkout.js`.
 
+## Confirmed pieces (verified in the repo)
+- **Catalog prices ARE server-side** → `storefront_products` table (migration `20260507123000`;
+  `productCatalogService.js:706` reads it). So catalog prices CAN be validated server-side.
+- **Bespoke prices** → `storefront_bespoke_options` table.
+- **Shipping** → RajaOngkir / Komerce via `apps/web/api/shipping/rates.js`. The customer picks a specific
+  courier+service; the endpoint must **re-fetch the rate for that selected service** (fresh RajaOngkir
+  call by destination + weight) and use it — never the client's `selectedShipping.cost`.
+- **Order-endpoint pattern already exists** → `apps/web/api/orders/expire-reservations.js` shows the
+  service-role Supabase-from-a-serverless-function pattern to copy.
+- **Voucher** → `storefront_record_voucher_usage` RPC (+ a server discount calc).
+
 ## Endpoint: `apps/web/api/orders/create.js`
-Reuse the service-role REST helper and structure from `api/doku/checkout.js`.
+Reuse the service-role REST helper and structure from `api/doku/checkout.js` /
+`api/orders/expire-reservations.js`.
 
 Input (references, never prices):
 ```
@@ -59,7 +71,9 @@ On staging: `POST /api/orders/create` with a tampered client price → the creat
 matches the server recompute, not the client. Then confirm a direct anon `insert` into
 `storefront_orders` is rejected.
 
-## Why this isn't drafted as runnable code
-It touches the money path and depends on the products/variants/voucher/shipping contracts I can't test
-here. Building it blind would risk breaking checkout. Point me at those table schemas + the shipping
-rate call and I'll write the endpoint against them in a focused pass.
+## Why this is design, not runnable code
+All the pieces are now located (above), so it IS buildable. It's left as design because it's the money
+path and I can't run the required check here — no live RajaOngkir call, no Supabase, no way to prove the
+recomputed subtotal matches before the anon-INSERT lockdown goes in. Ponytail rule: money-path logic
+ships with a runnable check; this one's check only exists on staging. Build it there (or I'll write it in
+a focused pass and you verify on staging before wiring it in + revoking the anon INSERT).
