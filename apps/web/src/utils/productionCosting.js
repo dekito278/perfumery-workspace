@@ -192,9 +192,12 @@ export const buildBulkRow = ({
 }) => {
   const safeVolumeMl = convertToMl(volumeValue, volumeUnit);
   const totalCogs = (materialCogsPerMl * safeVolumeMl) + ((handlingCostPerLiter + overheadPerLiter) * (safeVolumeMl / 1000));
-  const markupPercent = clampPercentage(parseNumberInput(bulkScenario.percent), 1000);
+  const rawPercent = clampPercentage(parseNumberInput(bulkScenario.percent), 1000);
+  // Margin is profit/price, so it's mathematically < 100%. Cap it just under 100 so an out-of-range
+  // entry (e.g. 150, meant as markup) yields a finite price, not Rp 0 or a ~1000× divide-by-near-zero.
+  const markupPercent = bulkScenario.mode === 'margin' ? Math.min(rawPercent, 99) : rawPercent;
   const sellPrice = bulkScenario.mode === 'margin'
-    ? (markupPercent >= 100 ? 0 : (totalCogs / Math.max(1 - (markupPercent / 100), 0.0001)))
+    ? totalCogs / (1 - (markupPercent / 100))
     : totalCogs * (1 + (markupPercent / 100));
   const profit = sellPrice - totalCogs;
   const margin = sellPrice > 0 ? (profit / sellPrice) * 100 : 0;

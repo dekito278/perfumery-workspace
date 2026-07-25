@@ -28,6 +28,7 @@ const ProductionCostPage = () => {
     handlePrint,
     handlePrintQuotation,
     loading,
+    profileError,
     quotationInputs,
     quotationOpen,
     retailChampion,
@@ -89,6 +90,12 @@ const ProductionCostPage = () => {
           </div>
         ) : (
           <div className="space-y-6">
+            {profileError ? (
+              <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                Biaya material formula gagal dimuat — angka COGS &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
+              </div>
+            ) : null}
+
             <ProductionCostOverviewCards
               retailComputed={retailComputed}
               bulkComputed={bulkComputed}
