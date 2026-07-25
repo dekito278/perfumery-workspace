@@ -154,18 +154,25 @@ const BulkWorkbookGuidanceImportDialog = ({
           const imported = await importPerfumersWorldByUrl(url);
           const importedWorkbookCode = normalizeWorkbookCode(imported.workbook_code);
           const matchingMaterials = materialsByWorkbookCode.get(workbookCode) || [];
+          // The scraped page can redirect to a different/fallback product. If its code doesn't match
+          // what we asked for, skip the write — overwriting guidance across all matching materials with
+          // the wrong product's data corrupts the library (and feeds PACE/IFRA advisories).
+          const codeMismatch = Boolean(importedWorkbookCode) && importedWorkbookCode !== workbookCode;
 
-          await Promise.all(matchingMaterials.map(async (material) => {
-            await updateMaterial(material.id, buildBulkWorkbookPayload(material, imported));
-            report.updatedMaterials += 1;
-          }));
+          if (!codeMismatch) {
+            await Promise.all(matchingMaterials.map(async (material) => {
+              await updateMaterial(material.id, buildBulkWorkbookPayload(material, imported));
+              report.updatedMaterials += 1;
+            }));
+          }
 
           report.workbookMatches.push({
             workbookCode,
             matchedCount: matchingMaterials.length,
             url,
             importedWorkbookCode: importedWorkbookCode || null,
-            codeMismatch: Boolean(importedWorkbookCode) && importedWorkbookCode !== workbookCode,
+            codeMismatch,
+            skipped: codeMismatch,
           });
         } catch (error) {
           report.failedCodes.push({

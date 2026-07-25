@@ -366,7 +366,9 @@ export const getPrimaryReferenceRawMaterialIds = async ({
         .in('id', idChunk);
 
       if (normalizedSearch) {
-        const escapedQuery = normalizedSearch.replace(/[%_,]/g, ' ');
+        // Neutralise ilike wildcards (% _) AND PostgREST or() structural chars ( , ( ) . \ * ) so a
+        // query like "foo)" can't break the or=(...) group into a parse error.
+        const escapedQuery = normalizedSearch.replace(/[%_,()\\.*]/g, ' ');
         profileQuery = profileQuery.or([
           `reference_code.ilike.%${escapedQuery}%`,
           `name.ilike.%${escapedQuery}%`,
@@ -398,7 +400,6 @@ export const getPrimaryReferenceRawMaterialIds = async ({
           || (normalizedReferenceFilter === 'approved_external' && mappedProfile?.review_status === 'approved_external')
           || (normalizedReferenceFilter === 'approved_pw' && mappedProfile?.review_status === 'approved_pw')
           || normalizedReferenceFilter === 'all'
-          || normalizedSearch
         );
 
         if (profileMatchesFilter) {
@@ -533,7 +534,7 @@ export const searchReferenceProfiles = async (query = '', limit = 12) => {
     .limit(limit);
 
   if (normalizedQuery) {
-    const escapedQuery = normalizedQuery.replace(/[%_,]/g, ' ');
+    const escapedQuery = normalizedQuery.replace(/[%_,()\\.*]/g, ' ');
     request = request.or([
       `reference_code.ilike.%${escapedQuery}%`,
       `name.ilike.%${escapedQuery}%`,
