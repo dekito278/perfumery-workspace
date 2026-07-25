@@ -788,6 +788,9 @@ export const isOrderReservationExpired = (order = {}, now = new Date()) => {
   if (!order?.inventoryDeducted) return false;
   if (!ACTIVE_RESERVATION_PAYMENT_STATUSES.includes(order.paymentStatus)) return false;
   if (['cancelled', 'completed'].includes(order.status)) return false;
+  // Manual-transfer buyers sit at paymentStatus 'pending' until an admin approves their proof.
+  // Once proof is submitted, the order is paid-awaiting-review — it must NEVER auto-cancel.
+  if (order.paymentProofStatus && !['missing', 'rejected'].includes(order.paymentProofStatus)) return false;
 
   const expiresAt = getReservationExpiryDate(order);
   if (!expiresAt) return false;
@@ -1334,7 +1337,11 @@ export const updateOrderStatus = async (orderId, status) => {
     }
 
     if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
-      await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
+      const restoreEvents = await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
+      // Clear the deducted flag so a later refund/cancel can't restore the same stock twice.
+      if (restoreEvents.length) {
+        await markOrderInventoryRestored(orderId, currentOrder.inventoryEvents, restoreEvents);
+      }
     }
 
     if (status === 'cancelled') {
@@ -1830,6 +1837,10 @@ export const updateOrderPaymentStatus = async (orderId, {
 export const deleteOrder = async (orderId) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   try {
+    // Hard-delete strands any stock still reserved for this order; give it back first.
+    if (currentOrder?.inventoryDeducted) {
+      await restoreInventoryForOrder(currentOrder, 'Order deleted stock released');
+    }
     const query = supabase
       .from('storefront_orders')
       .delete();

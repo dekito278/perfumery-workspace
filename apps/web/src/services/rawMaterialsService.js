@@ -1019,6 +1019,22 @@ export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
     });
     const mergedData = buildMergedRawMaterialData(masterRecord, duplicateRecord);
 
+    // ponytail: no client-side transaction. Instead, order the steps so the destructive one is last:
+    // write the merged enrichment onto the master FIRST, repoint all references, and delete the
+    // duplicate only at the very end. Any failure before the delete leaves the duplicate intact and
+    // the whole merge retryable. (Upgrade path: move this into a single Postgres RPC/transaction.)
+    const payload = buildRawMaterialPayload(mergedData);
+    const { data: updatedMaster, error: updateError } = await supabase
+      .from('raw_materials')
+      .update(payload)
+      .eq('id', masterId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
 
     await mergeReferenceLinksIntoMaster({ masterId, duplicateId, supabase });
     await mergeManualReferenceProfilesIntoMaster({ masterId, duplicateId, supabase });
@@ -1062,6 +1078,7 @@ export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
       throw failedResult.error;
     }
 
+    // Destructive step last: every reference now points at the master, so it's safe to drop the duplicate.
     const { error: deleteError } = await supabase
       .from('raw_materials')
       .delete()
@@ -1070,19 +1087,6 @@ export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
 
     if (deleteError) {
       throw deleteError;
-    }
-
-    const payload = buildRawMaterialPayload(mergedData);
-    const { data: updatedMaster, error: updateError } = await supabase
-      .from('raw_materials')
-      .update(payload)
-      .eq('id', masterId)
-      .eq('user_id', userId)
-      .select('*')
-      .single();
-
-    if (updateError) {
-      throw updateError;
     }
 
     const solventMap = await getSolventMap(updatedMaster.dilution_solvent_id ? [updatedMaster.dilution_solvent_id] : []);

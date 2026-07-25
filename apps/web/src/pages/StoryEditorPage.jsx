@@ -184,7 +184,7 @@ const SectionEditor = ({ section, index, slug, onChange, onRemove, onMoveUp, onM
             />
             <MediaUploadButton
               slug={slug}
-              category={`section-${index}`}
+              category={`section-${section.id}`}
               accept="image/*"
               label="Gambar Section"
               currentUrl={section.image}
@@ -195,7 +195,7 @@ const SectionEditor = ({ section, index, slug, onChange, onRemove, onMoveUp, onM
           <>
             <MediaUploadButton
               slug={slug}
-              category={`section-${index}`}
+              category={`section-${section.id}`}
               accept="image/*"
               label="Full Bleed Image"
               currentUrl={section.image}
@@ -213,6 +213,20 @@ const SectionEditor = ({ section, index, slug, onChange, onRemove, onMoveUp, onM
     </div>
   );
 };
+
+// Section media is stored at `${slug}/section-${id}.ext`. Keying by a STABLE id (not the array
+// index) means reordering sections no longer makes a replacement overwrite another section's file.
+const makeSectionId = () => (
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `s-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`
+);
+
+const withSectionIds = (storyObj) => (
+  storyObj
+    ? { ...storyObj, sections: (storyObj.sections || []).map((s) => (s.id ? s : { ...s, id: makeSectionId() })) }
+    : storyObj
+);
 
 // ── Main Page ──
 const StoryEditorPage = () => {
@@ -236,9 +250,9 @@ const StoryEditorPage = () => {
     setLoading(true);
     fetchStory(selectedSlug)
       .then((row) => {
-        setStory(row ? storyFromRow(row) : emptyStory(selectedSlug));
+        setStory(withSectionIds(row ? storyFromRow(row) : emptyStory(selectedSlug)));
       })
-      .catch(() => setStory(emptyStory(selectedSlug)))
+      .catch(() => setStory(withSectionIds(emptyStory(selectedSlug))))
       .finally(() => setLoading(false));
   }, [selectedSlug]);
 
@@ -268,7 +282,7 @@ const StoryEditorPage = () => {
   }, []);
 
   const addSection = (type) => {
-    const base = { type };
+    const base = { type, id: makeSectionId() };
     if (type === 'quote') base.text = '';
     if (type === 'text-image') Object.assign(base, { layout: 'image-right', eyebrow: '', heading: '', body: '', image: null });
     if (type === 'full-bleed') Object.assign(base, { image: null, caption: '' });

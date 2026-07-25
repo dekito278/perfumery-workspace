@@ -181,6 +181,13 @@ export const updateFormula = async (formulaId, formulaData, items) => {
     throw new Error(formulaError.message || 'Failed to update formula');
   }
 
+  // Snapshot existing items so a failed re-insert can be rolled back — Supabase JS has no
+  // client-side transaction, and delete-then-insert otherwise loses the whole composition.
+  const { data: previousItems } = await supabase
+    .from('formula_items')
+    .select('*')
+    .eq('formula_id', formulaId);
+
   const { error: deleteError } = await supabase
     .from('formula_items')
     .delete()
@@ -198,6 +205,11 @@ export const updateFormula = async (formulaId, formulaData, items) => {
 
     if (itemsError) {
       console.error('Error inserting formula items:', itemsError);
+      // ponytail: best-effort compensating rollback — restore the old rows so the formula keeps
+      // its previous composition. If this re-insert also fails, the items are lost (rare).
+      if (previousItems?.length) {
+        await supabase.from('formula_items').insert(previousItems);
+      }
       throw new Error(itemsError.message || 'Failed to update formula items');
     }
   }

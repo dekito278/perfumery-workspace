@@ -5,13 +5,23 @@ import { ArrowRight, MessageCircle } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
+import TextReveal from '@/components/storefront/TextReveal.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
+import {
+  DEFAULT_SHARE_IMAGE,
+  buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
+  getSiteOrigin,
+  toAbsoluteUrl,
+} from '@/utils/seo.js';
 
 const moodCategories = [
   // `family` is the display label; `filter` is the real catalog category used in the link
@@ -32,6 +42,7 @@ const HomePage = () => {
   const [publishedArticles, setPublishedArticles] = useState([]);
   const [activeMood, setActiveMood] = useState(0);
   const revealRef = useScrollReveal();
+  const { magnetic: handleMagnetic, tilt, resetTilt } = useMicroInteractions();
   const carouselRef = useRef(null);
 
   const visibleProducts = useMemo(
@@ -57,18 +68,32 @@ const HomePage = () => {
     carouselRef.current.scrollBy({ left: direction === 'right' ? scrollAmount : -scrollAmount, behavior: 'smooth' });
   };
 
+  const siteOrigin = getSiteOrigin();
+  const homeCanonical = toAbsoluteUrl('/home', siteOrigin);
+  const homeShareImage = toAbsoluteUrl(DEFAULT_SHARE_IMAGE, siteOrigin);
+
   return (
     <>
       <Helmet>
         <title>SOLIVAGANT - Artisan Perfumery Atelier by Dekito</title>
         <meta name="description" content="SOLIVAGANT adalah atelier parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
+        <link rel="canonical" href={homeCanonical} />
         <meta property="og:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
         <meta property="og:description" content="Rumah parfum editorial oleh perfumer Dekito." />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/brand/home/raw-material-library.jpg" />
+        <meta property="og:site_name" content="SOLIVAGANT" />
+        <meta property="og:url" content={homeCanonical} />
+        <meta property="og:image" content={homeShareImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
+        <meta name="twitter:description" content="Rumah parfum editorial oleh perfumer Dekito." />
+        <meta name="twitter:image" content={homeShareImage} />
+        <script type="application/ld+json">{JSON.stringify(buildOrganizationJsonLd(siteOrigin))}</script>
+        <script type="application/ld+json">{JSON.stringify(buildWebSiteJsonLd(siteOrigin))}</script>
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <ScrollProgress />
         <PublicHeader />
 
         {/* ── 1. Hero Slideshow ── */}
@@ -76,9 +101,14 @@ const HomePage = () => {
           <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
           <div className="home-hero__overlay home-hero__overlay--editorial">
             <p className="home-hero__eyebrow">ATELIER PARFUM ARTISAN</p>
-            <h1 className="home-hero__title">Aroma sebagai<br />objek kenangan.</h1>
+            <h1 className="home-hero__title" data-text-reveal>
+              <span className="text-reveal-word"><span>Aroma</span></span>{' '}
+              <span className="text-reveal-word"><span>sebagai</span></span><br />
+              <span className="text-reveal-word"><span>objek</span></span>{' '}
+              <span className="text-reveal-word"><span>kenangan.</span></span>
+            </h1>
             <p className="home-hero__subtitle">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
-            <Link to="/catalog" className="home-hero__cta">
+            <Link to="/catalog" className="home-hero__cta magnetic-hover" onMouseMove={handleMagnetic}>
               LIHAT KOLEKSI <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -88,8 +118,8 @@ const HomePage = () => {
         <section className="home-brandmark" data-reveal>
           <div className="home-brandmark__inner">
             <span className="home-brandmark__logo">SOLIVAGANT</span>
-            <h2 className="home-brandmark__tagline">Parfum artisan yang dirakit dari kenangan, material, dan ritual pribadi.</h2>
-            <Link to="/catalog" className="home-brandmark__cta">
+            <TextReveal as="h2" className="home-brandmark__tagline" text="Parfum artisan yang dirakit dari kenangan, material, dan ritual pribadi." />
+            <Link to="/catalog" className="home-brandmark__cta magnetic-hover" onMouseMove={handleMagnetic}>
               Lihat Koleksi <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -109,7 +139,13 @@ const HomePage = () => {
               <button className="home-carousel__arrow home-carousel__arrow--left" onClick={() => scrollCarousel('left')} aria-label="Geser kiri">&larr;</button>
               <div className="home-carousel__track" ref={carouselRef}>
                 {collectionProducts.map((product, index) => (
-                  <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="home-carousel__card card-lift img-hover-zoom">
+                  <Link
+                    key={product.slug || product.id}
+                    to={`/catalog/${product.slug}`}
+                    className="home-carousel__card card-lift card-tilt img-hover-zoom"
+                    onMouseMove={tilt}
+                    onMouseLeave={resetTilt}
+                  >
                     <ProductVisual
                       product={product}
                       className="home-carousel__card-visual"
@@ -141,9 +177,9 @@ const HomePage = () => {
         <section className="home-statement" data-reveal="scale">
           <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
           <div className="home-statement__overlay">
-            <h2>Rasa di Atas Formula.</h2>
+            <TextReveal text="Rasa di Atas Formula." />
             <p>Kami tidak mengejar tren atau selera pasar. Setiap fragrance SOLIVAGANT adalah sebuah atmosfer — dirakit dari obsesi, intuisi, dan keyakinan bahwa parfum seharusnya mengubah cara kamu membawa diri di sebuah ruangan.</p>
-            <Link to="/bespoke" className="home-statement__cta">
+            <Link to="/bespoke" className="home-statement__cta magnetic-hover" onMouseMove={handleMagnetic}>
               Konsultasi Bespoke <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -153,7 +189,7 @@ const HomePage = () => {
         <section className="home-section" data-reveal>
           <div className="home-section__head">
             <p className="editorial-eyebrow">JELAJAHI BERDASARKAN MOOD</p>
-            <h2>Temukan arah aromamu</h2>
+            <TextReveal text="Temukan arah aromamu" />
           </div>
           <div className="home-moods">
             <div className="home-moods__tabs">
@@ -191,7 +227,7 @@ const HomePage = () => {
           <section className="home-section" data-reveal>
             <div className="home-section__head">
               <p className="editorial-eyebrow">JURNAL</p>
-              <h2>Catatan dari atelier</h2>
+              <TextReveal text="Catatan dari atelier" />
             </div>
             <div className="home-journal-grid" data-reveal data-stagger-children>
               {publishedArticles.map((article) => (
@@ -220,7 +256,8 @@ const HomePage = () => {
               href="https://wa.me/6287774026625?text=Halo%20Dekito%2C%20saya%20tertarik%20berkolaborasi%20dengan%20SOLIVAGANT."
               target="_blank"
               rel="noopener noreferrer"
-              className="home-newsletter__wa"
+              className="home-newsletter__wa magnetic-hover"
+              onMouseMove={handleMagnetic}
             >
               <MessageCircle className="h-4 w-4" /> Hubungi WhatsApp Dekito
             </a>

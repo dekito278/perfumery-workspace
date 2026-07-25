@@ -113,6 +113,7 @@ export const AuthProvider = ({ children }) => {
   const [mfaResolutionPending, setMfaResolutionPending] = useState(false);
   const mfaChallengeRef = useRef(null);
   const manualSignOutRef = useRef(false);
+  const loginInProgressRef = useRef(false);
   const sessionRef = useRef(null);
   const authResolutionRef = useRef(0);
   const [session, setSession] = useState(null);
@@ -241,14 +242,16 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // While login() is resolving MFA it owns the auth state; ignore the SIGNED_IN it triggers
+      // so the fast-path below can't mark the aal1 session authenticated before the TOTP challenge.
+      if (loginInProgressRef.current && event === 'SIGNED_IN') {
+        return;
+      }
+
       if (!nextSession?.user) {
         if (event === 'SIGNED_OUT') {
-          const cachedSession = getCachedSession();
-          if (!manualSignOutRef.current && cachedSession?.user) {
-            finishLoading(cachedSession, null, false);
-            return;
-          }
-
+          // Trust the sign-out. Resurrecting a cached session here defeated server-side revocation
+          // (revoked token / password change / removed from allowlist) and dropped pending MFA.
           manualSignOutRef.current = false;
           authResolutionRef.current += 1;
           finishLoading(null, null, false);
@@ -293,6 +296,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    loginInProgressRef.current = true;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -306,6 +310,9 @@ export const AuthProvider = ({ children }) => {
       setSession(data.session);
       sessionRef.current = data.session;
       setCurrentUser(data.user);
+      // Hold isAuthenticated false until we know whether TOTP is required, so nothing navigates
+      // into the studio on the aal1 session during the listFactors/challenge round-trips.
+      setMfaResolutionPending(true);
       const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (factorsError) {
         throw factorsError;
@@ -327,14 +334,23 @@ export const AuthProvider = ({ children }) => {
           friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
         };
         setActiveMfaChallenge(nextChallenge);
+        setMfaResolutionPending(false);
         return { ...data, mfaRequired: true, mfaChallenge: nextChallenge };
       }
 
       setActiveMfaChallenge(null);
+      setMfaResolutionPending(false);
       return data;
     } catch (error) {
+      // A failure after sign-in (factor/challenge lookup) must not strand an authenticated aal1 session.
+      setSession(null);
+      sessionRef.current = null;
+      setCurrentUser(null);
+      setMfaResolutionPending(false);
       console.error('Login error:', error);
       throw new Error(error.message || 'Login failed');
+    } finally {
+      loginInProgressRef.current = false;
     }
   };
 

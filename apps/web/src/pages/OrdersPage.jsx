@@ -213,6 +213,9 @@ const OrdersPage = () => {
   };
 
   const handleDeleteOne = async (orderKey) => {
+    if (!window.confirm('Hapus order ini permanen? Stok yang direservasi akan dikembalikan dan tindakan ini tidak bisa dibatalkan.')) {
+      return;
+    }
     try {
       await deleteOne(orderKey);
     } catch (error) {

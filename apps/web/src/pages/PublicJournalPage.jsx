@@ -3,13 +3,17 @@ import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
+import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   getJournalCategoryLabel,
   getJournalPublicPath,
   getPublishedJournalPosts,
+  JOURNAL_CATEGORIES,
   JOURNAL_POSTS_CHANGED_EVENT,
 } from '@/services/journalPostsSupabaseService.js';
+import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { formatDate } from '@/utils/formatting.js';
 
@@ -21,7 +25,9 @@ const getExcerpt = (article) => article.excerpt || String(article.content || '')
   .trim()
   .slice(0, 180);
 
-const CATEGORIES = ['All', 'Scent Memory', 'Raw Material', 'Atelier Process', 'Product Story', 'Culture'];
+// Tabs must use the real category labels — otherwise the filter (which compares against
+// getJournalCategoryLabel) never matches and every non-"Semua" tab shows zero articles.
+const CATEGORIES = ['All', ...JOURNAL_CATEGORIES.map((category) => category.label)];
 
 const PublicJournalPage = () => {
   const revealRef = useScrollReveal();
@@ -64,21 +70,29 @@ const PublicJournalPage = () => {
   const featured = filtered[0];
   const remaining = useMemo(() => filtered.slice(1, visibleCount), [filtered, visibleCount]);
 
+  const journalCanonical = toAbsoluteUrl('/journal', getSiteOrigin());
+
   return (
     <>
       <Helmet>
         <title>Journal - SOLIVAGANT</title>
         <meta name="description" content="Editorial notes from the SOLIVAGANT perfume atelier." />
+        <link rel="canonical" href={journalCanonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SOLIVAGANT" />
+        <meta property="og:url" content={journalCanonical} />
         <meta property="og:title" content="Journal - SOLIVAGANT" />
         <meta property="og:description" content="Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture." />
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <ScrollProgress />
         <PublicHeader />
 
         <section className="journal-hero">
           <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JOURNAL / EDITORIAL</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">Catatan Atelier</h1>
+          <TextReveal as="h1" text="Catatan Atelier" />
           <p className="hero-animate-text hero-animate-text--d3">Tentang memori aroma, raw material, proses atelier, dan cerita di balik objek parfum SOLIVAGANT.</p>
         </section>
 

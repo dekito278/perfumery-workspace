@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Beaker } from 'lucide-react';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils.js';
 const MobileLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cancelMfaChallenge, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, initialLoading, isAuthenticated, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const keyboardActive = useMobileKeyboardState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +23,12 @@ const MobileLoginPage = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
   const [authStep, setAuthStep] = useState('password');
+
+  useEffect(() => {
+    if (!initialLoading && isAuthenticated) {
+      navigate(location.state?.from?.pathname || '/mobile/studio', { replace: true });
+    }
+  }, [initialLoading, isAuthenticated, location.state, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

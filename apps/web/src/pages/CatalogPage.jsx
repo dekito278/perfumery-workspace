@@ -1,15 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
+import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { featuredProducts } from '@/data/storefront.js';
+import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { buildBreadcrumbJsonLd, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 
 const CatalogPage = () => {
   const fetchedProducts = useCatalogProducts();
@@ -22,7 +28,30 @@ const CatalogPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const revealRef = useScrollReveal();
+  const { magnetic, tilt, resetTilt } = useMicroInteractions();
+  const { addItem } = useCart();
+  const navigate = useNavigate();
+  const [addedSlug, setAddedSlug] = useState('');
   const isLoading = Boolean(fetchedProducts.loading) && !fetchedProducts.length;
+
+  const handleQuickAdd = useCallback((event, product) => {
+    // The card is a <Link>; keep the click from navigating to the PDP.
+    event.preventDefault();
+    event.stopPropagation();
+    if (product.publicStatus !== 'Available') {
+      toast.error(`${product.name} sedang habis`);
+      return;
+    }
+    addItem(product, 1);
+    setAddedSlug(product.slug);
+    toast.success(`${product.name} masuk ke keranjang`, {
+      description: 'Keranjang sudah diperbarui.',
+      action: { label: 'Lihat cart', onClick: () => navigate('/cart') },
+    });
+    window.setTimeout(() => {
+      setAddedSlug((current) => (current === product.slug ? '' : current));
+    }, 1800);
+  }, [addItem, navigate]);
 
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
@@ -64,21 +93,35 @@ const CatalogPage = () => {
     }
   }, [initialFamily, catalogCategories]);
 
+  const siteOrigin = getSiteOrigin();
+  const catalogCanonical = toAbsoluteUrl('/catalog', siteOrigin);
+  const catalogBreadcrumb = buildBreadcrumbJsonLd([
+    { name: 'Beranda', path: '/home' },
+    { name: 'Koleksi', path: '/catalog' },
+  ], siteOrigin);
+
   return (
     <>
       <Helmet>
         <title>Fragrance Collection - SOLIVAGANT</title>
         <meta name="description" content="Explore the SOLIVAGANT fragrance collection by perfumer Dekito." />
+        <link rel="canonical" href={catalogCanonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SOLIVAGANT" />
+        <meta property="og:url" content={catalogCanonical} />
         <meta property="og:title" content="Fragrance Collection - SOLIVAGANT" />
         <meta property="og:description" content="Public SOLIVAGANT fragrance objects with notes, sizes, and pricing." />
+        <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify(catalogBreadcrumb)}</script>
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <ScrollProgress />
         <PublicHeader />
 
         <section className="catalog-hero">
           <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KOLEKSI FRAGRANCE</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">Koleksi</h1>
+          <TextReveal as="h1" text="Koleksi" />
           <p className="hero-animate-text hero-animate-text--d3">Objek parfum terbatas dan signature harian yang tenang dari atelier.</p>
         </section>
 
@@ -121,14 +164,37 @@ const CatalogPage = () => {
           ) : filteredProducts.length ? (
             <div className="catalog-grid" data-reveal data-stagger-children>
               {visibleProducts.map((product, index) => (
-                <Link key={product.slug || product.id} to={`/catalog/${product.slug}`} className="catalog-card card-lift img-hover-zoom">
-                  <ProductVisual
-                    product={product}
-                    className="catalog-card__visual"
-                    imageFit="cover"
-                    priority={index < 4}
-                    label={false}
-                  />
+                <Link
+                  key={product.slug || product.id}
+                  to={`/catalog/${product.slug}`}
+                  className="catalog-card card-lift card-tilt img-hover-zoom"
+                  onMouseMove={tilt}
+                  onMouseLeave={resetTilt}
+                >
+                  <div className="catalog-card__media">
+                    <ProductVisual
+                      product={product}
+                      className="catalog-card__visual"
+                      imageFit="cover"
+                      priority={index < 4}
+                      label={false}
+                    />
+                    <button
+                      type="button"
+                      className={`catalog-card__quick-add${addedSlug === product.slug ? ' is-added' : ''}`}
+                      onClick={(event) => handleQuickAdd(event, product)}
+                      aria-label={product.publicStatus !== 'Available' ? `${product.name} stok habis` : `Tambah ${product.name} ke keranjang`}
+                      disabled={product.publicStatus !== 'Available'}
+                    >
+                      {product.publicStatus !== 'Available' ? (
+                        <>Habis</>
+                      ) : addedSlug === product.slug ? (
+                        <><CheckCircle2 className="h-4 w-4" /> Ditambahkan</>
+                      ) : (
+                        <><Plus className="h-4 w-4" /> Keranjang</>
+                      )}
+                    </button>
+                  </div>
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{product.category || 'Atelier'}</span>
                     <h3>{product.name}</h3>
@@ -149,7 +215,7 @@ const CatalogPage = () => {
 
           {visibleProducts.length < filteredProducts.length ? (
             <div className="catalog-load-more">
-              <button type="button" className="editorial-button" onClick={() => setVisibleCount((c) => c + 12)}>
+              <button type="button" className="editorial-button magnetic-hover" onClick={() => setVisibleCount((c) => c + 12)} onMouseMove={magnetic}>
                 Tampilkan lagi <ArrowRight className="h-4 w-4" />
               </button>
               <span>{visibleProducts.length} dari {filteredProducts.length}</span>

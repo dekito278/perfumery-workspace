@@ -36,7 +36,6 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
             entry.target.classList.add('is-visible');
             observer.unobserve(entry.target);
 
-            // Stagger children if flagged
             if (entry.target.hasAttribute('data-stagger-children')) {
               staggerChildren(entry.target);
             }
@@ -46,13 +45,22 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
       { threshold, rootMargin }
     );
 
-    // (Re)scan the subtree: observe not-yet-revealed [data-reveal] nodes, and immediately
-    // reveal freshly-added children of stagger containers whose parent is already visible.
-    // Keeps content visible when a list changes (e.g. switching catalog category tabs)
-    // without a full remount — otherwise the new nodes stay opacity:0 until a page refresh.
+    const textObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('text-revealed');
+            textObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+
     const scan = () => {
       container.querySelectorAll('[data-reveal]:not(.is-visible)').forEach((el) => observer.observe(el));
       container.querySelectorAll('[data-stagger-children].is-visible').forEach((parent) => staggerChildren(parent, 40));
+      container.querySelectorAll('[data-text-reveal]:not(.text-revealed)').forEach((el) => textObserver.observe(el));
     };
 
     scan();
@@ -62,6 +70,7 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
 
     return () => {
       observer.disconnect();
+      textObserver.disconnect();
       mutationObserver.disconnect();
     };
   }, [threshold, rootMargin]);
