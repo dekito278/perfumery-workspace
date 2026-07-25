@@ -93,12 +93,13 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const variants = Array.isArray(product.variants) ? product.variants : [];
   const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
   const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
-  const selectedStock = Number(selectedVariant?.stock ?? product.stock ?? 0);
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
   const selectedPriceLabel = selectedPrice > 0 ? formatRupiah(selectedPrice) : product.price;
-  // Out of stock when the selected variant has no stock (fall back to publicStatus if no variants).
-  const soldOut = variants.length ? selectedStock <= 0 : product.publicStatus !== 'Available';
+  // Public variants carry `availability` ('Available'|'Inquire'), not a raw stock count — use it so we
+  // don't expose exact inventory. Fall back to the product-level publicStatus when there are no variants.
+  const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
+  const soldOut = !selectedAvailable;
 
   const handleAddToCart = () => {
     if (soldOut) {
@@ -112,7 +113,6 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       size: selectedSize,
       price: selectedPriceLabel,
       priceNumber: selectedPrice,
-      maxStock: selectedStock,
     }, 1);
     setLastAddedSlug(product.slug);
     toast.success(`${product.name} (${selectedSize}) masuk ke keranjang`, {
@@ -231,10 +231,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 >
                   {variants.map((v) => {
                     const key = v.id || v.size;
-                    const stock = Number(v.stock || 0);
                     return (
                       <option key={key} value={key}>
-                        {v.size} — {formatRupiah(v.priceNumber)}{stock <= 0 ? ' (Habis)' : ''}
+                        {v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? ' (Habis)' : ''}
                       </option>
                     );
                   })}
