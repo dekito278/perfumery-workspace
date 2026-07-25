@@ -144,7 +144,9 @@ export const convertToMl = (value, unit) => {
   if (unit === 'liter' || unit === 'kg') {
     return parsedValue * 1000;
   }
-  return unit === 'gram' ? parsedValue : parsedValue;
+  // ponytail: gram and ml both map 1:1 here (density assumed 1.0). A per-material density field would
+  // make liter/ml quotes exact — deferred, needs a data-model decision.
+  return parsedValue;
 };
 
 export const buildPackagingLineItems = (inputs, bottleCount) => {

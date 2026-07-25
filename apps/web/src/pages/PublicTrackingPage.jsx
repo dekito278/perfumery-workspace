@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ExternalLink, Search } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -59,6 +59,7 @@ const PublicTrackingPage = () => {
   const revealRef = useScrollReveal();
   const { code = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [lookup, setLookup] = useState(code);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -100,7 +101,9 @@ const PublicTrackingPage = () => {
     event.preventDefault();
     const normalized = lookup.trim();
     if (!normalized) return;
-    navigate(`/track-order/${encodeURIComponent(normalized)}`);
+    // Stay on whichever tracking route the user is already on instead of always bouncing to /track-order.
+    const base = location.pathname.startsWith('/track-order') ? '/track-order' : '/track';
+    navigate(`${base}/${encodeURIComponent(normalized)}`);
     if (normalized === code) {
       loadOrder(normalized);
     }
