@@ -1,6 +1,6 @@
 import {
   applyShippingPromotionToRates,
-  getShippingPromotionSettings,
+  getShippingPromotionSettingsAsync,
 } from '@/services/shippingPromotionService.js';
 
 export const SHIPPING_STORAGE_KEY = 'solivagant.checkout.shipping.v1';
@@ -52,7 +52,9 @@ export const getShippingRates = async ({
   return applyShippingPromotionToRates(
     rates,
     promotionDestination,
-    getShippingPromotionSettings(),
+    // Hydrate promo settings from the DB at checkout — the sync cache is empty on a customer's device,
+    // so reading it here meant configured promos never applied for anyone but the admin.
+    await getShippingPromotionSettingsAsync(),
     { subtotal },
   );
 };
