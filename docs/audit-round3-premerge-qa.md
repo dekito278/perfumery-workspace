@@ -45,11 +45,18 @@ Run these against a staging/preview environment before merging PR #2. ✅ = pass
 
 ## 🔴 Auth / security
 
-### 7. Admin allowlist is fail-closed
-- [ ] Confirm `VITE_ADMIN_EMAILS` is set in the production env (currently
-      `aderizki68@gmail.com,dekito@techteam.id`). ✍️ Only these emails reach the studio.
+### 7. Admin allowlist is fail-closed  ⚠️ DEPLOY-CRITICAL
+- [ ] `VITE_ADMIN_EMAILS` is inlined at **build** time. Confirm the **production build** carries it
+      (currently `aderizki68@gmail.com,dekito@techteam.id`). A build without it = empty allowlist =
+      total studio lockout for everyone (fail-closed).
+- [ ] Confirm the owner's **real Google login email** is one of the allowlisted addresses.
 - [ ] Confirm self-service signup is **disabled** in Supabase Auth settings (so a stranger can't
       register at all).
+
+### 7b. Cancelled order can no longer be paid
+- [ ] Cancel an unpaid/pending DOKU order from the studio, then open its payment page.
+- ✍️ No live "pay now" invoice is offered (`payment_status` is now `expired`); a `paid` order that
+      you cancel keeps `paid` (refunds are separate).
 
 ### 8. Disabling MFA requires a live TOTP code
 - [ ] Go to the authenticator page → "Nonaktifkan authenticator".
