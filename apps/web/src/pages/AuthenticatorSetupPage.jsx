@@ -35,6 +35,7 @@ const SetupContent = ({ mobile = false }) => {
   const navigate = useNavigate();
   const {
     challengeAuthenticatorEnrollment,
+    currentUser,
     disableAuthenticator,
     enrollAuthenticator,
     listAuthenticatorFactors,
@@ -42,6 +43,12 @@ const SetupContent = ({ mobile = false }) => {
     updatePassword,
     verifyAuthenticatorEnrollment,
   } = useAuth();
+  // Only email/password accounts have a current password to re-verify. OAuth-only accounts (e.g.
+  // Google) have none, so requiring it would make this form permanently error for them.
+  const hasPasswordIdentity = (
+    currentUser?.app_metadata?.provider === 'email'
+    || (currentUser?.app_metadata?.providers || []).includes('email')
+  );
   const [factor, setFactor] = useState(null);
   const [activeFactors, setActiveFactors] = useState([]);
   const [challengeId, setChallengeId] = useState('');
@@ -149,7 +156,7 @@ const SetupContent = ({ mobile = false }) => {
       return;
     }
 
-    if (!currentPassword.trim()) {
+    if (hasPasswordIdentity && !currentPassword.trim()) {
       toast.error('Masukkan password saat ini untuk konfirmasi');
       return;
     }
@@ -157,8 +164,10 @@ const SetupContent = ({ mobile = false }) => {
     setChangingPassword(true);
     try {
       // Prove the user knows the current password before changing it — a lingering session shouldn't
-      // be able to silently reset the account password.
-      await reauthenticateWithPassword(currentPassword);
+      // be able to silently reset the account password. OAuth-only accounts have no password to prove.
+      if (hasPasswordIdentity) {
+        await reauthenticateWithPassword(currentPassword);
+      }
       await updatePassword(newPassword);
       setCurrentPassword('');
       setNewPassword('');
@@ -296,19 +305,21 @@ const SetupContent = ({ mobile = false }) => {
         </div>
 
         <form onSubmit={handlePasswordChange} className="mt-4 grid gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Password saat ini</Label>
-            <Input
-              id="current-password"
-              type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              placeholder="Password lama"
-              autoComplete="current-password"
-              className="h-12 rounded-2xl bg-white"
-              required
-            />
-          </div>
+          {hasPasswordIdentity ? (
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Password saat ini</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                placeholder="Password lama"
+                autoComplete="current-password"
+                className="h-12 rounded-2xl bg-white"
+                required
+              />
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="new-password">Password baru</Label>
             <Input
@@ -339,7 +350,7 @@ const SetupContent = ({ mobile = false }) => {
           </div>
           <Button
             type="submit"
-            disabled={changingPassword || !currentPassword.trim() || newPassword.length < 8 || newPassword !== newPasswordConfirm}
+            disabled={changingPassword || (hasPasswordIdentity && !currentPassword.trim()) || newPassword.length < 8 || newPassword !== newPasswordConfirm}
             className="h-12 w-full rounded-2xl bg-editorial-charcoal text-white hover:bg-[#1f3020]"
           >
             {changingPassword ? 'Saving...' : 'Ubah password'}

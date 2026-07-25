@@ -1325,11 +1325,20 @@ export const updateOrderStatus = async (orderId, status) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
   const statusTimeline = appendStatusTimeline(currentOrder?.statusTimeline, status, 'Status updated from Studio');
   const auditAction = status === 'cancelled' ? 'order_cancelled' : 'order_status_updated';
+  // Cancelling an unpaid/pending order must also close its payment window, otherwise a cancelled DOKU
+  // order keeps a live payment_url and a buyer could still pay for it (stock already released). Mirror
+  // the reservation sweep, which pairs status:'cancelled' with payment_status:'expired'. Never touch a
+  // 'paid' order's payment status here (that would be a refund, handled elsewhere).
+  const expirePayment = status === 'cancelled' && ['unpaid', 'pending'].includes(currentOrder?.paymentStatus);
 
   try {
+    const updatePayload = { status, status_timeline: statusTimeline };
+    if (expirePayment) {
+      updatePayload.payment_status = 'expired';
+    }
     const query = supabase
       .from('storefront_orders')
-      .update({ status, status_timeline: statusTimeline });
+      .update(updatePayload);
     const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
 
     if (error) {
@@ -1377,6 +1386,7 @@ export const updateOrderStatus = async (orderId, status) => {
           ...order,
           status,
           statusTimeline,
+          paymentStatus: expirePayment ? 'expired' : order.paymentStatus,
           inventoryDeducted: restoredEvents.length ? false : order.inventoryDeducted,
           inventoryEvents: restoredEvents.length ? [...order.inventoryEvents, ...normalizeInventoryEvents(restoredEvents)] : order.inventoryEvents,
           updatedAt: new Date().toISOString(),
