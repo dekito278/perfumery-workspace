@@ -57,16 +57,24 @@ const queueFilterOptions = [
   { value: 'blocked', label: 'Tertahan' },
 ];
 
-const createDrafts = (orders) => Object.fromEntries(orders.map((order) => [
-  order.id || order.orderNumber,
-  {
-    shipmentStatus: order.shipmentStatus || 'not_ready',
-    courierName: order.courierName || '',
-    trackingNumber: order.trackingNumber || '',
-    trackingUrl: order.trackingUrl || '',
-    packingNotes: order.packingNotes || '',
-  },
-]));
+// Signature of the server-side shipment fields, so a draft is only re-seeded when the order actually
+// changed on the server — not on every reload (which would wipe unsaved typing on other cards).
+const shipmentServerSignature = (order = {}) => [
+  order.shipmentStatus || '',
+  order.courierName || '',
+  order.trackingNumber || '',
+  order.trackingUrl || '',
+  order.packingNotes || '',
+].join('|');
+
+const buildDraft = (order = {}) => ({
+  shipmentStatus: order.shipmentStatus || 'not_ready',
+  courierName: order.courierName || '',
+  trackingNumber: order.trackingNumber || '',
+  trackingUrl: order.trackingUrl || '',
+  packingNotes: order.packingNotes || '',
+  _basis: shipmentServerSignature(order),
+});
 
 const FulfillmentMetric = ({ label, value, tone = 'amber' }) => {
   const tones = {
@@ -96,7 +104,19 @@ const MobileFulfillmentPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    setDrafts(createDrafts(orders));
+    setDrafts((current) => {
+      const next = { ...current };
+      orders.forEach((order) => {
+        const key = order.id || order.orderNumber;
+        const existing = next[key];
+        // Only re-seed when there's no draft yet or the server order changed since the draft was built,
+        // so saving one card's reload() doesn't discard unsaved edits typed into other cards.
+        if (!existing || existing._basis !== shipmentServerSignature(order)) {
+          next[key] = buildDraft(order);
+        }
+      });
+      return next;
+    });
   }, [orders]);
 
   const paidOrders = useMemo(() => orders.filter(isPaid), [orders]);

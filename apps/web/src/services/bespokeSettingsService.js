@@ -167,9 +167,10 @@ export const saveBespokeOption = async (collectionKey, option) => {
     writeSettings(nextSettings);
     return fromDatabaseRow(data);
   } catch (error) {
-    console.warn('Saving bespoke option locally because database save failed:', error.message || error);
-    writeSettings(nextSettings);
-    return normalizedOption;
+    // Admin settings are read by customers from the DB — a silent localStorage-only "save" would show
+    // the admin success while customers never see the change. Surface the failure instead.
+    console.warn('Bespoke option save failed:', error.message || error);
+    throw new Error('Gagal menyimpan opsi bespoke ke server. Perubahan belum tersimpan — coba lagi.');
   }
 };
 
@@ -191,8 +192,8 @@ export const deleteBespokeOption = async (collectionKey, optionId) => {
 
     writeSettings(nextSettings);
   } catch (error) {
-    console.warn('Deleting bespoke option locally because database delete failed:', error.message || error);
-    writeSettings(nextSettings);
+    console.warn('Bespoke option delete failed:', error.message || error);
+    throw new Error('Gagal menghapus opsi bespoke di server. Coba lagi.');
   }
 
   return nextSettings;
@@ -222,8 +223,8 @@ export const resetBespokeSettings = async () => {
 
     writeSettings(settings);
   } catch (error) {
-    console.warn('Resetting bespoke settings locally because database reset failed:', error.message || error);
-    writeSettings(settings);
+    console.warn('Bespoke settings reset failed:', error.message || error);
+    throw new Error('Gagal reset bespoke settings di server. Coba lagi.');
   }
 
   return settings;
