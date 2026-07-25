@@ -165,9 +165,12 @@ const VoucherManagementPage = () => {
   const submitVoucher = async (event) => {
     event.preventDefault();
     try {
+      const rawDiscountValue = Number(draft.discountValue || 0);
       const savedVoucher = await saveVoucher({
         ...draft,
-        discountValue: Number(draft.discountValue || 0),
+        // Percent discounts can't exceed 100 — cap on save so the stored/displayed value matches what
+        // redemption actually applies (calculateVoucherDiscount already clamps to 100 at checkout).
+        discountValue: draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? Math.min(rawDiscountValue, 100) : rawDiscountValue,
         minimumOrder: Number(draft.minimumOrder || 0),
         minimumQuantity: Number(draft.minimumQuantity || 0),
         usageLimitTotal: Number(draft.usageLimitTotal || 0),
@@ -436,7 +439,7 @@ const VoucherManagementPage = () => {
                         <div className="mt-3 grid gap-2 text-sm font-semibold text-editorial-charcoal sm:grid-cols-2">
                           <div className="rounded-2xl bg-white px-3 py-2">
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Diskon</span>
-                            {voucher.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? `${voucher.discountValue}%` : formatTotal(voucher.discountValue)}
+                            {voucher.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? `${Math.min(Number(voucher.discountValue) || 0, 100)}%` : formatTotal(voucher.discountValue)}
                           </div>
                           <div className="rounded-2xl bg-white px-3 py-2">
                             <span className="block text-[10px] font-bold uppercase text-muted-foreground">Minimum order</span>

@@ -64,7 +64,9 @@ const PublicTrackingPage = () => {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(Boolean(code));
   const [error, setError] = useState('');
-  const completeCount = useMemo(() => completedStepCount(order), [order]);
+  const isCancelled = order?.status === 'cancelled';
+  // A cancelled order must not render as a normal in-progress timeline with a "(saat ini)" step.
+  const completeCount = useMemo(() => (isCancelled ? 0 : completedStepCount(order)), [order, isCancelled]);
   const courierUrl = order?.trackingUrl || buildCourierTrackingSearchUrl(order || {});
 
   const loadOrder = async (value) => {
@@ -146,7 +148,16 @@ const PublicTrackingPage = () => {
                   <span className="tracking-card__customer">{order.customerName}</span>
                 </div>
 
-                <ol className="tracking-timeline" aria-label="Progres pesanan">
+                {isCancelled ? (
+                  <div
+                    role="status"
+                    style={{ margin: '4px 0 16px', padding: '12px 16px', borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', fontSize: 14, fontWeight: 500 }}
+                  >
+                    Pesanan ini <strong>dibatalkan</strong>. Bila ini keliru atau kamu sudah membayar, hubungi kami lewat WhatsApp.
+                  </div>
+                ) : null}
+
+                <ol className="tracking-timeline" aria-label="Progres pesanan" aria-hidden={isCancelled ? 'true' : undefined}>
                   {steps.map((item, index) => (
                     <li
                       key={item.key}

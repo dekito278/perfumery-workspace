@@ -122,7 +122,7 @@ const MobileLoginPage = () => {
           <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Solivagant</h1>
           {authStep === 'mfa' || mfaChallenge ? (
             <form onSubmit={handleMfaSubmit} className="mt-5 space-y-4">
-              {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
+              {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
                 Open your authenticator app and enter the 6 digit code for {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
               </div>
@@ -148,7 +148,7 @@ const MobileLoginPage = () => {
             </form>
           ) : (
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-            {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
+            {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
             <div className="space-y-2">
               <Label htmlFor="mobile-email">Email</Label>
               <Input id="mobile-email" type="text" inputMode="email" autoCapitalize="none" value={email} onChange={(event) => setEmail(event.target.value)} required className="h-12 rounded-2xl bg-white" />
