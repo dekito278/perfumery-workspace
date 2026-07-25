@@ -1482,6 +1482,8 @@ const CustomerPortalPage = () => {
                   <div className="mt-1 text-sm font-bold text-editorial-charcoal">{portal.customer.securityQuestion}</div>
                 </div>
                 <input
+                  type="password"
+                  autoComplete="off"
                   value={securityAnswer}
                   onChange={(event) => setSecurityAnswer(event.target.value)}
                   placeholder="Jawaban"
@@ -1738,6 +1740,8 @@ const CustomerPortalPage = () => {
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
                   <input
+                    type="password"
+                    autoComplete="off"
                     value={securityAnswer}
                     onChange={(event) => setSecurityAnswer(event.target.value)}
                     placeholder="Jawaban"

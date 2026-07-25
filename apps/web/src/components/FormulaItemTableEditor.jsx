@@ -56,8 +56,8 @@ const FormulaItemTableEditor = ({
   );
   const impactCardLabel = hasActualizedDilutionInsight ? 'Actual blend impact' : 'Material impact';
   const lifeCardLabel = hasActualizedDilutionInsight ? 'Actual blend life' : 'Material life';
-  const solventBehaviourLabel = activeItemInsight?.dilutionSolventBehaviour
-    ? String(activeItemInsight.dilutionSolventBehaviour).toUpperCase()
+  const solventBehaviourLabel = activeItemInsight?.dilutionSolventBehaviour?.key
+    ? String(activeItemInsight.dilutionSolventBehaviour.key).toUpperCase()
     : null;
 
   return (
