@@ -257,8 +257,12 @@ const MobileFulfillmentPage = () => {
       ...getOrderProductItems(order).map((item) => `- ${item.name} x${item.quantity}${item.size ? ` / ${item.size}` : ''}`),
       draft.packingNotes || order.packingNotes ? `\nCatatan: ${draft.packingNotes || order.packingNotes}` : '',
     ].filter(Boolean);
-    await navigator.clipboard.writeText(lines.join('\n'));
-    toast.success('Packing list disalin');
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      toast.success('Packing list disalin');
+    } catch (error) {
+      toast.error(error?.message || 'Gagal menyalin packing list');
+    }
   };
 
   const openWhatsAppFollowUp = (order, draft = {}) => {
@@ -289,42 +293,50 @@ const MobileFulfillmentPage = () => {
       toast.error('Resi PDF tersedia setelah payment paid');
       return;
     }
-    const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
-    await exportShippingLabelPdf(order);
-    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
-      const draft = drafts[order.id || order.orderNumber] || {};
-      await updateOrderShipment(order.id || order.orderNumber, {
-        ...draft,
-        shipmentStatus: 'packing',
-        packingNotes: draft.packingNotes || order.packingNotes || 'Resi PDF dicetak dari Mobile Fulfillment.',
-      });
-      await reload();
-      setQueueFilter('packing');
-      toast.success('Resi PDF siap. Order masuk Label/resi.');
-      return;
+    try {
+      const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
+      await exportShippingLabelPdf(order);
+      if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+        const draft = drafts[order.id || order.orderNumber] || {};
+        await updateOrderShipment(order.id || order.orderNumber, {
+          ...draft,
+          shipmentStatus: 'packing',
+          packingNotes: draft.packingNotes || order.packingNotes || 'Resi PDF dicetak dari Mobile Fulfillment.',
+        });
+        await reload();
+        setQueueFilter('packing');
+        toast.success('Resi PDF siap. Order masuk Label/resi.');
+        return;
+      }
+      toast.success('Resi PDF siap');
+    } catch (error) {
+      toast.error(error?.message || 'Gagal membuat resi PDF');
     }
-    toast.success('Resi PDF siap');
   };
 
   const bulkPrintResi = async () => {
-    const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
-    const printedCount = await exportShippingLabelsPdf(selectedSearchedOrders);
-    if (!printedCount) {
-      toast.error('Pilih order paid untuk print resi');
-      return;
+    try {
+      const { exportShippingLabelsPdf } = await import('@/utils/shippingLabelPdf.js');
+      const printedCount = await exportShippingLabelsPdf(selectedSearchedOrders);
+      if (!printedCount) {
+        toast.error('Pilih order paid untuk print resi');
+        return;
+      }
+      await Promise.all(selectedPrintableOrders.map((order) => (
+        hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
+          ? Promise.resolve()
+          : updateOrderShipment(order.id || order.orderNumber, {
+            ...(drafts[order.id || order.orderNumber] || {}),
+            shipmentStatus: 'packing',
+            packingNotes: drafts[order.id || order.orderNumber]?.packingNotes || order.packingNotes || 'Resi PDF dicetak dari Mobile Fulfillment.',
+          })
+      )));
+      await reload();
+      setQueueFilter('packing');
+      toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
+    } catch (error) {
+      toast.error(error?.message || 'Gagal print resi PDF');
     }
-    await Promise.all(selectedPrintableOrders.map((order) => (
-      hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
-        ? Promise.resolve()
-        : updateOrderShipment(order.id || order.orderNumber, {
-          ...(drafts[order.id || order.orderNumber] || {}),
-          shipmentStatus: 'packing',
-          packingNotes: drafts[order.id || order.orderNumber]?.packingNotes || order.packingNotes || 'Resi PDF dicetak dari Mobile Fulfillment.',
-        })
-    )));
-    await reload();
-    setQueueFilter('packing');
-    toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 
   const bulkWhatsAppFollowUp = async () => {
@@ -349,9 +361,16 @@ const MobileFulfillmentPage = () => {
       toast.error('Tidak ada template WA untuk order terpilih');
       return;
     }
-    await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    let copied = true;
+    try {
+      await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
+    } catch (error) {
+      // Clipboard often rejects on mobile / non-secure contexts — still open WhatsApp regardless.
+      copied = false;
+      console.warn('Clipboard write failed:', error?.message || error);
+    }
     window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
-    toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
+    toast.success(copied ? `${messages.length} pesan WA disalin, WA pertama dibuka` : 'WA pertama dibuka (salin pesan gagal)');
   };
 
   const bulkExportCsv = () => {

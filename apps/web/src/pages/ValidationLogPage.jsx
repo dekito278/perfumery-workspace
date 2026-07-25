@@ -345,7 +345,7 @@ const ValidationLogPage = () => {
                             <Button type="button" variant="outline" className="rounded-xl" onClick={() => handleEditLog(log)}>
                               Edit
                             </Button>
-                            <Button type="button" variant="ghost" className="rounded-xl px-3" onClick={() => handleDeleteLog(log)}>
+                            <Button type="button" variant="ghost" className="rounded-xl px-3" onClick={() => handleDeleteLog(log)} aria-label="Hapus log validasi">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>

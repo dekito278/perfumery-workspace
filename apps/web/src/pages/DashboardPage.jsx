@@ -691,11 +691,13 @@ const DashboardPage = () => {
                 value={auditFilters.query}
                 onChange={(event) => setAuditFilters((current) => ({ ...current, query: event.target.value }))}
                 placeholder="Cari order, admin, event, atau isi diff"
+                aria-label="Cari audit log"
                 className="h-11 rounded-2xl border bg-white px-4 text-sm font-semibold outline-none focus:border-amber-300"
               />
               <select
                 value={auditFilters.admin}
                 onChange={(event) => setAuditFilters((current) => ({ ...current, admin: event.target.value }))}
+                aria-label="Filter audit log per admin"
                 className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300"
               >
                 <option value="all">Semua admin</option>
@@ -704,6 +706,7 @@ const DashboardPage = () => {
               <select
                 value={auditFilters.event}
                 onChange={(event) => setAuditFilters((current) => ({ ...current, event: event.target.value }))}
+                aria-label="Filter audit log per event"
                 className="h-11 rounded-2xl border bg-white px-3 text-sm font-bold outline-none focus:border-amber-300"
               >
                 <option value="all">Semua event</option>
