@@ -17,7 +17,14 @@ I can't run them against your schema, so treat every one as a proposal to verify
 ## Apply order
 `01` first (04 depends on its `invoice_token` column). The rest are independent.
 
-## #2 order creation — DESIGN in `05_create_order_design.md`
+## #2 order creation — DESIGN `05` + DRAFT ENDPOINT `06_orders_create.draft.js`
+`06` is a starter endpoint: the catalog + bespoke **price recompute is real and unit-tested** (ignores
+any client price, reads storefront_products/storefront_bespoke_options), while **shipping, voucher, and
+the final insert are marked TODO** — they call RajaOngkir / replicate discount logic / must match
+buildOrderPayload, so finish + verify them on staging before copying to `apps/web/api/orders/create.js`,
+switching the frontend, and revoking the anon INSERT.
+
+
 The biggest fix (client-authoritative `subtotal`). Turns out it must be a **Node endpoint, not a SQL
 RPC**, because shipping comes from an external courier API a Postgres function can't call. `05` has the
 full design: recompute item/bespoke prices from the DB, shipping from the courier API + DB promo,
