@@ -87,39 +87,100 @@ const priceBespokeOptions = async (optionIds = []) => {
   return { subtotal, resolved };
 };
 
+// --- shipping (authoritative) ----------------------------------------------------------------------
+
+// Reuse the existing /api/shipping/rates endpoint (which already calls RajaOngkir) instead of
+// re-implementing the courier call. Pick the rate for the courier+service the customer selected —
+// never trust a client-sent cost.
+const computeShippingFee = async (baseUrl, { destinationId, weight, courier, service }) => {
+  if (!destinationId) return 0;
+  const res = await fetch(`${baseUrl}/api/shipping/rates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ destinationId, weight, couriers: courier ? [courier] : undefined }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || 'Failed to price shipping');
+  const rates = Array.isArray(data.rates) ? data.rates : [];
+  const chosen = rates.find((r) => r.courierCode === courier && r.service === service) || rates[0];
+  const baseFee = Math.round(Number(chosen?.cost || 0));
+
+  // ponytail: DB promo NOT applied here. applyShippingPromotionToRates + getShippingPromotionSettingsAsync
+  // live in the client (services/shippingPromotion*.js). Extract them into a shared module the client AND
+  // this endpoint import, OR a storefront_shipping_promotion RPC — then apply the promo to baseFee here.
+  // Duplicating the promo math would drift from the client. Until extracted, this returns the raw fee.
+  return baseFee;
+};
+
 // --- handler ---------------------------------------------------------------------------------------
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return jsonResponse(res, 405, { message: 'Method not allowed' }); }
   try {
     const input = JSON.parse((await readBody(req)) || '{}');
+    const baseUrl = `https://${req.headers.host}`;
 
-    // 1. Catalog + bespoke prices (authoritative)
+    // 1. Catalog + bespoke prices (authoritative, from DB)
     const catalog = await priceCatalogItems(input.items || []);
     const bespoke = await priceBespokeOptions(input.bespoke?.optionIds || []);
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
 
-    // 2. Shipping — TODO: call RajaOngkir the same way api/shipping/rates.js does, for input.destination
-    //    + computed weight, then pick the rate for the SELECTED input.courier/input.service, then apply
-    //    the storefront_shipping_promotion row. Do NOT trust any client-sent shipping cost.
-    const shippingFee = 0; // <-- replace with server-computed rate
+    // 2. Shipping (authoritative) — reuse /api/shipping/rates; see computeShippingFee for the promo caveat.
+    const weight = Math.max(catalog.resolved.reduce((sum, l) => sum + l.quantity, 0) * 300, 300); // match getCheckoutShippingWeight
+    const shippingFee = await computeShippingFee(baseUrl, {
+      destinationId: input.destination?.id,
+      weight,
+      courier: input.courier,
+      service: input.service,
+    });
 
-    // 3. Voucher — TODO: read the voucher server-side (storefront_vouchers), replicate the discount calc
-    //    in voucherService.applyVoucherToSubtotalAsync, then reserve it via storefront_record_voucher_usage.
-    const voucherDiscount = 0; // <-- replace with server-computed discount
+    // 3. Voucher (authoritative). validateVoucher is now an ISOMORPHIC module — utils/voucherValidation.js
+    //    (zero browser/supabase imports), so this endpoint can import it directly and run it against a
+    //    voucher row read from storefront_vouchers. Do NOT re-implement the rules here.
+    //      import { validateVoucher } from '../../src/utils/voucherValidation.js';  // adjust path when wired
+    //      const [vRow] = await sbSelect(`storefront_vouchers?code=eq.${enc(input.voucherCode)}&select=*`);
+    //      const v = validateVoucher({ code: input.voucherCode, voucher: vRow, subtotal: itemsSubtotal,
+    //                                  items: catalog.resolved });
+    //      const voucherDiscount = v.valid ? v.discountAmount : 0;
+    //    Then reserve it via the existing storefront_record_voucher_usage RPC.
+    const voucherDiscount = 0; // <-- wire the import above (voucherValidation.js is ready)
 
-    // 4. Authoritative total
+    // 4. Authoritative total (matches useCheckoutFlow: (items − voucher) + shipping)
     const subtotal = Math.max(itemsSubtotal - voucherDiscount, 0) + shippingFee;
     if (subtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no payable amount' });
 
-    // 5. Insert — match buildOrderPayload() in orderService.js exactly (order_number, status,
-    //    customer_*, items (incl. voucher discount line via withVoucherDiscountItem), quantity,
-    //    subtotal, checkout_draft, payment_provider, payment_status, source, bespoke_production_status).
-    //    Insert with the service-role headers (bypasses RLS). Return the created row.
-    // const { restUrl, headers } = getSupabaseRest();
-    // const insert = await fetch(`${restUrl}/storefront_orders`, { method: 'POST', headers: {...headers, Prefer:'return=representation'}, body: JSON.stringify(payload) });
+    // 5. Insert with the service-role key (bypasses RLS). Shape MUST match buildOrderPayload() in
+    //    orderService.js. Note: order_number here uses a timestamp like createOrderNumber(); the voucher
+    //    discount line is added to items the same way withVoucherDiscountItem() does — reuse that helper
+    //    (extract it too) rather than re-deriving it.
+    const { restUrl, headers } = getSupabaseRest();
+    const orderNumber = `DKT-${Date.now().toString(36).toUpperCase()}`;
+    const paymentProvider = input.paymentProvider || 'manual';
+    const payload = {
+      order_number: orderNumber,
+      status: 'pending_payment',
+      customer_name: input.customer?.name?.trim() || 'Walk-in customer',
+      customer_code: input.customer?.code || null,
+      contact: input.customer?.contact?.trim() || '-',
+      items: [...catalog.resolved, ...bespoke.resolved], // + voucher discount line via withVoucherDiscountItem
+      quantity: catalog.resolved.reduce((sum, l) => sum + l.quantity, 0) || 1,
+      subtotal,
+      payment_provider: paymentProvider,
+      payment_status: ['manual', 'whatsapp'].includes(paymentProvider) ? 'pending' : 'unpaid',
+      source: input.source || 'storefront',
+      ...(input.source === 'bespoke' ? { bespoke_production_status: 'review_brief' } : {}),
+    };
+    const insertRes = await fetch(`${restUrl}/storefront_orders`, {
+      method: 'POST',
+      headers: { ...headers, Prefer: 'return=representation' },
+      body: JSON.stringify(payload),
+    });
+    if (!insertRes.ok) throw new Error(`Order insert failed: ${await insertRes.text()}`);
+    const [order] = await insertRes.json();
 
-    return jsonResponse(res, 200, { message: 'DRAFT — finish shipping/voucher/insert before use', itemsSubtotal, subtotal });
+    // TODO before going live: reserve the voucher (step 3), and confirm the payload matches
+    // buildOrderPayload exactly (checkout_draft, customer_id, internalTags-derived tags, etc.).
+    return jsonResponse(res, 200, { order, itemsSubtotal, shippingFee, subtotal });
   } catch (error) {
     return jsonResponse(res, 400, { message: error.message || 'Order creation failed' });
   }
