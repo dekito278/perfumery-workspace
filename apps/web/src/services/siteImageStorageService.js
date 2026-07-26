@@ -76,6 +76,13 @@ export const uploadSiteImage = async (key, file) => {
     throw new Error(uploadError.message || 'Failed to upload site image.');
   }
 
+  // Remove any other-format file for this key (e.g. old .jpg when uploading .webp), otherwise both
+  // coexist and listSiteImages could resurrect the stale one. remove() of missing paths is a no-op.
+  const stalePaths = ['webp', 'jpg', 'png']
+    .filter((otherExt) => otherExt !== ext)
+    .map((otherExt) => storagePath(key, otherExt));
+  await supabase.storage.from(SITE_IMAGES_BUCKET).remove(stalePaths);
+
   const { data: urlData } = supabase.storage
     .from(SITE_IMAGES_BUCKET)
     .getPublicUrl(path);
@@ -120,12 +127,19 @@ export const listSiteImages = async () => {
 
   const imageMap = new Map();
 
-  for (const file of (files || [])) {
+  // Newest first, so if a key still has multiple formats (legacy dupes) we keep the latest upload,
+  // not the alphabetically-first one (which wrongly let an old .jpg beat a newer .webp).
+  const sortedFiles = [...(files || [])].sort((a, b) => (
+    new Date(b.updated_at || b.created_at || 0).getTime()
+    - new Date(a.updated_at || a.created_at || 0).getTime()
+  ));
+
+  for (const file of sortedFiles) {
     // Extract key from filename: "home-hero.webp" → "home-hero"
     const dotIndex = file.name.lastIndexOf('.');
     const key = dotIndex > 0 ? file.name.slice(0, dotIndex) : file.name;
 
-    // Only keep the first match per key (in case multiple extensions exist)
+    // Only keep the newest match per key (in case multiple extensions exist)
     if (!imageMap.has(key)) {
       const { data: urlData } = supabase.storage
         .from(SITE_IMAGES_BUCKET)

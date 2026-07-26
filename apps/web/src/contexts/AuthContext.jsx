@@ -13,19 +13,14 @@ const ADMIN_EMAILS = String(import.meta.env.VITE_ADMIN_EMAILS || '')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
-// Admin gate. When VITE_ADMIN_EMAILS is set it is authoritative: only those emails
-// are admin, regardless of login method — so the owner can sign in with Google
-// (Google verifies the email, so an allowlisted Google email is a strong gate) while
-// every other Google customer stays out. When the allowlist is empty we fall back to
-// legacy behaviour (any password login is admin) so the owner isn't locked out before
-// configuring it; Google customers are still excluded in that case.
+// Admin gate. VITE_ADMIN_EMAILS is authoritative: only those emails are admin, regardless of login
+// method (Google verifies the email, so an allowlisted Google address is a strong gate). It fails
+// CLOSED — an empty/missing allowlist means nobody is admin, rather than the old fallback that made
+// any password login an admin (a missing env var + open Supabase signups was an instant-admin hole).
 const isAdminUser = (user) => {
   if (!user) return false;
   const email = String(user.email || '').toLowerCase();
-  if (ADMIN_EMAILS.length > 0) {
-    return ADMIN_EMAILS.includes(email);
-  }
-  return user.app_metadata?.provider === 'email';
+  return ADMIN_EMAILS.includes(email);
 };
 
 const getCachedSession = () => {
@@ -113,6 +108,7 @@ export const AuthProvider = ({ children }) => {
   const [mfaResolutionPending, setMfaResolutionPending] = useState(false);
   const mfaChallengeRef = useRef(null);
   const manualSignOutRef = useRef(false);
+  const loginInProgressRef = useRef(false);
   const sessionRef = useRef(null);
   const authResolutionRef = useRef(0);
   const [session, setSession] = useState(null);
@@ -241,14 +237,16 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // While login() is resolving MFA it owns the auth state; ignore the SIGNED_IN it triggers
+      // so the fast-path below can't mark the aal1 session authenticated before the TOTP challenge.
+      if (loginInProgressRef.current && event === 'SIGNED_IN') {
+        return;
+      }
+
       if (!nextSession?.user) {
         if (event === 'SIGNED_OUT') {
-          const cachedSession = getCachedSession();
-          if (!manualSignOutRef.current && cachedSession?.user) {
-            finishLoading(cachedSession, null, false);
-            return;
-          }
-
+          // Trust the sign-out. Resurrecting a cached session here defeated server-side revocation
+          // (revoked token / password change / removed from allowlist) and dropped pending MFA.
           manualSignOutRef.current = false;
           authResolutionRef.current += 1;
           finishLoading(null, null, false);
@@ -293,6 +291,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    loginInProgressRef.current = true;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -306,6 +305,9 @@ export const AuthProvider = ({ children }) => {
       setSession(data.session);
       sessionRef.current = data.session;
       setCurrentUser(data.user);
+      // Hold isAuthenticated false until we know whether TOTP is required, so nothing navigates
+      // into the studio on the aal1 session during the listFactors/challenge round-trips.
+      setMfaResolutionPending(true);
       const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (factorsError) {
         throw factorsError;
@@ -327,14 +329,23 @@ export const AuthProvider = ({ children }) => {
           friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
         };
         setActiveMfaChallenge(nextChallenge);
+        setMfaResolutionPending(false);
         return { ...data, mfaRequired: true, mfaChallenge: nextChallenge };
       }
 
       setActiveMfaChallenge(null);
+      setMfaResolutionPending(false);
       return data;
     } catch (error) {
+      // A failure after sign-in (factor/challenge lookup) must not strand an authenticated aal1 session.
+      setSession(null);
+      sessionRef.current = null;
+      setCurrentUser(null);
+      setMfaResolutionPending(false);
       console.error('Login error:', error);
       throw new Error(error.message || 'Login failed');
+    } finally {
+      loginInProgressRef.current = false;
     }
   };
 
@@ -441,9 +452,28 @@ export const AuthProvider = ({ children }) => {
     return data?.totp || [];
   };
 
-  const disableAuthenticator = async (factorId) => {
+  const disableAuthenticator = async (factorId, code) => {
     if (!factorId) {
       throw new Error('Authenticator factor is required');
+    }
+
+    // Require a live TOTP code (proof of possession) before removing the second factor. Otherwise any
+    // lingering authenticated session could strip MFA with no proof the user holds the authenticator.
+    const trimmedCode = String(code || '').trim();
+    if (!/^\d{6}$/.test(trimmedCode)) {
+      throw new Error('Masukkan 6 digit kode authenticator untuk menonaktifkan');
+    }
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+    if (challengeError) {
+      throw new Error(challengeError.message || 'Gagal memverifikasi authenticator');
+    }
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challengeData.id,
+      code: trimmedCode,
+    });
+    if (verifyError) {
+      throw new Error('Kode authenticator salah');
     }
 
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
@@ -454,6 +484,21 @@ export const AuthProvider = ({ children }) => {
 
     clearRememberedMfaSession();
     setActiveMfaChallenge(null);
+    return true;
+  };
+
+  // Verify the user's CURRENT password (Supabase updateUser can't check the old password on its own).
+  // ponytail: re-sign-in is the only client-side way to prove the password; it refreshes the session
+  // to aal1. Acceptable for a self-service change the user is actively performing at the keyboard.
+  const reauthenticateWithPassword = async (password) => {
+    const email = sessionRef.current?.user?.email || currentUser?.email;
+    if (!email) {
+      throw new Error('Sesi tidak valid, silakan login ulang');
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password: String(password || '') });
+    if (error) {
+      throw new Error('Password saat ini salah');
+    }
     return true;
   };
 
@@ -559,6 +604,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin: !!session?.user && isAdminUser(session.user),
     login,
     loginWithGoogle,
+    reauthenticateWithPassword,
     rememberCustomerCode,
     requestPasswordReset,
     signup,

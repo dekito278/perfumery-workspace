@@ -28,7 +28,7 @@ const MobileProductDetailPage = () => {
     : null;
   const product = previewProduct || catalog.find((p) => p.slug === slug);
   const previewMode = Boolean(previewProduct);
-  const previewBackTo = location.state?.previewBackTo || '/mobile/studio/products?view=new';
+  const previewBackTo = location.state?.previewBackTo || '/mobile/studio/products/new';
   const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [cartPromptOpen, setCartPromptOpen] = useState(false);

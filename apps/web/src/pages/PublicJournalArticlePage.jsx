@@ -7,6 +7,7 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import {
   getJournalCategoryBadgeClassName,
@@ -291,6 +292,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <ScrollProgress />
         <PublicHeader />
 
         {loading ? (

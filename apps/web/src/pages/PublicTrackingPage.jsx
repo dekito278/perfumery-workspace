@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ExternalLink, Search } from 'lucide-react';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -59,12 +59,15 @@ const PublicTrackingPage = () => {
   const revealRef = useScrollReveal();
   const { code = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [lookup, setLookup] = useState(code);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(Boolean(code));
   const [error, setError] = useState('');
-  const completeCount = useMemo(() => completedStepCount(order), [order]);
+  const isCancelled = order?.status === 'cancelled';
+  // A cancelled order must not render as a normal in-progress timeline with a "(saat ini)" step.
+  const completeCount = useMemo(() => (isCancelled ? 0 : completedStepCount(order)), [order, isCancelled]);
   const courierUrl = order?.trackingUrl || buildCourierTrackingSearchUrl(order || {});
 
   const loadOrder = async (value) => {
@@ -98,7 +101,9 @@ const PublicTrackingPage = () => {
     event.preventDefault();
     const normalized = lookup.trim();
     if (!normalized) return;
-    navigate(`/track-order/${encodeURIComponent(normalized)}`);
+    // Stay on whichever tracking route the user is already on instead of always bouncing to /track-order.
+    const base = location.pathname.startsWith('/track-order') ? '/track-order' : '/track';
+    navigate(`${base}/${encodeURIComponent(normalized)}`);
     if (normalized === code) {
       loadOrder(normalized);
     }
@@ -146,7 +151,16 @@ const PublicTrackingPage = () => {
                   <span className="tracking-card__customer">{order.customerName}</span>
                 </div>
 
-                <ol className="tracking-timeline" aria-label="Progres pesanan">
+                {isCancelled ? (
+                  <div
+                    role="status"
+                    style={{ margin: '4px 0 16px', padding: '12px 16px', borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', fontSize: 14, fontWeight: 500 }}
+                  >
+                    Pesanan ini <strong>dibatalkan</strong>. Bila ini keliru atau kamu sudah membayar, hubungi kami lewat WhatsApp.
+                  </div>
+                ) : null}
+
+                <ol className="tracking-timeline" aria-label="Progres pesanan" aria-hidden={isCancelled ? 'true' : undefined}>
                   {steps.map((item, index) => (
                     <li
                       key={item.key}

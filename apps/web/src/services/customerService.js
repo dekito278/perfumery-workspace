@@ -264,6 +264,54 @@ export const getCustomerPortalByCode = async (customerCode) => {
   }
 };
 
+const buildAccountPortalResult = (result) => {
+  if (!result?.customer?.customer_code) return null;
+  return {
+    customer: normalizeCustomer(result.customer),
+    orders: Array.isArray(result.orders) ? result.orders.map(normalizePortalOrder) : [],
+    requiresSecurity: false,
+    persistence: 'database',
+  };
+};
+
+// Load the logged-in customer's portal by their linked account (no code needed).
+export const getCustomerAccount = async () => {
+  try {
+    const { data, error } = await supabase.rpc('storefront_customer_account');
+    if (error) throw error;
+    return buildAccountPortalResult(data?.[0]);
+  } catch (error) {
+    console.warn('Customer account lookup failed:', error.message || error);
+    return null;
+  }
+};
+
+// Link an existing SOLIxxxxx code to the logged-in account (security-question gated).
+export const claimCustomerCode = async (customerCode, securityAnswer = '') => {
+  const { data, error } = await supabase.rpc('storefront_claim_customer_code', {
+    p_customer_code: normalizeCustomerCode(customerCode),
+    p_security_answer: securityAnswer?.trim() || null,
+  });
+  if (error) throw new Error(error.message || 'Gagal menautkan kode');
+  const result = buildAccountPortalResult(data?.[0]);
+  if (!result) throw new Error('Kode customer tidak ditemukan');
+  return result;
+};
+
+// Save/update the logged-in customer's profile + delivery address (address book).
+export const saveCustomerAccount = async ({ customerName, contact, deliveryAddress = '', deliveryArea = '' }) => {
+  const { data, error } = await supabase.rpc('storefront_save_customer_account', {
+    p_customer_name: customerName?.trim() || null,
+    p_contact: contact?.trim() || null,
+    p_delivery_address: deliveryAddress?.trim() || null,
+    p_delivery_area: deliveryArea?.trim() || null,
+  });
+  if (error) throw new Error(error.message || 'Gagal menyimpan profil');
+  const result = buildAccountPortalResult(data?.[0]);
+  if (!result) throw new Error('Gagal menyimpan profil');
+  return result;
+};
+
 export const verifyCustomerPortalSecurity = async (customerCode, securityAnswer) => {
   const normalizedCode = normalizeCustomerCode(customerCode);
   if (!normalizedCode || !securityAnswer?.trim()) return null;

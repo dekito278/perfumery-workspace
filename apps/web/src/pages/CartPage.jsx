@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
+import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useMicroInteractions } from '@/hooks/useParallax.js';
+import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -16,6 +23,17 @@ const CartPage = () => {
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
   const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);
+  const revealRef = useScrollReveal();
+  const { magnetic, tilt, resetTilt } = useMicroInteractions();
+  const catalogProducts = useCatalogProducts();
+
+  const recommendations = useMemo(() => {
+    const inCart = new Set(items.map((item) => item.productSlug || item.slug));
+    const visible = catalogProducts.filter(isProductVisibleInStorefront);
+    return getPublicFragranceCatalog(visible)
+      .filter((product) => !inCart.has(product.slug))
+      .slice(0, 4);
+  }, [catalogProducts, items]);
 
   return (
     <>
@@ -23,16 +41,17 @@ const CartPage = () => {
         <title>Cart - SOLIVAGANT</title>
       </Helmet>
 
-      <main className="solivagant-editorial-home">
+      <main className="solivagant-editorial-home" ref={revealRef}>
+        <ScrollProgress />
         <PublicHeader />
 
         <section className="cart-hero">
-          <p className="editorial-eyebrow">KERANJANG</p>
-          <h1>Keranjang</h1>
-          <p>Tinjau fragrance pilihanmu sebelum checkout.</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KERANJANG</p>
+          <TextReveal as="h1" text="Keranjang" />
+          <p className="hero-animate-text hero-animate-text--d3">Tinjau fragrance pilihanmu sebelum checkout.</p>
         </section>
 
-        <section className="cart-layout">
+        <section className="cart-layout" data-reveal>
           {/* Cart items */}
           <div className="cart-items">
             {!items.length ? (
@@ -129,14 +148,44 @@ const CartPage = () => {
             {/* Actions */}
             <div className="cart-actions">
               {items.length ? (
-                <Link to="/checkout" className="cart-actions__primary">Lanjut ke Checkout</Link>
+                <Link to="/checkout" className="cart-actions__primary magnetic-hover" onMouseMove={magnetic}>Lanjut ke Checkout</Link>
               ) : (
-                <Link to="/catalog" className="cart-actions__primary">Tambah Produk Dulu</Link>
+                <Link to="/catalog" className="cart-actions__primary magnetic-hover" onMouseMove={magnetic}>Tambah Produk Dulu</Link>
               )}
               <Link to="/catalog" className="cart-actions__secondary">Lanjut Belanja</Link>
             </div>
           </aside>
         </section>
+
+        {/* Cross-sell — complete the ritual */}
+        {items.length && recommendations.length ? (
+          <section className="cart-recommend" data-reveal>
+            <div className="home-section__head">
+              <p className="editorial-eyebrow">LENGKAPI RITUALMU</p>
+              <h2>Mungkin kamu suka</h2>
+            </div>
+            <div className="catalog-grid catalog-grid--four" data-reveal data-stagger-children>
+              {recommendations.map((item) => (
+                <Link
+                  key={item.slug}
+                  to={`/catalog/${item.slug}`}
+                  className="catalog-card card-lift card-tilt img-hover-zoom"
+                  onMouseMove={tilt}
+                  onMouseLeave={resetTilt}
+                >
+                  <div className="catalog-card__media">
+                    <ProductVisual product={item} className="catalog-card__visual" imageFit="cover" label={false} />
+                  </div>
+                  <div className="catalog-card__info">
+                    <span className="catalog-card__category">{item.category}</span>
+                    <h3>{item.name}</h3>
+                    <span className="catalog-card__price">{item.price}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <StorefrontFooter />
       </main>

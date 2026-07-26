@@ -184,7 +184,7 @@ const SectionEditor = ({ section, index, slug, onChange, onRemove, onMoveUp, onM
             />
             <MediaUploadButton
               slug={slug}
-              category={`section-${index}`}
+              category={`section-${section.id}`}
               accept="image/*"
               label="Gambar Section"
               currentUrl={section.image}
@@ -195,7 +195,7 @@ const SectionEditor = ({ section, index, slug, onChange, onRemove, onMoveUp, onM
           <>
             <MediaUploadButton
               slug={slug}
-              category={`section-${index}`}
+              category={`section-${section.id}`}
               accept="image/*"
               label="Full Bleed Image"
               currentUrl={section.image}
@@ -214,6 +214,20 @@ const SectionEditor = ({ section, index, slug, onChange, onRemove, onMoveUp, onM
   );
 };
 
+// Section media is stored at `${slug}/section-${id}.ext`. Keying by a STABLE id (not the array
+// index) means reordering sections no longer makes a replacement overwrite another section's file.
+const makeSectionId = () => (
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `s-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`
+);
+
+const withSectionIds = (storyObj) => (
+  storyObj
+    ? { ...storyObj, sections: (storyObj.sections || []).map((s) => (s.id ? s : { ...s, id: makeSectionId() })) }
+    : storyObj
+);
+
 // ── Main Page ──
 const StoryEditorPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -226,6 +240,8 @@ const StoryEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const [existingStories, setExistingStories] = useState([]);
   const [showAddSection, setShowAddSection] = useState(false);
+  // Section ids present at load — used on save to clean up media for sections the user removed.
+  const loadedSectionIdsRef = useRef([]);
 
   useEffect(() => {
     fetchAllStories().then(setExistingStories).catch(() => {});
@@ -236,9 +252,15 @@ const StoryEditorPage = () => {
     setLoading(true);
     fetchStory(selectedSlug)
       .then((row) => {
-        setStory(row ? storyFromRow(row) : emptyStory(selectedSlug));
+        const withIds = withSectionIds(row ? storyFromRow(row) : emptyStory(selectedSlug));
+        loadedSectionIdsRef.current = (withIds.sections || []).map((section) => section.id);
+        setStory(withIds);
       })
-      .catch(() => setStory(emptyStory(selectedSlug)))
+      .catch(() => {
+        const withIds = withSectionIds(emptyStory(selectedSlug));
+        loadedSectionIdsRef.current = (withIds.sections || []).map((section) => section.id);
+        setStory(withIds);
+      })
       .finally(() => setLoading(false));
   }, [selectedSlug]);
 
@@ -268,7 +290,7 @@ const StoryEditorPage = () => {
   }, []);
 
   const addSection = (type) => {
-    const base = { type };
+    const base = { type, id: makeSectionId() };
     if (type === 'quote') base.text = '';
     if (type === 'text-image') Object.assign(base, { layout: 'image-right', eyebrow: '', heading: '', body: '', image: null });
     if (type === 'full-bleed') Object.assign(base, { image: null, caption: '' });
@@ -296,6 +318,11 @@ const StoryEditorPage = () => {
     setSaving(true);
     try {
       await upsertStory(selectedSlug, story);
+      // Clean up media for sections removed since load so their files aren't orphaned in storage.
+      const currentIds = new Set((story.sections || []).map((section) => section.id));
+      const removedIds = loadedSectionIdsRef.current.filter((id) => id && !currentIds.has(id));
+      await Promise.all(removedIds.map((id) => deleteStoryMedia(selectedSlug, `section-${id}`).catch(() => {})));
+      loadedSectionIdsRef.current = [...currentIds];
       invalidateStoryCache(selectedSlug);
       toast.success('Story tersimpan!');
       fetchAllStories().then(setExistingStories).catch(() => {});

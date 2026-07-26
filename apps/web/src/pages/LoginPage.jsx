@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Helmet } from 'react-helmet';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cancelMfaChallenge, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, initialLoading, isAuthenticated, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authenticatorCode, setAuthenticatorCode] = useState('');
@@ -21,6 +21,12 @@ const LoginPage = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
   const [authStep, setAuthStep] = useState('password');
+
+  useEffect(() => {
+    if (!initialLoading && isAuthenticated) {
+      navigate(location.state?.from?.pathname || '/studio', { replace: true });
+    }
+  }, [initialLoading, isAuthenticated, location.state, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -116,7 +122,7 @@ const LoginPage = () => {
             {authStep === 'mfa' || mfaChallenge ? (
               <form onSubmit={handleMfaSubmit} className="space-y-4">
                 {error && (
-                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                  <div role="alert" className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                     {error}
                   </div>
                 )}

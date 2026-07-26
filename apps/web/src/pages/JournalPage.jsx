@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { BookOpenText, CalendarDays, ExternalLink, Home, Plus, RefreshCw, Timer } from 'lucide-react';
+import { BookOpenText, CalendarDays, ExternalLink, Home, Plus, RefreshCw, Timer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ const getReadingMinutes = (post) => {
 
 const JournalPage = () => {
   const navigate = useNavigate();
-  const { getJournalPosts } = useJournalPosts();
+  const { getJournalPosts, deleteJournalPost } = useJournalPosts();
   const { getFormulas } = useFormulas();
   const [posts, setPosts] = useState([]);
   const [formulas, setFormulas] = useState([]);
@@ -70,6 +70,17 @@ const JournalPage = () => {
       setLoading(false);
     }
   }, [getFormulas, getJournalPosts]);
+
+  const handleDeletePost = useCallback(async (post) => {
+    if (!window.confirm(`Hapus artikel "${post.title}" permanen? Tindakan ini tidak bisa dibatalkan.`)) return;
+    try {
+      await deleteJournalPost(post.id);
+      setPosts((current) => current.filter((item) => item.id !== post.id));
+      toast.success('Artikel dihapus');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus artikel');
+    }
+  }, [deleteJournalPost]);
 
   useEffect(() => {
     loadJournalPosts();
@@ -386,18 +397,31 @@ const JournalPage = () => {
                   const publicPath = getJournalPublicPath(post);
 
                   return (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(publicPath)}
-                      disabled={!publicPath}
-                      className="table-action-button"
-                      title={publicPath ? 'Buka artikel publik' : 'Publish artikel dulu'}
-                      aria-label={publicPath ? `Buka artikel publik ${post.title}` : `${post.title} masih draft`}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(publicPath)}
+                        disabled={!publicPath}
+                        className="table-action-button"
+                        title={publicPath ? 'Buka artikel publik' : 'Publish artikel dulu'}
+                        aria-label={publicPath ? `Buka artikel publik ${post.title}` : `${post.title} masih draft`}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletePost(post)}
+                        className="table-action-button text-rose-600 hover:text-rose-700"
+                        title="Hapus artikel"
+                        aria-label={`Hapus artikel ${post.title}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   );
                 }}
                 mobileCard={(post) => (
@@ -426,14 +450,25 @@ const JournalPage = () => {
                           </Badge>
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="col-span-2 h-9 rounded-xl sm:col-span-1"
-                        onClick={() => navigate(`/studio/journal/${post.id}/edit`)}
-                      >
-                        Edit
-                      </Button>
+                      <div className="col-span-2 flex gap-2 sm:col-span-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 flex-1 rounded-xl"
+                          onClick={() => navigate(`/studio/journal/${post.id}/edit`)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 rounded-xl border-rose-200 px-3 text-rose-600"
+                          onClick={() => handleDeletePost(post)}
+                          aria-label={`Hapus artikel ${post.title}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     {getPreviewText(post) ? (
                       <div className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{getPreviewText(post)}</div>

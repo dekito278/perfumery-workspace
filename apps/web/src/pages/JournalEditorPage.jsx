@@ -56,6 +56,8 @@ const JournalEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const [formulas, setFormulas] = useState([]);
   const [formState, setFormState] = useState(createEmptyPost(queryFormulaId));
+  const [savedSnapshot, setSavedSnapshot] = useState('');
+  const isDirty = useMemo(() => savedSnapshot !== '' && JSON.stringify(formState) !== savedSnapshot, [formState, savedSnapshot]);
 
   useEffect(() => {
     let active = true;
@@ -73,8 +75,10 @@ const JournalEditorPage = () => {
         }
 
         const linkedFormula = formulaRows.find((formula) => formula.id === queryFormulaId);
+        const initialState = post ? toEditorState(post) : createEmptyPost(queryFormulaId, linkedFormula?.name);
         setFormulas(formulaRows);
-        setFormState(post ? toEditorState(post) : createEmptyPost(queryFormulaId, linkedFormula?.name));
+        setFormState(initialState);
+        setSavedSnapshot(JSON.stringify(initialState));
       } catch (error) {
         toast.error('Failed to load journal editor');
         navigate('/studio/journal');
@@ -104,7 +108,20 @@ const JournalEditorPage = () => {
     }));
   };
 
+  useEffect(() => {
+    if (!isDirty) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const handleBack = () => {
+    if (isDirty && !window.confirm('Ada tulisan yang belum disimpan. Lanjut dan buang perubahan?')) {
+      return;
+    }
     if (location.state?.from) {
       navigate(location.state.from, { state: { restoreScroll: true } });
       return;

@@ -57,6 +57,19 @@ export const useJournalPosts = () => {
     }
   }, []);
 
+  const deleteJournalPost = useCallback(async (postId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      return await journalPostsService.deleteJournalPost(postId);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -64,5 +77,6 @@ export const useJournalPosts = () => {
     getJournalPostById,
     createJournalPost,
     updateJournalPost,
+    deleteJournalPost,
   };
 };

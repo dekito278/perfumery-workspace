@@ -50,6 +50,9 @@ export const useProductionCostPage = () => {
   const [selectedSolventId, setSelectedSolventId] = useState('');
   const [formulaProfile, setFormulaProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  // True when a formula is selected but its cost profile failed to load — so the page can warn instead
+  // of silently costing the juice at Rp 0 (material cost falls back to 0 when the profile is null).
+  const [profileError, setProfileError] = useState(false);
   const [retailInputs, setRetailInputs] = useState(DEFAULT_RETAIL_INPUTS);
   const [bulkInputs, setBulkInputs] = useState(DEFAULT_BULK_INPUTS);
   const [retailScenarios, setRetailScenarios] = useState(createDefaultRetailScenarios);
@@ -180,11 +183,13 @@ export const useProductionCostPage = () => {
     const loadFormulaProfile = async () => {
       if (!selectedFormulaId) {
         setFormulaProfile(null);
+        setProfileError(false);
         setProfileLoading(false);
         return;
       }
 
       setProfileLoading(true);
+      setProfileError(false);
       try {
         const items = await runWithTimeout(getFormulaItems(selectedFormulaId), REQUEST_TIMEOUT, 8000);
         // Ignore a stale response if the user already switched to another formula.
@@ -224,6 +229,7 @@ export const useProductionCostPage = () => {
           ? 'Data formula lambat dimuat (timeout). Coba pilih ulang formula.'
           : 'Failed to load formula profile');
         setFormulaProfile(null);
+        setProfileError(true);
       } finally {
         if (!cancelled) setProfileLoading(false);
       }
@@ -269,10 +275,13 @@ export const useProductionCostPage = () => {
     const cogsPerMl = targetFillVolume > 0 ? totalProductionCost / targetFillVolume : 0;
 
     const scenarioResults = retailScenarios.map((scenario) => {
-      const percent = clampPercentage(parseNumberInput(scenario.percent), 1000);
+      const rawPercent = clampPercentage(parseNumberInput(scenario.percent), 1000);
+      // Margin is profit/price, so it's < 100%. Cap it just under 100 so an out-of-range entry
+      // yields a finite price, not Rp 0 or a ~1000× divide-by-near-zero.
+      const percent = scenario.mode === 'margin' ? Math.min(rawPercent, 99) : rawPercent;
       const feePercent = clampPercentage(parseNumberInput(scenario.feePercent));
       const salePrice = scenario.mode === 'margin'
-        ? (percent >= 100 ? 0 : (costPerBottle / Math.max(1 - (percent / 100), 0.0001)))
+        ? costPerBottle / (1 - (percent / 100))
         : costPerBottle * (1 + (percent / 100));
       const channelFee = salePrice * (feePercent / 100);
       const netRevenue = Math.max(salePrice - channelFee, 0);
@@ -507,6 +516,7 @@ export const useProductionCostPage = () => {
     handlePrintQuotation,
     loading,
     profileLoading,
+    profileError,
     quotationInputs,
     quotationOpen,
     retailChampion,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Beaker } from 'lucide-react';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils.js';
 const MobileLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cancelMfaChallenge, login, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
+  const { cancelMfaChallenge, initialLoading, isAuthenticated, login, loginWithGoogle, mfaChallenge, requestPasswordReset, verifyMfaCode } = useAuth();
   const keyboardActive = useMobileKeyboardState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +23,12 @@ const MobileLoginPage = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
   const [authStep, setAuthStep] = useState('password');
+
+  useEffect(() => {
+    if (!initialLoading && isAuthenticated) {
+      navigate(location.state?.from?.pathname || '/mobile/studio', { replace: true });
+    }
+  }, [initialLoading, isAuthenticated, location.state, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -72,6 +78,17 @@ const MobileLoginPage = () => {
     await cancelMfaChallenge();
   };
 
+  const handleGoogleSignIn = async () => {
+    setError('');
+    try {
+      await loginWithGoogle(`${window.location.origin}/mobile/studio`);
+    } catch (googleError) {
+      const message = googleError.message || 'Google sign-in failed';
+      setError(message);
+      toast.error(message);
+    }
+  };
+
   const handlePasswordReset = async () => {
     if (!email.trim()) {
       setError('Enter your email first, then request a reset link.');
@@ -105,7 +122,7 @@ const MobileLoginPage = () => {
           <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Solivagant</h1>
           {authStep === 'mfa' || mfaChallenge ? (
             <form onSubmit={handleMfaSubmit} className="mt-5 space-y-4">
-              {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
+              {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
                 Open your authenticator app and enter the 6 digit code for {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
               </div>
@@ -131,7 +148,7 @@ const MobileLoginPage = () => {
             </form>
           ) : (
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-            {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
+            {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
             <div className="space-y-2">
               <Label htmlFor="mobile-email">Email</Label>
               <Input id="mobile-email" type="text" inputMode="email" autoCapitalize="none" value={email} onChange={(event) => setEmail(event.target.value)} required className="h-12 rounded-2xl bg-white" />
@@ -142,6 +159,12 @@ const MobileLoginPage = () => {
             </div>
             <Button type="submit" disabled={loading} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
               {loading ? 'Signing in...' : 'Sign in'}
+            </Button>
+            <div className="flex items-center gap-3 text-xs font-semibold text-[#9ca3af]">
+              <span className="h-px flex-1 bg-[#e5e7eb]" />atau<span className="h-px flex-1 bg-[#e5e7eb]" />
+            </div>
+            <Button type="button" variant="outline" onClick={handleGoogleSignIn} className="h-12 w-full rounded-2xl bg-white">
+              Masuk dengan Google
             </Button>
             <Button type="button" variant="ghost" disabled={resetLoading} onClick={handlePasswordReset} className="h-11 w-full rounded-2xl">
               {resetLoading ? 'Sending reset link...' : 'Forgot password?'}

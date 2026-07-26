@@ -1,3 +1,5 @@
+import { parseLocalizedNumber } from '@/utils/numberInputs.js';
+
 export const normalizeQuickMaterialName = (name) =>
   String(name || '').trim().replace(/\s+/g, ' ');
 
@@ -59,10 +61,10 @@ const normalizeOptionalQuickField = (value) => {
 };
 
 const normalizeOptionalQuickNumber = (value) => {
-  const normalized = String(value || '').trim().replace(/\./g, '').replace(',', '.');
-  if (!normalized) return 0;
-  const numericValue = Number(normalized);
-  return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : 0;
+  // Use the app-wide dot-decimal parser (same as costing inputs). The old local parser stripped every
+  // dot as a thousands separator, so "12.5" became 125 — a 10x cost corruption on decimal entries.
+  const numericValue = parseLocalizedNumber(value, 0);
+  return numericValue >= 0 ? numericValue : 0;
 };
 
 export const buildQuickRawMaterialPayload = (name, details = {}) => {

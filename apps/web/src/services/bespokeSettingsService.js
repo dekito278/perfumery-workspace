@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { deleteBespokeImages } from '@/services/bespokeImageStorageService.js';
 
 export const BESPOKE_SETTINGS_STORAGE_KEY = 'dekito.storefront.bespoke-settings.v1';
 export const BESPOKE_SETTINGS_UPDATED_EVENT = 'dekito:bespoke-settings-updated';
@@ -150,6 +151,7 @@ export const saveBespokeOption = async (collectionKey, option) => {
   const settings = getBespokeSettings();
   const normalizedOption = normalizeOption({ ...option, collectionKey });
   const options = settings[collectionKey] || [];
+  const previousOption = options.find((item) => item.id === normalizedOption.id);
   const nextOptions = options.some((item) => item.id === normalizedOption.id)
     ? options.map((item) => (item.id === normalizedOption.id ? normalizedOption : item))
     : [...options, normalizedOption];
@@ -165,16 +167,22 @@ export const saveBespokeOption = async (collectionKey, option) => {
     if (error) throw error;
 
     writeSettings(nextSettings);
+    // Save succeeded — if this edit replaced the image, drop the old file so it isn't orphaned.
+    if (previousOption?.imageUrl && previousOption.imageUrl !== normalizedOption.imageUrl) {
+      deleteBespokeImages([previousOption.imageUrl]).catch((cleanupError) => console.warn('Bespoke image cleanup skipped:', cleanupError.message || cleanupError));
+    }
     return fromDatabaseRow(data);
   } catch (error) {
-    console.warn('Saving bespoke option locally because database save failed:', error.message || error);
-    writeSettings(nextSettings);
-    return normalizedOption;
+    // Admin settings are read by customers from the DB — a silent localStorage-only "save" would show
+    // the admin success while customers never see the change. Surface the failure instead.
+    console.warn('Bespoke option save failed:', error.message || error);
+    throw new Error('Gagal menyimpan opsi bespoke ke server. Perubahan belum tersimpan — coba lagi.');
   }
 };
 
 export const deleteBespokeOption = async (collectionKey, optionId) => {
   const settings = getBespokeSettings();
+  const removedOption = (settings[collectionKey] || []).find((option) => option.id === optionId);
   const nextSettings = {
     ...settings,
     [collectionKey]: (settings[collectionKey] || []).filter((option) => option.id !== optionId),
@@ -190,9 +198,13 @@ export const deleteBespokeOption = async (collectionKey, optionId) => {
     if (error) throw error;
 
     writeSettings(nextSettings);
+    // Option is gone — remove its image so it isn't orphaned in storage.
+    if (removedOption?.imageUrl) {
+      deleteBespokeImages([removedOption.imageUrl]).catch((cleanupError) => console.warn('Bespoke image cleanup skipped:', cleanupError.message || cleanupError));
+    }
   } catch (error) {
-    console.warn('Deleting bespoke option locally because database delete failed:', error.message || error);
-    writeSettings(nextSettings);
+    console.warn('Bespoke option delete failed:', error.message || error);
+    throw new Error('Gagal menghapus opsi bespoke di server. Coba lagi.');
   }
 
   return nextSettings;
@@ -222,8 +234,8 @@ export const resetBespokeSettings = async () => {
 
     writeSettings(settings);
   } catch (error) {
-    console.warn('Resetting bespoke settings locally because database reset failed:', error.message || error);
-    writeSettings(settings);
+    console.warn('Bespoke settings reset failed:', error.message || error);
+    throw new Error('Gagal reset bespoke settings di server. Coba lagi.');
   }
 
   return settings;

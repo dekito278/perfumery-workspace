@@ -31,6 +31,7 @@ const ImageSlotCard = ({ slot, currentUrl, onUpload, onDelete }) => {
   };
 
   const handleDelete = async () => {
+    if (!window.confirm(`Hapus gambar "${slot.label}" dari situs? Slot ini akan kosong di storefront sampai kamu upload ulang.`)) return;
     try {
       await onDelete(slot.key);
       toast.success(`${slot.label} removed`);

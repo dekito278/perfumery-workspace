@@ -267,3 +267,18 @@ export const updateJournalPost = async (postId, postData) => {
   dispatchJournalPostsChanged(savedPost);
   return savedPost;
 };
+
+export const deleteJournalPost = async (postId) => {
+  const { error } = await supabase
+    .from('journal_posts')
+    .delete()
+    .eq('id', postId);
+
+  if (error) {
+    console.error('Error deleting journal post:', error);
+    throw new Error(error.message || 'Failed to delete journal post');
+  }
+
+  dispatchJournalPostsChanged(null);
+  return true;
+};

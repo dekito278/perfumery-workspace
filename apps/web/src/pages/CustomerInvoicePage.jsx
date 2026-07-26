@@ -372,6 +372,8 @@ const CustomerInvoicePage = () => {
           </div>
           <form onSubmit={unlockInvoice} className="mt-5 grid gap-3">
             <input
+              type="password"
+              autoComplete="off"
               value={securityAnswer}
               onChange={(event) => setSecurityAnswer(event.target.value)}
               placeholder="Jawaban"

@@ -11,7 +11,10 @@ import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
+  claimCustomerCode,
+  getCustomerAccount,
   getCustomerPortalByCode,
+  saveCustomerAccount,
   setCustomerPortalSecurity,
   verifyCustomerPortalSecurity,
 } from '@/services/customerService.js';
@@ -887,14 +890,30 @@ const CustomerPortalPage = () => {
     }
   }, [initialCode, loadPortalForCode]);
 
-  // Google-signed-in customer: auto-open the portal for the code saved on their profile.
+  // Logged-in customer: open the portal by their linked account (no code needed);
+  // fall back to a code saved on their profile for legacy sessions.
   useEffect(() => {
-    const savedCode = currentUser?.user_metadata?.customer_code;
-    if (savedCode && !initialCode && lastLoadedCodeRef.current !== savedCode) {
-      lastLoadedCodeRef.current = savedCode;
-      setCustomerCode(savedCode);
-      loadPortalForCode(savedCode, { silent: true });
-    }
+    if (!currentUser || initialCode) return undefined;
+    let cancelled = false;
+    (async () => {
+      const account = await getCustomerAccount();
+      if (cancelled) return;
+      if (account?.customer?.customerCode) {
+        lastLoadedCodeRef.current = account.customer.customerCode;
+        setPortal(account);
+        setSearched(true);
+        setCustomerCode(account.customer.customerCode);
+        setSecurityQuestion(account.customer.securityQuestion || '');
+        return;
+      }
+      const savedCode = currentUser?.user_metadata?.customer_code;
+      if (savedCode && lastLoadedCodeRef.current !== savedCode) {
+        lastLoadedCodeRef.current = savedCode;
+        setCustomerCode(savedCode);
+        loadPortalForCode(savedCode, { silent: true });
+      }
+    })();
+    return () => { cancelled = true; };
   }, [currentUser, initialCode, loadPortalForCode]);
 
   // Once a logged-in customer resolves a code, remember it on their profile so they
@@ -914,6 +933,105 @@ const CustomerPortalPage = () => {
     } catch (error) {
       toast.error(error.message || 'Gagal masuk dengan Google');
     }
+  };
+
+  const [profileName, setProfileName] = useState('');
+  const [profileContact, setProfileContact] = useState('');
+  const [profileAddress, setProfileAddress] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [claimCodeValue, setClaimCodeValue] = useState('');
+  const [claimAnswer, setClaimAnswer] = useState('');
+  const [claimLoading, setClaimLoading] = useState(false);
+
+  // Keep the account/address form in sync with the loaded customer.
+  useEffect(() => {
+    const customer = portal?.customer;
+    setProfileName(customer?.customerName && customer.customerName !== 'Customer' ? customer.customerName : '');
+    setProfileContact(customer?.contact && customer.contact !== '-' ? customer.contact : '');
+    setProfileAddress(customer?.deliveryAddress || '');
+  }, [portal]);
+
+  const submitProfile = async (event) => {
+    event.preventDefault();
+    if (!profileName.trim() || !profileContact.trim()) {
+      toast.error('Nama dan kontak wajib diisi');
+      return;
+    }
+    setProfileLoading(true);
+    try {
+      const result = await saveCustomerAccount({
+        customerName: profileName,
+        contact: profileContact,
+        deliveryAddress: profileAddress,
+      });
+      lastLoadedCodeRef.current = result.customer.customerCode;
+      setPortal(result);
+      setSearched(true);
+      setCustomerCode(result.customer.customerCode);
+      toast.success('Profil & alamat tersimpan');
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyimpan profil');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const submitClaim = async (event) => {
+    event.preventDefault();
+    if (!claimCodeValue.trim()) {
+      toast.error('Kode wajib diisi');
+      return;
+    }
+    setClaimLoading(true);
+    try {
+      const result = await claimCustomerCode(claimCodeValue, claimAnswer);
+      lastLoadedCodeRef.current = result.customer.customerCode;
+      setPortal(result);
+      setSearched(true);
+      setCustomerCode(result.customer.customerCode);
+      setClaimCodeValue('');
+      setClaimAnswer('');
+      toast.success(`${result.customer.customerCode} ditautkan ke akunmu`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menautkan kode');
+    } finally {
+      setClaimLoading(false);
+    }
+  };
+
+  // Account + address book panel, shown to logged-in customers on both layouts.
+  const renderAccountPanel = () => {
+    if (!currentUser) return null;
+    const inputClass = 'h-11 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal';
+    return (
+      <section className="mobile-card rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase text-editorial-charcoal">
+          <UserRound className="h-4 w-4" />
+          Akun &amp; alamat
+        </div>
+        <p className="mt-1 text-xs font-semibold text-[#6b7280]">{currentUser.email}</p>
+
+        <form onSubmit={submitProfile} className="mt-3 grid gap-2">
+          <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Nama penerima" className={inputClass} />
+          <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder="No. WhatsApp / telepon" className={inputClass} />
+          <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder="Alamat pengiriman lengkap" className={`${inputClass} h-auto py-2`} />
+          <Button type="submit" disabled={profileLoading} className="h-11 rounded-2xl gap-2">
+            {profileLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+            Simpan alamat
+          </Button>
+        </form>
+
+        <form onSubmit={submitClaim} className="mt-4 grid gap-2 border-t border-[#e5e7eb] pt-3">
+          <div className="text-[11px] font-bold uppercase text-[#6b7280]">Punya kode order lama?</div>
+          <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} placeholder="SOLI09232" className={`${inputClass} uppercase tracking-[0.08em]`} />
+          <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder="Jawaban keamanan (jika ada)" className={inputClass} />
+          <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-2xl gap-2 bg-white">
+            {claimLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+            Tautkan kode ke akun
+          </Button>
+        </form>
+      </section>
+    );
   };
 
   const loadPortal = async (event) => {
@@ -1342,6 +1460,8 @@ const CustomerPortalPage = () => {
             </form>
           </section>
 
+          {renderAccountPanel()}
+
           {loading ? (
             <MobileCustomerPortalSkeleton />
           ) : portal?.requiresSecurity ? (
@@ -1362,6 +1482,8 @@ const CustomerPortalPage = () => {
                   <div className="mt-1 text-sm font-bold text-editorial-charcoal">{portal.customer.securityQuestion}</div>
                 </div>
                 <input
+                  type="password"
+                  autoComplete="off"
                   value={securityAnswer}
                   onChange={(event) => setSecurityAnswer(event.target.value)}
                   placeholder="Jawaban"
@@ -1594,6 +1716,7 @@ const CustomerPortalPage = () => {
                 </Button>
               )}
             </form>
+            {renderAccountPanel()}
           </div>
 
           <div className="space-y-4">
@@ -1617,6 +1740,8 @@ const CustomerPortalPage = () => {
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
                   <input
+                    type="password"
+                    autoComplete="off"
                     value={securityAnswer}
                     onChange={(event) => setSecurityAnswer(event.target.value)}
                     placeholder="Jawaban"

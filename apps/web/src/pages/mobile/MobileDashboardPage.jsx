@@ -343,7 +343,7 @@ const MobileDashboardPage = () => {
                 title={`${lowStockProducts.length} product hampir habis`}
                 helper="Cek varian dan publish status"
                 tone={lowStockProducts.length ? 'rose' : 'emerald'}
-                onClick={() => navigate('/mobile/studio/products?view=list')}
+                onClick={() => navigate('/mobile/studio/products')}
               />
             </div>
           </section>
@@ -465,9 +465,9 @@ const MobileDashboardPage = () => {
       >
         <div className="grid gap-3 pb-2">
           {[
-            { label: 'Tambah produk baru', helper: 'Form produk, varian, gambar', path: '/mobile/studio/products?view=new', icon: PackagePlus },
-            { label: 'Daftar produk', helper: 'Edit dan hapus produk katalog', path: '/mobile/studio/products?view=list', icon: PackageCheck },
-            { label: 'Kategori produk', helper: 'Kelola family/kategori shop', path: '/mobile/studio/products?view=categories', icon: LibraryBig },
+            { label: 'Tambah produk baru', helper: 'Form produk, varian, gambar', path: '/mobile/studio/products/new', icon: PackagePlus },
+            { label: 'Daftar produk', helper: 'Edit dan hapus produk katalog', path: '/mobile/studio/products', icon: PackageCheck },
+            { label: 'Kategori produk', helper: 'Kelola family/kategori shop', path: '/mobile/studio/product-categories', icon: LibraryBig },
           ].map((item) => {
             const Icon = item.icon;
             return (

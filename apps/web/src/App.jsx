@@ -83,7 +83,10 @@ const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
 const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
 const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetupPage.jsx'));
 const DashboardPage = lazyRoute(() => import('@/pages/DashboardPage.jsx'));
-const ProductManagementPage = lazyRoute(() => import('@/pages/ProductManagementPage.jsx'));
+const ProductListPage = lazyRoute(() => import('@/pages/ProductListPage.jsx'));
+const ProductCreatePage = lazyRoute(() => import('@/pages/ProductCreatePage.jsx'));
+const ProductEditPage = lazyRoute(() => import('@/pages/ProductEditPage.jsx'));
+const ProductInventoryPage = lazyRoute(() => import('@/pages/ProductInventoryPage.jsx'));
 const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
 const VoucherManagementPage = lazyRoute(() => import('@/pages/VoucherManagementPage.jsx'));
 const ShippingPromotionPage = lazyRoute(() => import('@/pages/ShippingPromotionPage.jsx'));
@@ -116,7 +119,10 @@ const MobileProductDetailPage = lazyRoute(() => import('@/pages/mobile/MobilePro
 const MobileBespokePage = lazyRoute(() => import('@/pages/mobile/MobileBespokePage.jsx'));
 const MobileCartPage = lazyRoute(() => import('@/pages/mobile/MobileCartPage.jsx'));
 const MobileCheckoutPage = lazyRoute(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
-const MobileProductManagementPage = lazyRoute(() => import('@/pages/mobile/MobileProductManagementPage.jsx'));
+const MobileProductListPage = lazyRoute(() => import('@/pages/mobile/MobileProductListPage.jsx'));
+const MobileProductCreatePage = lazyRoute(() => import('@/pages/mobile/MobileProductCreatePage.jsx'));
+const MobileProductEditPage = lazyRoute(() => import('@/pages/mobile/MobileProductEditPage.jsx'));
+const MobileProductCategoriesPage = lazyRoute(() => import('@/pages/mobile/MobileProductCategoriesPage.jsx'));
 const MobileBespokeSettingsPage = lazyRoute(() => import('@/pages/mobile/MobileBespokeSettingsPage.jsx'));
 const MobileVoucherManagementPage = lazyRoute(() => import('@/pages/mobile/MobileVoucherManagementPage.jsx'));
 const MobileShippingPromotionPage = lazyRoute(() => import('@/pages/mobile/MobileShippingPromotionPage.jsx'));
@@ -507,7 +513,25 @@ function AppRoutes() {
 
         <Route path="/mobile/studio/products" element={
           <ProtectedRoute>
-            <MobileProductManagementPage />
+            <MobileProductListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/products/new" element={
+          <ProtectedRoute>
+            <MobileProductCreatePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/products/:id/edit" element={
+          <ProtectedRoute>
+            <MobileProductEditPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/mobile/studio/product-categories" element={
+          <ProtectedRoute>
+            <MobileProductCategoriesPage />
           </ProtectedRoute>
         } />
 
@@ -705,7 +729,25 @@ function AppRoutes() {
 
         <Route path="/studio/products" element={
           <ProtectedRoute>
-            <ProductManagementPage />
+            <ProductListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/new" element={
+          <ProtectedRoute>
+            <ProductCreatePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/inventory" element={
+          <ProtectedRoute>
+            <ProductInventoryPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/:id/edit" element={
+          <ProtectedRoute>
+            <ProductEditPage />
           </ProtectedRoute>
         } />
 

@@ -4,8 +4,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
+import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
+import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { bespokeOccasionOptions } from '@/data/storefront.js';
+import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
@@ -142,6 +145,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 
 const BespokePage = () => {
   const revealRef = useScrollReveal();
+  const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
@@ -629,12 +633,13 @@ const BespokePage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <ScrollProgress />
         <PublicHeader />
 
         <section className="bespoke-hero">
           <div className="bespoke-hero__copy">
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KONSULTASI BESPOKE</p>
-            <h1 className="hero-animate-text hero-animate-text--d2">Racik Parfum Versimu</h1>
+            <TextReveal as="h1" text="Racik Parfum Versimu" />
             <p className="hero-animate-text hero-animate-text--d3">Ceritakan arah aromamu, pilih detail botol, lalu kirim permintaan. Parfum custom dikerjakan dalam 7–14 hari.</p>
           </div>
           <ol className="bespoke-hero__steps hero-animate-fade">
@@ -753,7 +758,7 @@ const BespokePage = () => {
               </div>
               <div className="editorial-bespoke-next__action">
                 <p>Sudah cocok dengan desainnya?</p>
-                <button type="button" className="editorial-button editorial-button--primary" onClick={() => setCheckoutOpen(true)}>
+                <button type="button" className="editorial-button editorial-button--primary magnetic-hover" onClick={() => setCheckoutOpen(true)} onMouseMove={magnetic}>
                   Lanjut ke checkout
                   <CreditCard className="h-4 w-4" />
                 </button>
@@ -874,7 +879,7 @@ const BespokePage = () => {
                   <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
                   Saya memahami bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
                 </label>
-                <button type="submit" className="editorial-button editorial-button--primary" disabled={saving}>
+                <button type="submit" className="editorial-button editorial-button--primary magnetic-hover" disabled={saving} onMouseMove={magnetic}>
                   {saving ? 'Menyimpan...' : (isManualPayment ? 'Buat order & upload bukti' : 'Buat order & bayar')}
                   {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </button>

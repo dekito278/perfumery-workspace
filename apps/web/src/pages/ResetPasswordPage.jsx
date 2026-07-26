@@ -73,7 +73,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
           Enter a new password for your Solivagant studio account.
         </p>
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
+          {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
           <div className="space-y-2">
             <Label htmlFor="reset-password">New password</Label>
             <Input

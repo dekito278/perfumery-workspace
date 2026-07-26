@@ -294,6 +294,8 @@ const BatchProductionPage = () => {
       let nextUsageRecords = [];
       if (stockDeductingStatuses.has(nextStatus) && !batch.is_stock_deducted) {
         nextUsageRecords = await deductBatchMaterialStock(batch.id);
+        // Persist the flag (not just local state) so a reload can't re-run the deduct and halve stock.
+        batch = await saveBatch({ ...batch, is_stock_deducted: true });
         batch = { ...batch, is_stock_deducted: true, usage_records: nextUsageRecords };
         setUsageRecords(nextUsageRecords);
       }
@@ -317,7 +319,8 @@ const BatchProductionPage = () => {
     if (savedBatch?.id && savedBatch.status === nextStatus) {
       if (stockDeductingStatuses.has(nextStatus) && !savedBatch.is_stock_deducted) {
         const nextUsageRecords = await deductBatchMaterialStock(savedBatch.id);
-        const nextBatch = { ...savedBatch, is_stock_deducted: true, usage_records: nextUsageRecords };
+        const persisted = await saveBatch({ ...savedBatch, is_stock_deducted: true });
+        const nextBatch = { ...persisted, is_stock_deducted: true, usage_records: nextUsageRecords };
         setSavedBatch(nextBatch);
         setUsageRecords(nextUsageRecords);
         await refreshBatchHistory();

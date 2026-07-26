@@ -33,6 +33,7 @@ const CheckoutPage = () => {
   });
   const {
     customerCode, customerName, contact, deliveryAddress, notes, saving, lookupLoading,
+    securityChallenge, securityAnswer, setSecurityAnswer, verifyCustomerSecurity,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
     shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod,
     canSubmitCheckout, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
@@ -138,6 +139,23 @@ const CheckoutPage = () => {
                   </button>
                 </div>
               </label>
+              {securityChallenge ? (
+                <label className="checkout-field">
+                  <span>{securityChallenge.securityQuestion || 'Pertanyaan keamanan'}</span>
+                  <div className="checkout-field__inline">
+                    <input
+                      type="text"
+                      value={securityAnswer}
+                      onChange={(event) => setSecurityAnswer(event.target.value)}
+                      placeholder="Jawaban keamanan"
+                      autoComplete="off"
+                    />
+                    <button type="button" onClick={verifyCustomerSecurity} disabled={lookupLoading || !securityAnswer.trim()}>
+                      {lookupLoading ? 'Cek...' : 'Verifikasi'}
+                    </button>
+                  </div>
+                </label>
+              ) : null}
               <label className="checkout-field">
                 <span>Nama lengkap</span>
                 <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />

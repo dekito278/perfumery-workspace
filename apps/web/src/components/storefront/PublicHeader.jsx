@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, X, Menu } from 'lucide-react';
+import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -153,6 +154,8 @@ const PublicHeader = () => {
           </button>
         </div>
       )}
+
+      <BackToTop />
     </div>
   );
 };
