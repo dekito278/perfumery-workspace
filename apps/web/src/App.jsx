@@ -83,7 +83,9 @@ const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
 const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
 const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetupPage.jsx'));
 const DashboardPage = lazyRoute(() => import('@/pages/DashboardPage.jsx'));
-const ProductManagementPage = lazyRoute(() => import('@/pages/ProductManagementPage.jsx'));
+const ProductListPage = lazyRoute(() => import('@/pages/ProductListPage.jsx'));
+const ProductCreatePage = lazyRoute(() => import('@/pages/ProductCreatePage.jsx'));
+const ProductEditPage = lazyRoute(() => import('@/pages/ProductEditPage.jsx'));
 const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
 const VoucherManagementPage = lazyRoute(() => import('@/pages/VoucherManagementPage.jsx'));
 const ShippingPromotionPage = lazyRoute(() => import('@/pages/ShippingPromotionPage.jsx'));
@@ -705,7 +707,19 @@ function AppRoutes() {
 
         <Route path="/studio/products" element={
           <ProtectedRoute>
-            <ProductManagementPage />
+            <ProductListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/new" element={
+          <ProtectedRoute>
+            <ProductCreatePage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/:id/edit" element={
+          <ProtectedRoute>
+            <ProductEditPage />
           </ProtectedRoute>
         } />
 
