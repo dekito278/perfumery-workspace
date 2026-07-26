@@ -134,17 +134,16 @@ export default async function handler(req, res) {
       service: input.service,
     });
 
-    // 3. Voucher (authoritative) — DO NOT re-implement validateVoucher here. It's a large, tested client
-    //    function (min-subtotal / expiry / quota / product+category eligibility / percent-vs-fixed caps in
-    //    services/voucherService.js). Reimplementing risks money-path drift. Instead FIRST make it a single
-    //    authoritative source both sides use:
-    //      (a) extract validateVoucher into an isomorphic module (no import.meta.env / supabase-client at
-    //          top level) that this endpoint imports and runs against a voucher row read from
-    //          storefront_vouchers, OR
-    //      (b) add a `storefront_validate_voucher(code, subtotal, items)` SECURITY DEFINER RPC returning
-    //          { valid, discountAmount } and call it here.
+    // 3. Voucher (authoritative). validateVoucher is now an ISOMORPHIC module — utils/voucherValidation.js
+    //    (zero browser/supabase imports), so this endpoint can import it directly and run it against a
+    //    voucher row read from storefront_vouchers. Do NOT re-implement the rules here.
+    //      import { validateVoucher } from '../../src/utils/voucherValidation.js';  // adjust path when wired
+    //      const [vRow] = await sbSelect(`storefront_vouchers?code=eq.${enc(input.voucherCode)}&select=*`);
+    //      const v = validateVoucher({ code: input.voucherCode, voucher: vRow, subtotal: itemsSubtotal,
+    //                                  items: catalog.resolved });
+    //      const voucherDiscount = v.valid ? v.discountAmount : 0;
     //    Then reserve it via the existing storefront_record_voucher_usage RPC.
-    const voucherDiscount = 0; // <-- from (a)/(b) above once the shared validator exists
+    const voucherDiscount = 0; // <-- wire the import above (voucherValidation.js is ready)
 
     // 4. Authoritative total (matches useCheckoutFlow: (items − voucher) + shipping)
     const subtotal = Math.max(itemsSubtotal - voucherDiscount, 0) + shippingFee;
