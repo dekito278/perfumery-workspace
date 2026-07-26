@@ -572,7 +572,7 @@ const MobileBatchesPage = () => {
 
     if (publishedProduct) {
       toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
-      navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
+      navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`);
       return;
     }
 
@@ -597,7 +597,7 @@ const MobileBatchesPage = () => {
 
     if (publishedProduct) {
       toast.info('Batch ini sudah pernah dipublish. Buka produk untuk edit stok, foto, dan deskripsi.');
-      navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
+      navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`);
       return;
     }
 
@@ -660,7 +660,7 @@ const MobileBatchesPage = () => {
       await updateFormulaStatus(selectedFormula.id, 'published_product');
       toast.success(`${productBottleCount} bottles drafted in products`);
       setPublishConfirmOpen(false);
-      navigate('/mobile/studio/products?view=list');
+      navigate('/mobile/studio/products');
     } catch (error) {
       toast.error(error.message || 'Failed to publish product');
     } finally {
@@ -737,7 +737,7 @@ const MobileBatchesPage = () => {
 
     if (batchStep === 'stock') {
       if (publishedProduct) {
-        navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`);
+        navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`);
         return;
       }
       openPublishConfirmation();
@@ -1064,7 +1064,7 @@ const MobileBatchesPage = () => {
                   </div>
                   <Button
                     type="button"
-                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products?view=new&edit=${encodeURIComponent(publishedProduct.id)}`) : openPublishConfirmation}
+                    onClick={publishedProduct ? () => navigate(`/mobile/studio/products/${encodeURIComponent(publishedProduct.id)}/edit`) : openPublishConfirmation}
                     disabled={publishingProduct || (!publishedProduct && productBottleCount <= 0)}
                     variant="outline"
                     className="mt-3 h-11 w-full rounded-2xl bg-white gap-2 text-xs font-bold"
