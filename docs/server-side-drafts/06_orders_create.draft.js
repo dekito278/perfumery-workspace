@@ -105,11 +105,17 @@ const computeShippingFee = async (baseUrl, { destinationId, weight, courier, ser
   const chosen = rates.find((r) => r.courierCode === courier && r.service === service) || rates[0];
   const baseFee = Math.round(Number(chosen?.cost || 0));
 
-  // ponytail: DB promo NOT applied here. applyShippingPromotionToRates + getShippingPromotionSettingsAsync
-  // live in the client (services/shippingPromotion*.js). Extract them into a shared module the client AND
-  // this endpoint import, OR a storefront_shipping_promotion RPC — then apply the promo to baseFee here.
-  // Duplicating the promo math would drift from the client. Until extracted, this returns the raw fee.
-  return baseFee;
+  // Apply the DB promo. applyShippingPromotionToRates is now ISOMORPHIC — utils/shippingPromotion.js
+  // (zero browser/supabase imports) — so import it here and pass the storefront_shipping_promotion row
+  // (read via service-role) as settings, instead of duplicating the promo math:
+  //   import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js'; // adjust path
+  //   const [promoRow] = await sbSelect(`storefront_shipping_promotion_settings?id=eq.default&select=*`);
+  //   const [promoted] = applyShippingPromotionToRates([{ ...chosen, cost: baseFee }], destination,
+  //     { enabled: promoRow?.enabled, preset: promoRow?.preset, javaAmount: promoRow?.java_amount,
+  //       otherAmount: promoRow?.other_amount, minimumSubtotal: promoRow?.minimum_subtotal,
+  //       startsAt: promoRow?.starts_at, endsAt: promoRow?.ends_at }, { subtotal });
+  //   return Math.round(promoted?.cost ?? baseFee);
+  return baseFee; // <-- wire the promo apply above (shippingPromotion.js is ready)
 };
 
 // --- handler ---------------------------------------------------------------------------------------
