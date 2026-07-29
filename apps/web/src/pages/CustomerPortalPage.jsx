@@ -839,6 +839,7 @@ const CustomerPortalPage = () => {
   const [savingSecurity, setSavingSecurity] = useState(false);
   const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
+  const [accountPanelOpen, setAccountPanelOpen] = useState(false);
   const [reorderDraft, setReorderDraft] = useState(null);
   const [submittingReorder, setSubmittingReorder] = useState('');
   const [lastCustomerCode, setLastCustomerCode] = useState(() => readLastCustomerCode());
@@ -1005,13 +1006,23 @@ const CustomerPortalPage = () => {
     const inputClass = 'h-11 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal';
     return (
       <section className="mobile-card rounded-2xl border bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase text-editorial-charcoal">
-          <UserRound className="h-4 w-4" />
-          Akun &amp; alamat
-        </div>
-        <p className="mt-1 text-xs font-semibold text-[#6b7280]">{currentUser.email}</p>
-
-        <form onSubmit={submitProfile} className="mt-3 grid gap-2">
+        <button type="button" onClick={() => setAccountPanelOpen((open) => !open)} className="flex w-full items-center justify-between gap-3 text-left">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-editorial-ivory text-editorial-charcoal">
+              <UserRound className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs font-bold uppercase text-editorial-charcoal">Akun &amp; alamat</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{currentUser.email}</span>
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full bg-editorial-paper px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
+            {accountPanelOpen ? 'Tutup' : 'Ubah'}
+          </span>
+        </button>
+        {!accountPanelOpen ? null : (
+        <div className="mt-3 border-t border-[#e5e7eb] pt-3">
+        <form onSubmit={submitProfile} className="grid gap-2">
           <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Nama penerima" className={inputClass} />
           <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder="No. WhatsApp / telepon" className={inputClass} />
           <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder="Alamat pengiriman lengkap" className={`${inputClass} h-auto py-2`} />
@@ -1030,6 +1041,8 @@ const CustomerPortalPage = () => {
             Tautkan kode ke akun
           </Button>
         </form>
+        </div>
+        )}
       </section>
     );
   };
@@ -1460,8 +1473,6 @@ const CustomerPortalPage = () => {
             </form>
           </section>
 
-          {renderAccountPanel()}
-
           {loading ? (
             <MobileCustomerPortalSkeleton />
           ) : portal?.requiresSecurity ? (
@@ -1642,6 +1653,8 @@ const CustomerPortalPage = () => {
               </p>
             </section>
           )}
+
+          {renderAccountPanel()}
         </main>
         {isMobileRoute ? (
           <MobileBottomSheet
