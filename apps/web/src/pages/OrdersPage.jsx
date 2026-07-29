@@ -34,6 +34,7 @@ import {
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
+  isAwaitingCustomerPayment,
   isFrontQueueOrder,
   isShippedOrder,
 } from '@/utils/orderWorkflow.js';
@@ -149,7 +150,7 @@ const OrdersPage = () => {
 
   const visibleOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
-    const matchesFilter = (orderFilter === 'active' && isFrontQueueOrder(order))
+    const matchesFilter = (orderFilter === 'active' && isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order))
       || (orderFilter === 'proof_review' && order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order))
       || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order))
       || (orderFilter === 'paid' && order.paymentStatus === 'paid' && isFrontQueueOrder(order))
@@ -171,7 +172,7 @@ const OrdersPage = () => {
   });
 
   const filterCounts = {
-    active: orders.filter(isFrontQueueOrder).length,
+    active: orders.filter((order) => isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order)).length,
     proof_review: orders.filter((order) => order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order)).length,
     payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order)).length,
     paid: orders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length,

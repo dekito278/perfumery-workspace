@@ -31,6 +31,7 @@ import {
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
+  isAwaitingCustomerPayment,
   isFrontQueueOrder,
   isShippedOrder,
 } from '@/utils/orderWorkflow.js';
@@ -149,7 +150,7 @@ const MobileOrdersPage = () => {
     }
     if (orderFilter === 'bespoke') return isBespokeOrder(order) && isFrontQueueOrder(order);
     if (orderFilter === 'archive') return isArchivedOrder(order);
-    return isFrontQueueOrder(order);
+    return isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order);
   }).filter((order) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     if (!query) return true;
