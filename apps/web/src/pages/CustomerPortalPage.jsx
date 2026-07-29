@@ -1527,12 +1527,17 @@ const CustomerPortalPage = () => {
                   <div className="min-w-0">
                     <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Selamat datang kembali</div>
                     <h2 className="mt-1 truncate text-lg font-bold text-editorial-charcoal">{portal.customer.customerName}</h2>
-                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.contact}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.masked ? 'Detail disembunyikan demi keamanan' : portal.customer.contact}</p>
                   </div>
                   <button type="button" onClick={copyCode} className="shrink-0 rounded-2xl bg-editorial-charcoal px-3 py-2 text-xs font-bold tracking-[0.12em] text-editorial-ivory">
                     {portal.customer.customerCode}
                   </button>
                 </div>
+                {portal.customer.masked ? (
+                  <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-semibold leading-relaxed text-amber-800">
+                    Kamu melihat progres order via kode. Untuk lihat &amp; kelola detail lengkap (nama, kontak, alamat), <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">masuk dengan Google</button> pakai akun saat order.
+                  </div>
+                ) : null}
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-3 text-center">
                     <div className="text-sm font-bold text-editorial-charcoal">{portal.orders.length}</div>
@@ -1787,7 +1792,12 @@ const CustomerPortalPage = () => {
                     <div>
                       <div className="text-xs font-bold uppercase text-editorial-charcoal">Selamat datang kembali</div>
                       <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
-                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.contact}</p>
+                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.masked ? 'Detail disembunyikan demi keamanan' : portal.customer.contact}</p>
+                      {portal.customer.masked ? (
+                        <p className="mt-2 text-xs font-semibold leading-relaxed text-amber-800">
+                          Untuk detail lengkap (nama, kontak, alamat), <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">masuk dengan Google</button> pakai akun saat order.
+                        </p>
+                      ) : null}
                     </div>
                     <button type="button" onClick={copyCode} className="rounded-2xl bg-editorial-charcoal px-5 py-4 text-center text-xl font-bold tracking-[0.16em] text-editorial-ivory">
                       {portal.customer.customerCode}
