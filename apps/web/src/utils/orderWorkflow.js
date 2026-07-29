@@ -18,6 +18,14 @@ export const isFrontQueueOrder = (order = {}) => (
   && !isShippedOrder(order)
 );
 
+// Order still waiting on the CUSTOMER to pay (no proof submitted yet). These abandoned/pending orders
+// pile up, so we keep them out of the default "Aktif" queue — the "Perlu dibayar" tab owns them.
+// Proof-submitted orders stay in Aktif because the admin needs to act on them.
+export const isAwaitingCustomerPayment = (order = {}) => (
+  ['unpaid', 'pending'].includes(order.paymentStatus)
+  && order.paymentProofStatus !== 'submitted'
+);
+
 export const getBespokeOrderSummary = (order = {}) => {
   if (!isBespokeOrder(order)) return null;
 

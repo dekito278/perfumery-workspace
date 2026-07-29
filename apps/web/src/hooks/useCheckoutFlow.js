@@ -448,6 +448,9 @@ export const useCheckoutFlow = ({
   };
 
   const submitOrder = async ({ onSuccess } = {}) => {
+    // Hard idempotency guard: a fast double-tap (or any non-button caller) must not create two orders.
+    // The disabled button alone doesn't cover the window before React re-renders.
+    if (saving) return;
     if (!items.length) {
       toast.error('Keranjang masih kosong');
       return;
@@ -609,17 +612,8 @@ export const useCheckoutFlow = ({
         items: order.items || items,
         callbackPath: paymentPath,
       });
-      await updateOrderPaymentStatus(order.id || order.orderNumber, {
-        paymentStatus: 'pending',
-        paymentProvider: 'doku',
-        paymentReference: checkout.requestId || '',
-        paymentUrl: checkout.paymentUrl,
-        paymentExpiresAt: checkout.paymentExpiresAt || '',
-        paymentSessionId: checkout.paymentSessionId || '',
-        paymentResponse: checkout.dokuResponse || {},
-        status: 'pending_payment',
-        audit: false,
-      });
+      // Record voucher usage BEFORE navigating so a quota miss cancels the order here, not after the
+      // buyer is already staring at the payment panel.
       if (voucherSnapshot?.code) {
         try {
           await recordVoucherUsageForOrder({
@@ -655,7 +649,23 @@ export const useCheckoutFlow = ({
       setSubmittedOrder(order);
       toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
       onSuccess?.(order);
+      // Optimistic navigation: the payment panel renders straight from sessionStorage (paymentUrl), so
+      // navigate NOW. Bare path (no ?order=) keeps PaymentPage on its fast sessionStorage path instead of
+      // a DB fetch.
       navigate(paymentPath);
+      // Persist the DOKU session to the order OFF the critical path — enables refresh-recovery + the
+      // 60-min payment_expires_at. If it fails, worst case is a refresh re-mints the session (guarded).
+      void updateOrderPaymentStatus(order.id || order.orderNumber, {
+        paymentStatus: 'pending',
+        paymentProvider: 'doku',
+        paymentReference: checkout.requestId || '',
+        paymentUrl: checkout.paymentUrl,
+        paymentExpiresAt: checkout.paymentExpiresAt || '',
+        paymentSessionId: checkout.paymentSessionId || '',
+        paymentResponse: checkout.dokuResponse || {},
+        status: 'pending_payment',
+        audit: false,
+      }).catch((persistError) => console.warn('Deferred DOKU session persist failed:', persistError.message || persistError));
     } catch (error) {
       if (createdOrder) {
         try {

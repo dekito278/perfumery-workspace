@@ -2,6 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build --prefix apps/web",
   "outputDirectory": "apps/web/dist",
+  "crons": [
+    {
+      "path": "/api/orders/expire-reservations",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
