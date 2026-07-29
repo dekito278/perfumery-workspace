@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { BadgePercent, ChevronDown, CreditCard, Minus, Plus, ShoppingBag, X } from 'lucide-react';
+import { BadgePercent, ChevronDown, CreditCard, Minus, Plus, ShoppingBag, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
@@ -59,7 +60,15 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
 const MobileCheckoutPage = () => {
   const navigate = useNavigate();
   const [showManualShippingArea, setShowManualShippingArea] = useState(false);
+  const { currentUser, loginWithGoogle, logout } = useAuth();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      toast.error(error.message || 'Gagal masuk dengan Google');
+    }
+  };
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const checkout = useCheckoutFlow({
@@ -181,6 +190,17 @@ const MobileCheckoutPage = () => {
           description="Kode customer opsional untuk pembeli lama. Pembeli baru langsung isi nama dan nomor."
           complete={contactComplete}
         >
+            {currentUser ? (
+              <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f3f1ec] px-3 py-2 text-xs font-semibold text-editorial-charcoal">
+                <span className="min-w-0 truncate">Masuk sebagai {currentUser.email} — data terisi otomatis</span>
+                <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" className="h-12 w-full rounded-2xl bg-white gap-2 text-xs font-bold" onClick={handleGoogleLogin}>
+                <UserRound className="h-4 w-4" />
+                Masuk dengan Google — data terisi otomatis
+              </Button>
+            )}
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional: kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : 'Cek kode'}</Button>

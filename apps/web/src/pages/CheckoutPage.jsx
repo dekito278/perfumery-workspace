@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
-import { BadgePercent, ChevronDown, CreditCard, Search, ShoppingBag, X } from 'lucide-react';
+import { BadgePercent, ChevronDown, CreditCard, Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
@@ -19,6 +21,7 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 
 const CheckoutPage = () => {
   const { items, summary, clear } = useCart();
+  const { currentUser, loginWithGoogle, logout } = useAuth();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const [showAreaSearch, setShowAreaSearch] = useState(false);
   const checkout = useCheckoutFlow({
@@ -54,6 +57,15 @@ const CheckoutPage = () => {
     !selectedShipping ? 'ongkir' : '',
     !selectedPaymentMethod ? 'metode pembayaran' : '',
   ].filter(Boolean).join(', ');
+
+  const handleGoogleLogin = async () => {
+    try {
+      // Returns to this checkout URL; useCheckoutFlow then prefills name/contact/address from the account.
+      await loginWithGoogle();
+    } catch (error) {
+      toast.error(error.message || 'Gagal masuk dengan Google');
+    }
+  };
 
   const [triedSubmit, setTriedSubmit] = useState(false);
   const fieldErrors = {
@@ -130,6 +142,16 @@ const CheckoutPage = () => {
             {/* Customer info */}
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">INFORMASI PEMBELI</legend>
+              {currentUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', borderRadius: '14px', background: '#f3f1ec', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px' }}>
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Masuk sebagai {currentUser.email} — data terisi otomatis</span>
+                  <button type="button" onClick={logout} style={{ flexShrink: 0, fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Keluar</button>
+                </div>
+              ) : (
+                <button type="button" onClick={handleGoogleLogin} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px', borderRadius: '14px', border: '1px solid #d8d2c4', background: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', marginBottom: '12px' }}>
+                  <UserRound size={16} /> Masuk dengan Google — alamat &amp; data terisi otomatis
+                </button>
+              )}
               <label className="checkout-field">
                 <span>Kode customer</span>
                 <div className="checkout-field__inline">
