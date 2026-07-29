@@ -1,0 +1,43 @@
+## Pages
+- [- Journal - Solivagant` : 'Journal Detail - Solivagant'}](/journaldetail): No description available
+- [- Solivagant](/productdetail): No description available
+- [- SOLIVAGANT](/publicproductdetail): No description available
+- [- Solivagant Studio](/orderdetail): No description available
+- [- Solivagant`}](/editformula): Edit a formula with the same composition workspace used for creating formulas.
+- [- Solivagant`}](/formuladetail): No description available
+- [— SOLIVAGANT](/immersiveproduct): No description available
+- [Aturan Ongkir | Solivagant Studio](/shippingpromotion): No description available
+- [Authenticator - Solivagant](/authenticatorsetup): No description available
+- [Batch Production - Solivagant](/batchproduction): Create production batches, QC gates, stock usage, and draft product stock from approved formulas.
+- [Cart - SOLIVAGANT](/cart): No description available
+- [Categories - Solivagant](/categories): Reference the Perfumer
+- [Cek Order - Solivagant](/customerportal): Cek progres order Solivagant dengan kode customer.
+- [Checkout - SOLIVAGANT](/checkout): No description available
+- [Create Formula - Solivagant](/createformula): Build a formula on a dedicated page with ingredient composition on the left and a live workbook odour display on the right.
+- [Customer - Solivagant](/customers): Kelola customer Solivagant dan kode repeat order.
+- [Daftar produk - Solivagant](/productlist): Kelola produk custom storefront Solivagant.
+- [Edit produk - Solivagant](/productedit): Edit produk custom di katalog Solivagant.
+- [Formulas - Solivagant](/formulas): Manage formula compositions, workbook imports, and revision-ready perfume formulas.
+- [Fragrance Collection - SOLIVAGANT](/catalog): Explore the SOLIVAGANT fragrance collection by perfumer Dekito.
+- [Halaman Tidak Ditemukan - SOLIVAGANT](/notfound): No description available
+- [Inventory ops - Solivagant](/productinventory): Monitor low stock dan riwayat koreksi stok produk custom.
+- [Invoice  - Solivagant](/customerinvoice): No description available
+- [Journal - Solivagant](/journal): Collect perfumery notes, accord stories, process notes, and product ideas in one writing library.
+- [Lacak Pesanan - SOLIVAGANT](/publictracking): Lacak status pesanan SOLIVAGANT.
+- [Login - Solivagant](/login): Sign in to your Solivagant account to manage materials, formulas, and validation work.
+- [Material Audit - Solivagant](/rawmaterialaudit): No description available
+- [Materials - Solivagant](/rawmaterials): Browse your material library, guidance coverage, and dilution readiness from one formulation workspace.
+- [Orders - Solivagant](/orders): Manage storefront orders for Solivagant.
+- [Parfum Bespoke - SOLIVAGANT](/bespoke): Ajukan konsultasi parfum custom SOLIVAGANT lewat pilihan aroma, botol, data pengiriman, dan pembayaran.
+- [Payment - Solivagant](/payment): No description available
+- [Pengiriman - Solivagant](/shipments): Kelola fulfillment pengiriman order Solivagant.
+- [Product Categories - Solivagant](/productcategories): Manage e-commerce product categories for the Solivagant storefront.
+- [Production Costing - Solivagant](/productioncost): Calculate retail bottle COGS and bulk brand pricing from formula concentrate, solvent, packaging, overhead, and manual markup.
+- [Raw Material Archive - SOLIVAGANT](/publicmaterials): A public raw material storytelling archive from SOLIVAGANT.
+- [Reset Password - Solivagant](/resetpassword): No description available
+- [Site Images - SOLIVAGANT Studio](/siteimagemanager): No description available
+- [Studio - Solivagant](/dashboard): Track formulation progress, guidance coverage, formula activity, and validation follow-up from one perfumery workspace.
+- [Tambah produk - Solivagant](/productcreate): Tambah produk custom baru ke katalog Solivagant.
+- [Untitled Page](/journaleditor): Write or edit a perfumery journal note.
+- [Validation - Solivagant](/validationlog): Track evaluation backlog, revision notes, and validation checkpoints for formulas.
+- [Vouchers - Solivagant](/vouchermanagement): Manage storefront vouchers for Solivagant checkout.

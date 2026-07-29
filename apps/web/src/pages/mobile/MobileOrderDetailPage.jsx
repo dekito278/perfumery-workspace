@@ -137,6 +137,7 @@ const parseNoteLines = (notes = '') => String(notes || '')
   });
 
 const bespokeDetailRows = (item) => [
+  ['Nama parfum', item?.perfumeName],
   ['Aroma', item?.preferredNotes || item?.notes],
   ['Momen', item?.occasion],
   ['Ukuran', item?.size],

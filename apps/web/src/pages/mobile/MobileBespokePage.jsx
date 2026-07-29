@@ -220,10 +220,10 @@ const MobileBespokePage = () => {
     slug: 'bespoke-perfume-request',
     productSlug: 'bespoke-perfume-request',
     category: 'Bespoke',
-    name: 'Bespoke perfume request',
+    name: form.perfumeName ? `Bespoke perfume: ${form.perfumeName}` : 'Bespoke perfume request',
     quantity: 1,
     priceNumber: estimatedTotal,
-  }], [estimatedTotal]);
+  }], [estimatedTotal, form.perfumeName]);
   const voucher = useAppliedVoucher(estimatedTotal, bespokeVoucherItems);
   const shippingFee = Number(selectedShipping?.cost || 0);
   const discountAmount = Number(voucher.discountAmount || 0);
@@ -751,6 +751,10 @@ const MobileBespokePage = () => {
       setStep(flowSteps.indexOf(incompleteStep));
       return;
     }
+    if (estimatedTotal <= 0) {
+      toast.error('Harga custom belum terhitung. Pilih ulang opsi botol.');
+      return;
+    }
 
     setSaving(true);
     let createdOrder = null;
@@ -775,6 +779,18 @@ const MobileBespokePage = () => {
       });
       const order = await createBespokeRequest({
         ...form,
+        optionIds: {
+          size: selectedSize?.id || '',
+          bottleType: selectedBottleType?.id || '',
+          capDesign: selectedCap?.id || '',
+          labelDesign: selectedLabel?.id || '',
+          exoticMaterial: selectedExoticMaterial?.id || '',
+        },
+        // Shipping references so the authoritative endpoint can re-price the courier server-side.
+        shippingDestinationId: selectedDestination?.id || '',
+        shippingDestination: selectedDestination || null,
+        shippingCourier: selectedShipping?.courierCode || selectedCourier || '',
+        shippingService: selectedShipping?.service || '',
         deliveryArea: selectedDestination?.label || destinationSearch,
         preferredNotes: form.scentDescription,
         budget: formatRupiah(estimatedTotal),
@@ -791,13 +807,16 @@ const MobileBespokePage = () => {
         referenceProductSlug: referenceProduct?.slug || '',
       });
       createdOrder = order;
+      // Charge the order's authoritative subtotal (equals checkoutTotalDue on the direct-insert path;
+      // the server recompute on the endpoint path), so display and charge always match what was stored.
+      const paymentAmount = Number(order.subtotal) || checkoutTotalDue;
       if (isManualPayment) {
         const manualPaymentResponse = {
           method: selectedPaymentMethod.provider,
           bankName: selectedPaymentMethod.bankName,
           accountNumber: selectedPaymentMethod.accountNumber,
           accountName: selectedPaymentMethod.accountName,
-          amount: checkoutTotalDue,
+          amount: paymentAmount,
         };
         await updateOrderPaymentStatus(order.id || order.orderNumber, {
           paymentStatus: 'pending',
@@ -816,7 +835,7 @@ const MobileBespokePage = () => {
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || form.customerCode,
-          amount: checkoutTotalDue,
+          amount: paymentAmount,
           customerName: form.customerName,
           paymentStatus: 'pending',
           manualTransfer: manualPaymentResponse,
@@ -843,7 +862,7 @@ const MobileBespokePage = () => {
           budget: formatRupiah(estimatedTotal),
           shipping: shippingSummary,
           shippingFee,
-          totalDue: formatRupiah(checkoutTotalDue),
+          totalDue: formatRupiah(paymentAmount),
           voucherCode: voucherSnapshot?.code || '',
           reference: referenceProduct?.name || '',
           createdAt: new Date().toISOString(),
@@ -857,7 +876,7 @@ const MobileBespokePage = () => {
 
       const checkout = await createDokuCheckout({
         order,
-        amount: checkoutTotalDue,
+        amount: paymentAmount,
         customerName: form.customerName,
         contact: form.contact,
         items: order.items || [],
@@ -881,7 +900,7 @@ const MobileBespokePage = () => {
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
-        amount: checkoutTotalDue,
+        amount: paymentAmount,
         customerName: form.customerName,
         paymentStatus: 'pending',
         paymentExpiresAt: checkout.paymentExpiresAt || '',
@@ -909,7 +928,7 @@ const MobileBespokePage = () => {
         budget: formatRupiah(estimatedTotal),
         shipping: shippingSummary,
         shippingFee,
-        totalDue: formatRupiah(checkoutTotalDue),
+        totalDue: formatRupiah(paymentAmount),
         voucherCode: voucherSnapshot?.code || '',
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),

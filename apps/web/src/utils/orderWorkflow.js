@@ -33,9 +33,11 @@ export const getBespokeOrderSummary = (order = {}) => {
   ].filter(Boolean);
   const aroma = item.preferredNotes || item.notes || item.mood || '';
   const story = item.story || item.description || '';
+  const perfumeName = String(item.perfumeName || '').trim();
 
   return {
     item,
+    perfumeName: perfumeName || 'Belum diberi nama',
     bottle: bottleParts.join(' / ') || '-',
     design: designParts.join(' / ') || '-',
     aroma,

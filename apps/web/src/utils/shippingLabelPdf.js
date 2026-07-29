@@ -56,6 +56,17 @@ const getOrderAddress = (order) => parseNoteField(order?.notes, 'Address');
 const getOrderArea = (order) => parseNoteField(order?.notes, 'Area');
 const getOrderShipping = (order) => parseNoteField(order?.notes, 'Shipping');
 
+const getBespokeBriefItem = (order) => (order?.items || []).find((item) => item.type === 'bespoke_request');
+
+const bespokeBriefRows = (item) => [
+  ['Nama parfum', item.perfumeName || 'Belum diberi nama'],
+  ['Botol', [item.size, item.bottleType].filter(Boolean).join(' / ')],
+  ['Cap / label', [item.capDesign, item.labelDesign].filter(Boolean).join(' / ')],
+  ['Material', item.exoticMaterial],
+  // ponytail: aroma truncated to ~140 chars so the A6 brief block can't overrun the fixed QR box; full brief lives in the app
+  ['Aroma', String(item.preferredNotes || item.notes || item.mood || '').slice(0, 140)],
+].filter(([, value]) => String(value || '').trim());
+
 export const canExportShippingLabel = (order) => Boolean(
   order
     && order.paymentStatus === 'paid'
@@ -154,7 +165,27 @@ const drawShippingLabel = async (doc, order) => {
   y += 2;
   drawDivider(doc, y);
   y += 7;
-  y = drawLabelValue(doc, 'Isi paket', itemSummary || `${order.quantity || 0} item`, MARGIN, y);
+  const bespokeItem = getBespokeBriefItem(order);
+  if (bespokeItem) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...BRAND.muted);
+    doc.text('BRIEF BESPOKE', MARGIN, y);
+    y += 4.4;
+    for (const [label, value] of bespokeBriefRows(bespokeItem)) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.4);
+      doc.setTextColor(...BRAND.accent);
+      doc.text(`${label}:`, MARGIN, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...BRAND.ink);
+      const lines = doc.splitTextToSize(asText(value), CONTENT_WIDTH - 24);
+      doc.text(lines, MARGIN + 24, y);
+      y += Math.max(4.4, lines.length * 3.8);
+    }
+  } else {
+    y = drawLabelValue(doc, 'Isi paket', itemSummary || `${order.quantity || 0} item`, MARGIN, y);
+  }
 
   y = Math.min(y + 2, PAGE_HEIGHT - 33);
   doc.setFillColor(255, 255, 255);

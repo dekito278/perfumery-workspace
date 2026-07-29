@@ -455,6 +455,7 @@ const BespokePage = () => {
     if (!form.contact.trim()) return 'Email atau WhatsApp wajib diisi.';
     if (!form.scentDescription.trim()) return 'Ceritakan arah aroma dulu.';
     if (!form.size) return 'Pilih ukuran botol.';
+    if (estimatedTotal <= 0) return 'Harga custom belum terhitung. Pilih ulang opsi botol.';
     if (!form.deliveryAddress.trim()) return 'Alamat pengiriman wajib diisi.';
     if (!selectedDestination) return 'Pilih area ongkir dari hasil pencarian.';
     if (!selectedCourier) return 'Pilih kurir pengiriman.';
@@ -499,6 +500,18 @@ const BespokePage = () => {
         capDesign: getOptionDisplayValue(selectedCap, form.capDesign),
         labelDesign: getOptionDisplayValue(selectedLabel, form.labelDesign),
         exoticMaterial: selectedMaterial ? getOptionDisplayValue(selectedMaterial, form.exoticMaterial) : '',
+        optionIds: {
+          size: getOptionKey(selectedSize),
+          bottleType: getOptionKey(selectedBottle),
+          capDesign: getOptionKey(selectedCap),
+          labelDesign: getOptionKey(selectedLabel),
+          exoticMaterial: selectedMaterial ? getOptionKey(selectedMaterial) : '',
+        },
+        // Shipping references so the authoritative endpoint can re-price the courier server-side.
+        shippingDestinationId: selectedDestination?.id || '',
+        shippingDestination: selectedDestination || null,
+        shippingCourier: selectedShipping?.courierCode || selectedCourier || '',
+        shippingService: selectedShipping?.service || '',
         deliveryArea: selectedDestination?.label || destinationSearch,
         preferredNotes: form.scentDescription,
         budget: formatRupiah(estimatedTotal),
@@ -515,6 +528,9 @@ const BespokePage = () => {
         referenceProductSlug: referenceProduct?.slug || '',
       });
       createdOrder = order;
+      // Charge the order's authoritative subtotal. On the direct-insert path this equals checkoutTotalDue;
+      // on the endpoint path it's the server recompute, so the buyer is charged exactly what was stored.
+      const paymentAmount = Number(order.subtotal) || checkoutTotalDue;
 
       if (isManualPayment) {
         const manualTransfer = {
@@ -522,7 +538,7 @@ const BespokePage = () => {
           bankName: selectedPaymentMethod.bankName,
           accountNumber: selectedPaymentMethod.accountNumber,
           accountName: selectedPaymentMethod.accountName,
-          amount: checkoutTotalDue,
+          amount: paymentAmount,
         };
         await updateOrderPaymentStatus(order.id || order.orderNumber, {
           paymentStatus: 'pending',
@@ -541,7 +557,7 @@ const BespokePage = () => {
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || form.customerCode,
-          amount: checkoutTotalDue,
+          amount: paymentAmount,
           customerName: form.customerName,
           paymentStatus: 'pending',
           manualTransfer,
@@ -568,7 +584,7 @@ const BespokePage = () => {
 
       const checkout = await createDokuCheckout({
         order,
-        amount: checkoutTotalDue,
+        amount: paymentAmount,
         customerName: form.customerName,
         contact: form.contact,
         items: order.items || [],
@@ -592,7 +608,7 @@ const BespokePage = () => {
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || form.customerCode,
-        amount: checkoutTotalDue,
+        amount: paymentAmount,
         customerName: form.customerName,
         paymentStatus: 'pending',
         paymentExpiresAt: checkout.paymentExpiresAt || '',

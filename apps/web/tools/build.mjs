@@ -124,13 +124,23 @@ const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (character
   "'": '&#39;',
 })[character]);
 
+// Replace a <meta> tag's content, or insert it before </head> if it doesn't exist.
+// (index.html no longer ships static OG tags — react-helmet owns them at runtime —
+// so the prerendered marketing snapshots must inject rather than only replace.)
 const replaceMetaContent = (html, selector, content) => {
   const escapedContent = escapeHtml(content);
-  const pattern = selector.startsWith('property=')
-    ? new RegExp(`<meta ${selector} content="[^"]*" \\/>`)
-    : new RegExp(`<meta ${selector} content="[^"]*" \\/>`);
+  const pattern = new RegExp(`<meta ${selector} content="[^"]*" ?\\/?>`);
   const replacement = `<meta ${selector} content="${escapedContent}" />`;
-  return html.match(pattern) ? html.replace(pattern, replacement) : html;
+  if (html.match(pattern)) return html.replace(pattern, replacement);
+  return html.replace('</head>', `\t\t${replacement}\n\t</head>`);
+};
+
+const upsertCanonical = (html, href) => {
+  const tag = `<link rel="canonical" href="${escapeHtml(href)}" />`;
+  if (/<link rel="canonical"[^>]*>/i.test(html)) {
+    return html.replace(/<link rel="canonical"[^>]*>/i, tag);
+  }
+  return html.replace('</head>', `\t\t${tag}\n\t</head>`);
 };
 
 const renderStaticFallback = (page) => {
@@ -163,7 +173,7 @@ const renderStaticFallback = (page) => {
 \t\t\t</noscript>`;
 };
 
-const writeStaticPublicPages = () => {
+const writeStaticPublicPages = (siteUrl) => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
   if (!fs.existsSync(indexPath)) return;
@@ -174,28 +184,69 @@ const writeStaticPublicPages = () => {
     const routeName = page.route.replace(/^\/+/, '');
     const routeDir = path.join(distRoot, routeName);
     const routePath = path.join(routeDir, 'index.html');
-    const html = replaceMetaContent(
-      replaceMetaContent(
-        replaceMetaContent(
-          baseHtml.replace(/<title>.*?<\/title>/, `<title>${escapeHtml(page.title)}</title>`)
-            .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page)),
-          'name="description"',
-          page.description,
-        ),
-        'property="og:title"',
-        page.title,
-      ),
-      'property="og:description"',
-      page.description,
-    );
+    const canonical = siteUrl ? `${siteUrl}${page.route}` : '';
+
+    let html = baseHtml
+      .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(page.title)}</title>`)
+      .replace(/<noscript>[\s\S]*?<\/noscript>/, renderStaticFallback(page));
+    html = replaceMetaContent(html, 'name="description"', page.description);
+    html = replaceMetaContent(html, 'property="og:type"', 'website');
+    html = replaceMetaContent(html, 'property="og:site_name"', 'SOLIVAGANT');
+    html = replaceMetaContent(html, 'property="og:title"', page.title);
+    html = replaceMetaContent(html, 'property="og:description"', page.description);
+    html = replaceMetaContent(html, 'name="twitter:card"', 'summary_large_image');
+    html = replaceMetaContent(html, 'name="twitter:title"', page.title);
+    html = replaceMetaContent(html, 'name="twitter:description"', page.description);
+    if (canonical) {
+      html = replaceMetaContent(html, 'property="og:url"', canonical);
+      html = upsertCanonical(html, canonical);
+    }
 
     fs.mkdirSync(routeDir, { recursive: true });
     fs.writeFileSync(routePath, html);
   });
 };
 
+const generateSeoArtifacts = async () => {
+  const distRoot = path.join(webRoot, 'dist');
+  const indexPath = path.join(distRoot, 'index.html');
+  if (!fs.existsSync(indexPath)) return;
+
+  const {
+    resolveEnv, fetchPublicProducts, fetchPublishedJournal,
+    writeProductPages, writeSitemap, finalizeRobots,
+  } = await import('./seo-artifacts.mjs');
+
+  const env = resolveEnv(webRoot);
+  if (!env.siteUrl) {
+    console.warn('[seo] No site URL configured (set VITE_PUBLIC_SITE_URL). Skipping canonical URLs, product prerender, and sitemap.');
+  }
+
+  writeStaticPublicPages(env.siteUrl);
+
+  let products = [];
+  let journal = [];
+  try {
+    [products, journal] = await Promise.all([fetchPublicProducts(env), fetchPublishedJournal(env)]);
+  } catch (error) {
+    console.warn('[seo] Supabase fetch failed, skipping product prerender/sitemap products:', error.message || error);
+  }
+
+  if (env.siteUrl && products.length) {
+    const baseHtml = fs.readFileSync(indexPath, 'utf8');
+    const written = writeProductPages(distRoot, baseHtml, products, env.siteUrl);
+    console.log(`[seo] Prerendered ${written} product page(s).`);
+  }
+
+  const urls = writeSitemap(distRoot, env.siteUrl, { products, journal });
+  if (urls) {
+    finalizeRobots(distRoot, env.siteUrl);
+    console.log(`[seo] Wrote sitemap.xml with ${urls} URL(s).`);
+  }
+};
+
 if (viteResult.status === 0) {
-  writeStaticPublicPages();
+  await generateSeoArtifacts();
 }
 
 process.exit(viteResult.status ?? 1);
