@@ -9,11 +9,14 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import {
+  buildStockCorrection,
   formatRupiah,
   getProductBatchDetails,
   getProductFormulaId,
   getProductPublishChecklist,
+  getProductRestockThreshold,
   getProductSlugConflicts,
+  getProductStockCorrections,
   getProductStorefrontPath,
   getVisibleProductTags,
   isProductDraft,
@@ -55,6 +58,12 @@ export const toProductForm = (product) => ({
   baseNotes: product.baseNotes.join(', '),
   variants: product.variants,
   tags: getVisibleProductTags(product).join(', '),
+  // Carry internal tags (batch key, formula id, SKU, stock movement, threshold, correction history)
+  // separately — the visible `tags` string above strips them, and without this a mobile save would drop
+  // every internal tag. Mirrors desktop toEditableProduct.
+  internalTags: product.tags.filter((tag) => !getVisibleProductTags(product).includes(tag)),
+  restockThreshold: getProductRestockThreshold(product),
+  stockCorrections: getProductStockCorrections(product),
   images: product.images || (product.imageUrl ? [product.imageUrl] : []),
 });
 
@@ -223,11 +232,18 @@ const MobileProductForm = ({ product = null, onSaved }) => {
     setSavingProduct(true);
     try {
       const nextPrimaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
+      // Record a stock-correction audit entry on edit, same as desktop, so mobile stock changes are traceable.
+      const previousProduct = products.find((item) => item.id === form.id);
+      const stockCorrection = buildStockCorrection({ form, previousProduct });
+      const stockCorrections = stockCorrection
+        ? [stockCorrection, ...(form.stockCorrections || [])]
+        : (form.stockCorrections || []);
       const saved = await saveCustomProduct({
         ...form,
+        stockCorrections,
         priceNumber: nextPrimaryVariantPrice,
         compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
-        stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+        stock: totalVariantStock,
         size: form.variants?.[0]?.size || form.size,
         price: formatRupiah(nextPrimaryVariantPrice),
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
@@ -293,7 +309,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
           </div>
           <div className="rounded-2xl bg-white px-3 py-2">
             <div className="text-[10px] font-bold uppercase text-[#8b949e]">Stok</div>
-            <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{totalVariantStock || Number(form.stock || 0)}</div>
+            <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{totalVariantStock}</div>
           </div>
           <div className="rounded-2xl bg-white px-3 py-2">
             <div className="text-[10px] font-bold uppercase text-[#8b949e]">Status</div>
@@ -417,8 +433,9 @@ const MobileProductForm = ({ product = null, onSaved }) => {
             <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} placeholder="Harga coret" className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
           </div>
           <div className="grid gap-1.5">
-            <ProductInputLabel>Stok dasar</ProductInputLabel>
-            <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <ProductInputLabel>Stok total</ProductInputLabel>
+            <input type="number" value={totalVariantStock} readOnly disabled className="h-11 rounded-xl border border-[#e5e7eb] bg-[#f3f1ec] px-3 text-sm font-semibold text-muted-foreground outline-none" />
+            <span className="text-[11px] font-semibold text-[#8b949e]">Otomatis dari total stok varian. Ubah stok per ukuran di bawah.</span>
           </div>
           <div className="grid gap-1.5">
             <ProductInputLabel>Ukuran dasar</ProductInputLabel>

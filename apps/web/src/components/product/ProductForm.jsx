@@ -8,6 +8,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import {
+  buildStockCorrection,
   formatRupiah,
   getProductPublishChecklist,
   getProductRestockThreshold,
@@ -101,35 +102,6 @@ const snapshotProductForm = (product) => JSON.stringify({
   catalogVisible: Boolean(product.catalogVisible),
 });
 
-const buildStockCorrection = ({ form, previousProduct }) => {
-  if (!previousProduct) return null;
-  const previousVariants = new Map((previousProduct.variants || []).map((variant) => [variant.id || variant.size, variant]));
-  const changedVariants = (form.variants || []).map((variant) => {
-    const previous = previousVariants.get(variant.id || variant.size) || {};
-    const before = Number(previous.stock || 0);
-    const after = Number(variant.stock || 0);
-    if (before === after) return null;
-    return {
-      id: variant.id || variant.size,
-      size: variant.size,
-      before,
-      after,
-    };
-  }).filter(Boolean);
-  const previousStock = Number(previousProduct.stock || 0);
-  const nextStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0);
-  if (!changedVariants.length && previousStock === nextStock) return null;
-  return {
-    id: `stock-${Date.now()}`,
-    at: new Date().toISOString(),
-    actor: 'Admin',
-    note: form.stockAdjustmentNote || 'Manual stock correction',
-    previousStock,
-    nextStock,
-    variants: changedVariants,
-  };
-};
-
 /**
  * Shared create/edit product form. `product` null → create; a product object → edit.
  * `onSaved(savedProduct)` fires after a successful save so the parent page can navigate.
@@ -156,6 +128,9 @@ const ProductForm = ({ product = null, onSaved }) => {
   const currentFormSnapshot = useMemo(() => snapshotProductForm(form), [form]);
   const hasUnsavedChanges = currentFormSnapshot !== savedFormSnapshot;
   const slugConflicts = useMemo(() => getProductSlugConflicts(form, products), [form, products]);
+  // Stock lives per-variant; the product-level number is just their sum. Single source of truth so the
+  // storefront (which reads variant stock) never disagrees with what admin shows.
+  const variantStockTotal = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -250,7 +225,7 @@ const ProductForm = ({ product = null, onSaved }) => {
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
         priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
         compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
-        stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+        stock: variantStockTotal,
         size: form.variants?.[0]?.size || form.size,
         price: formatRupiah(form.priceNumber),
       });
@@ -282,7 +257,7 @@ const ProductForm = ({ product = null, onSaved }) => {
       tags: getTagsForVisibility(form.tags, form.catalogVisible),
       priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
       compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
-      stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
+      stock: variantStockTotal,
       size: form.variants?.[0]?.size || form.size,
     }, products);
     navigate(getProductStorefrontPath(preview), {
@@ -353,8 +328,9 @@ const ProductForm = ({ product = null, onSaved }) => {
             <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
           </label>
           <label>
-            <span className="text-xs font-bold uppercase text-muted-foreground">Stok</span>
-            <input type="number" value={form.stock} onChange={(event) => updateField('stock', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+            <span className="text-xs font-bold uppercase text-muted-foreground">Stok total</span>
+            <input type="number" value={variantStockTotal} readOnly disabled className="mt-2 h-11 w-full rounded-2xl border bg-[#f3f1ec] px-4 text-sm font-semibold text-muted-foreground outline-none" />
+            <span className="mt-1 block text-[11px] font-semibold text-muted-foreground">Otomatis dari total stok varian di bawah. Ubah stok per ukuran.</span>
           </label>
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Restock threshold</span>

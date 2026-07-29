@@ -2,6 +2,7 @@ import supabase from '@/lib/supabaseClient.js';
 import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
 import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
+import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '@/utils/bespokeOrder.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -42,7 +43,9 @@ const localOnlyStatuses = {
 const BESPOKE_SOURCE = 'bespoke_request';
 const VOUCHER_DISCOUNT_ITEM_TYPE = 'voucher_discount';
 const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
-export const PAYMENT_RESERVATION_TTL_HOURS = 24;
+// Keep this in sync with the server cron's PAYMENT_RESERVATION_TTL_HOURS (api/orders/expire-reservations.js):
+// both actively cancel manual-transfer reservations, so a mismatch lets the client sweep override the cron.
+export const PAYMENT_RESERVATION_TTL_HOURS = Number(import.meta.env?.VITE_PAYMENT_RESERVATION_TTL_HOURS || 24);
 const ACTIVE_RESERVATION_PAYMENT_STATUSES = ['unpaid', 'pending'];
 
 export const isBespokeOrder = (order) => (
@@ -143,7 +146,9 @@ const clearOrderSyncIssue = (orderNumber) => {
   writeOrderSyncQueue(readOrderSyncQueue().filter((item) => item.orderNumber !== orderNumber));
 };
 
-const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}`;
+// Timestamp prefix (sortable) + 6 random base36 chars (~2.2B) so order numbers can't be enumerated by
+// guessing sequential timestamps — the anon payment-session lookup RPC keys off this number.
+const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const isUuid = (value = '') => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
 
 const normalizeTimeline = (timeline) => (
@@ -523,115 +528,13 @@ const buildOrderPayload = ({
   subtotal,
   checkout_draft: checkoutDraft,
   payment_provider: paymentProvider,
-  payment_status: ['manual', 'whatsapp'].includes(paymentProvider) ? 'pending' : 'unpaid',
+  // Manual transfer starts 'pending' (awaiting proof); gateway (DOKU) starts 'unpaid'. The real provider
+  // ids are 'manual_transfer_bca'/'doku' — the old ['manual','whatsapp'] literals never matched, so every
+  // manual order was inserted 'unpaid' and relied on a follow-up patch.
+  payment_status: ['manual_transfer_bca', 'manual'].includes(paymentProvider) ? 'pending' : 'unpaid',
   source,
   ...(source === BESPOKE_SOURCE ? { bespoke_production_status: 'review_brief' } : {}),
 });
-
-const formatLine = (label, value) => `${label}: ${value || '-'}`;
-
-const buildBespokeCheckoutDraft = ({
-  customerCode,
-  customerName,
-  contact,
-  deliveryAddress,
-  deliveryArea,
-  perfumeName,
-  referenceProductName,
-  mood,
-  occasion,
-  budget,
-  size,
-  preferredNotes,
-  avoidedNotes,
-  story,
-  scentDescription,
-  capDesign,
-  bottleType,
-  labelDesign,
-  exoticMaterial,
-  paymentProvider,
-  shippingSummary,
-  shippingFee,
-  totalPrice,
-  preorderAcknowledged,
-  voucherCode,
-  voucherDiscount,
-}) => [
-  'Solivagant Bespoke Request',
-  customerCode ? formatLine('Customer code', customerCode) : '',
-  formatLine('Customer', customerName),
-  formatLine('Contact', contact),
-  formatLine('Address', deliveryAddress),
-  formatLine('Area', deliveryArea),
-  formatLine('Perfume name', perfumeName),
-  formatLine('Reference scent', referenceProductName),
-  formatLine('Mood', mood),
-  formatLine('Occasion', occasion),
-  formatLine('Budget', budget),
-  formatLine('Size', size),
-  formatLine('Preferred aroma', preferredNotes || scentDescription),
-  formatLine('Avoided notes', avoidedNotes),
-  formatLine('Story', story),
-  formatLine('Bottle type', bottleType),
-  formatLine('Cap design', capDesign),
-  formatLine('Label design', labelDesign),
-  formatLine('Exotic material', exoticMaterial),
-  formatLine('Shipping', shippingSummary),
-  shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
-  voucherCode ? formatLine('Voucher', voucherCode) : '',
-  voucherDiscount ? formatLine('Voucher discount', `Rp ${new Intl.NumberFormat('id-ID').format(Number(voucherDiscount || 0))}`) : '',
-  totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
-  formatLine('Pre-order acknowledgement', preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
-  formatLine('Payment rail', paymentProvider || 'manual'),
-].filter((line) => line !== '').join('\n');
-
-const buildBespokeNotes = ({
-  deliveryAddress,
-  deliveryArea,
-  perfumeName,
-  mood,
-  occasion,
-  budget,
-  size,
-  preferredNotes,
-  avoidedNotes,
-  story,
-  scentDescription,
-  capDesign,
-  bottleType,
-  labelDesign,
-  exoticMaterial,
-  shippingSummary,
-  shippingFee,
-  totalPrice,
-  referenceProductName,
-  preorderAcknowledged,
-  voucherCode,
-  voucherDiscount,
-}) => [
-  formatLine('Address', deliveryAddress),
-  formatLine('Area', deliveryArea),
-  formatLine('Perfume name', perfumeName),
-  formatLine('Mood', mood),
-  formatLine('Occasion', occasion),
-  formatLine('Budget', budget),
-  formatLine('Size', size),
-  formatLine('Preferred aroma', preferredNotes || scentDescription),
-  formatLine('Avoided notes', avoidedNotes),
-  formatLine('Story', story),
-  formatLine('Bottle type', bottleType),
-  formatLine('Cap design', capDesign),
-  formatLine('Label design', labelDesign),
-  formatLine('Exotic material', exoticMaterial),
-  formatLine('Shipping', shippingSummary),
-  shippingFee ? formatLine('Shipping fee', `Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee || 0))}`) : '',
-  voucherCode ? formatLine('Voucher', voucherCode) : '',
-  voucherDiscount ? formatLine('Voucher discount', `Rp ${new Intl.NumberFormat('id-ID').format(Number(voucherDiscount || 0))}`) : '',
-  totalPrice ? formatLine('Estimated total', `Rp ${new Intl.NumberFormat('id-ID').format(Number(totalPrice || 0))}`) : '',
-  formatLine('Pre-order acknowledgement', preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
-  formatLine('Reference scent', referenceProductName),
-].join('\n');
 
 const createLocalOrder = (payload) => {
   const createdAt = new Date().toISOString();
@@ -1033,6 +936,13 @@ export const reviewOrderPaymentProof = async (orderId, {
       payment_status: 'pending',
       status: 'pending_payment',
     } : {}),
+    // Approve proof + mark paid in the SAME write, so a failure of the follow-up updateOrderPaymentStatus
+    // can't leave the order stuck at "proof approved but payment still pending". The follow-up call below
+    // is then just an idempotent backstop for inventory/metadata/audit.
+    ...(nextStatus === 'approved' && currentOrder.paymentStatus !== 'paid' ? {
+      payment_status: 'paid',
+      status: 'paid',
+    } : {}),
   };
   const proofAudit = {
     action: nextStatus === 'approved' ? 'payment_proof_approved' : 'payment_proof_rejected',
@@ -1268,41 +1178,94 @@ export const createOrder = async (orderData) => {
   return order;
 };
 
+// Rollout flag for authoritative (server-priced) order creation via /api/orders/create.
+// OFF by default: flip VITE_AUTHORITATIVE_ORDERS=true only after smoke-testing the endpoint on staging.
+// See docs/server-side-drafts/05_create_order_design.md.
+export const authoritativeOrdersEnabled = () => {
+  try {
+    return import.meta.env?.VITE_AUTHORITATIVE_ORDERS === 'true';
+  } catch {
+    return false;
+  }
+};
+
+// POST references (never prices) to the authoritative endpoint, which recomputes every price from the DB
+// and inserts via the service role. Returns a normalized order, or throws so the caller can fall back to
+// the direct-insert path.
+const postAuthoritativeOrder = async (body) => {
+  const response = await fetch('/api/orders/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data?.order) {
+    throw new Error(data?.message || 'Authoritative order endpoint failed');
+  }
+  return normalizeOrder(data.order);
+};
+
+const createBespokeOrderViaEndpoint = (request) => postAuthoritativeOrder({
+  source: 'bespoke',
+  customer: { name: request.customerName || '', code: request.customerCode || '', contact: request.contact || '' },
+  delivery: { address: request.deliveryAddress || '', area: request.deliveryArea || '' },
+  bespoke: {
+    optionIds: request.optionIds || {},
+    perfumeName: request.perfumeName || '',
+    scentDescription: request.scentDescription || request.preferredNotes || '',
+    preferredNotes: request.preferredNotes || request.scentDescription || '',
+    occasion: request.occasion || '',
+    avoidedNotes: request.avoidedNotes || '',
+    story: request.story || '',
+    referenceProductName: request.referenceProductName || '',
+    referenceProductSlug: request.referenceProductSlug || '',
+    preorderAcknowledged: Boolean(request.preorderAcknowledged),
+  },
+  shipping: {
+    destinationId: request.shippingDestinationId || '',
+    destination: request.shippingDestination || null,
+    courier: request.shippingCourier || '',
+    service: request.shippingService || '',
+  },
+  voucherCode: request.voucherCode || '',
+  paymentProvider: request.paymentProvider || 'manual',
+});
+
+// Catalog cart checkout via the authoritative endpoint. `orderData` is what createOrder receives today;
+// `refs` carries the shipping selection + voucher code the endpoint needs to re-price server-side.
+export const createCatalogOrderViaEndpoint = (orderData, refs = {}) => postAuthoritativeOrder({
+  source: orderData.source || 'storefront',
+  customer: { name: orderData.customerName || '', code: orderData.customerCode || '', contact: orderData.contact || '' },
+  delivery: { address: orderData.deliveryAddress || '', area: orderData.deliveryArea || '' },
+  items: (orderData.items || []).filter((item) => item.type !== 'voucher_discount'),
+  notes: orderData.notes || '',
+  checkoutDraft: orderData.checkoutDraft || '',
+  shipping: {
+    destinationId: refs.shippingDestinationId || '',
+    destination: refs.shippingDestination || null,
+    courier: refs.shippingCourier || '',
+    service: refs.shippingService || '',
+  },
+  voucherCode: refs.voucherCode || '',
+  paymentProvider: orderData.paymentProvider || 'manual',
+});
+
 export const createBespokeRequest = async (requestData) => {
   const normalizedRequest = {
     ...requestData,
     customerName: requestData.customerName || requestData.name,
   };
-  const aromaBrief = normalizedRequest.preferredNotes || normalizedRequest.scentDescription || normalizedRequest.mood || 'Custom aroma brief';
-  const perfumeName = String(normalizedRequest.perfumeName || '').trim();
   const totalPrice = Number(normalizedRequest.totalPrice || normalizedRequest.estimatedTotal || 0);
-  const itemPrice = Number(normalizedRequest.itemPrice || normalizedRequest.estimatedTotal || totalPrice || 0);
-  const item = {
-    slug: 'bespoke-perfume-request',
-    type: BESPOKE_SOURCE,
-    name: perfumeName ? `Bespoke perfume: ${perfumeName}` : 'Bespoke perfume request',
-    category: 'Bespoke',
-    quantity: 1,
-    price: itemPrice ? `Rp ${new Intl.NumberFormat('id-ID').format(itemPrice)}` : normalizedRequest.budget || 'Custom quote',
-    priceNumber: itemPrice,
-    size: normalizedRequest.size || '-',
-    notes: aromaBrief,
-    mood: normalizedRequest.mood || '',
-    perfumeName,
-    occasion: normalizedRequest.occasion || '',
-    budget: normalizedRequest.budget || '',
-    totalPrice: itemPrice,
-    preferredNotes: normalizedRequest.preferredNotes || normalizedRequest.scentDescription || '',
-    avoidedNotes: normalizedRequest.avoidedNotes || '',
-    story: normalizedRequest.story || '',
-    bottleType: normalizedRequest.bottleType || '',
-    capDesign: normalizedRequest.capDesign || '',
-    labelDesign: normalizedRequest.labelDesign || '',
-    exoticMaterial: normalizedRequest.exoticMaterial || '',
-    preorderAcknowledged: Boolean(normalizedRequest.preorderAcknowledged),
-    referenceProductName: normalizedRequest.referenceProductName || '',
-    referenceProductSlug: normalizedRequest.referenceProductSlug || '',
-  };
+
+  if (authoritativeOrdersEnabled()) {
+    try {
+      return await createBespokeOrderViaEndpoint(normalizedRequest);
+    } catch (error) {
+      // Endpoint down/misconfigured → keep checkout working via the existing client insert. The buyer is
+      // never blocked; the trade-off is this order stays client-priced until the endpoint is healthy.
+      console.warn('Authoritative bespoke order failed, using direct insert fallback:', error.message || error);
+    }
+  }
 
   return createOrder({
     customerCode: normalizedRequest.customerCode,
@@ -1311,7 +1274,7 @@ export const createBespokeRequest = async (requestData) => {
     deliveryAddress: normalizedRequest.deliveryAddress,
     deliveryArea: normalizedRequest.deliveryArea,
     notes: buildBespokeNotes(normalizedRequest),
-    items: [item],
+    items: [buildBespokeItem(normalizedRequest)],
     quantity: 1,
     subtotal: totalPrice,
     checkoutDraft: buildBespokeCheckoutDraft(normalizedRequest),
@@ -1323,6 +1286,10 @@ export const createBespokeRequest = async (requestData) => {
 
 export const updateOrderStatus = async (orderId, status) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
+  // Fulfillment requires payment: never ship/complete an order that isn't paid.
+  if (['shipped', 'completed'].includes(status) && currentOrder?.paymentStatus !== 'paid') {
+    throw new Error('Order belum lunas — tandai pembayaran "paid" dulu sebelum kirim atau selesaikan order.');
+  }
   const statusTimeline = appendStatusTimeline(currentOrder?.statusTimeline, status, 'Status updated from Studio');
   const auditAction = status === 'cancelled' ? 'order_cancelled' : 'order_status_updated';
   // Cancelling an unpaid/pending order must also close its payment window, otherwise a cancelled DOKU
@@ -1441,6 +1408,10 @@ export const updateOrderInternalNotes = async (orderId, internalNotes) => {
 export const updateOrderShipment = async (orderId, shipmentData = {}) => {
   const shipmentStatus = shipmentData.shipmentStatus || 'not_ready';
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
+  // Shipping/delivery moves status to shipped/completed — same paid-first rule as updateOrderStatus.
+  if (['shipped', 'delivered'].includes(shipmentStatus) && currentOrder?.paymentStatus !== 'paid') {
+    throw new Error('Order belum lunas — tandai pembayaran "paid" dulu sebelum mengirim order.');
+  }
   const shippedAt = shipmentData.shippedAt
     || currentOrder?.shippedAt
     || (shipmentStatus === 'shipped' ? new Date().toISOString() : null);
@@ -1557,6 +1528,15 @@ export const updateOrderBespokeProductionStatus = async (orderId, productionStat
 
     if (error) throw error;
 
+    await createOrderAuditLog({
+      action: 'bespoke_production_updated',
+      currentOrder,
+      orderId,
+      previousValues: { bespokeProductionStatus: currentOrder?.bespokeProductionStatus || '' },
+      nextValues: { bespokeProductionStatus: productionStatus },
+      metadata: { source: 'studio' },
+    });
+
     window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
     return getOrderById(orderId);
   } catch (error) {
@@ -1671,6 +1651,16 @@ export const updateOrderPaymentStatus = async (orderId, {
   audit = true,
 }) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
+
+  // Symmetric guard (mirrors the DOKU webhook): never mark a cancelled/expired order paid. Its stock
+  // was restored on cancel and may already be resold; re-flipping to paid re-deducts stock and
+  // resurrects a dead order. Reviving a closed order must be a deliberate manual re-order, not this path.
+  if (paymentStatus === 'paid'
+    && (currentOrder?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(currentOrder?.paymentStatus))) {
+    console.warn(`Refusing to mark order ${orderId} paid: order is ${currentOrder?.status}/${currentOrder?.paymentStatus}`);
+    return;
+  }
+
   const patch = {
     payment_status: paymentStatus,
     payment_provider: paymentProvider,

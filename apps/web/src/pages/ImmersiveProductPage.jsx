@@ -22,6 +22,7 @@ const ImmersiveProductPage = ({ product, story }) => {
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState('');
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -80,14 +81,30 @@ const ImmersiveProductPage = ({ product, story }) => {
     setVideoPlaying((p) => !p);
   }, [videoPlaying]);
 
-  const soldOut = product.publicStatus !== 'Available';
+  // Per-variant selection so a multi-size story product isn't always charged the default variant and
+  // isn't gated on the product-level total. Mirrors PublicProductDetailPage / MobileProductDetailPage.
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
+  const selectedSize = selectedVariant?.size || product.size;
+  const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
+  const selectedPriceLabel = selectedVariant?.price || product.price;
+  const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
+  const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
+  const soldOut = !selectedAvailable;
 
   const handleAddToCart = () => {
     if (soldOut) {
       toast.error(`${product.name} sedang habis`);
       return;
     }
-    addItem(product, 1);
+    addItem({
+      ...product,
+      cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
+      variantId: selectedVariant?.id || '',
+      size: selectedSize,
+      price: selectedPriceLabel,
+      priceNumber: selectedPrice,
+    }, 1);
     setLastAddedSlug(product.slug);
     toast.success(`${product.name} masuk ke keranjang`, {
       description: 'Keranjang sudah diperbarui.',
@@ -256,9 +273,25 @@ const ImmersiveProductPage = ({ product, story }) => {
 
           <div className="imm-product__meta">
             <span>{product.concentration}</span>
-            <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
-            <span>{product.price}</span>
+            <span>{selectedSize}</span>
+            <span>{selectedPriceLabel}</span>
           </div>
+
+          {variants.length > 1 ? (
+            <label className="imm-product__variant">
+              <span className="imm-product__variant-label">Ukuran</span>
+              <select
+                value={selectedVariantKey}
+                onChange={(e) => setSelectedVariantId(e.target.value)}
+                className="imm-product__variant-select"
+              >
+                {variants.map((v) => {
+                  const key = v.id || v.size;
+                  return <option key={key} value={key}>{v.size} — {v.price}{v.availability !== 'Available' ? ' (Habis)' : ''}</option>;
+                })}
+              </select>
+            </label>
+          ) : null}
 
           <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
             {soldOut ? (
@@ -266,7 +299,7 @@ const ImmersiveProductPage = ({ product, story }) => {
             ) : lastAddedSlug === product.slug ? (
               <><CheckCircle2 className="h-4 w-4" /> Sudah di Keranjang</>
             ) : (
-              <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {product.price}</>
+              <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {selectedPriceLabel}</>
             )}
           </button>
         </section>

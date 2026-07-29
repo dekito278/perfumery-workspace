@@ -1,36 +1,17 @@
+import { itemMatchesVoucher } from './voucherValidation.js';
+
 const toAmount = (value) => {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? Math.max(numeric, 0) : 0;
 };
 
-const normalizeList = (value) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean);
-  }
-  return String(value || '')
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-};
-
-const getItemProductKeys = (item = {}) => [
-  item.slug,
-  item.productSlug,
-  item.product_slug,
-  item.productId,
-  item.product_id,
-].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean);
-
-export const isVoucherEligibleCartItem = (voucher = {}, item = {}) => {
-  const productSlugs = normalizeList(voucher.eligibleProductSlugs || voucher.eligible_product_slugs);
-  const categories = normalizeList(voucher.eligibleCategories || voucher.eligible_categories);
-  if (!productSlugs.length && !categories.length) return true;
-
-  const productKeys = getItemProductKeys(item);
-  const itemCategory = String(item.category || '').trim().toLowerCase();
-  return productSlugs.some((slug) => productKeys.includes(slug))
-    || (itemCategory && categories.includes(itemCategory));
-};
+// Single-source the eligibility rule with voucherValidation so cart-line discount display can't drift
+// from the discount actually applied. Map snake_case voucher fields (raw DB shape) to the camelCase the
+// shared matcher expects.
+export const isVoucherEligibleCartItem = (voucher = {}, item = {}) => itemMatchesVoucher({
+  eligibleProductSlugs: voucher.eligibleProductSlugs ?? voucher.eligible_product_slugs,
+  eligibleCategories: voucher.eligibleCategories ?? voucher.eligible_categories,
+}, item);
 
 export const getCartItemLineTotal = (item = {}) => (
   toAmount(item.priceNumber) * Math.max(toAmount(item.quantity), 0)

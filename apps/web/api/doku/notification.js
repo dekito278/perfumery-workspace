@@ -182,6 +182,14 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
     return { skipped: 'already_paid' };
   }
 
+  // Symmetric guard: a late/duplicate 'paid' webhook must NOT resurrect an order that was already
+  // cancelled/expired (its stock was restored and may have been resold). Re-flipping to paid would
+  // re-deduct stock and revive a dead order — needs a manual refund/re-order decision instead.
+  if (incomingStatus === 'paid'
+    && (currentOrder?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(currentOrder?.payment_status))) {
+    return { skipped: 'order_closed' };
+  }
+
   // Amount verification: never mark an order paid for less than its stored total.
   if (incomingStatus === 'paid') {
     const expected = Math.round(Number(currentOrder?.subtotal || 0));

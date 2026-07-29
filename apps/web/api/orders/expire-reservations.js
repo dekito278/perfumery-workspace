@@ -64,6 +64,10 @@ const isExpiredReservation = (order, now) => {
   if (!order?.inventory_deducted) return false;
   if (!ACTIVE_PAYMENT_STATUSES.includes(order.payment_status)) return false;
   if (['cancelled', 'completed'].includes(order.status)) return false;
+  // Manual-transfer buyers sit at payment_status 'pending' until an admin approves their proof.
+  // Once proof is submitted, the order is paid-awaiting-review — it must NEVER auto-cancel.
+  // Mirrors the client guard in orderService.isOrderReservationExpired.
+  if (order.payment_proof_status && !['missing', 'rejected'].includes(order.payment_proof_status)) return false;
 
   const expiresAt = getReservationExpiryDate(order);
   return Boolean(expiresAt && expiresAt.getTime() <= now.getTime());
