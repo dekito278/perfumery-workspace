@@ -60,8 +60,10 @@ const CheckoutPage = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      // Returns to this checkout URL; useCheckoutFlow then prefills name/contact/address from the account.
-      await loginWithGoogle();
+      // Return to a CLEAN checkout URL (no hash/query) so Supabase appends a single #access_token it can
+      // parse — window.location.href can carry a stale hash and produce ##access_token, which fails to
+      // parse (session then only appears after a manual refresh). useCheckoutFlow prefills once logged in.
+      await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
     } catch (error) {
       toast.error(error.message || 'Gagal masuk dengan Google');
     }

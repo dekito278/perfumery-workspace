@@ -64,7 +64,9 @@ const MobileCheckoutPage = () => {
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle();
+      // Clean redirect (no hash/query) so Supabase appends a single, parseable #access_token — a stale
+      // hash on window.location.href produces ##access_token, which only resolves after a manual refresh.
+      await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
     } catch (error) {
       toast.error(error.message || 'Gagal masuk dengan Google');
     }
