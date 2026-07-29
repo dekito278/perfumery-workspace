@@ -839,6 +839,8 @@ const CustomerPortalPage = () => {
   const [savingSecurity, setSavingSecurity] = useState(false);
   const [refreshingPaymentOrder, setRefreshingPaymentOrder] = useState('');
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
+  const [accountPanelOpen, setAccountPanelOpen] = useState(false);
+  const [codeSearchOpen, setCodeSearchOpen] = useState(false);
   const [reorderDraft, setReorderDraft] = useState(null);
   const [submittingReorder, setSubmittingReorder] = useState('');
   const [lastCustomerCode, setLastCustomerCode] = useState(() => readLastCustomerCode());
@@ -1005,13 +1007,23 @@ const CustomerPortalPage = () => {
     const inputClass = 'h-11 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal';
     return (
       <section className="mobile-card rounded-2xl border bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase text-editorial-charcoal">
-          <UserRound className="h-4 w-4" />
-          Akun &amp; alamat
-        </div>
-        <p className="mt-1 text-xs font-semibold text-[#6b7280]">{currentUser.email}</p>
-
-        <form onSubmit={submitProfile} className="mt-3 grid gap-2">
+        <button type="button" onClick={() => setAccountPanelOpen((open) => !open)} className="flex w-full items-center justify-between gap-3 text-left">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-editorial-ivory text-editorial-charcoal">
+              <UserRound className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs font-bold uppercase text-editorial-charcoal">Akun &amp; alamat</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{currentUser.email}</span>
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full bg-editorial-paper px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
+            {accountPanelOpen ? 'Tutup' : 'Ubah'}
+          </span>
+        </button>
+        {!accountPanelOpen ? null : (
+        <div className="mt-3 border-t border-[#e5e7eb] pt-3">
+        <form onSubmit={submitProfile} className="grid gap-2">
           <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Nama penerima" className={inputClass} />
           <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder="No. WhatsApp / telepon" className={inputClass} />
           <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder="Alamat pengiriman lengkap" className={`${inputClass} h-auto py-2`} />
@@ -1030,6 +1042,8 @@ const CustomerPortalPage = () => {
             Tautkan kode ke akun
           </Button>
         </form>
+        </div>
+        )}
       </section>
     );
   };
@@ -1416,51 +1430,62 @@ const CustomerPortalPage = () => {
               </div>
             </div>
             <form onSubmit={loadPortal} className="grid gap-3 p-4">
-              <label className="text-[10px] font-bold uppercase text-[#6b7280]">Kode customer</label>
-              <div className="grid grid-cols-[1fr_auto] gap-2">
-                <input
-                  value={customerCode}
-                  onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
-                  placeholder="SOLI09232"
-                  className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
-                />
-                <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Cek kode customer">
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
-                  <ClipboardPaste className="h-4 w-4" />
-                  Tempel kode
-                </Button>
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
-                  <History className="h-4 w-4" />
-                  Cek terakhir
-                </Button>
-              </div>
-              {lastCustomerCode ? (
-                <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-editorial-charcoal underline underline-offset-4">
-                  Terakhir dipakai: {lastCustomerCode}
-                </button>
-              ) : null}
-              <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-                Kode ini diberikan setelah checkout pertama.
-              </p>
+              {/* Logged-in: greet + let orders take focus. Code lookup collapses into a small option. */}
               {currentUser ? (
                 <div className="flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-3 py-2 text-xs font-semibold text-editorial-charcoal">
                   <span className="min-w-0 truncate">Masuk sebagai {currentUser.email}</span>
                   <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
                 </div>
               ) : (
-                <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={signInGoogle}>
+                <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-sm font-bold" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
                   Masuk dengan Google
                 </Button>
               )}
+
+              {currentUser ? (
+                <button type="button" onClick={() => setCodeSearchOpen((open) => !open)} className="flex items-center justify-between rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2 text-[11px] font-bold uppercase text-[#6b7280]">
+                  <span className="inline-flex items-center gap-2"><Search className="h-3.5 w-3.5" /> Cari pakai kode order</span>
+                  <span>{codeSearchOpen ? 'Tutup' : 'Buka'}</span>
+                </button>
+              ) : null}
+
+              {(!currentUser || codeSearchOpen) ? (
+                <>
+                  <label className="text-[10px] font-bold uppercase text-[#6b7280]">Kode customer</label>
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <input
+                      value={customerCode}
+                      onChange={(event) => setCustomerCode(event.target.value.toUpperCase())}
+                      placeholder="SOLI09232"
+                      className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
+                    />
+                    <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Cek kode customer">
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
+                      <ClipboardPaste className="h-4 w-4" />
+                      Tempel kode
+                    </Button>
+                    <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
+                      <History className="h-4 w-4" />
+                      Cek terakhir
+                    </Button>
+                  </div>
+                  {lastCustomerCode ? (
+                    <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-editorial-charcoal underline underline-offset-4">
+                      Terakhir dipakai: {lastCustomerCode}
+                    </button>
+                  ) : null}
+                  <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
+                    Kode ini diberikan setelah checkout pertama.
+                  </p>
+                </>
+              ) : null}
             </form>
           </section>
-
-          {renderAccountPanel()}
 
           {loading ? (
             <MobileCustomerPortalSkeleton />
@@ -1642,6 +1667,8 @@ const CustomerPortalPage = () => {
               </p>
             </section>
           )}
+
+          {renderAccountPanel()}
         </main>
         {isMobileRoute ? (
           <MobileBottomSheet
