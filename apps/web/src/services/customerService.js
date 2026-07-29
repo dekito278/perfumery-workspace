@@ -19,6 +19,7 @@ const normalizeCustomer = (customer = {}) => ({
   lastOrderAt: customer.last_order_at || customer.lastOrderAt || '',
   securityQuestion: customer.security_question || customer.securityQuestion || '',
   requiresSecurity: Boolean(customer.requires_security || customer.requiresSecurity),
+  masked: Boolean(customer.masked),
   securityEnabledAt: customer.security_enabled_at || customer.securityEnabledAt || '',
   persistence: customer.persistence || 'database',
   createdAt: customer.created_at || customer.createdAt || new Date().toISOString(),
