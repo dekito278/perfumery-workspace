@@ -263,25 +263,6 @@ const PaymentFrame = ({ session, compact = false }) => {
           ) : null}
         </div>
         <PaymentTotalBreakdown session={session} compact={compact} />
-        {customerCode ? (
-          <div className={compact ? 'mt-4 rounded-2xl border border-editorial-stone/15 bg-white p-4' : 'mt-5 rounded-2xl border border-editorial-stone/15 bg-white p-5'}>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Kode customer</div>
-                <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-editorial-charcoal' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-editorial-charcoal'}>
-                  {customerCode}
-                </div>
-                <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-                  Simpan kode ini untuk cek order dan belanja berikutnya tanpa isi ulang data.
-                </p>
-              </div>
-              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
-                <Copy className="h-4 w-4" />
-                Salin kode
-              </Button>
-            </div>
-          </div>
-        ) : null}
         <div className={`mt-4 rounded-2xl border px-4 py-3 ${currentPaymentTone.className}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -317,6 +298,19 @@ const PaymentFrame = ({ session, compact = false }) => {
           onError={() => setFrameStatus('failed')}
         />
       </div>
+      {customerCode ? (
+        <div className="flex items-center justify-between gap-3 border-t border-editorial-stone/10 bg-white px-4 py-3">
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Kode customer</span>
+            <div className="select-text text-lg font-bold tracking-[0.12em] text-editorial-charcoal">{customerCode}</div>
+            <p className="text-[11px] font-semibold text-[#54604d]">Simpan untuk cek order &amp; belanja berikutnya.</p>
+          </div>
+          <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
+            <Copy className="h-4 w-4" />
+            Salin
+          </Button>
+        </div>
+      ) : null}
       <div className={compact ? 'grid gap-2 border-t border-editorial-stone/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-editorial-stone/10 bg-[#fbfaf7] p-4'}>
         <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
           Kalau panel pembayaran tidak termuat oleh browser, gunakan tombol cadangan ini.
