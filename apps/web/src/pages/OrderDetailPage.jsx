@@ -115,6 +115,7 @@ const auditActionLabels = {
   payment_proof_rejected: 'Bukti ditolak',
   payment_proof_reviewed: 'Bukti direview',
   shipment_updated: 'Fulfillment / resi',
+  bespoke_production_updated: 'Produksi bespoke',
   order_cancelled: 'Order dibatalkan',
   order_deleted: 'Order dihapus',
 };
@@ -207,6 +208,7 @@ const getNoteValue = (rows, label) => (
 );
 
 const bespokeDetailRows = (item) => [
+  ['Nama parfum', item?.perfumeName],
   ['Aroma', item?.preferredNotes || item?.notes],
   ['Momen', item?.occasion],
   ['Ukuran', item?.size],
@@ -795,7 +797,8 @@ const OrderDetailPage = () => {
             {bespoke ? (
               <>
                 <StatusChip tone="primary" className="mt-2">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip>
-                <p className="mt-3 truncate text-sm font-bold text-editorial-charcoal">{bespokeSummary?.bottle}</p>
+                <p className="mt-3 truncate text-sm font-bold text-editorial-charcoal">{bespokeSummary?.perfumeName}</p>
+                <p className="mt-1 truncate text-xs font-semibold text-muted-foreground">{bespokeSummary?.bottle}</p>
               </>
             ) : (
               <>
@@ -876,6 +879,10 @@ const OrderDetailPage = () => {
                   <StatusChip tone="primary">
                     {bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}
                   </StatusChip>
+                </div>
+                <div className="mb-3 rounded-2xl bg-white px-4 py-3">
+                  <span className="block text-[10px] font-bold uppercase text-[#6b7280]">Nama parfum</span>
+                  <span className="mt-1 block text-lg font-bold text-editorial-charcoal">{bespokeSummary?.perfumeName}</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
                   <div className="rounded-2xl bg-white px-4 py-3">

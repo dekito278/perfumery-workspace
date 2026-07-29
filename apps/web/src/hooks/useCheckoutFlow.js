@@ -11,7 +11,7 @@ import {
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { getCustomerAccount, lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
+import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
 import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
@@ -508,7 +508,7 @@ export const useCheckoutFlow = ({
         eligibleSubtotal: voucherValidation?.eligibleSubtotal,
         eligibleQuantity: voucherValidation?.eligibleQuantity,
       });
-      const order = await createOrder({
+      const orderData = {
         customerName,
         customerCode,
         contact,
@@ -521,15 +521,35 @@ export const useCheckoutFlow = ({
         checkoutDraft: finalCheckoutDraft,
         paymentProvider: paymentMethodDetails.provider,
         voucherSnapshot,
-      });
+      };
+      let order = null;
+      if (authoritativeOrdersEnabled()) {
+        try {
+          order = await createCatalogOrderViaEndpoint(orderData, {
+            shippingDestinationId: selectedDestination?.id || '',
+            shippingDestination: selectedDestination || null,
+            shippingCourier: selectedShipping?.courierCode || '',
+            shippingService: selectedShipping?.service || '',
+            voucherCode,
+          });
+        } catch (endpointError) {
+          // Endpoint down/misconfigured → keep checkout working via the existing client insert.
+          console.warn('Authoritative order failed, using direct insert fallback:', endpointError.message || endpointError);
+        }
+      }
+      if (!order) {
+        order = await createOrder(orderData);
+      }
       createdOrder = order;
+      // Charge the order's authoritative subtotal (equals checkoutTotalDue on the direct-insert path).
+      const paymentAmount = Number(order.subtotal) || checkoutTotalDue;
       if (isManualPayment) {
         const manualPaymentResponse = {
           method: paymentMethodDetails.provider,
           bankName: paymentMethodDetails.bankName,
           accountNumber: paymentMethodDetails.accountNumber,
           accountName: paymentMethodDetails.accountName,
-          amount: checkoutTotalDue,
+          amount: paymentAmount,
         };
         await updateOrderPaymentStatus(order.id || order.orderNumber, {
           paymentStatus: 'pending',
@@ -560,7 +580,7 @@ export const useCheckoutFlow = ({
           invoiceNumber: order.orderNumber,
           orderNumber: order.orderNumber,
           customerCode: order.customerCode || customerCode,
-          amount: checkoutTotalDue,
+          amount: paymentAmount,
           customerName,
           paymentStatus: 'pending',
           manualTransfer: manualPaymentResponse,
@@ -583,7 +603,7 @@ export const useCheckoutFlow = ({
 
       const checkout = await createDokuCheckout({
         order,
-        amount: checkoutTotalDue,
+        amount: paymentAmount,
         customerName,
         contact,
         items: order.items || items,
@@ -617,7 +637,7 @@ export const useCheckoutFlow = ({
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
         customerCode: order.customerCode || customerCode,
-        amount: checkoutTotalDue,
+        amount: paymentAmount,
         customerName,
         paymentStatus: 'pending',
         paymentExpiresAt: checkout.paymentExpiresAt || '',

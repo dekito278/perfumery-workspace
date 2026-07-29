@@ -1,26 +1,13 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /studio
+Disallow: /dashboard
+Disallow: /login
+Disallow: /checkout
+Disallow: /payment
+Disallow: /customer
+Disallow: /cart
 
-User-agent: Googlebot
-Disallow: /
-
-User-agent: Bingbot
-Disallow: /
-
-User-agent: GPTBot
-Disallow: /
-
-User-agent: ChatGPT-User
-Disallow: /
-
-User-agent: ClaudeBot
-Disallow: /
-
-User-agent: PerplexityBot
-Disallow: /
-
-User-agent: CCBot
-Disallow: /
-
-User-agent: ia_archiver
-Disallow: /
+# The absolute Sitemap URL is injected into dist/robots.txt at build time
+# (tools/build.mjs) once the canonical site URL is known.
+Sitemap: /sitemap.xml

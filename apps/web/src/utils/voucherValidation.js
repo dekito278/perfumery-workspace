@@ -82,7 +82,7 @@ const getItemProductKeys = (item = {}) => [
   item.product_id,
 ].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean);
 
-const itemMatchesVoucher = (voucher, item) => {
+export const itemMatchesVoucher = (voucher, item) => {
   const productSlugs = normalizeSlugList(voucher.eligibleProductSlugs);
   const categories = normalizeCategoryList(voucher.eligibleCategories);
   if (!productSlugs.length && !categories.length) return true;

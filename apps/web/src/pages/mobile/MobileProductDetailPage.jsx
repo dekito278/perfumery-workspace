@@ -67,10 +67,12 @@ const MobileProductDetailPage = () => {
   }
 
   const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
-  const selectedStock = Number(selectedVariant?.stock ?? product.stock ?? 0);
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
-  const soldOut = selectedStock <= 0;
+  // Public catalog objects expose `availability`/`publicStatus`, not a raw stock count (see
+  // publicStorefront.js). Mirror the desktop PDP — reading `.stock` here always yields 0 → sold out.
+  const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
+  const soldOut = !selectedAvailable;
 
   const addSelectedVariant = () => {
     if (previewMode) { toast.error('Preview — cart disabled'); return; }
@@ -82,7 +84,6 @@ const MobileProductDetailPage = () => {
       size: selectedSize,
       price: formatRupiah(selectedPrice),
       priceNumber: selectedPrice,
-      maxStock: selectedStock,
     }, 1);
     setLastAddedItem({ name: product.name, size: selectedSize, price: formatRupiah(selectedPrice) });
     toast.success(`${product.name} added to cart`);
@@ -153,8 +154,7 @@ const MobileProductDetailPage = () => {
               >
                 {product.variants.map((v) => {
                   const key = v.id || v.size;
-                  const stock = Number(v.stock || 0);
-                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{stock <= 0 ? ' (Sold out)' : ''}</option>;
+                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? ' (Sold out)' : ''}</option>;
                 })}
               </select>
             </div>

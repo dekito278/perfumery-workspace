@@ -246,6 +246,33 @@ export const getProductStockCorrections = (product = {}) => (
     .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
 );
 
+// Build a stock-correction audit entry by diffing an edited product form against the saved product.
+// Returns null when nothing changed. Shared by the desktop and mobile product forms so both record the
+// same audit trail. `form` needs { id, variants, stock?, stockAdjustmentNote? }.
+export const buildStockCorrection = ({ form, previousProduct }) => {
+  if (!previousProduct) return null;
+  const previousVariants = new Map((previousProduct.variants || []).map((variant) => [variant.id || variant.size, variant]));
+  const changedVariants = (form.variants || []).map((variant) => {
+    const previous = previousVariants.get(variant.id || variant.size) || {};
+    const before = Number(previous.stock || 0);
+    const after = Number(variant.stock || 0);
+    if (before === after) return null;
+    return { id: variant.id || variant.size, size: variant.size, before, after };
+  }).filter(Boolean);
+  const previousStock = Number(previousProduct.stock || 0);
+  const nextStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0);
+  if (!changedVariants.length && previousStock === nextStock) return null;
+  return {
+    id: `stock-${Date.now()}`,
+    at: new Date().toISOString(),
+    actor: 'Admin',
+    note: form.stockAdjustmentNote || 'Manual stock correction',
+    previousStock,
+    nextStock,
+    variants: changedVariants,
+  };
+};
+
 export const normalizeProductImages = (input = {}) => {
   const rawImages = Array.isArray(input.images)
     ? input.images
