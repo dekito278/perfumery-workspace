@@ -49,6 +49,15 @@ const snapTimestamp = () => {
     + `T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}+00:00`;
 };
 
+// validityPeriod must be ISO8601 with an explicit numeric offset and NO milliseconds — Date.toISOString()
+// (…T13:59:14.123Z) is rejected by DOKU as "Invalid Field Format (validityPeriod)". Emit Jakarta +07:00.
+const snapValidityPeriod = (msFromNow) => {
+  const d = new Date(Date.now() + msFromNow + 7 * 60 * 60 * 1000); // shift so getUTC* reads Jakarta wall-clock
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+    + `T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}+07:00`;
+};
+
 const getSupabaseRest = () => {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -121,26 +130,32 @@ export default async function handler(req, res) {
     if (amount <= 0) return jsonResponse(res, 422, { message: 'Order has no payable amount' });
 
     const clientKey = String(process.env.DOKU_SNAP_CLIENT_KEY || process.env.DOKU_CLIENT_ID || '').trim();
+    // NOTE: this must be the DOKU "Secret Key" (SK-…), NOT the "API Key" (doku_key_…) — the HMAC-SHA512
+    // service signature verifies against the SK- secret. Mixing them up yields "Signature Not Match".
     const clientSecret = String(process.env.DOKU_SECRET_KEY || '').trim();
     if (!clientSecret) {
-      return jsonResponse(res, 500, { message: 'DOKU SNAP QRIS not configured (need DOKU_SECRET_KEY + DOKU_PRIVATE_KEY).' });
+      return jsonResponse(res, 500, { message: 'DOKU SNAP QRIS not configured (need DOKU_SECRET_KEY (SK-…) + DOKU_PRIVATE_KEY).' });
     }
-    // merchantId/terminalId/postalCode are often DOKU-assigned or optional — send only when explicitly
-    // configured. If DOKU actually requires them, its error response names the missing field.
+    // merchantId (DOKU "mall ID") + terminalId are MANDATORY for qr-mpm-generate and must be the real
+    // DOKU-provisioned QRIS values — placeholders return "Invalid Merchant" (4044708). They come from
+    // DOKU QRIS activation, not the dashboard API-keys page.
     const merchantId = String(process.env.DOKU_MERCHANT_ID || '').trim();
     const terminalId = String(process.env.DOKU_TERMINAL_ID || '').trim();
     const postalCode = String(process.env.DOKU_MERCHANT_POSTAL || '').trim();
+    if (!merchantId || !terminalId) {
+      return jsonResponse(res, 500, { message: 'QRIS not activated: set DOKU_MERCHANT_ID + DOKU_TERMINAL_ID (from DOKU QRIS registration).' });
+    }
 
     const accessToken = await getSnapAccessToken();
     const validityMinutes = Number(process.env.DOKU_PAYMENT_DUE_DATE || 60);
 
     const body = {
       partnerReferenceNo: orderNumber,
+      merchantId,
+      terminalId,
       amount: { value: `${amount}.00`, currency: 'IDR' },
-      ...(merchantId ? { merchantId } : {}),
-      ...(terminalId ? { terminalId } : {}),
-      validityPeriod: new Date(Date.now() + validityMinutes * 60 * 1000).toISOString(),
-      ...(postalCode ? { additionalInfo: { postalCode: postalCode.slice(0, 5), feeType: 1 } } : {}),
+      validityPeriod: snapValidityPeriod(validityMinutes * 60 * 1000),
+      ...(postalCode ? { additionalInfo: { postalCode: postalCode.slice(0, 5), feeType: '1' } } : {}),
     };
     const minifiedBody = JSON.stringify(body);
     const timestamp = snapTimestamp();
