@@ -1,5 +1,17 @@
 import { getBespokeItem, isBespokeOrder } from '@/services/orderService.js';
 
+// Single source for payment-status labels in order lists, order detail, and customer tracking.
+// Consolidated to stop 7 copies drifting — e.g. desktop showed "Expired" while mobile showed
+// "Kedaluwarsa" for the same order. (PaymentPage keeps its own payment-flow-specific wording.)
+export const paymentStatusLabels = {
+  unpaid: 'Belum dibayar',
+  pending: 'Menunggu bayar',
+  paid: 'Sudah dibayar',
+  failed: 'Gagal',
+  expired: 'Kedaluwarsa',
+  refunded: 'Refund',
+};
+
 export const isArchivedOrder = (order = {}) => (
   ['completed', 'cancelled'].includes(order.status)
   || order.shipmentStatus === 'delivered'

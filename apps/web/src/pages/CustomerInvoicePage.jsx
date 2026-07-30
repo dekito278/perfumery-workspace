@@ -23,20 +23,13 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
   ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
   : '-');
 
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Kedaluwarsa',
-  refunded: 'Refund',
-};
 const shipmentStatusLabels = getShipmentStatusLabels();
 
 const PaymentBadge = ({ status }) => (

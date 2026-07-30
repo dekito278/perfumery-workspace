@@ -34,6 +34,7 @@ import {
   isAwaitingCustomerPayment,
   isFrontQueueOrder,
   isShippedOrder,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
@@ -45,14 +46,6 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 
 const statusLabels = getOrderStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Kedaluwarsa',
-  refunded: 'Refund',
-};
 
 const bespokeDetailRows = (item) => [
   ['Aroma', item?.preferredNotes || item?.notes],

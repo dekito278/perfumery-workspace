@@ -37,6 +37,7 @@ import {
   isAwaitingCustomerPayment,
   isFrontQueueOrder,
   isShippedOrder,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -54,14 +55,6 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Expired',
-  refunded: 'Refund',
-};
 
 const orderFilterLabels = {
   active: 'Aktif',

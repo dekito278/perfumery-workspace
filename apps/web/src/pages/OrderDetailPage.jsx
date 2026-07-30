@@ -72,6 +72,7 @@ import {
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -86,14 +87,6 @@ const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const notificationEventLabels = getNotificationEventLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Expired',
-  refunded: 'Refund',
-};
 const paymentProofStatusLabels = {
   missing: 'Belum upload bukti',
   submitted: 'Bukti terkirim',
