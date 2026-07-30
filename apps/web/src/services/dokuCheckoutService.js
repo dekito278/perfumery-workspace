@@ -36,6 +36,27 @@ export const createDokuCheckout = async ({
   return data;
 };
 
+// Native in-app QRIS: our own UI renders the QR string (no DOKU hosted page).
+export const createDokuQris = async (orderNumber) => {
+  const normalizedOrderNumber = String(orderNumber || '').trim();
+  if (!normalizedOrderNumber) {
+    throw new Error('Order number is required');
+  }
+
+  const response = await fetch('/api/doku/qris', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderNumber: normalizedOrderNumber }),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || !data.qrContent) {
+    throw new Error(data.message || 'Gagal membuat QRIS');
+  }
+
+  return data; // { orderNumber, amount, qrContent, referenceNo, expiresAt }
+};
+
 export const refreshDokuPaymentStatus = async (orderNumber) => {
   const normalizedOrderNumber = String(orderNumber || '').trim();
   if (!normalizedOrderNumber) {
