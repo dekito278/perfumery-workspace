@@ -472,7 +472,9 @@ const MobileOrdersPage = () => {
                       {bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}
                     </StatusChip>
                   ) : null}
-                  <StatusChip size="sm" tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                  {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (
+                    <StatusChip size="sm" tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                  ) : null}
                   <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
                     {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                   </StatusChip>

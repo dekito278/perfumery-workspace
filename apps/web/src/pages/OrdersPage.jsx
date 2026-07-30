@@ -519,7 +519,9 @@ const OrdersPage = () => {
                       <Checkbox checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                       {bespoke ? <StatusChip className="border-editorial-charcoal/20 bg-editorial-ivory text-editorial-charcoal">Bespoke</StatusChip> : null}
                       {bespoke ? <StatusChip className="border-editorial-charcoal/10 bg-editorial-paper text-editorial-charcoal">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
-                      <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                      {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (
+                        <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                      ) : null}
                       <StatusChip icon={CreditCard} tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
                       <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
                       {order.paymentProofStatus && order.paymentProofStatus !== 'missing' ? (

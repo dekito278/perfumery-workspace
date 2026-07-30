@@ -709,9 +709,13 @@ const OrderDetailPage = () => {
               <StatusChip tone={getPaymentStatusTone(order.paymentStatus)} size="md">
                 {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
               </StatusChip>
-              <StatusChip tone={getOrderStatusTone(order.status)} size="md">
-                {statusLabels[order.status] || order.status}
-              </StatusChip>
+              {/* Skip the order-status chip when it would just duplicate the payment chip
+                  (e.g. pending_payment/pending both read "Menunggu bayar"). */}
+              {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (
+                <StatusChip tone={getOrderStatusTone(order.status)} size="md">
+                  {statusLabels[order.status] || order.status}
+                </StatusChip>
+              ) : null}
               <StatusChip tone={getShipmentStatusTone(order.shipmentStatus)} size="md">
                 {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
               </StatusChip>
