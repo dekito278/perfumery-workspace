@@ -13,8 +13,21 @@ export const MANUAL_TRANSFER_PAYMENT = {
   description: 'Transfer sesuai total bayar, lalu wajib upload bukti transfer.',
 };
 
+export const QRIS_PAYMENT = {
+  id: 'doku-qris',
+  provider: 'doku-qris',
+  label: 'QRIS',
+  shortLabel: 'QRIS',
+  description: 'Scan satu QR pakai e-wallet atau m-banking. Konfirmasi otomatis, tanpa pindah halaman.',
+};
+
+// QRIS stays hidden until DOKU provisions the merchantId/terminalId for qr-mpm-generate
+// (see api/doku/qris.js). Flip VITE_QRIS_ENABLED=true at go-live to surface it in checkout.
+const QRIS_ENABLED = String(import.meta.env.VITE_QRIS_ENABLED || '').toLowerCase() === 'true';
+
 export const checkoutPaymentMethods = [
   MANUAL_TRANSFER_PAYMENT,
+  ...(QRIS_ENABLED ? [QRIS_PAYMENT] : []),
   {
     id: 'doku',
     provider: 'doku',
@@ -39,6 +52,8 @@ export const getCheckoutPaymentMethod = (methodId) => (
 );
 
 export const isManualTransferPayment = (provider) => provider === MANUAL_TRANSFER_PAYMENT.provider || provider === 'manual';
+
+export const isDokuQrisPayment = (provider) => provider === QRIS_PAYMENT.provider;
 
 export const getStorefrontWhatsAppNumber = () => normalizeWhatsAppPhoneNumber(import.meta.env.VITE_STOREFRONT_WHATSAPP_NUMBER || '');
 

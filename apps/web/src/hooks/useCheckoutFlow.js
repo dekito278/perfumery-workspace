@@ -5,10 +5,11 @@ import {
   buildCheckoutDraft,
   buildOrderNotes,
   getCheckoutPaymentMethod,
+  isDokuQrisPayment,
   isManualTransferPayment,
   MANUAL_TRANSFER_PAYMENT,
 } from '@/services/cartService.js';
-import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
+import { createDokuCheckout, createDokuQris } from '@/services/dokuCheckoutService.js';
 import { getCustomerAccount, lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
@@ -115,6 +116,7 @@ export const useCheckoutFlow = ({
   const paymentMethodDetails = getCheckoutPaymentMethod(selectedPaymentMethod);
   const paymentMethod = paymentMethodDetails.label;
   const isManualPayment = isManualTransferPayment(paymentMethodDetails.provider);
+  const isQrisPayment = isDokuQrisPayment(paymentMethodDetails.provider);
   const shippingFee = Number(selectedShipping?.cost || 0);
   const discountAmount = Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
   const discountedSubtotal = Math.max(Number(summary.subtotal || 0) - discountAmount, 0);
@@ -601,6 +603,55 @@ export const useCheckoutFlow = ({
         toast.success(`Order ${order.orderNumber} saved. Upload bukti transfer wajib setelah transfer.`);
         onSuccess?.(order);
         navigate(`${paymentPath}?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
+        return;
+      }
+
+      if (isQrisPayment) {
+        const qris = await createDokuQris(order.orderNumber);
+        // Reserve voucher quota BEFORE navigating (same as the DOKU path): a quota miss cancels here.
+        if (voucherSnapshot?.code) {
+          try {
+            await recordVoucherUsageForOrder({ orderId: order.id, orderNumber: order.orderNumber, voucherSnapshot, items });
+          } catch (voucherError) {
+            throw new Error(`Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Pesanan dibatalkan — silakan checkout ulang tanpa voucher tersebut.`);
+          }
+        }
+        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+          paymentType: 'doku-qris',
+          paymentProvider: 'doku-qris',
+          qrContent: qris.qrContent,
+          invoiceNumber: order.orderNumber,
+          orderNumber: order.orderNumber,
+          customerCode: order.customerCode || customerCode,
+          amount: paymentAmount,
+          customerName,
+          paymentStatus: 'pending',
+          paymentExpiresAt: qris.expiresAt || '',
+          shippingSummary,
+          shippingFee,
+          voucherCode,
+          voucherDiscount: checkoutDiscountAmount,
+          voucherSnapshot,
+          createdAt: new Date().toISOString(),
+        }));
+        clearCart();
+        clearCheckoutDraft();
+        (clearVoucher || clearAppliedVoucherCode)();
+        setSubmittedOrder(order);
+        toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
+        onSuccess?.(order);
+        navigate(paymentPath);
+        void updateOrderPaymentStatus(order.id || order.orderNumber, {
+          paymentStatus: 'pending',
+          paymentProvider: 'doku-qris',
+          paymentReference: qris.referenceNo || '',
+          paymentUrl: '',
+          paymentExpiresAt: qris.expiresAt || '',
+          paymentSessionId: '',
+          paymentResponse: {},
+          status: 'pending_payment',
+          audit: false,
+        }).catch((persistError) => console.warn('Deferred QRIS session persist failed:', persistError.message || persistError));
         return;
       }
 
