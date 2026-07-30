@@ -122,11 +122,14 @@ export default async function handler(req, res) {
 
     const clientKey = String(process.env.DOKU_SNAP_CLIENT_KEY || process.env.DOKU_CLIENT_ID || '').trim();
     const clientSecret = String(process.env.DOKU_SECRET_KEY || '').trim();
+    if (!clientSecret) {
+      return jsonResponse(res, 500, { message: 'DOKU SNAP QRIS not configured (need DOKU_SECRET_KEY + DOKU_PRIVATE_KEY).' });
+    }
+    // merchantId/terminalId/postalCode are often DOKU-assigned or optional — send only when explicitly
+    // configured. If DOKU actually requires them, its error response names the missing field.
     const merchantId = String(process.env.DOKU_MERCHANT_ID || '').trim();
     const terminalId = String(process.env.DOKU_TERMINAL_ID || '').trim();
-    if (!clientSecret || !merchantId || !terminalId) {
-      return jsonResponse(res, 500, { message: 'DOKU SNAP QRIS not configured (need DOKU_SECRET_KEY, DOKU_MERCHANT_ID, DOKU_TERMINAL_ID).' });
-    }
+    const postalCode = String(process.env.DOKU_MERCHANT_POSTAL || '').trim();
 
     const accessToken = await getSnapAccessToken();
     const validityMinutes = Number(process.env.DOKU_PAYMENT_DUE_DATE || 60);
@@ -134,13 +137,10 @@ export default async function handler(req, res) {
     const body = {
       partnerReferenceNo: orderNumber,
       amount: { value: `${amount}.00`, currency: 'IDR' },
-      merchantId,
-      terminalId,
+      ...(merchantId ? { merchantId } : {}),
+      ...(terminalId ? { terminalId } : {}),
       validityPeriod: new Date(Date.now() + validityMinutes * 60 * 1000).toISOString(),
-      additionalInfo: {
-        postalCode: String(process.env.DOKU_MERCHANT_POSTAL || '00000').slice(0, 5),
-        feeType: 1,
-      },
+      ...(postalCode ? { additionalInfo: { postalCode: postalCode.slice(0, 5), feeType: 1 } } : {}),
     };
     const minifiedBody = JSON.stringify(body);
     const timestamp = snapTimestamp();
