@@ -1,8 +1,8 @@
-// Runnable check for the import-pdf admin gate. `node api/formula/import-pdf.selfcheck.mjs`.
+// Runnable check for the import-pdf admin gate. `node tools/api-selfchecks/import-pdf.selfcheck.mjs`.
 // The endpoint is the studio's mobile PDF-import fallback and hands its input to pdfjs,
 // so the property that matters is that no unauthenticated body ever reaches the parser.
 import assert from 'node:assert/strict';
-import handler from './import-pdf.js';
+import handler from '../../api/formula/import-pdf.js';
 
 process.env.VITE_SUPABASE_URL = 'https://project.supabase.co';
 process.env.VITE_SUPABASE_ANON_KEY = 'anon-key';

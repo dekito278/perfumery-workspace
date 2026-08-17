@@ -1,9 +1,9 @@
-// Runnable check for the brief-intent endpoint. `node api/brief-intent.selfcheck.mjs`.
+// Runnable check for the brief-intent endpoint. `node tools/api-selfchecks/brief-intent.selfcheck.mjs`.
 // Covers the paths that answer without touching an AI gateway: method guard, empty
 // brief, the gas/fuel keyword branch, and the generic fallback. Guards the ESM
 // conversion done when this file moved out of the never-deployed repo-root api/.
 import assert from 'node:assert/strict';
-import handler, { buildFallbackIntent } from './brief-intent.js';
+import handler, { buildFallbackIntent } from '../../api/brief-intent.js';
 
 // Minimal stand-in for the req/res helpers Vercel's Node runtime injects.
 const call = async (req) => {

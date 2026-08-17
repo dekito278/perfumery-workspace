@@ -1,11 +1,11 @@
-// Runnable check for the DOKU notification webhook. `node api/doku/notification.selfcheck.mjs`.
+// Runnable check for the DOKU notification webhook. `node tools/api-selfchecks/doku-notification.selfcheck.mjs`.
 // This endpoint is what turns a payment into a paid order and moves stock, so the
 // invariants worth pinning are the ones about when it must NOT write: an unknown
 // invoice, a replayed cancel on a paid order, a late paid on a dead order, and an
 // underpayment. Signs real payloads with the same HMAC the handler verifies.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import handler from './notification.js';
+import handler from '../../api/doku/notification.js';
 
 process.env.DOKU_CLIENT_ID = 'test-client';
 process.env.DOKU_SECRET_KEY = 'test-secret';
