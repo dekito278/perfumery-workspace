@@ -63,6 +63,15 @@ export const matchesOrderFilter = (order = {}, filter = 'active') => {
       return isBespokeOrder(order) && isFrontQueueOrder(order);
     case 'archive':
       return isArchivedOrder(order);
+    // Payment-status lenses, deliberately NOT scoped to the queue: these back the
+    // Menunggu/Dibayar/Masalah summary tiles, so tapping a tile has to show exactly
+    // the orders it counted — including the completed and cancelled ones.
+    case 'payment_pending':
+      return ['unpaid', 'pending'].includes(order.paymentStatus);
+    case 'payment_paid':
+      return order.paymentStatus === 'paid';
+    case 'payment_problem':
+      return ['failed', 'expired'].includes(order.paymentStatus);
     default:
       // "Aktif": the queue the admin still has to act on, minus orders that are only
       // waiting on the customer to pay — those live in the payment/follow-up tab.
