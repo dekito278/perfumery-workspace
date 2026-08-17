@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'solivagant-v15';
+const CACHE_VERSION = 'solivagant-v16';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
@@ -13,6 +13,7 @@ const PRECACHE_URLS = [
 
 const isSameOrigin = (url) => url.origin === self.location.origin;
 const isAssetRequest = (request) => ['script', 'style', 'worker', 'font', 'image'].includes(request.destination);
+const isHtmlResponse = (response) => (response.headers.get('content-type') || '').includes('text/html');
 const isLocalDev = ['localhost', '127.0.0.1', '::1'].includes(self.location.hostname);
 
 self.addEventListener('install', (event) => {
@@ -75,8 +76,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(APP_SHELL_CACHE).then((cache) => cache.put(request, responseClone));
+          // Only cache a real hit. Without this, a miss that the SPA catch-all answers
+          // with 200 text/html gets stored under a .js URL, and every later load replays
+          // the "expected a JavaScript module script, got text/html" failure from cache —
+          // which is why a stale-chunk error after a deploy used to survive reloads.
+          if (response.ok && !isHtmlResponse(response)) {
+            const responseClone = response.clone();
+            caches.open(APP_SHELL_CACHE).then((cache) => cache.put(request, responseClone));
+          }
           return response;
         })
         .catch(() => caches.match(request))

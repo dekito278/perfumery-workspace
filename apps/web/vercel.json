@@ -66,6 +66,10 @@
       "destination": "/api/not-found"
     },
     {
+      "source": "/assets/(.*)",
+      "destination": "/api/not-found"
+    },
+    {
       "source": "/home",
       "destination": "/home/index.html"
     },
