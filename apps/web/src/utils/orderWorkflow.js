@@ -38,6 +38,42 @@ export const isAwaitingCustomerPayment = (order = {}) => (
   && order.paymentProofStatus !== 'submitted'
 );
 
+// Single definition of what each order-list tab shows. This used to be written out
+// three times — the desktop list, the desktop tab counts, and the mobile list — and
+// they had already drifted apart: desktop has a `payment` tab, mobile a wider
+// `follow_up` one that also sweeps in shipped orders. Both keys are kept here so
+// neither page changes behaviour; the point is that a list and its count can no
+// longer disagree about the same tab.
+export const matchesOrderFilter = (order = {}, filter = 'active') => {
+  switch (filter) {
+    case 'proof_review':
+      return order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order);
+    case 'payment':
+      return ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order);
+    case 'follow_up':
+      return !isArchivedOrder(order)
+        && (['unpaid', 'pending'].includes(order.paymentStatus) || isShippedOrder(order));
+    case 'paid':
+      return order.paymentStatus === 'paid' && isFrontQueueOrder(order);
+    case 'packing':
+      return hasShippingLabelPrinted(order);
+    case 'shipped':
+      return isShippedOrder(order) && !isArchivedOrder(order);
+    case 'bespoke':
+      return isBespokeOrder(order) && isFrontQueueOrder(order);
+    case 'archive':
+      return isArchivedOrder(order);
+    default:
+      // "Aktif": the queue the admin still has to act on, minus orders that are only
+      // waiting on the customer to pay — those live in the payment/follow-up tab.
+      return isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order);
+  }
+};
+
+export const countOrdersByFilter = (orders = [], filters = []) => Object.fromEntries(
+  filters.map((filter) => [filter, orders.filter((order) => matchesOrderFilter(order, filter)).length]),
+);
+
 export const getBespokeOrderSummary = (order = {}) => {
   if (!isBespokeOrder(order)) return null;
 

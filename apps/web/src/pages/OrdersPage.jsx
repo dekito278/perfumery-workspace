@@ -31,12 +31,12 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
+  countOrdersByFilter,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
-  isAwaitingCustomerPayment,
-  isFrontQueueOrder,
   isShippedOrder,
+  matchesOrderFilter,
   paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 
@@ -143,15 +143,7 @@ const OrdersPage = () => {
 
   const visibleOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
-    const matchesFilter = (orderFilter === 'active' && isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order))
-      || (orderFilter === 'proof_review' && order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order))
-      || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order))
-      || (orderFilter === 'paid' && order.paymentStatus === 'paid' && isFrontQueueOrder(order))
-      || (orderFilter === 'packing' && hasShippingLabelPrinted(order))
-      || (orderFilter === 'shipped' && isShippedOrder(order) && !isArchivedOrder(order))
-      || (orderFilter === 'bespoke' && isBespokeOrder(order) && isFrontQueueOrder(order))
-      || (orderFilter === 'archive' && isArchivedOrder(order));
-    if (!matchesFilter) return false;
+    if (!matchesOrderFilter(order, orderFilter)) return false;
     if (!query) return true;
     return [
       order.orderNumber,
@@ -164,16 +156,7 @@ const OrdersPage = () => {
     ].some((value) => String(value || '').toLowerCase().includes(query));
   });
 
-  const filterCounts = {
-    active: orders.filter((order) => isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order)).length,
-    proof_review: orders.filter((order) => order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order)).length,
-    payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order)).length,
-    paid: orders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length,
-    packing: orders.filter(hasShippingLabelPrinted).length,
-    shipped: orders.filter((order) => isShippedOrder(order) && !isArchivedOrder(order)).length,
-    bespoke: orders.filter((order) => isBespokeOrder(order) && isFrontQueueOrder(order)).length,
-    archive: orders.filter(isArchivedOrder).length,
-  };
+  const filterCounts = countOrdersByFilter(orders, Object.keys(orderFilterLabels));
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedVisibleOrders = visibleOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber));
   const selectedPrintableOrders = selectedVisibleOrders.filter(canExportShippingLabel);

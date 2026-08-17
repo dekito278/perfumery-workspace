@@ -28,12 +28,13 @@ import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTota
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
+  countOrdersByFilter,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
-  isAwaitingCustomerPayment,
   isFrontQueueOrder,
   isShippedOrder,
+  matchesOrderFilter,
   paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
@@ -133,18 +134,9 @@ const MobileOrdersPage = () => {
   const paymentSummary = getPaymentSummary(orders);
   const lowStockProducts = products.filter(getProductLowStock);
   const lowStockPreview = lowStockProducts.slice(0, 8);
-  const filteredOrders = useMemo(() => orders.filter((order) => {
-    if (orderFilter === 'proof_review') return order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order);
-    if (orderFilter === 'paid') return order.paymentStatus === 'paid' && isFrontQueueOrder(order);
-    if (orderFilter === 'packing') return hasShippingLabelPrinted(order);
-    if (orderFilter === 'shipped') return isShippedOrder(order) && !isArchivedOrder(order);
-    if (orderFilter === 'follow_up') {
-      return !isArchivedOrder(order) && (['unpaid', 'pending'].includes(order.paymentStatus) || isShippedOrder(order));
-    }
-    if (orderFilter === 'bespoke') return isBespokeOrder(order) && isFrontQueueOrder(order);
-    if (orderFilter === 'archive') return isArchivedOrder(order);
-    return isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order);
-  }).filter((order) => {
+  const filteredOrders = useMemo(() => orders.filter((order) => (
+    matchesOrderFilter(order, orderFilter)
+  )).filter((order) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     if (!query) return true;
     return [
@@ -157,6 +149,20 @@ const MobileOrdersPage = () => {
       ...getOrderProductItems(order).map((item) => item.name),
     ].some((value) => String(value || '').toLowerCase().includes(query));
   }), [deferredSearchTerm, orderFilter, orders]);
+  // Desktop has always shown a count on every filter button; mobile did not, so a tab
+  // holding 16 orders looked the same as an empty one and the default "Aktif" view
+  // reading 1 gave no clue that the other 35 were one chip away.
+  const filterCounts = useMemo(
+    () => countOrdersByFilter(orders, orderFilterOptions.map((option) => option.value)),
+    [orders],
+  );
+  const countedFilterOptions = useMemo(
+    () => orderFilterOptions.map((option) => ({
+      ...option,
+      label: `${option.label} ${filterCounts[option.value] ?? 0}`,
+    })),
+    [filterCounts],
+  );
   const visibleOrders = filteredOrders.slice(0, visibleCount);
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedFilteredOrders = useMemo(() => filteredOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber)), [filteredOrders, selectedOrderSet]);
@@ -370,7 +376,7 @@ const MobileOrdersPage = () => {
           <MobileFilterChips
             value={orderFilter}
             onChange={setOrderFilter}
-            options={orderFilterOptions}
+            options={countedFilterOptions}
             className="mt-3 flex-nowrap overflow-x-auto pb-0"
           />
           <form className="relative mt-3" onSubmit={submitScannerSearch}>
