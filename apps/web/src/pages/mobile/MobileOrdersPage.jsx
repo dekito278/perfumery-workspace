@@ -119,7 +119,7 @@ const getQuickAction = (order) => {
 const MobileOrdersPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, error: loadError, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [orderFilter, setOrderFilter] = useState(() => {
     const filter = new URLSearchParams(location.search).get('filter');
     return orderFilterOptions.some((option) => option.value === filter) ? filter : 'active';
@@ -619,12 +619,29 @@ const MobileOrdersPage = () => {
             loading={loading}
             onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
           />
-          {!filteredOrders.length && !loading ? (
+          {loadError && !loading ? (
             <MobileStatePanel
-              icon={PackageCheck}
-              title="Tidak ada order di tampilan ini"
-              description="Ganti chip filter untuk melihat order lain."
+              tone="error"
+              title="Order gagal dimuat"
+              description={loadError}
             />
+          ) : null}
+          {/* An empty list has two very different causes and they used to look identical:
+              the filter matched nothing, or no order is readable at all. Say which. */}
+          {!loadError && !filteredOrders.length && !loading ? (
+            orders.length ? (
+              <MobileStatePanel
+                icon={PackageCheck}
+                title="Tidak ada order di tampilan ini"
+                description={`Ganti chip filter untuk melihat order lain. Total ${orders.length} order terbaca.`}
+              />
+            ) : (
+              <MobileStatePanel
+                icon={PackageCheck}
+                title="Belum ada order yang terbaca"
+                description="Akun ini tidak membaca satu order pun. Kalau seharusnya ada, muat ulang atau login lagi."
+              />
+            )
           ) : null}
           {loading && !filteredOrders.length ? (
             <MobileStatePanel
