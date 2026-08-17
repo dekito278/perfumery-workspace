@@ -23,6 +23,7 @@ import {
 } from '@/services/orderService.js';
 import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
+import { cn } from '@/lib/utils.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
@@ -163,6 +164,32 @@ const MobileOrdersPage = () => {
     })),
     [filterCounts],
   );
+  const paymentSummaryTiles = [
+    {
+      value: 'payment_pending',
+      label: 'Menunggu',
+      count: paymentSummary.pending,
+      className: 'bg-amber-50',
+      valueClassName: 'text-amber-800',
+      labelClassName: 'text-amber-700',
+    },
+    {
+      value: 'payment_paid',
+      label: 'Dibayar',
+      count: paymentSummary.paid,
+      className: 'bg-emerald-50',
+      valueClassName: 'text-emerald-700',
+      labelClassName: 'text-emerald-700',
+    },
+    {
+      value: 'payment_problem',
+      label: 'Masalah',
+      count: paymentSummary.attention,
+      className: 'bg-rose-50',
+      valueClassName: 'text-rose-700',
+      labelClassName: 'text-rose-700',
+    },
+  ];
   const visibleOrders = filteredOrders.slice(0, visibleCount);
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedFilteredOrders = useMemo(() => filteredOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber)), [filteredOrders, selectedOrderSet]);
@@ -329,9 +356,11 @@ const MobileOrdersPage = () => {
         <title>Order - Solivagant</title>
       </Helmet>
       <main className="mobile-page space-y-4">
+        {/* summary.active counts anything not completed/cancelled, which rendered "15 aktif"
+            directly above an "Aktif 1" chip — same word, two definitions, one screen. */}
         <MobileTopBar
           title="Order"
-          subtitle={`${summary.active} aktif / ${summary.total} total`}
+          subtitle={`${filterCounts.active} aktif / ${summary.total} total`}
           eyebrow="Studio admin"
           action={<PackageCheck className="h-5 w-5 text-amber-700" />}
         />
@@ -359,19 +388,26 @@ const MobileOrdersPage = () => {
               </p>
             </div>
           </div>
+          {/* These tiles looked like buttons and counted real orders, but tapping one did
+              nothing — the orders they count live behind a chip further down the row. They
+              are filters now, and each shows exactly the orders in its own number. */}
           <div className="mt-3 grid grid-cols-3 gap-2">
-            <div className="rounded-2xl bg-amber-50 px-3 py-2 text-center">
-              <div className="text-sm font-bold text-amber-800">{paymentSummary.pending}</div>
-              <div className="text-[9px] font-bold uppercase text-amber-700">Menunggu</div>
-            </div>
-            <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-center">
-              <div className="text-sm font-bold text-emerald-700">{paymentSummary.paid}</div>
-              <div className="text-[9px] font-bold uppercase text-emerald-700">Dibayar</div>
-            </div>
-            <div className="rounded-2xl bg-rose-50 px-3 py-2 text-center">
-              <div className="text-sm font-bold text-rose-700">{paymentSummary.attention}</div>
-              <div className="text-[9px] font-bold uppercase text-rose-700">Masalah</div>
-            </div>
+            {paymentSummaryTiles.map((tile) => (
+              <button
+                key={tile.value}
+                type="button"
+                aria-pressed={orderFilter === tile.value}
+                onClick={() => setOrderFilter(orderFilter === tile.value ? 'active' : tile.value)}
+                className={cn(
+                  'mobile-interactive mobile-pressable rounded-2xl px-3 py-2 text-center transition',
+                  tile.className,
+                  orderFilter === tile.value ? 'ring-2 ring-offset-1 ring-editorial-charcoal/40' : '',
+                )}
+              >
+                <div className={cn('text-sm font-bold', tile.valueClassName)}>{tile.count}</div>
+                <div className={cn('text-[9px] font-bold uppercase', tile.labelClassName)}>{tile.label}</div>
+              </button>
+            ))}
           </div>
           <MobileFilterChips
             value={orderFilter}
