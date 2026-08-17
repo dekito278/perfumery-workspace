@@ -1,4 +1,8 @@
-const { z } = require('zod');
+// Lives under apps/web/api because that is the Vercel Root Directory — the repo-root
+// api/ folder this file used to sit in was never deployed, so every POST hit the SPA
+// catch-all (405) and briefAiIntentService silently fell back to the local heuristic.
+import process from 'node:process';
+import { z } from 'zod';
 
 const STAGES = ['top', 'middle', 'base'];
 
@@ -144,7 +148,7 @@ const defaultFallbackIntent = {
   fallback_reason: 'AI gateway unavailable',
 };
 
-const buildFallbackIntent = (freeText, reason) => {
+export const buildFallbackIntent = (freeText, reason) => {
   const text = String(freeText || '').toLowerCase();
   const payload = /\b(gas|gasoline|bensin|fuel|petrol|vapor|uap)\b/i.test(text)
     ? gasFallbackIntent
@@ -157,7 +161,7 @@ const buildFallbackIntent = (freeText, reason) => {
   };
 };
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
