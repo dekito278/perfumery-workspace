@@ -173,6 +173,18 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
   const { restUrl, headers } = getSupabaseRestConfig();
   const currentOrder = await getOrderByInvoice(invoiceNumber);
 
+  // A signed notification for an invoice we cannot find is never a no-op. The likeliest
+  // cause is a race — DOKU calling back before the order row is visible — and the PATCH
+  // below would quietly match zero rows and still report success, so a real payment would
+  // be acknowledged and then never applied. Fail loudly instead: DOKU retries on a
+  // non-2xx, and by then the order normally exists.
+  if (!currentOrder) {
+    throw Object.assign(
+      new Error(`No order found for invoice ${invoiceNumber}`),
+      { statusCode: 404 },
+    );
+  }
+
   const incomingStatus = statusPatch.paymentStatus;
   const isTerminalCancel = ['failed', 'expired', 'refunded', 'cancelled'].includes(incomingStatus);
 
@@ -394,10 +406,10 @@ export default async function handler(request, response) {
       payload: parsedPayload,
       statusPatch: currentStatusPatch,
       processingStatus: 'error',
-      httpStatus: 500,
+      httpStatus: error.statusCode || 500,
       signatureValid: signatureVerified,
       errorMessage: error.message || 'DOKU notification error',
     });
-    return jsonResponse(response, 500, { message: error.message || 'DOKU notification error' });
+    return jsonResponse(response, error.statusCode || 500, { message: error.message || 'DOKU notification error' });
   }
 }

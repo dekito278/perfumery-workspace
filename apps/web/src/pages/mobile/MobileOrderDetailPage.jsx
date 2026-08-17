@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
+import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -66,14 +67,6 @@ const orderSections = [
   { value: 'history', label: 'History' },
 ];
 
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Kedaluwarsa',
-  refunded: 'Refund',
-};
 const paymentProofStatusLabels = {
   missing: 'Belum upload bukti',
   submitted: 'Bukti terkirim',

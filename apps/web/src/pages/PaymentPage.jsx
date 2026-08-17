@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock3, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, QrCode, RefreshCw, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import QRCode from 'qrcode';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
@@ -326,6 +327,184 @@ const PaymentFrame = ({ session, compact = false }) => {
             Buka pembayaran
           </Button>
         </div>
+      </div>
+    </section>
+  );
+};
+
+const EWALLET_HINTS = ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja', 'm-banking'];
+
+// Native QRIS — renders the DOKU QR string in our own UI (no DOKU hosted page). Payment is confirmed
+// by the DOKU notification webhook flipping the order to paid; we poll the public order for that.
+const QrisPanel = ({ session, compact = false, onPaid }) => {
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [remainingMs, setRemainingMs] = useState(() => {
+    const exp = session.paymentExpiresAt ? new Date(session.paymentExpiresAt).getTime() : 0;
+    return exp ? Math.max(exp - Date.now(), 0) : 0;
+  });
+  const [paid, setPaid] = useState(session.paymentStatus === 'paid');
+  const customerCode = session.customerCode || '';
+  const orderNumber = session.orderNumber || session.invoiceNumber;
+  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
+
+  useEffect(() => {
+    let alive = true;
+    if (!session.qrContent) { setQrDataUrl(''); return undefined; }
+    QRCode.toDataURL(session.qrContent, { margin: 1, width: 360, errorCorrectionLevel: 'M' })
+      .then((url) => { if (alive) setQrDataUrl(url); })
+      .catch(() => { if (alive) setQrDataUrl(''); });
+    return () => { alive = false; };
+  }, [session.qrContent]);
+
+  useEffect(() => {
+    if (!session.paymentExpiresAt) return undefined;
+    const exp = new Date(session.paymentExpiresAt).getTime();
+    const tick = () => setRemainingMs(Math.max(exp - Date.now(), 0));
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [session.paymentExpiresAt]);
+
+  useEffect(() => {
+    if (paid || !orderNumber) return undefined;
+    let alive = true;
+    const check = async () => {
+      try {
+        const order = await getPublicOrderPaymentSession(orderNumber);
+        if (alive && order?.paymentStatus === 'paid') {
+          setPaid(true);
+          onPaid?.(order);
+        }
+      } catch { /* keep polling quietly */ }
+    };
+    const id = window.setInterval(check, 5000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, [orderNumber, paid, onPaid]);
+
+  const mins = Math.floor(remainingMs / 60000);
+  const secs = Math.floor((remainingMs % 60000) / 1000);
+  const expired = Boolean(session.paymentExpiresAt) && remainingMs <= 0;
+  const pad = (n) => String(n).padStart(2, '0');
+
+  const copyCustomerCode = async () => {
+    if (!customerCode) return;
+    const copied = await copyTextToClipboard(customerCode);
+    copied ? toast.success(`${customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
+  };
+
+  if (paid) {
+    return (
+      <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
+        <div className="p-6 text-center sm:p-10">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+            <CheckCircle2 className="h-7 w-7" />
+          </span>
+          <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>Pembayaran diterima</h1>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-[#54604d]">
+            Terima kasih. Pembayaran QRIS untuk order {orderNumber} sudah masuk. Pesanan akan diproses.
+          </p>
+          <div className="mt-5 flex justify-center gap-2">
+            {customerCode ? (
+              <Link to={orderTrackingPath} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
+                Lacak pesanan
+              </Link>
+            ) : null}
+            <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
+              Belanja lagi
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
+      <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">Pembayaran QRIS</div>
+            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
+            <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
+              Scan QR di bawah pakai aplikasi e-wallet atau m-banking. Pembayaran otomatis terkonfirmasi tanpa meninggalkan aplikasi.
+            </p>
+          </div>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
+            <QrCode className="h-5 w-5" />
+          </span>
+        </div>
+        <div className={compact ? 'mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-editorial-charcoal' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
+            <div className="mt-1 truncate">{orderNumber}</div>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
+            <div className="mt-1 truncate">{customerCode || session.customerName || '-'}</div>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-4 py-3">
+            <div className="text-[10px] uppercase text-editorial-muted">Total</div>
+            <div className="mt-1">{formatTotal(session.amount)}</div>
+          </div>
+        </div>
+        <PaymentTotalBreakdown session={session} compact={compact} />
+      </div>
+
+      <div className="grid gap-4 p-4 sm:p-6">
+        {session.paymentExpiresAt ? (
+          <div className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${expired ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+            <Clock3 className="h-4 w-4" />
+            {expired ? 'QR kedaluwarsa — muat ulang untuk buat baru' : `Selesaikan dalam ${pad(mins)}:${pad(secs)}`}
+          </div>
+        ) : null}
+
+        <div className="mx-auto w-full max-w-[360px] rounded-[24px] border border-editorial-stone/15 bg-white p-4 text-center shadow-sm">
+          <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-editorial-muted">
+            <span className="grid h-5 w-5 place-items-center rounded-md bg-[#c0392b] text-[9px] font-bold text-white">Q</span>
+            QRIS · satu QR untuk semua
+          </div>
+          <div className="mt-3 grid aspect-square w-full place-items-center rounded-2xl bg-white">
+            {qrDataUrl ? (
+              <img src={qrDataUrl} alt="Kode QRIS pembayaran" className="h-full w-full rounded-xl object-contain" />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-editorial-muted">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-xs font-semibold">Menyiapkan QR…</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-3 text-[10px] font-bold uppercase text-editorial-muted">Total bayar</div>
+          <div className="text-2xl font-bold text-[#c0392b]">{formatTotal(session.amount)}</div>
+        </div>
+
+        <div className="mx-auto flex max-w-[360px] flex-wrap items-center justify-center gap-1.5">
+          {EWALLET_HINTS.map((name) => (
+            <span key={name} className="rounded-full border border-editorial-stone/15 bg-editorial-ivory px-2.5 py-1 text-[11px] font-bold text-editorial-charcoal">{name}</span>
+          ))}
+        </div>
+
+        <div className="mx-auto flex max-w-[360px] items-start gap-2 rounded-2xl border border-editorial-stone/10 bg-[#fbfaf7] px-4 py-3 text-xs font-semibold leading-relaxed text-[#54604d]">
+          <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-editorial-charcoal" />
+          Buka aplikasi pembayaran → menu Scan/QRIS → arahkan ke QR ini → pastikan nominal sama → bayar. Halaman ini otomatis update saat pembayaran masuk.
+        </div>
+
+        <div className="mx-auto flex max-w-[360px] items-center justify-center gap-2 text-xs font-bold text-editorial-muted">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Menunggu pembayaran…
+        </div>
+
+        {customerCode ? (
+          <div className="mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border border-editorial-stone/10 bg-white px-4 py-3">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Kode customer</span>
+              <div className="select-text text-lg font-bold tracking-[0.12em] text-editorial-charcoal">{customerCode}</div>
+            </div>
+            <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
+              <Copy className="h-4 w-4" />
+              Salin
+            </Button>
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -788,6 +967,7 @@ const PaymentPageContent = ({ isMobile }) => {
 
   const refreshPaymentSession = () => loadPaymentSession({ syncStatus: Boolean(orderNumber) });
   const sessionIsManual = isManualTransferPayment(session?.paymentProvider || session?.paymentType);
+  const sessionIsQris = Boolean(session?.qrContent) || session?.paymentProvider === 'doku-qris';
   const openPrimaryPaymentAction = () => {
     if (!session) return;
     if (sessionIsManual) {
@@ -816,8 +996,8 @@ const PaymentPageContent = ({ isMobile }) => {
           />
           {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
-          ) : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
-          {session ? (
+          ) : session?.qrContent ? <QrisPanel session={session} compact onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          {session && !sessionIsQris ? (
             <StickyBottomActionBar
               fixed
               reserveSpace
@@ -853,7 +1033,7 @@ const PaymentPageContent = ({ isMobile }) => {
         <section className="tracking-content" style={{ paddingTop: 'var(--space-block)' }}>
           {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} onProofSubmitted={setSession} />
-          ) : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </section>
         <StorefrontFooter />
       </main>

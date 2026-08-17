@@ -31,12 +31,13 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
+  countOrdersByFilter,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
-  isAwaitingCustomerPayment,
-  isFrontQueueOrder,
   isShippedOrder,
+  matchesOrderFilter,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -54,14 +55,6 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Expired',
-  refunded: 'Refund',
-};
 
 const orderFilterLabels = {
   active: 'Aktif',
@@ -150,15 +143,7 @@ const OrdersPage = () => {
 
   const visibleOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
-    const matchesFilter = (orderFilter === 'active' && isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order))
-      || (orderFilter === 'proof_review' && order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order))
-      || (orderFilter === 'payment' && ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order))
-      || (orderFilter === 'paid' && order.paymentStatus === 'paid' && isFrontQueueOrder(order))
-      || (orderFilter === 'packing' && hasShippingLabelPrinted(order))
-      || (orderFilter === 'shipped' && isShippedOrder(order) && !isArchivedOrder(order))
-      || (orderFilter === 'bespoke' && isBespokeOrder(order) && isFrontQueueOrder(order))
-      || (orderFilter === 'archive' && isArchivedOrder(order));
-    if (!matchesFilter) return false;
+    if (!matchesOrderFilter(order, orderFilter)) return false;
     if (!query) return true;
     return [
       order.orderNumber,
@@ -171,16 +156,7 @@ const OrdersPage = () => {
     ].some((value) => String(value || '').toLowerCase().includes(query));
   });
 
-  const filterCounts = {
-    active: orders.filter((order) => isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order)).length,
-    proof_review: orders.filter((order) => order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order)).length,
-    payment: orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus) && isFrontQueueOrder(order)).length,
-    paid: orders.filter((order) => order.paymentStatus === 'paid' && isFrontQueueOrder(order)).length,
-    packing: orders.filter(hasShippingLabelPrinted).length,
-    shipped: orders.filter((order) => isShippedOrder(order) && !isArchivedOrder(order)).length,
-    bespoke: orders.filter((order) => isBespokeOrder(order) && isFrontQueueOrder(order)).length,
-    archive: orders.filter(isArchivedOrder).length,
-  };
+  const filterCounts = countOrdersByFilter(orders, Object.keys(orderFilterLabels));
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedVisibleOrders = visibleOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber));
   const selectedPrintableOrders = selectedVisibleOrders.filter(canExportShippingLabel);
@@ -526,7 +502,9 @@ const OrdersPage = () => {
                       <Checkbox checked={selectedOrderSet.has(order.id || order.orderNumber)} onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))} />
                       {bespoke ? <StatusChip className="border-editorial-charcoal/20 bg-editorial-ivory text-editorial-charcoal">Bespoke</StatusChip> : null}
                       {bespoke ? <StatusChip className="border-editorial-charcoal/10 bg-editorial-paper text-editorial-charcoal">{bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}</StatusChip> : null}
-                      <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                      {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (
+                        <StatusChip tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                      ) : null}
                       <StatusChip icon={CreditCard} tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
                       <StatusChip icon={Truck} tone={getShipmentStatusTone(order.shipmentStatus)}>{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}</StatusChip>
                       {order.paymentProofStatus && order.paymentProofStatus !== 'missing' ? (

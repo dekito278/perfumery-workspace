@@ -28,12 +28,14 @@ import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTota
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
+  countOrdersByFilter,
   getBespokeOrderSummary,
   hasShippingLabelPrinted,
   isArchivedOrder,
-  isAwaitingCustomerPayment,
   isFrontQueueOrder,
   isShippedOrder,
+  matchesOrderFilter,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 
@@ -45,14 +47,6 @@ const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
 
 const statusLabels = getOrderStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Kedaluwarsa',
-  refunded: 'Refund',
-};
 
 const bespokeDetailRows = (item) => [
   ['Aroma', item?.preferredNotes || item?.notes],
@@ -126,7 +120,7 @@ const getQuickAction = (order) => {
 const MobileOrdersPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orders, summary, loading, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
+  const { orders, summary, loading, error: loadError, reload, updateStatus, updatePaymentStatus, deleteOne } = useOrders();
   const [orderFilter, setOrderFilter] = useState(() => {
     const filter = new URLSearchParams(location.search).get('filter');
     return orderFilterOptions.some((option) => option.value === filter) ? filter : 'active';
@@ -140,18 +134,9 @@ const MobileOrdersPage = () => {
   const paymentSummary = getPaymentSummary(orders);
   const lowStockProducts = products.filter(getProductLowStock);
   const lowStockPreview = lowStockProducts.slice(0, 8);
-  const filteredOrders = useMemo(() => orders.filter((order) => {
-    if (orderFilter === 'proof_review') return order.paymentProofStatus === 'submitted' && isFrontQueueOrder(order);
-    if (orderFilter === 'paid') return order.paymentStatus === 'paid' && isFrontQueueOrder(order);
-    if (orderFilter === 'packing') return hasShippingLabelPrinted(order);
-    if (orderFilter === 'shipped') return isShippedOrder(order) && !isArchivedOrder(order);
-    if (orderFilter === 'follow_up') {
-      return !isArchivedOrder(order) && (['unpaid', 'pending'].includes(order.paymentStatus) || isShippedOrder(order));
-    }
-    if (orderFilter === 'bespoke') return isBespokeOrder(order) && isFrontQueueOrder(order);
-    if (orderFilter === 'archive') return isArchivedOrder(order);
-    return isFrontQueueOrder(order) && !isAwaitingCustomerPayment(order);
-  }).filter((order) => {
+  const filteredOrders = useMemo(() => orders.filter((order) => (
+    matchesOrderFilter(order, orderFilter)
+  )).filter((order) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     if (!query) return true;
     return [
@@ -164,6 +149,20 @@ const MobileOrdersPage = () => {
       ...getOrderProductItems(order).map((item) => item.name),
     ].some((value) => String(value || '').toLowerCase().includes(query));
   }), [deferredSearchTerm, orderFilter, orders]);
+  // Desktop has always shown a count on every filter button; mobile did not, so a tab
+  // holding 16 orders looked the same as an empty one and the default "Aktif" view
+  // reading 1 gave no clue that the other 35 were one chip away.
+  const filterCounts = useMemo(
+    () => countOrdersByFilter(orders, orderFilterOptions.map((option) => option.value)),
+    [orders],
+  );
+  const countedFilterOptions = useMemo(
+    () => orderFilterOptions.map((option) => ({
+      ...option,
+      label: `${option.label} ${filterCounts[option.value] ?? 0}`,
+    })),
+    [filterCounts],
+  );
   const visibleOrders = filteredOrders.slice(0, visibleCount);
   const selectedOrderSet = useMemo(() => new Set(selectedOrders), [selectedOrders]);
   const selectedFilteredOrders = useMemo(() => filteredOrders.filter((order) => selectedOrderSet.has(order.id || order.orderNumber)), [filteredOrders, selectedOrderSet]);
@@ -377,7 +376,7 @@ const MobileOrdersPage = () => {
           <MobileFilterChips
             value={orderFilter}
             onChange={setOrderFilter}
-            options={orderFilterOptions}
+            options={countedFilterOptions}
             className="mt-3 flex-nowrap overflow-x-auto pb-0"
           />
           <form className="relative mt-3" onSubmit={submitScannerSearch}>
@@ -479,7 +478,9 @@ const MobileOrdersPage = () => {
                       {bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']}
                     </StatusChip>
                   ) : null}
-                  <StatusChip size="sm" tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                  {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (
+                    <StatusChip size="sm" tone={getOrderStatusTone(order.status)}>{statusLabels[order.status] || order.status}</StatusChip>
+                  ) : null}
                   <StatusChip size="sm" tone={getPaymentStatusTone(order.paymentStatus)}>
                     {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                   </StatusChip>
@@ -624,12 +625,29 @@ const MobileOrdersPage = () => {
             loading={loading}
             onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
           />
-          {!filteredOrders.length && !loading ? (
+          {loadError && !loading ? (
             <MobileStatePanel
-              icon={PackageCheck}
-              title="Tidak ada order di tampilan ini"
-              description="Ganti chip filter untuk melihat order lain."
+              tone="error"
+              title="Order gagal dimuat"
+              description={loadError}
             />
+          ) : null}
+          {/* An empty list has two very different causes and they used to look identical:
+              the filter matched nothing, or no order is readable at all. Say which. */}
+          {!loadError && !filteredOrders.length && !loading ? (
+            orders.length ? (
+              <MobileStatePanel
+                icon={PackageCheck}
+                title="Tidak ada order di tampilan ini"
+                description={`Ganti chip filter untuk melihat order lain. Total ${orders.length} order terbaca.`}
+              />
+            ) : (
+              <MobileStatePanel
+                icon={PackageCheck}
+                title="Belum ada order yang terbaca"
+                description="Akun ini tidak membaca satu order pun. Kalau seharusnya ada, muat ulang atau login lagi."
+              />
+            )
           ) : null}
           {loading && !filteredOrders.length ? (
             <MobileStatePanel

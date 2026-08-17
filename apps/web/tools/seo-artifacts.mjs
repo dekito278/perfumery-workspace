@@ -41,14 +41,14 @@ const loadDotEnv = (webRoot) => {
 export const resolveEnv = (webRoot) => {
   const fileEnv = loadDotEnv(webRoot);
   const get = (key) => process.env[key] || fileEnv[key] || '';
-  const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL || '';
-  const vercel = process.env.VERCEL_URL || '';
+  // Deliberately NOT falling back to VERCEL_PROJECT_PRODUCTION_URL / VERCEL_URL: those
+  // resolve to whatever hostname Vercel assigned (the bare apex, or a preview URL), so
+  // they emitted canonicals pointing at a 307 redirect instead of the live www origin.
+  // Mirrors src/utils/seo.js getSiteOrigin() exactly — one canonical origin, two places.
   const siteUrl = (
     get('VITE_PUBLIC_SITE_URL')
     || get('SITE_URL')
     || get('VITE_SITE_URL')
-    || (vercelProd ? `https://${vercelProd}` : '')
-    || (vercel ? `https://${vercel}` : '')
     || DEFAULT_SITE_URL
   ).replace(/\/+$/, '');
   return {

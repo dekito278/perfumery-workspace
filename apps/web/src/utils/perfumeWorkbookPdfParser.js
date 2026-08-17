@@ -1,3 +1,5 @@
+import { supabaseClient } from '@/lib/supabaseClient.js';
+
 let pdfRuntimePromise;
 
 const ensurePdfDomMatrix = () => {
@@ -240,11 +242,19 @@ const parsePerfumeWorkbookPdfLocally = async (file) => {
 };
 
 const parsePerfumeWorkbookPdfOnServer = async (file, localError) => {
+  // The endpoint is admin-only, so send the studio session's token with the upload.
+  const { data: { session } = {} } = await supabaseClient.auth.getSession();
+  const accessToken = session?.access_token;
+  if (!accessToken) {
+    throw new Error('Sesi studio berakhir. Masuk lagi untuk mengimpor PDF formula.');
+  }
+
   const dataBase64 = arrayBufferToBase64(await readFileArrayBuffer(file));
   const response = await fetch('/api/formula/import-pdf', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
       fileName: file.name,

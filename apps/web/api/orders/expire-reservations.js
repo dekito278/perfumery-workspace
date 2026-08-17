@@ -61,7 +61,6 @@ const getReservationExpiryDate = (order) => {
 };
 
 const isExpiredReservation = (order, now) => {
-  if (!order?.inventory_deducted) return false;
   if (!ACTIVE_PAYMENT_STATUSES.includes(order.payment_status)) return false;
   if (['cancelled', 'completed'].includes(order.status)) return false;
   // Manual-transfer buyers sit at payment_status 'pending' until an admin approves their proof.
@@ -69,21 +68,30 @@ const isExpiredReservation = (order, now) => {
   // Mirrors the client guard in orderService.isOrderReservationExpired.
   if (order.payment_proof_status && !['missing', 'rejected'].includes(order.payment_proof_status)) return false;
 
-  const expiresAt = getReservationExpiryDate(order);
-  return Boolean(expiresAt && expiresAt.getTime() <= now.getTime());
+  // Deducted (stock-reserving) orders expire on payment_expires_at OR created_at+TTL, so reserved
+  // stock is always freed. Non-deducted orders (bespoke / stockless / deduct-failed) have no stock to
+  // free and used to never expire → they piled up in "Menunggu bayar" forever. Cancel them too, but
+  // ONLY when an EXPLICIT payment deadline lapsed — never auto-cancel an order that was never given a
+  // payment window (e.g. a bespoke request still in discussion, no payment_expires_at set).
+  const expiresAt = order.inventory_deducted
+    ? getReservationExpiryDate(order)
+    : (order.payment_expires_at ? new Date(order.payment_expires_at) : null);
+  return Boolean(expiresAt && Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() <= now.getTime());
 };
 
-const fetchReservableOrders = async () => {
+const fetchExpirableOrders = async () => {
   const { restUrl, headers } = getSupabaseRestConfig();
+  // Fetch ALL active-payment-status orders (both stock-reserving and non-deducted) — isExpiredReservation
+  // then decides which are actually expired. Previously this filtered inventory_deducted=eq.true, which
+  // is why non-deducted (bespoke/stockless) unpaid orders never got cancelled.
   const query = [
     'select=*',
-    'inventory_deducted=eq.true',
     `payment_status=in.(${ACTIVE_PAYMENT_STATUSES.join(',')})`,
   ].join('&');
   const response = await fetch(`${restUrl}/storefront_orders?${query}`, { headers });
 
   if (!response.ok) {
-    throw new Error(`Failed to read reservable orders: ${await response.text()}`);
+    throw new Error(`Failed to read expirable orders: ${await response.text()}`);
   }
 
   return response.json();
@@ -110,14 +118,16 @@ const restoreInventoryForOrder = async (order, reason) => {
   return response.json();
 };
 
-const appendTimeline = (timeline, now) => {
+const appendTimeline = (timeline, now, stockReleased) => {
   const entries = Array.isArray(timeline) ? timeline : [];
   return [
     ...entries,
     {
       status: 'cancelled',
       label: 'Cancelled',
-      note: 'Payment reservation expired; stock released automatically',
+      note: stockReleased
+        ? 'Payment reservation expired; stock released automatically'
+        : 'Payment reservation expired; order cancelled automatically',
       at: now.toISOString(),
     },
   ];
@@ -143,7 +153,8 @@ const releaseVoucherUsageForOrder = async (order) => {
 const expireOrder = async (order, now) => {
   const { restUrl, headers } = getSupabaseRestConfig();
   const reason = 'Payment expired stock released automatically';
-  const restoreEvents = await restoreInventoryForOrder(order, reason);
+  // Only stock-reserving orders have anything to restore; non-deducted (bespoke/stockless) orders skip it.
+  const restoreEvents = order.inventory_deducted ? await restoreInventoryForOrder(order, reason) : [];
   await releaseVoucherUsageForOrder(order);
   const response = await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(order.order_number)}`, {
     method: 'PATCH',
@@ -154,7 +165,7 @@ const expireOrder = async (order, now) => {
     body: JSON.stringify({
       status: 'cancelled',
       payment_status: 'expired',
-      status_timeline: appendTimeline(order.status_timeline, now),
+      status_timeline: appendTimeline(order.status_timeline, now, Boolean(order.inventory_deducted)),
     }),
   });
 
@@ -178,7 +189,7 @@ export default async function handler(request, response) {
   try {
     assertAuthorized(request);
     const now = new Date();
-    const orders = await fetchReservableOrders();
+    const orders = await fetchExpirableOrders();
     const expiredOrders = orders.filter((order) => isExpiredReservation(order, now));
     const expired = [];
     const errors = [];

@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { WorkerMessageHandler } from 'pdfjs-dist/legacy/build/pdf.worker.mjs';
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -7,6 +8,49 @@ const jsonResponse = (response, status, body) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json');
   response.end(JSON.stringify(body));
+};
+
+const getHeader = (request, name) => (
+  request.headers?.[name.toLowerCase()] || request.headers?.[name] || ''
+);
+
+// Studio-only endpoint: this is the mobile fallback for the formula workbook import,
+// so the only legitimate caller is a logged-in admin. It used to accept an 8 MB PDF
+// from anyone and hand it straight to pdfjs.
+//
+// Reuses the existing public.is_admin() from 20260715120000 rather than re-deriving
+// admin-ness here: called with the caller's own bearer token, Supabase rejects an
+// invalid or expired JWT with a non-2xx, and the SECURITY DEFINER function answers
+// false for any authenticated non-admin (a signed-in customer). One round trip
+// settles both questions, and the service-role key is never involved.
+const assertAdmin = async (request) => {
+  const token = String(getHeader(request, 'authorization')).replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    throw Object.assign(new Error('Authentication required'), { statusCode: 401 });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    throw Object.assign(new Error('Auth is not configured'), { statusCode: 500 });
+  }
+
+  const result = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/is_admin`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+
+  if (!result.ok) {
+    throw Object.assign(new Error('Authentication required'), { statusCode: 401 });
+  }
+  if (await result.json() !== true) {
+    throw Object.assign(new Error('Admin access required'), { statusCode: 403 });
+  }
 };
 
 const readBody = async (request) => {
@@ -216,6 +260,9 @@ export default async function handler(request, response) {
   }
 
   try {
+    // Before readBody: an unauthenticated caller must not get to stream 8 MB at us.
+    await assertAdmin(request);
+
     const body = JSON.parse(await readBody(request));
     const fileName = String(body.fileName || 'formula.pdf').trim();
     const dataBase64 = String(body.dataBase64 || '').replace(/^data:application\/pdf;base64,/, '');
@@ -232,7 +279,7 @@ export default async function handler(request, response) {
     const parseResult = await parsePerfumeWorkbookPdfBuffer({ buffer, fileName });
     return jsonResponse(response, 200, { parseResult });
   } catch (error) {
-    return jsonResponse(response, 500, {
+    return jsonResponse(response, error.statusCode || 500, {
       message: error.message || 'Failed to parse PDF on server',
     });
   }

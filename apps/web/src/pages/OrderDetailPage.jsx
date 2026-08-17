@@ -72,6 +72,7 @@ import {
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -86,14 +87,6 @@ const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const notificationEventLabels = getNotificationEventLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Expired',
-  refunded: 'Refund',
-};
 const paymentProofStatusLabels = {
   missing: 'Belum upload bukti',
   submitted: 'Bukti terkirim',
@@ -716,9 +709,13 @@ const OrderDetailPage = () => {
               <StatusChip tone={getPaymentStatusTone(order.paymentStatus)} size="md">
                 {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
               </StatusChip>
-              <StatusChip tone={getOrderStatusTone(order.status)} size="md">
-                {statusLabels[order.status] || order.status}
-              </StatusChip>
+              {/* Skip the order-status chip when it would just duplicate the payment chip
+                  (e.g. pending_payment/pending both read "Menunggu bayar"). */}
+              {(statusLabels[order.status] || order.status) !== (paymentStatusLabels[order.paymentStatus] || order.paymentStatus) ? (
+                <StatusChip tone={getOrderStatusTone(order.status)} size="md">
+                  {statusLabels[order.status] || order.status}
+                </StatusChip>
+              ) : null}
               <StatusChip tone={getShipmentStatusTone(order.shipmentStatus)} size="md">
                 {shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus}
               </StatusChip>

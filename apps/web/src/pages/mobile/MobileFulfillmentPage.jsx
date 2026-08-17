@@ -95,7 +95,7 @@ const FulfillmentMetric = ({ label, value, tone = 'amber' }) => {
 const MobileFulfillmentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orders, loading, reload, updatePaymentStatus } = useOrders();
+  const { orders, loading, error: loadError, reload, updatePaymentStatus } = useOrders();
   const [drafts, setDrafts] = useState({});
   const [savingId, setSavingId] = useState('');
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -649,7 +649,14 @@ const MobileFulfillmentPage = () => {
             );
           })}
 
-          {!searchedOrders.length && !loading ? (
+          {loadError && !loading ? (
+            <MobileStatePanel
+              tone="error"
+              title="Order gagal dimuat"
+              description={loadError}
+            />
+          ) : null}
+          {!loadError && !searchedOrders.length && !loading ? (
             <MobileStatePanel
               icon={PackageOpen}
               title="Tidak ada order di tampilan ini"

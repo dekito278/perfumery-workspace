@@ -19,17 +19,13 @@ const runNode = (args, options = {}) =>
     ...options,
   });
 
-const llmsResult = runNode([path.join('tools', 'generate-llms.js')]);
-
-if (llmsResult.status !== 0) {
-  console.warn('llms.txt generation failed, continuing with Vite build');
-}
-
 const vitePackageJsonPath = require.resolve('vite/package.json', {
   paths: [webRoot, path.resolve(webRoot, '..', '..')],
 });
 const viteBinPath = path.join(path.dirname(vitePackageJsonPath), 'bin', 'vite.js');
 const viteResult = runNode([viteBinPath, 'build', '--outDir', 'dist']);
+
+const BRAND_SUMMARY = 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual. Public storefront with a fragrance collection, bespoke consultation, a raw material archive, and an editorial journal.';
 
 const staticPublicPages = [
   {
@@ -207,6 +203,24 @@ const writeStaticPublicPages = (siteUrl) => {
   });
 };
 
+// llms.txt describes the site to AI crawlers, so it lists the public storefront and
+// nothing else. It is built from staticPublicPages — the same curated routes,
+// titles and descriptions used for the prerendered marketing snapshots — rather
+// than scraped from src/pages, which is how the previous generator ended up
+// publishing the studio surface (/dashboard, /orders, /customers, /vouchermanagement,
+// …) under filename-derived URLs that were mostly not real routes.
+const writeLlmsTxt = (distRoot, siteUrl) => {
+  const absolute = (route) => (siteUrl ? `${siteUrl}${route}` : route);
+  const body = staticPublicPages
+    .map((page) => `- [${page.title}](${absolute(page.route)}): ${page.description}`)
+    .join('\n');
+
+  fs.writeFileSync(
+    path.join(distRoot, 'llms.txt'),
+    `# SOLIVAGANT\n\n> ${BRAND_SUMMARY}\n\n## Pages\n${body}\n`,
+  );
+};
+
 const generateSeoArtifacts = async () => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
@@ -223,6 +237,7 @@ const generateSeoArtifacts = async () => {
   }
 
   writeStaticPublicPages(env.siteUrl);
+  writeLlmsTxt(distRoot, env.siteUrl);
 
   let products = [];
   let journal = [];

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -50,14 +51,6 @@ const formatDate = (value) => (value
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu bayar',
-  paid: 'Sudah dibayar',
-  failed: 'Gagal',
-  expired: 'Kedaluwarsa',
-  refunded: 'Refund',
-};
 const paymentProofStatusLabels = {
   missing: 'Belum upload bukti',
   submitted: 'Bukti terkirim',
