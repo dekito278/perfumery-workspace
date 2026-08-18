@@ -56,7 +56,7 @@ import {
   canSendEmailNotification,
   getEmailNotificationUrl,
   getNotificationEventLabels,
-  getWhatsAppNotificationUrl,
+  getNotificationHandoffUrl,
 } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
@@ -439,7 +439,7 @@ const OrderDetailPage = () => {
         description: notificationEventLabels[eventKey] || 'Update order',
         action: {
           label: 'Buka WA',
-          onClick: () => window.open(getWhatsAppNotificationUrl(nextOrder, message), '_blank', 'noopener,noreferrer'),
+          onClick: () => window.open(getNotificationHandoffUrl(nextOrder, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
@@ -619,7 +619,7 @@ const OrderDetailPage = () => {
   };
 
   const openWhatsApp = (message) => {
-    window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer');
   };
 
   const copyPublicTrackingLink = async () => {

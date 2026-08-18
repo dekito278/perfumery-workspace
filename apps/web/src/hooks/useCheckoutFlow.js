@@ -234,7 +234,7 @@ export const useCheckoutFlow = ({
     setDeliveryArea(customer.deliveryArea || '');
     setDestinationSearch(customer.deliveryArea || '');
     resetShipping();
-    toast.success(`${customer.customerCode} loaded`);
+    toast.success(`${customer.customerCode} dimuat`);
   };
 
   const useCustomerLastAddress = () => {
@@ -601,7 +601,7 @@ export const useCheckoutFlow = ({
         clearCheckoutDraft();
         (clearVoucher || clearAppliedVoucherCode)();
         setSubmittedOrder(order);
-        toast.success(`Order ${order.orderNumber} saved. Upload bukti transfer wajib setelah transfer.`);
+        toast.success(`Pesanan ${order.orderNumber} tersimpan. Wajib upload bukti transfer setelah transfer.`);
         onSuccess?.(order);
         navigate(`${paymentPath}?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
@@ -702,9 +702,9 @@ export const useCheckoutFlow = ({
       toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
       onSuccess?.(order);
       // Optimistic navigation: the payment panel renders straight from sessionStorage (paymentUrl), so
-      // navigate NOW. Bare path (no ?order=) keeps PaymentPage on its fast sessionStorage path instead of
-      // a DB fetch.
-      navigate(paymentPath);
+      // navigate NOW. The order number rides along so the payment link stays recoverable if this tab is
+      // lost — PaymentPage still prefers the stored session when it matches, so the fast path is intact.
+      navigate(`${paymentPath}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
       // Persist the DOKU session to the order OFF the critical path — enables refresh-recovery + the
       // 60-min payment_expires_at. If it fails, worst case is a refresh re-mints the session (guarded).
       void updateOrderPaymentStatus(order.id || order.orderNumber, {
@@ -726,7 +726,7 @@ export const useCheckoutFlow = ({
           console.warn('Failed to cancel checkout order after payment session error:', restoreError.message || restoreError);
         }
       }
-      toast.error(error.message || 'Failed to save order');
+      toast.error(error.message || 'Gagal menyimpan pesanan');
     } finally {
       setSaving(false);
     }

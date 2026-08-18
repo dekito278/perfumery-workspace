@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { shopToday } from '@/utils/localDay.js';
 import { getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js';
 
 export const BATCHES_STORAGE_KEY = 'dekito.studio.batches.v1';
@@ -70,7 +71,7 @@ const normalizeBatch = (input = {}) => {
     solvent_id: input.solvent_id || input.solventId || null,
     target_quantity: targetQuantity,
     produced_quantity: producedQuantity,
-    production_date: input.production_date || input.productionDate || new Date().toISOString().slice(0, 10),
+    production_date: input.production_date || input.productionDate || shopToday(),
     unit: input.unit || 'ml',
     formula_percentage: formulaPercentage,
     solvent_percentage: solventPercentage,

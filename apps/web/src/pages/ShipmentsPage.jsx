@@ -10,7 +10,7 @@ import StateBlock from '@/components/ui/state-block.jsx';
 import StatusChip, { getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import { useOrders } from '@/hooks/useOrders.js';
 import { getShipmentStatusLabels, updateOrderShipment } from '@/services/orderService.js';
-import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
@@ -166,7 +166,7 @@ const ShipmentsPage = () => {
       toast.success(`${order.orderNumber} pesan resi disalin`, {
         action: {
           label: 'Buka WA',
-          onClick: () => window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer'),
+          onClick: () => window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
@@ -350,7 +350,7 @@ const ShipmentsPage = () => {
     } catch (error) {
       copied = false;
     }
-    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
     toast.success(copied
       ? `${messages.length} pesan WA disalin, WA pertama dibuka`
       : `WA pertama dibuka (${messages.length} pesan gagal disalin ke clipboard)`);

@@ -930,6 +930,12 @@ export const updateRawMaterial = async (id, data) => {
         ...data,
       };
       const payload = buildRawMaterialPayload(mergedData);
+      // The payload is rebuilt from a snapshot read a moment ago, so a batch deduction that lands in
+      // between would be written straight back out. Stock is only ever changed by the deduction RPC or by
+      // a caller that explicitly passes it — leave the column alone otherwise (audit round 7).
+      if (!Object.prototype.hasOwnProperty.call(data || {}, 'stock_quantity')) {
+        delete payload.stock_quantity;
+      }
 
       const duplicateWorkbookCodeRecord = await findDuplicateWorkbookCodeRecord({
         userId: currentRecord.user_id,

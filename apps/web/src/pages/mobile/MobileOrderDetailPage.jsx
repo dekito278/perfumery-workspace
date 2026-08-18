@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import { getNextOrderStatusForPayment, paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { getNextOrderStatusForPayment, hasShippingLabelPrinted, isArchivedOrder, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -35,7 +35,7 @@ import {
   canSendEmailNotification,
   getEmailNotificationUrl,
   getNotificationEventLabels,
-  getWhatsAppNotificationUrl,
+  getNotificationHandoffUrl,
 } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -499,14 +499,14 @@ const MobileOrderDetailPage = () => {
           toast.success('Template WA reject disalin', {
             action: {
               label: 'Buka WA',
-              onClick: () => window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
+              onClick: () => window.open(getNotificationHandoffUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
             },
           });
         } catch {
           toast.success('Template WA reject siap', {
             action: {
               label: 'Buka WA',
-              onClick: () => window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
+              onClick: () => window.open(getNotificationHandoffUrl(notificationOrder, message), '_blank', 'noopener,noreferrer'),
             },
           });
         }
@@ -539,6 +539,18 @@ const MobileOrderDetailPage = () => {
     }
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     await exportShippingLabelPdf(order);
+    // Move the order out of the paid queue, exactly as the desktop detail page does — printing a resi from
+    // a phone used to leave the order sitting in "sudah dibayar" forever (audit round 7).
+    if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
+      await updateOrderShipment(order.id || order.orderNumber, {
+        ...shipmentDraft,
+        shipmentStatus: 'packing',
+        packingNotes: shipmentDraft.packingNotes || 'Resi PDF dicetak dari Detail Order mobile.',
+      });
+      setOrder(await getOrderById(orderId) || order);
+      toast.success('Resi PDF siap. Order masuk Label/resi.');
+      return;
+    }
     toast.success('Resi PDF siap');
   };
 
@@ -575,7 +587,7 @@ const MobileOrderDetailPage = () => {
   };
 
   const openWhatsAppNotification = () => {
-    window.open(getWhatsAppNotificationUrl(order, notificationMessage), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(order, notificationMessage), '_blank', 'noopener,noreferrer');
   };
 
   const openSmartWhatsAppNotification = () => {
@@ -592,7 +604,7 @@ const MobileOrderDetailPage = () => {
       trackingNumber: shipmentDraft.trackingNumber || order.trackingNumber,
       trackingUrl: shipmentDraft.trackingUrl || order.trackingUrl,
     }, eventKey);
-    window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer');
   };
 
   const openEmailNotification = () => {

@@ -2,6 +2,8 @@
 // client AND in a Node serverless endpoint (the authoritative order-creation path). All DB/localStorage
 // access lives in services/voucherService.js, which re-exports these. Keep this file import-free.
 
+import { shopEndOfDay } from './localDay.js';
+
 export const VOUCHER_DISCOUNT_TYPES = {
   PERCENT: 'percent',
   FIXED: 'fixed',
@@ -42,7 +44,7 @@ export const getExpiryTime = (expiresAt) => {
   if (!rawValue) return null;
 
   const normalizedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
-    ? `${rawValue}T23:59:59.999`
+    ? shopEndOfDay(rawValue)
     : rawValue;
   const time = new Date(normalizedDate).getTime();
   return Number.isFinite(time) ? time : null;

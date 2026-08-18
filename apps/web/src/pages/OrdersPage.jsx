@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { buildOrderCopyText } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
@@ -19,7 +20,7 @@ import {
   isBespokeOrder,
   updateOrderShipment,
 } from '@/services/orderService.js';
-import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import {
   getOrderProductItems,
@@ -176,7 +177,7 @@ const OrdersPage = () => {
   }, [orders]);
 
   const copyOrder = async (order) => {
-    const text = order.checkoutDraft || order.notes || order.orderNumber || '';
+    const text = buildOrderCopyText(order);
     if (!text) {
       toast.error('Tidak ada data order untuk disalin');
       return;
@@ -215,7 +216,7 @@ const OrdersPage = () => {
       toast.success(`Pesan customer ${order.orderNumber} disalin`, {
         action: {
           label: 'Open WA',
-          onClick: () => window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer'),
+          onClick: () => window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
@@ -320,7 +321,7 @@ const OrdersPage = () => {
       return;
     }
     await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
-    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
     toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
   };
 

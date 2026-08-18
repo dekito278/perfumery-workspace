@@ -39,6 +39,10 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
   const [quickCreateLoading, setQuickCreateLoading] = useState(false);
 
   const createEmptyFormulaItem = useCallback(() => ({
+    // Stable identity for React's key. Keying rows by array index made FormulaItemRow's own panel state
+    // (the open dilution editor) stay behind on the index when a row above it was removed, so it appeared
+    // to jump onto the neighbouring material (audit round 7). Mirrors the mobile composer's row_key.
+    row_key: `row-${Math.random().toString(36).slice(2, 10)}`,
     item_id: '',
     gram_amount: '',
     dilution_percent: '',
@@ -423,7 +427,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
               <div className="space-y-3">
                 {formulaItems.map((item, index) => (
                   <FormulaItemRow
-                    key={index}
+                    key={item.row_key || index}
                     item={item}
                     index={index}
                     onItemChange={updateItem}

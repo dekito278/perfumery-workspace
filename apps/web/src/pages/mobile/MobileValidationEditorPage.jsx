@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { shopToday } from '@/utils/localDay.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CalendarCheck, ClipboardCheck, FlaskConical, NotebookPen } from 'lucide-react';
@@ -48,7 +49,7 @@ const createEmptyLog = (formulaId = 'none') => ({
   note: '',
   next_action: '',
   evaluator_name: '',
-  tested_at: new Date().toISOString().slice(0, 10),
+  tested_at: shopToday(),
 });
 
 const ValidationStepSection = ({ icon: Icon, eyebrow, title, description, children }) => (
@@ -110,7 +111,7 @@ const MobileValidationEditorPage = () => {
             note: match.note || '',
             next_action: match.next_action || '',
             evaluator_name: match.evaluator_name || '',
-            tested_at: match.tested_at || new Date().toISOString().slice(0, 10),
+            tested_at: match.tested_at || shopToday(),
           });
         } else {
           setFormState(createEmptyLog(queryFormulaId));

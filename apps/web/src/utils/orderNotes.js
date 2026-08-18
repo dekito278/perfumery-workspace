@@ -38,3 +38,10 @@ export const getOrderNoteField = (notes = '', label) => {
   const row = parseOrderNoteRows(notes).find((item) => item.label.toLowerCase() === String(label).toLowerCase());
   return row && row.value !== '-' ? row.value : '';
 };
+
+// The text an admin expects when they tap "Salin" on an order. The mobile list used to copy
+// order.checkoutDraft directly, so an order without a draft put the literal string "undefined" on the
+// clipboard and a clipboard rejection went unhandled (audit round 7).
+export const buildOrderCopyText = (order = {}) => (
+  order.checkoutDraft || order.notes || order.orderNumber || ''
+);

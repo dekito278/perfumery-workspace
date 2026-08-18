@@ -1,4 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { buildOrderCopyText } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ScanLine, Search, Sparkles, Trash2, Truck } from 'lucide-react';
@@ -21,7 +22,7 @@ import {
   isBespokeOrder,
   updateOrderShipment,
 } from '@/services/orderService.js';
-import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { cn } from '@/lib/utils.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
@@ -220,8 +221,17 @@ const MobileOrdersPage = () => {
   };
 
   const copyOrder = async (order) => {
-    await navigator.clipboard.writeText(order.checkoutDraft);
-    toast.success(`${order.orderNumber} disalin`);
+    const text = buildOrderCopyText(order);
+    if (!text) {
+      toast.error('Tidak ada data order untuk disalin');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${order.orderNumber} disalin`);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menyalin order');
+    }
   };
 
   const handleDeleteOne = async (orderKey) => {
@@ -335,7 +345,7 @@ const MobileOrdersPage = () => {
       return;
     }
     await navigator.clipboard.writeText(messages.map(({ order, message }) => `${order.orderNumber}\n${message}`).join('\n\n---\n\n'));
-    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
     toast.success(`${messages.length} pesan WA disalin, WA pertama dibuka`);
   };
 
@@ -377,7 +387,7 @@ const MobileOrdersPage = () => {
         ? 'paid'
         : 'order_created';
     const message = buildNotificationMessage(order, eventKey);
-    window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer');
   };
 
   return (

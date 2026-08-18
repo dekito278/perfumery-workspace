@@ -126,7 +126,9 @@ export default async function handler(req, res) {
     const orderNumber = String(input.orderNumber || input.invoiceNumber || '').trim();
     if (!orderNumber) return jsonResponse(res, 422, { message: 'orderNumber is required' });
 
-    const { amount } = await getOrderAmountByInvoice(orderNumber);
+    const { amount, paymentStatus } = await getOrderAmountByInvoice(orderNumber);
+    // Mirror checkout.js:168 — never mint a payable QR for an order that is already paid.
+    if (paymentStatus === 'paid') return jsonResponse(res, 409, { message: 'Order is already paid' });
     if (amount <= 0) return jsonResponse(res, 422, { message: 'Order has no payable amount' });
 
     const clientKey = String(process.env.DOKU_SNAP_CLIENT_KEY || process.env.DOKU_CLIENT_ID || '').trim();
@@ -180,10 +182,12 @@ export default async function handler(req, res) {
     const doku = await dokuRes.json().catch(() => ({}));
     // SNAP success codes start with 200 (e.g. 2004900).
     if (!dokuRes.ok || !doku?.qrContent) {
+      // The full DOKU payload stays in the server log — echoing it to the browser leaked gateway
+      // internals to anyone who could hit this endpoint (audit round 7).
+      console.error('DOKU QRIS generate failed:', JSON.stringify(doku));
       return jsonResponse(res, 502, {
         message: doku?.responseMessage || 'DOKU QRIS generate failed',
         dokuResponseCode: doku?.responseCode,
-        doku,
       });
     }
 

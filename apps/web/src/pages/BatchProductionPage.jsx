@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { shopToday } from '@/utils/localDay.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Beaker, ClipboardCheck, Factory, Home, PackageCheck, Save, ShoppingBag } from 'lucide-react';
@@ -259,7 +260,7 @@ const BatchProductionPage = () => {
     solvent_id: selectedSolventId || null,
     target_quantity: targetValue,
     produced_quantity: targetValue,
-    production_date: new Date().toISOString().slice(0, 10),
+    production_date: shopToday(),
     unit: 'ml',
     formula_percentage: concentration,
     solvent_percentage: Math.max(100 - concentration, 0),

@@ -12,7 +12,8 @@ Migrations are written but **never applied** here — each one carries a MANUAL 
 | 2 | Tinggi — RPC anon grants, doku/status guards, payment page, proof review, number parsing, cart links, batch stock | done |
 | 3a | Sedang — server, uang, stok | done |
 | 3b | Sedang — UX customer, divergensi desktop↔mobile | done |
-| 4 | Rendah | todo |
+| 4a | Rendah — API, timezone, divergensi kecil | done |
+| 4b | Rendah — cart, copy Indonesia, QRIS, brief-intent | todo |
 | 5 | UI mobile A2–A5, B1–B3, C1–C2, D1–D2 | todo |
 
 ## Batch 1 — done
@@ -137,3 +138,33 @@ Still open from this area, moved to batch 4: mobile formula editor does not run 
 `validateFormulaItems` before submit.
 
 Checks run: `npm run lint`, five `*.selfcheck.mjs`, `npm run build`.
+
+## Batch 4a — done (14 severity-rendah)
+
+- **Shipping fell back to the cheapest rate** — `/api/orders/create` now refuses when the courier and
+  service the buyer picked are no longer quotable, instead of quietly charging a different courier.
+- **An invalid voucher was dropped server-side** — the endpoint returns 422 with the reason so checkout
+  can re-price, rather than charging more than the total the buyer confirmed.
+- **QRIS minted a QR for a paid order** — `qris.js` returns 409 on a paid order, mirroring `checkout.js`.
+- **Gateway internals echoed to the browser** — order-insert, DOKU checkout and QRIS failures log the raw
+  upstream payload server-side and return only a message.
+- **Timezone** — new `src/utils/localDay.js` (`shopToday`, `shopEndOfDay`). Six default production and
+  validation dates stopped using the UTC calendar day (between 00:00 and 07:00 WIB they were stamped
+  yesterday), and a date-only voucher expiry is now pinned to `+07:00` so the browser and the server agree
+  on the same instant. Covered by `localDay.selfcheck.mjs`.
+- **WhatsApp handoff for email contacts** — `getWhatsAppNotificationUrl` is now
+  `getNotificationHandoffUrl` and falls back to the mailto URL when the contact is an email. One function,
+  16 call sites fixed; no more empty wa.me window under a "message sent" toast.
+- **Formula rows keyed by index** — both desktop modals carry a `row_key`, so removing a row no longer
+  leaves the open dilution panel behind on the neighbouring material.
+- **Mobile "Salin" wrote "undefined"** — `buildOrderCopyText` in `orderNotes.js` is shared by both order
+  lists, and the mobile copy now handles a clipboard rejection.
+- **Mobile product form orphaned images** — it runs the same post-save reconciliation as desktop.
+- **Printing a resi from mobile left the order in the paid queue** — mobile order detail moves the order to
+  `packing`, like the desktop page.
+- **Raw material saves could revert a batch deduction** — `updateRawMaterial` no longer writes
+  `stock_quantity` back from its snapshot unless the caller explicitly passed it.
+- **Checkout copy** — the three English strings are Indonesian, and the DOKU redirect carries `?order=` so
+  a lost tab can find its way back to the payment page.
+
+Checks run: `npm run lint`, six `*.selfcheck.mjs`, `npm run build`.

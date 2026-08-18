@@ -250,21 +250,19 @@ export default async function handler(request, response) {
       const dokuMessage = dokuData?.error?.message || dokuData?.message || 'Failed to create DOKU checkout';
       const isInvalidSignature = String(dokuData?.error?.code || '').toLowerCase() === 'invalid_signature'
         || /invalid header signature/i.test(dokuMessage);
+      console.error('DOKU checkout failed:', JSON.stringify(dokuData));
       return jsonResponse(response, dokuResponse.status, {
         message: isInvalidSignature
           ? 'DOKU menolak signature. Pastikan DOKU_CLIENT_ID dan DOKU_SECRET_KEY berasal dari environment yang sama di DOKU Dashboard.'
           : dokuMessage,
-        doku: dokuData,
       });
     }
 
     const checkoutPayload = dokuData?.response || dokuData;
     const paymentUrl = checkoutPayload?.payment?.url;
     if (!paymentUrl) {
-      return jsonResponse(response, 502, {
-        message: 'DOKU did not return a payment URL',
-        doku: dokuData,
-      });
+      console.error('DOKU returned no payment URL:', JSON.stringify(dokuData));
+      return jsonResponse(response, 502, { message: 'DOKU did not return a payment URL' });
     }
 
     const paymentSessionId = checkoutPayload?.order?.session_id || checkoutPayload?.payment?.token_id || checkoutPayload?.uuid || '';
