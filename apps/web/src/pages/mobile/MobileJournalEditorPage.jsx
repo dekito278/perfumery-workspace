@@ -299,7 +299,7 @@ const MobileJournalEditorPage = () => {
             </MobileFormField>
           </section>
 
-          <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Journal editor actions">
+          <StickyBottomActionBar fixed reserveSpace aria-label="Journal editor actions">
             <div className="grid grid-cols-[0.8fr_1fr] gap-2">
               <Button type="button" variant="outline" onClick={handleBack} className="h-11 rounded-2xl bg-white">
                 Batal

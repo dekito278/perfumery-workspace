@@ -16,7 +16,7 @@ const MobileAppShell = ({ children, showFab = true, taskMode = false }) => {
   const shouldShowFab = showFab && !taskMode;
 
   return (
-    <div className={cn('mobile-app', keyboardActive && 'mobile-keyboard-active', taskMode && 'mobile-task-mode')} data-mobile-task-mode={taskMode || undefined}>
+    <div className={cn('mobile-app', keyboardActive && 'mobile-keyboard-active')}>
       <div className="mobile-app-shell" data-mobile-primary-scroller="true">
         {children}
       </div>

@@ -296,7 +296,7 @@ const MobileVoucherManagementPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet>
         <title>Vouchers - Solivagant Studio</title>
       </Helmet>

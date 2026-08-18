@@ -391,7 +391,7 @@ const MobileOrdersPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet>
         <title>Order - Solivagant</title>
       </Helmet>

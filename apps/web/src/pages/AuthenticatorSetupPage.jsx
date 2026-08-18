@@ -430,7 +430,7 @@ const SetupContent = ({ mobile = false }) => {
 const AuthenticatorSetupPage = ({ mobile = false }) => {
   if (mobile) {
     return (
-      <MobileAuthenticatedLayout showFab={false}>
+      <MobileAuthenticatedLayout>
         <Helmet><title>Authenticator - Solivagant</title></Helmet>
         <SetupContent mobile />
       </MobileAuthenticatedLayout>

@@ -383,7 +383,7 @@ const MobileFulfillmentPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet><title>Fulfillment - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar

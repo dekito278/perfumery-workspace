@@ -127,7 +127,7 @@ const MobileValidationPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet><title>Validasi Mobile - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar

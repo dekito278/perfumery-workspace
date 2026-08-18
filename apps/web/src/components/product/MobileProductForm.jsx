@@ -570,7 +570,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         </label>
       </ProductFormSection>
 
-      <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Aksi form produk">
+      <StickyBottomActionBar fixed reserveSpace aria-label="Aksi form produk">
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={resetForm}>Reset</Button>
           <Button type="button" className="h-12 rounded-2xl gap-2" onClick={handleSubmit} disabled={savingProduct || !requiredReady}>

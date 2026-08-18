@@ -292,7 +292,7 @@ const MobileCreateFormulaPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet><title>New Mobile Formula - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
         <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />

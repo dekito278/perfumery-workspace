@@ -14,7 +14,7 @@ Migrations are written but **never applied** here — each one carries a MANUAL 
 | 3b | Sedang — UX customer, divergensi desktop↔mobile | done |
 | 4a | Rendah — API, timezone, divergensi kecil | done |
 | 4b | Rendah — cart, copy Indonesia, QRIS, brief-intent | done |
-| 5 | UI mobile A2–A5, B1–B3, C1–C2, D1–D2 | todo |
+| 5 | UI mobile A2–A5, B1–B3, C1–C2, D1–D2 | done |
 
 ## Batch 1 — done
 
@@ -194,3 +194,34 @@ Checks run: `npm run lint`, six `*.selfcheck.mjs`, `npm run build`.
   DO-NOT-ENABLE-YET warning naming the exact missing piece.
 
 Checks run: `npm run lint`, seven `*.selfcheck.mjs`, `npm run build`.
+
+## Batch 5 — done (UI mobile)
+
+Root of the whole keyboard/spacing cluster: nobody knew how tall the action bar actually was, so every
+number around it was guessed. `StickyBottomActionBar` now measures itself with a ResizeObserver and
+publishes `--mobile-action-bar-height`, and three separate guesses read it instead:
+
+- **A2** the spacer reserves `bar + nav + safe-area + gap` normally, and `bar + gap` while the keyboard is
+  up (it used to collapse to 18px under a ~110px bar, hiding the last field behind Simpan).
+- **C2** the hardcoded 118px is now only a fallback.
+- **A3** `useMobileKeyboardAvoidance` subtracts the bar height from the visible bottom, so a focused field
+  is scrolled clear of the bar rather than behind it.
+- **A4** `keyboardBehavior` defaults to `'stay'`. That fixes the six form pages that silently used `'hide'`
+  and made the primary action vanish mid-typing; the six pages that spelled out `keyboardBehavior="stay"`
+  no longer need to.
+- **A5** the duplicated `body:has(...)` keyboard block is gone — the React `mobile-keyboard-active` class
+  is the single source of truth and is applied by every mobile layout.
+- **B1/B2** a status-bar strip and a soft halo behind the floating session button, so scrolled content
+  stops colliding with the clock and with the avatar.
+- **B3** the action bar is 448px wide, matching the bottom nav and `.mobile-page` (was 430px).
+- **C1** `.mobile-app-shell:has(.mobile-action-bar-spacer)` drops the shell's extra 88px, removing ~240px
+  of dead scroll under every studio form. Commerce already had the equivalent rule.
+- **D1/D2** `mobile-task-mode` (zero consumers) removed, and the redundant `showFab={false}` props dropped.
+
+Verified in the browser by loading `mobile.css` and reading computed values: spacer 186px fallback →
+180px with a measured 112px bar → 120px with the keyboard up, shell padding-bottom collapsing to the safe
+area when a spacer is present, and the bar at 448px. A full visual pass was NOT possible — this worktree
+has no `VITE_SUPABASE_URL`, so the app stops at "Loading workspace". Added `.claude/launch.json` so the
+dev server can be started directly next time.
+
+Checks run: `npm run lint`, seven `*.selfcheck.mjs`, `npm run build`, computed-style check in the browser.
