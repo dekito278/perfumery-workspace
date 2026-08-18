@@ -348,6 +348,28 @@ const MobileOrdersPage = () => {
     toast.success(`${selectedFilteredOrders.length} order diekspor CSV`);
   };
 
+  // Both hook calls throw — updateOrderStatus refuses to ship an unpaid order, updateOrderPaymentStatus
+  // refuses to revive a cancelled one — and the bare onChange/onClick handlers turned that into an
+  // unhandled rejection: the select snapped back with no explanation (audit round 7).
+  const changePaymentStatus = async (order, paymentStatus) => {
+    try {
+      await updatePaymentStatus(order.id || order.orderNumber, paymentStatus);
+      if (paymentStatus === 'paid') {
+        toast.success(`${order.orderNumber} ditandai paid`);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Gagal memperbarui status pembayaran');
+    }
+  };
+
+  const changeOrderStatus = async (order, status) => {
+    try {
+      await updateStatus(order.id || order.orderNumber, status);
+    } catch (error) {
+      toast.error(error.message || 'Gagal memperbarui status order');
+    }
+  };
+
   const openQuickFollowUp = (order) => {
     const eventKey = order.shipmentStatus === 'shipped'
       ? 'shipped'
@@ -589,7 +611,7 @@ const MobileOrdersPage = () => {
                     <p className="mt-1 text-xs font-semibold text-[#1f2937]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</p>
                   </div>
                   {order.paymentStatus !== 'paid' ? (
-                    <Button type="button" size="sm" className="h-9 shrink-0 rounded-2xl px-3 text-xs" onClick={() => updatePaymentStatus(order.id || order.orderNumber, 'paid')}>
+                    <Button type="button" size="sm" className="h-9 shrink-0 rounded-2xl px-3 text-xs" onClick={() => changePaymentStatus(order, 'paid')}>
                       Tandai paid
                     </Button>
                   ) : null}
@@ -597,7 +619,7 @@ const MobileOrdersPage = () => {
                 <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                   <select
                     value={order.paymentStatus}
-                    onChange={(event) => updatePaymentStatus(order.id || order.orderNumber, event.target.value)}
+                    onChange={(event) => changePaymentStatus(order, event.target.value)}
                     className="h-10 rounded-2xl border border-[#e5e7eb] bg-[#f8f7f4] px-3 text-xs font-bold outline-none focus:border-amber-300"
                   >
                     {Object.entries(paymentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -645,7 +667,7 @@ const MobileOrdersPage = () => {
                   <div className="text-base font-bold text-[#1f2937]">{formatTotal(order.subtotal)}</div>
                   {voucherSnapshot ? <div className="text-[11px] font-bold text-editorial-charcoal">Hemat {formatTotal(voucherSnapshot.discountAmount)}</div> : null}
                 </div>
-                <select value={order.status} onChange={(event) => updateStatus(order.id || order.orderNumber, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
+                <select value={order.status} onChange={(event) => changeOrderStatus(order, event.target.value)} className="h-10 rounded-2xl border border-[#e5e7eb] bg-white px-2 text-xs font-bold outline-none focus:border-amber-300">
                   {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </div>

@@ -109,3 +109,12 @@ export const getBespokeOrderSummary = (order = {}) => {
     story,
   };
 };
+
+// The order status that must accompany a payment-status change. Was written out three times (order detail,
+// the orders hook, and nowhere at all on mobile order detail, which is why mobile could not change payment
+// status) — keep it here so the three agree (audit round 7).
+export const getNextOrderStatusForPayment = (paymentStatus) => {
+  if (paymentStatus === 'paid') return 'paid';
+  if (['failed', 'expired'].includes(paymentStatus)) return 'cancelled';
+  return 'pending_payment';
+};

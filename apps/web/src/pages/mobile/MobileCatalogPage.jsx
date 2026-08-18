@@ -14,6 +14,9 @@ export const MobileCatalogContent = ({ active = true }) => {
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('category') || searchParams.get('family') || '';
   const catalogProducts = useCatalogProducts({ active });
+  // Mirror CatalogPage.jsx:35 — without this the page told the buyer "No fragrance matches" during the very
+  // first fetch, and kept saying it forever if that fetch failed (audit round 7).
+  const isLoading = Boolean(catalogProducts.loading) && !catalogProducts.length;
   const [activeCategory, setActiveCategory] = useState(
     initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All'
   );
@@ -114,12 +117,36 @@ export const MobileCatalogContent = ({ active = true }) => {
               </Link>
             ))}
           </div>
-        ) : (
+        ) : isLoading ? (
+          <div className="m-editorial-product-grid" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="m-editorial-product-card">
+                <div className="editorial-skel m-editorial-product-card__visual" />
+                <div className="m-editorial-product-card__info">
+                  <div className="editorial-skel skel-line skel-line--sm" />
+                  <div className="editorial-skel skel-line skel-line--md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : catalogProducts.length ? (
           <div className="m-editorial-empty">
             <p className="m-editorial-eyebrow">NO MATCH</p>
-            <h2>No fragrance matches.</h2>
+            <h2>Tidak ada fragrance yang cocok.</h2>
             <button type="button" className="m-editorial-cta" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
-              Reset
+              Reset filter
+            </button>
+          </div>
+        ) : (
+          <div className="m-editorial-empty">
+            <p className="m-editorial-eyebrow">KATALOG</p>
+            <h2>Katalog belum bisa dimuat.</h2>
+            <button
+              type="button"
+              className="m-editorial-cta"
+              onClick={() => window.dispatchEvent(new CustomEvent('dekito:products-updated'))}
+            >
+              Coba lagi
             </button>
           </div>
         )}

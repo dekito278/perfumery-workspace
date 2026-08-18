@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, Clipboard, Copy, CreditCard, Download, ExternalLink, Factory, FileCheck2, FlaskConical, History, Loader2, Mail, MessageCircle, NotebookPen, PackageCheck, RefreshCw, Save, Send, Sparkles, Truck, UserRound } from 'lucide-react';
@@ -6,7 +7,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { getNextOrderStatusForPayment, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -26,6 +27,7 @@ import {
   updateOrderInternalNotes,
   updateOrderProductionLinks,
   updateOrderShipment,
+  updateOrderPaymentStatus,
   updateOrderStatus,
 } from '@/services/orderService.js';
 import {
@@ -120,14 +122,6 @@ const getNextOrderTask = (order) => {
   return { label: 'Order complete', helper: 'Everything important is already closed.' };
 };
 
-const parseNoteLines = (notes = '') => String(notes || '')
-  .split('\n')
-  .map((line) => line.trim())
-  .filter(Boolean)
-  .map((line) => {
-    const [label, ...rest] = line.split(':');
-    return { label: label || 'Note', value: rest.join(':').trim() || '-' };
-  });
 
 const bespokeDetailRows = (item) => [
   ['Nama parfum', item?.perfumeName],
@@ -201,6 +195,7 @@ const MobileOrderDetailPage = () => {
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingShipment, setSavingShipment] = useState(false);
   const [savingPaymentProof, setSavingPaymentProof] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
   const [savingBespokeProduction, setSavingBespokeProduction] = useState(false);
   const [savingProductionLinks, setSavingProductionLinks] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
@@ -278,7 +273,7 @@ const MobileOrderDetailPage = () => {
 
   const bespoke = isBespokeOrder(order);
   const bespokeItem = getBespokeItem(order);
-  const noteRows = useMemo(() => parseNoteLines(order?.notes), [order?.notes]);
+  const noteRows = useMemo(() => parseOrderNoteRows(order?.notes), [order?.notes]);
   const activeStep = getActiveStep(order?.status);
   const bespokeProductionStatus = order?.bespokeProductionStatus || 'review_brief';
   const bespokeProductionStep = getBespokeProductionStep(bespokeProductionStatus);
@@ -335,6 +330,27 @@ const MobileOrderDetailPage = () => {
       toast.success('Status order diperbarui');
     } catch (error) {
       toast.error(error.message || 'Gagal memperbarui status order');
+    }
+  };
+
+  // Mobile order detail could read the payment status but never change it, so an admin working from a
+  // phone had to open the desktop page to mark a manual transfer paid (audit round 7).
+  const handlePaymentStatusChange = async (paymentStatus) => {
+    setSavingPayment(true);
+    try {
+      const orderKey = order.id || order.orderNumber;
+      await updateOrderPaymentStatus(orderKey, {
+        paymentStatus,
+        paymentProvider: order.paymentProvider || 'doku',
+        status: getNextOrderStatusForPayment(paymentStatus),
+      });
+      setOrder(await getOrderById(orderId) || order);
+      setPaymentLogs(await getOrderPaymentLogs(orderKey));
+      toast.success('Status pembayaran diperbarui');
+    } catch (error) {
+      toast.error(error.message || 'Gagal memperbarui status pembayaran');
+    } finally {
+      setSavingPayment(false);
     }
   };
 
@@ -803,6 +819,22 @@ const MobileOrderDetailPage = () => {
               <div className="text-[10px] font-bold uppercase text-[#6b7280]">Referensi</div>
               <div className="mt-1 truncate text-sm font-bold text-editorial-charcoal">{order.paymentReference || '-'}</div>
             </div>
+          </div>
+          <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+            <select
+              value={order.paymentStatus}
+              onChange={(event) => handlePaymentStatusChange(event.target.value)}
+              disabled={savingPayment}
+              aria-label="Status pembayaran"
+              className="h-11 rounded-2xl border border-[#e5e7eb] bg-white px-3 text-xs font-bold outline-none focus:border-amber-300 disabled:opacity-60"
+            >
+              {Object.entries(paymentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            {order.paymentStatus !== 'paid' ? (
+              <Button type="button" className="h-11 rounded-2xl px-4 text-xs" onClick={() => handlePaymentStatusChange('paid')} disabled={savingPayment}>
+                {savingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Tandai paid'}
+              </Button>
+            ) : null}
           </div>
           {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
             <Button type="button" className="mt-3 h-11 w-full rounded-2xl gap-2" onClick={() => navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`)}>

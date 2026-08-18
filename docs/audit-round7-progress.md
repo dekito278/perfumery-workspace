@@ -11,7 +11,7 @@ Migrations are written but **never applied** here — each one carries a MANUAL 
 | 1 | Kritis — anon order INSERT, customer PII lookup | done |
 | 2 | Tinggi — RPC anon grants, doku/status guards, payment page, proof review, number parsing, cart links, batch stock | done |
 | 3a | Sedang — server, uang, stok | done |
-| 3b | Sedang — UX customer, divergensi desktop↔mobile | todo |
+| 3b | Sedang — UX customer, divergensi desktop↔mobile | done |
 | 4 | Rendah | todo |
 | 5 | UI mobile A2–A5, B1–B3, C1–C2, D1–D2 | todo |
 
@@ -105,3 +105,35 @@ Checks run: `npm run lint`, all three `*.selfcheck.mjs`, `npm run build`.
   it daily and trigger `/api/orders/expire-reservations` from the DOKU status refresh instead.
 
 Checks run: `npm run lint`, four `*.selfcheck.mjs`, `npm run build`.
+
+## Batch 3b — done (11 severity-sedang: UX customer + divergensi)
+
+- **Mobile order actions failed silently** — the status/payment selects called the throwing hook bare, so
+  a refusal ("order belum lunas", "order sudah dibatalkan") became an unhandled rejection and the select
+  just snapped back. Both now go through `changePaymentStatus` / `changeOrderStatus` with a toast.
+- **Mobile order detail could not change payment status at all** — added the handler and controls, and
+  `getNextOrderStatusForPayment` moved into `orderWorkflow.js`; it existed once in OrderDetailPage, once
+  inline in `useOrders`, and nowhere on mobile.
+- **Shipping label truncated multi-line addresses** — note parsing moved into `src/utils/orderNotes.js`,
+  which reads a value up to the next known key instead of taking one line. It replaces three copies (the
+  label PDF plus both order-detail pages). Covered by `orderNotes.selfcheck.mjs`.
+- **Shipped/delivered timestamps drifted 7 hours per save** — `toDatetimeLocal` now formats in local time,
+  so the datetime-local input and the stored UTC value round-trip.
+- **Quantity changes did not re-price shipping** — a `useEffect` on the parcel weight clears the selected
+  rate, forcing a re-quote before the order can be submitted.
+- **PaymentPage could render another order's session** — both fallbacks apply the `isSessionForOrder`
+  guard that already existed but was only consulted in the early-return branch.
+- **Mobile catalog said "No fragrance matches" while loading** — skeletons while the first fetch runs, and
+  a distinct "katalog belum bisa dimuat / coba lagi" state when the fetch failed, matching CatalogPage.
+- **Mobile journal editor discarded unsaved work** — ported the desktop dirty snapshot, the Back confirm
+  and the beforeunload guard.
+- **Portal reorder charged the old prices** — reorder lines are re-resolved against the live catalog and
+  the draft total is derived from the repriced lines instead of the historical `order.subtotal`.
+- **Mobile formula editor could not record a dilution solvent** — the dilution sheet now has a solvent
+  select (from the same `type === 'solvent'` list the desktop row uses) and refuses to apply a dilution
+  without one, so diluted materials stop being read back as neat.
+
+Still open from this area, moved to batch 4: mobile formula editor does not run the shared
+`validateFormulaItems` before submit.
+
+Checks run: `npm run lint`, five `*.selfcheck.mjs`, `npm run build`.

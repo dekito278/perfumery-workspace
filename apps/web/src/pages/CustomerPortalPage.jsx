@@ -42,6 +42,9 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -815,6 +818,7 @@ const ReorderPaymentPanel = ({
 };
 
 const CustomerPortalPage = () => {
+  const catalogProducts = useCatalogProducts();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
@@ -1188,24 +1192,49 @@ const CustomerPortalPage = () => {
     }
   };
 
-  const buildReorderItems = (order) => getOrderProductItems(order).map((item) => ({
-    id: item.productId || item.id || item.slug || item.name,
-    slug: item.productSlug || item.slug || item.productId || item.name,
-    cartSlug: item.slug || item.productSlug || item.productId || item.name,
-    productSlug: item.productSlug || item.slug,
-    variantId: item.variantId || '',
-    name: item.name,
-    price: item.price || formatTotal(item.priceNumber),
-    priceNumber: item.priceNumber
+  // Reorder lines used to carry the price the buyer paid the first time, and createOrder charges whatever
+  // subtotal it is handed — so a reorder of an item whose price went up was charged at the old price
+  // (audit round 7). Re-resolve every line against the live catalog before building the draft.
+  const repriceReorderItem = (item, catalog) => {
+    const fragrance = catalog.find((product) => (
+      product.slug === (item.productSlug || item.slug) || product.id === item.productId
+    ));
+    if (!fragrance) return null;
+    const variant = (fragrance.variants || []).find((option) => (
+      option.id === item.variantId || option.size === item.size
+    )) || fragrance.variants?.[0];
+    const livePrice = Number(variant?.priceNumber || fragrance.priceNumber || 0);
+    return livePrice > 0 ? livePrice : null;
+  };
+
+  const reorderCatalog = useMemo(
+    () => getPublicFragranceCatalog(catalogProducts.filter(isProductVisibleInStorefront)),
+    [catalogProducts],
+  );
+
+  const buildReorderItems = (order, catalog = []) => getOrderProductItems(order).map((item) => {
+    const livePrice = repriceReorderItem(item, catalog);
+    const quantity = Math.max(Number(item.quantity || 1), 1);
+    const priceNumber = livePrice ?? (item.priceNumber
       ? Number(item.priceNumber)
-      : Number(item.totalPrice || 0) / Math.max(Number(item.quantity || 1), 1),
-    totalPrice: item.totalPrice || Number(item.priceNumber || 0) * Math.max(Number(item.quantity || 1), 1),
-    size: item.size || '',
-    category: item.category || '',
-    notes: item.notes || '',
-    maxStock: Number(item.maxStock || item.stock || 0),
-    quantity: Math.max(Number(item.quantity || 1), 1),
-  }));
+      : Number(item.totalPrice || 0) / quantity);
+    return {
+      id: item.productId || item.id || item.slug || item.name,
+      slug: item.productSlug || item.slug || item.productId || item.name,
+      cartSlug: item.slug || item.productSlug || item.productId || item.name,
+      productSlug: item.productSlug || item.slug,
+      variantId: item.variantId || '',
+      name: item.name,
+      price: formatTotal(priceNumber),
+      priceNumber,
+      totalPrice: priceNumber * quantity,
+      size: item.size || '',
+      category: item.category || '',
+      notes: item.notes || '',
+      maxStock: Number(item.maxStock || item.stock || 0),
+      quantity,
+    };
+  });
 
   const prepareReorderPayment = async (order) => {
     const productItems = getOrderProductItems(order);
@@ -1214,8 +1243,10 @@ const CustomerPortalPage = () => {
       return;
     }
 
-    const reorderItems = buildReorderItems(order);
-    const productSubtotal = getOrderProductsSubtotal(order);
+    const reorderItems = buildReorderItems(order, reorderCatalog);
+    // Derive the subtotal from the repriced lines, not from the historical order, so the amount the buyer
+    // is charged always matches the prices this draft is showing them.
+    const productSubtotal = reorderItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
     const shippingFee = getOrderShippingFee(order);
     const originalVoucherSnapshot = getOrderVoucherSnapshot(order);
     const baseDraft = {
@@ -1226,7 +1257,7 @@ const CustomerPortalPage = () => {
       originalVoucherSnapshot,
       voucherSnapshot: originalVoucherSnapshot,
       voucherMessage: '',
-      totalDue: Number(order.subtotal || productSubtotal + shippingFee),
+      totalDue: productSubtotal + shippingFee,
       checkingVoucher: Boolean(originalVoucherSnapshot?.code),
     };
     setReorderDraft(baseDraft);

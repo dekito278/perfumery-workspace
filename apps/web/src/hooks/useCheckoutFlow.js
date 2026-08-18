@@ -123,6 +123,14 @@ export const useCheckoutFlow = ({
   const totalDue = discountedSubtotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const shippingWeight = useMemo(() => getCheckoutShippingWeight(items), [items]);
+
+  // Changing quantity changes the parcel weight, which changes the courier price. The previously quoted
+  // rate stayed selected, so the buyer saw (and agreed to) an old shipping fee while the order was created
+  // with it — force a re-quote instead (audit round 7).
+  useEffect(() => {
+    setSelectedShipping(null);
+    setShippingOptions([]);
+  }, [shippingWeight]);
   const validPhoneContact = hasValidWhatsAppPhoneNumber(contact);
   const canSubmitCheckout = Boolean(
     items.length

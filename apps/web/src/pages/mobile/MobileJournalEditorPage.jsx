@@ -61,6 +61,10 @@ const MobileJournalEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const [formulas, setFormulas] = useState([]);
   const [formState, setFormState] = useState(createEmptyPost(queryFormulaId));
+  const [savedSnapshot, setSavedSnapshot] = useState('');
+  // Same dirty guard the desktop editor has (JournalEditorPage.jsx:60). Without it, Back threw away a
+  // half-written article with no warning (audit round 7).
+  const isDirty = savedSnapshot !== '' && JSON.stringify(formState) !== savedSnapshot;
 
   useEffect(() => {
     let active = true;
@@ -78,8 +82,10 @@ const MobileJournalEditorPage = () => {
         }
 
         const linkedFormula = formulaRows.find((formula) => formula.id === queryFormulaId);
+        const loadedState = post ? toEditorState(post) : createEmptyPost(queryFormulaId, linkedFormula?.name);
         setFormulas(formulaRows);
-        setFormState(post ? toEditorState(post) : createEmptyPost(queryFormulaId, linkedFormula?.name));
+        setFormState(loadedState);
+        setSavedSnapshot(JSON.stringify(loadedState));
       } catch (error) {
         toast.error('Editor artikel belum bisa dimuat');
         navigate('/mobile/journal');
@@ -102,6 +108,16 @@ const MobileJournalEditorPage = () => {
     [isEditMode]
   );
 
+  useEffect(() => {
+    if (!isDirty) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const handleChange = (field, value) => {
     setFormState((current) => ({
       ...current,
@@ -110,6 +126,9 @@ const MobileJournalEditorPage = () => {
   };
 
   const handleBack = () => {
+    if (isDirty && !window.confirm('Ada tulisan yang belum disimpan. Lanjut dan buang perubahan?')) {
+      return;
+    }
     if (location.state?.from) {
       navigate(location.state.from, { state: { restoreScroll: true } });
       return;
@@ -140,6 +159,7 @@ const MobileJournalEditorPage = () => {
         ? await updateJournalPost(id, payload)
         : await createJournalPost(payload);
 
+      setSavedSnapshot(JSON.stringify(formState));
       toast.success(isEditMode ? 'Artikel diperbarui' : 'Artikel disimpan');
       navigate(`/mobile/journal/${savedPost.id}`);
     } catch (error) {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getNextOrderStatusForPayment } from '@/utils/orderWorkflow.js';
 import {
   clearOrders,
   deleteOrder,
@@ -67,11 +68,7 @@ export const useOrders = () => {
     },
     updateStatus: async (orderId, status) => setOrders(await updateOrderStatus(orderId, status)),
     updatePaymentStatus: async (orderId, paymentStatus) => {
-      const nextOrderStatus = paymentStatus === 'paid'
-        ? 'paid'
-        : ['failed', 'expired'].includes(paymentStatus)
-          ? 'cancelled'
-          : 'pending_payment';
+      const nextOrderStatus = getNextOrderStatusForPayment(paymentStatus);
       // Keep the order's own provider. Hardcoding 'doku' relabelled every manual-transfer order as a DOKU
       // payment the moment an admin marked it paid from a list or a bulk action, so the payment method on
       // record no longer matched how the buyer actually paid.
