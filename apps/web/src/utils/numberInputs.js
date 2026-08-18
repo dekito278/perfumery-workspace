@@ -2,9 +2,28 @@ export const blurNumberInputOnWheel = (event) => {
   event.currentTarget.blur();
 };
 
+// Indonesian number entry: "," is the decimal separator and "." groups thousands, so "150.000" means
+// 150 thousand, not 150. Reading every "." as a decimal point published products at Rp 150 and understated
+// every material cost (audit round 7). One dot followed by exactly three digits is therefore a grouping
+// separator — except after a leading "0", where "0.750" is a real decimal (gram fields rely on that).
+const applyIndonesianSeparators = (raw) => {
+  const text = String(raw ?? '');
+  if (text.includes(',')) {
+    return text.replace(/\./g, '').replace(',', '.');
+  }
+  const dots = (text.match(/\./g) || []).length;
+  if (dots > 1) {
+    return text.replace(/\./g, '');
+  }
+  if (dots === 1 && /^[^.]*[1-9][^.]*\.\d{3}$/.test(text)) {
+    return text.replace('.', '');
+  }
+  return text;
+};
+
 export const normalizeLocalizedDecimalInput = (value, options = {}) => {
   const { autoDecimalAfterLeadingZero = false } = options;
-  const text = String(value ?? '').replace(/,/g, '.');
+  const text = applyIndonesianSeparators(value);
   let normalized = '';
   let hasDecimal = false;
 

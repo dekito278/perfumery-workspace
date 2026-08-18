@@ -66,11 +66,11 @@ const CartPage = () => {
             ) : (
               items.map((item) => (
                 <div key={item.slug} className="cart-line">
-                  <Link to={`/catalog/${item.slug}`} className="cart-line__image">
+                  <Link to={`/catalog/${item.productSlug || item.slug}`} className="cart-line__image">
                     <ProductVisual product={item} imageFit="cover" />
                   </Link>
                   <div className="cart-line__info">
-                    <Link to={`/catalog/${item.slug}`} className="cart-line__name">{item.name}</Link>
+                    <Link to={`/catalog/${item.productSlug || item.slug}`} className="cart-line__name">{item.name}</Link>
                     <span className="cart-line__meta">{[item.notes, item.size].filter(Boolean).join(' · ')}</span>
                     <span className="cart-line__price">{item.price}</span>
                   </div>

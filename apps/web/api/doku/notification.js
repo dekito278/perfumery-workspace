@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
+import { checkDokuOrderTransition, isTerminalCancelStatus } from '../../src/utils/dokuOrderGuards.js';
 
 const NOTIFICATION_TARGET = '/api/doku/notification';
 
@@ -186,30 +187,11 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
   }
 
   const incomingStatus = statusPatch.paymentStatus;
-  const isTerminalCancel = ['failed', 'expired', 'refunded', 'cancelled'].includes(incomingStatus);
+  const isTerminalCancel = isTerminalCancelStatus(incomingStatus);
 
-  // Terminal-state guard: once an order is paid, a late or duplicate failure/expiry
-  // webhook must not flip it back to cancelled or release its stock.
-  if (currentOrder?.payment_status === 'paid' && isTerminalCancel) {
-    return { skipped: 'already_paid' };
-  }
-
-  // Symmetric guard: a late/duplicate 'paid' webhook must NOT resurrect an order that was already
-  // cancelled/expired (its stock was restored and may have been resold). Re-flipping to paid would
-  // re-deduct stock and revive a dead order — needs a manual refund/re-order decision instead.
-  if (incomingStatus === 'paid'
-    && (currentOrder?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(currentOrder?.payment_status))) {
-    return { skipped: 'order_closed' };
-  }
-
-  // Amount verification: never mark an order paid for less than its stored total.
-  if (incomingStatus === 'paid') {
-    const expected = Math.round(Number(currentOrder?.subtotal || 0));
-    const paid = Math.round(Number(paidAmount || 0));
-    if (expected > 0 && paid > 0 && paid < expected) {
-      throw new Error(`DOKU amount mismatch for ${invoiceNumber}: paid ${paid} < expected ${expected}`);
-    }
-  }
+  const verdict = checkDokuOrderTransition({ currentOrder, incomingStatus, paidAmount });
+  if (verdict?.skip) return { skipped: verdict.skip };
+  if (verdict?.error) throw new Error(`${verdict.error} (${invoiceNumber})`);
 
   const endpoint = `${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}`;
   const response = await fetch(endpoint, {

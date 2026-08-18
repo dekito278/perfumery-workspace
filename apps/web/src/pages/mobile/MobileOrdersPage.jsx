@@ -224,6 +224,14 @@ const MobileOrdersPage = () => {
     toast.success(`${order.orderNumber} disalin`);
   };
 
+  const handleDeleteOne = async (orderKey) => {
+    try {
+      await deleteOne(orderKey);
+    } catch (error) {
+      toast.error(error.message || 'Gagal menghapus order');
+    }
+  };
+
   const copyPublicTrackingLink = async (order) => {
     try {
       await navigator.clipboard.writeText(buildPublicTrackingUrl(order.orderNumber));
@@ -650,7 +658,7 @@ const MobileOrdersPage = () => {
                 )}
                 <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyOrder(order)}><Clipboard className="h-4 w-4" />Salin</Button>
                 <Button type="button" variant="outline" className="mobile-interactive mobile-pressable h-12 rounded-2xl gap-2 bg-white text-xs font-bold" onClick={() => copyPublicTrackingLink(order)}><ExternalLink className="h-4 w-4" />Tracking</Button>
-                <Button type="button" variant="outline" className="mobile-interactive mobile-delete-action h-12 rounded-2xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700" onClick={() => deleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
+                <Button type="button" variant="outline" className="mobile-interactive mobile-delete-action h-12 rounded-2xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700" onClick={() => handleDeleteOne(order.id || order.orderNumber)}><Trash2 className="h-4 w-4" />Hapus</Button>
               </div>
             </article>
             );

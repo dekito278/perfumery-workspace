@@ -46,6 +46,12 @@ const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
 // Keep this in sync with the server cron's PAYMENT_RESERVATION_TTL_HOURS (api/orders/expire-reservations.js):
 // both actively cancel manual-transfer reservations, so a mismatch lets the client sweep override the cron.
 export const PAYMENT_RESERVATION_TTL_HOURS = Number(import.meta.env?.VITE_PAYMENT_RESERVATION_TTL_HOURS || 24);
+
+// A cancelled/expired/failed/refunded order is closed: its stock was restored on cancel and may already
+// be resold, so no payment path may quietly revive it. Reviving one is a deliberate manual re-order.
+export const isOrderClosedForPayment = (order = {}) => (
+  order?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(order?.paymentStatus)
+);
 const ACTIVE_RESERVATION_PAYMENT_STATUSES = ['unpaid', 'pending'];
 
 export const isBespokeOrder = (order) => (
@@ -923,6 +929,12 @@ export const reviewOrderPaymentProof = async (orderId, {
   if (!currentOrder?.paymentProofUrl) {
     throw new Error('Bukti transfer belum tersedia');
   }
+  // Approving writes payment_status='paid' directly, which is exactly the transition updateOrderPaymentStatus
+  // refuses on a closed order — but the follow-up call reads the row this function just wrote, so it saw
+  // 'paid' and never fired. The order ended up paid with inventory_deducted still false, i.e. sold twice.
+  if (nextStatus === 'approved' && isOrderClosedForPayment(currentOrder)) {
+    throw new Error('Order ini sudah dibatalkan atau kedaluwarsa. Stoknya sudah dilepas — buat order baru sebelum menyetujui bukti transfer.');
+  }
 
   const normalizedNotes = nextStatus === 'rejected'
     ? String(notes || '').trim() || 'Bukti transfer ditolak admin'
@@ -932,9 +944,13 @@ export const reviewOrderPaymentProof = async (orderId, {
     payment_proof_status: nextStatus,
     payment_proof_notes: normalizedNotes || null,
     payment_proof_uploaded_at: currentOrder.paymentProofUploadedAt || reviewedAt,
+    // A proof is usually reviewed more than TTL hours after checkout, so leaving the original deadline in
+    // place handed the order straight to the expiry sweep — it got cancelled before the buyer could upload
+    // a clearer photo, while the rejection message told them the order was still pending.
     ...(nextStatus === 'rejected' ? {
       payment_status: 'pending',
       status: 'pending_payment',
+      payment_expires_at: new Date(Date.now() + (PAYMENT_RESERVATION_TTL_HOURS * 60 * 60 * 1000)).toISOString(),
     } : {}),
     // Approve proof + mark paid in the SAME write, so a failure of the follow-up updateOrderPaymentStatus
     // can't leave the order stuck at "proof approved but payment still pending". The follow-up call below
@@ -1655,8 +1671,7 @@ export const updateOrderPaymentStatus = async (orderId, {
   // Symmetric guard (mirrors the DOKU webhook): never mark a cancelled/expired order paid. Its stock
   // was restored on cancel and may already be resold; re-flipping to paid re-deducts stock and
   // resurrects a dead order. Reviving a closed order must be a deliberate manual re-order, not this path.
-  if (paymentStatus === 'paid'
-    && (currentOrder?.status === 'cancelled' || ['expired', 'failed', 'refunded'].includes(currentOrder?.paymentStatus))) {
+  if (paymentStatus === 'paid' && isOrderClosedForPayment(currentOrder)) {
     console.warn(`Refusing to mark order ${orderId} paid: order is ${currentOrder?.status}/${currentOrder?.paymentStatus}`);
     return;
   }

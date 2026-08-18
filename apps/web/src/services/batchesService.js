@@ -121,7 +121,10 @@ const toDatabasePayload = (batch, userId) => ({
   sku: batch.sku,
   product_id: batch.product_id,
   status: batch.status,
-  is_stock_deducted: batch.is_stock_deducted,
+  // Deliberately NOT written from the client: deduct_batch_material_stock owns this flag (it sets it and
+  // refuses to deduct twice while it is true). Sending it back meant any save built from stale React state
+  // cleared it — publishing a batch as a product did exactly that, and the next save deducted every raw
+  // material a second time (audit round 7).
   qc_status: batch.qc_status,
   qc_notes: batch.qc_notes,
   qc_checked_at: batch.qc_checked_at,

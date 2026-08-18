@@ -186,6 +186,33 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   );
 };
 
+// Shared success state. A paid order must never be shown a live payment panel again — the DOKU return
+// URL lands back here with the order already paid, and the iframe invited a second payment for the same
+// invoice (audit round 7).
+const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, method }) => (
+  <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
+    <div className="p-6 text-center sm:p-10">
+      <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
+        <CheckCircle2 className="h-7 w-7" />
+      </span>
+      <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>Pembayaran diterima</h1>
+      <p className="mt-2 text-sm font-semibold leading-relaxed text-[#54604d]">
+        Terima kasih. Pembayaran{method ? ` ${method}` : ''} untuk order {orderNumber} sudah masuk. Pesanan akan diproses.
+      </p>
+      <div className="mt-5 flex justify-center gap-2">
+        {customerCode ? (
+          <Link to={compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
+            Lacak pesanan
+          </Link>
+        ) : null}
+        <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
+          Belanja lagi
+        </Link>
+      </div>
+    </div>
+  </section>
+);
+
 const PaymentFrame = ({ session, compact = false }) => {
   const [frameStatus, setFrameStatus] = useState('loading');
 
@@ -197,6 +224,17 @@ const PaymentFrame = ({ session, compact = false }) => {
 
     return () => window.clearTimeout(timeoutId);
   }, [session.paymentUrl]);
+
+  // After the hooks, so the panel can flip to paid without changing hook order.
+  if (session.paymentStatus === 'paid') {
+    return (
+      <PaymentSuccessPanel
+        compact={compact}
+        orderNumber={session.orderNumber || session.invoiceNumber}
+        customerCode={session.customerCode || ''}
+      />
+    );
+  }
 
   const statusCopy = {
     loading: {
@@ -345,7 +383,6 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   const [paid, setPaid] = useState(session.paymentStatus === 'paid');
   const customerCode = session.customerCode || '';
   const orderNumber = session.orderNumber || session.invoiceNumber;
-  const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
 
   useEffect(() => {
     let alive = true;
@@ -393,29 +430,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   };
 
   if (paid) {
-    return (
-      <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
-        <div className="p-6 text-center sm:p-10">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
-            <CheckCircle2 className="h-7 w-7" />
-          </span>
-          <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>Pembayaran diterima</h1>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-[#54604d]">
-            Terima kasih. Pembayaran QRIS untuk order {orderNumber} sudah masuk. Pesanan akan diproses.
-          </p>
-          <div className="mt-5 flex justify-center gap-2">
-            {customerCode ? (
-              <Link to={orderTrackingPath} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
-                Lacak pesanan
-              </Link>
-            ) : null}
-            <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
-              Belanja lagi
-            </Link>
-          </div>
-        </div>
-      </section>
-    );
+    return <PaymentSuccessPanel compact={compact} orderNumber={orderNumber} customerCode={customerCode} method="QRIS" />;
   }
 
   return (
