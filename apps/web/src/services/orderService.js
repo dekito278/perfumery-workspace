@@ -1179,13 +1179,16 @@ export const createOrder = async (orderData) => {
 };
 
 // Rollout flag for authoritative (server-priced) order creation via /api/orders/create.
-// OFF by default: flip VITE_AUTHORITATIVE_ORDERS=true only after smoke-testing the endpoint on staging.
-// See docs/server-side-drafts/05_create_order_design.md.
+// ON by default (audit round 7, finding #1): the client-priced insert lets anyone craft their own
+// subtotal, so it is now the exception, not the default. Set VITE_AUTHORITATIVE_ORDERS=false only as an
+// emergency escape hatch — and note that it stops working entirely once anon INSERT on storefront_orders
+// is revoked (docs/server-side-drafts/07_orders_anon_insert_revoke.sql).
+// See docs/server-side-drafts/05_create_order_design.md and 08_rollout_runbook.md.
 export const authoritativeOrdersEnabled = () => {
   try {
-    return import.meta.env?.VITE_AUTHORITATIVE_ORDERS === 'true';
+    return import.meta.env?.VITE_AUTHORITATIVE_ORDERS !== 'false';
   } catch {
-    return false;
+    return true;
   }
 };
 
@@ -1257,14 +1260,11 @@ export const createBespokeRequest = async (requestData) => {
   };
   const totalPrice = Number(normalizedRequest.totalPrice || normalizedRequest.estimatedTotal || 0);
 
+  // No fallback on failure: falling back re-opened the price-tampering path the endpoint exists to close
+  // (audit round 7, finding #1). A failing endpoint must surface as a failed checkout, not as a silently
+  // client-priced order.
   if (authoritativeOrdersEnabled()) {
-    try {
-      return await createBespokeOrderViaEndpoint(normalizedRequest);
-    } catch (error) {
-      // Endpoint down/misconfigured → keep checkout working via the existing client insert. The buyer is
-      // never blocked; the trade-off is this order stays client-priced until the endpoint is healthy.
-      console.warn('Authoritative bespoke order failed, using direct insert fallback:', error.message || error);
-    }
+    return createBespokeOrderViaEndpoint(normalizedRequest);
   }
 
   return createOrder({

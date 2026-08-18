@@ -111,6 +111,8 @@
 .mobile-app.mobile-keyboard-active .mobile-action-bar--keyboard-stay {
   opacity: 1;
   pointer-events: auto;
+  /* bottom nav is hidden while the keyboard is up, so drop its height from the offset */
+  bottom: var(--mobile-action-gap, 10px);
   transform: translateY(calc(-1 * var(--mobile-keyboard-offset, 0px)));
 }
 
@@ -121,6 +123,7 @@
   body:has([contenteditable="true"]:focus) .mobile-action-bar--keyboard-stay {
     opacity: 1;
     pointer-events: auto;
+    bottom: var(--mobile-action-gap, 10px);
     transform: translateY(calc(-1 * var(--mobile-keyboard-offset, 0px)));
   }
 }
