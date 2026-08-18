@@ -10,7 +10,8 @@ Migrations are written but **never applied** here — each one carries a MANUAL 
 |---|---|---|
 | 1 | Kritis — anon order INSERT, customer PII lookup | done |
 | 2 | Tinggi — RPC anon grants, doku/status guards, payment page, proof review, number parsing, cart links, batch stock | done |
-| 3 | Sedang — order/stock/divergence | todo |
+| 3a | Sedang — server, uang, stok | done |
+| 3b | Sedang — UX customer, divergensi desktop↔mobile | todo |
 | 4 | Rendah | todo |
 | 5 | UI mobile A2–A5, B1–B3, C1–C2, D1–D2 | todo |
 
@@ -67,3 +68,40 @@ Migrations are written but **never applied** here — each one carries a MANUAL 
   none can, on desktop or mobile.
 
 Checks run: `npm run lint`, all three `*.selfcheck.mjs`, `npm run build`.
+
+## Batch 3a — done (10 severity-sedang: server, uang, stok)
+
+- **Voucher release RPC anon-callable** and **payment-proof submit unguarded** —
+  `supabase/migrations/20260819122000_voucher_release_and_payment_proof_hardening.sql` (MANUAL APPLY).
+  Release goes behind the same wrapper pattern as the inventory restore (service-role or `is_admin()`);
+  recording usage stays anon, because buyers do that at checkout. Proof submission now requires the file
+  path to sit under the order's own folder, refuses to overwrite an approved proof, and returns only the
+  fields the buyer's own payment page renders instead of the whole order row.
+  **Known gap left open on purpose:** proof submission still has no ownership check, so a valid order
+  number is enough to attach a file. Closing it needs the security answer in the buyer flow — a UI
+  decision, documented in the migration header.
+- **Bespoke orders bypassed voucher restrictions** — `getVoucherEligibleSubtotal` returned the *full*
+  subtotal when a restricted voucher had no item list to check. It now returns 0: a product/category
+  voucher with nothing to match is not a whole-order voucher. Covered by `voucherValidation.selfcheck.mjs`.
+- **Customer-side order writes were RLS no-ops reporting success** — `/api/doku/checkout` now persists
+  `payment_url`, `payment_reference`, `payment_session_id` and `payment_expires_at` with the service-role
+  key it already holds. That is what the reservation sweep reads, so abandoned DOKU checkouts finally
+  free their stock on time.
+- **Silent refusal on "mark paid"** — `updateOrderPaymentStatus` throws instead of returning quietly, so
+  the `toast.success` that every call site fires after the await no longer lies.
+- **Bulk mark-paid relabelled manual transfers as DOKU** — `useOrders.updatePaymentStatus` passes the
+  order's own provider, matching what OrderDetailPage already did.
+- **Zombie orders when the stock deduct fails** — `createOrder` cancels the row it just inserted before
+  rethrowing, mirroring `api/orders/create.js`.
+- **Product edit reverted stock** — `saveCustomProduct` now carries the row's real `updated_at` (it used
+  to stamp "now" on every normalize) and uses it as an optimistic lock. A stale save is refused with
+  "muat ulang halaman" instead of writing the pre-order variants back over sold stock, and that conflict
+  is never swallowed by the local-draft fallback.
+- **Batch re-publish minted a second product** — both desktop and mobile now match the already-published
+  product by `savedBatch.product_id` first, falling back to the old parameter hash only for batches
+  published before that column was stored.
+- **Reservation sweep ran daily against 60-minute payment windows** — cron moved to `*/15 * * * *`.
+  **Check your Vercel plan:** Hobby allows one cron run per day. If the deploy rejects the schedule, keep
+  it daily and trigger `/api/orders/expire-reservations` from the DOKU status refresh instead.
+
+Checks run: `npm run lint`, four `*.selfcheck.mjs`, `npm run build`.

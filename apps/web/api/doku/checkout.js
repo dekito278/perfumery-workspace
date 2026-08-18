@@ -267,11 +267,39 @@ export default async function handler(request, response) {
       });
     }
 
+    const paymentSessionId = checkoutPayload?.order?.session_id || checkoutPayload?.payment?.token_id || checkoutPayload?.uuid || '';
+    const paymentExpiresAt = parseDokuExpiredDate(checkoutPayload?.payment?.expired_date);
+
+    // Persist the payment window here, with the service-role key. The browser used to write this itself,
+    // but storefront_orders UPDATE is admin-only under RLS, so every customer-side write was filtered out
+    // and PostgREST still answered 200 — the order kept no payment_url and no payment_expires_at, which is
+    // what the reservation sweep reads to free stock (audit round 7).
+    try {
+      const { restUrl, headers } = getSupabaseRestConfig();
+      await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(orderNumber)}`, {
+        method: 'PATCH',
+        headers: { ...headers, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          payment_provider: 'doku',
+          payment_url: paymentUrl,
+          payment_reference: requestId,
+          payment_session_id: paymentSessionId || null,
+          payment_expires_at: paymentExpiresAt || null,
+          payment_response: checkoutPayload,
+          doku_response: checkoutPayload,
+          status: 'pending_payment',
+        }),
+      });
+    } catch (persistError) {
+      // The buyer can still pay — do not fail the checkout over bookkeeping.
+      console.warn('Failed to persist DOKU payment session:', persistError.message || persistError);
+    }
+
     return jsonResponse(response, 200, {
       paymentUrl,
       invoiceNumber: checkoutPayload?.order?.invoice_number || orderNumber,
-      paymentSessionId: checkoutPayload?.order?.session_id || checkoutPayload?.payment?.token_id || checkoutPayload?.uuid || '',
-      paymentExpiresAt: parseDokuExpiredDate(checkoutPayload?.payment?.expired_date),
+      paymentSessionId,
+      paymentExpiresAt,
       dokuResponse: checkoutPayload,
       requestId,
     });

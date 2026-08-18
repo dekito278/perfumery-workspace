@@ -1181,7 +1181,19 @@ export const createOrder = async (orderData) => {
     throw new Error(`Order ${order.orderNumber} gagal tersimpan ke server. Coba lagi sebentar dan jangan lakukan pembayaran sampai order berhasil dibuat.`);
   }
 
-  const inventoryEvents = await deductInventoryForOrder(order);
+  // Mirror api/orders/create.js: if reserving stock fails the just-inserted row must not survive as a
+  // never-payable, never-expiring order — the cron only cancels orders that reserved stock or were given
+  // an explicit payment window, and this one has neither.
+  let inventoryEvents;
+  try {
+    inventoryEvents = await deductInventoryForOrder(order);
+  } catch (stockError) {
+    await supabase
+      .from('storefront_orders')
+      .update({ status: 'cancelled', payment_status: 'expired' })
+      .eq('order_number', order.orderNumber || payload.order_number);
+    throw stockError;
+  }
   if (inventoryEvents.length) {
     await markOrderInventoryDeducted(order.id || order.orderNumber, inventoryEvents);
     return {
@@ -1671,9 +1683,10 @@ export const updateOrderPaymentStatus = async (orderId, {
   // Symmetric guard (mirrors the DOKU webhook): never mark a cancelled/expired order paid. Its stock
   // was restored on cancel and may already be resold; re-flipping to paid re-deducts stock and
   // resurrects a dead order. Reviving a closed order must be a deliberate manual re-order, not this path.
+  // Throw rather than return: every call site follows the await with toast.success, so a silent refusal
+  // told the admin the order was marked paid when nothing had changed.
   if (paymentStatus === 'paid' && isOrderClosedForPayment(currentOrder)) {
-    console.warn(`Refusing to mark order ${orderId} paid: order is ${currentOrder?.status}/${currentOrder?.paymentStatus}`);
-    return;
+    throw new Error(`Order ${currentOrder?.orderNumber || orderId} sudah ${currentOrder?.status === 'cancelled' ? 'dibatalkan' : currentOrder?.paymentStatus}. Stoknya sudah dilepas — buat order baru, jangan tandai paid.`);
   }
 
   const patch = {

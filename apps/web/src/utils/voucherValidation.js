@@ -101,7 +101,11 @@ export const getVoucherEligibleSubtotal = (voucher, items = [], fallbackSubtotal
   const productSlugs = normalizeSlugList(voucher?.eligibleProductSlugs);
   const categories = normalizeCategoryList(voucher?.eligibleCategories);
   if (!productSlugs.length && !categories.length) return toAmount(fallbackSubtotal);
-  if (!items?.length) return toAmount(fallbackSubtotal);
+  // A restricted voucher with no item list to check against is NOT a whole-order voucher. Falling back to
+  // the full subtotal let a product/category-restricted voucher discount an order it should never touch —
+  // the authoritative endpoint hits this on every bespoke order, where the catalog item list is empty
+  // (audit round 7).
+  if (!items?.length) return 0;
 
   return getVoucherEligibleItems(voucher, items).reduce((sum, item) => (
     sum + (toAmount(item.priceNumber) * Math.max(toAmount(item.quantity), 0))

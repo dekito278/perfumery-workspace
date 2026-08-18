@@ -72,9 +72,13 @@ export const useOrders = () => {
         : ['failed', 'expired'].includes(paymentStatus)
           ? 'cancelled'
           : 'pending_payment';
+      // Keep the order's own provider. Hardcoding 'doku' relabelled every manual-transfer order as a DOKU
+      // payment the moment an admin marked it paid from a list or a bulk action, so the payment method on
+      // record no longer matched how the buyer actually paid.
+      const target = orders.find((order) => order.id === orderId || order.orderNumber === orderId);
       await updateOrderPaymentStatus(orderId, {
         paymentStatus,
-        paymentProvider: 'doku',
+        paymentProvider: target?.paymentProvider || 'doku',
         status: nextOrderStatus,
       });
       setOrders(await getOrders());
