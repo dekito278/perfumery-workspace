@@ -54,6 +54,11 @@ const CartPage = () => {
         <section className="cart-layout" data-reveal>
           {/* Cart items */}
           <div className="cart-items">
+            {items.some((item) => item.priceChanged) ? (
+              <p className="cart-line__meta" role="status">
+                Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+              </p>
+            ) : null}
             {!items.length ? (
               <div className="cart-empty">
                 <ShoppingBag className="h-10 w-10" />

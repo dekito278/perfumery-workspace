@@ -1,7 +1,14 @@
 // DOKU SNAP QRIS (MPM) generate — native in-app payment (no DOKU iframe).
 // Flow: get a B2B access token (asymmetric RSA-SHA256 signature), then call qr-mpm-generate
 // (symmetric HMAC-SHA512 signature). Returns the QRIS string (qrContent) which the frontend renders
-// as a QR code. Payment is confirmed via the DOKU SNAP payment notification webhook (see notification.js).
+// as a QR code.
+//
+// NOT YET CONFIRMABLE (audit round 7): notification.js still only understands the Jokul notification
+// envelope, and status.js polls the Jokul checkout API, so a SNAP QRIS payment never marks its order paid.
+// Add a SNAP branch to notification.js — verify X-SIGNATURE as HMAC-SHA512 over
+// `POST:<path>:<accessToken>:<sha256hex(body)>:<X-TIMESTAMP>`, then map partnerReferenceNo +
+// latestTransactionStatus through mapDokuStatus — and verify it against the DOKU sandbox BEFORE setting
+// VITE_QRIS_ENABLED=true. Until then this endpoint is dark code behind that flag.
 //
 // Env (all runtime; set SANDBOX values on Vercel Preview scope, PRODUCTION values on Production scope):
 //   DOKU_ENVIRONMENT       'sandbox' | 'production' (already used by checkout.js)

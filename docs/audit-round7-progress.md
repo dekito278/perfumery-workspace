@@ -13,7 +13,7 @@ Migrations are written but **never applied** here — each one carries a MANUAL 
 | 3a | Sedang — server, uang, stok | done |
 | 3b | Sedang — UX customer, divergensi desktop↔mobile | done |
 | 4a | Rendah — API, timezone, divergensi kecil | done |
-| 4b | Rendah — cart, copy Indonesia, QRIS, brief-intent | todo |
+| 4b | Rendah — cart, copy Indonesia, QRIS, brief-intent | done |
 | 5 | UI mobile A2–A5, B1–B3, C1–C2, D1–D2 | todo |
 
 ## Batch 1 — done
@@ -168,3 +168,29 @@ Checks run: `npm run lint`, five `*.selfcheck.mjs`, `npm run build`.
   a lost tab can find its way back to the payment page.
 
 Checks run: `npm run lint`, six `*.selfcheck.mjs`, `npm run build`.
+
+## Batch 4b — done (7 severity-rendah)
+
+- **The cart was a frozen snapshot** — new pure `src/utils/cartReconcile.js`, applied inside `useCart`, so
+  every consumer (cart page, summary, and the order the buyer is charged for) sees the live price, the real
+  per-variant stock cap and the current image. That closes three findings at once: a week-old cart charged
+  at last week's price, the quantity cap that was dead because public products carry no stock, and the
+  placeholder gradient on the desktop cart. A changed price is flagged to the buyer on the cart page.
+  Covered by `cartReconcile.selfcheck.mjs` (which caught a wrong fixture of mine — the "deleted product"
+  case still matched by product id).
+- **English copy on the buyer-facing mobile pages** — catalog and product detail now use the desktop
+  Indonesian wording (Koleksi, Cari notes…, Tampilkan lagi, Stok habis, Masukkan keranjang).
+- **Mobile formula editor skipped validation** — both mobile formula pages run the shared
+  `validateFormulaItems` over the same shape `buildItemsForSubmit` sends, so an incomplete dilution is
+  refused on mobile exactly as it is on desktop.
+- **/api/brief-intent was unauthenticated and unmetered** — a per-IP window (8 calls/minute) falls back to
+  the deterministic intent instead of the billed LLM call. Marked `ponytail:` — it is per-instance memory,
+  so a fleet multiplies the effective limit; move it to a shared store only if the logs show abuse.
+- **QRIS can never be confirmed — documented, deliberately NOT implemented.** Generating the QR works, but
+  `notification.js` only parses Jokul-format notifications and `status.js` polls the Jokul API, so a SNAP
+  QRIS payment would never mark its order paid. Writing the SNAP signature branch blind, with no sandbox
+  credentials to verify against, would be worse than leaving it absent — a wrong HMAC silently rejects real
+  payments. Both `api/doku/qris.js` and the `VITE_QRIS_ENABLED` flag in `cartService.js` now carry a
+  DO-NOT-ENABLE-YET warning naming the exact missing piece.
+
+Checks run: `npm run lint`, seven `*.selfcheck.mjs`, `npm run build`.

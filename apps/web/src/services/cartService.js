@@ -1,4 +1,5 @@
 import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+export { reconcileCartLines } from '@/utils/cartReconcile.js';
 
 export const CART_STORAGE_KEY = 'dekito.storefront.cart.v1';
 
@@ -23,6 +24,13 @@ export const QRIS_PAYMENT = {
 
 // QRIS stays hidden until DOKU provisions the merchantId/terminalId for qr-mpm-generate
 // (see api/doku/qris.js). Flip VITE_QRIS_ENABLED=true at go-live to surface it in checkout.
+//
+// DO NOT FLIP THIS YET — a QRIS payment currently cannot be confirmed (audit round 7). Generating the QR
+// works, but nothing marks the order paid afterwards: api/doku/notification.js only parses Jokul-format
+// notifications, while SNAP QRIS posts a different envelope (partnerReferenceNo + latestTransactionStatus,
+// signed as HMAC-SHA512 over POST:<path>:<accessToken>:<sha256hex(body)>:<X-TIMESTAMP>), and
+// api/doku/status.js polls the Jokul checkout API, which does not know the SNAP reference. Enabling QRIS
+// without that webhook branch means buyers pay and their orders sit unpaid until someone notices.
 const QRIS_ENABLED = String(import.meta.env.VITE_QRIS_ENABLED || '').toLowerCase() === 'true';
 
 export const checkoutPaymentMethods = [

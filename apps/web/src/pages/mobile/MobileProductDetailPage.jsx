@@ -52,11 +52,11 @@ const MobileProductDetailPage = () => {
   if (!product) {
     return (
       <MobileCommerceLayout>
-        <Helmet><title>Not found - SOLIVAGANT</title></Helmet>
+        <Helmet><title>Tidak ditemukan - SOLIVAGANT</title></Helmet>
         <main className="mobile-page m-editorial-page">
           <div className="m-editorial-empty">
             <p className="m-editorial-eyebrow">NOT FOUND</p>
-            <h2>This fragrance doesn't exist.</h2>
+            <h2>Fragrance ini tidak ditemukan.</h2>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
               Back to Collection <ChevronLeft className="h-3.5 w-3.5" />
             </button>
@@ -75,8 +75,8 @@ const MobileProductDetailPage = () => {
   const soldOut = !selectedAvailable;
 
   const addSelectedVariant = () => {
-    if (previewMode) { toast.error('Preview — cart disabled'); return; }
-    if (soldOut) { toast.error('Out of stock'); return; }
+    if (previewMode) { toast.error('Mode preview — keranjang dimatikan'); return; }
+    if (soldOut) { toast.error('Stok habis'); return; }
     addItem({
       ...product,
       cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
@@ -120,7 +120,7 @@ const MobileProductDetailPage = () => {
           {previewMode ? (
             <div className="m-editorial-pdp__preview-badge">
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>Admin preview — cart disabled</span>
+              <span>Preview admin — keranjang dimatikan</span>
             </div>
           ) : null}
 
@@ -154,7 +154,7 @@ const MobileProductDetailPage = () => {
               >
                 {product.variants.map((v) => {
                   const key = v.id || v.size;
-                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? ' (Sold out)' : ''}</option>;
+                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? ' (Stok habis)' : ''}</option>;
                 })}
               </select>
             </div>
@@ -204,7 +204,7 @@ const MobileProductDetailPage = () => {
             </div>
             <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
               <ShoppingBag className="h-4 w-4" />
-              {previewMode ? 'Preview' : soldOut ? 'Sold out' : 'Add to Cart'}
+              {previewMode ? 'Preview' : soldOut ? 'Stok habis' : 'Masukkan keranjang'}
             </button>
           </div>
         </StickyBottomActionBar>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { validateFormulaItems } from '@/utils/formulaCalculations.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClipboardList, FileUp } from 'lucide-react';
@@ -251,6 +252,20 @@ const MobileCreateFormulaPage = () => {
 
   const handleSubmit = async () => {
     if (!validate()) return;
+    // Run the same shared validation the desktop modals run, on the same shape buildItemsForSubmit sends.
+    // Mobile skipped it entirely, so an incomplete dilution (a percentage with no solvent) saved silently
+    // and came back wrong (audit round 7).
+    const itemErrors = validateFormulaItems(itemsWithInsights.map((item) => ({
+      item_type: item.item_type,
+      item_id: item.item_id,
+      gram_amount: item.gram_amount ?? item.gram,
+      dilution_percent: item.dilution_type === 'neat' ? '' : (item.concentration_percent || item.dilution_percent),
+      dilution_solvent_id: item.dilution_solvent_id,
+    })));
+    if (itemErrors.length) {
+      toast.error(itemErrors[0]);
+      return;
+    }
     try {
       const created = await createFormula({ name, code, category, version: version || null, status, notes: notes || null }, buildItemsForSubmit(itemsWithInsights));
       if (orderContext) {

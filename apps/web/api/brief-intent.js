@@ -161,6 +161,32 @@ export const buildFallbackIntent = (freeText, reason) => {
   };
 };
 
+// The bespoke wizard is genuinely public, so this endpoint cannot require auth — but it calls a paid LLM
+// on the owner's account, unauthenticated and unmetered (audit round 7). A caller over the limit gets the
+// deterministic fallback intent, so the wizard keeps working; only the billed call is skipped.
+// ponytail: per-instance in-memory window — a serverless fleet multiplies the effective limit. Move to a
+// shared store (or a WAF rule) if abuse actually shows up in the logs.
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_CALLS = 8;
+const recentCalls = new Map();
+
+const isRateLimited = (key) => {
+  const now = Date.now();
+  const fresh = (recentCalls.get(key) || []).filter((at) => now - at < RATE_LIMIT_WINDOW_MS);
+  if (recentCalls.size > 500) recentCalls.clear();
+  if (fresh.length >= RATE_LIMIT_MAX_CALLS) {
+    recentCalls.set(key, fresh);
+    return true;
+  }
+  fresh.push(now);
+  recentCalls.set(key, fresh);
+  return false;
+};
+
+const getCallerKey = (req) => String(
+  req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown',
+).split(',')[0].trim();
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -177,6 +203,10 @@ export default async function handler(req, res) {
 
   if (process.env.DISABLE_BRIEF_AI_INTENT === '1') {
     return res.status(200).json(buildFallbackIntent(freeText, 'AI intent disabled by environment'));
+  }
+
+  if (isRateLimited(getCallerKey(req))) {
+    return res.status(200).json(buildFallbackIntent(freeText, 'Rate limited'));
   }
 
   try {

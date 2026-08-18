@@ -60,16 +60,16 @@ export const MobileCatalogContent = ({ active = true }) => {
     <>
       {active ? (
         <Helmet>
-          <title>Collection - SOLIVAGANT</title>
-          <meta name="description" content="Browse the SOLIVAGANT fragrance collection." />
+          <title>Koleksi - SOLIVAGANT</title>
+          <meta name="description" content="Jelajahi koleksi fragrance SOLIVAGANT." />
         </Helmet>
       ) : null}
 
       <main className="mobile-page m-editorial-page">
         {/* Header */}
         <section className="m-editorial-catalog-header">
-          <p className="m-editorial-eyebrow">FRAGRANCE COLLECTION</p>
-          <h1>Collection</h1>
+          <p className="m-editorial-eyebrow">KOLEKSI FRAGRANCE</p>
+          <h1>Koleksi</h1>
         </section>
 
         {/* Search */}
@@ -79,7 +79,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search notes, mood, name..."
+            placeholder="Cari notes, mood, atau nama..."
           />
         </div>
 
@@ -131,7 +131,7 @@ export const MobileCatalogContent = ({ active = true }) => {
           </div>
         ) : catalogProducts.length ? (
           <div className="m-editorial-empty">
-            <p className="m-editorial-eyebrow">NO MATCH</p>
+            <p className="m-editorial-eyebrow">TIDAK ADA HASIL</p>
             <h2>Tidak ada fragrance yang cocok.</h2>
             <button type="button" className="m-editorial-cta" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
               Reset filter
@@ -154,7 +154,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         {visible.length < filtered.length ? (
           <div className="m-editorial-load-more">
             <button type="button" className="m-editorial-cta" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
-              Show more <ArrowRight className="h-3.5 w-3.5" />
+              Tampilkan lagi <ArrowRight className="h-3.5 w-3.5" />
             </button>
             <span>{visible.length} of {filtered.length}</span>
           </div>
