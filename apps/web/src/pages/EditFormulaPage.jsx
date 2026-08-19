@@ -614,6 +614,19 @@ const EditFormulaPage = () => {
 
   const persistSeededFormulaItems = async (stageItems) => {
     const seededComposerItems = buildComposerItemsFromProjectStageItems(stageItems, rawMaterials, referenceLinksMap);
+    // Seeding replaces the entire saved composition, so a single wizard candidate click used to wipe out
+    // everything the perfumer had already weighed in. Only seed into an empty composer; once there is real
+    // work in it, add the wizard's materials without touching the existing rows (audit round 8).
+    const existingActiveItems = formulaItems.filter((item) => item.item_id && Number(item.gram_amount || 0) > 0);
+    if (existingActiveItems.length) {
+      const existingIds = new Set(existingActiveItems.map((item) => item.item_id));
+      const additions = seededComposerItems.filter((item) => item.item_id && !existingIds.has(item.item_id));
+      if (additions.length) {
+        replaceFormulaItems([...existingActiveItems, ...additions]);
+        toast.success(`${additions.length} material wizard ditambahkan. Komposisi lama tetap utuh — tekan Save kalau sudah pas.`);
+      }
+      return;
+    }
     const activeSeededItems = seededComposerItems.filter((item) => item.item_id || item.gram_amount || item.dilution_percent || item.dilution_solvent_id);
     const seededTotalAmount = calculateTotalAmount(activeSeededItems);
     const seededItemsWithPercentages = seededTotalAmount > 0
@@ -643,7 +656,18 @@ const EditFormulaPage = () => {
     setLinkedProject(nextProject);
     setLinkedProjectStageItems(nextProjectStageItems);
     setWizardStageItemsMap(nextStageMap);
-    replaceFormulaItems(buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials, referenceLinksMap));
+    // Same rule as persistSeededFormulaItems: never replace a composition the perfumer has already built.
+    // The round-8 guard only covered the persist path and this one still wiped the composer (audit round 8,
+    // second pass).
+    const seeded = buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials, referenceLinksMap);
+    const existingActive = formulaItems.filter((item) => item.item_id && Number(item.gram_amount || 0) > 0);
+    if (existingActive.length) {
+      const existingIds = new Set(existingActive.map((item) => item.item_id));
+      const additions = seeded.filter((item) => item.item_id && !existingIds.has(item.item_id));
+      if (additions.length) replaceFormulaItems([...existingActive, ...additions]);
+    } else {
+      replaceFormulaItems(seeded);
+    }
     return nextProjectStageItems;
   };
 

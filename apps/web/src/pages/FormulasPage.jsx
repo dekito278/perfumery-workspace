@@ -53,16 +53,23 @@ const FormulasPage = () => {
 
       const [validationLogs, metricEntries] = await Promise.all([
         getValidationLogs(),
+        // Per-formula metrics are decoration; one failed items query used to reject the whole Promise.all
+        // and drop the entire formula list into the error state (audit round 8).
         Promise.all(
           data.map(async (formula) => {
-            const items = await getFormulaItems(formula.id);
-            return [
-              formula.id,
-              {
-                itemCount: items.length,
-                totalGrams: calculateTotalAmount(items),
-              },
-            ];
+            try {
+              const items = await getFormulaItems(formula.id);
+              return [
+                formula.id,
+                {
+                  itemCount: items.length,
+                  totalGrams: calculateTotalAmount(items),
+                },
+              ];
+            } catch (metricError) {
+              console.warn(`Formula metrics unavailable for ${formula.code || formula.id}:`, metricError.message || metricError);
+              return [formula.id, { itemCount: null, totalGrams: null }];
+            }
           })
         ),
       ]);

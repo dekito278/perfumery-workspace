@@ -63,6 +63,7 @@ const MobileEditFormulaPage = () => {
   const { getFormulaItems } = useFormulaItems();
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [legacyAccordItems, setLegacyAccordItems] = useState([]);
   const [formula, setFormula] = useState(null);
   const [originalItems, setOriginalItems] = useState([]);
   const [name, setName] = useState('');
@@ -98,6 +99,11 @@ const MobileEditFormulaPage = () => {
         setVersion(formulaRow.version || '');
         setStatus(formulaRow.status || 'draft');
         setNotes(formulaRow.notes || '');
+        // Legacy accord rows are not editable here, but updateFormula replaces the whole item set — so
+        // filtering them out of the editor used to delete them from the formula on the next save. Desktop
+        // keeps them aside and blocks the update until they are cleaned up; mobile now keeps them too and
+        // re-submits them untouched (audit round 8).
+        setLegacyAccordItems((itemRows || []).filter((item) => item.item_type === 'accord'));
         const formatted = (itemRows || []).filter((item) => item.item_type !== 'accord').map((item) => {
           const material = enrichedMaterialRows.find((entry) => entry.id === item.item_id);
           return createItem(material || { id: item.item_id, type: item.item_type }, item.grams ?? item.percentage ?? 1, item);
@@ -228,7 +234,19 @@ const MobileEditFormulaPage = () => {
       return;
     }
     try {
-      await updateFormula(id, { name, code, category, version: version || null, status, notes: notes || null }, buildItemsForSubmit(itemsWithInsights));
+      await updateFormula(
+        id,
+        { name, code, category, version: version || null, status, notes: notes || null },
+        [...buildItemsForSubmit(itemsWithInsights), ...legacyAccordItems.map((item) => ({
+          item_type: item.item_type,
+          item_id: item.item_id,
+          percentage: item.percentage,
+          grams: item.grams,
+          dilution_percent: item.dilution_percent ?? null,
+          dilution_solvent_id: item.dilution_solvent_id || null,
+          concentrate_amount: item.concentrate_amount ?? null,
+        }))],
+      );
       toast.success('Revision saved');
       navigate(`/mobile/formulas/${id}`);
     } catch (error) {

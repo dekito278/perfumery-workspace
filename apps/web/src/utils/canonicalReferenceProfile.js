@@ -610,11 +610,16 @@ const mergeDistributionCandidates = (adapters) => {
       share: Number(entry.share || 0) * (adapter.priority / 100),
     })));
 
+  // Keyword inference is a hint, never a verdict. At 0.35 it outscored an explicitly chosen family
+  // entered through the material form (SOURCE_PRIORITIES.raw_material_form = 18 -> 0.18), so a description
+  // mentioning another family's descriptor could flip the ABC family the composer doses by. Keep the
+  // weight below the lowest explicit priority (fallback = 12 -> 0.12) so any stated family wins
+  // (audit round 8).
   const textCorpus = adapters.map((adapter) => adapter.text).filter(Boolean).join(' | ');
   const inferred = buildDistributionFromText(textCorpus)
     .map((entry) => ({
       letter: entry.letter,
-      share: Number(entry.share || 0) * 0.35,
+      share: Number(entry.share || 0) * 0.10,
     }));
 
   return normalizeDistribution([...explicit, ...inferred]);
@@ -981,9 +986,14 @@ export const buildCanonicalReferencePayload = ({
   };
 };
 
+// An empty object is "I have nothing to contribute", not "wipe what is stored". Opening the guidance
+// quick-edit from a page that does not load guidance_reference_profile produced `{}` here, which then
+// erased every imported reference snapshot on the material (audit round 8).
+const hasEntries = (value) => Boolean(value) && Object.keys(value).length > 0;
+
 export const createReferenceMetadataPatch = ({ sourceSnapshots = null, fieldLocks = null } = {}) => ({
-  __referenceSourceSnapshots: sourceSnapshots ? normalizeSourceSnapshots(sourceSnapshots) : null,
-  __referenceFieldLocks: fieldLocks ? normalizeFieldLocks(fieldLocks) : null,
+  __referenceSourceSnapshots: hasEntries(sourceSnapshots) ? normalizeSourceSnapshots(sourceSnapshots) : null,
+  __referenceFieldLocks: hasEntries(fieldLocks) ? normalizeFieldLocks(fieldLocks) : null,
 });
 
 export const REFERENCE_FIELD_KEYS = FIELD_KEYS;

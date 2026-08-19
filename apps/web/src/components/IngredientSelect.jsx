@@ -46,16 +46,19 @@ const getEditDistance = (left, right) => {
   return previous[right.length];
 };
 
+// A longer query means MORE confidence about what the perfumer wants, not less choice. Returning 1 past
+// three characters meant typing "vanil" offered a single material with no way to see the near misses —
+// and the material library has several close names (audit round 8).
 const getSuggestionLimit = (term) => {
   if (term.length <= 1) {
     return 6;
   }
 
   if (term.length <= 3) {
-    return 4;
+    return 5;
   }
 
-  return 1;
+  return 4;
 };
 
 const scoreIngredientMatch = (ingredientName, rawQuery) => {

@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { sanitizeOrFilterSearch } from '@/utils/likePattern.js';
 import { toAppRecord } from '@/services/supabaseDataHelpers.js';
 import { buildCanonicalReferencePayload, resolveCanonicalReferenceProfile } from '@/utils/canonicalReferenceProfile.js';
 
@@ -366,9 +367,7 @@ export const getPrimaryReferenceRawMaterialIds = async ({
         .in('id', idChunk);
 
       if (normalizedSearch) {
-        // Neutralise ilike wildcards (% _) AND PostgREST or() structural chars ( , ( ) . \ * ) so a
-        // query like "foo)" can't break the or=(...) group into a parse error.
-        const escapedQuery = normalizedSearch.replace(/[%_,()\\.*]/g, ' ');
+        const escapedQuery = sanitizeOrFilterSearch(normalizedSearch);
         profileQuery = profileQuery.or([
           `reference_code.ilike.%${escapedQuery}%`,
           `name.ilike.%${escapedQuery}%`,

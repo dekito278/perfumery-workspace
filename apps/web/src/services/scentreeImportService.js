@@ -1,5 +1,17 @@
 const API_BASE_URL = '/api';
 
+// The three URL importers are served by a Vite dev plugin (vite.config.js: scentreeImportDevPlugin, loaded
+// only when isDev). Production has no /api/imports/* handler, and vercel.json rewrites /api/(.*) to
+// not-found — so every import button returned a 404 the UI reported as a generic failure. Fail with the
+// truth instead, and let the UI hide the buttons entirely (audit round 8).
+export const URL_IMPORT_AVAILABLE = Boolean(import.meta.env?.DEV);
+
+const assertUrlImportAvailable = () => {
+  if (!URL_IMPORT_AVAILABLE) {
+    throw new Error('Import via URL hanya tersedia saat menjalankan dev server — belum ada endpoint-nya di production.');
+  }
+};
+
 const parseImportResponse = async (response, fallbackMessage) => {
 	const responseText = await response.text();
 	let payload = {};
@@ -41,6 +53,7 @@ export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
 };
 
 export const importScentreeByUrl = async (url) => {
+	assertUrlImportAvailable();
 	const response = await fetch(`${API_BASE_URL}/imports/scentree`, {
 		method: 'POST',
 		headers: {
@@ -53,6 +66,7 @@ export const importScentreeByUrl = async (url) => {
 };
 
 export const importPerfumersWorldByUrl = async (url) => {
+	assertUrlImportAvailable();
 	const response = await fetch(`${API_BASE_URL}/imports/perfumersworld`, {
 		method: 'POST',
 		headers: {
@@ -69,6 +83,7 @@ export const importPerfumersWorldByUrl = async (url) => {
 };
 
 export const importTgscByUrl = async (url) => {
+	assertUrlImportAvailable();
 	const response = await fetch(`${API_BASE_URL}/imports/tgsc`, {
 		method: 'POST',
 		headers: {

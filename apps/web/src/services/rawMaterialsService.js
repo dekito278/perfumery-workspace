@@ -1,5 +1,6 @@
 
 import supabase from '@/lib/supabaseClient.js';
+import { sanitizeOrFilterSearch } from '@/utils/likePattern.js';
 import { deriveScentFamilyFromCategory, inferRawMaterialTypeFromCategory } from '@/utils/rawMaterialCategoryMeta.js';
 import {
   getPrimaryReferenceRawMaterialIds,
@@ -443,6 +444,12 @@ const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
   return null;
 };
 
+// `%` and `_` are LIKE wildcards. Material names legitimately contain `%` — every stocked dilution row is
+// named like "Iso E Super 10%" — so an unescaped ilike matched the wrong row: silently merging a new
+// material into an unrelated one on create, and permanently blocking the save on edit (audit round 8).
+// PostgREST has no bind parameters here, so escape the pattern itself.
+const escapeLikePattern = (value) => String(value || '').replace(/([\\%_])/g, '\\$1');
+
 const findExistingRawMaterialByName = async (userId, name) => {
   const normalizedName = String(name || '').trim();
   if (!normalizedName) {
@@ -453,7 +460,7 @@ const findExistingRawMaterialByName = async (userId, name) => {
     .from('raw_materials')
     .select('*')
     .eq('user_id', userId)
-    .ilike('name', normalizedName)
+    .ilike('name', escapeLikePattern(normalizedName))
     .limit(1)
     .maybeSingle();
 
@@ -475,7 +482,7 @@ const findExistingRawMaterialByWorkbookCode = async (userId, workbookCode, exclu
     .from('raw_materials')
     .select('*')
     .eq('user_id', userId)
-    .ilike('workbook_code', normalizedWorkbookCode)
+    .ilike('workbook_code', escapeLikePattern(normalizedWorkbookCode))
     .limit(1);
 
   if (excludedRawMaterialId) {
@@ -542,7 +549,7 @@ export const getRawMaterialsPage = async ({
       .range(from, to);
 
     if (normalizedSearch) {
-      const escapedQuery = normalizedSearch.replace(/[%_,]/g, ' ');
+      const escapedQuery = sanitizeOrFilterSearch(normalizedSearch);
       const searchConditions = [
         `name.ilike.%${escapedQuery}%`,
         `category.ilike.%${escapedQuery}%`,
@@ -581,7 +588,14 @@ export const getRawMaterialsPage = async ({
       ].join(','));
     }
 
-    if (!lightweight && (referenceFilter === 'matched' || referenceFilter === 'ifra_limited' || referenceFilter === 'has_guidance')) {
+    // materialReferenceService already resolves ids for the four review-status filters, but this list
+    // never included them — so picking "Approved PW", "Approved external", "Provisional" or "Conflict"
+    // left the table completely unfiltered (audit round 8).
+    const PROFILE_SCOPED_FILTERS = [
+      'matched', 'ifra_limited', 'has_guidance',
+      'approved_pw', 'approved_external', 'provisional_review', 'conflict_review',
+    ];
+    if (!lightweight && PROFILE_SCOPED_FILTERS.includes(referenceFilter)) {
       if (!referenceScope.hasFilteredIds) {
         return {
           items: [],
@@ -1109,35 +1123,37 @@ export const mergeRawMaterialIntoMaster = async (masterId, duplicateId) => {
   }
 };
 
+// Every `on delete restrict` foreign key to raw_materials, so the confirm dialog lists what will actually
+// block the delete. It used to check formula_items only, and told the librarian a material was ready to
+// delete while accords, batches and usage records still pointed at it — the delete then failed at the DB
+// with a raw constraint error (audit round 8).
+const countRefs = (table, column, id, extra) => {
+  let query = supabase.from(table).select('id', { count: 'exact', head: true }).eq(column, id);
+  if (extra) query = extra(query);
+  return query;
+};
+
 export const getRawMaterialDeletionDependencies = async (id) => {
-  const [
-    formulaUsageResult,
-    formulaDilutionUsageResult,
-  ] = await Promise.all([
-    supabase
-      .from('formula_items')
-      .select('id', { count: 'exact', head: true })
-      .in('item_type', ['raw_material', 'solvent'])
-      .eq('item_id', id),
-    supabase
-      .from('formula_items')
-      .select('id', { count: 'exact', head: true })
-      .eq('dilution_solvent_id', id),
-  ]);
+  const checks = [
+    ['formula items', 'formula_items', 'item_id', (q) => q.in('item_type', ['raw_material', 'solvent'])],
+    ['formula dilution solvents', 'formula_items', 'dilution_solvent_id', null],
+    ['accord items', 'accord_items', 'raw_material_id', null],
+    ['accord dilution solvents', 'accord_items', 'dilution_solvent_id', null],
+    ['batches using it as solvent', 'batches', 'solvent_id', null],
+    ['batch usage records', 'batch_usage_records', 'raw_material_id', null],
+  ];
 
-  const dependencyErrors = [
-    formulaUsageResult,
-    formulaDilutionUsageResult,
-  ].filter((result) => result.error);
+  const results = await Promise.all(checks.map(([, table, column, extra]) => countRefs(table, column, id, extra)));
 
-  if (dependencyErrors.length) {
-    throw dependencyErrors[0].error;
+  // A table that does not exist in this deployment must not block the whole preview.
+  const fatal = results.find((result) => result.error && !/does not exist|schema cache/i.test(result.error.message || ''));
+  if (fatal) {
+    throw fatal.error;
   }
 
-  return [
-    { label: 'formula items', count: formulaUsageResult.count || 0 },
-    { label: 'formula dilution solvents', count: formulaDilutionUsageResult.count || 0 },
-  ].filter((entry) => entry.count > 0);
+  return checks
+    .map(([label], index) => ({ label, count: results[index]?.count || 0 }))
+    .filter((entry) => entry.count > 0);
 };
 
 export const deleteRawMaterial = async (id, { skipDependencyCheck = false } = {}) => {

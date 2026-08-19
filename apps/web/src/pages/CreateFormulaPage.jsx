@@ -135,6 +135,18 @@ const CreateFormulaPage = () => {
     };
   }, [replaceFormulaItems, seedMaterialIds]);
 
+  // A composition in progress is real work — leaving used to discard it with no prompt (audit round 8).
+  const hasUnsavedComposition = formulaItems.some((item) => item.item_id || Number(item.gram_amount || 0) > 0)
+    || Boolean(name.trim())
+    || Boolean(code.trim());
+
+  const handleBackToFormulas = () => {
+    if (hasUnsavedComposition && !window.confirm('Formula ini belum disimpan. Tinggalkan dan buang perubahan?')) {
+      return;
+    }
+    navigate('/formulas');
+  };
+
   const handleMobileLibraryPick = (itemId) => {
     handleLibraryDoubleClick(itemId);
     setMobileLibraryOpen(false);
@@ -341,7 +353,7 @@ const CreateFormulaPage = () => {
         <div className="mb-4 shrink-0">
           <Button
             variant="ghost"
-            onClick={() => navigate('/formulas')}
+            onClick={handleBackToFormulas}
             className="gap-2 mb-4 h-9"
           >
             <ChevronLeft className="w-4 h-4" />

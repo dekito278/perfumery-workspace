@@ -135,11 +135,15 @@ export const uploadStoryMedia = async (productSlug, category, file) => {
   }
 
   const ext = extFromMime(file.type);
-  const path = `${productSlug}/${category}.${ext}`;
+  // Content-addressed, never overwriting. The old fixed path plus upsert:true meant picking a new image
+  // replaced the file the public page was already serving — before the writer saved, and with no way back
+  // if they then abandoned the edit (audit round 8). Unreferenced files are swept at save time.
+  const token = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const path = `${productSlug}/${category}-${token}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
 
   if (uploadError) throw new Error(uploadError.message);
 
@@ -148,6 +152,32 @@ export const uploadStoryMedia = async (productSlug, category, file) => {
     .getPublicUrl(path);
 
   return `${urlData.publicUrl}?t=${Date.now()}`;
+};
+
+// Delete every file under the product's folder that the saved story no longer references. This replaces
+// the old "delete immediately when the writer clicks remove" behaviour, which destroyed live media before
+// the change was saved (audit round 8).
+export const sweepUnreferencedStoryMedia = async (productSlug, referencedUrls = []) => {
+  if (!productSlug) return;
+
+  const referenced = new Set(
+    referencedUrls
+      .filter(Boolean)
+      .map((url) => String(url).split('?')[0].split('/').pop())
+      .filter(Boolean)
+  );
+
+  const { data: files, error } = await supabase.storage.from(BUCKET).list(productSlug, { limit: 200 });
+  if (error || !Array.isArray(files)) return;
+
+  const orphans = files
+    .map((file) => file.name)
+    .filter((name) => name && !referenced.has(name))
+    .map((name) => `${productSlug}/${name}`);
+
+  if (orphans.length) {
+    await supabase.storage.from(BUCKET).remove(orphans);
+  }
 };
 
 export const deleteStoryMedia = async (productSlug, category) => {

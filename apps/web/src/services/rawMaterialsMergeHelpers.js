@@ -122,6 +122,11 @@ export const buildMergedRawMaterialData = (masterRecord, duplicateRecord) => ({
   cost_per_unit: Number(masterRecord.cost_per_unit || 0) > 0
     ? Number(masterRecord.cost_per_unit || 0)
     : Number(duplicateRecord.cost_per_unit || 0),
+  // Stock is physical: two rows for the same material hold two real quantities on the shelf, and the
+  // duplicate row is deleted right after this. Spreading masterRecord alone silently destroyed the
+  // duplicate's stock on every merge (audit round 8).
+  stock_quantity: Number(masterRecord.stock_quantity || 0) + Number(duplicateRecord.stock_quantity || 0),
+  minimum_stock: Math.max(Number(masterRecord.minimum_stock || 0), Number(duplicateRecord.minimum_stock || 0)),
 });
 
 export const moveRowsByRawMaterialId = async ({

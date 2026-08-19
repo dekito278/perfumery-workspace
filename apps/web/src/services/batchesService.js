@@ -200,8 +200,11 @@ export const saveBatch = async (input) => {
     window.dispatchEvent(new CustomEvent('dekito:batches-updated'));
     return normalizeBatch(toAppRecord(data));
   } catch (error) {
-    console.warn('Saving batch locally because database save failed:', error.message || error);
-    return saveLocalBatch(batch);
+    // Keep a local draft for recovery, but NEVER return it as a success: the caller toasts "Batch saved"
+    // and moves on, while the batch — and the stock deduction keyed to its id — exists only in this
+    // browser and vanishes on reload (audit round 8).
+    saveLocalBatch(batch);
+    throw new Error(`Batch gagal tersimpan ke server: ${error.message || error}. Draft lokal disimpan, coba lagi sebelum melanjutkan produksi.`);
   }
 };
 

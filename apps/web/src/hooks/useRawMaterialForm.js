@@ -274,13 +274,13 @@ export const useRawMaterialForm = ({ open, material = null }) => {
 
       if (field === 'category') {
         const meta = getRawMaterialCategoryMeta(normalizedValue, previous.type, previous.scent_family);
-        const previousCategoryCode = findPerfumersWorldCategoryByValue(previous.category)?.code || '';
-        const nextCategoryCode = findPerfumersWorldCategoryByValue(normalizedValue)?.code || '';
         next.type = meta.type;
         next.scent_family = meta.scentFamily;
-        if (nextCategoryCode && (!previous.workbook_code || previous.workbook_code === previousCategoryCode)) {
-          next.workbook_code = nextCategoryCode;
-        }
+        // Do NOT derive workbook_code from the category. The category code is a single letter (A-Z) while
+        // workbook_code is a per-material identifier under a unique index — so the auto-fill gave every
+        // material in a category the same code, and createRawMaterial's first match stage is workbook code.
+        // The second material in any category therefore matched the first, was never inserted, and the
+        // modal closed reporting success (audit round 8).
       }
 
       return next;

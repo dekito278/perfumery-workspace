@@ -162,7 +162,13 @@ const MobileRawMaterialEditorPage = () => {
       } else {
         const created = await addMaterial(buildPayload(formState));
         triggerMobileHaptic('success');
-        toast.success('Material added');
+        // The service may match an existing row instead of inserting. Desktop says so; mobile used to
+        // report "Material added" and navigate to the OTHER material's page (audit round 8).
+        if (created?._creationResolution?.action === 'matched_existing') {
+          toast.warning(`${created._creationResolution.message} Material baru TIDAK dibuat.`);
+        } else {
+          toast.success('Material added');
+        }
         navigate(created?.id ? `/mobile/raw-material/${created.id}` : '/mobile/raw-materials');
       }
     } catch (error) {

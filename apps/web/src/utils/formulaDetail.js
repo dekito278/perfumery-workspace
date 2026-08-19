@@ -45,7 +45,13 @@ export const buildPacedRevisionItems = (items, recommendations) => {
     percentage: Number(item.percentage || 0),
     sort_order: item.sort_order ?? index,
     grams: roundToThree(item.gram_amount || item.grams || 0),
-    dilution_percent: item.dilution_percentage ?? item.dilution_percent ?? null,
+    // A material that is stocked pre-diluted carries its own dilution_percentage; copying it onto the row
+    // is intended (it is what the workbench displays). But a percent with no solvent id fails
+    // validateFormulaItems, which then blocks the save with an error the perfumer cannot act on — so the
+    // pair travels together or not at all (audit round 8).
+    dilution_percent: (item.dilution_solvent_id || null)
+      ? (item.dilution_percentage ?? item.dilution_percent ?? null)
+      : (item.dilution_percent ?? null),
     dilution_solvent_id: item.dilution_solvent_id || null,
     concentrate_amount: item.concentrate_amount ?? null,
   }));
