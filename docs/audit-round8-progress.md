@@ -9,7 +9,7 @@ reasoning cannot be reproduced from the code.
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
 | Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
 | Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + all HIGH + the consequential MEDIUM done |
-| Journal editor | — | todo |
+| Journal editor | 27 live / 0 unreachable / 2 refuted | HIGH batch done; MEDIUM/LOW pending |
 
 ## Formula workbench — HIGH batch (done)
 
@@ -275,3 +275,46 @@ Nine MEDIUM and ten LOW, none of them data-destroying. The notable ones: the sam
 different effective concentrations for the same IFRA check (three call sites each compute it their own
 way); the PDF importer parses the workbook's own totals but never verifies them; and several mobile
 filters are applied client-side to only the first page of rows.
+
+## Journal editor — high batch (done)
+
+Everything here is public-facing, so the ranking is different from the other modules: a defect is visible
+to buyers and to search engines, not just to the owner.
+
+- **HIGH — any signed-in shopper could publish to the storefront.** `journal_posts` writes are gated on
+  self-ownership (`auth.uid() = user_id`, 20260519145000:13-23), the public read is author-blind
+  (`status = 'published'`, 20260519150000:23-25), and **no lockdown migration ever touched this table** —
+  only the seven `20260519*` files mention it. Customer Google login makes any shopper `authenticated`, so
+  an account plus the anon key from the JS bundle is enough to insert a published article that appears on
+  /journal with the shop's branding and Article JSON-LD. The owner would never see it: the studio list is
+  scoped to their own rows. This is the third table to be missed by the same sweep, after the storage
+  buckets and `product_stories` in round 6.
+- **MEDIUM — unpublishing a product story did not unpublish it.** `product_stories` is
+  `for select using (true)`, and the only thing honouring the `enabled` switch is JavaScript
+  (`fetchStoryConfig`). Draft hero copy for unreleased products was one anon REST call away.
+
+Both are in `supabase/migrations/20260819124000_journal_and_story_public_access_lockdown.sql`
+(**MANUAL APPLY**). Journal writes now require `is_admin() and auth.uid() = user_id` — ownership is kept, so
+nothing changes for the owner; what goes away is a non-admin being able to write at all. Story reads become
+`enabled or is_admin()`.
+
+- **HIGH — the story editor had no unsaved-work guard.** Changing the product dropdown re-ran the loader
+  and replaced the in-memory story wholesale, discarding everything unsaved without a word. It now carries
+  the same dirty snapshot, `beforeunload` listener and confirm the journal editors use.
+- **HIGH — the story editor wrote and deleted live media before the writer saved.** Uploads went to a fixed
+  path with `upsert: true`, so picking a new image replaced the file the public page was already serving;
+  removing an image deleted the live file immediately. Uploads are now content-addressed with
+  `upsert: false`, removal only drops the reference, and a save-time sweep deletes every file under the
+  product's folder that the saved story no longer references — replaced images, removed sections and
+  abandoned uploads together.
+
+Checks: `npm run lint`, eleven `*.selfcheck.mjs`, `npm run build`.
+
+### Still open in this module
+
+Two more HIGH (the same finding from two dimensions: **published articles are never prerendered**, so every
+shared `/articles/<slug>` link previews as the generic site card — a marketing problem rather than a
+correctness one, and a build-tooling change), plus 9 MEDIUM and 13 LOW. Notable: unpublishing an article
+destroys its publication date and republishing back-stamps it to today; the public slug is frozen at first
+save from the working title with no way to change it; product stories are desktop-only, so phone visitors
+are redirected to a page that never loads; and inline markdown images render as a stray "!" plus a link.

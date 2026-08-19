@@ -16,7 +16,7 @@ import {
   upsertStory,
   deleteStory,
   uploadStoryMedia,
-  deleteStoryMedia,
+  sweepUnreferencedStoryMedia,
 } from '@/services/productStoryService.js';
 import { invalidateStoryCache } from '@/hooks/useProductStory.js';
 
@@ -83,14 +83,11 @@ const MediaUploadButton = ({ slug, category, accept, label, currentUrl, onUpload
     }
   };
 
-  const handleRemove = async () => {
-    try {
-      await deleteStoryMedia(slug, category);
-      onUploaded(null);
-      toast.success(`${label} dihapus`);
-    } catch (err) {
-      toast.error(err.message);
-    }
+  // Drop the reference only. The file is swept at save time, so abandoning the edit leaves the live page
+  // exactly as it was (audit round 8).
+  const handleRemove = () => {
+    onUploaded(null);
+    toast.success(`${label} dilepas — tekan Simpan untuk menerapkannya`);
   };
 
   return (
@@ -242,29 +239,49 @@ const StoryEditorPage = () => {
   const [showAddSection, setShowAddSection] = useState(false);
   // Section ids present at load — used on save to clean up media for sections the user removed.
   const loadedSectionIdsRef = useRef([]);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
 
   useEffect(() => {
     fetchAllStories().then(setExistingStories).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!selectedSlug) { setStory(null); return; }
+    if (!selectedSlug) { setStory(null); setSavedSnapshot(''); return; }
     setLoading(true);
     fetchStory(selectedSlug)
       .then((row) => {
         const withIds = withSectionIds(row ? storyFromRow(row) : emptyStory(selectedSlug));
         loadedSectionIdsRef.current = (withIds.sections || []).map((section) => section.id);
         setStory(withIds);
+        setSavedSnapshot(JSON.stringify(withIds));
       })
       .catch(() => {
         const withIds = withSectionIds(emptyStory(selectedSlug));
         loadedSectionIdsRef.current = (withIds.sections || []).map((section) => section.id);
         setStory(withIds);
+        setSavedSnapshot(JSON.stringify(withIds));
       })
       .finally(() => setLoading(false));
   }, [selectedSlug]);
 
+  // Same dirty guard the journal editors have. Switching the product dropdown re-runs the loader and
+  // replaces `story` wholesale, so an unsaved story used to vanish without a word (audit round 8).
+  const isDirty = Boolean(story) && savedSnapshot !== '' && JSON.stringify(story) !== savedSnapshot;
+
+  useEffect(() => {
+    if (!isDirty) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const selectProduct = (slug) => {
+    if (isDirty && !window.confirm('Story ini belum disimpan. Pindah produk dan buang perubahan?')) {
+      return;
+    }
     setSearchParams(slug ? { product: slug } : {});
   };
 
@@ -318,12 +335,17 @@ const StoryEditorPage = () => {
     setSaving(true);
     try {
       await upsertStory(selectedSlug, story);
-      // Clean up media for sections removed since load so their files aren't orphaned in storage.
-      const currentIds = new Set((story.sections || []).map((section) => section.id));
-      const removedIds = loadedSectionIdsRef.current.filter((id) => id && !currentIds.has(id));
-      await Promise.all(removedIds.map((id) => deleteStoryMedia(selectedSlug, `section-${id}`).catch(() => {})));
-      loadedSectionIdsRef.current = [...currentIds];
+      // Sweep every file under this product's folder that the saved story no longer references — removed
+      // sections, replaced images, and abandoned uploads all at once.
+      const referencedUrls = [];
+      JSON.stringify(story, (key, value) => {
+        if (typeof value === 'string' && value.includes('/product-stories/')) referencedUrls.push(value);
+        return value;
+      });
+      await sweepUnreferencedStoryMedia(selectedSlug, referencedUrls).catch(() => {});
+      loadedSectionIdsRef.current = (story.sections || []).map((section) => section.id);
       invalidateStoryCache(selectedSlug);
+      setSavedSnapshot(JSON.stringify(story));
       toast.success('Story tersimpan!');
       fetchAllStories().then(setExistingStories).catch(() => {});
     } catch (err) {
