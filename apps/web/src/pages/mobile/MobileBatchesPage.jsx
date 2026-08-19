@@ -389,15 +389,19 @@ const MobileBatchesPage = () => {
   const formulaRatio = concentration / 100;
   const solventPrice = Number(priceOverrides.get(selectedSolventId) ?? selectedSolvent?.cost_per_unit ?? 0);
   const solventPriceDraft = priceDrafts[selectedSolventId] ?? String(solventPrice || '');
+  // Scale the weighing rows to the CONCENTRATE, not the finished batch — see BatchProductionPage for the
+  // full reasoning. These same rows are exported as the bench PDF, so the printed sheet was 1/ratio too
+  // large on every line (audit round 8).
+  const concentrateBaseGrams = targetValue * formulaRatio;
   const concentrateRows = useMemo(
-    () => buildScaledRows(formulaProfile?.items || [], targetValue, formulaProfile?.totalGrams || 0, priceOverrides, priceDrafts),
-    [formulaProfile, priceDrafts, priceOverrides, targetValue]
+    () => buildScaledRows(formulaProfile?.items || [], concentrateBaseGrams, formulaProfile?.totalGrams || 0, priceOverrides, priceDrafts),
+    [formulaProfile, priceDrafts, priceOverrides, concentrateBaseGrams]
   );
 
   const concentrateCost = concentrateRows.reduce((sum, item) => sum + item.cost, 0);
   const pricedRows = concentrateRows.filter((item) => Number(item.unitPrice || 0) > 0).length;
   const visibleConcentrateRows = concentrateRows.slice(0, visibleRows);
-  const concentrateCostPerGram = targetValue > 0 ? concentrateCost / targetValue : 0;
+  const concentrateCostPerGram = concentrateBaseGrams > 0 ? concentrateCost / concentrateBaseGrams : 0;
   const dilutionFormulaGrams = targetValue * formulaRatio;
   const dilutionSolventGrams = Math.max(targetValue - dilutionFormulaGrams, 0);
   const dilutionFormulaCost = concentrateCostPerGram * dilutionFormulaGrams;
@@ -688,7 +692,7 @@ const MobileBatchesPage = () => {
         buildFormulaWorkbookExportConfig({
           formula: {
             ...selectedFormula,
-            name: `${selectedFormula.name} - ${formatGramAmount(targetValue)} batch`,
+            name: `${selectedFormula.name} - konsentrat ${formatGramAmount(concentrateBaseGrams)} untuk batch ${formatGramAmount(targetValue)}`,
           },
           items: concentrateRows.map((item) => ({
             ...item,
@@ -698,7 +702,7 @@ const MobileBatchesPage = () => {
             percentage: item.percentage,
             unit_price: item.unitPrice,
           })),
-          totalGrams: targetValue,
+          totalGrams: concentrateBaseGrams,
           totalCost: concentrateCost,
         }),
         `${selectedFormula.code || 'formula'}_${formatQuantity(targetValue, 0)}g_batch.pdf`

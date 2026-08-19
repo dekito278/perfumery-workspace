@@ -157,13 +157,26 @@ const BatchProductionPage = () => {
 
       const rows = await getBatches({ formulaId: selectedFormulaId });
       setBatchHistory(rows);
-      setSavedBatch(rows[0] || null);
-      setBatchStatus(rows[0]?.status || 'planned');
-      setQcStatus(rows[0]?.qc_status || 'pending');
-      setQcNotes(rows[0]?.qc_notes || '');
+      const latest = rows[0] || null;
+      setSavedBatch(latest);
+      setBatchStatus(latest?.status || 'planned');
+      setQcStatus(latest?.qc_status || 'pending');
+      setQcNotes(latest?.qc_notes || '');
+      // Saving updates THIS batch by id, so the form has to show its parameters. It used to keep the page
+      // defaults, which meant simply opening a formula armed a save that would rewrite the last batch's
+      // volume, ratio, bottle size and loss with values nobody typed (audit round 8).
+      if (latest) {
+        if (latest.target_quantity) setTargetMl(String(latest.target_quantity));
+        if (latest.bottle_ml) setBottleMl(String(latest.bottle_ml));
+        if (latest.loss_percent !== null && latest.loss_percent !== undefined) setLossPercent(String(latest.loss_percent));
+        if (latest.solvent_id) setSelectedSolventId(latest.solvent_id);
+        if (latest.selling_price) setSellingPrice(String(latest.selling_price));
+        if (latest.formula_percentage) updateRetailInput('formulaPercentage', String(latest.formula_percentage));
+      }
     };
 
     loadBatchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFormulaId]);
 
   useEffect(() => {
@@ -191,12 +204,18 @@ const BatchProductionPage = () => {
   const lossValue = clampPercentage(parseNumberInput(lossPercent));
   const formulaItems = useMemo(() => formulaProfile?.items || [], [formulaProfile?.items]);
   const totalFormulaGrams = Number(formulaProfile?.totalGrams || 0);
+  // The rows are the CONCENTRATE weighing sheet, so they scale to formulaMl (targetValue x the formula
+  // ratio), not to the finished batch volume. Scaling to targetValue made every row 1/ratio too large —
+  // 5x at the default 20% — while deduct_batch_material_stock consumed formula_quantity_needed (= formulaMl).
+  // A perfumer following the sheet made 5x the concentrate they had diluent for, and the printed sheet
+  // disagreed with the usage ledger right below it (audit round 8).
+  const concentrateBaseGrams = targetValue * formulaRatio;
   const concentrateRows = useMemo(() => {
-    if (!formulaItems.length || !targetValue || !totalFormulaGrams) return [];
+    if (!formulaItems.length || !concentrateBaseGrams || !totalFormulaGrams) return [];
     return formulaItems.map((item, index) => {
       const formulaGram = Number(item.gram_amount || item.grams || 0);
       const percentage = totalFormulaGrams > 0 ? (formulaGram / totalFormulaGrams) * 100 : 0;
-      const batchGram = (targetValue * percentage) / 100;
+      const batchGram = (concentrateBaseGrams * percentage) / 100;
       const unitPrice = Number(item.unit_price || 0);
       const dilutionPercent = getFormulaItemDilutionPercent(item);
       const dilutionSolventName = getFormulaItemDilutionSolventName(item);
@@ -215,10 +234,10 @@ const BatchProductionPage = () => {
         unitPrice,
       };
     });
-  }, [formulaItems, targetValue, totalFormulaGrams]);
+  }, [formulaItems, concentrateBaseGrams, totalFormulaGrams]);
 
   const concentrateCost = concentrateRows.reduce((sum, item) => sum + Number(item.cost || 0), 0);
-  const concentrateCostPerMl = targetValue > 0 ? concentrateCost / targetValue : 0;
+  const concentrateCostPerMl = concentrateBaseGrams > 0 ? concentrateCost / concentrateBaseGrams : 0;
   const formulaMl = targetValue * formulaRatio;
   const solventMl = Math.max(targetValue - formulaMl, 0);
   const solventCostPerMl = selectedSolvent ? calculateIngredientCost(1, Number(selectedSolvent.cost_per_unit || 0)) : 0;
@@ -627,7 +646,7 @@ const BatchProductionPage = () => {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-bold">Raw material breakdown</h2>
-                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Formula diskalakan ke batch {formatNumber(targetValue, 1)} ml.</p>
+                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Konsentrat untuk batch {formatNumber(targetValue, 1)} ml: timbang {formatNumber(concentrateBaseGrams, 2)} ml total, lalu encerkan dengan {formatNumber(solventMl, 2)} ml {selectedSolvent?.name || 'solvent'}.</p>
                 </div>
                 <StatusChip tone={concentrateRows.length ? 'success' : 'neutral'}>{concentrateRows.length} materials</StatusChip>
               </div>

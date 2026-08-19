@@ -88,10 +88,12 @@ export const validateComposerFields = ({ name, code, formulaItems, activeFormula
     errors.ingredients = ingredientErrors.join(', ');
   }
 
+  // Key by the row's own id, not its position: inserting or removing a row shifted every index below it,
+  // so an error stayed pinned to a position that now held a different material (audit round 8).
   const materialIds = new Set();
   formulaItems.forEach((item, index) => {
     if (item.item_id && materialIds.has(item.item_id)) {
-      errors[`item_${index}`] = 'Duplicate material';
+      errors[`item_${item.row_key || index}`] = 'Duplicate material';
     } else if (item.item_id) {
       materialIds.add(item.item_id);
     }
@@ -204,9 +206,11 @@ export const useFormulaComposer = ({
       }
       return Math.max(0, current > index ? current - 1 : current);
     });
+    const removedRowKey = formulaItems[index]?.row_key;
     setValidationErrors((current) => {
       const nextErrors = { ...current };
       delete nextErrors[`item_${index}`];
+      if (removedRowKey) delete nextErrors[`item_${removedRowKey}`];
       return nextErrors;
     });
   };
