@@ -527,24 +527,17 @@ export const useCheckoutFlow = ({
         paymentProvider: paymentMethodDetails.provider,
         voucherSnapshot,
       };
-      let order = null;
-      if (authoritativeOrdersEnabled()) {
-        try {
-          order = await createCatalogOrderViaEndpoint(orderData, {
-            shippingDestinationId: selectedDestination?.id || '',
-            shippingDestination: selectedDestination || null,
-            shippingCourier: selectedShipping?.courierCode || '',
-            shippingService: selectedShipping?.service || '',
-            voucherCode,
-          });
-        } catch (endpointError) {
-          // Endpoint down/misconfigured → keep checkout working via the existing client insert.
-          console.warn('Authoritative order failed, using direct insert fallback:', endpointError.message || endpointError);
-        }
-      }
-      if (!order) {
-        order = await createOrder(orderData);
-      }
+      // No fallback on failure: falling back re-opened the price-tampering path the endpoint exists to
+      // close (audit round 7, finding #1). A failing endpoint must surface as a failed checkout.
+      const order = authoritativeOrdersEnabled()
+        ? await createCatalogOrderViaEndpoint(orderData, {
+          shippingDestinationId: selectedDestination?.id || '',
+          shippingDestination: selectedDestination || null,
+          shippingCourier: selectedShipping?.courierCode || '',
+          shippingService: selectedShipping?.service || '',
+          voucherCode,
+        })
+        : await createOrder(orderData);
       createdOrder = order;
       // Charge the order's authoritative subtotal (equals checkoutTotalDue on the direct-insert path).
       const paymentAmount = Number(order.subtotal) || checkoutTotalDue;

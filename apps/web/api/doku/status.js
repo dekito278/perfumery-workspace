@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
+import { checkDokuOrderTransition, isTerminalCancelStatus } from '../../src/utils/dokuOrderGuards.js';
 
 const STATUS_TARGET_PREFIX = '/orders/v1/status';
 
@@ -155,7 +156,7 @@ const releaseVoucherUsageForOrder = async (order) => {
   }
 };
 
-const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => {
+const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidAmount = 0 }) => {
   const { restUrl, headers } = getSupabaseRestConfig();
   const currentOrder = await getOrderByInvoice(invoiceNumber);
 
@@ -164,11 +165,11 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference }) => 
   }
 
   const incomingStatus = statusPatch.paymentStatus;
-  const isTerminalCancel = ['failed', 'expired', 'refunded', 'cancelled'].includes(incomingStatus);
+  const isTerminalCancel = isTerminalCancelStatus(incomingStatus);
 
-  if (currentOrder.payment_status === 'paid' && isTerminalCancel) {
-    return { skipped: 'already_paid' };
-  }
+  const verdict = checkDokuOrderTransition({ currentOrder, incomingStatus, paidAmount });
+  if (verdict?.skip) return { skipped: verdict.skip };
+  if (verdict?.error) throw new Error(`${verdict.error} (${invoiceNumber})`);
 
   const response = await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(invoiceNumber)}`, {
     method: 'PATCH',
@@ -352,6 +353,7 @@ export default async function handler(request, response) {
         invoiceNumber,
         statusPatch,
         paymentReference: dokuData?.transaction?.original_request_id || requestId,
+        paidAmount: Number(dokuData?.order?.amount || dokuData?.transaction?.amount || 0),
       });
     } catch (syncError) {
       syncApplied = false;

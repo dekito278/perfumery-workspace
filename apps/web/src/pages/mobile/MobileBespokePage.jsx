@@ -289,8 +289,10 @@ const MobileBespokePage = () => {
       ...current,
       customerCode: customer.customerCode,
       customerName: customer.customerName,
-      contact: customer.contact,
-      deliveryAddress: customer.deliveryAddress || '',
+      // The public lookup no longer returns contact/address (they were harvestable by code guessing —
+      // see 20260819120000_customer_lookup_pii_lockdown.sql), so keep whatever the buyer already typed.
+      contact: customer.contact && customer.contact !== '-' ? customer.contact : current.contact,
+      deliveryAddress: customer.deliveryAddress || current.deliveryAddress,
     }));
     updateDestinationSearch(customer.deliveryArea || '');
     toast.success(`${customer.customerCode} loaded`);

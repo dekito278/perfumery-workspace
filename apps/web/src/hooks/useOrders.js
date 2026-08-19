@@ -79,7 +79,15 @@ export const useOrders = () => {
       });
       setOrders(await getOrders());
     },
-    deleteOne: async (orderId) => setOrders(await deleteOrder(orderId)),
+    // Confirm here rather than at each call site: the mobile list used to hard-delete a live order on a
+    // single mis-tap because only the desktop page asked first (audit round 7).
+    deleteOne: async (orderId) => {
+      if (typeof window !== 'undefined'
+        && !window.confirm('Hapus order ini permanen? Stok yang direservasi akan dikembalikan dan tindakan ini tidak bisa dibatalkan.')) {
+        return;
+      }
+      setOrders(await deleteOrder(orderId));
+    },
     clearAll: () => {
       clearOrders();
       setOrders([]);
