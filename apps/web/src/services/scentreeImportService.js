@@ -1,15 +1,19 @@
+import supabase from '@/lib/supabaseClient.js';
+
 const API_BASE_URL = '/api';
 
-// The three URL importers are served by a Vite dev plugin (vite.config.js: scentreeImportDevPlugin, loaded
-// only when isDev). Production has no /api/imports/* handler, and vercel.json rewrites /api/(.*) to
-// not-found — so every import button returned a 404 the UI reported as a generic failure. Fail with the
-// truth instead, and let the UI hide the buttons entirely (audit round 8).
-export const URL_IMPORT_AVAILABLE = Boolean(import.meta.env?.DEV);
+// These now run as real serverless functions in apps/web/api/imports/, sharing the scrapers with the Vite
+// dev plugin. They were dev-only middleware before, so every import button 404'd in production
+// (audit round 8). The endpoints are admin-only, so the studio session's token rides along.
+export const URL_IMPORT_AVAILABLE = true;
 
-const assertUrlImportAvailable = () => {
-  if (!URL_IMPORT_AVAILABLE) {
-    throw new Error('Import via URL hanya tersedia saat menjalankan dev server — belum ada endpoint-nya di production.');
+const authHeaders = async () => {
+  const { data: { session } = {} } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+  if (!accessToken) {
+    throw new Error('Sesi studio berakhir. Masuk lagi untuk mengimpor dari URL.');
   }
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` };
 };
 
 const parseImportResponse = async (response, fallbackMessage) => {
@@ -35,9 +39,7 @@ const importPerfumersWorldByGet = async (url) => {
 	const query = new URLSearchParams({ url });
 	const response = await fetch(`${API_BASE_URL}/imports/perfumersworld?${query.toString()}`, {
 		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-		},
+		headers: { ...(await authHeaders()), Accept: 'application/json' },
 	});
 
 	return parseImportResponse(response, 'Failed to import PerfumersWorld data');
@@ -53,12 +55,9 @@ export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
 };
 
 export const importScentreeByUrl = async (url) => {
-	assertUrlImportAvailable();
 	const response = await fetch(`${API_BASE_URL}/imports/scentree`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
+		headers: await authHeaders(),
 		body: JSON.stringify({ url }),
 	});
 
@@ -66,12 +65,9 @@ export const importScentreeByUrl = async (url) => {
 };
 
 export const importPerfumersWorldByUrl = async (url) => {
-	assertUrlImportAvailable();
 	const response = await fetch(`${API_BASE_URL}/imports/perfumersworld`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
+		headers: await authHeaders(),
 		body: JSON.stringify({ url }),
 	});
 
@@ -83,12 +79,9 @@ export const importPerfumersWorldByUrl = async (url) => {
 };
 
 export const importTgscByUrl = async (url) => {
-	assertUrlImportAvailable();
 	const response = await fetch(`${API_BASE_URL}/imports/tgsc`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
+		headers: await authHeaders(),
 		body: JSON.stringify({ url }),
 	});
 

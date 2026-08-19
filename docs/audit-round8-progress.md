@@ -344,3 +344,21 @@ could open. `materialCompositionProfile.js` is untouched: `formulaPipeline` and
 `supabase/migrations/20260819125000_drop_brief_tables.sql` drops the five tables. It is **optional and
 destructive** — the only migration here that destroys data — and carries the row counts that were verified
 before it was written, plus a query to re-check them. Not running it costs nothing but clutter.
+
+## The three URL importers now work in production
+
+They existed only as Vite dev middleware (`plugins/scentree-import-dev-plugin.js`, loaded when `isDev`),
+and production rewrites `/api/(.*)` to not-found — so Scentree, PerfumersWorld and TGSC imports had never
+worked in the deployed app.
+
+The scraping logic moved out of the plugin into `src/utils/materialImportScrapers.js` (runtime-agnostic:
+fetch and string parsing only), and both the dev plugin and three new serverless endpoints under
+`apps/web/api/imports/` now run **the same code** — the plugin shrank from 676 to 92 lines. Shared plumbing
+lives in `api/imports/_handler.js` (underscore-prefixed so Vercel does not route it).
+
+The endpoints are **admin-only**. `assertAdmin` moved out of `api/formula/import-pdf.js` into
+`src/utils/apiAdminAuth.js` so there is one copy rather than a fourth, and the client sends the studio
+session's token the same way the PDF import already did. Upstream failures log server-side and return a
+plain message instead of the scraper's internals.
+
+The "dev only" warning band added earlier is removed — the capability is real now.
