@@ -7,7 +7,7 @@ reasoning cannot be reproduced from the code.
 | Module | Findings | Status |
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
-| Brief AI | 35 confirmed / 3 refuted | audited; module is dormant, awaiting an owner decision |
+| Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
 | Material reference | — | todo |
 | Journal editor | — | todo |
 
@@ -147,3 +147,53 @@ Is the brief wizard a feature you still want?
 
 Full finding list: `/private/tmp/.../scratchpad/m2.json` in this session; the important ones are summarised
 above.
+
+## Brief AI — the owner chose deletion, and my first attempt at it failed
+
+Decision recorded: remove the module. I attempted it in this session and **backed out**. The tree is
+unchanged. What happened is worth writing down, because the next attempt should not repeat it.
+
+### What is genuinely safe to delete
+
+Nothing outside `EditFormulaPage.jsx` has a live consumer:
+
+- services: `briefAiIntentService`, `briefAiInterpretationsService`, `briefsSupabaseService`,
+  `briefProjectsSupabaseService`, `briefMaterialShortlistsSupabaseService`
+- utils: `briefAiIntent`, `briefProjectWizard`, `briefRecommendationEngine` (already dead), `briefProjectBoard`
+  (already dead), `briefFormulaHistory`, `recommendationLearningStorage`
+- hooks: `useBriefs`, `useBriefProjects`
+- endpoint: `apps/web/api/brief-intent.js`
+
+**`materialCompositionProfile.js` must NOT be deleted** — `formulaPipeline.js` and
+`FormulaWorkbookSimulationPanel.jsx` use `resolveMaterialCompositionProfile` /
+`resolveRecommendedUsagePlan` on the live formula path. The string-concatenating `bumpMapCount` bug lives
+in that file but is only reachable from the wizard, so it becomes truly dead once the wizard goes.
+
+### Why the attempt failed, twice
+
+`EditFormulaPage.jsx` is the live desktop formula editor: 1994 lines, of which ~365 touch brief/wizard.
+Removing them mechanically (delete each declaration ESLint reports as unused, repeat) breaks the file,
+because:
+
+1. **The build is not a safety net here.** Vite does not run ESLint, so `npm run build` stayed green while
+   the page had `setBriefAiIntentLoading is not defined` — a runtime crash waiting for the first user.
+   Only `npx eslint` on the file caught it. Any future attempt must gate on ESLint, not the build.
+2. **Removing a `useState` because its getter is unused orphans the setter**, which is still called from
+   code the strip has not reached yet.
+3. **Brief state is referenced by JSX outside the wizard `<Dialog>`.** Removing the dialog (lines
+   1014-1437, cleanly contiguous) and the handler cluster (568-841, also contiguous) both work and keep the
+   build green — but `linkedProjectStageItems` and friends are still read by other parts of the page, so
+   the module's UI is woven into the editor, not isolated in the dialog.
+
+### How to do it next time
+
+In this order, running `npx eslint src/pages/EditFormulaPage.jsx` (not just the build) after every step:
+
+1. Delete the wizard `<Dialog>` block.
+2. Delete the handler cluster.
+3. Find and delete the *remaining* brief JSX in the page body — this is the part that needs eyes, and it is
+   what both automated attempts got wrong.
+4. Only then remove effects, state and imports, one at a time.
+5. Then delete the standalone modules listed above.
+6. Optionally drop the five tables. They are empty, but a drop is irreversible, so it should be its own
+   decision and its own manual-apply migration.
