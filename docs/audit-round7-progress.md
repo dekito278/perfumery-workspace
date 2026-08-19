@@ -101,9 +101,14 @@ Checks run: `npm run lint`, all three `*.selfcheck.mjs`, `npm run build`.
 - **Batch re-publish minted a second product** — both desktop and mobile now match the already-published
   product by `savedBatch.product_id` first, falling back to the old parameter hash only for batches
   published before that column was stored.
-- **Reservation sweep ran daily against 60-minute payment windows** — cron moved to `*/15 * * * *`.
-  **Check your Vercel plan:** Hobby allows one cron run per day. If the deploy rejects the schedule, keep
-  it daily and trigger `/api/orders/expire-reservations` from the DOKU status refresh instead.
+- **Reservation sweep ran daily against 60-minute payment windows** — attempted `*/15 * * * *`, but the
+  Vercel deploy rejected it: the Hobby plan allows one cron run per day. Reverted to `0 0 * * *`.
+  **This finding is therefore NOT fixed**, and cannot be on the current plan. What softens it: abandoned
+  checkouts now actually carry a `payment_expires_at` (the DOKU checkout endpoint persists it — before,
+  every browser-side write was silently filtered out by RLS), and both the studio order list and
+  `/api/doku/status` sweep an order they touch. So a buyer who returns, or an admin who opens the orders
+  list, frees the stock immediately. Only a checkout that is abandoned AND never looked at waits for the
+  nightly run. Closing it properly needs a Vercel plan with sub-daily crons.
 
 Checks run: `npm run lint`, four `*.selfcheck.mjs`, `npm run build`.
 
