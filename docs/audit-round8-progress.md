@@ -7,7 +7,7 @@ reasoning cannot be reproduced from the code.
 | Module | Findings | Status |
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
-| Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
+| Brief AI | 35 confirmed / 3 refuted | module deleted |
 | Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + all HIGH + the consequential MEDIUM done |
 | Journal editor | 27 live / 0 unreachable / 2 refuted | HIGH batch done; MEDIUM/LOW pending |
 
@@ -318,3 +318,29 @@ correctness one, and a build-tooling change), plus 9 MEDIUM and 13 LOW. Notable:
 destroys its publication date and republishing back-stamps it to today; the public slug is frozen at first
 save from the working title with no way to change it; product stories are desktop-only, so phone visitors
 are redirected to a page that never loads; and inline markdown images render as a stray "!" plus a link.
+
+## Brief AI — deleted
+
+The second attempt worked, following the plan written after the first one failed. What made the difference:
+**ESLint on the single file after every step, never `npm run build`** — the build stayed green through both
+earlier failures while the page had undefined setters.
+
+Order that worked, 0 ESLint errors at every checkpoint:
+
+1. the wizard `<Dialog>` (424 lines, contiguous)
+2. the handler cluster (274 lines, contiguous)
+3. **the brief/project panel still in the page body** (72 lines) — this is what both automated attempts
+   missed, and why removing state first kept breaking the file
+4. five brief effects, bottom-up
+5. the brief branch inside the main loader, by hand
+6. the remaining dead declarations, one at a time, each rolled back automatically if it introduced an error
+7. the modules themselves
+
+`EditFormulaPage.jsx` went from 1994 to 815 lines. Deleted: 6 utils, 5 services, 3 hooks, and
+`api/brief-intent.js` — the unauthenticated LLM endpoint that was billed to the owner for a feature nobody
+could open. `materialCompositionProfile.js` is untouched: `formulaPipeline` and
+`FormulaWorkbookSimulationPanel` use it on the live formula path.
+
+`supabase/migrations/20260819125000_drop_brief_tables.sql` drops the five tables. It is **optional and
+destructive** — the only migration here that destroys data — and carries the row counts that were verified
+before it was written, plus a query to re-check them. Not running it costs nothing but clutter.
