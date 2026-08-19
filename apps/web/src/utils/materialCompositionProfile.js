@@ -1,5 +1,5 @@
 import { resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
-import { buildGuidanceLimitAdvisories, getDilutionFactor } from '@/utils/rawMaterialGuidanceAdvisories.js';
+import { buildGuidanceLimitAdvisories, resolveEffectiveConcentration } from '@/utils/rawMaterialGuidanceAdvisories.js';
 
 const FUNCTION_PATTERNS = [
   { key: 'linear_substrate', pattern: /linear[\s-_]*substrate|substrate/i },
@@ -1253,7 +1253,7 @@ const buildLearningSignals = ({
 
 const buildGuidancePenalty = ({ profile, stage, fitScore }) => {
   const estimatedSeedPercentage = resolveSeedPercentageEstimate({ profile, stage, fitScore });
-  const effectivePercentage = estimatedSeedPercentage * getDilutionFactor(profile.material?.dilution_percentage);
+  const effectivePercentage = resolveEffectiveConcentration({ listedPercentage: estimatedSeedPercentage, material: profile.material });
   const advisories = buildGuidanceLimitAdvisories({
     referenceProfile: profile.reference_profile,
     effectivePercentage,

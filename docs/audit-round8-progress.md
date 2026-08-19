@@ -7,9 +7,9 @@ reasoning cannot be reproduced from the code.
 | Module | Findings | Status |
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
-| Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
+| Brief AI | 35 confirmed / 3 refuted | module deleted |
 | Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + all HIGH + the consequential MEDIUM done |
-| Journal editor | 27 live / 0 unreachable / 2 refuted | HIGH batch done; MEDIUM/LOW pending |
+| Journal editor | 27 live / 0 unreachable / 2 refuted | done |
 
 ## Formula workbench — HIGH batch (done)
 
@@ -318,3 +318,119 @@ correctness one, and a build-tooling change), plus 9 MEDIUM and 13 LOW. Notable:
 destroys its publication date and republishing back-stamps it to today; the public slug is frozen at first
 save from the working title with no way to change it; product stories are desktop-only, so phone visitors
 are redirected to a page that never loads; and inline markdown images render as a stray "!" plus a link.
+
+## Brief AI — deleted
+
+The second attempt worked, following the plan written after the first one failed. What made the difference:
+**ESLint on the single file after every step, never `npm run build`** — the build stayed green through both
+earlier failures while the page had undefined setters.
+
+Order that worked, 0 ESLint errors at every checkpoint:
+
+1. the wizard `<Dialog>` (424 lines, contiguous)
+2. the handler cluster (274 lines, contiguous)
+3. **the brief/project panel still in the page body** (72 lines) — this is what both automated attempts
+   missed, and why removing state first kept breaking the file
+4. five brief effects, bottom-up
+5. the brief branch inside the main loader, by hand
+6. the remaining dead declarations, one at a time, each rolled back automatically if it introduced an error
+7. the modules themselves
+
+`EditFormulaPage.jsx` went from 1994 to 815 lines. Deleted: 6 utils, 5 services, 3 hooks, and
+`api/brief-intent.js` — the unauthenticated LLM endpoint that was billed to the owner for a feature nobody
+could open. `materialCompositionProfile.js` is untouched: `formulaPipeline` and
+`FormulaWorkbookSimulationPanel` use it on the live formula path.
+
+`supabase/migrations/20260819125000_drop_brief_tables.sql` drops the five tables. It is **optional and
+destructive** — the only migration here that destroys data — and carries the row counts that were verified
+before it was written, plus a query to re-check them. Not running it costs nothing but clutter.
+
+## The three URL importers now work in production
+
+They existed only as Vite dev middleware (`plugins/scentree-import-dev-plugin.js`, loaded when `isDev`),
+and production rewrites `/api/(.*)` to not-found — so Scentree, PerfumersWorld and TGSC imports had never
+worked in the deployed app.
+
+The scraping logic moved out of the plugin into `src/utils/materialImportScrapers.js` (runtime-agnostic:
+fetch and string parsing only), and both the dev plugin and three new serverless endpoints under
+`apps/web/api/imports/` now run **the same code** — the plugin shrank from 676 to 92 lines. All three share **one** endpoint, `api/imports/index.js`, with the source chosen by the payload.
+
+It began as three route files, and the Vercel deploy failed: that took the deployment to 13 serverless
+functions, one over the Hobby ceiling of 12. Three files differing only in which scraper they called did
+not earn three functions anyway. Second Hobby-plan ceiling this audit has hit, after the cron interval.
+
+The endpoints are **admin-only**. `assertAdmin` moved out of `api/formula/import-pdf.js` into
+`src/utils/apiAdminAuth.js` so there is one copy rather than a fourth, and the client sends the studio
+session's token the same way the PDF import already did. Upstream failures log server-side and return a
+plain message instead of the scraper's internals.
+
+The "dev only" warning band added earlier is removed — the capability is real now.
+
+## Journal articles are prerendered
+
+`/articles/<slug>` was already in the sitemap but had no file behind it, so every shared link — and every
+crawler — received the SPA shell and its generic site card.
+
+`fetchPublishedJournal` already existed for the sitemap; it now also selects title, seo_title, excerpt,
+cover image and dates, and a new `writeJournalPages` mirrors `writeProductPages`: real `<title>`, canonical
+on the production host, `og:type=article`, `article:published_time`, Article + BreadcrumbList JSON-LD.
+No `vercel.json` change is needed — Vercel resolves the filesystem before the catch-all rewrite, which is
+how prerendered product pages already work.
+
+Two details worth naming: a post with no title is skipped rather than written with an empty headline, and
+`twitter:card` only claims `summary_large_image` when there is actually an image — the audit flagged the
+static pages promising a large image they did not have.
+
+Covered by `tools/journal-prerender.selfcheck.mjs`, which asserts the head a crawler receives from a
+fixture. That matters here because the build cannot prerender anything without Supabase credentials, so
+`npm run build` alone proves nothing about this code.
+
+## Material reference — remaining batch
+
+- **One definition of effective concentration.** Three call sites each derived it their own way — the
+  composer seeder from the material's `dilution_percentage`, the workbook simulation from the row's
+  `dilution_percent`, the scorer from a seed estimate — so the same material could be judged against the
+  same IFRA limit at two different numbers. `resolveEffectiveConcentration` in
+  `rawMaterialGuidanceAdvisories.js` is now the only one, and it encodes the settled model: both fields
+  describe the same dilution, the row wins because it is what the perfumer chose for this formula.
+- **Mobile guidance import overwrote hand-curated values.** Desktop keeps a curated number and only fills
+  blanks; mobile let the scrape win, so importing on a phone silently replaced tuned impact and lifetime.
+  Mobile now uses the same rule, and its synthetic-code guard learned the `MAN-`/`EXT-` prefixes the
+  desktop dialog already knew.
+- **The PDF importer never checked the workbook's own totals.** `parseItems` silently drops any line its
+  regex misses, so an unfamiliar layout imported a formula that looked fine and was short a few materials.
+  The header already carried the ground truth (`RM:` count and `Total:`); a mismatch now refuses the import
+  instead of quietly corrupting a formula.
+- **Merging rows with different units is refused.** Stock is summed on merge, so folding 80 ml into a
+  gram-based row read as 80 g. Covered by `mergeStock.selfcheck.mjs`.
+- **The material search no longer disables itself mid-word.** Typing triggers the refetch that disabled the
+  input, which stole focus and dropped keystrokes.
+
+Obsolete: the finding that merge does not repoint the brief tables — those tables have no application code
+left, and the optional migration drops them.
+
+## Journal editor — remaining batch
+
+- **Article canonical pointed at whatever host served the page.** `PublicJournalArticlePage` carried its own
+  `getSiteOrigin`/`toAbsoluteUrl` that fell back to `window.location.origin`, while `utils/seo.js` has the
+  shared pair that falls back to the production URL — which is why every other page was fine. The local
+  copies are gone; the canonical, `og:url` and the JSON-LD `@id` now always name production.
+- **Unpublishing an article destroyed its publication date.** The trigger nulls `published_at` on draft, so
+  pulling an article back to fix a typo erased the date and republishing back-stamped it to today — wrong
+  on the page, in the Article `datePublished`, and in the sitemap. Fixed in
+  `supabase/migrations/20260819126000_journal_keep_published_at_on_unpublish.sql` (**MANUAL APPLY**): the
+  first publication is stamped once and never cleared.
+- **Inline images rendered as a stray "!" plus a link.** The inline pattern tried the link alternative
+  before the image one, so `![alt](src)` matched as a link and left the bang behind as text. Images now
+  render as images, and the existing href guard applies to them too — a `javascript:` or `data:` src falls
+  back to the alt text rather than reaching the DOM. Covered by `journalMarkdown.selfcheck.mjs`.
+
+### Left alone, with reasons
+
+- Product stories are desktop-only, so a phone visitor is redirected to a page that never loads. That is a
+  missing mobile implementation, not a defect to patch — it needs a decision about whether stories should
+  exist on mobile at all.
+- The public article lists download every published article's full body. Real, but the journal is small;
+  worth a `select` narrowing when it starts to hurt.
+- Several mobile journal niceties (no delete, publish without confirmation, loading flashes) are genuine
+  divergences but none of them lose or corrupt work.

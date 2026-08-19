@@ -31,7 +31,14 @@ const preferPositiveNumber = (nextValue, currentValue) => (
   hasPositiveNumber(nextValue) ? Number(nextValue) : hasPositiveNumber(currentValue) ? Number(currentValue) : null
 );
 
-const isSyntheticWorkbookCode = (value) => /^RAW-(?:MANUAL|[A-Z0-9]+)/i.test(String(value || '').trim());
+// The desktop importers keep a value the perfumer already curated and only fill blanks
+// (useRawMaterialForm.shouldOverrideNumericGuidance). Mobile let the scrape win, so importing on a phone
+// silently overwrote hand-tuned impact and lifetime (audit round 8).
+const keepCuratedNumber = (nextValue, currentValue) => (
+  hasPositiveNumber(currentValue) ? Number(currentValue) : (hasPositiveNumber(nextValue) ? Number(nextValue) : null)
+);
+
+const isSyntheticWorkbookCode = (value) => /^(?:RAW|MAN|EXT)-/i.test(String(value || '').trim());
 
 const preferImportedWorkbookCode = (importedWorkbookCode, currentWorkbookCode) => {
   if (importedWorkbookCode) {
@@ -86,8 +93,8 @@ export const buildGuidancePatch = ({ material = {}, sourceType, imported }) => {
     cas_number: normalizedImported.cas_number || material.cas_number || null,
     ifra_limit: preferPositiveNumber(normalizedImported.ifra_limit, material.ifra_limit),
     reference_abc_primary_family: normalizedImported.reference_abc_primary_family || material.reference_abc_primary_family || null,
-    reference_impact: preferPositiveNumber(normalizedImported.reference_impact, material.reference_impact),
-    reference_life_hours: preferPositiveNumber(normalizedImported.reference_life_hours, material.reference_life_hours),
+    reference_impact: keepCuratedNumber(normalizedImported.reference_impact, material.reference_impact),
+    reference_life_hours: keepCuratedNumber(normalizedImported.reference_life_hours, material.reference_life_hours),
     reference_use_level_typical_percent: preferPositiveNumber(normalizedImported.reference_use_level_typical_percent, material.reference_use_level_typical_percent),
     reference_use_level_max_percent: preferPositiveNumber(normalizedImported.reference_use_level_max_percent, material.reference_use_level_max_percent),
     description: normalizedImported.description || normalizedImported.odor_description || material.description || null,

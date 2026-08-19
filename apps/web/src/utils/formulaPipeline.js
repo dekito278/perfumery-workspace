@@ -1,5 +1,5 @@
 import { resolveMaterialCompositionProfile, resolveRecommendedUsagePlan } from '@/utils/materialCompositionProfile.js';
-import { buildGuidanceLimitAdvisories, getDilutionFactor } from '@/utils/rawMaterialGuidanceAdvisories.js';
+import { buildGuidanceLimitAdvisories, resolveEffectiveConcentration } from '@/utils/rawMaterialGuidanceAdvisories.js';
 
 const STAGE_GRAM_BASE = {
   top: 0.54,
@@ -87,7 +87,7 @@ const resolveSeedGramAmount = (item, material, referenceLink = null) => {
   if (profile?.reference_profile) {
     const estimatedEffectivePercentage = Math.max(
       0.15,
-      ((seededGrams / 3.2) * 100) * getDilutionFactor(material?.dilution_percentage),
+      resolveEffectiveConcentration({ listedPercentage: (seededGrams / 3.2) * 100, material }),
     );
     const advisories = buildGuidanceLimitAdvisories({
       referenceProfile: profile.reference_profile,

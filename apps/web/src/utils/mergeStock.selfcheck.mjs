@@ -18,3 +18,19 @@ assert.equal(buildMergedRawMaterialData({ id: 'a' }, { id: 'b', stock_quantity: 
 assert.equal(buildMergedRawMaterialData({ id: 'a' }, { id: 'b' }).stock_quantity, 0);
 
 console.log('mergeStock selfcheck OK');
+
+// Units must match, because the merge sums the quantities
+const { validateMergeableRawMaterials } = await import('../services/rawMaterialsMergeHelpers.js');
+const helpers = {
+  normalizeLookupValue: (v) => String(v || '').trim().toLowerCase(),
+  normalizeCasValue: (v) => String(v || '').trim(),
+  invalidCasMatchValues: new Set(),
+};
+assert.throws(
+  () => validateMergeableRawMaterials({ id: 'a', name: 'X', unit: 'g' }, { id: 'b', name: 'X', unit: 'ml' }, helpers),
+  /different units/,
+);
+// Same unit, or a row with no unit recorded, still merges
+assert.doesNotThrow(() => validateMergeableRawMaterials({ id: 'a', name: 'X', unit: 'g' }, { id: 'b', name: 'X', unit: 'g' }, helpers));
+assert.doesNotThrow(() => validateMergeableRawMaterials({ id: 'a', name: 'X', unit: 'g' }, { id: 'b', name: 'X' }, helpers));
+console.log('mergeUnits selfcheck OK');

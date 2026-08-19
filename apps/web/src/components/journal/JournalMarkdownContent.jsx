@@ -12,7 +12,9 @@ const normalizeHref = (href) => {
 
 const renderInline = (text) => {
   const parts = [];
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|\*[^*]+\*)/g;
+  // `!` must come before the link alternative, or an image matches as a link and leaves the bang behind as
+  // stray text — every inline image rendered as a literal "!" followed by a link (audit round 8).
+  const pattern = /(!\[[^\]]*\]\([^)]+\)|\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|\*[^*]+\*)/g;
   let lastIndex = 0;
   let match;
 
@@ -24,7 +26,23 @@ const renderInline = (text) => {
     const token = match[0];
     const key = `${token}-${match.index}`;
 
-    if (token.startsWith('**')) {
+    if (token.startsWith('![')) {
+      const imageMatch = token.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      const src = normalizeHref(imageMatch?.[2]);
+      // normalizeHref answers '#' for anything that is not http(s), mailto or a site-relative path, so a
+      // javascript: or data: src never reaches the DOM.
+      parts.push(src === '#'
+        ? <span key={key}>{imageMatch?.[1] || ''}</span>
+        : (
+          <img
+            key={key}
+            src={src}
+            alt={imageMatch?.[1] || ''}
+            loading="lazy"
+            className="my-4 w-full rounded-2xl border border-[#e6deca] object-cover"
+          />
+        ));
+    } else if (token.startsWith('**')) {
       parts.push(<strong key={key} className="font-bold text-[#111827]">{token.slice(2, -2)}</strong>);
     } else if (token.startsWith('*')) {
       parts.push(<em key={key}>{token.slice(1, -1)}</em>);

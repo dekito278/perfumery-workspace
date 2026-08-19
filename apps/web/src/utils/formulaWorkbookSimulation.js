@@ -1,5 +1,5 @@
 import { resolvePyramidPlacement, resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
-import { buildGuidanceLimitAdvisories, getDilutionFactor } from '@/utils/rawMaterialGuidanceAdvisories.js';
+import { buildGuidanceLimitAdvisories, getDilutionFactor, resolveEffectiveConcentration } from '@/utils/rawMaterialGuidanceAdvisories.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 
 const toFiniteNumber = (value) => {
@@ -283,7 +283,7 @@ export const buildReferenceAdvisories = (item) => {
 
   const listedPercentage = Number(item?.percentage || 0);
   const dilutionFactor = getFormulaItemDilutionFactor(item);
-  const effectivePercentage = listedPercentage * dilutionFactor;
+  const effectivePercentage = resolveEffectiveConcentration({ listedPercentage, item });
   const advisories = buildGuidanceLimitAdvisories({
     referenceProfile,
     effectivePercentage,

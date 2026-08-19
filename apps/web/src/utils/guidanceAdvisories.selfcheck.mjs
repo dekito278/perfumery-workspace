@@ -36,3 +36,18 @@ assert.equal(getDilutionFactor(null), 1);
 assert.equal(getDilutionFactor(0), 1);
 
 console.log('guidanceAdvisories selfcheck OK');
+
+// One effective concentration for every call site
+const { resolveEffectiveConcentration } = await import('./rawMaterialGuidanceAdvisories.js');
+// Neat: listed percentage is the effective one
+assert.equal(resolveEffectiveConcentration({ listedPercentage: 5 }), 5);
+// The row's own dilution wins (it is what the perfumer chose for this formula)
+assert.equal(resolveEffectiveConcentration({ listedPercentage: 5, item: { dilution_percent: 10 } }), 0.5);
+// Falls back to the material's stocked dilution when the row does not carry one
+assert.equal(resolveEffectiveConcentration({ listedPercentage: 5, material: { dilution_percentage: 10 } }), 0.5);
+// Row wins over material when both are present
+assert.equal(resolveEffectiveConcentration({ listedPercentage: 5, item: { dilution_percent: 50 }, material: { dilution_percentage: 10 } }), 2.5);
+// Nothing in the formula means nothing to judge
+assert.equal(resolveEffectiveConcentration({ listedPercentage: 0, item: { dilution_percent: 10 } }), 0);
+assert.equal(resolveEffectiveConcentration({}), 0);
+console.log('resolveEffectiveConcentration selfcheck OK');

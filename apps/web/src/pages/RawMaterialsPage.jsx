@@ -90,7 +90,6 @@ const RawMaterialsPage = () => {
         <RawMaterialsToolbar
           searchTerm={page.searchTerm}
           setSearchTerm={page.setSearchTerm}
-          showRefreshing={page.showRefreshing}
           loading={page.loading}
           onRefresh={page.refreshAll}
           filters={page.filters}

@@ -229,6 +229,20 @@ const parsePerfumeWorkbookPdfLocally = async (file) => {
 
   const totalGrams = items.reduce((sum, item) => sum + item.grams, 0);
 
+  // The workbook prints its own row count and total. parseItems drops any line the regex misses, silently,
+  // so a layout the parser does not understand imported a formula that looked fine and was short a few
+  // materials. Compare against the PDF's own numbers and refuse rather than import something wrong
+  // (audit round 8).
+  const expectedCount = Number.parseInt(String(header.rawMaterialSummary || '').replace(/[^0-9]/g, ''), 10);
+  if (Number.isFinite(expectedCount) && expectedCount > 0 && expectedCount !== items.length) {
+    throw new Error(`PDF ini menyebut ${expectedCount} raw material, tapi hanya ${items.length} baris yang terbaca. Jangan diimpor — kirim PDF-nya untuk dicek.`);
+  }
+
+  const expectedTotal = Number(header.totalFromPdf);
+  if (Number.isFinite(expectedTotal) && expectedTotal > 0 && Math.abs(expectedTotal - totalGrams) > 0.05) {
+    throw new Error(`Total di PDF ${expectedTotal} g tidak cocok dengan jumlah baris yang terbaca ${totalGrams.toFixed(3)} g. Jangan diimpor — ada baris yang tidak terbaca.`);
+  }
+
   return {
     ...header,
     fileName: file.name,

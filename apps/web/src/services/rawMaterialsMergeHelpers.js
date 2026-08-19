@@ -46,6 +46,14 @@ export const validateMergeableRawMaterials = (masterRecord, duplicateRecord, hel
     throw new Error('Raw material merge requires both a master and a duplicate row.');
   }
 
+  // Stock is summed on merge, so mixing units would silently reinterpret the absorbed quantity —
+  // 80 ml folded into a gram-based row reads as 80 g (audit round 8).
+  const masterUnit = String(masterRecord.unit || '').trim().toLowerCase();
+  const duplicateUnit = String(duplicateRecord.unit || '').trim().toLowerCase();
+  if (masterUnit && duplicateUnit && masterUnit !== duplicateUnit) {
+    throw new Error(`Cannot merge rows measured in different units (${masterUnit} vs ${duplicateUnit}).`);
+  }
+
   if (masterRecord.id === duplicateRecord.id) {
     throw new Error('Master and duplicate raw material cannot be the same row.');
   }

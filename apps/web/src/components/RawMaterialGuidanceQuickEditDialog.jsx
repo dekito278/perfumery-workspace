@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useRawMaterials } from '@/hooks/useRawMaterials.js';
 import { createReferenceMetadataPatch, REFERENCE_FIELD_KEYS } from '@/utils/canonicalReferenceProfile.js';
 import { WORKBOOK_ABC_CLASSIFICATIONS } from '@/utils/workbookAbcClassification.js';
-import { URL_IMPORT_AVAILABLE, importPerfumersWorldByUrl, importScentreeByUrl, importTgscByUrl } from '@/services/scentreeImportService.js';
+import { importPerfumersWorldByUrl, importScentreeByUrl, importTgscByUrl } from '@/services/scentreeImportService.js';
 
 const familyOptions = WORKBOOK_ABC_CLASSIFICATIONS.map((entry) => ({
   value: entry.familyName,
@@ -585,12 +585,7 @@ const RawMaterialGuidanceQuickEditDialog = ({
             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7b6d4f]">
               Import URL
             </div>
-            {!URL_IMPORT_AVAILABLE ? (
-              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-                Import via URL hanya jalan di dev server — endpoint-nya belum ada di production, jadi tombol
-                di bawah akan gagal. Isi manual dulu.
-              </p>
-            ) : null}
+
             <div className="rounded-xl border border-[#e7decb] bg-white px-3 py-3">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
