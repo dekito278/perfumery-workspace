@@ -8,7 +8,7 @@ reasoning cannot be reproduced from the code.
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
 | Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
-| Material reference | 33 live / 8 unreachable / 3 refuted | all 9 HIGH + CRITICAL done; MEDIUM/LOW pending |
+| Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + all HIGH + the consequential MEDIUM done |
 | Journal editor | — | todo |
 
 ## Formula workbench — HIGH batch (done)
@@ -251,9 +251,27 @@ Checks: `npm run lint`, ten `*.selfcheck.mjs`, `npm run build`.
   separate piece of work** — three handlers under `apps/web/api/imports/` with a host allowlist and an
   admin check, modelled on `api/formula/import-pdf.js`.
 
+### Medium batch (done)
+
+- **An IFRA limit of 0 was read as "no limit".** `toPositiveGuidanceLimit` collapsed 0 into null, so the
+  one material that must never appear in a formula was the one material that never raised an advisory. 0
+  is now a real ceiling — and a limit of exactly 0 raises a distinct "Prohibited by IFRA" danger advisory
+  at any usage above zero. Covered by `guidanceAdvisories.selfcheck.mjs`.
+- **The delete pre-check only looked at `formula_items`.** Six `on delete restrict` foreign keys point at
+  raw_materials; the dialog checked two, so it said "ready to delete" for materials still held by accords,
+  batches and usage records, and the delete then failed at the database with a raw constraint error. All
+  six are checked now, and a table missing from a given deployment degrades instead of breaking the preview.
+- **Four of the ten reference filters did nothing.** `materialReferenceService` already resolves ids for the
+  review-status filters, but the query never applied them, so picking Approved PW / Approved external /
+  Provisional / Conflict left the table unfiltered.
+- **The search box mangled ordinary names.** Two search paths hand-build PostgREST `or=(...)` groups and
+  each escaped a different character set — the material search replaced only `% _ ,`, so `Ambrox (DL)`
+  could break the group. Both now use one `sanitizeOrFilterSearch` helper, covered by
+  `likePattern.selfcheck.mjs`.
+
 ### Still open in this module
 
-13 MEDIUM and 10 LOW. Worth knowing: an IFRA limit of 0 (a prohibited material) is read everywhere as
-"no limit"; four of the ten reference-filter options are no-ops; the delete pre-check only counts
-`formula_items`, so the dialog says "ready to delete" for materials still referenced elsewhere; and the
-search box mangles ordinary names (`%` replaced by a space).
+Nine MEDIUM and ten LOW, none of them data-destroying. The notable ones: the same material can get two
+different effective concentrations for the same IFRA check (three call sites each compute it their own
+way); the PDF importer parses the workbook's own totals but never verifies them; and several mobile
+filters are applied client-side to only the first page of rows.

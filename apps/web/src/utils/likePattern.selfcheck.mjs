@@ -35,3 +35,13 @@ assert.equal(likeMatches(escapeLikePattern('Iso E Super 10%'), 'Iso E Super 10% 
 assert.equal(likeMatches(escapeLikePattern('Iso E Super 10%'), 'Iso E Super 10%'), true);
 
 console.log('likePattern selfcheck OK');
+
+// The or()-group sanitiser: ordinary material names must survive, structural chars must not
+const { sanitizeOrFilterSearch } = await import('./likePattern.js');
+assert.equal(sanitizeOrFilterSearch('Ambrox (DL)'), 'Ambrox  DL');
+assert.equal(sanitizeOrFilterSearch('Iso E Super 10%'), 'Iso E Super 10');
+assert.equal(sanitizeOrFilterSearch('Hedione'), 'Hedione');
+assert.equal(sanitizeOrFilterSearch('a,b'), 'a b');
+assert.equal(sanitizeOrFilterSearch(''), '');
+assert.equal(sanitizeOrFilterSearch(null), '');
+console.log('sanitizeOrFilterSearch selfcheck OK');

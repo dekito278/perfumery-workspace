@@ -7,9 +7,12 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(numericValue) ? numericValue : null;
 };
 
-const toPositiveGuidanceLimit = (value) => {
+// A limit of 0 is a real, and the strictest, limit: IFRA uses it for prohibited materials. Folding it into
+// "no limit" meant the one material that must never appear in a formula was the one material that never
+// raised an advisory (audit round 8). null still means "unknown".
+const toGuidanceLimit = (value) => {
   const numericValue = toFiniteNumber(value);
-  return numericValue > 0 ? numericValue : null;
+  return numericValue !== null && numericValue >= 0 ? numericValue : null;
 };
 
 export const getDilutionFactor = (value) => {
@@ -35,9 +38,9 @@ export const buildGuidanceLimitAdvisories = ({
   }
 
   const advisories = [];
-  const typicalLimit = toPositiveGuidanceLimit(referenceProfile.use_level_typical_percent);
-  const maxLimit = toPositiveGuidanceLimit(referenceProfile.use_level_max_percent);
-  const ifraLimit = toPositiveGuidanceLimit(referenceProfile.ifra_limit_percent);
+  const typicalLimit = toGuidanceLimit(referenceProfile.use_level_typical_percent);
+  const maxLimit = toGuidanceLimit(referenceProfile.use_level_max_percent);
+  const ifraLimit = toGuidanceLimit(referenceProfile.ifra_limit_percent);
 
   if (typicalLimit !== null && normalizedEffectivePercentage > typicalLimit) {
     advisories.push({
@@ -59,7 +62,15 @@ export const buildGuidanceLimitAdvisories = ({
     });
   }
 
-  if (ifraLimit !== null && normalizedEffectivePercentage > ifraLimit) {
+  if (ifraLimit === 0) {
+    advisories.push({
+      type: 'ifra',
+      severity: 'danger',
+      label: 'Prohibited by IFRA',
+      limit: 0,
+      message: `Reference IFRA limit is 0% — material ini tidak boleh dipakai sama sekali, sekarang terpakai ${normalizedEffectivePercentage.toFixed(2)}%.`,
+    });
+  } else if (ifraLimit !== null && normalizedEffectivePercentage > ifraLimit) {
     advisories.push({
       type: 'ifra',
       severity: 'danger',
