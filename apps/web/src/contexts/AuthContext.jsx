@@ -148,9 +148,18 @@ export const AuthProvider = ({ children }) => {
         return null;
       }
 
+      // "Remember this device" used to skip the TOTP challenge outright, on the strength of a plain
+      // localStorage object anyone can hand-write — so the second factor was optional for whoever had the
+      // password, and the session stayed at aal1 while the app treated it as verified. It now only
+      // suppresses the prompt for a session Supabase itself already reports as aal2; anything less still
+      // has to enter a code (audit round 8).
       const rememberedMfa = allowRememberedSession ? readRememberedMfaSession() : null;
       if (rememberedMfa?.userId === nextSession.user.id) {
-        return null;
+        const { data: rememberedAssurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (rememberedAssurance?.currentLevel === 'aal2') {
+          return null;
+        }
+        clearRememberedMfaSession();
       }
 
       try {
