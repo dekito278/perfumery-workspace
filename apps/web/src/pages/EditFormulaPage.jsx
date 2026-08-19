@@ -656,7 +656,18 @@ const EditFormulaPage = () => {
     setLinkedProject(nextProject);
     setLinkedProjectStageItems(nextProjectStageItems);
     setWizardStageItemsMap(nextStageMap);
-    replaceFormulaItems(buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials, referenceLinksMap));
+    // Same rule as persistSeededFormulaItems: never replace a composition the perfumer has already built.
+    // The round-8 guard only covered the persist path and this one still wiped the composer (audit round 8,
+    // second pass).
+    const seeded = buildComposerItemsFromProjectStageItems(nextProjectStageItems, rawMaterials, referenceLinksMap);
+    const existingActive = formulaItems.filter((item) => item.item_id && Number(item.gram_amount || 0) > 0);
+    if (existingActive.length) {
+      const existingIds = new Set(existingActive.map((item) => item.item_id));
+      const additions = seeded.filter((item) => item.item_id && !existingIds.has(item.item_id));
+      if (additions.length) replaceFormulaItems([...existingActive, ...additions]);
+    } else {
+      replaceFormulaItems(seeded);
+    }
     return nextProjectStageItems;
   };
 

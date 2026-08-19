@@ -7,7 +7,7 @@ reasoning cannot be reproduced from the code.
 | Module | Findings | Status |
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
-| Brief AI | — | todo |
+| Brief AI | 35 confirmed / 3 refuted | audited; module is dormant, awaiting an owner decision |
 | Material reference | — | todo |
 | Journal editor | — | todo |
 
@@ -101,3 +101,49 @@ Note that the batch weighing-sheet fix above is on a different axis and stands: 
   small enough that it is not observable today; revisit if the library grows or the composer gets slow.
 - Five composer components appear unused. Dead-code removal is safer as its own pass than mixed into a
   behaviour batch.
+
+## Brief AI — audited, then stopped on purpose
+
+35 findings survived verification (7 HIGH). I fixed one and stopped, because checking production first
+changed what the right answer is:
+
+**The module is not reachable, and it has never run.**
+
+- Nothing in the app ever creates a `briefs` row. `createBrief` exists in `useBriefs`/`briefsSupabaseService`
+  but has no caller, and there is no `/briefs` route. The wizard only appears when
+  `briefs.find((b) => b.formula_id === id)` matches (EditFormulaPage.jsx:338), so with no way to create one
+  it never appears.
+- Production confirms it: `briefs`, `brief_projects` and `brief_material_shortlists` all return **0 rows**.
+- `brief_ai_interpretations` returns **404 — the table does not exist in production**. Migration
+  `20260502120000_brief_ai_interpretations.sql` was never applied, so every
+  `createBriefAiInterpretation` call would fail at runtime anyway.
+- Anon **cannot** write to these tables (verified: `42501 row-level security`), so there is no urgent
+  security exposure while they sit empty.
+
+So the 7 HIGH findings — the learning accumulator that concatenates strings instead of adding
+(`materialCompositionProfile.js:414`), AI wizard options whose tags never reach the ranker, effect tags
+inferred from the profile's own keywords, `preferred_letters` matched as single characters, `avoid_tags`
+validated and persisted but never read — are all real as code defects, and all of them are in code that
+cannot currently execute. Fixing them now would be 35 changes to a feature nobody can open, on a path with
+no test coverage and no way to verify the result.
+
+### The one thing fixed
+
+`refreshLinkedProjectStageItems` still replaced the entire composition — the round-8 guard was added to
+`persistSeededFormulaItems` only, so the other path kept the wipe. Small, and it completes work I had
+already started, so it is done rather than left half-finished.
+
+### Needs an owner decision before anything else here
+
+Is the brief wizard a feature you still want?
+
+- **Revive it** — then the entry point has to be built (something must create a `briefs` row), migration
+  `20260502120000` has to be applied, and the 34 remaining findings are worth working through, because the
+  ranking defects in particular mean the recommendations it produces would be close to arbitrary.
+- **Remove it** — then the honest move is deleting the five services, six utils, two hooks, the wizard UI
+  inside EditFormulaPage, `/api/brief-intent` (an unauthenticated LLM endpoint billed to the owner, kept
+  alive for a feature nobody can reach), and the five tables. That is a large deletion, so it should be its
+  own pass with its own review.
+
+Full finding list: `/private/tmp/.../scratchpad/m2.json` in this session; the important ones are summarised
+above.
