@@ -147,6 +147,10 @@ const BatchProductionPage = () => {
   }, [formulas, requestedFormulaId, selectedOnce, setSelectedFormulaId]);
 
   useEffect(() => {
+    // Guard against an out-of-order response: switching formulas quickly could let the earlier request
+    // resolve last and leave savedBatch pointing at another formula's batch — which the save path then
+    // updates by id (audit round 8).
+    let cancelled = false;
     const loadBatchHistory = async () => {
       if (!selectedFormulaId) {
         setBatchHistory([]);
@@ -156,6 +160,7 @@ const BatchProductionPage = () => {
       }
 
       const rows = await getBatches({ formulaId: selectedFormulaId });
+      if (cancelled) return;
       setBatchHistory(rows);
       const latest = rows[0] || null;
       setSavedBatch(latest);
@@ -176,6 +181,7 @@ const BatchProductionPage = () => {
     };
 
     loadBatchHistory();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFormulaId]);
 
@@ -361,6 +367,12 @@ const BatchProductionPage = () => {
   const publishBatchAsProduct = async () => {
     if (!selectedFormula || bottleCount <= 0) {
       toast.error('Set formula, batch size, dan bottle size dulu');
+      return;
+    }
+    // The mobile twin refuses to publish without a price; desktop did not, so a batch could go live as a
+    // catalog product at Rp 0 (audit round 8).
+    if (sellingPriceNumber <= 0) {
+      toast.error('Set harga jual dulu sebelum draft product stock');
       return;
     }
     if (qcStatus !== 'passed') {

@@ -4,7 +4,11 @@ import { getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js
 const normalizeFormulaPayload = (formulaData) => ({
   name: String(formulaData.name).trim(),
   code: String(formulaData.code || `FORMULA-${Date.now()}`).trim(),
-  author_name: formulaData.author_name ? String(formulaData.author_name).trim() : null,
+  // Only write author_name when the caller actually supplied one. Every edit page omits it, so forcing
+  // null here erased the author on the first save after the formula was created (audit round 8).
+  ...(formulaData.author_name === undefined ? {} : {
+    author_name: formulaData.author_name ? String(formulaData.author_name).trim() : null,
+  }),
   notes: formulaData.notes ? String(formulaData.notes).trim() : null,
   category: formulaData.category || null,
   status: formulaData.status || 'draft',
@@ -161,6 +165,13 @@ export const createFormula = async (formulaData, items) => {
 
     if (itemsError) {
       console.error('Error creating formula items:', itemsError);
+      // Roll the formula row back. Without this the failed create left an item-less formula behind, and the
+      // perfumer's retry created a second one — updateFormula already rolls its items back, so this only
+      // brings create in line with it (audit round 8).
+      const { error: rollbackError } = await supabase.from('formulas').delete().eq('id', formula.id);
+      if (rollbackError) {
+        console.error('Failed to roll back the empty formula row:', rollbackError);
+      }
       throw new Error(itemsError.message || 'Failed to create formula items');
     }
   }

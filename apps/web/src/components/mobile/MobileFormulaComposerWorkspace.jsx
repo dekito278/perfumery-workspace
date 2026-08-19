@@ -564,16 +564,17 @@ const MobileFormulaComposerWorkspace = ({
     if (!dilutionItem) return;
     const concentration = dilutionDraft.preset === 'neat' ? '100' : normalizeLocalizedDecimalInput(dilutionDraft.concentration, { autoDecimalAfterLeadingZero: true });
     const isNeat = parseLocalizedNumber(concentration) >= 99.99;
-    onUpdateItem(dilutionItem.row_key, 'dilution_type', isNeat ? 'neat' : dilutionDraft.preset === 'custom' ? 'custom' : 'solution');
-    onUpdateItem(dilutionItem.row_key, 'dilution_medium', dilutionDraft.medium);
-    onUpdateItem(dilutionItem.row_key, 'concentration_percent', isNeat ? '100' : concentration);
-    onUpdateItem(dilutionItem.row_key, 'dilution_percent', isNeat ? '' : concentration);
-    // The sheet used to record only a free-text medium, so dilution_solvent_id stayed null and every
-    // diluted material was read back as neat — wrong cost and wrong strength (audit round 7).
+    // Validate BEFORE writing anything. The round-7 guard sat after the first four onUpdateItem calls, so
+    // a rejected apply still left the row marked diluted with no solvent — the exact half-written state the
+    // guard exists to prevent (audit round 8).
     if (!isNeat && !dilutionDraft.solventId) {
       toast.error('Pilih solvent untuk material yang diencerkan');
       return;
     }
+    onUpdateItem(dilutionItem.row_key, 'dilution_type', isNeat ? 'neat' : dilutionDraft.preset === 'custom' ? 'custom' : 'solution');
+    onUpdateItem(dilutionItem.row_key, 'dilution_medium', dilutionDraft.medium);
+    onUpdateItem(dilutionItem.row_key, 'concentration_percent', isNeat ? '100' : concentration);
+    onUpdateItem(dilutionItem.row_key, 'dilution_percent', isNeat ? '' : concentration);
     onUpdateItem(dilutionItem.row_key, 'dilution_solvent_id', isNeat ? '' : dilutionDraft.solventId);
     onUpdateItem(
       dilutionItem.row_key,
@@ -582,11 +583,6 @@ const MobileFormulaComposerWorkspace = ({
     );
     setDilutionItem(null);
     toast.success('Dilution updated');
-  };
-
-  const normalizeTo100 = () => {
-    if (!totalGrams) return;
-    toast.success('Formula normalized to 100% view');
   };
 
   const importGuidance = async () => {
@@ -740,7 +736,6 @@ const MobileFormulaComposerWorkspace = ({
             <SectionTitle
               title="Composition Board"
               subtitle={`${composition.length} materials - ${formatGram(insight.totalGrams)}`}
-              action={<Button type="button" variant="outline" onClick={normalizeTo100} className="h-8 rounded-xl bg-white px-3 text-[11px]">Normalize</Button>}
             />
             <div className="mt-2 space-y-2">
               {visibleComposition.length ? visibleComposition.map((item) => {

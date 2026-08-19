@@ -6,7 +6,7 @@ reasoning cannot be reproduced from the code.
 
 | Module | Findings | Status |
 |---|---|---|
-| Formula workbench | 37 confirmed / 7 refuted | HIGH batch done; MEDIUM+LOW pending |
+| Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
 | Brief AI | — | todo |
 | Material reference | — | todo |
 | Journal editor | — | todo |
@@ -70,3 +70,34 @@ the solvent separately. Those paths *look* like bench dilution. They are not.
 
 Note that the batch weighing-sheet fix above is on a different axis and stands: that one is about the
 **batch** being diluted (`formulaPercentage`, the batch-level solvent), not about per-row dilution.
+
+## Formula workbench — medium and low batch (done)
+
+- **A rejected dilution left the row half-written.** The solvent guard added in round 7 sat *after* the
+  first four `onUpdateItem` calls, so cancelling still marked the row diluted with no solvent — the exact
+  state the guard exists to prevent. My own regression; the guard now runs first.
+- **`author_name` was erased on every edit.** `normalizeFormulaPayload` forced `null` when the caller
+  omitted it, and every edit page omits it. It is now only written when supplied.
+- **A material's own dilution could land on a row with a null solvent**, which then failed
+  `validateFormulaItems` and blocked the save with an error the perfumer could not act on. Percent and
+  solvent now travel together or not at all.
+- **Desktop could publish a batch as a product at Rp 0** — the price guard existed only on mobile.
+- **Switching formulas quickly could leave `savedBatch` pointing at another formula's batch**, which the
+  save path then updates by id. The history load is now cancellable.
+- **One failed items query hid the entire formula list.** Per-formula metrics are decoration; they now
+  degrade to null instead of rejecting the whole load.
+- **Leaving the composer discarded an unsaved composition silently.** Back now confirms.
+- **A failed create left a headless formula row behind**, and the retry created a second one. `createFormula`
+  now rolls the row back, matching what `updateFormula` already did for items.
+- **Removed the mobile "Normalize" button**, which only ever showed a success toast and changed nothing.
+
+### Accepted, not fixed
+
+- Clearing a dilution percentage also clears the solvent, so retyping the number loses the solvent choice.
+  The wipe is deliberate (`validateFormulaItems` treats a lone solvent as an incomplete dilution and blocks
+  the save), so removing it would need the validator's semantics changed — churn on a real money path for a
+  small typing annoyance. Left alone.
+- `IngredientSelect` re-scores the whole material library per keystroke per row. Real, but the library is
+  small enough that it is not observable today; revisit if the library grows or the composer gets slow.
+- Five composer components appear unused. Dead-code removal is safer as its own pass than mixed into a
+  behaviour batch.
