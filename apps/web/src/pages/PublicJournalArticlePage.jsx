@@ -17,6 +17,10 @@ import {
 } from '@/services/journalPostsSupabaseService.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { formatDate } from '@/utils/formatting.js';
+// The shared helpers fall back to the production site URL; this page had its own copies that fell back to
+// window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
+// og:url and JSON-LD @id pointing at that host (audit round 8).
+import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 
 const getReadingMinutes = (content) => {
   const wordCount = String(content || '').trim().split(/\s+/).filter(Boolean).length;
@@ -26,14 +30,6 @@ const getReadingMinutes = (content) => {
 const FALLBACK_SHARE_IMAGE = '/brand/home/perfumer-at-work.jpg';
 const DEFAULT_DESCRIPTION = 'Read a Solivagant perfumery journal article.';
 
-const getSiteOrigin = () => {
-  const configuredOrigin = String(import.meta.env.VITE_PUBLIC_SITE_URL || import.meta.env.VITE_SITE_URL || '').trim();
-  if (configuredOrigin) {
-    return configuredOrigin.replace(/\/+$/, '');
-  }
-
-  return typeof window !== 'undefined' ? window.location.origin : '';
-};
 
 const stripMarkdown = (value) => String(value || '')
   .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
@@ -51,19 +47,6 @@ const truncateMeta = (value, maxLength = 155) => {
   return `${normalized.slice(0, maxLength - 1).trim()}...`;
 };
 
-const toAbsoluteUrl = (value, origin) => {
-  const normalized = String(value || '').trim();
-  if (!normalized) {
-    return '';
-  }
-
-  if (/^https?:\/\//i.test(normalized)) {
-    return normalized;
-  }
-
-  const path = normalized.startsWith('/') ? normalized : `/${normalized}`;
-  return origin ? `${origin}${path}` : path;
-};
 
 /* ─── Mobile article view (unchanged Tailwind-based layout) ─── */
 const MobileArticleView = ({ post, loading, failed, slug, title, description, canonicalUrl, shareImageUrl, publishedDate, modifiedDate, tags, readingMinutes, jsonLd, copyArticleLink, copyState }) => (

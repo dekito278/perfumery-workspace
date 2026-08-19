@@ -9,7 +9,7 @@ reasoning cannot be reproduced from the code.
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
 | Brief AI | 35 confirmed / 3 refuted | module deleted |
 | Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + all HIGH + the consequential MEDIUM done |
-| Journal editor | 27 live / 0 unreachable / 2 refuted | HIGH batch done; MEDIUM/LOW pending |
+| Journal editor | 27 live / 0 unreachable / 2 refuted | done |
 
 ## Formula workbench — HIGH batch (done)
 
@@ -405,3 +405,29 @@ fixture. That matters here because the build cannot prerender anything without S
 
 Obsolete: the finding that merge does not repoint the brief tables — those tables have no application code
 left, and the optional migration drops them.
+
+## Journal editor — remaining batch
+
+- **Article canonical pointed at whatever host served the page.** `PublicJournalArticlePage` carried its own
+  `getSiteOrigin`/`toAbsoluteUrl` that fell back to `window.location.origin`, while `utils/seo.js` has the
+  shared pair that falls back to the production URL — which is why every other page was fine. The local
+  copies are gone; the canonical, `og:url` and the JSON-LD `@id` now always name production.
+- **Unpublishing an article destroyed its publication date.** The trigger nulls `published_at` on draft, so
+  pulling an article back to fix a typo erased the date and republishing back-stamped it to today — wrong
+  on the page, in the Article `datePublished`, and in the sitemap. Fixed in
+  `supabase/migrations/20260819126000_journal_keep_published_at_on_unpublish.sql` (**MANUAL APPLY**): the
+  first publication is stamped once and never cleared.
+- **Inline images rendered as a stray "!" plus a link.** The inline pattern tried the link alternative
+  before the image one, so `![alt](src)` matched as a link and left the bang behind as text. Images now
+  render as images, and the existing href guard applies to them too — a `javascript:` or `data:` src falls
+  back to the alt text rather than reaching the DOM. Covered by `journalMarkdown.selfcheck.mjs`.
+
+### Left alone, with reasons
+
+- Product stories are desktop-only, so a phone visitor is redirected to a page that never loads. That is a
+  missing mobile implementation, not a defect to patch — it needs a decision about whether stories should
+  exist on mobile at all.
+- The public article lists download every published article's full body. Real, but the journal is small;
+  worth a `select` narrowing when it starts to hurt.
+- Several mobile journal niceties (no delete, publish without confirmation, loading flashes) are genuine
+  divergences but none of them lose or corrupt work.
