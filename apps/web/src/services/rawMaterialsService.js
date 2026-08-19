@@ -443,6 +443,12 @@ const findExistingRawMaterialBySmartMatch = async (userId, payload) => {
   return null;
 };
 
+// `%` and `_` are LIKE wildcards. Material names legitimately contain `%` — every stocked dilution row is
+// named like "Iso E Super 10%" — so an unescaped ilike matched the wrong row: silently merging a new
+// material into an unrelated one on create, and permanently blocking the save on edit (audit round 8).
+// PostgREST has no bind parameters here, so escape the pattern itself.
+const escapeLikePattern = (value) => String(value || '').replace(/([\\%_])/g, '\\$1');
+
 const findExistingRawMaterialByName = async (userId, name) => {
   const normalizedName = String(name || '').trim();
   if (!normalizedName) {
@@ -453,7 +459,7 @@ const findExistingRawMaterialByName = async (userId, name) => {
     .from('raw_materials')
     .select('*')
     .eq('user_id', userId)
-    .ilike('name', normalizedName)
+    .ilike('name', escapeLikePattern(normalizedName))
     .limit(1)
     .maybeSingle();
 
@@ -475,7 +481,7 @@ const findExistingRawMaterialByWorkbookCode = async (userId, workbookCode, exclu
     .from('raw_materials')
     .select('*')
     .eq('user_id', userId)
-    .ilike('workbook_code', normalizedWorkbookCode)
+    .ilike('workbook_code', escapeLikePattern(normalizedWorkbookCode))
     .limit(1);
 
   if (excludedRawMaterialId) {

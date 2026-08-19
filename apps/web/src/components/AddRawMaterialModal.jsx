@@ -23,12 +23,15 @@ const AddRawMaterialModal = ({ open, onOpenChange, onSuccess }) => {
         name: formatName(form.formData.name),
       });
 
+      // Nothing was created in the matched case — keep the dialog open and say so plainly, instead of
+      // closing on a toast.info that reads like success (audit round 8).
       if (result?._creationResolution?.action === 'matched_existing') {
-        toast.info(result._creationResolution.message);
-      } else {
-        toast.success('Material added successfully');
+        toast.warning(`${result._creationResolution.message} Material baru TIDAK dibuat — ubah nama atau workbook code kalau ini memang material berbeda.`);
+        onSuccess?.();
+        return;
       }
 
+      toast.success('Material added successfully');
       form.resetForm();
       onOpenChange(false);
       onSuccess?.();

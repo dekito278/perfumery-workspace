@@ -981,9 +981,14 @@ export const buildCanonicalReferencePayload = ({
   };
 };
 
+// An empty object is "I have nothing to contribute", not "wipe what is stored". Opening the guidance
+// quick-edit from a page that does not load guidance_reference_profile produced `{}` here, which then
+// erased every imported reference snapshot on the material (audit round 8).
+const hasEntries = (value) => Boolean(value) && Object.keys(value).length > 0;
+
 export const createReferenceMetadataPatch = ({ sourceSnapshots = null, fieldLocks = null } = {}) => ({
-  __referenceSourceSnapshots: sourceSnapshots ? normalizeSourceSnapshots(sourceSnapshots) : null,
-  __referenceFieldLocks: fieldLocks ? normalizeFieldLocks(fieldLocks) : null,
+  __referenceSourceSnapshots: hasEntries(sourceSnapshots) ? normalizeSourceSnapshots(sourceSnapshots) : null,
+  __referenceFieldLocks: hasEntries(fieldLocks) ? normalizeFieldLocks(fieldLocks) : null,
 });
 
 export const REFERENCE_FIELD_KEYS = FIELD_KEYS;

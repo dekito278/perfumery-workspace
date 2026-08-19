@@ -61,7 +61,10 @@ const shouldOverrideNumericGuidance = ({
   return nextSourceKind === 'explicit';
 };
 
-const isSyntheticWorkbookCode = (value) => /^RAW-(?:MANUAL|[A-Z0-9]+)/i.test(String(value || '').trim());
+// Generated reference ids must never be offered as a workbook code: the guard only knew the RAW- family,
+// so a manual profile's MAN-<uuid> was stamped into raw_materials.workbook_code — a column under a unique
+// index that the create path matches on first (audit round 8).
+const isSyntheticWorkbookCode = (value) => /^(?:RAW|MAN|EXT)-/i.test(String(value || '').trim());
 
 const normalizeWorkbookCodeForForm = (preferredValue, fallbackValue = '') => {
   if (preferredValue && !isSyntheticWorkbookCode(preferredValue)) {

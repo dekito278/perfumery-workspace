@@ -8,7 +8,7 @@ reasoning cannot be reproduced from the code.
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
 | Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
-| Material reference | — | todo |
+| Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + first HIGHs done, rest pending |
 | Journal editor | — | todo |
 
 ## Formula workbench — HIGH batch (done)
@@ -197,3 +197,47 @@ In this order, running `npx eslint src/pages/EditFormulaPage.jsx` (not just the 
 5. Then delete the standalone modules listed above.
 6. Optionally drop the five tables. They are empty, but a drop is irreversible, so it should be its own
    decision and its own manual-apply migration.
+
+## Material reference — critical and first high findings (done)
+
+This audit asked every finding to name the route and action that reaches it, and had the skeptic verify
+reachability independently. That split 44 findings into 33 live, 8 unreachable and 3 refuted — worth
+keeping for future rounds, because the previous module burned effort on defects nobody could trigger.
+
+- **CRITICAL — the second material in any category was never saved.** Picking a category auto-filled
+  `workbook_code` with the bare category letter (`A`..`Z`) whenever the field was blank, and the field sits
+  *above* the category select so it usually is. `createRawMaterial` matches on workbook code first, so
+  material #2 in category J matched material #1, no INSERT happened, and the modal closed on a
+  `toast.info` that read like success — name, cost, stock and CAS all discarded, and any imported guidance
+  written onto the unrelated material. The auto-fill is removed: the workbook code is a per-material
+  identifier under a unique index, not a category tag. The matched case now warns explicitly that nothing
+  was created and keeps the dialog open.
+- **`%` in a material name matched the wrong row.** `findExistingRawMaterialByName` / `...ByWorkbookCode`
+  passed the name straight into `ilike` as a LIKE pattern. Every stocked dilution is named like
+  "Iso E Super 10%", so `%` acted as a wildcard — silently merging a new material into an unrelated one on
+  create, and permanently blocking the save on edit. One `escapeLikePattern` helper now feeds both, matching
+  what the search paths already did. Covered by `likePattern.selfcheck.mjs`.
+- **Merging duplicates destroyed the duplicate's stock.** `buildMergedRawMaterialData` spread the master row
+  and never summed `stock_quantity`, and the duplicate is deleted immediately after. Quantities are now
+  added and the stricter `minimum_stock` kept. Covered by `mergeStock.selfcheck.mjs`.
+- **Opening the guidance quick-edit erased imported reference snapshots.** A page that does not load
+  `guidance_reference_profile` produced `{}`, and `createReferenceMetadataPatch` treated that as "replace
+  with nothing". An empty object now means "no change", fixing every caller at once.
+- **`MAN-<uuid>` was stamped into `workbook_code`.** The synthetic-code guard only knew the `RAW-` family,
+  so a manual profile's generated id landed in the unique-indexed column the create path matches on first.
+  The guard now covers `RAW-`, `MAN-` and `EXT-`.
+
+Checks: `npm run lint`, ten `*.selfcheck.mjs`, `npm run build`.
+
+### Still open in this module
+
+Five HIGH findings remain, plus 13 MEDIUM and 10 LOW. The most consequential:
+
+- **All three URL importers are vite-dev-only** — Scentree, PerfumersWorld and TGSC import buttons call
+  dev-server middleware that does not exist in production, so every import returns 404 in the deployed app.
+  Either port them to `apps/web/api/imports/*` or hide the buttons; both are more than a patch.
+- Free-text keyword inference can outweigh the perfumer's chosen ABC family.
+- Mobile "new material" reports success when the service merged instead of inserting (same root as the
+  CRITICAL, different call site).
+- Mobile list copies guidance between different rows that share a CAS.
+- An IFRA limit of 0 (prohibited) is read everywhere as "no limit".
