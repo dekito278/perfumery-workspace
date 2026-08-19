@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
@@ -33,70 +33,6 @@ import {
 } from '@/utils/mobileGuidanceImport.js';
 import { enrichMaterialsWithGuidance, getResolvedGuidanceNumber, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 
-const normalizePeerKey = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-const buildGuidanceScore = (material) => {
-  const resolved = getResolvedGuidanceValues(material);
-  return [
-    resolved.reference_impact,
-    resolved.reference_life_hours,
-    resolved.reference_abc_primary_family,
-    resolved.ifra_limit,
-    resolved.workbook_code,
-  ].filter(Boolean).length;
-};
-
-const hydrateGuidanceFromPeerMaterials = (materials = []) => {
-  const peerMap = new Map();
-  materials.forEach((material) => {
-    const resolved = getResolvedGuidanceValues(material);
-    const keys = [
-      normalizePeerKey(resolved.cas_number || material.cas_number),
-      normalizePeerKey(material.name).replace(/undiliuted/g, 'undiluted').replace(/undilute/g, 'undiluted'),
-    ].filter(Boolean);
-
-    keys.forEach((key) => {
-      const currentBest = peerMap.get(key);
-      if (!currentBest || buildGuidanceScore(material) > buildGuidanceScore(currentBest)) {
-        peerMap.set(key, material);
-      }
-    });
-  });
-
-  return materials.map((material) => {
-    const resolved = getResolvedGuidanceValues(material);
-    if (resolved.reference_impact && resolved.reference_life_hours) {
-      return material;
-    }
-
-    const keys = [
-      normalizePeerKey(resolved.cas_number || material.cas_number),
-      normalizePeerKey(material.name).replace(/undiliuted/g, 'undiluted').replace(/undilute/g, 'undiluted'),
-    ].filter(Boolean);
-    const peer = keys.map((key) => peerMap.get(key)).find((entry) => entry && entry.id !== material.id && buildGuidanceScore(entry) > buildGuidanceScore(material));
-    if (!peer) {
-      return material;
-    }
-
-    const peerResolved = getResolvedGuidanceValues(peer);
-    return {
-      ...material,
-      guidance_resolved_values: {
-        ...(material.guidance_resolved_values || {}),
-        workbook_code: resolved.workbook_code || peerResolved.workbook_code,
-        reference_abc_primary_family: resolved.reference_abc_primary_family || peerResolved.reference_abc_primary_family,
-        reference_impact: resolved.reference_impact || peerResolved.reference_impact,
-        reference_life_hours: resolved.reference_life_hours || peerResolved.reference_life_hours,
-        reference_use_level_typical_percent: resolved.reference_use_level_typical_percent || peerResolved.reference_use_level_typical_percent,
-        reference_use_level_max_percent: resolved.reference_use_level_max_percent || peerResolved.reference_use_level_max_percent,
-        ifra_limit: resolved.ifra_limit || peerResolved.ifra_limit,
-        cas_number: resolved.cas_number || peerResolved.cas_number,
-      },
-      guidance_reference_profile: material.guidance_reference_profile || peer.guidance_reference_profile,
-    };
-  });
-};
-
 const referenceOptions = [
   { value: 'all', label: 'All' },
   { value: 'has_guidance', label: 'Guided' },
@@ -111,8 +47,6 @@ const cleanupOptions = [
   { value: 'archived', label: 'Archived' },
   { value: 'all', label: 'All' },
 ];
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const runWithTimeout = (promise, timeoutMs = 4500, message = 'Request timed out') => Promise.race([
   promise,
@@ -247,7 +181,10 @@ const MobileRawMaterialsPage = () => {
       }
 
       setGuidanceLoading(true);
-      const enrichedItems = hydrateGuidanceFromPeerMaterials(await runGuidanceWithTimeout(enrichMaterialsWithGuidance(baseItems)));
+      // No peer hydration: it copied guidance between rows sharing a CAS, so a stocked dilution inherited
+      // the neat material's use levels — off by the dilution factor on the exact number a perfumer doses
+      // by. Desktop never did this (audit round 8).
+      const enrichedItems = await runGuidanceWithTimeout(enrichMaterialsWithGuidance(baseItems));
       if (loadToken !== loadTokenRef.current) return;
       const filteredItems = applyMaterialFilters(enrichedItems);
       setMaterials(filteredItems);

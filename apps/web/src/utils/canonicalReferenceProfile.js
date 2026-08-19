@@ -610,11 +610,16 @@ const mergeDistributionCandidates = (adapters) => {
       share: Number(entry.share || 0) * (adapter.priority / 100),
     })));
 
+  // Keyword inference is a hint, never a verdict. At 0.35 it outscored an explicitly chosen family
+  // entered through the material form (SOURCE_PRIORITIES.raw_material_form = 18 -> 0.18), so a description
+  // mentioning another family's descriptor could flip the ABC family the composer doses by. Keep the
+  // weight below the lowest explicit priority (fallback = 12 -> 0.12) so any stated family wins
+  // (audit round 8).
   const textCorpus = adapters.map((adapter) => adapter.text).filter(Boolean).join(' | ');
   const inferred = buildDistributionFromText(textCorpus)
     .map((entry) => ({
       letter: entry.letter,
-      share: Number(entry.share || 0) * 0.35,
+      share: Number(entry.share || 0) * 0.10,
     }));
 
   return normalizeDistribution([...explicit, ...inferred]);

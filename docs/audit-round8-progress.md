@@ -8,7 +8,7 @@ reasoning cannot be reproduced from the code.
 |---|---|---|
 | Formula workbench | 37 confirmed / 7 refuted | done (2 withdrawn by the owner's answer) |
 | Brief AI | 35 confirmed / 3 refuted | audited; owner chose deletion — deletion NOT done, see below |
-| Material reference | 33 live / 8 unreachable / 3 refuted | CRITICAL + first HIGHs done, rest pending |
+| Material reference | 33 live / 8 unreachable / 3 refuted | all 9 HIGH + CRITICAL done; MEDIUM/LOW pending |
 | Journal editor | — | todo |
 
 ## Formula workbench — HIGH batch (done)
@@ -229,15 +229,31 @@ keeping for future rounds, because the previous module burned effort on defects 
 
 Checks: `npm run lint`, ten `*.selfcheck.mjs`, `npm run build`.
 
+### Remaining HIGH findings (also done)
+
+- **Mobile list copied guidance between rows sharing a CAS.** A stocked dilution shares its CAS with the
+  neat material, so "Iso E Super 10%" inherited the neat row's use levels — wrong by the dilution factor on
+  the exact number a perfumer doses by, and it reached `guidance_reference_profile`, the filters and the
+  scoring. Desktop never had this. `hydrateGuidanceFromPeerMaterials` and its three now-orphaned helpers
+  are removed.
+- **Mobile "new material" reported success when the service merged instead of inserting** — same root as
+  the CRITICAL, different call site. It now warns and says nothing was created. (It still navigates to the
+  matched material, which is the honest destination: that row is what exists.)
+- **Keyword inference outweighed a stated ABC family.** Inferred shares were weighted 0.35 while a family
+  entered through the material form carries `raw_material_form` priority 18 → 0.18, so a description
+  mentioning another family's descriptor could flip the family the composer doses by. Inference is now
+  0.10, below the lowest explicit priority (`fallback` 12 → 0.12), so any stated family wins.
+- **All three URL importers are vite-dev-only.** `scentreeImportDevPlugin` is loaded only when `isDev`, and
+  production rewrites `/api/(.*)` to not-found — so Scentree, PerfumersWorld and TGSC imports have always
+  404'd in the deployed app. Porting three scrapers to serverless is a feature, not a patch, so instead the
+  service now exports `URL_IMPORT_AVAILABLE` and throws a truthful error, and the quick-edit dialog shows a
+  warning band above the buttons in production. **If you want these working in production, that is a
+  separate piece of work** — three handlers under `apps/web/api/imports/` with a host allowlist and an
+  admin check, modelled on `api/formula/import-pdf.js`.
+
 ### Still open in this module
 
-Five HIGH findings remain, plus 13 MEDIUM and 10 LOW. The most consequential:
-
-- **All three URL importers are vite-dev-only** — Scentree, PerfumersWorld and TGSC import buttons call
-  dev-server middleware that does not exist in production, so every import returns 404 in the deployed app.
-  Either port them to `apps/web/api/imports/*` or hide the buttons; both are more than a patch.
-- Free-text keyword inference can outweigh the perfumer's chosen ABC family.
-- Mobile "new material" reports success when the service merged instead of inserting (same root as the
-  CRITICAL, different call site).
-- Mobile list copies guidance between different rows that share a CAS.
-- An IFRA limit of 0 (prohibited) is read everywhere as "no limit".
+13 MEDIUM and 10 LOW. Worth knowing: an IFRA limit of 0 (a prohibited material) is read everywhere as
+"no limit"; four of the ten reference-filter options are no-ops; the delete pre-check only counts
+`formula_items`, so the dialog says "ready to delete" for materials still referenced elsewhere; and the
+search box mangles ordinary names (`%` replaced by a space).
