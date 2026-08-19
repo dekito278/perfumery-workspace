@@ -353,8 +353,11 @@ worked in the deployed app.
 
 The scraping logic moved out of the plugin into `src/utils/materialImportScrapers.js` (runtime-agnostic:
 fetch and string parsing only), and both the dev plugin and three new serverless endpoints under
-`apps/web/api/imports/` now run **the same code** — the plugin shrank from 676 to 92 lines. Shared plumbing
-lives in `api/imports/_handler.js` (underscore-prefixed so Vercel does not route it).
+`apps/web/api/imports/` now run **the same code** — the plugin shrank from 676 to 92 lines. All three share **one** endpoint, `api/imports/index.js`, with the source chosen by the payload.
+
+It began as three route files, and the Vercel deploy failed: that took the deployment to 13 serverless
+functions, one over the Hobby ceiling of 12. Three files differing only in which scraper they called did
+not earn three functions anyway. Second Hobby-plan ceiling this audit has hit, after the cron interval.
 
 The endpoints are **admin-only**. `assertAdmin` moved out of `api/formula/import-pdf.js` into
 `src/utils/apiAdminAuth.js` so there is one copy rather than a fourth, and the client sends the studio

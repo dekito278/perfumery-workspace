@@ -35,16 +35,6 @@ const parseImportResponse = async (response, fallbackMessage) => {
 	return payload;
 };
 
-const importPerfumersWorldByGet = async (url) => {
-	const query = new URLSearchParams({ url });
-	const response = await fetch(`${API_BASE_URL}/imports/perfumersworld?${query.toString()}`, {
-		method: 'GET',
-		headers: { ...(await authHeaders()), Accept: 'application/json' },
-	});
-
-	return parseImportResponse(response, 'Failed to import PerfumersWorld data');
-};
-
 export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
 	const normalizedCode = String(workbookCode || '').trim().toUpperCase();
 	if (!normalizedCode) {
@@ -54,36 +44,20 @@ export const buildPerfumersWorldUrlFromWorkbookCode = (workbookCode) => {
 	return `https://www.perfumersworld.com/view.php?pro_id=${encodeURIComponent(normalizedCode)}`;
 };
 
-export const importScentreeByUrl = async (url) => {
-	const response = await fetch(`${API_BASE_URL}/imports/scentree`, {
+// All three sources share one endpoint (api/imports/index.js) — three route files would have put the
+// deployment one over the Vercel Hobby serverless-function ceiling.
+const importBySource = async (source, url, fallbackMessage) => {
+	const response = await fetch(`${API_BASE_URL}/imports`, {
 		method: 'POST',
 		headers: await authHeaders(),
-		body: JSON.stringify({ url }),
+		body: JSON.stringify({ source, url }),
 	});
 
-	return parseImportResponse(response, 'Failed to import ScenTree data');
+	return parseImportResponse(response, fallbackMessage);
 };
 
-export const importPerfumersWorldByUrl = async (url) => {
-	const response = await fetch(`${API_BASE_URL}/imports/perfumersworld`, {
-		method: 'POST',
-		headers: await authHeaders(),
-		body: JSON.stringify({ url }),
-	});
+export const importScentreeByUrl = (url) => importBySource('scentree', url, 'Failed to import ScenTree data');
 
-	if (response.status === 405) {
-		return importPerfumersWorldByGet(url);
-	}
+export const importPerfumersWorldByUrl = (url) => importBySource('perfumersworld', url, 'Failed to import PerfumersWorld data');
 
-	return parseImportResponse(response, 'Failed to import PerfumersWorld data');
-};
-
-export const importTgscByUrl = async (url) => {
-	const response = await fetch(`${API_BASE_URL}/imports/tgsc`, {
-		method: 'POST',
-		headers: await authHeaders(),
-		body: JSON.stringify({ url }),
-	});
-
-	return parseImportResponse(response, 'Failed to import TGSC data');
-};
+export const importTgscByUrl = (url) => importBySource('tgsc', url, 'Failed to import TGSC data');

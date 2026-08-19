@@ -21,67 +21,37 @@ const readJsonBody = async (req) => {
 	return rawBody ? JSON.parse(rawBody) : {};
 };
 
+const SCRAPERS = {
+	scentree: importScentreeByUrl,
+	perfumersworld: importPerfumersWorldByUrl,
+	tgsc: importTgscByUrl,
+};
+
 export default function scentreeImportDevPlugin() {
 	return {
 		name: 'scentree-import-dev-plugin',
 		configureServer(server) {
-			server.middlewares.use('/api/imports/scentree', async (req, res, next) => {
-				if (req.method !== 'POST') {
-					return next();
-				}
-
-				try {
-					const body = await readJsonBody(req);
-					const url = String(body?.url || '').trim();
-					if (!url) {
-						return sendJson(res, 400, { message: 'URL is required' });
-					}
-
-					const payload = await importScentreeByUrl(url);
-					return sendJson(res, 200, payload);
-				} catch (error) {
-					return sendJson(res, error.statusCode || 500, {
-						message: error.message || 'Something went wrong!',
-					});
-				}
-			});
-
-			server.middlewares.use('/api/imports/perfumersworld', async (req, res, next) => {
+			// Mirrors api/imports/index.js: one path, source chosen by the payload.
+			server.middlewares.use('/api/imports', async (req, res, next) => {
 				if (!['GET', 'POST'].includes(req.method)) {
 					return next();
 				}
 
 				try {
-					const requestUrl = new URL(req.url || '/', 'http://localhost');
+					const query = new URL(req.url || '/', 'http://localhost').searchParams;
 					const body = req.method === 'POST' ? await readJsonBody(req) : {};
-					const url = String(body?.url || requestUrl.searchParams.get('url') || '').trim();
+					const source = String(body?.source || query.get('source') || '').trim().toLowerCase();
+					const url = String(body?.url || query.get('url') || '').trim();
+
+					const scrape = SCRAPERS[source];
+					if (!scrape) {
+						return sendJson(res, 400, { message: `Unknown import source: ${source || '(none)'}` });
+					}
 					if (!url) {
 						return sendJson(res, 400, { message: 'URL is required' });
 					}
 
-					const payload = await importPerfumersWorldByUrl(url);
-					return sendJson(res, 200, payload);
-				} catch (error) {
-					return sendJson(res, error.statusCode || 500, {
-						message: error.message || 'Something went wrong!',
-					});
-				}
-			});
-
-			server.middlewares.use('/api/imports/tgsc', async (req, res, next) => {
-				if (req.method !== 'POST') {
-					return next();
-				}
-
-				try {
-					const body = await readJsonBody(req);
-					const url = String(body?.url || '').trim();
-					if (!url) {
-						return sendJson(res, 400, { message: 'URL is required' });
-					}
-
-					const payload = await importTgscByUrl(url);
-					return sendJson(res, 200, payload);
+					return sendJson(res, 200, await scrape(url));
 				} catch (error) {
 					return sendJson(res, error.statusCode || 500, {
 						message: error.message || 'Something went wrong!',
