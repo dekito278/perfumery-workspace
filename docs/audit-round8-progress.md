@@ -38,24 +38,35 @@ reasoning cannot be reproduced from the code.
 - **Per-row validation errors were keyed by array index**, so inserting or removing a row pinned an error
   to a position that then held a different material. Keyed by `row_key` now, in the hook and the table.
 
-## Formula workbench — needs an owner decision, NOT fixed
+## Formula workbench — the dilution question, answered
 
-Two HIGH findings turn on one domain question I will not guess at, because both readings are defensible
-and the wrong one corrupts inventory or cost:
+Two HIGH findings claimed that stock deduction and cost were wrong for diluted rows. Both rested on an
+assumption about how the bench actually works, so it was put to the owner rather than guessed at:
 
-> When a formula row carries a dilution (`dilution_percent` + `dilution_solvent_id`), does the perfumer
-> dilute at the bench from **neat** stock — or pick a material that is **already stocked pre-diluted**?
+> When a formula row carries a dilution (`dilution_percent` + `dilution_solvent_id`), is the material
+> diluted at the bench from neat stock, or is it a material that is already stocked pre-diluted?
 
-`raw_materials` supports both: it has its own `dilution_percentage` / `dilution_solvent_id`, so a stocked
-item can itself be "Iso E Super 10% in DPG".
+**Answer: the row points at a material that is already stocked pre-diluted** — the raw-material list holds
+a separate item (e.g. "Iso E Super 10%") with its own `stock_quantity` and `cost_per_unit`, and that is
+what gets selected. `raw_materials` supports exactly this: it carries its own `dilution_percentage` and
+`dilution_solvent_id`.
 
-- If dilution is done **at the bench**, then `deduct_batch_material_stock` is wrong: it removes the full
-  diluted weight from the neat material (10× too much at 10%) and never deducts the dilution solvent at
-  all, and `formulaDetailData.enrichFormulaItem` prices the diluted weight at the neat material's rate
-  while ignoring the solvent — so both stock and COGS are overstated.
-- If the row points at a **pre-diluted stocked material**, today's behaviour is correct and "fixing" it
-  would under-deduct stock and understate cost.
+So **both findings are withdrawn, and nothing changes**:
 
-The code leans toward bench dilution (`formulaPipeline` seeds neat material + a recommended dilution + an
-auto-picked solvent; the PDF import resolves the row to the pure material and creates the solvent as a
-separate material). But leaning is not enough to rewrite stock and cost maths in production.
+- `deduct_batch_material_stock` removing the full row weight from the selected material is CORRECT — that
+  weight *is* the stock being consumed. Deducting only `concentrate_amount` would under-deduct, and
+  deducting a separate dilution solvent would remove stock that was never touched.
+- `formulaDetailData.enrichFormulaItem` pricing the full gram weight at that material's `cost_per_unit` is
+  CORRECT for the same reason, and there is no separate solvent cost to add.
+
+The per-row `dilution_percent` / `dilution_solvent_id` / `concentrate_amount` fields are therefore
+**descriptive** — they record what the chosen material's dilution is, so the workbench can show active
+versus carrier contribution. They are not an instruction to dilute anything.
+
+Worth keeping in mind for future audits of this module: an auditor reading only the code will keep
+re-deriving the bench-dilution reading, because `formulaPipeline` seeds a neat material plus a recommended
+dilution and auto-picks a solvent, and the PDF import resolves a row to the pure material while creating
+the solvent separately. Those paths *look* like bench dilution. They are not.
+
+Note that the batch weighing-sheet fix above is on a different axis and stands: that one is about the
+**batch** being diluted (`formulaPercentage`, the batch-level solvent), not about per-row dilution.
