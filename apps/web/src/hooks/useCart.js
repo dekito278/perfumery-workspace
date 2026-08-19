@@ -4,15 +4,21 @@ import {
   clearCart,
   getCartItems,
   getCartSummary,
+  reconcileCartLines,
   removeCartItem,
   updateCartQuantity,
 } from '@/services/cartService.js';
+import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 
 export const useCart = () => {
-  const [items, setItems] = useState(getCartItems);
+  const [storedItems, setStoredItems] = useState(getCartItems);
+  const catalog = useCatalogProducts();
+  // Everything downstream — the cart page, the summary, and the order the buyer is charged for — reads
+  // the reconciled lines, so a stale localStorage cart cannot carry an old price or a dead stock cap.
+  const items = useMemo(() => reconcileCartLines(storedItems, catalog), [storedItems, catalog]);
 
   useEffect(() => {
-    const syncCart = () => setItems(getCartItems());
+    const syncCart = () => setStoredItems(getCartItems());
     window.addEventListener('storage', syncCart);
     window.addEventListener('dekito:cart-updated', syncCart);
     syncCart();
@@ -28,12 +34,12 @@ export const useCart = () => {
   return {
     items,
     summary,
-    addItem: (product, quantity) => setItems(addCartItem(product, quantity)),
-    updateQuantity: (slug, quantity) => setItems(updateCartQuantity(slug, quantity)),
-    removeItem: (slug) => setItems(removeCartItem(slug)),
+    addItem: (product, quantity) => setStoredItems(addCartItem(product, quantity)),
+    updateQuantity: (slug, quantity) => setStoredItems(updateCartQuantity(slug, quantity)),
+    removeItem: (slug) => setStoredItems(removeCartItem(slug)),
     clear: () => {
       clearCart();
-      setItems([]);
+      setStoredItems([]);
     },
   };
 };

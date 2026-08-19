@@ -28,7 +28,7 @@ const MobileCustomersPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet>
         <title>Customer - Solivagant</title>
       </Helmet>

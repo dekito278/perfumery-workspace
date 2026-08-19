@@ -135,7 +135,13 @@ const computeShippingFee = async (baseUrl, { destinationId, destination, weight,
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.message || 'Failed to price shipping');
   const rates = Array.isArray(data.rates) ? data.rates : [];
-  const chosen = rates.find((r) => r.courierCode === courier && r.service === service) || rates[0];
+  // Fail closed. Silently falling back to rates[0] charged the buyer a different courier and price than
+  // the one they picked and saw on the checkout screen (audit round 7).
+  const exact = rates.find((r) => r.courierCode === courier && r.service === service);
+  if (!exact && courier && service) {
+    throw new Error('Layanan pengiriman yang dipilih sudah tidak tersedia. Pilih ulang kurir dan layanan.');
+  }
+  const chosen = exact || rates[0];
   if (!chosen) throw new Error('No shipping rate for the selected destination/courier');
 
   const [promoRow] = await sbSelect('storefront_shipping_promotion_settings?id=eq.default&select=*').catch(() => []);
@@ -198,6 +204,14 @@ export default async function handler(req, res) {
     if (voucherCode) {
       const [voucherRow] = await sbSelect(`storefront_vouchers?code=eq.${encodeURIComponent(voucherCode)}&select=*`);
       const verdict = validateVoucher({ code: voucherCode, voucher: voucherRow, subtotal: itemsSubtotal, items: catalog.resolved });
+      // Dropping an invalid voucher server-side charged the buyer more than the total they confirmed.
+      // Refuse instead, so checkout can re-price and show them the real number (audit round 7).
+      if (!verdict.valid) {
+        return jsonResponse(res, 422, {
+          message: verdict.message || `Voucher ${voucherCode} tidak bisa dipakai`,
+          reason: verdict.reason,
+        });
+      }
       if (verdict.valid) {
         voucherDiscount = Math.max(Number(verdict.discountAmount || 0), 0);
         voucherSnapshot = {
@@ -292,7 +306,10 @@ export default async function handler(req, res) {
       headers: { ...headers, Prefer: 'return=representation' },
       body: JSON.stringify(payload),
     });
-    if (!insertRes.ok) throw new Error(`Order insert failed: ${await insertRes.text()}`);
+    if (!insertRes.ok) {
+      console.error('Order insert failed:', await insertRes.text());
+      throw new Error('Gagal membuat pesanan. Coba lagi sebentar.');
+    }
     const [order] = await insertRes.json();
 
     // Reserve stock for catalog lines (bespoke has none). The RPC is atomic + idempotent and raises on

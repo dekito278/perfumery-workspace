@@ -17,7 +17,7 @@ import {
   isBespokeOrder,
   updateOrderShipment,
 } from '@/services/orderService.js';
-import { buildNotificationMessage, getWhatsAppNotificationUrl } from '@/services/notificationTemplateService.js';
+import { buildNotificationMessage, getNotificationHandoffUrl } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
@@ -276,7 +276,7 @@ const MobileFulfillmentPage = () => {
     };
     const eventKey = notificationOrder.trackingNumber || notificationOrder.shipmentStatus === 'shipped' ? 'shipped' : 'processing';
     const message = buildNotificationMessage(notificationOrder, eventKey);
-    window.open(getWhatsAppNotificationUrl(notificationOrder, message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(notificationOrder, message), '_blank', 'noopener,noreferrer');
   };
 
   const copyPublicTrackingLink = async (order) => {
@@ -369,7 +369,7 @@ const MobileFulfillmentPage = () => {
       copied = false;
       console.warn('Clipboard write failed:', error?.message || error);
     }
-    window.open(getWhatsAppNotificationUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(messages[0].order, messages[0].message), '_blank', 'noopener,noreferrer');
     toast.success(copied ? `${messages.length} pesan WA disalin, WA pertama dibuka` : 'WA pertama dibuka (salin pesan gagal)');
   };
 
@@ -383,7 +383,7 @@ const MobileFulfillmentPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet><title>Fulfillment - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar

@@ -24,7 +24,7 @@ import {
   PRODUCT_DRAFT_TAG,
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
-import { uploadProductImage } from '@/services/productImageStorageService.js';
+import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { formatQuantity } from '@/utils/formatting.js';
 
 export const emptyProduct = {
@@ -248,6 +248,14 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         price: formatRupiah(nextPrimaryVariantPrice),
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
       });
+      // Same save-time reconciliation the desktop form does: storage files for images that were on the
+      // product before but are no longer referenced would otherwise stay in the bucket forever, and the
+      // buckets are admin-locked so nothing else cleans them up (audit round 7).
+      const savedImages = new Set(saved.images || []);
+      const removedImages = (previousProduct?.images || []).filter((url) => !savedImages.has(url));
+      if (removedImages.length) {
+        deleteProductImages(removedImages).catch((cleanupError) => console.warn('Product image cleanup skipped:', cleanupError.message || cleanupError));
+      }
       const nextForm = toProductForm(saved);
       setForm(nextForm);
       setSavedFormSnapshot(snapshotProductForm(nextForm));
@@ -562,7 +570,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         </label>
       </ProductFormSection>
 
-      <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Aksi form produk">
+      <StickyBottomActionBar fixed reserveSpace aria-label="Aksi form produk">
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={resetForm}>Reset</Button>
           <Button type="button" className="h-12 rounded-2xl gap-2" onClick={handleSubmit} disabled={savingProduct || !requiredReady}>

@@ -1,7 +1,14 @@
 // DOKU SNAP QRIS (MPM) generate — native in-app payment (no DOKU iframe).
 // Flow: get a B2B access token (asymmetric RSA-SHA256 signature), then call qr-mpm-generate
 // (symmetric HMAC-SHA512 signature). Returns the QRIS string (qrContent) which the frontend renders
-// as a QR code. Payment is confirmed via the DOKU SNAP payment notification webhook (see notification.js).
+// as a QR code.
+//
+// NOT YET CONFIRMABLE (audit round 7): notification.js still only understands the Jokul notification
+// envelope, and status.js polls the Jokul checkout API, so a SNAP QRIS payment never marks its order paid.
+// Add a SNAP branch to notification.js — verify X-SIGNATURE as HMAC-SHA512 over
+// `POST:<path>:<accessToken>:<sha256hex(body)>:<X-TIMESTAMP>`, then map partnerReferenceNo +
+// latestTransactionStatus through mapDokuStatus — and verify it against the DOKU sandbox BEFORE setting
+// VITE_QRIS_ENABLED=true. Until then this endpoint is dark code behind that flag.
 //
 // Env (all runtime; set SANDBOX values on Vercel Preview scope, PRODUCTION values on Production scope):
 //   DOKU_ENVIRONMENT       'sandbox' | 'production' (already used by checkout.js)
@@ -126,7 +133,9 @@ export default async function handler(req, res) {
     const orderNumber = String(input.orderNumber || input.invoiceNumber || '').trim();
     if (!orderNumber) return jsonResponse(res, 422, { message: 'orderNumber is required' });
 
-    const { amount } = await getOrderAmountByInvoice(orderNumber);
+    const { amount, paymentStatus } = await getOrderAmountByInvoice(orderNumber);
+    // Mirror checkout.js:168 — never mint a payable QR for an order that is already paid.
+    if (paymentStatus === 'paid') return jsonResponse(res, 409, { message: 'Order is already paid' });
     if (amount <= 0) return jsonResponse(res, 422, { message: 'Order has no payable amount' });
 
     const clientKey = String(process.env.DOKU_SNAP_CLIENT_KEY || process.env.DOKU_CLIENT_ID || '').trim();
@@ -180,10 +189,12 @@ export default async function handler(req, res) {
     const doku = await dokuRes.json().catch(() => ({}));
     // SNAP success codes start with 200 (e.g. 2004900).
     if (!dokuRes.ok || !doku?.qrContent) {
+      // The full DOKU payload stays in the server log — echoing it to the browser leaked gateway
+      // internals to anyone who could hit this endpoint (audit round 7).
+      console.error('DOKU QRIS generate failed:', JSON.stringify(doku));
       return jsonResponse(res, 502, {
         message: doku?.responseMessage || 'DOKU QRIS generate failed',
         dokuResponseCode: doku?.responseCode,
-        doku,
       });
     }
 

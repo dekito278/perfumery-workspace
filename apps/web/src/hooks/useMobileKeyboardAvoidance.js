@@ -33,6 +33,15 @@ const findScrollContainer = (element) => {
   return window;
 };
 
+// The fixed action bar sits inside the visible viewport, right above the keyboard, so a field scrolled to
+// the bottom of that viewport landed behind Simpan/Bayar. StickyBottomActionBar publishes its measured
+// height; treat that as part of the obstruction (audit round 7).
+const getActionBarHeight = () => {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--mobile-action-bar-height');
+  const height = Number.parseFloat(raw);
+  return Number.isFinite(height) ? height : 0;
+};
+
 const getVisibleBounds = () => {
   const viewport = window.visualViewport;
   const top = viewport?.offsetTop || 0;
@@ -40,7 +49,7 @@ const getVisibleBounds = () => {
 
   return {
     top: top + SAFE_TOP_GAP,
-    bottom: top + height - SAFE_BOTTOM_GAP,
+    bottom: top + height - SAFE_BOTTOM_GAP - getActionBarHeight(),
   };
 };
 

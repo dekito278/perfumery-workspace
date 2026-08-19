@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { shopToday } from '@/utils/localDay.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Beaker, ClipboardCheck, Factory, Home, PackageCheck, Save, ShoppingBag } from 'lucide-react';
@@ -240,9 +241,16 @@ const BatchProductionPage = () => {
     formula: selectedFormula,
     targetMl: targetValue,
   }) : '';
-  const publishedProduct = batchProductKey
-    ? catalogProducts.find((product) => getProductBatchKey(product) === batchProductKey)
-    : null;
+  // Match the batch, not a hash of the current form inputs: tweaking loss/target/bottle size changed the
+  // hash, so the guard stopped seeing the product this batch had already published and minted a second
+  // one with a full bottle count (audit round 7). The parameter hash stays as a fallback for batches
+  // published before product_id was stored on the batch row.
+  const publishedProduct = (savedBatch?.product_id
+    ? catalogProducts.find((product) => product.id === savedBatch.product_id)
+    : null)
+    || (batchProductKey
+      ? catalogProducts.find((product) => getProductBatchKey(product) === batchProductKey)
+      : null);
 
   const buildBatchPayload = (status = batchStatus, overrides = {}) => ({
     ...(savedBatch || {}),
@@ -252,7 +260,7 @@ const BatchProductionPage = () => {
     solvent_id: selectedSolventId || null,
     target_quantity: targetValue,
     produced_quantity: targetValue,
-    production_date: new Date().toISOString().slice(0, 10),
+    production_date: shopToday(),
     unit: 'ml',
     formula_percentage: concentration,
     solvent_percentage: Math.max(100 - concentration, 0),

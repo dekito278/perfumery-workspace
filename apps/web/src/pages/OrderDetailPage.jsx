@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -55,7 +56,7 @@ import {
   canSendEmailNotification,
   getEmailNotificationUrl,
   getNotificationEventLabels,
-  getWhatsAppNotificationUrl,
+  getNotificationHandoffUrl,
 } from '@/services/notificationTemplateService.js';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createPaymentProofSignedUrl } from '@/services/paymentProofStorageService.js';
@@ -69,6 +70,7 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import {
   getBespokeOrderSummary,
+  getNextOrderStatusForPayment,
   hasShippingLabelPrinted,
   isArchivedOrder,
   isShippedOrder,
@@ -187,14 +189,6 @@ const getProofTimeline = (logs = []) => logs
     };
   });
 
-const parseNoteLines = (notes = '') => String(notes || '')
-  .split('\n')
-  .map((line) => line.trim())
-  .filter(Boolean)
-  .map((line) => {
-    const [label, ...rest] = line.split(':');
-    return { label: label || 'Note', value: rest.join(':').trim() || '-' };
-  });
 
 const getNoteValue = (rows, label) => (
   rows.find((row) => row.label.toLowerCase() === label.toLowerCase())?.value || ''
@@ -240,14 +234,16 @@ const getNextOperationalTask = (order, bespoke) => {
   return { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' };
 };
 
-const toDatetimeLocal = (value) => (value ? value.slice(0, 16) : '');
-const fromDatetimeLocal = (value) => (value ? new Date(value).toISOString() : '');
-
-const getNextOrderStatusForPayment = (paymentStatus) => {
-  if (paymentStatus === 'paid') return 'paid';
-  if (['failed', 'expired'].includes(paymentStatus)) return 'cancelled';
-  return 'pending_payment';
+// <input type="datetime-local"> speaks local time. Slicing the stored UTC string handed it the UTC clock
+// reading as if it were local, so every save shifted shipped_at/delivered_at by the WIB offset — seven
+// hours per save, compounding (audit round 7). 'sv' formats as YYYY-MM-DD HH:mm in local time.
+const toDatetimeLocal = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toLocaleString('sv').slice(0, 16).replace(' ', 'T');
 };
+const fromDatetimeLocal = (value) => (value ? new Date(value).toISOString() : '');
 
 const OrderDetailPage = () => {
   const navigate = useNavigate();
@@ -280,7 +276,7 @@ const OrderDetailPage = () => {
   });
 
   const orderKey = order?.id || order?.orderNumber || orderId;
-  const noteRows = useMemo(() => parseNoteLines(order?.notes), [order?.notes]);
+  const noteRows = useMemo(() => parseOrderNoteRows(order?.notes), [order?.notes]);
   const address = getNoteValue(noteRows, 'Address');
   const area = getNoteValue(noteRows, 'Area');
   const shipping = getNoteValue(noteRows, 'Shipping');
@@ -443,7 +439,7 @@ const OrderDetailPage = () => {
         description: notificationEventLabels[eventKey] || 'Update order',
         action: {
           label: 'Buka WA',
-          onClick: () => window.open(getWhatsAppNotificationUrl(nextOrder, message), '_blank', 'noopener,noreferrer'),
+          onClick: () => window.open(getNotificationHandoffUrl(nextOrder, message), '_blank', 'noopener,noreferrer'),
         },
       });
     } catch (error) {
@@ -623,7 +619,7 @@ const OrderDetailPage = () => {
   };
 
   const openWhatsApp = (message) => {
-    window.open(getWhatsAppNotificationUrl(order, message), '_blank', 'noopener,noreferrer');
+    window.open(getNotificationHandoffUrl(order, message), '_blank', 'noopener,noreferrer');
   };
 
   const copyPublicTrackingLink = async () => {

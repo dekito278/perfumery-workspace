@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
+import { getOrderNoteField } from './orderNotes.js';
 
 const PAGE_WIDTH = 105;
 const PAGE_HEIGHT = 148;
@@ -42,19 +43,9 @@ const safeBatchFilename = (count) => (
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
 );
 
-const parseNoteField = (notes = '', label) => {
-  const prefix = `${label}:`;
-  return String(notes || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.toLowerCase().startsWith(prefix.toLowerCase()))
-    ?.slice(prefix.length)
-    .trim() || '';
-};
-
-const getOrderAddress = (order) => parseNoteField(order?.notes, 'Address');
-const getOrderArea = (order) => parseNoteField(order?.notes, 'Area');
-const getOrderShipping = (order) => parseNoteField(order?.notes, 'Shipping');
+const getOrderAddress = (order) => getOrderNoteField(order?.notes, 'Address');
+const getOrderArea = (order) => getOrderNoteField(order?.notes, 'Area');
+const getOrderShipping = (order) => getOrderNoteField(order?.notes, 'Shipping');
 
 const getBespokeBriefItem = (order) => (order?.items || []).find((item) => item.type === 'bespoke_request');
 

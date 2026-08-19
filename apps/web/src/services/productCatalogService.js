@@ -6,6 +6,8 @@ export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
 export const PRODUCT_DRAFT_TAG = 'Studio draft';
 export const PRODUCT_BATCH_TAG_PREFIX = 'Batch key:';
+const PRODUCT_STALE_WRITE = 'PRODUCT_STALE_WRITE';
+
 export const PRODUCT_BATCH_ID_TAG_PREFIX = 'Batch ID:';
 export const PRODUCT_BATCH_CODE_TAG_PREFIX = 'Batch code:';
 export const PRODUCT_FORMULA_TAG_PREFIX = 'Formula ID:';
@@ -570,7 +572,9 @@ export const normalizeProduct = (input, existingProducts = []) => {
     imageUrl: images[0] || '',
     images,
     source: input.source || 'custom',
-    updatedAt: new Date().toISOString(),
+    // Preserve the row's own timestamp when we have one — saveCustomProduct uses it as an optimistic lock,
+    // and stamping "now" here made every write look current no matter how stale the snapshot was.
+    updatedAt: input.updatedAt || input.updated_at || new Date().toISOString(),
   };
 };
 
@@ -600,6 +604,7 @@ const toDatabasePayload = (product) => ({
 });
 
 const fromDatabaseRow = (row) => normalizeProduct({
+  updatedAt: row.updated_at,
   id: row.id,
   slug: row.slug,
   name: row.name,
@@ -800,14 +805,28 @@ export const saveCustomProduct = async (input) => {
   const payload = toDatabasePayload(product);
 
   try {
-    const query = product.id && !String(product.id).startsWith('custom-')
+    const isUpdate = Boolean(product.id) && !String(product.id).startsWith('custom-');
+    // Optimistic lock on update: this is a blind full-row write, so a form opened before an order deducted
+    // stock used to save the pre-order variants back and silently resurrect the sold units. Refuse the
+    // write instead of clobbering, and tell the admin to reload (audit round 7).
+    const expectedUpdatedAt = isUpdate ? (input.updatedAt || input.updated_at || '') : '';
+    let query = isUpdate
       ? supabase.from('storefront_products').update(payload).eq('id', product.id)
       : supabase.from('storefront_products').insert(payload);
+    if (expectedUpdatedAt) {
+      query = query.eq('updated_at', expectedUpdatedAt);
+    }
 
-    const { data, error } = await query.select('*').single();
+    const { data, error } = await query.select('*').maybeSingle();
 
     if (error) {
       throw error;
+    }
+
+    if (!data && expectedUpdatedAt) {
+      const conflict = new Error(`${product.name} sudah berubah di tempat lain (kemungkinan stok terpotong order baru). Muat ulang halaman sebelum menyimpan.`);
+      conflict.code = PRODUCT_STALE_WRITE;
+      throw conflict;
     }
 
     const savedProduct = fromDatabaseRow(data);
@@ -815,6 +834,11 @@ export const saveCustomProduct = async (input) => {
     dispatchProductsUpdated();
     return savedProduct;
   } catch (error) {
+    // A stale-write conflict is a real answer from the server, not an outage — never bury it in the
+    // local-draft fallback, or the admin would be told the save worked.
+    if (error?.code === PRODUCT_STALE_WRITE) {
+      throw error;
+    }
     console.warn('Saving storefront product locally because database save failed:', error.message || error);
     return saveLocalCustomProduct(input);
   }

@@ -127,10 +127,19 @@ export const buildNotificationSubject = (order, eventKey) => {
   return `Solivagant ${label} - ${order?.orderNumber || 'Order'}`;
 };
 
-export const getWhatsAppNotificationUrl = (order, message) => {
+// Hand the message off through whatever channel the customer actually gave us. Every caller used to open
+// WhatsApp unconditionally, so an order whose contact is an email opened wa.me with no recipient while the
+// toast said the message had been sent (audit round 7). Renamed from getNotificationHandoffUrl because it
+// is no longer WhatsApp-only.
+export const getNotificationHandoffUrl = (order, message, eventKey) => {
   const phone = normalizeWhatsAppPhoneNumber(order?.contact);
-  const text = encodeURIComponent(message || '');
-  return phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+  if (phone) {
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message || '')}`;
+  }
+  if (isEmail(order?.contact)) {
+    return getEmailNotificationUrl(order, eventKey, message);
+  }
+  return `https://wa.me/?text=${encodeURIComponent(message || '')}`;
 };
 
 export const getEmailNotificationUrl = (order, eventKey, message) => {

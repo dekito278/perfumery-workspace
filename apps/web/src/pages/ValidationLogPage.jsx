@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { shopToday } from '@/utils/localDay.js';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Home, NotebookPen, Trash2 } from 'lucide-react';
@@ -28,7 +29,7 @@ const createEmptyLog = (formulaId = 'none') => ({
   note: '',
   next_action: '',
   evaluator_name: '',
-  tested_at: new Date().toISOString().slice(0, 10),
+  tested_at: shopToday(),
 });
 
 const ValidationLogPage = () => {
@@ -108,7 +109,7 @@ const ValidationLogPage = () => {
       note: log.note || '',
       next_action: log.next_action || '',
       evaluator_name: log.evaluator_name || '',
-      tested_at: log.tested_at || new Date().toISOString().slice(0, 10),
+      tested_at: log.tested_at || shopToday(),
     });
   };
 

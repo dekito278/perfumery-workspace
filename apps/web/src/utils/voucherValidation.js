@@ -2,6 +2,8 @@
 // client AND in a Node serverless endpoint (the authoritative order-creation path). All DB/localStorage
 // access lives in services/voucherService.js, which re-exports these. Keep this file import-free.
 
+import { shopEndOfDay } from './localDay.js';
+
 export const VOUCHER_DISCOUNT_TYPES = {
   PERCENT: 'percent',
   FIXED: 'fixed',
@@ -42,7 +44,7 @@ export const getExpiryTime = (expiresAt) => {
   if (!rawValue) return null;
 
   const normalizedDate = /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
-    ? `${rawValue}T23:59:59.999`
+    ? shopEndOfDay(rawValue)
     : rawValue;
   const time = new Date(normalizedDate).getTime();
   return Number.isFinite(time) ? time : null;
@@ -101,7 +103,11 @@ export const getVoucherEligibleSubtotal = (voucher, items = [], fallbackSubtotal
   const productSlugs = normalizeSlugList(voucher?.eligibleProductSlugs);
   const categories = normalizeCategoryList(voucher?.eligibleCategories);
   if (!productSlugs.length && !categories.length) return toAmount(fallbackSubtotal);
-  if (!items?.length) return toAmount(fallbackSubtotal);
+  // A restricted voucher with no item list to check against is NOT a whole-order voucher. Falling back to
+  // the full subtotal let a product/category-restricted voucher discount an order it should never touch —
+  // the authoritative endpoint hits this on every bespoke order, where the catalog item list is empty
+  // (audit round 7).
+  if (!items?.length) return 0;
 
   return getVoucherEligibleItems(voucher, items).reduce((sum, item) => (
     sum + (toAmount(item.priceNumber) * Math.max(toAmount(item.quantity), 0))

@@ -14,6 +14,9 @@ export const MobileCatalogContent = ({ active = true }) => {
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('category') || searchParams.get('family') || '';
   const catalogProducts = useCatalogProducts({ active });
+  // Mirror CatalogPage.jsx:35 — without this the page told the buyer "No fragrance matches" during the very
+  // first fetch, and kept saying it forever if that fetch failed (audit round 7).
+  const isLoading = Boolean(catalogProducts.loading) && !catalogProducts.length;
   const [activeCategory, setActiveCategory] = useState(
     initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All'
   );
@@ -57,16 +60,16 @@ export const MobileCatalogContent = ({ active = true }) => {
     <>
       {active ? (
         <Helmet>
-          <title>Collection - SOLIVAGANT</title>
-          <meta name="description" content="Browse the SOLIVAGANT fragrance collection." />
+          <title>Koleksi - SOLIVAGANT</title>
+          <meta name="description" content="Jelajahi koleksi fragrance SOLIVAGANT." />
         </Helmet>
       ) : null}
 
       <main className="mobile-page m-editorial-page">
         {/* Header */}
         <section className="m-editorial-catalog-header">
-          <p className="m-editorial-eyebrow">FRAGRANCE COLLECTION</p>
-          <h1>Collection</h1>
+          <p className="m-editorial-eyebrow">KOLEKSI FRAGRANCE</p>
+          <h1>Koleksi</h1>
         </section>
 
         {/* Search */}
@@ -76,7 +79,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search notes, mood, name..."
+            placeholder="Cari notes, mood, atau nama..."
           />
         </div>
 
@@ -114,12 +117,36 @@ export const MobileCatalogContent = ({ active = true }) => {
               </Link>
             ))}
           </div>
+        ) : isLoading ? (
+          <div className="m-editorial-product-grid" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="m-editorial-product-card">
+                <div className="editorial-skel m-editorial-product-card__visual" />
+                <div className="m-editorial-product-card__info">
+                  <div className="editorial-skel skel-line skel-line--sm" />
+                  <div className="editorial-skel skel-line skel-line--md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : catalogProducts.length ? (
+          <div className="m-editorial-empty">
+            <p className="m-editorial-eyebrow">TIDAK ADA HASIL</p>
+            <h2>Tidak ada fragrance yang cocok.</h2>
+            <button type="button" className="m-editorial-cta" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
+              Reset filter
+            </button>
+          </div>
         ) : (
           <div className="m-editorial-empty">
-            <p className="m-editorial-eyebrow">NO MATCH</p>
-            <h2>No fragrance matches.</h2>
-            <button type="button" className="m-editorial-cta" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
-              Reset
+            <p className="m-editorial-eyebrow">KATALOG</p>
+            <h2>Katalog belum bisa dimuat.</h2>
+            <button
+              type="button"
+              className="m-editorial-cta"
+              onClick={() => window.dispatchEvent(new CustomEvent('dekito:products-updated'))}
+            >
+              Coba lagi
             </button>
           </div>
         )}
@@ -127,7 +154,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         {visible.length < filtered.length ? (
           <div className="m-editorial-load-more">
             <button type="button" className="m-editorial-cta" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
-              Show more <ArrowRight className="h-3.5 w-3.5" />
+              Tampilkan lagi <ArrowRight className="h-3.5 w-3.5" />
             </button>
             <span>{visible.length} of {filtered.length}</span>
           </div>

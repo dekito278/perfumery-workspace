@@ -407,7 +407,7 @@ const MobileFormulaComposerWorkspace = ({
   const [materialQuery, setMaterialQuery] = useState('');
   const [materialFilter, setMaterialFilter] = useState('all');
   const [dilutionItem, setDilutionItem] = useState(null);
-  const [dilutionDraft, setDilutionDraft] = useState({ preset: 'neat', medium: 'DPG', concentration: '100' });
+  const [dilutionDraft, setDilutionDraft] = useState({ preset: 'neat', medium: 'DPG', concentration: '100', solventId: '' });
   const [guidanceOpen, setGuidanceOpen] = useState(false);
   const [guidanceState, setGuidanceState] = useState('empty');
   const [guidanceSources, setGuidanceSources] = useState([]);
@@ -528,6 +528,8 @@ const MobileFormulaComposerWorkspace = ({
     onUpdateItem(item.row_key, 'gram_amount', Number.isFinite(nextGram) ? nextGram.toFixed(3) : '0');
   };
 
+  const solventOptions = (rawMaterials || []).filter((material) => material.type === 'solvent');
+
   const openDilutionSheet = (item) => {
     const concentration = parseLocalizedNumber(item.concentration_percent || item.dilution_percent || item.concentrationPercent, 100);
     const preset = concentration >= 99.99
@@ -544,6 +546,7 @@ const MobileFormulaComposerWorkspace = ({
       preset,
       medium: item.dilutionMedium || item.dilution_medium || 'DPG',
       concentration: concentration >= 99.99 ? '100' : String(concentration || ''),
+      solventId: item.dilution_solvent_id || '',
     });
   };
 
@@ -565,6 +568,18 @@ const MobileFormulaComposerWorkspace = ({
     onUpdateItem(dilutionItem.row_key, 'dilution_medium', dilutionDraft.medium);
     onUpdateItem(dilutionItem.row_key, 'concentration_percent', isNeat ? '100' : concentration);
     onUpdateItem(dilutionItem.row_key, 'dilution_percent', isNeat ? '' : concentration);
+    // The sheet used to record only a free-text medium, so dilution_solvent_id stayed null and every
+    // diluted material was read back as neat — wrong cost and wrong strength (audit round 7).
+    if (!isNeat && !dilutionDraft.solventId) {
+      toast.error('Pilih solvent untuk material yang diencerkan');
+      return;
+    }
+    onUpdateItem(dilutionItem.row_key, 'dilution_solvent_id', isNeat ? '' : dilutionDraft.solventId);
+    onUpdateItem(
+      dilutionItem.row_key,
+      'dilution_solvent_name',
+      isNeat ? '' : (solventOptions.find((material) => material.id === dilutionDraft.solventId)?.name || ''),
+    );
     setDilutionItem(null);
     toast.success('Dilution updated');
   };
@@ -851,7 +866,7 @@ const MobileFormulaComposerWorkspace = ({
             <PaginationOrLoadMore visibleCount={Math.min(compositionVisible, composition.length)} totalCount={composition.length} onLoadMore={() => setCompositionVisible((current) => current + COMPOSER_PAGE_SIZE)} />
           </section>
 
-          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar fixed reserveSpace keyboardBehavior="stay" aria-label="Formula composer actions">
+          {showActionBar && !dilutionItem && !guidanceOpen ? <StickyBottomActionBar fixed reserveSpace aria-label="Formula composer actions">
             <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-2">
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Formula<br /><span className="text-xs text-[#1f2937]">{formatPercent(insight.totalPercent)}</span></div>
               <div className="rounded-xl bg-white px-2 py-1 text-[10px] font-bold text-[#6b7280]">Actual<br /><span className="text-xs text-[#1f2937]">{formatGram(insight.totalActualActiveGrams)}</span></div>
@@ -1022,6 +1037,24 @@ const MobileFormulaComposerWorkspace = ({
               </button>
             ))}
           </div>
+          {dilutionDraft.preset !== 'neat' ? (
+            <div className="space-y-1">
+              <Label className="text-xs">Dilution solvent</Label>
+              <select
+                value={dilutionDraft.solventId}
+                onChange={(event) => setDilutionDraft((current) => ({ ...current, solventId: event.target.value }))}
+                className="h-10 w-full rounded-xl border border-[#e5e7eb] bg-white px-3 text-xs font-bold outline-none focus:border-amber-300"
+              >
+                <option value="">Pilih solvent</option>
+                {solventOptions.map((solvent) => (
+                  <option key={solvent.id} value={solvent.id}>{solvent.name}</option>
+                ))}
+              </select>
+              {!solventOptions.length ? (
+                <p className="text-[11px] font-semibold text-rose-600">Belum ada material bertipe solvent di library.</p>
+              ) : null}
+            </div>
+          ) : null}
           {dilutionDraft.preset === 'custom' ? (
             <>
               <div className="space-y-1">

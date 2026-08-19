@@ -120,7 +120,7 @@ const MobileBespokeSettingsPage = () => {
   };
 
   return (
-    <MobileAuthenticatedLayout showFab={false}>
+    <MobileAuthenticatedLayout>
       <Helmet><title>Pengaturan Bespoke - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar title="Bespoke" subtitle="Pengaturan wizard custom" eyebrow="E-commerce" action={<WandSparkles className="h-5 w-5 text-amber-700" />} />

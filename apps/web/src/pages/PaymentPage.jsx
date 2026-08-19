@@ -964,12 +964,15 @@ const PaymentPageContent = ({ isMobile }) => {
         }
       }
 
-      setSession(storedSession);
+      // Only fall back to the stored session when it belongs to THIS order — otherwise the page rendered
+      // the previous buyer's (or the previous tab's) payment session under the requested order number
+      // (audit round 7).
+      setSession(isSessionForOrder(storedSession) ? storedSession : null);
     } catch (error) {
       console.warn('Failed to restore payment session:', error.message || error);
       // Fall back to any session we already had and tell the buyer, instead of
       // silently showing an empty "no payment session" state.
-      setSession(storedSession);
+      setSession(isSessionForOrder(storedSession) ? storedSession : null);
       toast.error('Gagal memuat sesi pembayaran. Coba muat ulang halaman.');
     } finally {
       setLoadingOrder(false);

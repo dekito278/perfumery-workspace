@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { shopToday } from '@/utils/localDay.js';
 import { getCurrentUserId, toAppRecord } from '@/services/supabaseDataHelpers.js';
 
 const normalizeValidationLogPayload = (logData) => ({
@@ -9,7 +10,7 @@ const normalizeValidationLogPayload = (logData) => ({
   note: String(logData.note || '').trim(),
   next_action: logData.next_action ? String(logData.next_action).trim() : null,
   evaluator_name: logData.evaluator_name ? String(logData.evaluator_name).trim() : null,
-  tested_at: logData.tested_at || new Date().toISOString().slice(0, 10),
+  tested_at: logData.tested_at || shopToday(),
 });
 
 export const getValidationLogs = async ({ formulaId } = {}) => {
