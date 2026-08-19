@@ -362,3 +362,22 @@ session's token the same way the PDF import already did. Upstream failures log s
 plain message instead of the scraper's internals.
 
 The "dev only" warning band added earlier is removed — the capability is real now.
+
+## Journal articles are prerendered
+
+`/articles/<slug>` was already in the sitemap but had no file behind it, so every shared link — and every
+crawler — received the SPA shell and its generic site card.
+
+`fetchPublishedJournal` already existed for the sitemap; it now also selects title, seo_title, excerpt,
+cover image and dates, and a new `writeJournalPages` mirrors `writeProductPages`: real `<title>`, canonical
+on the production host, `og:type=article`, `article:published_time`, Article + BreadcrumbList JSON-LD.
+No `vercel.json` change is needed — Vercel resolves the filesystem before the catch-all rewrite, which is
+how prerendered product pages already work.
+
+Two details worth naming: a post with no title is skipped rather than written with an empty headline, and
+`twitter:card` only claims `summary_large_image` when there is actually an image — the audit flagged the
+static pages promising a large image they did not have.
+
+Covered by `tools/journal-prerender.selfcheck.mjs`, which asserts the head a crawler receives from a
+fixture. That matters here because the build cannot prerender anything without Supabase credentials, so
+`npm run build` alone proves nothing about this code.

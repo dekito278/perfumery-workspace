@@ -115,12 +115,21 @@ export const fetchPublicProducts = async (env) => {
 export const fetchPublishedJournal = async (env) => {
   const rows = await restGet(
     env,
-    'journal_posts?select=slug,published_at,updated_at&status=eq.published&order=published_at.desc',
+    'journal_posts?select=slug,title,seo_title,excerpt,cover_image_url,category,published_at,updated_at&status=eq.published&order=published_at.desc',
   );
   if (!Array.isArray(rows)) return [];
   return rows
     .filter((row) => row && row.slug)
-    .map((row) => ({ slug: String(row.slug), updatedAt: row.updated_at || row.published_at || '' }));
+    .map((row) => ({
+      slug: String(row.slug),
+      title: String(row.title || ''),
+      seoTitle: String(row.seo_title || ''),
+      excerpt: String(row.excerpt || ''),
+      image: String(row.cover_image_url || ''),
+      category: String(row.category || ''),
+      publishedAt: row.published_at || '',
+      updatedAt: row.updated_at || row.published_at || '',
+    }));
 };
 
 // --- head-tag upsert ---------------------------------------------------
@@ -232,6 +241,67 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
     ]);
 
     const dir = path.join(distRoot, 'catalog', product.slug);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.html'), html);
+    written += 1;
+  }
+  return written;
+};
+
+const articleJsonLd = (post, siteUrl, canonical) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.title,
+  ...(post.excerpt ? { description: post.excerpt } : {}),
+  ...(post.image ? { image: [abs(siteUrl, post.image)] } : {}),
+  ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+  ...(post.updatedAt ? { dateModified: post.updatedAt } : {}),
+  author: { '@type': 'Organization', name: BRAND },
+  publisher: { '@type': 'Organization', name: BRAND },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+});
+
+// Articles were in the sitemap but had no prerendered file, so every shared /articles/<slug> link — and
+// every crawler — got the SPA shell and its generic site card (audit round 8). Mirrors writeProductPages;
+// Vercel resolves the filesystem before the catch-all rewrite, so no vercel.json change is needed.
+export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
+  let written = 0;
+  for (const post of journal) {
+    if (!post.title) continue;
+    const canonical = abs(siteUrl, `/articles/${post.slug}`);
+    const title = `${post.seoTitle || post.title} - ${BRAND}`;
+    const description = (post.excerpt || post.title).slice(0, 155);
+    const image = abs(siteUrl, post.image);
+
+    let html = baseHtml.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+    html = upsertMeta(html, 'name', 'description', description);
+    html = upsertCanonical(html, canonical);
+    html = upsertMeta(html, 'property', 'og:type', 'article');
+    html = upsertMeta(html, 'property', 'og:site_name', BRAND);
+    html = upsertMeta(html, 'property', 'og:url', canonical);
+    html = upsertMeta(html, 'property', 'og:title', title);
+    html = upsertMeta(html, 'property', 'og:description', description);
+    if (post.publishedAt) {
+      html = upsertMeta(html, 'property', 'article:published_time', post.publishedAt);
+    }
+    if (image) {
+      html = upsertMeta(html, 'property', 'og:image', image);
+      html = upsertMeta(html, 'name', 'twitter:image', image);
+    }
+    // Only claim a large image card when there is actually an image to show.
+    html = upsertMeta(html, 'name', 'twitter:card', image ? 'summary_large_image' : 'summary');
+    html = upsertMeta(html, 'name', 'twitter:title', title);
+    html = upsertMeta(html, 'name', 'twitter:description', description);
+    html = injectJsonLd(html, [
+      articleJsonLd(post, siteUrl, canonical),
+      breadcrumbJsonLd([
+        { name: 'Beranda', path: '/home' },
+        { name: 'Journal', path: '/journal' },
+        { name: post.title, path: `/articles/${post.slug}` },
+      ], siteUrl),
+    ]);
+
+    const dir = path.join(distRoot, 'articles', post.slug);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'index.html'), html);
     written += 1;

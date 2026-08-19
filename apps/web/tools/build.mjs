@@ -228,7 +228,7 @@ const generateSeoArtifacts = async () => {
 
   const {
     resolveEnv, fetchPublicProducts, fetchPublishedJournal,
-    writeProductPages, writeSitemap, finalizeRobots,
+    writeProductPages, writeJournalPages, writeSitemap, finalizeRobots,
   } = await import('./seo-artifacts.mjs');
 
   const env = resolveEnv(webRoot);
@@ -247,10 +247,14 @@ const generateSeoArtifacts = async () => {
     console.warn('[seo] Supabase fetch failed, skipping product prerender/sitemap products:', error.message || error);
   }
 
-  if (env.siteUrl && products.length) {
+  if (env.siteUrl && (products.length || journal.length)) {
     const baseHtml = fs.readFileSync(indexPath, 'utf8');
-    const written = writeProductPages(distRoot, baseHtml, products, env.siteUrl);
-    console.log(`[seo] Prerendered ${written} product page(s).`);
+    if (products.length) {
+      console.log(`[seo] Prerendered ${writeProductPages(distRoot, baseHtml, products, env.siteUrl)} product page(s).`);
+    }
+    if (journal.length) {
+      console.log(`[seo] Prerendered ${writeJournalPages(distRoot, baseHtml, journal, env.siteUrl)} journal article(s).`);
+    }
   }
 
   const urls = writeSitemap(distRoot, env.siteUrl, { products, journal });
