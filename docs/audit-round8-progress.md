@@ -381,3 +381,27 @@ static pages promising a large image they did not have.
 Covered by `tools/journal-prerender.selfcheck.mjs`, which asserts the head a crawler receives from a
 fixture. That matters here because the build cannot prerender anything without Supabase credentials, so
 `npm run build` alone proves nothing about this code.
+
+## Material reference — remaining batch
+
+- **One definition of effective concentration.** Three call sites each derived it their own way — the
+  composer seeder from the material's `dilution_percentage`, the workbook simulation from the row's
+  `dilution_percent`, the scorer from a seed estimate — so the same material could be judged against the
+  same IFRA limit at two different numbers. `resolveEffectiveConcentration` in
+  `rawMaterialGuidanceAdvisories.js` is now the only one, and it encodes the settled model: both fields
+  describe the same dilution, the row wins because it is what the perfumer chose for this formula.
+- **Mobile guidance import overwrote hand-curated values.** Desktop keeps a curated number and only fills
+  blanks; mobile let the scrape win, so importing on a phone silently replaced tuned impact and lifetime.
+  Mobile now uses the same rule, and its synthetic-code guard learned the `MAN-`/`EXT-` prefixes the
+  desktop dialog already knew.
+- **The PDF importer never checked the workbook's own totals.** `parseItems` silently drops any line its
+  regex misses, so an unfamiliar layout imported a formula that looked fine and was short a few materials.
+  The header already carried the ground truth (`RM:` count and `Total:`); a mismatch now refuses the import
+  instead of quietly corrupting a formula.
+- **Merging rows with different units is refused.** Stock is summed on merge, so folding 80 ml into a
+  gram-based row read as 80 g. Covered by `mergeStock.selfcheck.mjs`.
+- **The material search no longer disables itself mid-word.** Typing triggers the refetch that disabled the
+  input, which stole focus and dropped keystrokes.
+
+Obsolete: the finding that merge does not repoint the brief tables — those tables have no application code
+left, and the optional migration drops them.

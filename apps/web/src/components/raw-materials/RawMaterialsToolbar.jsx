@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import SearchBar from '@/components/SearchBar.jsx';
 import FilterBar from '@/components/FilterBar.jsx';
 
+// Note: the search box and filters are deliberately NOT disabled while a refetch is in flight. Typing is
+// what triggers the refetch, so disabling mid-word stole focus and dropped keystrokes (audit round 8).
 const RawMaterialsToolbar = ({
   searchTerm,
   setSearchTerm,
-  showRefreshing,
   loading,
   onRefresh,
   filters,
@@ -31,7 +32,6 @@ const RawMaterialsToolbar = ({
           value={searchTerm}
           onChange={setSearchTerm}
           placeholder="Search by name, vendor, CAS, workbook code, reference code, or family..."
-          disabled={showRefreshing}
         />
       </div>
       <div className="flex items-end">
@@ -47,7 +47,6 @@ const RawMaterialsToolbar = ({
         onFilterChange={onFilterChange}
         onClearAll={onClearFilters}
         compact
-        disabled={showRefreshing}
       />
     </div>
 

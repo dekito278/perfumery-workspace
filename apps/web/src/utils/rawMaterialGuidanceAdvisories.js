@@ -24,6 +24,25 @@ export const getDilutionFactor = (value) => {
   return dilutionPercent / 100;
 };
 
+// One definition of "effective concentration" for every advisory check. Three call sites each derived it
+// their own way — the composer seeder from the material's own dilution_percentage, the workbook simulation
+// from the row's dilution_percent, the scorer from a seed estimate — so the same material could be judged
+// against the same IFRA limit at two different numbers (audit round 8).
+//
+// Both dilution fields describe the SAME thing: a diluted formula row points at a material that is stocked
+// pre-diluted, and the row carries a copy of that material's dilution for display. So take whichever is
+// present, preferring the row (it is what the perfumer actually chose for this formula).
+export const resolveEffectiveConcentration = ({ listedPercentage = 0, item = null, material = null } = {}) => {
+  const listed = Number(listedPercentage);
+  if (!Number.isFinite(listed) || listed <= 0) return 0;
+
+  const rowDilution = item?.dilution_percent ?? item?.dilution_percentage ?? null;
+  const materialDilution = material?.dilution_percentage ?? null;
+  const source = rowDilution ?? materialDilution;
+
+  return listed * getDilutionFactor(source);
+};
+
 export const buildGuidanceLimitAdvisories = ({
   referenceProfile = null,
   effectivePercentage = null,
