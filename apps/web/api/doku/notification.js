@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import crypto from 'node:crypto';
 import process from 'node:process';
 import { checkDokuOrderTransition, isTerminalCancelStatus } from '../../src/utils/dokuOrderGuards.js';
+import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const NOTIFICATION_TARGET = '/api/doku/notification';
 
@@ -224,6 +225,15 @@ const updateOrder = async ({ invoiceNumber, statusPatch, paymentReference, paidA
 
   if (isTerminalCancel) {
     await releaseVoucherUsageForOrder(currentOrder);
+  }
+
+  // Money actually landed — this is the alert worth interrupting someone for.
+  if (incomingStatus === 'paid') {
+    await sendOrderAlert({
+      order: { ...currentOrder, payment_provider: 'doku' },
+      event: 'paid',
+      env: process.env,
+    });
   }
 };
 
