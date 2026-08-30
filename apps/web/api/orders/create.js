@@ -17,6 +17,7 @@ import { Buffer } from 'node:buffer';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '../../src/utils/bespokeOrder.js';
 import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
+import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const jsonResponse = (res, status, body) => {
   res.statusCode = status;
@@ -332,6 +333,10 @@ export default async function handler(req, res) {
     // recordVoucherUsageForOrder() after the order is created, so doing it here too would double count.
     // If those client calls are ever removed, record usage here (storefront_record_voucher_usage:
     // p_voucher_code, p_order_id, p_order_number, p_amount:1) instead.
+
+    // Tell the owner. Awaited (serverless freezes after the response) but never fatal — sendOrderAlert
+    // swallows its own failures, so a dead webhook cannot cost us a paid order.
+    await sendOrderAlert({ order, event: 'created', env: process.env });
 
     return jsonResponse(res, 200, { order, itemsSubtotal, shippingFee, voucherDiscount, subtotal });
   } catch (error) {
