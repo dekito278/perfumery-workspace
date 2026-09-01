@@ -433,6 +433,14 @@ buang fallback localStorage dari semua jalur tulis (biarkan hanya di jalur baca 
 
 ---
 
+## STATUS
+
+- **Gelombang 1 (kode, selesai)** — A-1, P-2, S-1, C-1, R-1. Commit `3272dfd`.
+- **Gelombang 1b (kode, selesai)** — O-1b: reorder portal lewat keranjang + checkout normal.
+- **Gelombang 2 (SQL, siap diterapkan)** — urutan, verifikasi, dan rollback ada di
+  [audit-round9-runbook.md](audit-round9-runbook.md).
+- **Gelombang 3** — belum dikerjakan; daftarnya di akhir runbook.
+
 ## URUTAN PENGERJAAN YANG DISARANKAN
 
 1. **O-1b lalu O-1** — perbaiki dulu jalur reorder, baru jadikan `07_orders_anon_insert_revoke.sql`
