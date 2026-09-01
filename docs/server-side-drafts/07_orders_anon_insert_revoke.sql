@@ -12,6 +12,14 @@
 --      verify Vercel logs show POST /api/orders/create 200 for real orders of each type, no fallback warnings.
 --   3. Confirm a real catalog order still deducts stock (endpoint calls storefront_deduct_inventory_for_order)
 --      and a voucher order still records usage once (page calls it; the endpoint intentionally does not).
+--   4. *** NOT YET TRUE (audit round 9) *** — there is a THIRD order-creation path this checklist missed.
+--      CustomerPortalPage.createReorderPayment() ("Pesan lagi") builds its items and subtotal in the
+--      browser and calls orderService.createOrder() directly, bypassing the endpoint entirely
+--      (src/pages/CustomerPortalPage.jsx:1342). Applying this file today silently breaks reorder for every
+--      customer. Reorder also has no destinationId/courier/service — it reuses the source order's shipping
+--      fee — so it cannot simply be pointed at /api/orders/create as-is; the endpoint prices shipping at 0
+--      without a destination. Route it through the endpoint (server-side "reuse shipping from order X",
+--      ownership-checked) or send reorder through the normal cart+checkout flow FIRST.
 --
 -- Apply (as a new timestamped migration, or straight in the SQL editor) only after 1–3 hold:
 

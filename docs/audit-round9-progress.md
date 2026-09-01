@@ -199,6 +199,20 @@ order tetap dapat diskon tapi kuota tidak pernah terpakai → voucher bisa dipak
 
 File: `src/hooks/useCheckoutFlow.js`, `apps/web/api/orders/create.js`, `src/services/orderService.js`
 
+### O-1b · HIGH — Jalur pembuatan order KETIGA yang tidak lewat endpoint (ditemukan saat gelombang 1)
+`CustomerPortalPage.createReorderPayment()` — tombol "Pesan lagi" di portal pelanggan — menyusun item dan
+subtotal di browser lalu memanggil `orderService.createOrder()` langsung
+([CustomerPortalPage.jsx:1342](../apps/web/src/pages/CustomerPortalPage.jsx:1342)). Checklist di
+`07_orders_anon_insert_revoke.sql` hanya menyebut dua jalur (cart + bespoke), jadi:
+
+1. Reorder hari ini **client-priced** — sama rentannya dengan jalur lama, meski `repriceReorderItem`
+   sudah mengambil harga hidup dari katalog (yang mengambil harga dari klien tetap `createOrder`).
+2. Mencabut anon INSERT sekarang akan **mematikan fitur reorder** untuk semua pelanggan.
+
+Reorder juga tidak punya `destinationId`/courier/service — ia memakai ulang ongkir dari order sumber —
+jadi tidak bisa langsung diarahkan ke `/api/orders/create`, yang akan menghitung ongkir 0 tanpa destinasi.
+**Ini prasyarat O-1.**
+
 ### O-1 · CRITICAL — Penetapan harga otoritatif masih bisa dilewati sepenuhnya
 `storefront_orders` masih memakai policy `for insert with check (true)`
 (`20260507103000_storefront_orders.sql:51-54`). Skrip pencabutannya ada, tapi disimpan **di luar**
@@ -421,10 +435,13 @@ buang fallback localStorage dari semua jalur tulis (biarkan hanya di jalur baca 
 
 ## URUTAN PENGERJAAN YANG DISARANKAN
 
-1. **O-1** — jadikan `07_orders_anon_insert_revoke.sql` sebuah migrasi bertanggal, apply. Ini satu baris
-   yang menutup seluruh kelas manipulasi harga. Prasyaratnya sudah terpenuhi sejak Juli.
+1. **O-1b lalu O-1** — perbaiki dulu jalur reorder, baru jadikan `07_orders_anon_insert_revoke.sql`
+   migrasi bertanggal dan apply. Prasyaratnya **belum** terpenuhi: checklist Juli melewatkan jalur ketiga.
 2. **A-1** — paksa TOTP ulang setelah ganti password, **sebelum** menerapkan migrasi aal2.
-3. **P-1** — kunci SELECT `storefront_products` (view publik / policy draft) dan pindahkan tag internal.
+3. **P-1a** (sudah ditulis: `20260901120000_storefront_products_hide_drafts_from_public.sql`) — sembunyikan
+   baris draft dari anon. **P-1b** — pindahkan 16 tag internal (COGS, batch, SKU) keluar dari `tags` ke
+   kolom khusus admin; RLS memfilter baris, bukan kolom, jadi tag internal pada produk terbit masih bocor
+   sampai ini dikerjakan.
 4. **P-2** — hapus atau ganti label tombol "Reset semua".
 5. **S-1** — cocokkan kata kunci Jawa per token, bukan substring.
 6. **X-1** — mulai dari `orderService` jalur tulis: `.select()` + gagal kalau 0 baris, buang fallback lokal.
