@@ -22,6 +22,9 @@ const MobileCartPage = () => {
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const products = useCatalogProducts();
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
+  // Lines whose product left the catalog or ran out of stock — checkout refuses them, so say so here
+  // rather than at the end of the form (audit round 9).
+  const unavailableItems = items.filter((item) => item.unavailable || item.outOfStock);
   const getCartItemProduct = (item) => {
     const product = products.find((entry) => entry.slug === item.productSlug || entry.slug === item.slug || entry.id === item.productId);
     return {
@@ -142,6 +145,11 @@ const MobileCartPage = () => {
               <p style={{ marginTop: 8, borderRadius: 10, background: 'var(--editorial-ivory)', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-brass)' }}>{voucher.message}</p>
             ) : null}
           </section>
+        ) : null}
+        {unavailableItems.length ? (
+          <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, background: 'var(--editorial-ivory)', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-brass)' }}>
+            {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
+          </p>
         ) : null}
         <section style={{ display: 'grid', gap: 0 }}>
           {items.map((item) => {

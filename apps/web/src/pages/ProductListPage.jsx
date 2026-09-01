@@ -13,7 +13,6 @@ import {
   getProductPublishStatus,
   getProductRestockThreshold,
   getProductStorefrontPath,
-  resetCustomProducts,
 } from '@/services/productCatalogService.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
@@ -80,16 +79,6 @@ const ProductListPage = () => {
     }
   };
 
-  const handleResetAll = async () => {
-    if (!window.confirm('Reset semua produk custom ke default? Tindakan ini tidak bisa dibatalkan.')) return;
-    try {
-      await resetCustomProducts();
-      toast.success('Produk custom direset');
-    } catch (error) {
-      toast.error(error.message || 'Gagal mereset produk');
-    }
-  };
-
   return (
     <AuthenticatedLayout>
       <Helmet>
@@ -135,7 +124,6 @@ const ProductListPage = () => {
               <h2 className="text-xl font-bold">Daftar produk</h2>
               <p className="mt-1 text-sm font-semibold text-muted-foreground">Cek status publish, alasan tidak muncul, dan link publik produk.</p>
             </div>
-            {customProducts.length ? <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={handleResetAll}>Reset semua</Button> : null}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {productStatusFilters.map((filter) => (

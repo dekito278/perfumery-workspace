@@ -53,6 +53,21 @@ const writeCheckoutDraft = (draft) => {
   }
 };
 
+// Seed the checkout draft from somewhere else in the app (the customer portal's "Pesan lagi" hands over
+// the saved name/contact/address so a code-only portal visitor does not retype it). Only fills fields the
+// draft does not already have, so a half-typed checkout is never clobbered.
+export const seedCheckoutDraft = (values = {}) => {
+  const draft = readCheckoutDraft();
+  const next = { ...draft };
+  for (const [key, value] of Object.entries(values)) {
+    const text = String(value || '').trim();
+    if (text && !String(next[key] || '').trim()) {
+      next[key] = text;
+    }
+  }
+  writeCheckoutDraft({ ...next, updatedAt: new Date().toISOString() });
+};
+
 const clearCheckoutDraft = () => {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
@@ -132,8 +147,13 @@ export const useCheckoutFlow = ({
     setShippingOptions([]);
   }, [shippingWeight]);
   const validPhoneContact = hasValidWhatsAppPhoneNumber(contact);
+  // reconcileCartLines flags lines whose product left the catalog or ran out of stock. Letting them
+  // through meant the buyer filled in the whole form and only hit the wall at submit, with the
+  // endpoint's raw "Unknown product" / "Stok tidak cukup" (audit round 9).
+  const blockedItems = items.filter((item) => item.unavailable || item.outOfStock);
   const canSubmitCheckout = Boolean(
     items.length
+    && !blockedItems.length
     && customerName.trim()
     && validPhoneContact
     && deliveryAddress.trim()
@@ -465,6 +485,11 @@ export const useCheckoutFlow = ({
       toast.error('Keranjang masih kosong');
       return;
     }
+    if (blockedItems.length) {
+      const names = blockedItems.map((item) => item.name).filter(Boolean).join(', ');
+      toast.error(`${names || 'Beberapa item'} sudah tidak tersedia. Hapus dari keranjang dulu.`);
+      return;
+    }
     if (!customerName.trim() || !deliveryAddress.trim()) {
       toast.error('Nama dan alamat pengiriman wajib diisi');
       return;
@@ -767,6 +792,7 @@ export const useCheckoutFlow = ({
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
+    blockedItems,
     setCustomerName,
     setContact,
     setDeliveryAddress: updateDeliveryAddress,
