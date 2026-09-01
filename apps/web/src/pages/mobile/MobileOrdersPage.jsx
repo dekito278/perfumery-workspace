@@ -290,7 +290,8 @@ const MobileOrdersPage = () => {
       toast.error('Pilih order paid untuk print resi');
       return;
     }
-    await Promise.all(selectedPrintableOrders.map((order) => (
+    // Promise.all rejects on the first failure and would leave the rest unreported, so settle and count.
+    const moves = await Promise.allSettled(selectedPrintableOrders.map((order) => (
       hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
         ? Promise.resolve()
         : updateOrderShipment(order.id || order.orderNumber, {
@@ -303,6 +304,11 @@ const MobileOrdersPage = () => {
     )));
     await reload();
     setOrderFilter('packing');
+    const failed = moves.filter((result) => result.status === 'rejected').length;
+    if (failed) {
+      toast.error(`${printedCount} resi PDF siap, tapi ${failed} order gagal dipindah ke Label/resi. Muat ulang lalu coba lagi.`);
+      return;
+    }
     toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 

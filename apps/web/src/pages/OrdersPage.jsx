@@ -362,13 +362,19 @@ const OrdersPage = () => {
     const { exportShippingLabelPdf } = await import('@/utils/shippingLabelPdf.js');
     await exportShippingLabelPdf(order);
     if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
-      await updateOrderShipment(order.id || order.orderNumber, {
-        shipmentStatus: 'packing',
-        courierName: order.courierName,
-        trackingNumber: order.trackingNumber,
-        trackingUrl: order.trackingUrl,
-        packingNotes: order.packingNotes || 'Resi PDF dicetak dari Studio Orders.',
-      });
+      // The PDF is already in the operator's hands; say so honestly if only the status move failed.
+      try {
+        await updateOrderShipment(order.id || order.orderNumber, {
+          shipmentStatus: 'packing',
+          courierName: order.courierName,
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          packingNotes: order.packingNotes || 'Resi PDF dicetak dari Studio Orders.',
+        });
+      } catch (error) {
+        toast.error(`Resi PDF siap, tapi status ${order.orderNumber} gagal dipindah ke Label/resi: ${error.message || 'coba lagi'}`);
+        return;
+      }
       await reload();
       setOrderFilter('packing');
     }

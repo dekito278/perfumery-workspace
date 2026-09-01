@@ -157,6 +157,39 @@ const clearOrderSyncIssue = (orderNumber) => {
 const createOrderNumber = () => `DKT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const isUuid = (value = '') => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
 
+// Every write to storefront_orders goes through here, and it is loud on both ways a write used to
+// disappear (audit round 9):
+//
+//   1. An RLS refusal is NOT an error in PostgREST. It answers 200 with zero rows and `error === null`,
+//      so `if (error) throw` never fired and the caller ran its success path against an unchanged row.
+//   2. Every writer wrapped its update in a try/catch whose catch mirrored the change into localStorage
+//      and returned normally, so the caller's `toast.success` fired either way. "Tandai lunas" could
+//      tell the owner an order was paid while the row never moved, and another device still saw unpaid.
+//
+// `.select()` makes the affected rows observable, so zero rows is a failure we can name. Reads keep
+// their localStorage fallback (a cache is fine); writes must never pretend.
+export const ORDER_WRITE_FAILED = 'ORDER_WRITE_FAILED';
+
+const orderWriteError = (message) => Object.assign(new Error(message), { code: ORDER_WRITE_FAILED });
+
+export const assertOrderWriteApplied = (rows, orderId) => {
+  if (!rows?.length) {
+    throw orderWriteError(`Perubahan order ${orderId} tidak tersimpan. Muat ulang halaman dan coba lagi — kalau tetap gagal, sesi admin mungkin sudah kedaluwarsa.`);
+  }
+  return rows[0];
+};
+
+const updateOrderRow = async (orderId, patch) => {
+  const query = supabase.from('storefront_orders').update(patch).select('order_number');
+  const { data, error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+  if (error) {
+    throw orderWriteError(error.message || `Gagal menyimpan perubahan order ${orderId}`);
+  }
+  assertOrderWriteApplied(data, orderId);
+  window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+  return data[0];
+};
+
 const normalizeTimeline = (timeline) => (
   Array.isArray(timeline)
     ? timeline.map((entry) => ({
@@ -833,69 +866,26 @@ export const submitOrderPaymentProof = async (orderNumber, {
     throw new Error('Bukti transfer belum diupload');
   }
 
-  try {
-    const { data, error } = await supabase.rpc('storefront_submit_payment_proof', {
-      p_order_number: normalizedOrderNumber,
-      p_payment_proof_url: paymentProofUrl,
-      p_file_name: fileName || '',
-      p_content_type: contentType || '',
-    });
+  // No local fallback. The buyer reads the result of this call as "bukti transfer terkirim"; mirroring it
+  // into their own browser's localStorage told them the shop had been notified when the order row never
+  // recorded the proof, and the owner had nothing to review (audit round 9).
+  const { data, error } = await supabase.rpc('storefront_submit_payment_proof', {
+    p_order_number: normalizedOrderNumber,
+    p_payment_proof_url: paymentProofUrl,
+    p_file_name: fileName || '',
+    p_content_type: contentType || '',
+  });
 
-    if (error) throw error;
-
-    const normalizedOrder = normalizeOrder(data || {});
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    return normalizedOrder;
-  } catch (error) {
-    console.warn('Saving payment proof locally:', error.message || error);
-    const uploadedAt = new Date().toISOString();
-    const currentOrder = readOrders()
-      .map(normalizeOrder)
-      .find((order) => order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber
-        ? {
-          ...order,
-          paymentProofUrl,
-          paymentProofFileName: fileName || '',
-          paymentProofContentType: contentType || '',
-          paymentProofUploadedAt: uploadedAt,
-          paymentProofStatus: 'submitted',
-          paymentProofNotes: '',
-          updatedAt: uploadedAt,
-        }
-        : order
-    ));
-    writeOrders(nextOrders);
-    const updatedOrder = nextOrders.find((order) => order.id === normalizedOrderNumber || order.orderNumber === normalizedOrderNumber);
-    if (!updatedOrder) {
-      throw new Error(error.message || 'Gagal menyimpan bukti transfer ke order');
-    }
-    await createOrderAuditLog({
-      action: 'payment_proof_uploaded',
-      currentOrder: currentOrder || updatedOrder,
-      orderId: normalizedOrderNumber,
-      previousValues: {
-        paymentProofStatus: currentOrder?.paymentProofStatus || 'missing',
-        paymentProofUrl: currentOrder?.paymentProofUrl || '',
-        paymentProofFileName: currentOrder?.paymentProofFileName || '',
-        paymentProofContentType: currentOrder?.paymentProofContentType || '',
-        paymentProofUploadedAt: currentOrder?.paymentProofUploadedAt || '',
-      },
-      nextValues: {
-        paymentProofStatus: 'submitted',
-        paymentProofUrl,
-        paymentProofFileName: fileName || '',
-        paymentProofContentType: contentType || '',
-        paymentProofUploadedAt: uploadedAt,
-      },
-      metadata: {
-        source: 'customer_payment_page',
-        persistence: 'local',
-      },
-    });
-    return updatedOrder;
+  if (error) {
+    throw new Error(error.message || 'Bukti transfer belum tersimpan ke pesanan. Coba upload ulang — jangan tutup halaman ini sebelum berhasil.');
   }
+  if (!data) {
+    throw new Error(`Pesanan ${normalizedOrderNumber} tidak ditemukan, bukti transfer belum tersimpan. Periksa nomor pesanan lalu coba lagi.`);
+  }
+
+  const normalizedOrder = normalizeOrder(data);
+  window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+  return normalizedOrder;
 };
 
 export const getPublicOrderPaymentSession = async (orderNumber) => {
@@ -999,15 +989,9 @@ export const reviewOrderPaymentProof = async (orderId, {
     },
   };
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update(patch);
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+  {
+    // Approving a proof marks money received. If the write does not land, the caller must hear about it.
+    await updateOrderRow(orderId, patch);
     await createOrderAuditLog(proofAudit);
     if (paymentStatusChangedByReview) {
       await createOrderAuditLog(rejectionPaymentAudit);
@@ -1025,45 +1009,6 @@ export const reviewOrderPaymentProof = async (orderId, {
       });
     }
     return getOrderById(orderId, { sweepExpiredReservation: false });
-  } catch (error) {
-    console.warn('Reviewing payment proof locally:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? {
-          ...order,
-          paymentProofStatus: nextStatus,
-          paymentProofNotes: normalizedNotes,
-          paymentProofUploadedAt: order.paymentProofUploadedAt || reviewedAt,
-          ...(nextStatus === 'approved' ? {
-            paymentStatus: 'paid',
-            status: 'paid',
-          } : {}),
-          ...(nextStatus === 'rejected' ? {
-            paymentStatus: 'pending',
-            status: 'pending_payment',
-          } : {}),
-          updatedAt: reviewedAt,
-        }
-        : order
-    ));
-    writeOrders(nextOrders);
-    await createOrderAuditLog({
-      ...proofAudit,
-      metadata: {
-        ...proofAudit.metadata,
-        persistence: 'local',
-      },
-    });
-    if (paymentStatusChangedByReview) {
-      await createOrderAuditLog({
-        ...rejectionPaymentAudit,
-        metadata: {
-          ...rejectionPaymentAudit.metadata,
-          persistence: 'local',
-        },
-      });
-    }
-    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
   }
 };
 
@@ -1188,10 +1133,13 @@ export const createOrder = async (orderData) => {
   try {
     inventoryEvents = await deductInventoryForOrder(order);
   } catch (stockError) {
-    await supabase
-      .from('storefront_orders')
-      .update({ status: 'cancelled', payment_status: 'expired' })
-      .eq('order_number', order.orderNumber || payload.order_number);
+    // Best-effort cleanup: the stock error is what the buyer must see, so a failed cancel is logged, not
+    // thrown. It still goes through updateOrderRow so a silent no-op shows up in the console.
+    try {
+      await updateOrderRow(order.orderNumber || payload.order_number, { status: 'cancelled', payment_status: 'expired' });
+    } catch (cancelError) {
+      console.warn('Failed to cancel order after stock reservation failed:', cancelError.message || cancelError);
+    }
     throw stockError;
   }
   if (inventoryEvents.length) {
@@ -1326,19 +1274,12 @@ export const updateOrderStatus = async (orderId, status) => {
   // 'paid' order's payment status here (that would be a refund, handled elsewhere).
   const expirePayment = status === 'cancelled' && ['unpaid', 'pending'].includes(currentOrder?.paymentStatus);
 
-  try {
+  {
     const updatePayload = { status, status_timeline: statusTimeline };
     if (expirePayment) {
       updatePayload.payment_status = 'expired';
     }
-    const query = supabase
-      .from('storefront_orders')
-      .update(updatePayload);
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) {
-      throw error;
-    }
+    await updateOrderRow(orderId, updatePayload);
 
     if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
       const restoreEvents = await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
@@ -1369,68 +1310,14 @@ export const updateOrderStatus = async (orderId, status) => {
     });
 
     return getOrders();
-  } catch (error) {
-    console.warn('Updating local storefront order fallback:', error.message || error);
-    let restoredEvents = [];
-    if (status === 'cancelled' && currentOrder?.inventoryDeducted) {
-      restoredEvents = await restoreInventoryForOrder(currentOrder, 'Order cancelled stock released');
-    }
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? {
-          ...order,
-          status,
-          statusTimeline,
-          paymentStatus: expirePayment ? 'expired' : order.paymentStatus,
-          inventoryDeducted: restoredEvents.length ? false : order.inventoryDeducted,
-          inventoryEvents: restoredEvents.length ? [...order.inventoryEvents, ...normalizeInventoryEvents(restoredEvents)] : order.inventoryEvents,
-          updatedAt: new Date().toISOString(),
-        }
-        : order
-    ));
-    writeOrders(nextOrders);
-    await createOrderAuditLog({
-      action: auditAction,
-      currentOrder,
-      orderId,
-      previousValues: {
-        status: currentOrder?.status || '',
-      },
-      nextValues: {
-        status,
-      },
-      metadata: {
-        source: 'studio',
-        persistence: 'local',
-      },
-    });
-    return nextOrders;
   }
 };
 
 export const updateOrderInternalNotes = async (orderId, internalNotes) => {
   const normalizedNotes = String(internalNotes || '').trim();
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update({ internal_notes: normalizedNotes });
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    return getOrderById(orderId);
-  } catch (error) {
-    console.warn('Updating local storefront order internal notes fallback:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? { ...order, internalNotes: normalizedNotes, updatedAt: new Date().toISOString() }
-        : order
-    ));
-    writeOrders(nextOrders);
-    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
-  }
+  await updateOrderRow(orderId, { internal_notes: normalizedNotes });
+  return getOrderById(orderId);
 };
 
 export const updateOrderShipment = async (orderId, shipmentData = {}) => {
@@ -1494,45 +1381,9 @@ export const updateOrderShipment = async (orderId, shipmentData = {}) => {
     },
   };
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update(payload);
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    await createOrderAuditLog(shipmentAudit);
-    return getOrderById(orderId);
-  } catch (error) {
-    console.warn('Updating local storefront order shipment fallback:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? {
-          ...order,
-          shipmentStatus,
-          courierName: patch.courier_name || '',
-          trackingNumber: patch.tracking_number || '',
-          trackingUrl: patch.tracking_url || '',
-          shippedAt: patch.shipped_at || '',
-          deliveredAt: patch.delivered_at || '',
-          packingNotes: patch.packing_notes || '',
-          ...(patch.status ? { status: patch.status, statusTimeline } : {}),
-          updatedAt: new Date().toISOString(),
-        }
-        : order
-    ));
-    writeOrders(nextOrders);
-    await createOrderAuditLog({
-      ...shipmentAudit,
-      metadata: {
-        ...shipmentAudit.metadata,
-        persistence: 'local',
-      },
-    });
-    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
-  }
+  await updateOrderRow(orderId, payload);
+  await createOrderAuditLog(shipmentAudit);
+  return getOrderById(orderId);
 };
 
 export const updateOrderBespokeProductionStatus = async (orderId, productionStatus) => {
@@ -1548,41 +1399,16 @@ export const updateOrderBespokeProductionStatus = async (orderId, productionStat
     ...(productionStatus === 'production' ? { status: 'processing' } : {}),
   };
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update(patch);
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-
-    await createOrderAuditLog({
-      action: 'bespoke_production_updated',
-      currentOrder,
-      orderId,
-      previousValues: { bespokeProductionStatus: currentOrder?.bespokeProductionStatus || '' },
-      nextValues: { bespokeProductionStatus: productionStatus },
-      metadata: { source: 'studio' },
-    });
-
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    return getOrderById(orderId);
-  } catch (error) {
-    console.warn('Updating local bespoke production fallback:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? {
-          ...order,
-          bespokeProductionStatus: productionStatus,
-          bespokeProductionTimeline,
-          ...(patch.status ? { status: patch.status } : {}),
-          updatedAt: new Date().toISOString(),
-        }
-        : order
-    ));
-    writeOrders(nextOrders);
-    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
-  }
+  await updateOrderRow(orderId, patch);
+  await createOrderAuditLog({
+    action: 'bespoke_production_updated',
+    currentOrder,
+    orderId,
+    previousValues: { bespokeProductionStatus: currentOrder?.bespokeProductionStatus || '' },
+    nextValues: { bespokeProductionStatus: productionStatus },
+    metadata: { source: 'studio' },
+  });
+  return getOrderById(orderId);
 };
 
 export const updateOrderProductionLinks = async (orderId, productionLinks = {}) => {
@@ -1591,26 +1417,8 @@ export const updateOrderProductionLinks = async (orderId, productionLinks = {}) 
     updatedAt: new Date().toISOString(),
   });
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update({ production_links: normalizedLinks });
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-
-    window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    return getOrderById(orderId);
-  } catch (error) {
-    console.warn('Updating local production links fallback:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? { ...order, productionLinks: normalizedLinks, updatedAt: new Date().toISOString() }
-        : order
-    ));
-    writeOrders(nextOrders);
-    return nextOrders.find((order) => order.id === orderId || order.orderNumber === orderId) || null;
-  }
+  await updateOrderRow(orderId, { production_links: normalizedLinks });
+  return getOrderById(orderId);
 };
 
 const markOrderInventoryDeducted = async (orderId, events = []) => {
@@ -1619,25 +1427,12 @@ const markOrderInventoryDeducted = async (orderId, events = []) => {
     at: event.at || new Date().toISOString(),
   }));
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update({
-        inventory_deducted: true,
-        inventory_events: inventoryEvents,
-      });
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-  } catch (error) {
-    console.warn('Marking inventory deduction locally:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? { ...order, inventoryDeducted: true, inventoryEvents, updatedAt: new Date().toISOString() }
-        : order
-    ));
-    writeOrders(nextOrders);
-  }
+  // The deduction already happened in the DB; if this flag does not land the order looks un-deducted and
+  // a later cancel would restore stock that was never held. Never swallow it.
+  await updateOrderRow(orderId, {
+    inventory_deducted: true,
+    inventory_events: inventoryEvents,
+  });
 };
 
 const markOrderInventoryRestored = async (orderId, currentEvents = [], restoreEvents = []) => {
@@ -1646,25 +1441,12 @@ const markOrderInventoryRestored = async (orderId, currentEvents = [], restoreEv
     ...normalizeInventoryEvents(restoreEvents),
   ];
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update({
-        inventory_deducted: false,
-        inventory_events: inventoryEvents,
-      });
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) throw error;
-  } catch (error) {
-    console.warn('Marking inventory restore locally:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? { ...order, inventoryDeducted: false, inventoryEvents, updatedAt: new Date().toISOString() }
-        : order
-    ));
-    writeOrders(nextOrders);
-  }
+  // Mirror of markOrderInventoryDeducted: if the flag stays true after stock was restored, a second
+  // cancel would restore the same units again.
+  await updateOrderRow(orderId, {
+    inventory_deducted: false,
+    inventory_events: inventoryEvents,
+  });
 };
 
 export const updateOrderPaymentStatus = async (orderId, {
@@ -1730,114 +1512,50 @@ export const updateOrderPaymentStatus = async (orderId, {
     },
   };
 
-  try {
-    const query = supabase
-      .from('storefront_orders')
-      .update(patch);
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+  // Older databases may not have doku_response or the payment-session columns. Shed exactly those and
+  // retry — anything else, including a write that changed zero rows, has to surface. This function is what
+  // "tandai lunas" calls, so a swallowed failure here tells the owner money arrived when it did not.
+  const mentionsColumn = (candidate, columns) => columns.some((column) => String(candidate?.message || '').includes(column));
 
-    if (error) {
-      const missingDokuResponseColumn = String(error.message || '').includes('doku_response');
-      if (missingDokuResponseColumn) {
-        const retryPatch = { ...patch };
-        delete retryPatch.doku_response;
-        const retryQuery = supabase
-          .from('storefront_orders')
-          .update(retryPatch);
-        const { error: retryError } = await (isUuid(orderId) ? retryQuery.eq('id', orderId) : retryQuery.eq('order_number', orderId));
-        if (retryError) throw retryError;
-        window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-      } else {
-      const missingPaymentSessionColumn = ['payment_url', 'payment_expires_at', 'payment_session_id', 'payment_response']
-        .some((column) => String(error.message || '').includes(column));
-      if (missingPaymentSessionColumn) {
-        const legacyPatch = {
-          payment_status: paymentStatus,
-          payment_provider: paymentProvider,
-          payment_reference: paymentReference,
-          ...(status ? { status } : {}),
-        };
-        const retryQuery = supabase
-          .from('storefront_orders')
-          .update(legacyPatch);
-        const { error: retryError } = await (isUuid(orderId) ? retryQuery.eq('id', orderId) : retryQuery.eq('order_number', orderId));
-        if (retryError) throw retryError;
-        window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-      } else {
-        throw error;
-      }
-      }
-    } else {
-      window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
-    }
-    if (audit) {
-      await createOrderAuditLog(paymentAudit);
-    }
-    if (status === 'cancelled') {
-      await createOrderAuditLog({
-        action: 'order_cancelled',
-        currentOrder,
-        orderId,
-        previousValues: {
-          status: currentOrder?.status || '',
-          paymentStatus: currentOrder?.paymentStatus || '',
-        },
-        nextValues: {
-          status,
-          paymentStatus,
-        },
-        metadata: {
-          source: 'payment',
-        },
-      });
-    }
+  try {
+    await updateOrderRow(orderId, patch);
   } catch (error) {
-    console.warn('Updating local storefront order payment fallback:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).map((order) => (
-      order.id === orderId || order.orderNumber === orderId
-        ? {
-          ...order,
-          paymentStatus,
-          paymentProvider,
-          paymentReference: paymentReference ?? order.paymentReference,
-          paymentUrl: paymentUrl ?? order.paymentUrl,
-          paymentExpiresAt: paymentExpiresAt ?? order.paymentExpiresAt,
-          paymentSessionId: paymentSessionId ?? order.paymentSessionId,
-          paymentResponse: paymentResponse ?? order.paymentResponse,
-          ...(status ? { status } : {}),
-          updatedAt: new Date().toISOString(),
-        }
-        : order
-    ));
-    writeOrders(nextOrders);
-    if (audit) {
-      await createOrderAuditLog({
-        ...paymentAudit,
-        metadata: {
-          ...paymentAudit.metadata,
-          persistence: 'local',
-        },
+    if (mentionsColumn(error, ['doku_response'])) {
+      const retryPatch = { ...patch };
+      delete retryPatch.doku_response;
+      await updateOrderRow(orderId, retryPatch);
+    } else if (mentionsColumn(error, ['payment_url', 'payment_expires_at', 'payment_session_id', 'payment_response'])) {
+      await updateOrderRow(orderId, {
+        payment_status: paymentStatus,
+        payment_provider: paymentProvider,
+        payment_reference: paymentReference,
+        ...(status ? { status } : {}),
       });
+    } else {
+      throw error;
     }
-    if (status === 'cancelled') {
-      await createOrderAuditLog({
-        action: 'order_cancelled',
-        currentOrder,
-        orderId,
-        previousValues: {
-          status: currentOrder?.status || '',
-          paymentStatus: currentOrder?.paymentStatus || '',
-        },
-        nextValues: {
-          status,
-          paymentStatus,
-        },
-        metadata: {
-          source: 'payment',
-          persistence: 'local',
-        },
-      });
-    }
+  }
+
+  if (audit) {
+    await createOrderAuditLog(paymentAudit);
+  }
+  if (status === 'cancelled') {
+    await createOrderAuditLog({
+      action: 'order_cancelled',
+      currentOrder,
+      orderId,
+      previousValues: {
+        status: currentOrder?.status || '',
+        paymentStatus: currentOrder?.paymentStatus || '',
+      },
+      nextValues: {
+        status,
+        paymentStatus,
+      },
+      metadata: {
+        source: 'payment',
+      },
+    });
   }
 
   if (paymentStatus === 'paid' && currentOrder && !currentOrder.inventoryDeducted) {
@@ -1864,60 +1582,38 @@ export const updateOrderPaymentStatus = async (orderId, {
 
 export const deleteOrder = async (orderId) => {
   const currentOrder = await getOrderById(orderId, { sweepExpiredReservation: false });
-  try {
-    // Hard-delete strands any stock still reserved for this order; give it back first.
-    if (currentOrder?.inventoryDeducted) {
-      await restoreInventoryForOrder(currentOrder, 'Order deleted stock released');
-    }
-    const query = supabase
-      .from('storefront_orders')
-      .delete();
-    const { error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
-
-    if (error) {
-      throw error;
-    }
-
-    await createOrderAuditLog({
-      action: 'order_deleted',
-      currentOrder: currentOrder ? { ...currentOrder, id: null } : currentOrder,
-      orderId,
-      previousValues: {
-        status: currentOrder?.status || '',
-        paymentStatus: currentOrder?.paymentStatus || '',
-        shipmentStatus: currentOrder?.shipmentStatus || '',
-      },
-      nextValues: {
-        deleted: true,
-      },
-      metadata: {
-        source: 'studio',
-      },
-    });
-    return getOrders();
-  } catch (error) {
-    console.warn('Deleting local storefront order fallback:', error.message || error);
-    const nextOrders = readOrders().map(normalizeOrder).filter((order) => order.id !== orderId && order.orderNumber !== orderId);
-    writeOrders(nextOrders);
-    await createOrderAuditLog({
-      action: 'order_deleted',
-      currentOrder: currentOrder ? { ...currentOrder, id: null } : currentOrder,
-      orderId,
-      previousValues: {
-        status: currentOrder?.status || '',
-        paymentStatus: currentOrder?.paymentStatus || '',
-        shipmentStatus: currentOrder?.shipmentStatus || '',
-      },
-      nextValues: {
-        deleted: true,
-      },
-      metadata: {
-        source: 'studio',
-        persistence: 'local',
-      },
-    });
-    return nextOrders;
+  // Hard-delete strands any stock still reserved for this order; give it back first.
+  if (currentOrder?.inventoryDeducted) {
+    await restoreInventoryForOrder(currentOrder, 'Order deleted stock released');
   }
+
+  const query = supabase.from('storefront_orders').delete().select('order_number');
+  const { data, error } = await (isUuid(orderId) ? query.eq('id', orderId) : query.eq('order_number', orderId));
+  if (error) {
+    throw orderWriteError(error.message || `Gagal menghapus order ${orderId}`);
+  }
+  // A delete refused by RLS also comes back as 200 with zero rows. Dropping the row from localStorage and
+  // reporting success made the order vanish from this browser while it stayed live everywhere else.
+  assertOrderWriteApplied(data, orderId);
+  window.dispatchEvent(new CustomEvent('dekito:orders-updated'));
+
+  await createOrderAuditLog({
+    action: 'order_deleted',
+    currentOrder: currentOrder ? { ...currentOrder, id: null } : currentOrder,
+    orderId,
+    previousValues: {
+      status: currentOrder?.status || '',
+      paymentStatus: currentOrder?.paymentStatus || '',
+      shipmentStatus: currentOrder?.shipmentStatus || '',
+    },
+    nextValues: {
+      deleted: true,
+    },
+    metadata: {
+      source: 'studio',
+    },
+  });
+  return getOrders();
 };
 
 export const clearOrders = () => writeOrders([]);

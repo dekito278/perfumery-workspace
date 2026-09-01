@@ -633,7 +633,12 @@ const BespokePage = () => {
       navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
       if (createdOrder) {
-        await updateOrderStatus(createdOrder.id || createdOrder.orderNumber, 'cancelled');
+        // The cancel is best-effort cleanup; it must not replace the error the buyer needs to see.
+        try {
+          await updateOrderStatus(createdOrder.id || createdOrder.orderNumber, 'cancelled');
+        } catch (cancelError) {
+          console.warn('Failed to cancel bespoke order after payment session error:', cancelError.message || cancelError);
+        }
       }
       toast.error(error.message || 'Gagal menyimpan request bespoke.');
     } finally {

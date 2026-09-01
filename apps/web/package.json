@@ -19,7 +19,7 @@
     "reference:match:apply": "node tools/match-material-reference-links.mjs --apply",
     "reference:inventory:plan": "node tools/seed-operational-material-library.mjs --out-dir ../../docs/material-library-seed",
     "reference:inventory:apply": "node tools/seed-operational-material-library.mjs --apply --out-dir ../../docs/material-library-seed",
-    "selfcheck": "node tools/api-selfchecks/doku-notification.selfcheck.mjs && node tools/api-selfchecks/import-pdf.selfcheck.mjs && node src/utils/bespokeOrder.selfcheck.mjs && node src/utils/cartReconcile.selfcheck.mjs && node src/utils/shippingPromotion.selfcheck.mjs",
+    "selfcheck": "node tools/api-selfchecks/doku-notification.selfcheck.mjs && node tools/api-selfchecks/import-pdf.selfcheck.mjs && node src/utils/bespokeOrder.selfcheck.mjs && node src/utils/cartReconcile.selfcheck.mjs && node src/utils/shippingPromotion.selfcheck.mjs && node src/utils/orderWrites.selfcheck.mjs",
     "browser:smoke": "node tools/browser-smoke-check.mjs",
     "e2e:production-flow": "node tools/production-flow-e2e.mjs"
   },

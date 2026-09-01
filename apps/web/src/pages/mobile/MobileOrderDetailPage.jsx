@@ -542,11 +542,16 @@ const MobileOrderDetailPage = () => {
     // Move the order out of the paid queue, exactly as the desktop detail page does — printing a resi from
     // a phone used to leave the order sitting in "sudah dibayar" forever (audit round 7).
     if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
-      await updateOrderShipment(order.id || order.orderNumber, {
-        ...shipmentDraft,
-        shipmentStatus: 'packing',
-        packingNotes: shipmentDraft.packingNotes || 'Resi PDF dicetak dari Detail Order mobile.',
-      });
+      try {
+        await updateOrderShipment(order.id || order.orderNumber, {
+          ...shipmentDraft,
+          shipmentStatus: 'packing',
+          packingNotes: shipmentDraft.packingNotes || 'Resi PDF dicetak dari Detail Order mobile.',
+        });
+      } catch (error) {
+        toast.error(`Resi PDF siap, tapi status order gagal dipindah ke Label/resi: ${error.message || 'coba lagi'}`);
+        return;
+      }
       setOrder(await getOrderById(orderId) || order);
       toast.success('Resi PDF siap. Order masuk Label/resi.');
       return;
