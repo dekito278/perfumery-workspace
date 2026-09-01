@@ -120,9 +120,12 @@ melewati RLS, jadi rollback selalu bisa dijalankan.
 
 Urut dari yang paling berdampak:
 
-1. **X-1** — 30+ titik "gagal tulis DB → localStorage → lapor sukses". Mulai dari jalur tulis
-   `orderService`: pakai `.select()` di setiap write, perlakukan 0 baris sebagai gagal, buang fallback
-   lokal. Ini yang membuat "tandai lunas" bisa berbohong.
+1. **X-1 — `orderService` SELESAI** (commit `966a8a1`). Semua write lewat `updateOrderRow()` yang
+   `.select()` dan melempar kalau 0 baris; 11 mirror localStorage dihapus; 5 call site yang tadinya tanpa
+   penanganan error ditutup. Dijaga `orderWrites.selfcheck.mjs` di tingkat source.
+   **Masih tersisa di service lain** (9 titik): `bespokeSettingsService` (6),
+   `storefrontCategoryService` (3), `shippingPromotionService` (3), `customerService` (7 — lihat CU-1),
+   plus `productCatalogService` (lihat P-3 di bawah).
 2. **P-1b** — pindahkan 16 tag internal keluar dari `tags`.
 3. **P-3** — `saveCustomProduct` / `deleteCustomProduct` berhenti melapor sukses palsu.
 4. **O-2, D-1, S-2** — rate limit / auth untuk 4 endpoint terbuka yang memproksi API berbayar dan
