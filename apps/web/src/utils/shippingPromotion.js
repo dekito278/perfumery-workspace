@@ -30,7 +30,9 @@ const JAVA_KEYWORDS = [
   'surabaya',
   'malang',
   'sidoarjo',
-  'kediri',
+  // No 'kediri': there is a Kediri in Lombok Barat (NTB) as well as the Javanese one, and this list is
+  // only a fallback for destinations that arrive without province data. Kediri, Jawa Timur is still
+  // matched by its province. A promo must fail closed, not hand free shipping to another island.
 ];
 
 const JAVA_PROVINCES = new Set([
@@ -78,6 +80,11 @@ const normalizeAreaText = (value) => String(value || '')
   .trim();
 
 const JAVA_FALLBACK_KEYWORDS = [...JAVA_PROVINCES, ...JAVA_KEYWORDS].map(normalizeAreaText);
+
+// Whole-phrase match, not substring: `includes('solo')` was true for "Solok, Sumatera Barat", so a promo
+// with free Java shipping shipped to West Sumatra for nothing. Padding both sides means a keyword only
+// matches on word boundaries, and multi-word province names still work (audit round 9).
+const containsWholePhrase = (text, phrase) => ` ${text} `.includes(` ${phrase} `);
 
 export const normalizeShippingPromotionSettings = (settings = {}) => ({
   ...defaultShippingPromotionSettings,
@@ -128,7 +135,7 @@ export const getShippingDestinationArea = (destination, rate) => {
 
   const searchText = destinationToSearchText(destination, rate);
   const keywordMatch = JAVA_FALLBACK_KEYWORDS
-    .find((keyword) => searchText.includes(keyword));
+    .find((keyword) => containsWholePhrase(searchText, keyword));
 
   if (keywordMatch) {
     return { area: 'java', matchedBy: 'keyword', matchedValue: keywordMatch };

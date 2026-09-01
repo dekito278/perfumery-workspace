@@ -864,24 +864,6 @@ export const deleteCustomProduct = async (id) => {
   }
 };
 
-export const resetCustomProducts = async () => {
-  try {
-    const { error } = await supabase
-      .from('storefront_products')
-      .delete()
-      .eq('source', 'custom');
-
-    if (error) {
-      throw error;
-    }
-
-    dispatchProductsUpdated();
-  } catch (error) {
-    console.warn('Resetting local storefront products fallback:', error.message || error);
-    writeStoredProducts([]);
-  }
-};
-
 export const deductInventoryForOrder = async (order) => {
   if (!order || order.inventoryDeducted || !Array.isArray(order.items)) {
     return [];

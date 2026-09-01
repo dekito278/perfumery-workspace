@@ -26,6 +26,9 @@ const CartPage = () => {
   const revealRef = useScrollReveal();
   const { magnetic, tilt, resetTilt } = useMicroInteractions();
   const catalogProducts = useCatalogProducts();
+  // Lines whose product left the catalog or ran out of stock — checkout refuses them, so say so here
+  // rather than at the end of the form (audit round 9).
+  const unavailableItems = items.filter((item) => item.unavailable || item.outOfStock);
 
   const recommendations = useMemo(() => {
     const inCart = new Set(items.map((item) => item.productSlug || item.slug));
@@ -57,6 +60,11 @@ const CartPage = () => {
             {items.some((item) => item.priceChanged) ? (
               <p className="cart-line__meta" role="status">
                 Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+              </p>
+            ) : null}
+            {unavailableItems.length ? (
+              <p className="cart-line__meta" role="alert">
+                {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
               </p>
             ) : null}
             {!items.length ? (

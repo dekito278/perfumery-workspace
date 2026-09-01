@@ -559,9 +559,15 @@ export const AuthProvider = ({ children }) => {
       throw new Error(error.message || 'Failed to update password');
     }
 
-    if (data?.user) {
-      setCurrentUser(data.user);
-    }
+    // Sign out afterwards, always. Both callers reach here on a session that is only aal1:
+    // reauthenticateWithPassword signs in again to prove the old password, and a recovery link lands on a
+    // bare aal1 session. The SIGNED_IN fast-path in onAuthStateChange sees the same user id with no active
+    // challenge and never re-runs the TOTP challenge, so the session would keep studio access at aal1 —
+    // which goes silently empty (RLS filters, it does not error) once is_admin() requires aal2. A fresh
+    // login is the only end state that is right for both flows (audit round 9).
+    await logout().catch((signOutError) => {
+      console.warn('Sign-out after password change failed:', signOutError?.message || signOutError);
+    });
 
     return data;
   };

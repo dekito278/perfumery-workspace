@@ -13,6 +13,10 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/catalog\/([^/]+)$/, '/mobile/products/$1'],
   [/^\/track-order\/([^/]+)$/, '/mobile/customer?code=$1'],
   [/^\/track-order$/, '/mobile/customer'],
+  // publicTrackingService builds the links we hand buyers as /track/:code, so this pair has to exist or
+  // every shared tracking link opens the desktop page on a phone (audit round 9).
+  [/^\/track\/([^/]+)$/, '/mobile/customer?code=$1'],
+  [/^\/track$/, '/mobile/customer'],
   [/^\/bespoke$/, '/mobile/bespoke'],
   [/^\/cart$/, '/mobile/cart'],
   [/^\/checkout$/, '/mobile/checkout'],
@@ -20,16 +24,22 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/customer$/, '/mobile/customer'],
   [/^\/customer\/invoice\/([^/]+)$/, '/mobile/customer/invoice/$1'],
   [/^\/login$/, '/mobile/login'],
+  [/^\/reset-password$/, '/mobile/reset-password'],
+  [/^\/authenticator$/, '/mobile/authenticator'],
   [/^\/studio$/, '/mobile/studio'],
   [/^\/studio\/products$/, '/mobile/studio/products'],
   [/^\/studio\/products\/new$/, '/mobile/studio/products/new'],
   [/^\/studio\/products\/([^/]+)\/edit$/, '/mobile/studio/products/$1/edit'],
   [/^\/studio\/product-categories$/, '/mobile/studio/product-categories'],
+  // No entries for /studio/products/inventory or /studio/stories on purpose: neither has a mobile page
+  // yet, so a phone stays on the desktop one rather than being sent to a 404.
+
   [/^\/studio\/vouchers$/, '/mobile/studio/vouchers'],
   [/^\/studio\/shipping$/, '/mobile/studio/shipping'],
   [/^\/studio\/orders$/, '/mobile/studio/orders'],
   [/^\/studio\/orders\/([^/]+)$/, '/mobile/studio/orders/$1'],
   [/^\/studio\/customers$/, '/mobile/studio/customers'],
+  [/^\/studio\/site-images$/, '/mobile/studio/site-images'],
   [/^\/studio\/shipments$/, '/mobile/studio/fulfillment'],
   [/^\/dashboard$/, '/mobile/studio'],
   // Public journal index → public mobile articles tab (NOT the protected studio journal).

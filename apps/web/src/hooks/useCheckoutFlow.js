@@ -132,8 +132,13 @@ export const useCheckoutFlow = ({
     setShippingOptions([]);
   }, [shippingWeight]);
   const validPhoneContact = hasValidWhatsAppPhoneNumber(contact);
+  // reconcileCartLines flags lines whose product left the catalog or ran out of stock. Letting them
+  // through meant the buyer filled in the whole form and only hit the wall at submit, with the
+  // endpoint's raw "Unknown product" / "Stok tidak cukup" (audit round 9).
+  const blockedItems = items.filter((item) => item.unavailable || item.outOfStock);
   const canSubmitCheckout = Boolean(
     items.length
+    && !blockedItems.length
     && customerName.trim()
     && validPhoneContact
     && deliveryAddress.trim()
@@ -465,6 +470,11 @@ export const useCheckoutFlow = ({
       toast.error('Keranjang masih kosong');
       return;
     }
+    if (blockedItems.length) {
+      const names = blockedItems.map((item) => item.name).filter(Boolean).join(', ');
+      toast.error(`${names || 'Beberapa item'} sudah tidak tersedia. Hapus dari keranjang dulu.`);
+      return;
+    }
     if (!customerName.trim() || !deliveryAddress.trim()) {
       toast.error('Nama dan alamat pengiriman wajib diisi');
       return;
@@ -767,6 +777,7 @@ export const useCheckoutFlow = ({
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
+    blockedItems,
     setCustomerName,
     setContact,
     setDeliveryAddress: updateDeliveryAddress,

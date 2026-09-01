@@ -12,7 +12,10 @@ export const reconcileCartLines = (items = [], catalog = []) => {
     const product = catalog.find((entry) => (
       entry.slug === item.productSlug || entry.slug === item.slug || entry.id === item.productId
     ));
-    if (!product) return item;
+    // Left the catalog (deleted, or its slug changed): keep the line so the buyer can see what dropped
+    // out, but mark it. Silently keeping it at its stored price meant checkout only failed at the very
+    // end, with the endpoint's raw `Unknown product: <slug>` (audit round 9).
+    if (!product) return { ...item, unavailable: true, outOfStock: false };
 
     const variant = (product.variants || []).find((option) => (
       option.id === item.variantId || option.size === item.size
@@ -35,6 +38,10 @@ export const reconcileCartLines = (items = [], catalog = []) => {
       } : {}),
       maxStock: liveStock,
       quantity: liveStock > 0 ? Math.min(Number(item.quantity || 1), liveStock) : Number(item.quantity || 1),
+      // Stock 0 used to mean "no cap" everywhere, so a sold-out line kept whatever quantity it had and
+      // rode all the way to checkout. Both flags are always written, never left over from a stale line.
+      unavailable: false,
+      outOfStock: liveStock <= 0,
     };
   });
 };
