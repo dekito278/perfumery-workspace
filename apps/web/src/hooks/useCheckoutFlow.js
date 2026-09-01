@@ -53,6 +53,21 @@ const writeCheckoutDraft = (draft) => {
   }
 };
 
+// Seed the checkout draft from somewhere else in the app (the customer portal's "Pesan lagi" hands over
+// the saved name/contact/address so a code-only portal visitor does not retype it). Only fills fields the
+// draft does not already have, so a half-typed checkout is never clobbered.
+export const seedCheckoutDraft = (values = {}) => {
+  const draft = readCheckoutDraft();
+  const next = { ...draft };
+  for (const [key, value] of Object.entries(values)) {
+    const text = String(value || '').trim();
+    if (text && !String(next[key] || '').trim()) {
+      next[key] = text;
+    }
+  }
+  writeCheckoutDraft({ ...next, updatedAt: new Date().toISOString() });
+};
+
 const clearCheckoutDraft = () => {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);

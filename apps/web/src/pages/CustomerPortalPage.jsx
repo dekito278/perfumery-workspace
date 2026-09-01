@@ -10,7 +10,6 @@ import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
-import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import {
   claimCustomerCode,
   getCustomerAccount,
@@ -25,14 +24,13 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
-  createOrder,
   updateOrderPaymentStatus,
-  updateOrderStatus,
 } from '@/services/orderService.js';
 import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
-import { buildOrderNotes, checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
-import { applyVoucherToSubtotalAsync, recordVoucherUsageForOrder } from '@/services/voucherService.js';
+import { addCartItem, isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
+import { setAppliedVoucherCode } from '@/services/voucherService.js';
+import { seedCheckoutDraft } from '@/hooks/useCheckoutFlow.js';
 import {
   getOrderProductItems,
   getOrderProductsSubtotal,
@@ -42,9 +40,6 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
-import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -178,10 +173,10 @@ const getPaymentExperienceState = (order) => {
     return {
       label: 'Dibatalkan otomatis',
       title: 'Order dibatalkan',
-      description: 'Order ini sudah tidak aktif. Gunakan Reorder untuk membuat pembayaran baru dari data order yang sama.',
+      description: 'Order ini sudah tidak aktif. Pakai "Pesan lagi" untuk memasukkan itemnya ke keranjang dan checkout ulang.',
       className: 'border-slate-200 bg-slate-50 text-slate-800',
       iconClassName: 'bg-white text-slate-600',
-      action: 'Reorder',
+      action: 'Pesan lagi',
     };
   }
   if (order.paymentStatus === 'paid') {
@@ -705,7 +700,7 @@ const SelfServiceActions = ({
       </a>
       <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
         <ShoppingBag className="h-4 w-4" />
-        Reorder
+        Pesan lagi
       </button>
       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
         <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
@@ -717,108 +712,7 @@ const SelfServiceActions = ({
   );
 };
 
-const ReorderPaymentPanel = ({
-  compact = false,
-  draft,
-  onCancel,
-  onSubmit,
-  submitting = false,
-}) => {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(MANUAL_TRANSFER_PAYMENT.id);
-  if (!draft) return null;
-
-  const selectedMethod = getCheckoutPaymentMethod(selectedPaymentMethod);
-  const isManual = isManualTransferPayment(selectedMethod.provider);
-  const voucherChanged = draft.originalVoucherSnapshot && !draft.voucherSnapshot;
-
-  return (
-    <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-editorial-charcoal/14 bg-editorial-ivory`}>
-      <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
-          <CreditCard className="h-4 w-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-editorial-charcoal">Reorder</div>
-          <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-editorial-charcoal`}>Pilih pembayaran</h4>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-editorial-muted">
-            Item, alamat, dan ongkir mengikuti order lama. Pilih Manual atau DOKU untuk membuat order baru.
-          </p>
-
-          {draft.checkingVoucher ? (
-            <div className="mt-3 flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs font-bold text-editorial-charcoal">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Mengecek voucher lama...
-            </div>
-          ) : null}
-
-          {voucherChanged ? (
-            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-relaxed text-amber-900">
-              Mohon maaf, voucher {draft.originalVoucherSnapshot.code} tidak bisa dipakai lagi. Total sudah diperbarui tanpa diskon voucher.
-              {draft.voucherMessage ? <span className="mt-1 block font-bold">{draft.voucherMessage}</span> : null}
-            </div>
-          ) : draft.voucherSnapshot ? (
-            <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
-              Voucher {draft.voucherSnapshot.code} masih aktif: -{formatTotal(draft.voucherSnapshot.discountAmount)}
-            </div>
-          ) : null}
-
-          <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
-            <div className="rounded-2xl bg-white px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-editorial-muted">Subtotal produk</div>
-              <div className="mt-1 text-xs font-bold text-editorial-charcoal">{formatTotal(draft.productSubtotal)}</div>
-            </div>
-            <div className="rounded-2xl bg-white px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-editorial-muted">Ongkir lama</div>
-              <div className="mt-1 text-xs font-bold text-editorial-charcoal">{formatTotal(draft.shippingFee)}</div>
-            </div>
-            <div className="rounded-2xl bg-white px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-editorial-muted">Total baru</div>
-              <div className="mt-1 text-sm font-bold text-editorial-charcoal">{formatTotal(draft.totalDue)}</div>
-            </div>
-          </div>
-
-          <div className="mt-3 grid gap-2">
-            {checkoutPaymentMethods.map((method) => {
-              const active = selectedPaymentMethod === method.id;
-              return (
-                <button
-                  key={method.id}
-                  type="button"
-                  onClick={() => {
-                    if (!active) toast.success(`${method.label} dipilih`);
-                    setSelectedPaymentMethod(method.id);
-                  }}
-                  className={`rounded-2xl border px-3 py-3 text-left ${active ? 'border-editorial-charcoal bg-white text-editorial-charcoal' : 'border-editorial-charcoal/10 bg-white/70 text-[#6b7280]'}`}
-                >
-                  <div className="text-sm font-bold">{method.label}</div>
-                  <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
-                  {method.accountNumber && active ? (
-                    <div className="mt-2 rounded-xl bg-editorial-ivory px-3 py-2 text-[11px] font-bold text-editorial-charcoal">
-                      {method.bankName} {method.accountNumber} / A.N {method.accountName}
-                    </div>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={`${compact ? 'grid gap-2' : 'flex flex-wrap gap-2'} mt-3`}>
-            <button type="button" onClick={() => onSubmit(draft.order, selectedPaymentMethod)} disabled={submitting || draft.checkingVoucher} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory disabled:opacity-60">
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-              {isManual ? 'Pakai transfer manual' : 'Buat link DOKU'}
-            </button>
-            <button type="button" onClick={onCancel} disabled={submitting} className="flex h-11 items-center justify-center rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal disabled:opacity-60">
-              Batal
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const CustomerPortalPage = () => {
-  const catalogProducts = useCatalogProducts();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
@@ -838,8 +732,6 @@ const CustomerPortalPage = () => {
   const [securityFormOpen, setSecurityFormOpen] = useState(false);
   const [accountPanelOpen, setAccountPanelOpen] = useState(false);
   const [codeSearchOpen, setCodeSearchOpen] = useState(false);
-  const [reorderDraft, setReorderDraft] = useState(null);
-  const [submittingReorder, setSubmittingReorder] = useState('');
   const [lastCustomerCode, setLastCustomerCode] = useState(() => readLastCustomerCode());
 
   const latestOrder = portal?.orders?.[0];
@@ -1192,243 +1084,60 @@ const CustomerPortalPage = () => {
     }
   };
 
-  // Reorder lines used to carry the price the buyer paid the first time, and createOrder charges whatever
-  // subtotal it is handed — so a reorder of an item whose price went up was charged at the old price
-  // (audit round 7). Re-resolve every line against the live catalog before building the draft.
-  const repriceReorderItem = (item, catalog) => {
-    const fragrance = catalog.find((product) => (
-      product.slug === (item.productSlug || item.slug) || product.id === item.productId
-    ));
-    if (!fragrance) return null;
-    const variant = (fragrance.variants || []).find((option) => (
-      option.id === item.variantId || option.size === item.size
-    )) || fragrance.variants?.[0];
-    const livePrice = Number(variant?.priceNumber || fragrance.priceNumber || 0);
-    return livePrice > 0 ? livePrice : null;
-  };
-
-  const reorderCatalog = useMemo(
-    () => getPublicFragranceCatalog(catalogProducts.filter(isProductVisibleInStorefront)),
-    [catalogProducts],
-  );
-
-  const buildReorderItems = (order, catalog = []) => getOrderProductItems(order).map((item) => {
-    const livePrice = repriceReorderItem(item, catalog);
-    const quantity = Math.max(Number(item.quantity || 1), 1);
-    const priceNumber = livePrice ?? (item.priceNumber
-      ? Number(item.priceNumber)
-      : Number(item.totalPrice || 0) / quantity);
-    return {
-      id: item.productId || item.id || item.slug || item.name,
-      slug: item.productSlug || item.slug || item.productId || item.name,
-      cartSlug: item.slug || item.productSlug || item.productId || item.name,
-      productSlug: item.productSlug || item.slug,
-      variantId: item.variantId || '',
-      name: item.name,
-      price: formatTotal(priceNumber),
-      priceNumber,
-      totalPrice: priceNumber * quantity,
-      size: item.size || '',
-      category: item.category || '',
-      notes: item.notes || '',
-      maxStock: Number(item.maxStock || item.stock || 0),
-      quantity,
-    };
-  });
-
-  const prepareReorderPayment = async (order) => {
+  // "Pesan lagi" fills the cart and hands the buyer to the normal checkout, instead of the second
+  // checkout implementation that used to live here. That one priced the order in the browser and called
+  // createOrder() directly, which is the third path around /api/orders/create and the reason anon INSERT
+  // on storefront_orders could not be revoked (audit round 9). Going through the cart means the reorder
+  // gets the same server-recomputed prices, live shipping quote, and stock/voucher validation as any
+  // other order. reconcileCartLines reprices every line against the live catalog on read, so nothing
+  // here needs to carry a price.
+  const handleReorder = (order) => {
     const productItems = getOrderProductItems(order);
     if (!productItems.length) {
-      toast.error('Order ini belum punya item produk untuk reorder');
+      toast.error('Order ini belum punya item produk untuk dipesan lagi');
       return;
     }
 
-    const reorderItems = buildReorderItems(order, reorderCatalog);
-    // Derive the subtotal from the repriced lines, not from the historical order, so the amount the buyer
-    // is charged always matches the prices this draft is showing them.
-    const productSubtotal = reorderItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
-    const shippingFee = getOrderShippingFee(order);
-    const originalVoucherSnapshot = getOrderVoucherSnapshot(order);
-    const baseDraft = {
-      order,
-      items: reorderItems,
-      productSubtotal,
-      shippingFee,
-      originalVoucherSnapshot,
-      voucherSnapshot: originalVoucherSnapshot,
-      voucherMessage: '',
-      totalDue: productSubtotal + shippingFee,
-      checkingVoucher: Boolean(originalVoucherSnapshot?.code),
-    };
-    setReorderDraft(baseDraft);
+    productItems.forEach((item) => {
+      const quantity = Math.max(Number(item.quantity || 1), 1);
+      addCartItem({
+        id: item.productId || item.id || item.slug || item.name,
+        slug: item.productSlug || item.slug,
+        cartSlug: item.slug || item.productSlug || item.productId || item.name,
+        productSlug: item.productSlug || item.slug,
+        variantId: item.variantId || '',
+        name: item.name,
+        price: item.price,
+        priceNumber: Number(item.priceNumber || 0),
+        size: item.size || '',
+        category: item.category || '',
+        notes: item.notes || '',
+      }, quantity);
+    });
 
-    if (!originalVoucherSnapshot?.code) {
-      toast.success('Pilih metode pembayaran untuk reorder');
-      return;
-    }
-
-    try {
-      const validation = await applyVoucherToSubtotalAsync({
-        code: originalVoucherSnapshot.code,
-        subtotal: productSubtotal,
-        items: reorderItems,
-      });
-      if (!validation.valid) {
-        setReorderDraft((current) => current?.order.orderNumber === order.orderNumber ? {
-          ...current,
-          checkingVoucher: false,
-          voucherSnapshot: null,
-          voucherMessage: validation.message || 'Voucher tidak bisa digunakan',
-          totalDue: productSubtotal + shippingFee,
-        } : current);
-        toast.warning(`Voucher ${originalVoucherSnapshot.code} tidak bisa dipakai lagi`);
-        return;
-      }
-
-      const nextVoucherSnapshot = {
-        ...originalVoucherSnapshot,
-        discountType: validation.voucher?.discountType || originalVoucherSnapshot.discountType,
-        discountValue: Number(validation.voucher?.discountValue || originalVoucherSnapshot.discountValue || 0),
-        discountAmount: validation.discountAmount,
-        subtotalBeforeDiscount: productSubtotal,
-        subtotalAfterDiscount: validation.subtotalAfterDiscount,
-        eligibleSubtotal: validation.eligibleSubtotal || originalVoucherSnapshot.eligibleSubtotal || productSubtotal,
-        eligibleQuantity: validation.eligibleQuantity || originalVoucherSnapshot.eligibleQuantity || 0,
-        eligibleProductSlugs: validation.voucher?.eligibleProductSlugs || originalVoucherSnapshot.eligibleProductSlugs || [],
-        eligibleCategories: validation.voucher?.eligibleCategories || originalVoucherSnapshot.eligibleCategories || [],
-      };
-      setReorderDraft((current) => current?.order.orderNumber === order.orderNumber ? {
-        ...current,
-        checkingVoucher: false,
-        voucherSnapshot: nextVoucherSnapshot,
-        voucherMessage: '',
-        totalDue: validation.subtotalAfterDiscount + shippingFee,
-      } : current);
-      toast.success('Voucher lama masih bisa dipakai');
-    } catch (error) {
-      setReorderDraft((current) => current?.order.orderNumber === order.orderNumber ? {
-        ...current,
-        checkingVoucher: false,
-        voucherSnapshot: null,
-        voucherMessage: error.message || 'Voucher tidak bisa dicek',
-        totalDue: productSubtotal + shippingFee,
-      } : current);
-      toast.warning('Voucher lama tidak bisa dipakai saat reorder');
-    }
-  };
-
-  const createReorderPayment = async (sourceOrder, paymentMethodId) => {
-    const draft = reorderDraft?.order?.orderNumber === sourceOrder?.orderNumber ? reorderDraft : null;
-    if (!draft || draft.checkingVoucher) return;
-
-    const paymentMethodDetails = getCheckoutPaymentMethod(paymentMethodId);
+    // Hand the saved details to checkout. A portal visitor who came in with just a customer code is not
+    // logged in, so checkout's own account prefill never fires for them.
     const customer = portal?.customer || {};
-    const deliveryAddress = customer.deliveryAddress || '';
-    const deliveryArea = customer.deliveryArea || '';
-    const shippingSummary = draft.shippingFee ? `Ongkir lama dari ${sourceOrder.orderNumber}` : '';
-    const checkoutDraft = [
-      'Solivagant reorder',
-      `Original order: ${sourceOrder.orderNumber}`,
-      `Customer code: ${customer.customerCode || customerCode || '-'}`,
-      `Total: ${formatTotal(draft.totalDue)}`,
-      draft.voucherSnapshot ? `Voucher: ${draft.voucherSnapshot.code} (-${formatTotal(draft.voucherSnapshot.discountAmount)})` : 'Voucher: tidak dipakai',
-      `Shipping fee: ${formatTotal(draft.shippingFee)}`,
-      `Payment: ${paymentMethodDetails.label}`,
-    ].join('\n');
+    seedCheckoutDraft({
+      customerCode: customer.customerCode || customerCode,
+      customerName: customer.customerName && customer.customerName !== 'Customer' ? customer.customerName : order.customerName,
+      contact: customer.contact && customer.contact !== '-' ? customer.contact : order.contact,
+      deliveryAddress: customer.deliveryAddress,
+      deliveryArea: customer.deliveryArea,
+      destinationSearch: customer.deliveryArea,
+    });
 
-    setSubmittingReorder(sourceOrder.orderNumber);
-    let createdOrder = null;
-    try {
-      const order = await createOrder({
-        customerName: customer.customerName || sourceOrder.customerName || 'Customer',
-        customerCode: customer.customerCode || sourceOrder.customerCode || customerCode,
-        contact: customer.contact || sourceOrder.contact || '-',
-        deliveryAddress,
-        deliveryArea,
-        notes: buildOrderNotes({
-          deliveryAddress,
-          deliveryArea,
-          paymentMethod: paymentMethodDetails.label,
-          shippingSummary,
-          shippingFee: draft.shippingFee,
-          notes: `Reorder dari ${sourceOrder.orderNumber}`,
-        }),
-        items: draft.items,
-        subtotal: draft.totalDue,
-        quantity: draft.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
-        checkoutDraft,
-        paymentProvider: paymentMethodDetails.provider,
-        voucherSnapshot: draft.voucherSnapshot,
-      });
-      createdOrder = order;
-
-      if (draft.voucherSnapshot?.code) {
-        await recordVoucherUsageForOrder({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          voucherSnapshot: draft.voucherSnapshot,
-          items: draft.items,
-        });
-      }
-
-      if (isManualTransferPayment(paymentMethodDetails.provider)) {
-        const manualPaymentResponse = {
-          method: paymentMethodDetails.provider,
-          bankName: paymentMethodDetails.bankName,
-          accountNumber: paymentMethodDetails.accountNumber,
-          accountName: paymentMethodDetails.accountName,
-          amount: draft.totalDue,
-        };
-        await updateOrderPaymentStatus(order.id || order.orderNumber, {
-          paymentStatus: 'pending',
-          paymentProvider: paymentMethodDetails.provider,
-          paymentReference: `${paymentMethodDetails.bankName}-${order.orderNumber}`,
-          paymentUrl: '',
-          paymentExpiresAt: '',
-          paymentSessionId: '',
-          paymentResponse: manualPaymentResponse,
-          status: 'pending_payment',
-          audit: false,
-        });
-        toast.success(`Order ${order.orderNumber} dibuat. Upload bukti transfer setelah bayar.`);
-        navigate(`${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
-        return;
-      }
-
-      const checkout = await createDokuCheckout({
-        order,
-        amount: draft.totalDue,
-        customerName: customer.customerName || sourceOrder.customerName || 'Customer',
-        contact: customer.contact || sourceOrder.contact || '-',
-        items: order.items || draft.items,
-        callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
-      });
-      await updateOrderPaymentStatus(order.id || order.orderNumber, {
-        paymentStatus: 'pending',
-        paymentProvider: 'doku',
-        paymentReference: checkout.requestId || '',
-        paymentUrl: checkout.paymentUrl,
-        paymentExpiresAt: checkout.paymentExpiresAt || '',
-        paymentSessionId: checkout.paymentSessionId || '',
-        paymentResponse: checkout.dokuResponse || {},
-        status: 'pending_payment',
-        audit: false,
-      });
-      toast.success(`Order ${order.orderNumber} dibuat. Link DOKU siap.`);
-      navigate(`${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
-    } catch (error) {
-      if (createdOrder) {
-        try {
-          await updateOrderStatus(createdOrder.id || createdOrder.orderNumber, 'cancelled');
-        } catch (cancelError) {
-          console.warn('Failed to cancel reorder after payment setup error:', cancelError.message || cancelError);
-        }
-      }
-      toast.error(error.message || 'Gagal membuat reorder');
-    } finally {
-      setSubmittingReorder('');
+    // Carry the old voucher code over as an intent only — checkout revalidates it against the DB and
+    // drops it with a message if it no longer applies.
+    const previousVoucher = getOrderVoucherSnapshot(order);
+    if (previousVoucher?.code) {
+      setAppliedVoucherCode(previousVoucher.code);
     }
+
+    toast.success(`Item dari ${order.orderNumber} masuk ke keranjang`);
+    navigate(isMobileRoute ? '/mobile/checkout' : '/checkout');
   };
+
 
   if (isMobileRoute) {
     return (
@@ -1656,20 +1365,11 @@ const CustomerPortalPage = () => {
                           isMobileRoute={isMobileRoute}
                           invoicePath={invoicePath}
                           onRefreshPayment={refreshPaymentStatus}
-                          onReorder={prepareReorderPayment}
+                          onReorder={handleReorder}
                           order={order}
                           refreshing={refreshingPaymentOrder === order.orderNumber}
                         />
                       </div>
-                      {!isMobileRoute && reorderDraft?.order?.orderNumber === order.orderNumber ? (
-                        <ReorderPaymentPanel
-                          compact
-                          draft={reorderDraft}
-                          onCancel={() => setReorderDraft(null)}
-                          onSubmit={createReorderPayment}
-                          submitting={submittingReorder === order.orderNumber}
-                        />
-                      ) : null}
                       <div className="mt-4">
                         <OrderTimeline order={order} compact />
                       </div>
@@ -1699,24 +1399,6 @@ const CustomerPortalPage = () => {
 
           {renderAccountPanel()}
         </main>
-        {isMobileRoute ? (
-          <MobileBottomSheet
-            open={Boolean(reorderDraft)}
-            onOpenChange={(open) => {
-              if (!open && !submittingReorder) setReorderDraft(null);
-            }}
-            title="Reorder"
-            description="Ringkasan order lama dan pilihan pembayaran baru."
-          >
-            <ReorderPaymentPanel
-              compact
-              draft={reorderDraft}
-              onCancel={() => setReorderDraft(null)}
-              onSubmit={createReorderPayment}
-              submitting={Boolean(submittingReorder)}
-            />
-          </MobileBottomSheet>
-        ) : null}
       </MobileCommerceLayout>
     );
   }
@@ -1939,19 +1621,11 @@ const CustomerPortalPage = () => {
                                 isMobileRoute={isMobileRoute}
                                 invoicePath={invoicePath}
                                 onRefreshPayment={refreshPaymentStatus}
-                                onReorder={prepareReorderPayment}
+                                onReorder={handleReorder}
                                 order={order}
                                 refreshing={refreshingPaymentOrder === order.orderNumber}
                               />
                             </div>
-                            {!isMobileRoute && reorderDraft?.order?.orderNumber === order.orderNumber ? (
-                              <ReorderPaymentPanel
-                                draft={reorderDraft}
-                                onCancel={() => setReorderDraft(null)}
-                                onSubmit={createReorderPayment}
-                                submitting={submittingReorder === order.orderNumber}
-                              />
-                            ) : null}
                             <div className="mt-5">
                               <OrderTimeline order={order} />
                             </div>
@@ -1985,7 +1659,7 @@ const CustomerPortalPage = () => {
                     {[
                       ['1', 'Masukkan kode SOLI', 'Kode muncul setelah checkout pertama atau dari halaman sukses order.'],
                       ['2', 'Cek pembayaran dan produksi', 'Status bayar, bukti transfer, custom progress, dan resi tampil di satu tempat.'],
-                      ['3', 'Reorder lebih cepat', 'Order lama bisa dipakai lagi tanpa mengulang data dari awal.'],
+                      ['3', 'Pesan lagi lebih cepat', 'Item order lama langsung masuk keranjang, tinggal checkout.'],
                     ].map(([step, title, description]) => (
                       <div key={step} className="flex gap-3 rounded-2xl bg-white/82 p-3 shadow-sm shadow-editorial-charcoal/5">
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-editorial-charcoal text-xs font-bold text-editorial-ivory">{step}</span>
