@@ -87,7 +87,7 @@ const MobileCheckoutPage = () => {
     customerCode, customerName, contact, deliveryAddress, notes, saving, securityChallenge, securityAnswer, lookupLoading,
     repeatCustomer, repeatAddressMode, destinationSearch, destinationOptions, selectedDestination, shippingOptions, selectedCourier,
     selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, isManualPayment, validPhoneContact,
-    canSubmitCheckout, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
+    canSubmitCheckout, blockedItems, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
     useCustomerNewAddress, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
   } = checkout;
@@ -99,6 +99,8 @@ const MobileCheckoutPage = () => {
     { label: 'Alamat', complete: Boolean(deliveryAddress.trim()) },
     { label: 'Area', complete: Boolean(selectedDestination) },
     { label: 'Kurir', complete: Boolean(selectedCourier && selectedShipping) },
+    // Mirrors canSubmitCheckout: lines whose product is gone or sold out block the order (audit round 9).
+    { label: 'Hapus item tidak tersedia', complete: !blockedItems.length },
   ];
   const contactComplete = Boolean(customerName.trim() && validPhoneContact);
   const addressComplete = Boolean(contactComplete && deliveryAddress.trim());

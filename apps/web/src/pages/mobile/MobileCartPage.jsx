@@ -147,7 +147,7 @@ const MobileCartPage = () => {
           </section>
         ) : null}
         {unavailableItems.length ? (
-          <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, background: 'var(--editorial-ivory)', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-brass)' }}>
+          <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
             {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
           </p>
         ) : null}
