@@ -290,6 +290,22 @@ export default async function handler(request, response) {
       return jsonResponse(response, 400, { message: 'Order number is required' });
     }
 
+    // This endpoint is unauthenticated. Without this check, any order number at all — including ones that
+    // do not exist — costs a DOKU API call and a service-role INSERT into storefront_doku_payment_logs,
+    // so a loop could both burn the merchant's DOKU quota and fill that table for free (audit round 9).
+    // Deliberately existence-only: the row `updateOrder` acts on is still read fresh, immediately before
+    // the transition guard, so this does not widen the race those guards close. A read FAILURE falls
+    // through rather than blocking, so a Supabase blip cannot break a real buyer's status poll.
+    let orderExists = true;
+    try {
+      orderExists = Boolean(await getOrderByInvoice(invoiceNumber));
+    } catch (lookupError) {
+      console.warn('Order pre-check failed, continuing:', lookupError.message || lookupError);
+    }
+    if (!orderExists) {
+      return jsonResponse(response, 404, { message: `Order ${invoiceNumber} not found` });
+    }
+
     const requestTarget = `${STATUS_TARGET_PREFIX}/${encodeURIComponent(invoiceNumber)}`;
     const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     const signature = createSignature({
