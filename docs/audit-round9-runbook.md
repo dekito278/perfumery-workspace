@@ -136,6 +136,38 @@ melewati RLS, jadi rollback selalu bisa dijalankan.
 6. **O-2 sebagian** — `/api/doku/status` menolak order tak dikenal sebelum memanggil DOKU dan menulis log;
    `/api/orders/create` membatasi 50 baris item dan 100 qty per baris.
 
+### Diperiksa sendiri setelah workflow review gagal
+
+Workflow verifikasi adversarial atas diff gelombang 3 gagal — kelima agennya kena batas sesi akun, nol
+temuan. Penggantinya pemeriksaan manual terarah; hasilnya:
+
+- **Referensi menggantung:** nol. Semua yang dihapus (`saveLocalCustomProduct`, `writeStoredProducts`,
+  `mergeLocalFallbackProducts`, seluruh cache pelanggan) tidak punya pemanggil tersisa.
+- **Klaim 22P02 benar:** `storefront_products.id` dan `storefront_product_categories.id` dua-duanya
+  `uuid primary key`, jadi cabang id lokal memang perlu.
+- **Satu celah nyata ditemukan dan ditutup:** `api/doku/checkout.js` menulis seluruh sesi DOKU tapi
+  **tidak** `payment_status`. Tulisan klien yang saya hapus dulu yang men-set `'pending'` — dan itu tidak
+  pernah berhasil untuk pembeli, jadi order DOKU selalu tertinggal di `'unpaid'`. Sekarang penulis sesinya
+  yang memilikinya. Bukan regresi, tapi niatnya jadi tidak bertuan kalau dibiarkan.
+- **Jalur pembeli vs RPC tercabut:** aman. `storefront_restore_inventory_for_order` hanya dicapai lewat
+  fungsi admin, dan `releaseVoucherUsageForOrder` memang dirancang tidak pernah melempar.
+
+**Yang tetap belum terverifikasi mata: seluruh jalur tulis admin.** Butuh login studio. Lihat daftar uji
+di bawah.
+
+### Uji setelah deploy (butuh login studio)
+
+- [ ] Tandai satu order lunas → **refresh** → status bertahan.
+- [ ] Approve satu bukti transfer → refresh → tetap approved.
+- [ ] Ubah status pengiriman + isi resi → refresh → bertahan.
+- [ ] Simpan produk, lalu hapus satu produk uji → keduanya benar-benar berubah di DB.
+- [ ] Simpan kategori baru, lalu hapus → cek tombol hapus **tidak** muncul untuk 7 scent family bawaan.
+- [ ] Nyalakan lalu matikan promo ongkir → checkout benar-benar ikut berubah.
+- [ ] Hapus satu opsi bespoke → hilang juga di form bespoke publik.
+- [ ] Buka `/studio/customers` → daftar tampil (kalau gagal, sekarang muncul pesan merah, bukan "Belum ada customer").
+- [ ] **Cek cron:** pastikan `CRON_SECRET` ada di Vercel. Kalau tidak ada, sweep sudah 401 sejak dulu dan
+      stok order kedaluwarsa tidak pernah dilepas — sekarang gagalnya sama, tapi di semua environment.
+
 ### Ditunda, dengan alasan
 
 **P-1b — pindahkan tag internal keluar dari `tags`. DITUNDA.**
