@@ -116,6 +116,35 @@ melewati RLS, jadi rollback selalu bisa dijalankan.
 
 ---
 
+## ⚠️ TEMUAN SAAT VERIFIKASI DEPLOY: sweep reservasi TIDAK PERNAH JALAN
+
+`GET /api/orders/expire-reservations` di produksi menjawab:
+
+```
+{"ok":false,"message":"CRON_SECRET is not configured; refusing to sweep"}
+```
+
+Cabang itu menyala **murni karena `process.env.CRON_SECRET` kosong**, tidak peduli requestnya bawa
+header apa. Artinya `CRON_SECRET` tidak pernah di-set di Vercel — dan kode LAMA pun sudah menolak
+(`VERCEL_ENV === 'production'` → 401). Jadi cron harian di `vercel.json` sudah gagal sejak dipasang.
+
+**Akibatnya, selama ini:** order yang lewat batas bayar tidak pernah dibatalkan, **stok yang direservasi
+tidak pernah dilepas**, kuota voucher yang dipesan tidak pernah dikembalikan, dan order menumpuk di
+"Menunggu bayar". Ini bukan disebabkan perubahan round 9 — perubahan itu hanya membuat pesannya cukup
+spesifik untuk membedakan "secret tidak ada" dari "secret salah".
+
+**Perbaikan (di Vercel, bukan di kode):**
+1. Project Settings → Environment Variables → tambah `CRON_SECRET` dengan nilai acak panjang, untuk
+   **Production dan Preview**.
+2. Redeploy. Vercel mengirimkannya sendiri sebagai `Authorization: Bearer <CRON_SECRET>` pada setiap
+   pemanggilan cron terjadwal.
+3. Verifikasi: log Vercel untuk `/api/orders/expire-reservations` harus 200 (bukan 401) pada run
+   berikutnya, dan `expired` di responsnya menunjukkan order yang benar-benar dibersihkan.
+4. Sekali jalan pertama kemungkinan membatalkan **banyak** order lama sekaligus dan melepas stoknya.
+   Cek dulu daftar order "Menunggu bayar" sebelum menyalakannya supaya tidak kaget.
+
+---
+
 ## Gelombang 3 — status
 
 ### Selesai
