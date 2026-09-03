@@ -654,11 +654,6 @@ const readLastValidProducts = () => {
   }
 };
 
-const writeStoredProducts = (products) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(PRODUCT_CATALOG_STORAGE_KEY, JSON.stringify(products));
-  dispatchProductsUpdated();
-};
 
 const upsertStoredProduct = (product) => {
   if (typeof window === 'undefined' || !product?.id) return;
@@ -674,14 +669,6 @@ const removeStoredProduct = (id) => {
   cacheFetchedProducts(readStoredProducts().filter((product) => product.id !== id));
 };
 
-const mergeLocalFallbackProducts = (products = []) => {
-  const remoteKeys = new Set(products.flatMap((product) => [product.id, product.slug].filter(Boolean)));
-  const localFallbackProducts = readStoredProducts()
-    .filter((product) => String(product.id || '').startsWith('custom-'))
-    .filter((product) => !remoteKeys.has(product.id) && !remoteKeys.has(product.slug));
-
-  return localFallbackProducts.length ? [...localFallbackProducts, ...products] : products;
-};
 
 const cacheLastValidProducts = (products) => {
   if (typeof window === 'undefined' || !Array.isArray(products) || products.length === 0) return;
@@ -748,7 +735,11 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
       throw error;
     }
 
-    const products = mergeLocalFallbackProducts((data || []).map(fromDatabaseRow));
+    // No local merge. mergeLocalFallbackProducts used to splice `custom-*` products — the ones the old
+    // save fallback invented — back into the fetched catalog, and cacheFetchedProducts then wrote them
+    // straight back to localStorage, so a phantom re-appeared on every fetch forever. With the fallback
+    // gone this is self-healing: the first successful fetch overwrites the cache with real rows only.
+    const products = (data || []).map(fromDatabaseRow);
     cacheFetchedProducts(products);
     fetchMonitor.finish('success', { count: products.length });
     return products;
@@ -788,16 +779,6 @@ export const prefetchCatalogProducts = ({ force = false } = {}) => {
   return catalogProductsRequest;
 };
 
-const saveLocalCustomProduct = (input) => {
-  const storedProducts = readStoredProducts();
-  const existingProducts = [...featuredProducts, ...storedProducts];
-  const product = normalizeProduct(input, existingProducts);
-  const nextProducts = storedProducts.some((item) => item.id === product.id)
-    ? storedProducts.map((item) => (item.id === product.id ? product : item))
-    : [product, ...storedProducts];
-  writeStoredProducts(nextProducts);
-  return product;
-};
 
 export const saveCustomProduct = async (input) => {
   const editableProducts = await getEditableProducts();
@@ -834,34 +815,46 @@ export const saveCustomProduct = async (input) => {
     dispatchProductsUpdated();
     return savedProduct;
   } catch (error) {
-    // A stale-write conflict is a real answer from the server, not an outage — never bury it in the
-    // local-draft fallback, or the admin would be told the save worked.
     if (error?.code === PRODUCT_STALE_WRITE) {
       throw error;
     }
-    console.warn('Saving storefront product locally because database save failed:', error.message || error);
-    return saveLocalCustomProduct(input);
+    // No local-draft fallback. It wrote the product to localStorage and returned it as if saved, and
+    // mergeLocalFallbackProducts then showed that phantom in the admin's own catalog list — so a product
+    // refused by RLS, blocked by an expired session or rejected by a constraint all looked live to the
+    // one person who could have fixed it (audit round 9).
+    throw new Error(`${product.name} gagal disimpan ke server: ${error.message || 'penyebab tidak diketahui'}. Produk BELUM tersimpan — muat ulang halaman dan coba lagi.`);
   }
 };
 
 export const deleteCustomProduct = async (id) => {
-  try {
-    const { error } = await supabase
-      .from('storefront_products')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      throw error;
-    }
-
+  // A `custom-*` id never reached the database — it is a leftover from the old save fallback, which
+  // invented one whenever a save failed. storefront_products.id is a uuid, so sending that id to
+  // PostgREST answers 22P02 rather than deleting anything; evicting it locally IS the whole delete.
+  // Without this branch those leftovers would become permanently undeletable now that failures throw.
+  if (String(id).startsWith('custom-')) {
     removeStoredProduct(id);
     dispatchProductsUpdated();
-  } catch (error) {
-    console.warn('Deleting local storefront product fallback:', error.message || error);
-    const nextProducts = readStoredProducts().filter((product) => product.id !== id);
-    writeStoredProducts(nextProducts);
+    return;
   }
+
+  const { data, error } = await supabase
+    .from('storefront_products')
+    .delete()
+    .eq('id', id)
+    .select('id');
+
+  if (error) {
+    throw new Error(`Produk gagal dihapus: ${error.message}`);
+  }
+  // Zero rows means RLS refused it (200 + empty, error === null). The old catch dropped the product from
+  // localStorage and reported success, so the admin deleted its images from storage while the row stayed
+  // live in the public catalog — and only that browser thought it was gone.
+  if (!data?.length) {
+    throw new Error('Produk tidak terhapus di server. Muat ulang halaman — sesi admin mungkin sudah kedaluwarsa.');
+  }
+
+  removeStoredProduct(id);
+  dispatchProductsUpdated();
 };
 
 export const deductInventoryForOrder = async (order) => {

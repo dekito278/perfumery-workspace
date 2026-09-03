@@ -110,35 +110,39 @@ export const saveShippingPromotionSettings = async (settings) => {
     updatedAt: new Date().toISOString(),
   });
 
-  try {
-    const { data, error } = await supabase
-      .from(SHIPPING_PROMOTION_TABLE)
-      .upsert(toDatabasePayload(nextSettings))
-      .select('*')
-      .single();
+  // No local fallback. api/orders/create.js reads THIS ROW as the authoritative shipping price for every
+  // order (it applies the promo server-side), so mirroring a failed save into the cache showed the admin
+  // a live promo while checkout kept charging the old ongkir — or kept giving free shipping after the
+  // promo was switched off. The `.single()` is what makes an RLS refusal observable: zero rows becomes a
+  // PGRST116 error rather than a silent success (audit round 9).
+  const { data, error } = await supabase
+    .from(SHIPPING_PROMOTION_TABLE)
+    .upsert(toDatabasePayload(nextSettings))
+    .select('*')
+    .single();
 
-    if (error) throw error;
-
-    return cacheSettings(fromDatabaseRow(data));
-  } catch (error) {
-    console.warn('Saving shipping promotion locally because database save failed:', error.message || error);
-    return cacheSettings(nextSettings);
+  if (error) {
+    throw new Error(`Promo ongkir gagal disimpan ke server: ${error.message}. Checkout masih memakai pengaturan lama — muat ulang halaman dan coba lagi.`);
   }
+
+  return cacheSettings(fromDatabaseRow(data));
 };
 
 export const resetShippingPromotionSettings = async () => {
-  shippingPromotionCache = null;
+  // Same reasoning as the save: this row is what api/orders/create.js prices shipping from. Clearing the
+  // local cache while the row survived told the admin the promo was off while every checkout kept
+  // applying it. Deleting an already-absent row is a legitimate no-op, so zero rows is NOT an error here
+  // — only a real PostgREST error is (audit round 9).
+  const { error } = await supabase
+    .from(SHIPPING_PROMOTION_TABLE)
+    .delete()
+    .eq('id', SHIPPING_PROMOTION_ROW_ID);
 
-  try {
-    const { error } = await supabase
-      .from(SHIPPING_PROMOTION_TABLE)
-      .delete()
-      .eq('id', SHIPPING_PROMOTION_ROW_ID);
-
-    if (error) throw error;
-  } catch (error) {
-    console.warn('Resetting local shipping promotion fallback:', error.message || error);
+  if (error) {
+    throw new Error(`Promo ongkir gagal dinonaktifkan di server: ${error.message}. Checkout masih memakai promo lama.`);
   }
+
+  shippingPromotionCache = null;
 
   if (typeof window !== 'undefined') {
     window.localStorage.removeItem(SHIPPING_PROMOTION_STORAGE_KEY);
