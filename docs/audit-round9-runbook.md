@@ -116,18 +116,95 @@ melewati RLS, jadi rollback selalu bisa dijalankan.
 
 ---
 
-## Sisa yang belum dikerjakan (gelombang 3)
+## Gelombang 3 — status
 
-Urut dari yang paling berdampak:
+### Selesai
 
-1. **X-1** — 30+ titik "gagal tulis DB → localStorage → lapor sukses". Mulai dari jalur tulis
-   `orderService`: pakai `.select()` di setiap write, perlakukan 0 baris sebagai gagal, buang fallback
-   lokal. Ini yang membuat "tandai lunas" bisa berbohong.
-2. **P-1b** — pindahkan 16 tag internal keluar dari `tags`.
-3. **P-3** — `saveCustomProduct` / `deleteCustomProduct` berhenti melapor sukses palsu.
-4. **O-2, D-1, S-2** — rate limit / auth untuk 4 endpoint terbuka yang memproksi API berbayar dan
-   memesan stok.
-5. **V-1, V-2** — tutup enumerasi voucher, catat pemakaian voucher server-side.
-6. **I-1** — `CRON_SECRET` wajib juga di preview, bukan hanya production.
-7. **O-7** — jalur transfer manual masih menulis ke `storefront_orders` dari browser pembeli, yang
-   selalu difilter RLS tanpa error.
+1. **X-1 SELESAI di semua service.** `orderService` (commit `966a8a1`), lalu `shippingPromotionService`,
+   `storefrontCategoryService`, `bespokeSettingsService`, `productCatalogService` (`6be7713`) dan
+   `customerService` (`33dbadb`). Setiap tulisan yang bisa ditolak RLS sekarang `.select()` baris
+   terdampak dan gagal lantang; semua mirror localStorage di jalur tulis dihapus. Dijaga
+   `orderWrites.selfcheck.mjs`.
+2. **O-7 SELESAI** (`9af4584`) — sekaligus menutup regresi yang dibuat oleh X-1 sendiri: tujuh tulisan
+   sisi-pembeli yang dulu diam kini melempar dan mematikan checkout. Semuanya duplikasi dari yang sudah
+   ditulis server, jadi dihapus.
+3. **P-3 SELESAI** (`6be7713`) — plus `mergeLocalFallbackProducts` dihapus, yang membuat produk hantu
+   sembuh sendiri pada fetch berhasil pertama.
+4. **CU-1 SELESAI** (`33dbadb`) — generator kode `SOLI#####` palsu dihapus beserta seluruh cache
+   pelanggan di localStorage.
+5. **I-1 SELESAI** — `CRON_SECRET` wajib di semua environment, tanpa pengecualian.
+6. **O-2 sebagian** — `/api/doku/status` menolak order tak dikenal sebelum memanggil DOKU dan menulis log;
+   `/api/orders/create` membatasi 50 baris item dan 100 qty per baris.
+
+### Diperiksa sendiri setelah workflow review gagal
+
+Workflow verifikasi adversarial atas diff gelombang 3 gagal — kelima agennya kena batas sesi akun, nol
+temuan. Penggantinya pemeriksaan manual terarah; hasilnya:
+
+- **Referensi menggantung:** nol. Semua yang dihapus (`saveLocalCustomProduct`, `writeStoredProducts`,
+  `mergeLocalFallbackProducts`, seluruh cache pelanggan) tidak punya pemanggil tersisa.
+- **Klaim 22P02 benar:** `storefront_products.id` dan `storefront_product_categories.id` dua-duanya
+  `uuid primary key`, jadi cabang id lokal memang perlu.
+- **Satu celah nyata ditemukan dan ditutup:** `api/doku/checkout.js` menulis seluruh sesi DOKU tapi
+  **tidak** `payment_status`. Tulisan klien yang saya hapus dulu yang men-set `'pending'` — dan itu tidak
+  pernah berhasil untuk pembeli, jadi order DOKU selalu tertinggal di `'unpaid'`. Sekarang penulis sesinya
+  yang memilikinya. Bukan regresi, tapi niatnya jadi tidak bertuan kalau dibiarkan.
+- **Jalur pembeli vs RPC tercabut:** aman. `storefront_restore_inventory_for_order` hanya dicapai lewat
+  fungsi admin, dan `releaseVoucherUsageForOrder` memang dirancang tidak pernah melempar.
+
+**Yang tetap belum terverifikasi mata: seluruh jalur tulis admin.** Butuh login studio. Lihat daftar uji
+di bawah.
+
+### Uji setelah deploy (butuh login studio)
+
+- [ ] Tandai satu order lunas → **refresh** → status bertahan.
+- [ ] Approve satu bukti transfer → refresh → tetap approved.
+- [ ] Ubah status pengiriman + isi resi → refresh → bertahan.
+- [ ] Simpan produk, lalu hapus satu produk uji → keduanya benar-benar berubah di DB.
+- [ ] Simpan kategori baru, lalu hapus → cek tombol hapus **tidak** muncul untuk 7 scent family bawaan.
+- [ ] Nyalakan lalu matikan promo ongkir → checkout benar-benar ikut berubah.
+- [ ] Hapus satu opsi bespoke → hilang juga di form bespoke publik.
+- [ ] Buka `/studio/customers` → daftar tampil (kalau gagal, sekarang muncul pesan merah, bukan "Belum ada customer").
+- [ ] **Cek cron:** pastikan `CRON_SECRET` ada di Vercel. Kalau tidak ada, sweep sudah 401 sejak dulu dan
+      stok order kedaluwarsa tidak pernah dilepas — sekarang gagalnya sama, tapi di semua environment.
+
+### Ditunda, dengan alasan
+
+**P-1b — pindahkan tag internal keluar dari `tags`. DITUNDA.**
+Bentuk yang ditulis di temuan tidak bisa dijalankan: admin dan pelanggan yang login Google sama-sama
+memakai role `authenticated`, jadi tidak ada GRANT kolom, view, atau policy yang bisa membuat satu kolom
+"admin-only" pada baris yang publik. Satu-satunya bentuk yang benar adalah membalik arahnya — policy
+SELECT tabel jadi `is_admin()` saja, lalu view publik terpisah yang menyaring baris draft dan membuang
+tag internal — dan itu mengubah jalur baca utama storefront. Pemeriksaan adversarial menemukan enam
+konsumen tag yang tidak masuk rencana, termasuk `data/publicStorefront.js` (jalur publik),
+`ProductInventoryPage`, dan gate visibilitas seksi "Sumber batch" di form produk. Perlu dikerjakan
+sendiri, dengan verifikasi di browser, bukan disisipkan di akhir gelombang.
+Sementara ini yang bocor pada produk **terbit**: `COGS per bottle:`, `Batch ID:`, `SKU:`,
+`Initial stock:`, `Restock threshold:`, dan sampai 20 blob riwayat koreksi stok.
+
+**V-1 / V-2 — voucher. DITUNDA, ada jebakan.**
+V-2 (catat pemakaian voucher di `api/orders/create.js`) terdengar sepele tapi memindahkan reservasi kuota
+ke saat order dibuat. Hari ini bespoke dan DOKU mencatat pemakaian **setelah** `createDokuCheckout`
+berhasil, jadi kegagalan DOKU tidak memakan kuota. Kalau dipindah ke create, kegagalan DOKU akan menghanguskan
+kuota secara permanen — karena pelepasannya (`storefront_release_voucher_usage`) dicabut dari `anon`, jadi
+pembatalan dari browser tidak bisa mengembalikannya. Urutan yang benar: pindahkan **pelepasan** ke server
+lebih dulu, baru pencatatannya. V-1 (RPC lookup + cabut SELECT publik) aman dikerjakan sendiri, tapi
+sebaiknya satu paket dengan V-2 supaya `voucherService` tidak diaduk dua kali.
+
+**Rate limiting endpoint terbuka — DITUNDA, sebagian besar teater.**
+Di Vercel Hobby tidak ada Redis dan instance-nya berumur pendek serta tidak berbagi memori, jadi penghitung
+in-memory praktis tidak berguna. Yang benar-benar bekerja adalah tabel Supabase + RPC, dengan biaya satu
+round trip di setiap request checkout. Dua mitigasi termurah sudah diambil (lihat nomor 6). Sisanya —
+terutama proteksi `/api/orders/create` dari pemesanan stok massal — perlu keputusan: tabel rate limit,
+captcha, atau menerima risikonya. `applyShippingPromotionToRates` juga masih memanggil
+`/api/shipping/rates` lewat `req.headers.host`; hindari header caching di sini, tombol health check admin
+(`opsHealthService.checkShippingHealth`) memakai endpoint yang sama sebagai probe.
+
+### Belum tersentuh
+
+- **A-2** MFA challenge fail-open, **A-3/A-4/A-5** (kecil).
+- **R-2** route `/articles` tidak ada.
+- **P-4/P-5** fallback deduksi stok klien dan data terstruktur di dalam `tags`.
+- **D-2/D-3** verifikasi nominal DOKU fail-open, webhook tanpa cek kesegaran timestamp.
+- **S-3** preview promo salah tanggal.
+- **I-2** CSP `script-src 'unsafe-inline'`.

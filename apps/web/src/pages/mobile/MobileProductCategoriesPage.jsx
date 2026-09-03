@@ -78,7 +78,11 @@ const MobileProductCategoriesPage = () => {
           <div className="mt-3 flex flex-wrap gap-2">
             {categories.map((category) => {
               const usageCount = categoryUsage.get(category.name.toLowerCase()) || 0;
-              const canDelete = category.source !== 'product' && usageCount === 0;
+              // Only a category that actually has a DB row can be deleted. The built-in scent families
+              // are synthetic (`default-scent-family-*`, source 'default') and product-derived ones have
+              // no row either; sending those ids to PostgREST answers 22P02, which used to be swallowed
+              // and now surfaces as a confusing failure (audit round 9).
+              const canDelete = category.source === 'custom' && usageCount === 0;
               return (
                 <span key={category.name} className="inline-flex items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] px-3 py-2 text-[11px] font-bold text-[#344054]">
                   {category.name}

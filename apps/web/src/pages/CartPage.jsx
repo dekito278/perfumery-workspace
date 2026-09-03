@@ -63,7 +63,7 @@ const CartPage = () => {
               </p>
             ) : null}
             {unavailableItems.length ? (
-              <p className="cart-line__meta" role="alert">
+              <p className="checkout-notice is-error" role="alert">
                 {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
               </p>
             ) : null}

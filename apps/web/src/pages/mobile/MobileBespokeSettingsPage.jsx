@@ -79,7 +79,7 @@ const MobileBespokeSettingsPage = () => {
       setForm(savedOption);
       toast.success('Opsi bespoke tersimpan');
     } catch (error) {
-      toast.error('Opsi bespoke gagal tersimpan');
+      toast.error(error.message || 'Opsi bespoke gagal tersimpan');
     } finally {
       setSaving(false);
     }
@@ -96,7 +96,7 @@ const MobileBespokeSettingsPage = () => {
       if (form.id === option.id) resetForm();
       toast.success('Opsi dihapus');
     } catch (error) {
-      toast.error('Opsi gagal dihapus');
+      toast.error(error.message || 'Opsi gagal dihapus');
     } finally {
       setSaving(false);
     }
@@ -113,7 +113,7 @@ const MobileBespokeSettingsPage = () => {
       resetForm();
       toast.success('Bespoke settings dikembalikan ke default');
     } catch (error) {
-      toast.error('Bespoke settings gagal direset');
+      toast.error(error.message || 'Bespoke settings gagal direset');
     } finally {
       setSaving(false);
     }

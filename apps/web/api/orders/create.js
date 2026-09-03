@@ -58,12 +58,25 @@ const sbRpc = async (fn, body) => {
 
 // --- authoritative price recompute (never trust a client price) ------------------------------------
 
+// This endpoint is unauthenticated and reserves stock, so an unbounded item list is an amplifier: each
+// line costs its own sequential Supabase read, and every accepted order holds inventory until the daily
+// sweep. The caps are far above any real order (the shop sells perfume by the bottle) — they exist to
+// bound the work one request can ask for, not to police buyers (audit round 9).
+const MAX_ORDER_LINES = 50;
+const MAX_LINE_QUANTITY = 100;
+
 const priceCatalogItems = async (items = []) => {
+  if (items.length > MAX_ORDER_LINES) {
+    throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
+  }
   let subtotal = 0;
   const resolved = [];
   for (const line of items) {
     const slug = String(line.productSlug || line.product_slug || line.slug || '').trim();
     const qty = Math.max(1, Math.round(Number(line.quantity || 1)));
+    if (!Number.isFinite(qty) || qty > MAX_LINE_QUANTITY) {
+      throw new Error(`Quantity out of range for ${slug || 'item'} (max ${MAX_LINE_QUANTITY})`);
+    }
     if (!slug) throw new Error('Item missing productSlug');
     const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=slug,name,category,price_number,variants`);
     const product = rows?.[0];

@@ -13,7 +13,7 @@ const formatDate = (value) => (
 );
 
 const CustomersPage = () => {
-  const { customers, summary, loading } = useCustomers();
+  const { customers, summary, loading, error } = useCustomers();
 
   const copyCode = async (customer) => {
     await navigator.clipboard.writeText(customer.customerCode);
@@ -75,7 +75,14 @@ const CustomersPage = () => {
                 </Button>
               </article>
             ))}
-            {!customers.length && !loading ? (
+            {error && !customers.length ? (
+              <div role="alert" className="bg-white p-8 text-center">
+                <UsersRound className="mx-auto h-8 w-8 text-rose-600" />
+                <h3 className="mt-3 font-bold text-rose-700">Daftar customer gagal dimuat</h3>
+                <p className="mt-1 text-sm font-medium text-muted-foreground">{error}</p>
+              </div>
+            ) : null}
+            {!customers.length && !loading && !error ? (
               <div className="bg-white p-8 text-center">
                 <UsersRound className="mx-auto h-8 w-8 text-amber-700" />
                 <h3 className="mt-3 font-bold">Belum ada customer</h3>

@@ -128,7 +128,11 @@ const ProductCategoriesPage = () => {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {categories.map((category) => {
                 const usageCount = categoryUsage.get(category.name.toLowerCase()) || 0;
-                const canDelete = category.source !== 'product' && usageCount === 0;
+                // Only a category that actually has a DB row can be deleted. The built-in scent families
+                // are synthetic (`default-scent-family-*`, source 'default') and product-derived ones have
+                // no row either; sending those ids to PostgREST answers 22P02, which used to be swallowed
+                // and now surfaces as a confusing failure (audit round 9).
+                const canDelete = category.source === 'custom' && usageCount === 0;
                 return (
                   <article key={category.name} className="rounded-2xl border bg-[#fbfaf7] p-4">
                     <div className="flex items-start justify-between gap-3">

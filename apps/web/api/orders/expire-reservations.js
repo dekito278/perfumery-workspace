@@ -13,13 +13,18 @@ const getHeader = (request, name) => (
   request.headers?.[name.toLowerCase()] || request.headers?.[name] || ''
 );
 
+// This endpoint mass-cancels unpaid orders and releases their stock, so it fails closed everywhere.
+//
+// It used to require CRON_SECRET only when VERCEL_ENV === 'production'. Preview deployments normally
+// inherit the same Supabase env vars, so anyone who found a preview URL could cancel every pending order
+// in the live database (audit round 9). Keying the exemption off a Vercel-provided variable is also the
+// wrong shape: if "expose system environment variables" is ever off, the exemption silently applies in
+// production too. No exemption at all is the only version that cannot be wrong by configuration —
+// running it locally just means setting CRON_SECRET in .env, the same as every other secret here.
 const assertAuthorized = (request) => {
   const cronSecret = String(process.env.CRON_SECRET || '').trim();
   if (!cronSecret) {
-    if (process.env.VERCEL_ENV === 'production') {
-      throw Object.assign(new Error('CRON_SECRET is required in production'), { statusCode: 401 });
-    }
-    return;
+    throw Object.assign(new Error('CRON_SECRET is not configured; refusing to sweep'), { statusCode: 401 });
   }
 
   const authorization = String(getHeader(request, 'authorization') || '').trim();
