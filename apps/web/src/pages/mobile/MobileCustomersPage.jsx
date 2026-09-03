@@ -18,7 +18,7 @@ const formatDate = (value) => (
 );
 
 const MobileCustomersPage = () => {
-  const { customers, summary, loading } = useCustomers();
+  const { customers, summary, loading, error } = useCustomers();
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const visibleCustomers = customers.slice(0, visibleCount);
 
@@ -83,7 +83,15 @@ const MobileCustomersPage = () => {
             loading={loading}
             onLoadMore={() => setVisibleCount((current) => current + MOBILE_PAGE_SIZE)}
           />
-          {!customers.length && !loading ? (
+          {error && !customers.length ? (
+            <MobileStatePanel
+              icon={UsersRound}
+              tone="error"
+              title="Daftar customer gagal dimuat"
+              description={error}
+            />
+          ) : null}
+          {!customers.length && !loading && !error ? (
             <MobileStatePanel
               icon={UsersRound}
               title="Belum ada customer"
