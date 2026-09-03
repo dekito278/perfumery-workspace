@@ -24,7 +24,6 @@ import {
   getOrderStatusLabels,
   getShipmentStatusLabels,
   isBespokeOrder,
-  updateOrderPaymentStatus,
 } from '@/services/orderService.js';
 import { buildCourierTrackingSearchUrl, buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
@@ -1055,24 +1054,16 @@ const CustomerPortalPage = () => {
 
     setRefreshingPaymentOrder(order.orderNumber);
     try {
-      const checkout = await createDokuCheckout({
+      // The endpoint mints the DOKU session AND persists it to the order with the service role, so the
+      // return value is not needed here — reloading the portal picks up the new payment_url. The browser
+      // copy of that write was filtered by RLS for every buyer and now throws (audit round 9).
+      await createDokuCheckout({
         order,
         amount: order.subtotal,
         customerName: order.customerName,
         contact: order.contact,
         items: order.items || [],
         callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
-      });
-      await updateOrderPaymentStatus(order.id || order.orderNumber, {
-        paymentStatus: 'pending',
-        paymentProvider: 'doku',
-        paymentReference: checkout.requestId || '',
-        paymentUrl: checkout.paymentUrl,
-        paymentExpiresAt: checkout.paymentExpiresAt || '',
-        paymentSessionId: checkout.paymentSessionId || '',
-        paymentResponse: checkout.dokuResponse || {},
-        status: 'pending_payment',
-        audit: false,
       });
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
       toast.success('Link DOKU baru siap dipakai');

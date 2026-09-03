@@ -76,4 +76,54 @@ assert.throws(() => assertOrderWriteApplied(null, 'DKT-1'), /tidak tersimpan/, '
 assert.throws(() => assertOrderWriteApplied(undefined, 'DKT-1'), /tidak tersimpan/);
 assert.deepEqual(assertOrderWriteApplied([{ order_number: 'DKT-1' }], 'DKT-1'), { order_number: 'DKT-1' });
 
+// --- 6. buyer-facing code must not write to storefront_orders at all ------------------------------
+// storefront_orders UPDATE is admin-only. Every one of these calls was filtered by RLS and answered 200
+// with zero rows, so it looked like it worked; after the round 9 refactor the same call throws and takes
+// checkout down with it. The server already writes what these were trying to write:
+// api/orders/create.js sets the manual-transfer status, api/doku/checkout.js persists the DOKU session.
+const BUYER_FACING = [
+  'hooks/useCheckoutFlow.js',
+  'pages/BespokePage.jsx',
+  'pages/PaymentPage.jsx',
+  'pages/CustomerPortalPage.jsx',
+  'pages/mobile/MobileBespokePage.jsx',
+  'pages/mobile/MobileCheckoutPage.jsx',
+  'pages/CheckoutPage.jsx',
+  'pages/CartPage.jsx',
+  'pages/mobile/MobileCartPage.jsx',
+];
+const ADMIN_ONLY_WRITERS = [
+  'updateOrderStatus',
+  'updateOrderInternalNotes',
+  'updateOrderShipment',
+  'updateOrderBespokeProductionStatus',
+  'updateOrderProductionLinks',
+  'reviewOrderPaymentProof',
+  'deleteOrder',
+];
+
+for (const relative of BUYER_FACING) {
+  const buyerSource = readFileSync(join(here, '..', relative), 'utf8');
+  // updateOrderPaymentStatus is the one that broke checkout; it must not appear at all.
+  assert.ok(
+    !/\bupdateOrderPaymentStatus\b/.test(buyerSource),
+    `${relative} calls updateOrderPaymentStatus. storefront_orders UPDATE is admin-only, so for a buyer that write is refused — it used to fail silently and now throws, breaking checkout. The server already persists it.`,
+  );
+  for (const writer of ADMIN_ONLY_WRITERS) {
+    // updateOrderStatus is allowed ONLY as best-effort cleanup inside a catch, wrapped in its own try.
+    if (writer === 'updateOrderStatus' && buyerSource.includes('updateOrderStatus')) {
+      assert.match(
+        buyerSource,
+        /try \{\s*\n\s*await updateOrderStatus\(/,
+        `${relative} calls updateOrderStatus outside its own try/catch; as a buyer it is refused and would replace the error the buyer needs to see`,
+      );
+      continue;
+    }
+    assert.ok(
+      !new RegExp(`\\b${writer}\\b`).test(buyerSource),
+      `${relative} calls ${writer}, which is an admin-only write to storefront_orders`,
+    );
+  }
+}
+
 console.log('orderWrites selfcheck OK');

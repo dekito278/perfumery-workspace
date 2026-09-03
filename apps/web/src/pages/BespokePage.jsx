@@ -15,7 +15,7 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
-import { createBespokeRequest, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
+import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import {
   describeShippingRate,
@@ -540,17 +540,9 @@ const BespokePage = () => {
           accountName: selectedPaymentMethod.accountName,
           amount: paymentAmount,
         };
-        await updateOrderPaymentStatus(order.id || order.orderNumber, {
-          paymentStatus: 'pending',
-          paymentProvider: selectedPaymentMethod.provider,
-          paymentReference: `${selectedPaymentMethod.bankName}-${order.orderNumber}`,
-          paymentUrl: '',
-          paymentExpiresAt: '',
-          paymentSessionId: '',
-          paymentResponse: manualTransfer,
-          status: 'pending_payment',
-          audit: false,
-        });
+        // api/orders/create.js already stored payment_status 'pending' / status 'pending_payment'. The
+        // browser copy was filtered by RLS (admin-only UPDATE) and now throws; the bank details the buyer
+        // sees come from MANUAL_TRANSFER_PAYMENT anyway (audit round 9).
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
           paymentType: selectedPaymentMethod.provider,
           paymentProvider: selectedPaymentMethod.provider,
@@ -590,17 +582,8 @@ const BespokePage = () => {
         items: order.items || [],
         callbackPath: '/payment',
       });
-      await updateOrderPaymentStatus(order.id || order.orderNumber, {
-        paymentStatus: 'pending',
-        paymentProvider: 'doku',
-        paymentReference: checkout.requestId || '',
-        paymentUrl: checkout.paymentUrl,
-        paymentExpiresAt: checkout.paymentExpiresAt || '',
-        paymentSessionId: checkout.paymentSessionId || '',
-        paymentResponse: checkout.dokuResponse || {},
-        status: 'pending_payment',
-        audit: false,
-      });
+      // api/doku/checkout.js already persisted this payment session server-side with the service role;
+      // the browser copy was filtered by RLS for every buyer and now throws (audit round 9).
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentType: 'doku',
         paymentProvider: 'doku',
