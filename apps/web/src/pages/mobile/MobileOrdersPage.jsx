@@ -1,3 +1,4 @@
+import BriefText from '@/components/BriefText.jsx';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { buildOrderCopyText } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -670,7 +671,7 @@ const MobileOrdersPage = () => {
                       {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                         <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
                           <span className="text-[#6b7280]">{label}</span>
-                          <span className="min-w-0 text-[#1f2937]">{value}</span>
+                          <BriefText text={value} className="min-w-0 text-[#1f2937]" />
                         </div>
                       ))}
                     </div>
