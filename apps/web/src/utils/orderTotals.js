@@ -55,6 +55,9 @@ export const getOrderSubtotalAfterVoucher = (order = {}) => {
 };
 
 export const getOrderShippingFee = (order = {}) => {
+  // The anon payment-session lookup returns the total but no items. With nothing to subtract, "shipping"
+  // would come out as the whole total and the page would show "Subtotal produk Rp 0 / Ongkir Rp 225.000".
+  if (!getOrderProductItems(order).length && !getOrderVoucherSnapshot(order)) return 0;
   const total = parseNumber(order.subtotal || order.amount);
   const afterVoucher = getOrderSubtotalAfterVoucher(order);
   return Math.max(total - afterVoucher, 0);

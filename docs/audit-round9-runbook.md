@@ -121,6 +121,17 @@ yang dijaga `is_admin()` menjawab 200 dengan nol baris, bukan error. Sejak fix i
 panel merah "Data admin tidak akan tampil" dengan tombol logout/daftar authenticator. Obatnya tetap sama:
 logout → login ulang → masukkan kode TOTP.
 
+**Dua bug pembeli yang terlihat di order yang sama (DKT-MTQ270FV-8WECG6), diperbaiki di PR yang sama:**
+- Upload bukti transfer selalu gagal "Payment proof path does not belong to order": klien menulis path
+  `orders/dkt-.../` (huruf kecil), RPC `storefront_submit_payment_proof` (migrasi 20260819122000) hanya
+  menerima `orders/DKT-.../` dan LIKE peka huruf. File-nya terunggah, order-nya tidak pernah mencatat bukti.
+  Berlaku untuk **semua** pembeli transfer manual sejak migrasi itu diterapkan — cek mutasi BCA vs order
+  `pending` untuk periode itu. Fix: `utils/paymentProofPath.js` + selfcheck yang meniru aturan RPC.
+- Halaman bayar menampilkan "Subtotal produk Rp 0 / Ongkir Rp 225.000": RPC lookup anon tidak
+  mengembalikan `items`, jadi `getOrderShippingFee` = total − 0. Fix: tanpa item dan tanpa voucher, ongkir
+  dianggap tidak diketahui (0) dan rinciannya disembunyikan; total bayar tetap benar. Kalau mau rincian
+  tampil, tambahkan `'items', o.items` ke `storefront_payment_session_lookup`.
+
 ---
 
 ## ✅ SELESAI (2026-09-06): `CRON_SECRET` terpasang, sweep terverifikasi
