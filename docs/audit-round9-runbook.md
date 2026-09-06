@@ -114,6 +114,13 @@ Verifikasi:
 Mundur ada di file itu. Kalau terkunci: SQL editor Supabase terhubung sebagai pemilik tabel dan
 melewati RLS, jadi rollback selalu bisa dijalankan.
 
+**Gejala kalau sesi masih aal1 (kejadian 2026-09-07, di HP):** studio terbuka, formula/material tampil
+(policy-nya `auth.uid() = user_id`), tapi Order **0 aktif / 0 total**, bukti 0, customer kosong — semua tabel
+yang dijaga `is_admin()` menjawab 200 dengan nol baris, bukan error. Sejak fix ini, `AdminSessionNotice`
+(dirender di `AppShell` dan `MobileAppShell`) menanyakan `getAuthenticatorAssuranceLevel()` dan memasang
+panel merah "Data admin tidak akan tampil" dengan tombol logout/daftar authenticator. Obatnya tetap sama:
+logout → login ulang → masukkan kode TOTP.
+
 ---
 
 ## ✅ SELESAI (2026-09-06): `CRON_SECRET` terpasang, sweep terverifikasi

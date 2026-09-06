@@ -26,6 +26,7 @@ import {
   Truck,
   UsersRound,
 } from 'lucide-react';
+import AdminSessionNotice from '@/components/AdminSessionNotice.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const DESKTOP_SIDEBAR_STORAGE_KEY = 'perfumer-studio.sidebar-collapsed';
@@ -296,7 +297,10 @@ const AppShell = ({ children }) => {
               </div>
             </header>
 
-            <main className="app-main">{children}</main>
+            <main className="app-main">
+              <AdminSessionNotice />
+              {children}
+            </main>
           </div>
         </div>
       </div>
