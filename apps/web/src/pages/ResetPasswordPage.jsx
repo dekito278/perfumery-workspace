@@ -12,7 +12,9 @@ import { cn } from '@/lib/utils.js';
 
 const ResetPasswordPage = ({ mobile = false }) => {
   const navigate = useNavigate();
-  const { updatePassword } = useAuth();
+  const { mfaChallenge, updatePassword, verifyMfaCode } = useAuth();
+  const [code, setCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [saving, setSaving] = useState(false);
@@ -60,6 +62,58 @@ const ResetPasswordPage = ({ mobile = false }) => {
       setSaving(false);
     }
   };
+
+  // A recovery link lands on an aal1 session. For an account with an authenticator Supabase refuses
+  // updateUser({ password }) at aal1 ("AAL2 required"), so the code has to come first. AuthContext already
+  // opened the challenge on load; this only collects the answer.
+  const handleVerify = async (event) => {
+    event.preventDefault();
+    setError('');
+    setVerifying(true);
+    try {
+      await verifyMfaCode(code);
+    } catch (verifyError) {
+      setError(verifyError.message || 'Invalid authenticator code');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  if (mfaChallenge) {
+    return (
+      <div className={shellClassName}>
+        <Helmet><title>Reset Password - Solivagant</title></Helmet>
+        <div className={cardClassName}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
+            <KeyRound className="h-6 w-6" />
+          </div>
+          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Verify authenticator first</h1>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
+            Enter the 6 digit code for {mfaChallenge.friendlyName || 'Solivagant Studio'} to unlock the password form.
+          </p>
+          <form onSubmit={handleVerify} className="mt-5 space-y-4">
+            {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
+            <div className="space-y-2">
+              <Label htmlFor="reset-mfa-code">Authenticator code</Label>
+              <Input
+                id="reset-mfa-code"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="123456"
+                value={code}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                required
+                className="h-12 rounded-2xl bg-white text-center text-lg tracking-[0.35em]"
+              />
+            </div>
+            <Button type="submit" disabled={verifying || code.length < 6} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
+              {verifying ? 'Verifying...' : 'Verify authenticator'}
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={shellClassName}>
