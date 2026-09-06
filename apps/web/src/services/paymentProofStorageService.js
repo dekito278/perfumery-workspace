@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { buildPaymentProofPath } from '@/utils/paymentProofPath.js';
 
 export const PAYMENT_PROOFS_BUCKET = 'storefront-payment-proofs';
 
@@ -40,17 +41,10 @@ const getPaymentProofExtension = (file) => {
   return sanitizePathSegment(nameExtension, 'proof');
 };
 
-export const buildPaymentProofPath = ({ orderNumber, file }) => {
-  const safeOrderNumber = sanitizePathSegment(orderNumber, 'order');
-  const extension = getPaymentProofExtension(file);
-  const token = Math.random().toString(36).slice(2, 10);
-  return `orders/${safeOrderNumber}/${Date.now()}-${token}.${extension}`;
-};
-
 export const uploadPaymentProof = async ({ file, orderNumber }) => {
   validatePaymentProofFile(file);
 
-  const path = buildPaymentProofPath({ orderNumber, file });
+  const path = buildPaymentProofPath({ orderNumber, extension: getPaymentProofExtension(file) });
   const { error } = await supabase.storage
     .from(PAYMENT_PROOFS_BUCKET)
     .upload(path, file, {
