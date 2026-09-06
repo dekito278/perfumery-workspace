@@ -116,7 +116,26 @@ melewati RLS, jadi rollback selalu bisa dijalankan.
 
 ---
 
-## ⚠️ TEMUAN SAAT VERIFIKASI DEPLOY: sweep reservasi TIDAK PERNAH JALAN
+## ✅ SELESAI (2026-09-06): `CRON_SECRET` terpasang, sweep terverifikasi
+
+Dipasang owner lewat dashboard akun `aderizki68-1969s-projects` (tipe Secret, Production), lalu redeploy.
+Verifikasi dari luar:
+
+```
+tanpa header  → {"ok":false,"message":"Unauthorized"}
+dengan Bearer → 200 {"ok":true,"checked":6,"expired":[],"errors":[],"ttlHours":24}
+```
+
+Enam order berstatus bayar aktif diperiksa, tidak ada yang kedaluwarsa, tidak ada yang dibatalkan.
+Cron `0 0 * * *` UTC (07:00 WIB) sekarang benar-benar berjalan. Riwayat temuannya di bawah dibiarkan
+apa adanya sebagai catatan.
+
+Catatan infra yang ditemukan sepanjang jalan: ada **dua** project Vercel untuk repo ini. Yang melayani
+domain adalah `aderizki68-1969s-projects/perfumery-workspace`. Yang di team
+`tech-team-indonesia-s-projects` adalah duplikat mati (nol domain, build 0 ms, tanpa serverless function)
+— koneksi Git-nya sudah diputus supaya berhenti ikut build tiap push; `vercel git connect` untuk membalik.
+
+## (riwayat) TEMUAN SAAT VERIFIKASI DEPLOY: sweep reservasi TIDAK PERNAH JALAN
 
 `GET /api/orders/expire-reservations` di produksi menjawab:
 
