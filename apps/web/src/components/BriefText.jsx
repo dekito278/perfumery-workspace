@@ -6,10 +6,10 @@ import React from 'react';
 const inline = (text) => text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => (
   part.startsWith('**') && part.endsWith('**') && part.length > 4
     ? <strong key={index} className="font-bold text-editorial-charcoal">{part.slice(2, -2)}</strong>
-    : part
+    : part.replace(/\*\*/g, '') // an unpaired ** (seen live: "**main floral character") is noise, not text
 ));
 
-const isBullet = (line) => /^[*•-]\s+/.test(line);
+const isBullet = (line) => /^[*•-]\s*\S/.test(line) && !/^-{2,}/.test(line);
 
 const BriefText = ({ text, className = '' }) => {
   const lines = String(text || '').split('\n').map((line) => line.trim()).filter(Boolean);
@@ -19,7 +19,7 @@ const BriefText = ({ text, className = '' }) => {
   for (const line of lines) {
     const last = blocks[blocks.length - 1];
     if (isBullet(line)) {
-      const item = line.replace(/^[*•-]\s+/, '');
+      const item = line.replace(/^[*•-]\s*/, '');
       if (last?.type === 'list') last.items.push(item);
       else blocks.push({ type: 'list', items: [item] });
     } else {
