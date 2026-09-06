@@ -1,5 +1,6 @@
+import BriefText from '@/components/BriefText.jsx';
 import React, { useEffect, useMemo, useState } from 'react';
-import { buildOrderCopyText } from '@/utils/orderNotes.js';
+import { buildOrderCopyText, parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Clipboard, CreditCard, Download, ExternalLink, Eye, FileCheck2, Loader2, MessageCircle, PackageCheck, ReceiptText, RefreshCw, Search, Trash2, Truck } from 'lucide-react';
@@ -567,14 +568,26 @@ const OrdersPage = () => {
                             {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                               <p key={label} className="text-xs font-semibold text-muted-foreground">
                                 <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
-                                {value}
+                                <BriefText text={value} />
                               </p>
                             ))}
                           </div>
                         </details>
                       </div>
                     ) : null}
-                    {order.notes ? <p className="mt-3 text-sm font-semibold text-muted-foreground">Notes: {order.notes}</p> : null}
+                    {order.notes ? (
+                      <details className="mt-3 text-sm font-semibold text-muted-foreground" open={!bespoke}>
+                        <summary className="cursor-pointer select-none text-xs font-bold text-editorial-charcoal">Catatan pesanan</summary>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {parseOrderNoteRows(order.notes).map((row) => (
+                            <div key={row.label} className="text-xs">
+                              <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{row.label}</span>
+                              <BriefText text={row.value} />
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold">
                       <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-editorial-charcoal">
                         {order.paymentProvider || 'manual'} / {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}

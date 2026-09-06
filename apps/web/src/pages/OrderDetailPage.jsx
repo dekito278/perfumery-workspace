@@ -1,3 +1,4 @@
+import BriefText from '@/components/BriefText.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -896,7 +897,7 @@ const OrderDetailPage = () => {
                     {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                       <p key={label} className="text-xs font-semibold text-muted-foreground">
                         <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
-                        {value}
+                        <BriefText text={value} />
                       </p>
                     ))}
                   </div>
