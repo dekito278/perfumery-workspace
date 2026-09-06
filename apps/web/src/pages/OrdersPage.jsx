@@ -566,7 +566,7 @@ const OrdersPage = () => {
                           </summary>
                           <div className="mt-3 grid gap-2 border-t border-editorial-charcoal/10 pt-3 sm:grid-cols-2">
                             {bespokeDetailRows(bespokeItem).map(([label, value]) => (
-                              <p key={label} className="text-xs font-semibold text-muted-foreground">
+                              <p key={label} className={`text-xs font-semibold text-muted-foreground ${label === 'Preferred aroma' ? 'sm:col-span-2' : ''}`}>
                                 <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{label}</span>
                                 <BriefText text={value} />
                               </p>
@@ -580,7 +580,7 @@ const OrdersPage = () => {
                         <summary className="cursor-pointer select-none text-xs font-bold text-editorial-charcoal">Catatan pesanan</summary>
                         <div className="mt-2 grid gap-2 sm:grid-cols-2">
                           {parseOrderNoteRows(order.notes).map((row) => (
-                            <div key={row.label} className="text-xs">
+                            <div key={row.label} className={`text-xs ${row.label === 'Preferred aroma' ? 'sm:col-span-2' : ''}`}>
                               <span className="block text-[10px] font-bold uppercase text-editorial-charcoal">{row.label}</span>
                               <BriefText text={row.value} />
                             </div>
