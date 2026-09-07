@@ -25,6 +25,8 @@ import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
 import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
+import ProductWearTaggingPage from '@/pages/ProductWearTaggingPage.jsx';
+import MobileProductWearTaggingPage from '@/pages/mobile/MobileProductWearTaggingPage.jsx';
 
 const LAZY_ROUTE_RECOVERY_KEY = 'solivagant.lazy-route-recovered';
 const LAZY_IMPORT_RETRY_DELAY_MS = 350;
@@ -518,6 +520,12 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
+        <Route path="/mobile/studio/products/wear" element={
+          <ProtectedRoute>
+            <MobileProductWearTaggingPage />
+          </ProtectedRoute>
+        } />
+
         <Route path="/mobile/studio/products/new" element={
           <ProtectedRoute>
             <MobileProductCreatePage />
@@ -731,6 +739,12 @@ function AppRoutes() {
         <Route path="/studio/products" element={
           <ProtectedRoute>
             <ProductListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/wear" element={
+          <ProtectedRoute>
+            <ProductWearTaggingPage />
           </ProtectedRoute>
         } />
 

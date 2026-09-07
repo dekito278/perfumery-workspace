@@ -782,6 +782,31 @@ export const saveCustomProduct = async (input) => {
   }
 };
 
+// Tagging writes one column, not the whole row. saveCustomProduct is a blind full-row write guarded by
+// an optimistic lock on updated_at — right for the product form, wrong here: a tagging page held open
+// while an order deducts stock would either refuse every save or, without the lock, write the pre-order
+// variants back and resurrect sold units. Touching only `wear` cannot do either.
+export const saveProductWear = async (productId, wear) => {
+  const normalized = normalizeWear(wear);
+  const { data, error } = await supabase
+    .from('storefront_products')
+    .update({ wear: normalized })
+    .eq('id', productId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Tag gagal disimpan: ${error.message}`);
+  }
+  // Zero rows is an RLS refusal answering 200 with no error, not a missing product: the id came from a
+  // row this session just read. Reporting it as saved is how a tag silently fails to reach the shop.
+  if (!data) {
+    throw new Error('Tag tidak tersimpan di server. Sesi admin mungkin belum terverifikasi authenticator — muat ulang, verifikasi, lalu coba lagi.');
+  }
+
+  return normalized;
+};
+
 export const deleteCustomProduct = async (id) => {
   // A `custom-*` id never reached the database — it is a leftover from the old save fallback, which
   // invented one whenever a save failed. storefront_products.id is a uuid, so sending that id to

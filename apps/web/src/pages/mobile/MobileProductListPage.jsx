@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { Copy, Edit3, ExternalLink, Filter, PackagePlus, Plus, Tags, Trash2 } from 'lucide-react';
+import { CalendarClock, Copy, Edit3, ExternalLink, Filter, PackagePlus, Plus, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -159,6 +159,10 @@ const MobileProductListPage = () => {
           <Button type="button" className="h-11 rounded-2xl gap-2" onClick={() => navigate('/mobile/studio/products/new')}>
             <Plus className="h-4 w-4" />
             Tambah produk
+          </Button>
+          <Button type="button" variant="outline" className="h-11 rounded-2xl gap-2 bg-white" onClick={() => navigate('/mobile/studio/products/wear')}>
+            <CalendarClock className="h-4 w-4" />
+            Kapan dipakai
           </Button>
           <Button type="button" variant="outline" className="h-11 rounded-2xl gap-2 bg-white" onClick={() => navigate('/mobile/studio/product-categories')}>
             <Tags className="h-4 w-4" />

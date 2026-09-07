@@ -22,7 +22,8 @@ const WearPicker = ({ value, onChange, compact = false }) => {
                   type="button"
                   aria-pressed={active}
                   onClick={() => onChange(toggleWearValue(wear, facet, option.value))}
-                  className={`h-9 rounded-full border px-3 text-xs font-bold transition ${
+                  // 44px, not h-9: the tagging page is fifty-odd taps on a phone, and 36px misses the touch target.
+                  className={`min-h-[44px] rounded-full border px-3 text-xs font-bold transition ${
                     active
                       ? 'border-editorial-charcoal bg-editorial-charcoal text-white'
                       : 'border-[#e5e7eb] bg-white text-[#6b7280]'

@@ -83,6 +83,7 @@ assert.deepEqual(stale, [], `ALLOWED lists functions that no longer write silent
 const mustThrowOnZeroRows = {
   'voucherService.js': ['deleteVoucher', 'applyVoucherToSubtotal'],
   'productStoryService.js': ['deleteStory', 'uploadStoryMedia'],
+  'productCatalogService.js': ['saveProductWear', 'deleteCustomProduct'],
 };
 
 for (const [file, [fn, next]] of Object.entries(mustThrowOnZeroRows)) {
@@ -94,7 +95,7 @@ for (const [file, [fn, next]] of Object.entries(mustThrowOnZeroRows)) {
   assert.ok(body.includes('.select('), `${file}: ${fn} no longer asks which rows it wrote`);
   assert.match(
     body,
-    /if \(![a-zA-Z]+\?\.length\)[\s\S]{0,400}throw new Error/,
+    /if \(![a-zA-Z]+(\?\.length)?\)[\s\S]{0,400}throw new Error/,
     `${file}: ${fn} does not throw when zero rows changed — a refused write would still report success`,
   );
 }
