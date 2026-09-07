@@ -47,7 +47,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
       krem, sekitar 2.5:1, jauh di bawah 4.5:1. Ganti ke warna tubuh yang sudah ada
       (`#6b7280` ≈ 4.6:1) untuk teks yang harus terbaca.
 
-- [ ] **U-9 · Target sentuh di bawah 44px** di keranjang dan checkout (tombol jumlah 32×32,
+- [x] (PR #52) **U-9 · Target sentuh di bawah 44px** di keranjang dan checkout (tombol jumlah 32×32,
       beberapa 40px). Naikkan ke minimal 44×44 tanpa mengubah tampilan visual (padding/inset).
 
 - [ ] **U-10 · Fokus keyboard nyaris tidak ada di studio.** `studio.css` tidak punya satu pun
