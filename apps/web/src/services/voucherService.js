@@ -237,12 +237,23 @@ export const deleteVoucher = async (idOrCode) => {
   const targetCode = normalizeVoucherCode(idOrCode);
   const idValue = String(idOrCode || '').trim();
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idValue);
+  // An RLS refusal on DELETE is not an error. PostgREST answers 200 with zero rows and error === null,
+  // so without .select() this cleared the local cache, returned normally, and the studio said "dihapus"
+  // while the row survived — and checkout validates the code against that row, not the cache. The admin
+  // would only find out when a customer redeemed a voucher they had already retired.
   const request = isUuid
-    ? supabase.from(VOUCHER_TABLE).delete().eq('id', idValue)
-    : supabase.from(VOUCHER_TABLE).delete().eq('code', targetCode);
-  const { error } = await request;
+    ? supabase.from(VOUCHER_TABLE).delete().eq('id', idValue).select('id')
+    : supabase.from(VOUCHER_TABLE).delete().eq('code', targetCode).select('id');
+  const { data: deleted, error } = await request;
   if (error) {
     throw new Error(error.message || 'Gagal menghapus voucher');
+  }
+
+  // Re-reading to tell "already gone" from "refused" does not work: a session that cannot delete usually
+  // cannot select either, so both answer zero rows. Both call sites delete a voucher they are rendering
+  // from the loaded list, so zero rows here means the delete was refused.
+  if (!deleted?.length) {
+    throw new Error(`Voucher ${targetCode || idValue} tidak terhapus di server dan masih bisa dipakai pembeli. Sesi admin mungkin belum terverifikasi authenticator — muat ulang, verifikasi, lalu coba lagi.`);
   }
 
   const nextVouchers = getCachedVouchers().filter((voucher) => (
