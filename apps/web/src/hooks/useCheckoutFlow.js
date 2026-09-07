@@ -16,7 +16,6 @@ import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder,
 import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
-  recordVoucherUsageForOrder,
 } from '@/services/voucherService.js';
 import {
   describeShippingRate,
@@ -586,18 +585,6 @@ export const useCheckoutFlow = ({
         // 'pending_payment' for manual transfer, and storefront_orders UPDATE is admin-only — this call
         // was filtered by RLS for every buyer and only looked like it worked. The bank details the buyer
         // needs come from MANUAL_TRANSFER_PAYMENT, which PaymentPage already falls back to (audit round 9).
-        if (voucherSnapshot?.code) {
-          try {
-            await recordVoucherUsageForOrder({
-              orderId: order.id,
-              orderNumber: order.orderNumber,
-              voucherSnapshot,
-              items,
-            });
-          } catch (voucherError) {
-            throw new Error(`Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Pesanan dibatalkan — silakan checkout ulang tanpa voucher tersebut.`);
-          }
-        }
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
           paymentType: paymentMethodDetails.provider,
           paymentProvider: paymentMethodDetails.provider,
@@ -627,14 +614,6 @@ export const useCheckoutFlow = ({
 
       if (isQrisPayment) {
         const qris = await createDokuQris(order.orderNumber);
-        // Reserve voucher quota BEFORE navigating (same as the DOKU path): a quota miss cancels here.
-        if (voucherSnapshot?.code) {
-          try {
-            await recordVoucherUsageForOrder({ orderId: order.id, orderNumber: order.orderNumber, voucherSnapshot, items });
-          } catch (voucherError) {
-            throw new Error(`Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Pesanan dibatalkan — silakan checkout ulang tanpa voucher tersebut.`);
-          }
-        }
         sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
           paymentType: 'doku-qris',
           paymentProvider: 'doku-qris',
@@ -676,20 +655,6 @@ export const useCheckoutFlow = ({
         items: order.items || items,
         callbackPath: paymentPath,
       });
-      // Record voucher usage BEFORE navigating so a quota miss cancels the order here, not after the
-      // buyer is already staring at the payment panel.
-      if (voucherSnapshot?.code) {
-        try {
-          await recordVoucherUsageForOrder({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            voucherSnapshot,
-            items,
-          });
-        } catch (voucherError) {
-          throw new Error(`Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Pesanan dibatalkan — silakan checkout ulang tanpa voucher tersebut.`);
-        }
-      }
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
         paymentUrl: checkout.paymentUrl,
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,

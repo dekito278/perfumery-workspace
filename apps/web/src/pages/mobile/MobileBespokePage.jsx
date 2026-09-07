@@ -20,7 +20,6 @@ import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
-  recordVoucherUsageForOrder,
 } from '@/services/voucherService.js';
 import {
   describeShippingRate,
@@ -840,14 +839,6 @@ const MobileBespokePage = () => {
           voucherSnapshot,
           createdAt: new Date().toISOString(),
         }));
-        if (voucherSnapshot?.code) {
-          await recordVoucherUsageForOrder({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            voucherSnapshot,
-            items: bespokeVoucherItems,
-          });
-        }
 
         setSubmittedRequest({
           ...form,
@@ -897,14 +888,6 @@ const MobileBespokePage = () => {
         voucherSnapshot,
         createdAt: new Date().toISOString(),
       }));
-      if (voucherSnapshot?.code) {
-        await recordVoucherUsageForOrder({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          voucherSnapshot,
-          items: bespokeVoucherItems,
-        });
-      }
 
       setSubmittedRequest({
         ...form,
