@@ -187,15 +187,15 @@ const MobileJournalPage = () => {
       <div className="space-y-3 pb-6">
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3">
-            <div className="text-[10px] font-bold uppercase text-[#9ca3af]">Total</div>
+            <div className="text-[10px] font-bold uppercase text-[#6b7280]">Total</div>
             <div className="mt-1 text-lg font-bold text-[#111827]">{posts.length}</div>
           </div>
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3">
-            <div className="text-[10px] font-bold uppercase text-[#9ca3af]">Draft</div>
+            <div className="text-[10px] font-bold uppercase text-[#6b7280]">Draft</div>
             <div className="mt-1 text-lg font-bold text-[#111827]">{posts.filter((post) => post.status === 'draft').length}</div>
           </div>
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3">
-            <div className="text-[10px] font-bold uppercase text-[#9ca3af]">Published</div>
+            <div className="text-[10px] font-bold uppercase text-[#6b7280]">Published</div>
             <div className="mt-1 text-lg font-bold text-[#111827]">{posts.filter((post) => post.status === 'published').length}</div>
           </div>
         </div>

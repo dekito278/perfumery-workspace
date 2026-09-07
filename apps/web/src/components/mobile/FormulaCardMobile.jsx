@@ -39,7 +39,7 @@ const FormulaCardMobile = ({ formula, metrics, pipeline = {}, onView, onDuplicat
         </span>
       ) : null}
     </div>
-    <div className="mt-3 text-[11px] font-medium text-[#9ca3af]">Updated {formatDate(formula.updated || formula.created)}</div>
+    <div className="mt-3 text-[11px] font-medium text-[#6b7280]">Updated {formatDate(formula.updated || formula.created)}</div>
     <div className="mt-3 grid grid-cols-4 gap-2">
       <Button type="button" variant="outline" size="icon" onClick={onView} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="View formula"><Eye className="h-4 w-4" /></Button>
       <Button type="button" variant="outline" size="icon" onClick={onDuplicate} disabled={duplicating} className="mobile-interactive mobile-pressable h-9 w-full rounded-xl bg-white" aria-label="Duplicate formula"><Copy className="h-4 w-4" /></Button>

@@ -16,7 +16,7 @@ const ValidationCardMobile = ({ canOpen = true, log, formula, onDelete, onEdit, 
     <p className="mobile-line-clamp-2 mt-2 text-xs text-[#374151]">{log.note || 'No note recorded'}</p>
     {log.next_action ? <p className="mobile-line-clamp-2 mt-1 text-[11px] font-medium text-[#6b7280]">Next: {log.next_action}</p> : null}
     <div className="mt-2 flex items-center justify-between gap-2">
-      <div className="min-w-0 text-[11px] font-semibold text-[#9ca3af]">
+      <div className="min-w-0 text-[11px] font-semibold text-[#6b7280]">
         {formatDate(log.tested_at || log.created)}
         {log.evaluator_name ? ` - ${log.evaluator_name}` : ''}
       </div>

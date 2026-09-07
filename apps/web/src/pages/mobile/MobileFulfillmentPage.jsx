@@ -513,7 +513,7 @@ const MobileFulfillmentPage = () => {
                     <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-editorial-charcoal">{order.orderNumber}</h3>
                     <p className="mt-1 text-xs font-semibold text-[#6b7280]">{order.customerName} / {order.contact}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase text-[#9ca3af]">{formatDate(order.createdAt)}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase text-[#6b7280]">{formatDate(order.createdAt)}</p>
                     </div>
                   </div>
                   <StatusChip size="xs" tone={blocked ? 'warning' : getShipmentStatusTone(order.shipmentStatus)}>

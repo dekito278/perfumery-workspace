@@ -160,7 +160,7 @@ const MobileLoginPage = () => {
             <Button type="submit" disabled={loading} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
               {loading ? 'Masuk...' : 'Masuk'}
             </Button>
-            <div className="flex items-center gap-3 text-xs font-semibold text-[#9ca3af]">
+            <div className="flex items-center gap-3 text-xs font-semibold text-[#6b7280]">
               <span className="h-px flex-1 bg-[#e5e7eb]" />atau<span className="h-px flex-1 bg-[#e5e7eb]" />
             </div>
             <Button type="button" variant="outline" onClick={handleGoogleSignIn} className="h-12 w-full rounded-2xl bg-white">

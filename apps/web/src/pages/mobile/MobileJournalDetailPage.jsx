@@ -241,7 +241,7 @@ const MobileJournalDetailPage = () => {
             ) : null}
 
             <div className="mt-4 rounded-2xl border border-[#e5e7eb] bg-white p-3">
-              <div className="text-[10px] font-bold uppercase text-[#9ca3af]">Status publik</div>
+              <div className="text-[10px] font-bold uppercase text-[#6b7280]">Status publik</div>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
                 {publicPath
                   ? 'Artikel ini sudah Published dan bisa dibuka dari halaman Artikel publik.'

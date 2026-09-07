@@ -17,7 +17,7 @@ const SummaryMetricCardMobile = ({ icon: Icon, label, onClick, to, value, tone =
         {Icon ? <Icon className="h-4 w-4" /> : null}
       </div>
       <div className="mt-3 text-xl font-bold leading-none text-[#1f2937]">{value}</div>
-      <div className="mt-1 text-[10px] font-bold uppercase leading-snug text-[#9ca3af]">{label}</div>
+      <div className="mt-1 text-[10px] font-bold uppercase leading-snug text-[#6b7280]">{label}</div>
     </Component>
   );
 };

@@ -440,7 +440,7 @@ const MobileCheckoutPage = () => {
                   </div>
                   <div className="shrink-0 text-right">
                     {hasLineDiscount ? (
-                      <div className="text-[11px] font-bold text-[#9ca3af] line-through">{formatTotal(discountedLine.originalTotal)}</div>
+                      <div className="text-[11px] font-bold text-[#6b7280] line-through">{formatTotal(discountedLine.originalTotal)}</div>
                     ) : null}
                     <p className="text-xs font-bold text-editorial-charcoal">{formatTotal(discountedLine?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</p>
                     {hasLineDiscount ? (

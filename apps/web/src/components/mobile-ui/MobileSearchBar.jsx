@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 
 const MobileSearchBar = ({ value, onChange, placeholder = 'Search...', disabled = false }) => (
   <div className="relative">
-    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b7280]" />
     <input
       value={value}
       disabled={disabled}

@@ -121,7 +121,7 @@ const PriorityCard = ({ icon: Icon, label, title, helper, tone = 'amber', onClic
         {Icon ? <Icon className="h-5 w-5" /> : null}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold uppercase text-[#9ca3af]">{label}</span>
+        <span className="block text-[10px] font-bold uppercase text-[#6b7280]">{label}</span>
         <span className="mt-0.5 block truncate text-sm font-bold text-[#1f2937]">{title}</span>
         {helper ? <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{helper}</span> : null}
       </span>
