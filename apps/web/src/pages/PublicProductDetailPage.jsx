@@ -28,11 +28,8 @@ import {
   toAbsoluteUrl,
 } from '@/utils/seo.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
+import { isPlaceholderMood } from '@/utils/productMood.js';
 
-// 'Custom perfume profile' is stored on every product as a system default, in English — not a mood
-// anyone chose, so it is not worth a chip on the page.
-const PLACEHOLDER_MOODS = ['custom perfume profile', 'profil parfum custom', 'profil parfum bespoke'];
-const isPlaceholderMood = (mood) => !mood || PLACEHOLDER_MOODS.includes(String(mood).trim().toLowerCase());
 
 
 const relatedFor = (product, catalog) => {
