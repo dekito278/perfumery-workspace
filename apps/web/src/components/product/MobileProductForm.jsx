@@ -26,6 +26,7 @@ import {
 } from '@/services/productCatalogService.js';
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { formatQuantity } from '@/utils/formatting.js';
+import { moodForEditing } from '@/utils/productMood.js';
 
 export const emptyProduct = {
   name: '',
@@ -39,6 +40,8 @@ export const emptyProduct = {
     { id: '30-ml', size: '30 ml', priceNumber: 289000, compareAtPriceNumber: 0, stock: 10 },
   ],
   notes: '',
+  mood: '',
+  intensity: 'Medium',
   topNotes: '',
   heartNotes: '',
   baseNotes: '',
@@ -52,6 +55,8 @@ export const emptyProduct = {
 
 export const toProductForm = (product) => ({
   ...product,
+  mood: moodForEditing(product.mood),
+  intensity: product.intensity || 'Medium',
   catalogVisible: !isProductDraft(product),
   topNotes: product.topNotes.join(', '),
   heartNotes: product.heartNotes.join(', '),
@@ -417,6 +422,19 @@ const MobileProductForm = ({ product = null, onSaved }) => {
             <option value="">Kategori</option>
             {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
             {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
+          </select>
+        </div>
+        {/* Mood and intensity had no input on either form, so every product carried the system
+            default — 18 of 18 read 'Custom perfume profile'. Anything keyed on mood later (choosing
+            by occasion, a scent quiz) needs these filled, and they can only be filled here. */}
+        <div className="grid gap-1.5">
+          <ProductInputLabel>Mood</ProductInputLabel>
+          <input value={form.mood || ''} onChange={(event) => updateField('mood', event.target.value)} placeholder="Contoh: tenang, harian, hangat malam" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+        </div>
+        <div className="grid gap-1.5">
+          <ProductInputLabel>Intensitas</ProductInputLabel>
+          <select value={form.intensity || 'Medium'} onChange={(event) => updateField('intensity', event.target.value)} className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300">
+            {['Light', 'Medium', 'Medium strong', 'Strong'].map((level) => <option key={level} value={level}>{level}</option>)}
           </select>
         </div>
         <div className="grid gap-1.5">

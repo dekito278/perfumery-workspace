@@ -22,6 +22,7 @@ import {
   saveCustomProduct,
 } from '@/services/productCatalogService.js';
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
+import { moodForEditing } from '@/utils/productMood.js';
 
 export const emptyProduct = {
   name: '',
@@ -46,6 +47,7 @@ export const emptyProduct = {
   images: [],
   tags: '',
   mood: '',
+  intensity: 'Medium',
   featured: true,
   catalogVisible: true,
 };
@@ -97,7 +99,8 @@ const snapshotProductForm = (product) => JSON.stringify({
   imageUrl: product.imageUrl || '',
   images: product.images || [],
   tags: product.tags || '',
-  mood: product.mood || '',
+  mood: moodForEditing(product.mood),
+  intensity: product.intensity || 'Medium',
   featured: Boolean(product.featured),
   catalogVisible: Boolean(product.catalogVisible),
 });
@@ -311,6 +314,16 @@ const ProductForm = ({ product = null, onSaved }) => {
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
             <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
+          </label>
+          <label>
+            <span className="text-xs font-bold uppercase text-muted-foreground">Mood</span>
+            <input value={form.mood || ''} onChange={(event) => updateField('mood', event.target.value)} placeholder="Contoh: tenang, harian, hangat malam" className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+          </label>
+          <label>
+            <span className="text-xs font-bold uppercase text-muted-foreground">Intensitas</span>
+            <select value={form.intensity || 'Medium'} onChange={(event) => updateField('intensity', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-3 text-sm font-semibold outline-none focus:border-amber-300">
+              {['Light', 'Medium', 'Medium strong', 'Strong'].map((level) => <option key={level} value={level}>{level}</option>)}
+            </select>
           </label>
           <label className="sm:col-span-2">
             <span className="text-xs font-bold uppercase text-muted-foreground">Ringkasan notes</span>
