@@ -33,8 +33,8 @@ export const storefrontSegments = [
     filter: 'limited',
   },
   {
-    name: 'Layanan custom',
-    description: 'Custom perfume berbasis cerita, preferensi aroma, dan konsultasi personal.',
+    name: 'Layanan bespoke',
+    description: 'Parfum bespoke berbasis cerita, preferensi aroma, dan konsultasi personal.',
     filter: 'bespoke',
   },
 ];
@@ -82,7 +82,7 @@ export const feedbackFlowSteps = [
   },
   {
     title: 'Refine',
-    description: 'Masukan dipakai untuk batch berikutnya atau revisi custom perfume.',
+    description: 'Masukan dipakai untuk batch berikutnya atau revisi parfum bespoke.',
   },
 ];
 
@@ -230,7 +230,7 @@ export const featuredProducts = [
 export const storefrontStats = [
   { value: String(featuredProducts.length), label: 'Aroma' },
   { value: '4', label: 'Famili aroma' },
-  { value: '1:1', label: 'Konsultasi custom' },
+  { value: '1:1', label: 'Konsultasi bespoke' },
 ];
 
 export const catalogSortOptions = [

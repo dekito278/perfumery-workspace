@@ -146,7 +146,7 @@ const MobileCheckoutPage = () => {
         <section className="mobile-soft-card p-4">
           <div className="text-[10px] font-bold uppercase text-amber-700">Checkout</div>
           <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">Belum ada item untuk dibayar.</h1>
-          <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Tambahkan parfum ready stock ke keranjang, atau mulai dari request custom.</p>
+          <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Tambahkan parfum ready stock ke keranjang, atau mulai dari request bespoke.</p>
           <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
             <ShoppingBag className="h-4 w-4" />
             Buka katalog

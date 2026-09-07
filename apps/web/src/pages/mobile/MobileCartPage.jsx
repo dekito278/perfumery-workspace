@@ -6,7 +6,6 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -59,7 +58,7 @@ const MobileCartPage = () => {
                 <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
               ) : null}
               <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: 'var(--editorial-muted)' }}>
-                {items.length ? 'Cek item di sini, lalu lanjutkan untuk isi pengiriman dan pembayaran.' : 'Pilih parfum ready stock atau mulai request aroma custom.'}
+                {items.length ? 'Cek item di sini, lalu lanjutkan untuk isi pengiriman dan pembayaran.' : 'Pilih parfum ready stock atau mulai request aroma bespoke.'}
               </p>
             </div>
             {featuredCartItems[0] ? (
@@ -106,7 +105,7 @@ const MobileCartPage = () => {
                 Belanja
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
-                Custom
+                Bespoke
               </Button>
             </div>
           )}
@@ -197,13 +196,13 @@ const MobileCartPage = () => {
                 <ShoppingBag style={{ width: 32, height: 32, color: 'var(--editorial-stone)', marginBottom: 12 }} />
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--editorial-charcoal)', fontFamily: 'Georgia, "Times New Roman", serif' }}>Keranjang kosong</h2>
                 <p style={{ marginTop: 6, fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--editorial-muted)', maxWidth: 260 }}>
-                  Pilih parfum ready stock, mulai custom, atau lihat rekomendasi di bawah.
+                  Pilih parfum ready stock, mulai bespoke, atau lihat rekomendasi di bawah.
                 </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
                 <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
                   <Sparkles className="h-4 w-4" />
-                  Mulai custom
+                  Mulai bespoke
                 </Button>
                 <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
                   <ShoppingBag className="h-4 w-4" />
@@ -246,7 +245,7 @@ const MobileCartPage = () => {
             </button>
             <button type="button" onClick={() => navigate('/mobile/bespoke')} style={{ display: 'flex', minHeight: 78, flexDirection: 'column', justifyContent: 'space-between', border: '1px solid var(--editorial-stone)', borderRadius: 12, padding: 14, background: 'var(--editorial-ivory)', cursor: 'pointer', textAlign: 'left' }}>
               <Sparkles style={{ width: 16, height: 16, color: 'var(--editorial-muted)' }} />
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)' }}>Custom aroma</span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)' }}>Aroma bespoke</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-brass)' }}>Brief <ArrowRight style={{ width: 12, height: 12 }} /></span>
             </button>
           </section>
