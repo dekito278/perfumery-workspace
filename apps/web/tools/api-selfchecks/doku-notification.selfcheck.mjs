@@ -106,6 +106,12 @@ const underpaid = await post({ payload: notification('SUCCESS', 1000) });
 assert.notEqual(underpaid.statusCode, 200);
 assert.equal(patchesIssued().length, 0, 'underpayment must not write');
 
+// A SUCCESS with no amount at all is not a verified payment (D-2: this used to skip the check).
+orderRow = paidOrder();
+const amountless = await post({ payload: notification('SUCCESS', null) });
+assert.notEqual(amountless.statusCode, 200);
+assert.equal(patchesIssued().length, 0, 'amount-less success must not write');
+
 // Late or duplicate cancel on an order that is already paid must not undo it.
 orderRow = paidOrder({ payment_status: 'paid', status: 'paid', inventory_deducted: true });
 const lateExpiry = await post({ payload: notification('EXPIRED') });

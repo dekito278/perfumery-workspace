@@ -27,10 +27,11 @@ export const checkDokuOrderTransition = ({ currentOrder, incomingStatus, paidAmo
     return { skip: 'order_closed' };
   }
 
-  // Never mark an order paid for less than its stored total.
+  // Never mark an order paid for less than its stored total — and a notification that carries no amount
+  // at all is not a verified payment either (it used to skip the check entirely, audit round 9, D-2).
   const expected = Math.round(Number(currentOrder?.subtotal || 0));
   const paid = Math.round(Number(paidAmount || 0));
-  if (expected > 0 && paid > 0 && paid < expected) {
+  if (expected > 0 && paid < expected) {
     return { error: `DOKU amount mismatch: paid ${paid} < expected ${expected}` };
   }
 

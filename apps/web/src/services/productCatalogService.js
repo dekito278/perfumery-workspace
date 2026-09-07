@@ -380,27 +380,6 @@ const findVariantForOrderItem = (product = {}, item = {}) => {
 
 const isStockOrderItem = (item = {}) => !['bespoke_request', 'voucher_discount'].includes(item.type);
 
-const createInventoryEvent = (product = {}, item = {}) => {
-  const batchDetails = getProductBatchDetails(product);
-
-  return {
-    type: 'deduct',
-    direction: 'out',
-    productId: product.id,
-    productSlug: product.slug,
-    productName: product.name,
-    variantId: item.variantId || item.variant_id || '',
-    size: item.size || '',
-    quantity: Number(item.quantity || 1),
-    batchKey: batchDetails.batchKey,
-    formulaId: batchDetails.formulaId,
-    sku: batchDetails.sku,
-    initialStock: batchDetails.initialStock,
-    movement: batchDetails.movement || 'Order checkout stock reservation',
-    at: new Date().toISOString(),
-  };
-};
-
 const createInventoryRestoreEvent = (event = {}) => ({
   ...event,
   type: 'restore',
@@ -447,39 +426,6 @@ export const validateOrderStock = async (items = []) => {
   }).filter(Boolean);
 
   return { ok: issues.length === 0, issues };
-};
-
-const deductProductItemStock = (product, item = {}) => {
-  const quantity = Math.max(Number(item.quantity || 1), 0);
-  let deducted = false;
-  const variants = (product.variants || []).map((variant, index) => {
-    const matchesVariant = item.variantId
-      ? variant.id === item.variantId
-      : (variant.size === item.size || (!item.size && index === 0));
-    if (!matchesVariant || deducted) return variant;
-    if (Number(variant.stock || 0) < quantity) {
-      throw new Error(`${product.name} ${variant.size || ''} stok tersisa ${Number(variant.stock || 0)}, tidak cukup untuk ${quantity}.`);
-    }
-    deducted = true;
-    return {
-      ...variant,
-      stock: Number(variant.stock || 0) - quantity,
-    };
-  });
-
-  if (!deducted && variants.length) {
-    if (Number(variants[0].stock || 0) < quantity) {
-      throw new Error(`${product.name} stok tersisa ${Number(variants[0].stock || 0)}, tidak cukup untuk ${quantity}.`);
-    }
-    variants[0] = {
-      ...variants[0],
-      stock: Number(variants[0].stock || 0) - quantity,
-    };
-    deducted = true;
-  }
-
-  const stock = getProductStockTotal(variants);
-  return { product: { ...product, variants, stock }, deducted };
 };
 
 const restoreProductItemStock = (product, event = {}) => {
@@ -885,31 +831,11 @@ export const deductInventoryForOrder = async (order) => {
     dispatchProductsUpdated();
     return events;
   } catch (error) {
-    console.warn('Using client inventory deduction fallback:', error.message || error);
+    // No client fallback. The old path re-read and re-saved product rows from the browser; UPDATE on
+    // storefront_products is admin-only, so for everyone else it did nothing and reported success
+    // (audit round 9, P-4). The RPC is the only way stock moves.
+    throw new Error(error.message || 'Gagal mengurangi stok untuk order ini');
   }
-
-  const editableProducts = await getEditableProducts();
-  const deductedEvents = [];
-  const nextProducts = editableProducts.map((product) => {
-    const matchingItems = stockItems.filter((item) => findProductForOrderItem([product], item));
-    if (!matchingItems.length) return product;
-
-    return matchingItems.reduce((currentProduct, item) => {
-      const result = deductProductItemStock(currentProduct, item);
-      if (result.deducted) {
-        deductedEvents.push(createInventoryEvent(currentProduct, item));
-      }
-      return result.product;
-    }, product);
-  });
-
-  const changedProducts = nextProducts.filter((product) => {
-    const previous = editableProducts.find((item) => item.id === product.id);
-    return previous && JSON.stringify(previous.variants) !== JSON.stringify(product.variants);
-  });
-
-  await Promise.all(changedProducts.map((product) => saveCustomProduct(product)));
-  return deductedEvents;
 };
 
 export const restoreInventoryForOrder = async (order, reason = 'Order cancelled/payment failed stock released') => {

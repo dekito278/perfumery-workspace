@@ -511,35 +511,6 @@ export const AuthProvider = ({ children }) => {
     return true;
   };
 
-  const signup = async (email, password, _passwordConfirm, name) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          },
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setSession(data.session ?? null);
-      sessionRef.current = data.session ?? null;
-      setCurrentUser(data.user ?? null);
-      return {
-        ...data,
-        emailConfirmationRequired: !data.session,
-      };
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw new Error(error.message || 'Signup failed');
-    }
-  };
-
   const requestPasswordReset = async (email, redirectTo = `${window.location.origin}/reset-password`) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
@@ -622,7 +593,6 @@ export const AuthProvider = ({ children }) => {
     reauthenticateWithPassword,
     rememberCustomerCode,
     requestPasswordReset,
-    signup,
     updatePassword,
     logout,
     isAuthenticated: !!session?.user && !mfaChallenge && !mfaResolutionPending,

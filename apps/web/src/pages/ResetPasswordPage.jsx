@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils.js';
 
 const ResetPasswordPage = ({ mobile = false }) => {
   const navigate = useNavigate();
-  const { mfaChallenge, updatePassword, verifyMfaCode } = useAuth();
+  const { initialLoading, mfaChallenge, session, updatePassword, verifyMfaCode } = useAuth();
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [password, setPassword] = useState('');
@@ -78,6 +78,28 @@ const ResetPasswordPage = ({ mobile = false }) => {
       setVerifying(false);
     }
   };
+
+  // Opened without a recovery session (typed URL, expired or already-used link): the form would only
+  // fail later with "Auth session missing". Say it up front.
+  if (!initialLoading && !session?.user) {
+    return (
+      <div className={shellClassName}>
+        <Helmet><title>Reset Password - Solivagant</title></Helmet>
+        <div className={cardClassName}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
+            <KeyRound className="h-6 w-6" />
+          </div>
+          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Link reset tidak berlaku</h1>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
+            Link reset password sudah kedaluwarsa atau sudah dipakai. Minta link baru dari halaman login.
+          </p>
+          <Button type="button" className="mt-5 h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]" onClick={() => navigate(loginPath)}>
+            Ke halaman login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (mfaChallenge) {
     return (
