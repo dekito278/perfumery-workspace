@@ -415,7 +415,7 @@ export const validateOrderStock = async (items = []) => {
   const stockItems = items.filter(isStockOrderItem);
   if (!stockItems.length) return { ok: true, issues: [] };
 
-  const editableProducts = await getEditableProducts();
+  const editableProducts = await getEditableProducts({ table: PUBLIC_PRODUCTS_VIEW });
   const issues = stockItems.map((item) => {
     const product = findProductForOrderItem(editableProducts, item);
     const variant = product ? findVariantForOrderItem(product, item) : null;
@@ -715,7 +715,14 @@ export const getCatalogProducts = () => {
 
 export const getLocalCatalogProducts = () => getCatalogProducts();
 
-export const getEditableProducts = async ({ useLastValidFallback = true, timeoutMs = 5000 } = {}) => {
+// The public storefront reads storefront_products_public: the same columns, minus draft rows and minus the
+// internal tags (COGS, batch ids, stock corrections…). The table itself is admin-only under RLS, and an RLS
+// refusal answers 200 with zero rows — so a non-admin reading the table would see an empty catalog, not an
+// error. Admin pages keep reading the table; view rows never enter the admin cache (they lack the internal
+// tags a product save must carry forward).
+export const PUBLIC_PRODUCTS_VIEW = 'storefront_products_public';
+
+export const getEditableProducts = async ({ useLastValidFallback = true, timeoutMs = 5000, table = 'storefront_products' } = {}) => {
   const fetchMonitor = beginMobileFetchMonitor('storefront-products', {
     thresholdMs: 2200,
     metadata: { timeoutMs },
@@ -723,7 +730,7 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
 
   try {
     const query = supabase
-      .from('storefront_products')
+      .from(table)
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -740,7 +747,7 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
     // straight back to localStorage, so a phantom re-appeared on every fetch forever. With the fallback
     // gone this is self-healing: the first successful fetch overwrites the cache with real rows only.
     const products = (data || []).map(fromDatabaseRow);
-    cacheFetchedProducts(products);
+    if (table === 'storefront_products') cacheFetchedProducts(products);
     fetchMonitor.finish('success', { count: products.length });
     return products;
   } catch (error) {
@@ -756,8 +763,7 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
 };
 
 export const getCatalogProductsAsync = async () => {
-  const editableProducts = await getEditableProducts({ useLastValidFallback: true, timeoutMs: 4200 });
-  return editableProducts;
+  return getEditableProducts({ useLastValidFallback: true, timeoutMs: 4200, table: PUBLIC_PRODUCTS_VIEW });
 };
 
 export const prefetchCatalogProducts = ({ force = false } = {}) => {
