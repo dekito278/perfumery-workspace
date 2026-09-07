@@ -23,6 +23,7 @@ import {
 } from '@/services/productCatalogService.js';
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { moodForEditing } from '@/utils/productMood.js';
+import WearPicker from '@/components/product/WearPicker.jsx';
 
 export const emptyProduct = {
   name: '',
@@ -48,6 +49,7 @@ export const emptyProduct = {
   tags: '',
   mood: '',
   intensity: 'Medium',
+  wear: {},
   featured: true,
   catalogVisible: true,
 };
@@ -100,6 +102,7 @@ const snapshotProductForm = (product) => JSON.stringify({
   images: product.images || [],
   tags: product.tags || '',
   mood: moodForEditing(product.mood),
+  wear: product.wear || {},
   intensity: product.intensity || 'Medium',
   featured: Boolean(product.featured),
   catalogVisible: Boolean(product.catalogVisible),
@@ -314,6 +317,12 @@ const ProductForm = ({ product = null, onSaved }) => {
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
             <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="text-xs font-bold uppercase text-muted-foreground">Cocok dipakai kapan</span>
+            <div className="mt-2">
+              <WearPicker value={form.wear} onChange={(next) => updateField('wear', next)} />
+            </div>
           </label>
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Mood</span>

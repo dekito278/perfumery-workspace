@@ -1,6 +1,7 @@
 import { featuredProducts } from '@/data/storefront.js';
 import supabase from '@/lib/supabaseClient.js';
 import { beginMobileFetchMonitor } from '@/utils/mobileRenderMonitoring.js';
+import { normalizeWear } from '@/utils/productWear.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -512,6 +513,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
       ...stockCorrections.slice(0, 20).map(serializeStockCorrection),
     ],
     intensity: input.intensity || 'Medium',
+    wear: normalizeWear(input.wear),
     featured: Boolean(input.featured),
     popularity: Number(input.popularity || 70),
     visual: input.visual || FALLBACK_VISUALS[visualIndex],
@@ -535,6 +537,7 @@ const toDatabasePayload = (product) => ({
   heart_notes: product.heartNotes,
   base_notes: product.baseNotes,
   mood: product.mood,
+  wear: normalizeWear(product.wear),
   description: product.description,
   concentration: product.concentration,
   stock: product.stock,
@@ -562,6 +565,7 @@ const fromDatabaseRow = (row) => normalizeProduct({
   heartNotes: row.heart_notes,
   baseNotes: row.base_notes,
   mood: row.mood,
+  wear: normalizeWear(row.wear),
   description: row.description,
   concentration: row.concentration,
   stock: row.stock,

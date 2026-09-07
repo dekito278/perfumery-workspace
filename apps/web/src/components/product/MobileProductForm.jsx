@@ -27,6 +27,7 @@ import {
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { formatQuantity } from '@/utils/formatting.js';
 import { moodForEditing } from '@/utils/productMood.js';
+import WearPicker from '@/components/product/WearPicker.jsx';
 
 export const emptyProduct = {
   name: '',
@@ -42,6 +43,7 @@ export const emptyProduct = {
   notes: '',
   mood: '',
   intensity: 'Medium',
+  wear: {},
   topNotes: '',
   heartNotes: '',
   baseNotes: '',
@@ -427,6 +429,12 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         {/* Mood and intensity had no input on either form, so every product carried the system
             default — 18 of 18 read 'Custom perfume profile'. Anything keyed on mood later (choosing
             by occasion, a scent quiz) needs these filled, and they can only be filled here. */}
+        {/* Untagged products cannot appear in the wardrobe at all — silence is not a yes — so this is
+            the one place the "which bottle, when" page gets its data. */}
+        <div className="grid gap-1.5">
+          <ProductInputLabel>Cocok dipakai kapan</ProductInputLabel>
+          <WearPicker compact value={form.wear} onChange={(next) => updateField('wear', next)} />
+        </div>
         <div className="grid gap-1.5">
           <ProductInputLabel>Mood</ProductInputLabel>
           <input value={form.mood || ''} onChange={(event) => updateField('mood', event.target.value)} placeholder="Contoh: tenang, harian, hangat malam" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
