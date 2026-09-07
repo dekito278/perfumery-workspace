@@ -447,13 +447,13 @@ const MobileBespokePage = () => {
           <input
             value={form.perfumeName}
             onChange={(event) => updateField('perfumeName', event.target.value)}
-            placeholder="Nama parfum, contoh: After Rain"
+            placeholder="Nama parfum, contoh: After Rain" aria-label="Nama parfum"
             className="mobile-commerce-control h-12 px-3 text-sm font-semibold text-editorial-charcoal"
           />
           <textarea
             value={form.scentDescription}
             onChange={(event) => updateField('scentDescription', event.target.value)}
-            placeholder="Contoh: bersih, dewasa, woody, sedikit vanila, tidak terlalu manis."
+            placeholder="Contoh: bersih, dewasa, woody, sedikit vanila, tidak terlalu manis." aria-label="Arah aroma"
             rows={3}
             className="mobile-commerce-control min-h-[96px] w-full resize-none px-3 py-3 text-sm font-semibold leading-relaxed text-editorial-charcoal"
           />
@@ -569,17 +569,17 @@ const MobileBespokePage = () => {
         <div className="grid gap-3">
           <div className="grid gap-2">
             <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-              <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} placeholder="Kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} placeholder="Kode customer" aria-label="Kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={pasteCustomerCode}>Tempel</Button>
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>Cek</Button>
             </div>
-            <input value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-            <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="Nomor WhatsApp / telepon" inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-            <textarea autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <input value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama pembeli" aria-label="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="Nomor WhatsApp / telepon" aria-label="Nomor WhatsApp" inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            <textarea autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" aria-label="Alamat pengiriman" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </div>
           <div className="grid gap-2">
             <div className="grid grid-cols-[1fr_auto] gap-2">
-              <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota tujuan" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+              <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota tujuan" aria-label="Cari kecamatan atau kota tujuan" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>Cari</Button>
             </div>
             <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
@@ -671,7 +671,7 @@ const MobileBespokePage = () => {
               <input
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                placeholder="Kode voucher"
+                placeholder="Kode voucher" aria-label="Kode voucher"
                 className="mobile-commerce-control h-11 min-w-0 px-3 text-xs font-bold uppercase text-editorial-charcoal"
               />
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white px-3 text-[11px] font-bold" onClick={voucher.applyVoucher} disabled={voucher.loading}>

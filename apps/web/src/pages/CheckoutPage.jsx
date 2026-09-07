@@ -160,7 +160,7 @@ const CheckoutPage = () => {
               <label className="checkout-field">
                 <span>Kode customer</span>
                 <div className="checkout-field__inline">
-                  <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional untuk pembeli lama" autoComplete="off" />
+                  <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional untuk pembeli lama" aria-label="Kode customer" autoComplete="off" />
                   <button type="button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
                     {lookupLoading ? 'Cek...' : 'Muat'}
                   </button>
@@ -174,7 +174,7 @@ const CheckoutPage = () => {
                       type="text"
                       value={securityAnswer}
                       onChange={(event) => setSecurityAnswer(event.target.value)}
-                      placeholder="Jawaban keamanan"
+                      placeholder="Jawaban keamanan" aria-label="Jawaban keamanan"
                       autoComplete="off"
                     />
                     <button type="button" onClick={verifyCustomerSecurity} disabled={lookupLoading || !securityAnswer.trim()}>
@@ -185,17 +185,17 @@ const CheckoutPage = () => {
               ) : null}
               <label className="checkout-field">
                 <span>Nama lengkap</span>
-                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" aria-label="Nama pembeli" autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
                 {triedSubmit && fieldErrors.customerName ? <span className="checkout-field__error" role="alert">{fieldErrors.customerName}</span> : null}
               </label>
               <label className="checkout-field">
                 <span>WhatsApp</span>
-                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label="Nomor WhatsApp" autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
                 {triedSubmit && fieldErrors.contact ? <span className="checkout-field__error" role="alert">{fieldErrors.contact}</span> : null}
               </label>
               <label className="checkout-field">
                 <span>Alamat pengiriman</span>
-                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder="Alamat lengkap pengiriman" autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder="Alamat lengkap pengiriman" aria-label="Alamat pengiriman" autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
                 {triedSubmit && fieldErrors.deliveryAddress ? <span className="checkout-field__error" role="alert">{fieldErrors.deliveryAddress}</span> : null}
               </label>
             </fieldset>
@@ -219,7 +219,7 @@ const CheckoutPage = () => {
                 <label className="checkout-field">
                   <span>Area tujuan</span>
                   <div className="checkout-field__inline">
-                    <input type="text" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" autoComplete="off" />
+                    <input type="text" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" aria-label="Cari kecamatan atau kota tujuan" autoComplete="off" />
                     <button
                       type="button"
                       disabled={shippingLoading || !selectedCourier}
@@ -271,7 +271,7 @@ const CheckoutPage = () => {
                     type="text"
                     value={voucher.inputCode}
                     onChange={(event) => voucher.setInputCode(event.target.value)}
-                    placeholder="Kode voucher"
+                    placeholder="Kode voucher" aria-label="Kode voucher"
                     autoComplete="off"
                     disabled={!items.length || voucher.loading}
                   />
@@ -305,7 +305,7 @@ const CheckoutPage = () => {
               </label>
               <label className="checkout-field">
                 <span>Catatan pengiriman</span>
-                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder="Opsional" autoComplete="off" />
+                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder="Opsional" aria-label="Catatan pengiriman" autoComplete="off" />
               </label>
             </fieldset>
 
