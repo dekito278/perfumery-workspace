@@ -86,7 +86,7 @@ const MobileProductDetailPage = () => {
       priceNumber: selectedPrice,
     }, 1);
     setLastAddedItem({ name: product.name, size: selectedSize, price: formatRupiah(selectedPrice) });
-    toast.success(`${product.name} added to cart`);
+    toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} masuk ke keranjang`);
     setCartPromptOpen(true);
   };
 
