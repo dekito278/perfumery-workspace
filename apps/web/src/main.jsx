@@ -8,6 +8,7 @@ import '@/styles/mobile.css';
 import '@/styles/storefront.css';
 import '@/styles/print.css';
 import { applyStandaloneClass, installConnectivityEvents, installStaleShellRecovery, registerServiceWorker } from '@/utils/pwa.js';
+import { installRevealSafetyNet } from '@/utils/revealSafetyNet.js';
 import { recordMobileRuntimeError } from '@/utils/mobileDiagnostics.js';
 
 const RESIZE_OBSERVER_MESSAGES = [
@@ -36,6 +37,7 @@ const isExtensionNoise = ({ message, filename, reason }) => {
 
 installStaleShellRecovery();
 installConnectivityEvents();
+installRevealSafetyNet();
 
 window.addEventListener('error', (event) => {
   if (isResizeObserverNoise(event.message) || isExtensionNoise(event)) {
