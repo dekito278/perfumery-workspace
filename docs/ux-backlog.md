@@ -64,8 +64,12 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
 - [x] (PR #53) **U-11 · Kartu mood beranda terlihat kosong**: kotak pastel polos berisi satu kata.
       Beri isi yang tidak bergantung foto (tekstur/gradasi + nama nota khas).
 
-- [ ] **U-12 · Beranda serba terang tanpa jangkar gelap.** Satu-satunya blok gelap justru bagian
-      terkuat. Tambah satu bagian gelap sebagai kontras.
+- [x] **U-12 · TIDAK PERLU — temuan saya keliru.** Diukur di production, beranda desktop sudah
+      berselang-seling: hero gelap (luminans 26), brandmark krem (241), koleksi krem, statement gelap
+      (26), dua seksi krem, newsletter hijau tua (51). Tiga jangkar gelap, bukan satu. Kesan "serba
+      terang" datang dari screenshot tab tersembunyi, tempat gambar dan animasi reveal belum sempat
+      dilukis sehingga seksi bergambar tampak kosong. Pelajaran yang sama dengan U-10: verifikasi di
+      tab yang benar-benar terlihat.
 
 - [ ] **U-13 · Siapkan kartu produk untuk foto asli**: rasio tetap, `object-fit: cover`,
       skeleton saat memuat, dan fallback saat foto belum ada. (Foto botolnya sendiri dari owner.)
