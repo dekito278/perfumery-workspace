@@ -43,7 +43,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
 
 ## Gelombang 2 — keterbacaan & sentuhan
 
-- [ ] **U-8 · Kontras teks di bawah ambang.** `text-[#9ca3af]` dipakai 32 kali di atas latar
+- [x] (PR #51) **U-8 · Kontras teks di bawah ambang.** `text-[#9ca3af]` dipakai 32 kali di atas latar
       krem, sekitar 2.5:1, jauh di bawah 4.5:1. Ganti ke warna tubuh yang sudah ada
       (`#6b7280` ≈ 4.6:1) untuk teks yang harus terbaca.
 
