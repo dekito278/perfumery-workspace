@@ -14,6 +14,7 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useCart } from '@/hooks/useCart.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { getScarcityLabel } from '@/utils/stockScarcity.js';
 
 // 'Custom perfume profile' is stored on every product as a system default, in English — not a mood
 // anyone chose, so it is not worth a chip on the page.
@@ -80,6 +81,7 @@ const MobileProductDetailPage = () => {
   // Public catalog objects expose `availability`/`publicStatus`, not a raw stock count (see
   // publicStorefront.js). Mirror the desktop PDP — reading `.stock` here always yields 0 → sold out.
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
+  const scarcity = selectedAvailable ? getScarcityLabel(selectedVariant?.stock) : '';
   const soldOut = !selectedAvailable;
 
   const addSelectedVariant = () => {
@@ -124,6 +126,7 @@ const MobileProductDetailPage = () => {
           <p className="m-editorial-eyebrow">{product.category}</p>
           <h1>{product.name}</h1>
           <p className="m-editorial-pdp__price">{product.price}</p>
+          {scarcity ? <p className="pdp-scarcity">{scarcity}</p> : null}
 
           {previewMode ? (
             <div className="m-editorial-pdp__preview-badge">

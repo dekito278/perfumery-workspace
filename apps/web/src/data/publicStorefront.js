@@ -59,6 +59,7 @@ const normalizePublicVariants = (product = {}, publicPrice) => (
     size: variant.size || product.size || '30 ml',
     price: formatVariantPrice(variant, publicPrice),
     priceNumber: Number(variant.priceNumber || product.priceNumber || 0),
+    stock: Math.max(0, Math.floor(Number(variant.stock ?? product.stock ?? 0)) || 0),
     availability: Number(variant.stock ?? product.stock ?? 0) > 0 ? 'Available' : 'Inquire',
   }))
 );

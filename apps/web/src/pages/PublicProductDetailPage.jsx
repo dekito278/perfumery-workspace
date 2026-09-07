@@ -27,6 +27,7 @@ import {
   getSiteOrigin,
   toAbsoluteUrl,
 } from '@/utils/seo.js';
+import { getScarcityLabel } from '@/utils/stockScarcity.js';
 
 // 'Custom perfume profile' is stored on every product as a system default, in English — not a mood
 // anyone chose, so it is not worth a chip on the page.
@@ -109,6 +110,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   // don't expose exact inventory. Fall back to the product-level publicStatus when there are no variants.
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
   const soldOut = !selectedAvailable;
+  const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock);
 
   const handleAddToCart = () => {
     if (soldOut) {
@@ -206,6 +208,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
             <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
+            {scarcity ? <p className="pdp-scarcity hero-animate-text hero-animate-text--d3">{scarcity}</p> : null}
             {/* The written description carries blank lines the author typed; a bare {story} collapsed
                 them into one run-on block, the same way bespoke briefs used to render. */}
             <div className="pdp-story hero-animate-text hero-animate-text--d4">
