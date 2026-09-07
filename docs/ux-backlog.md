@@ -33,7 +33,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
       dan pembaca layar membacanya tanpa nama. Beri `<Label>` (boleh visually-hidden bila desain
       tidak boleh berubah) atau `aria-label` di semua field checkout dan bespoke.
 
-- [ ] **U-6 · Metode pembayaran tidak terlihat bisa dipilih.** "Transfer manual BCA" dan
+- [x] (PR #49) **U-6 · Metode pembayaran tidak terlihat bisa dipilih.** "Transfer manual BCA" dan
       "DOKU Checkout" tampil seperti kartu informasi statis: tanpa radio, tanpa keadaan terpilih
       yang jelas. Beri penanda pilihan yang tegas.
 
