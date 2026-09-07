@@ -71,8 +71,12 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
       dilukis sehingga seksi bergambar tampak kosong. Pelajaran yang sama dengan U-10: verifikasi di
       tab yang benar-benar terlihat.
 
-- [ ] **U-13 · Siapkan kartu produk untuk foto asli**: rasio tetap, `object-fit: cover`,
-      skeleton saat memuat, dan fallback saat foto belum ada. (Foto botolnya sendiri dari owner.)
+- [x] **U-13 · SUDAH SIAP — tidak ada yang perlu dikerjakan.** `components/storefront/ProductVisual.jsx`
+      sudah menangani semuanya: gradien fallback per-slug saat foto belum ada, `onError` yang menurunkan
+      ke fallback, status `imageLoaded` untuk transisi, `srcset` teroptimasi, dan `loading` eager/lazy.
+      Rasio pun sudah dikunci: `.catalog-card__visual` dan `.m-editorial-product-card__visual` 3/4,
+      `.mobile-home-product-visual` 4/4.7 — dan setiap kartu storefront memakai `imageFit="cover"`.
+      Yang menghambat memang hanya fotonya, dan itu sudah tercatat di bagian "butuh owner".
 
 ---
 
