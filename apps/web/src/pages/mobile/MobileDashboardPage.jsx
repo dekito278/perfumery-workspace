@@ -210,7 +210,7 @@ const MobileDashboardPage = () => {
         ...(logsByFormulaId.get(formula.id) || { validationCount: 0, actionNeededCount: 0 }),
       }])));
     } catch (error) {
-      toast.error('Failed to load mobile dashboard');
+      toast.error('Gagal memuat dasbor');
     } finally {
       if (isActive()) setLoading(false);
       if (isActive()) setSyncing(false);
@@ -248,10 +248,10 @@ const MobileDashboardPage = () => {
     setDuplicatingId(formula.id);
     try {
       await duplicateFormula(formula.id);
-      toast.success('Formula duplicated');
+      toast.success('Formula diduplikasi');
       await loadData();
     } catch (error) {
-      toast.error('Failed to duplicate formula');
+      toast.error('Gagal menduplikasi formula');
     } finally {
       setDuplicatingId('');
     }
@@ -282,7 +282,7 @@ const MobileDashboardPage = () => {
         <section className="mobile-studio-hero p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Workspace</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">Ruang kerja</div>
               <h1 className="mt-1 text-2xl font-bold leading-tight text-[#142116]">
                 {syncing && !formulas.length ? 'Syncing studio' : attentionCount ? 'Ada yang perlu dicek' : 'Studio ready'}
               </h1>
@@ -295,21 +295,21 @@ const MobileDashboardPage = () => {
             </span>
           </div>
           <div className="mobile-horizontal-scroll mt-4 flex gap-2 overflow-x-auto pb-1">
-            <StudioChip label="Validations" value={loadedSections.logs ? logs.length : '-'} tone="amber" />
-            <StudioChip label="Formulas" value={loadedSections.formulas ? formulas.length : '-'} tone="emerald" />
-            <StudioChip label="Materials" value={loadedSections.materials ? materials.length : '-'} tone="blue" />
-            <StudioChip label="Needs action" value={loadedSections.logs && loadedSections.materials ? attentionCount : '-'} tone="rose" />
+            <StudioChip label="Validasi" value={loadedSections.logs ? logs.length : '-'} tone="amber" />
+            <StudioChip label="Formula" value={loadedSections.formulas ? formulas.length : '-'} tone="emerald" />
+            <StudioChip label="Material" value={loadedSections.materials ? materials.length : '-'} tone="blue" />
+            <StudioChip label="Perlu tindakan" value={loadedSections.logs && loadedSections.materials ? attentionCount : '-'} tone="rose" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Button className="rounded-2xl" onClick={() => navigate('/mobile/studio/products')}>Products</Button>
-            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/studio/fulfillment')}>Fulfillment</Button>
+            <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/studio/fulfillment')}>Pengiriman</Button>
           </div>
         </section>
 
         <>
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">Today priority</h2>
+              <h2 className="text-base font-bold">Prioritas hari ini</h2>
               <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
             </div>
             <div className="grid gap-3">
@@ -323,7 +323,7 @@ const MobileDashboardPage = () => {
               />
               <PriorityCard
                 icon={Truck}
-                label="Paid-ready"
+                label="Siap packing"
                 title={`${paidReadyOrders.length} order siap packing`}
                 helper="Input resi dan mark shipped"
                 tone={paidReadyOrders.length ? 'emerald' : 'amber'}
@@ -339,7 +339,7 @@ const MobileDashboardPage = () => {
               />
               <PriorityCard
                 icon={AlertTriangle}
-                label="Low stock"
+                label="Stok menipis"
                 title={`${lowStockProducts.length} product hampir habis`}
                 helper="Cek varian dan publish status"
                 tone={lowStockProducts.length ? 'rose' : 'emerald'}
@@ -349,11 +349,11 @@ const MobileDashboardPage = () => {
           </section>
 
             <section className="grid grid-cols-2 gap-3">
-              <SummaryMetricCardMobile icon={Beaker} label="Formulas" value={loadedSections.formulas ? formulas.length : '-'} tone="blue" to="/mobile/formulas" />
-              <SummaryMetricCardMobile icon={LibraryBig} label="Materials" value={loadedSections.materials ? materials.length : '-'} tone="green" to="/mobile/raw-materials" />
-              <SummaryMetricCardMobile icon={ClipboardCheck} label="Validations" value={loadedSections.logs ? logs.length : '-'} tone="rose" to="/mobile/validation" />
+              <SummaryMetricCardMobile icon={Beaker} label="Formula" value={loadedSections.formulas ? formulas.length : '-'} tone="blue" to="/mobile/formulas" />
+              <SummaryMetricCardMobile icon={LibraryBig} label="Material" value={loadedSections.materials ? materials.length : '-'} tone="green" to="/mobile/raw-materials" />
+              <SummaryMetricCardMobile icon={ClipboardCheck} label="Validasi" value={loadedSections.logs ? logs.length : '-'} tone="rose" to="/mobile/validation" />
               <div className="col-span-2">
-                <SummaryMetricCardMobile icon={AlertTriangle} label="Guidance Gaps" value={loadedSections.materials ? missingGuidanceMaterials.length : '-'} tone="rose" to="/mobile/raw-materials" />
+                <SummaryMetricCardMobile icon={AlertTriangle} label="Celah panduan" value={loadedSections.materials ? missingGuidanceMaterials.length : '-'} tone="rose" to="/mobile/raw-materials" />
               </div>
             </section>
 
@@ -363,12 +363,12 @@ const MobileDashboardPage = () => {
                 <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/dashboard')}>Lihat home</Button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <WorkflowButton icon={PackagePlus} label="Products" helper="Tambah, daftar, kategori" tone="emerald" onClick={() => setProductMenuOpen(true)} />
-                <WorkflowTile icon={PackageCheck} label="Orders" helper="Payment & fulfillment" tone="amber" to="/mobile/studio/orders" />
-                <WorkflowTile icon={PackageOpen} label="Fulfillment" helper="Packing & shipping" tone="emerald" to="/mobile/studio/fulfillment" />
-                <WorkflowTile icon={UsersRound} label="Customers" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
-                <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Bottle, cap, label" tone="rose" to="/mobile/studio/bespoke" />
-                <WorkflowTile icon={BadgePercent} label="Vouchers" helper="Kode promo checkout" tone="amber" to="/mobile/studio/vouchers" />
+                <WorkflowButton icon={PackagePlus} label="Produk" helper="Tambah, daftar, kategori" tone="emerald" onClick={() => setProductMenuOpen(true)} />
+                <WorkflowTile icon={PackageCheck} label="Order" helper="Payment & fulfillment" tone="amber" to="/mobile/studio/orders" />
+                <WorkflowTile icon={PackageOpen} label="Pengiriman" helper="Packing & shipping" tone="emerald" to="/mobile/studio/fulfillment" />
+                <WorkflowTile icon={UsersRound} label="Customer" helper="Codes & repeat orders" tone="blue" to="/mobile/studio/customers" />
+                <WorkflowTile icon={WandSparkles} label="Bespoke" helper="Botol, cap, label" tone="rose" to="/mobile/studio/bespoke" />
+                <WorkflowTile icon={BadgePercent} label="Voucher" helper="Kode promo checkout" tone="amber" to="/mobile/studio/vouchers" />
               </div>
             </section>
 
@@ -380,8 +380,8 @@ const MobileDashboardPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <WorkflowTile icon={Beaker} label="Formula" helper="Create or revise" tone="blue" to="/mobile/formulas" />
                 <WorkflowTile icon={Calculator} label="Batch" helper="Scale grams" to="/mobile/batches" />
-                <WorkflowTile icon={Factory} label="Costing" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
-                <WorkflowTile icon={NotebookPen} label="Validation" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
+                <WorkflowTile icon={Factory} label="Biaya" helper="Bottle & bulk" tone="emerald" to="/mobile/production-costing" />
+                <WorkflowTile icon={NotebookPen} label="Validasi" helper={`${actionNeededLogs.length} action`} tone="rose" to="/mobile/validation" />
               </div>
             </section>
 
@@ -433,7 +433,7 @@ const MobileDashboardPage = () => {
             ) : null}
 
             <section className="space-y-3">
-              <div className="flex items-center justify-between"><h2 className="text-base font-bold">Draft formulas</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/formulas')}>View all</Button></div>
+              <div className="flex items-center justify-between"><h2 className="text-base font-bold">Draft formula</h2><Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/formulas')}>Lihat semua</Button></div>
               {draftFormulas.slice(0, 2).map((formula) => (
                 <FormulaCardMobile
                   key={formula.id}
