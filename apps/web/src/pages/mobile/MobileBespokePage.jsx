@@ -575,7 +575,7 @@ const MobileBespokePage = () => {
             </div>
             <input value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
             <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="Nomor WhatsApp / telepon" inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-            <textarea value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <textarea autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </div>
           <div className="grid gap-2">
             <div className="grid grid-cols-[1fr_auto] gap-2">

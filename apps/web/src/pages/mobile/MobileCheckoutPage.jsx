@@ -206,11 +206,11 @@ const MobileCheckoutPage = () => {
               </Button>
             )}
             <div className="grid grid-cols-[1fr_auto] gap-2">
-              <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional: kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional: kode customer" autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : 'Cek kode'}</Button>
             </div>
-            {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Jawaban keamanan" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>Verifikasi</Button></div> : null}
-            <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Jawaban keamanan" autoComplete="off" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>Verifikasi</Button></div> : null}
+            <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" autoComplete="name" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
             <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contoh: 081234567890" inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
         </CheckoutSection>
         <CheckoutSection
@@ -225,7 +225,7 @@ const MobileCheckoutPage = () => {
                 <button type="button" onClick={useCustomerNewAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'new' ? 'is-active' : ''}`}>Kirim ke alamat baru</button>
               </div>
             ) : null}
-            <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" rows={3} autoComplete="street-address" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
         </CheckoutSection>
         <CheckoutSection
           step="3"
@@ -259,7 +259,7 @@ const MobileCheckoutPage = () => {
             ) : null}
             {showShippingAreaFallback ? (
               <div className="mobile-commerce-panel bg-white p-3">
-                <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+                <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
                 <p className="mobile-commerce-notice mt-2">
                   Pakai ini hanya kalau alamat lengkap belum menemukan area ongkir yang tepat.
                 </p>
@@ -361,6 +361,7 @@ const MobileCheckoutPage = () => {
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
                 placeholder="Kode voucher"
+                autoComplete="off"
                 className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase"
               />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold gap-1.5" onClick={voucher.applyVoucher}>
@@ -390,7 +391,7 @@ const MobileCheckoutPage = () => {
             complete={paymentComplete}
           >
             {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => choosePaymentMethod(method)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
-            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" rows={2} autoComplete="off" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </CheckoutSection>
         </div>
         <div>

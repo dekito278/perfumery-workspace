@@ -762,7 +762,7 @@ const BespokePage = () => {
                 <div className="editorial-bespoke-checkout__fields">
                   <label>Nama<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama kamu" /></label>
                   <label>Email / WhatsApp<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>
-                  <label>Alamat pengiriman<textarea rows="4" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
+                  <label>Alamat pengiriman<textarea rows="4" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
                 </div>
                 <div className="editorial-voucher-panel">
                   <div>
