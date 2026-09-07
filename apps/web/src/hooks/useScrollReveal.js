@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Scroll-reveal hook using IntersectionObserver.
@@ -15,10 +15,15 @@ import { useEffect, useRef } from 'react';
  *   </section>
  */
 export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 0px' } = {}) {
-  const containerRef = useRef(null);
+  // A callback ref backed by state, not useRef. With useRef the effect ran once on mount and read
+  // whatever was there — and a page that renders a loading branch first (PublicProductDetailPage does,
+  // twice) had nothing there, so no observer was ever created. Every [data-reveal] on that page then
+  // stayed at opacity 0 for good, including the add-to-cart button. State makes the effect re-run the
+  // moment the real container mounts.
+  const [container, setContainer] = useState(null);
+  const containerRef = useCallback((node) => setContainer(node), []);
 
   useEffect(() => {
-    const container = containerRef.current;
     if (!container) return undefined;
 
     const staggerChildren = (parent, step = 80) => {
@@ -73,7 +78,7 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
       textObserver.disconnect();
       mutationObserver.disconnect();
     };
-  }, [threshold, rootMargin]);
+  }, [container, threshold, rootMargin]);
 
   return containerRef;
 }
@@ -82,11 +87,11 @@ export function useScrollReveal({ threshold = 0.12, rootMargin = '0px 0px -40px 
  * Lightweight hook for a single element reveal.
  */
 export function useRevealOnce(options = {}) {
-  const ref = useRef(null);
+  const [el, setEl] = useState(null);
+  const ref = useCallback((node) => setEl(node), []);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    if (!el) return undefined;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -100,7 +105,7 @@ export function useRevealOnce(options = {}) {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [el, options.threshold, options.rootMargin]);
 
   return ref;
 }
