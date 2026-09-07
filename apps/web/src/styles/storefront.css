@@ -7887,11 +7887,23 @@
 
 .m-editorial-mood-card__visual {
   aspect-ratio: 1;
+  position: relative;
   display: flex;
   align-items: flex-end;
+  overflow: hidden;
   padding: 12px;
   border-radius: 12px;
   background: var(--editorial-stone, #e5decf);
+}
+
+/* A soft diagonal wash instead of one flat fill, so the swatch reads as a surface rather than a gap. */
+.m-editorial-mood-card__visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 18% 12%, rgba(255, 255, 255, 0.75), transparent 62%),
+    radial-gradient(120% 90% at 88% 92%, rgba(27, 26, 22, 0.1), transparent 58%);
 }
 
 .m-editorial-mood-card__visual[data-family="fresh"] { background: #e8ede4; }
@@ -7900,11 +7912,21 @@
 .m-editorial-mood-card__visual[data-family="floral"] { background: #ebe4e8; }
 
 .m-editorial-mood-card__visual span {
+  position: relative;
   font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
   font-size: 0.85rem;
   font-weight: 400;
   font-style: italic;
   color: var(--editorial-charcoal, #1b1a16);
+}
+
+.m-editorial-mood-card__notes {
+  margin-top: 2px;
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #6b7280;
 }
 
 .m-editorial-mood-card h3 {
