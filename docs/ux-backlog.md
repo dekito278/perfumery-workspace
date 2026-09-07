@@ -11,7 +11,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
 
 ## Gelombang 1 — jalur pembeli (paling berdampak)
 
-- [ ] **U-1 · Autofill checkout mati.** 6 dari 7 field checkout tanpa atribut `autocomplete`,
+- [x] (PR #45) **U-1 · Autofill checkout mati.** 6 dari 7 field checkout tanpa atribut `autocomplete`,
       jadi nama, alamat, dan kode pos tidak pernah terisi otomatis di HP. Pembeli mengetik
       alamat lengkap dengan tangan setiap kali. Tambahkan `autocomplete` (`name`, `street-address`,
       `postal-code`, `tel`) + `inputmode` yang tepat di checkout desktop dan mobile.
