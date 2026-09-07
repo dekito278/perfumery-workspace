@@ -373,7 +373,7 @@ const MobileCheckoutPage = () => {
                   <div className="truncate text-xs font-bold text-editorial-charcoal">{voucher.appliedVoucher.code} diterapkan</div>
                   <div className="mt-0.5 text-[11px] font-semibold text-editorial-muted">Hemat {formatTotal(voucher.discountAmount)}</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-editorial-charcoal" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -449,9 +449,9 @@ const MobileCheckoutPage = () => {
                   </div>
                 </div>
                 <div className="mt-3 inline-flex items-center rounded-[14px] border border-editorial-stone/10 bg-white p-1">
-                  <Button type="button" size="icon" variant="ghost" aria-label="Kurangi jumlah" className="h-8 w-8 rounded-xl" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Kurangi jumlah" className="h-8 w-8 rounded-xl tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" aria-label="Tambah jumlah" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Tambah jumlah" className="h-8 w-8 rounded-xl tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
               </div>
               );

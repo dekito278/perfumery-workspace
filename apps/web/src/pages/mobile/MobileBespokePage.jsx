@@ -684,7 +684,7 @@ const MobileBespokePage = () => {
                   <div className="truncate text-xs font-bold text-editorial-charcoal">{voucher.appliedVoucher.code} diterapkan</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-editorial-muted">Total transfer sudah disesuaikan voucher.</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-editorial-charcoal" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>

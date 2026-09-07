@@ -1388,3 +1388,20 @@
   gap: 6px;
   margin-top: 4px;
 }
+
+/* A 44x44 hit area without changing what is drawn. The cart and checkout quantity controls are 32px
+   squares by design; this keeps the look and gives a thumb something to land on (UX backlog U-9).
+   Centred, so two controls 72px apart still cannot overlap. */
+.tap-44 {
+  position: relative;
+}
+
+.tap-44::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
