@@ -21,11 +21,11 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
       `${product.name} added to cart` di storefront yang selebihnya Indonesia — muncul tepat di
       aksi paling penting. Ganti "…masuk keranjang". Sisir juga toast pembeli lain.
 
-- [ ] **U-3 · Keranjang menampilkan barang yang sama dua kali** dan punya dua tombol
+- [x] (PR #47) **U-3 · Keranjang menampilkan barang yang sama dua kali** dan punya dua tombol
       "Lanjut bayar" (ringkasan atas + daftar bawah). Satukan: ringkasan tanpa daftar mini,
       satu tombol utama.
 
-- [ ] **U-4 · Kotak voucher berada di bawah tombol "Lanjut bayar" pertama.** Pembeli bisa
+- [x] (PR #47) **U-4 · Kotak voucher berada di bawah tombol "Lanjut bayar" pertama.** Pembeli bisa
       checkout tanpa pernah melihatnya. Pindahkan voucher ke atas tombol utama.
 
 - [ ] **U-5 · Placeholder dipakai sebagai label.** "KODE VOUCHER", "Catatan pengiriman atau
