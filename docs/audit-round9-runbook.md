@@ -102,6 +102,21 @@ create policy "storefront orders public insert" on public.storefront_orders for 
 **Prasyarat: langkah 0 hijau, khususnya ganti-password → logout → login dengan TOTP.**
 Tanpa itu, ganti password akan membuat semua data studio hilang diam-diam.
 
+**Prasyarat yang terlewat 2026-09-07: akun admin HARUS sudah punya faktor TOTP terverifikasi.** Migrasi ini
+diterapkan saat `aderizki68@gmail.com` belum pernah mendaftarkan authenticator, jadi tidak ada sesi admin di
+perangkat manapun yang bisa lolos `is_admin()` selama seminggu — studio tampak "0 order" tanpa error. Cek dulu:
+
+```sql
+select u.email, a.user_id,
+  (select count(*) from auth.mfa_factors f where f.user_id = u.id and f.status = 'verified') as totp_verified
+from auth.users u left join public.storefront_admins a on a.user_id = u.id
+where u.email = '<email admin>';
+```
+
+`totp_verified` harus ≥ 1 SEBELUM migrasi dijalankan. Kalau 0: daftarkan di `/authenticator` dulu (halaman ini
+tidak butuh data admin, bisa dibuka meski studio kosong). Faktor `unverified` sisa percobaan gagal menghalangi
+pendaftaran ulang dengan nama sama — hapus dengan `delete from auth.mfa_factors where user_id = '<id>' and status <> 'verified'`.
+
 ```sql
 -- supabase/migrations/20260819127000_is_admin_requires_aal2.sql
 ```
