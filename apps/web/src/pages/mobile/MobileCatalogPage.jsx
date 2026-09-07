@@ -92,7 +92,7 @@ export const MobileCatalogContent = ({ active = true }) => {
               className={`m-editorial-pill ${cat === activeCategory ? 'is-active' : ''}`}
               onClick={() => setActiveCategory(cat)}
             >
-              {cat}
+              {cat === 'All' ? 'Semua' : cat}
             </button>
           ))}
         </div>

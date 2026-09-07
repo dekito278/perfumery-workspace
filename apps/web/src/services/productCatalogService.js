@@ -500,7 +500,7 @@ export const normalizeProduct = (input, existingProducts = []) => {
     topNotes: splitList(input.topNotes).length ? splitList(input.topNotes) : ['Opening note'],
     heartNotes: splitList(input.heartNotes).length ? splitList(input.heartNotes) : ['Heart note'],
     baseNotes: splitList(input.baseNotes).length ? splitList(input.baseNotes) : ['Base note'],
-    mood: input.mood || 'Custom perfume profile',
+    mood: input.mood || 'Profil parfum custom',
     description: input.description || 'A custom product entry managed from Studio.',
     concentration: input.concentration || 'Eau de Parfum',
     stock,
