@@ -13,17 +13,41 @@ const AdminSessionNotice = ({ mobile = false }) => {
   const navigate = useNavigate();
   const { isAdmin, isAuthenticated, session, logout } = useAuth();
   const [assurance, setAssurance] = useState(null);
+  // The app gate (VITE_ADMIN_EMAILS) and the data gate (storefront_admins) are two lists nothing keeps in
+  // sync. An account on the first but not the second passes aal2 and still reads every admin table as
+  // empty. Ask the database directly once the session is aal2; 'unknown' on any failure — this drives a
+  // notice, never access, so a failed probe must not accuse a legitimate admin.
+  const [dbAdmin, setDbAdmin] = useState('unknown');
 
   useEffect(() => {
     if (!isAdmin || !isAuthenticated) return undefined;
     let active = true;
     supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
-      if (active) setAssurance(data || null);
+      if (!active) return;
+      setAssurance(data || null);
+      if (data?.currentLevel !== 'aal2') return;
+      supabase.rpc('is_admin').then(({ data: ok, error }) => {
+        if (active) setDbAdmin(error ? 'unknown' : (ok === true ? 'admin' : 'missing'));
+      });
     });
     return () => { active = false; };
   }, [isAdmin, isAuthenticated, session?.access_token]);
 
-  if (!isAdmin || !isAuthenticated || !assurance || assurance.currentLevel === 'aal2') return null;
+  if (!isAdmin || !isAuthenticated || !assurance) return null;
+
+  if (assurance.currentLevel === 'aal2') {
+    if (dbAdmin !== 'missing') return null;
+    return (
+      <MobileStatePanel
+        icon={ShieldAlert}
+        tone="error"
+        className="mb-4"
+        eyebrow="Akun belum terdaftar sebagai admin"
+        title="Data admin tidak akan tampil"
+        description={`Akun ini lolos gerbang aplikasi tapi tidak ada di tabel storefront_admins, jadi order, bukti transfer, dan customer terlihat kosong. Tambahkan user_id ${session?.user?.id || ''} ke tabel itu lewat SQL editor Supabase.`}
+      />
+    );
+  }
 
   const needsEnrollment = assurance.nextLevel !== 'aal2';
   const prefix = mobile ? '/mobile' : '';
