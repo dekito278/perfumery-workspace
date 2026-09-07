@@ -29,6 +29,7 @@ import {
 } from '@/utils/seo.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
+import { describeWear } from '@/utils/productWear.js';
 
 
 
@@ -223,6 +224,17 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               <span>{product.concentration}</span>
               <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
             </div>
+
+            {/* The catalogue filter promises this bottle suits a moment; the product page has to
+                say the same thing, or a customer arriving from search never sees the claim. */}
+            {describeWear(product.wear).length ? (
+              <div className="pdp-materials" data-reveal>
+                <p className="editorial-eyebrow">COCOK DIPAKAI</p>
+                <div className="pdp-meta">
+                  {describeWear(product.wear).map((label) => <span key={label}>{label}</span>)}
+                </div>
+              </div>
+            ) : null}
 
             {product.materialHighlights?.length ? (
               <div className="pdp-materials" data-reveal>

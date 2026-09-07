@@ -16,6 +16,8 @@ import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { buildBreadcrumbJsonLd, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
+import { matchesWear } from '@/utils/productWear.js';
+import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
   const fetchedProducts = useCatalogProducts();
@@ -26,6 +28,7 @@ const CatalogPage = () => {
   // family is a real catalog category, so an unknown ?family= never yields an empty list.
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [wearSelection, setWearSelection] = useState({ occasions: '', times: '', weather: '' });
   const [visibleCount, setVisibleCount] = useState(12);
   const revealRef = useScrollReveal();
   const { magnetic, tilt, resetTilt } = useMicroInteractions();
@@ -69,6 +72,9 @@ const CatalogPage = () => {
       const cat = product.publicCategory || product.category || '';
       const matchesCategory = activeCategory === 'All' || cat === activeCategory;
       if (!matchesCategory) return false;
+      // matchesWear ignores facets the customer left unset, and refuses products with no tags
+      // at all once a facet is set. An untagged bottle stays out rather than being guessed at.
+      if (!matchesWear(product.wear, wearSelection)) return false;
       if (!query) return true;
       const searchable = [
         product.name, product.subtitle, product.description,
@@ -77,11 +83,11 @@ const CatalogPage = () => {
       ].join(' ').toLowerCase();
       return searchable.includes(query);
     });
-  }, [activeCategory, products, searchTerm]);
+  }, [activeCategory, products, searchTerm, wearSelection]);
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
 
-  useEffect(() => { setVisibleCount(12); }, [activeCategory, searchTerm]);
+  useEffect(() => { setVisibleCount(12); }, [activeCategory, searchTerm, wearSelection]);
 
   // Sync family param from homepage mood cards
   useEffect(() => {
@@ -150,6 +156,8 @@ const CatalogPage = () => {
             />
           </div>
 
+          <WearFilter products={products} selection={wearSelection} onChange={setWearSelection} />
+
           {/* Image-first product grid */}
           {isLoading ? (
             <div className="catalog-grid" aria-hidden="true">
@@ -207,7 +215,7 @@ const CatalogPage = () => {
             <div className="catalog-empty">
               <p className="editorial-eyebrow">TIDAK ADA</p>
               <h2>Tidak ada fragrance yang cocok dengan filter ini.</h2>
-              <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
+              <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
                 Reset Katalog
               </button>
             </div>

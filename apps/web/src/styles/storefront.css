@@ -10120,3 +10120,55 @@
   text-transform: uppercase;
   color: var(--editorial-brass, #b08b4f);
 }
+
+/* --- Wardrobe filter: "which bottle, when" ------------------------------- */
+/* Sits under the category toolbar and only renders when products carry the tags.
+   Reuses .catalog-pill so it reads as part of the same toolbar, not a second system. */
+.wear-filter {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 32px;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--editorial-border);
+}
+
+.wear-filter__lede {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editorial-muted);
+}
+
+.wear-filter__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.wear-filter__label {
+  min-width: 64px;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--editorial-charcoal);
+}
+
+.wear-filter .catalog-pill {
+  min-height: 40px;
+  padding: 6px 18px;
+}
+
+@media (max-width: 640px) {
+  /* Stacked, so a long row of moments never squeezes the pills to unreadable width. */
+  .wear-filter__row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}

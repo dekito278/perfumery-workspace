@@ -34,4 +34,13 @@ assert.equal(matchesWear({}, { times: ['pagi'] }), false, 'an untagged product s
 assert.deepEqual(describeWear(bottle), ['Kerja', 'Pagi']);
 assert.deepEqual(WEAR_KEYS, ['occasions', 'times', 'weather']);
 
+
+// A single string is a real selection, not an absent one. This is the shape the catalog page sends,
+// and treating it as "unset" turned every filter into a silent no-op.
+assert.equal(matchesWear({ occasions: ['kerja'] }, { occasions: 'kerja' }), true);
+assert.equal(matchesWear({ occasions: ['santai'] }, { occasions: 'kerja' }), false);
+assert.equal(matchesWear({}, { occasions: 'kerja' }), false);
+assert.equal(matchesWear({ occasions: ['kerja'] }, { occasions: '' }), true);
+assert.equal(matchesWear({ occasions: ['kerja'] }, { occasions: '  Kerja ' }), true);
+
 console.log('productWear selfcheck OK');
