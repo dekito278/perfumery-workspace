@@ -251,17 +251,24 @@ di bawah.
 
 ### Ditunda, dengan alasan
 
-**P-1b — pindahkan tag internal keluar dari `tags`. DITUNDA.**
-Bentuk yang ditulis di temuan tidak bisa dijalankan: admin dan pelanggan yang login Google sama-sama
-memakai role `authenticated`, jadi tidak ada GRANT kolom, view, atau policy yang bisa membuat satu kolom
-"admin-only" pada baris yang publik. Satu-satunya bentuk yang benar adalah membalik arahnya — policy
-SELECT tabel jadi `is_admin()` saja, lalu view publik terpisah yang menyaring baris draft dan membuang
-tag internal — dan itu mengubah jalur baca utama storefront. Pemeriksaan adversarial menemukan enam
-konsumen tag yang tidak masuk rencana, termasuk `data/publicStorefront.js` (jalur publik),
-`ProductInventoryPage`, dan gate visibilitas seksi "Sumber batch" di form produk. Perlu dikerjakan
-sendiri, dengan verifikasi di browser, bukan disisipkan di akhir gelombang.
-Sementara ini yang bocor pada produk **terbit**: `COGS per bottle:`, `Batch ID:`, `SKU:`,
-`Initial stock:`, `Restock threshold:`, dan sampai 20 blob riwayat koreksi stok.
+**P-1b — tag internal produk. SIAP (2026-09-07), urutan WAJIB ini:**
+Bentuk yang benar (lihat alasan di riwayat git): tabel jadi admin-only, publik membaca view
+`storefront_products_public` yang membuang baris draft dan tag internal. Klien: `getCatalogProductsAsync`
+dan `validateOrderStock` (jalur pembeli) membaca view; halaman admin (`editableOnly`) tetap ke tabel; baris
+view tidak pernah masuk cache admin. Selfcheck `publicProductsView.selfcheck.mjs` menjaga daftar prefix
+SQL = JS.
+
+1. Jalankan `supabase/migrations/20260907053000_storefront_products_public_view.sql` (additive, aman kapan pun).
+   Verifikasi: `curl ".../rest/v1/storefront_products_public?select=slug,tags" -H "apikey: <anon>"` → ada baris,
+   dan grep `cogs per bottle|batch id|sku:|stock correction|studio draft` (case-insensitive) → kosong.
+2. Merge PR klien (branch `claude/p1b-public-products-view`), tunggu build, buka storefront → katalog tampil.
+   **Jangan dibalik**: klien yang membaca view sebelum view ada = katalog kosong untuk pengunjung baru.
+3. Jalankan `supabase/migrations/20260907053100_storefront_products_select_admin_only.sql`.
+   Verifikasi: tabel via anon → `[]`; view via anon → baris; storefront tetap tampil; studio Produk tetap tampil
+   (aal2). Rollback ada di file itu.
+
+**Bonus (bisa kapan pun): `20260907050000_payment_session_lookup_returns_items.sql`** — halaman bayar pembeli
+menampilkan rincian produk + ongkir sungguhan, bukan hanya total. Klien sudah siap sejak PR #25.
 
 **V-1 / V-2 — voucher. DITUNDA, ada jebakan.**
 V-2 (catat pemakaian voucher di `api/orders/create.js`) terdengar sepele tapi memindahkan reservasi kuota

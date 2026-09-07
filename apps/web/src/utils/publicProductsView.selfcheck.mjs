@@ -1,0 +1,23 @@
+// `node src/utils/publicProductsView.selfcheck.mjs` — the view strips internal tags by a prefix list that
+// lives in SQL; the studio writes tags by a prefix list that lives in JS. If they drift, a new internal
+// prefix leaks to the public. Compare the two by reading both sources.
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const js = readFileSync(join(here, '..', 'services', 'productCatalogService.js'), 'utf8');
+const sql = readFileSync(join(here, '..', '..', '..', '..', 'supabase', 'migrations', '20260907053000_storefront_products_public_view.sql'), 'utf8');
+
+// JS: every PRODUCT_*_TAG_PREFIX constant that is listed inside PRODUCT_INTERNAL_TAG_PREFIXES.
+const constants = Object.fromEntries([...js.matchAll(/export const (PRODUCT_[A-Z_]+_TAG_PREFIX) = '([^']+)';/g)].map((m) => [m[1], m[2]]));
+const listed = [...js.match(/const PRODUCT_INTERNAL_TAG_PREFIXES = \[([\s\S]*?)\];/)[1].matchAll(/(PRODUCT_[A-Z_]+_TAG_PREFIX)/g)].map((m) => constants[m[1]]);
+const jsPrefixes = new Set(listed.map((p) => p.toLowerCase()));
+
+// SQL: the literals inside `like any (array[ ... ])`.
+const sqlPrefixes = new Set([...sql.match(/like any \(array\[([\s\S]*?)\]\)/)[1].matchAll(/'([^']+)%'/g)].map((m) => m[1]));
+
+assert.ok(jsPrefixes.size >= 10, 'JS prefix list looks truncated');
+assert.deepEqual([...sqlPrefixes].sort(), [...jsPrefixes].sort(), 'SQL view prefix list and PRODUCT_INTERNAL_TAG_PREFIXES differ');
+console.log(`publicProductsView selfcheck OK (${jsPrefixes.size} prefixes)`);
