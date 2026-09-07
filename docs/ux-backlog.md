@@ -61,7 +61,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
 
 ## Gelombang 3 — tampilan (menyiapkan foto asli)
 
-- [ ] **U-11 · Kartu mood beranda terlihat kosong**: kotak pastel polos berisi satu kata.
+- [x] (PR #53) **U-11 · Kartu mood beranda terlihat kosong**: kotak pastel polos berisi satu kata.
       Beri isi yang tidak bergantung foto (tekstur/gradasi + nama nota khas).
 
 - [ ] **U-12 · Beranda serba terang tanpa jangkar gelap.** Satu-satunya blok gelap justru bagian
