@@ -72,11 +72,11 @@ const AppShell = ({ children }) => {
       icon: Beaker,
       items: [
         { path: '/studio', label: 'Dasbor', icon: Home, aliases: ['/dashboard'] },
-        { path: '/studio/journal', label: 'Journal', icon: BookOpenText },
+        { path: '/studio/journal', label: 'Jurnal', icon: BookOpenText },
         { path: '/raw-materials', label: 'Material', icon: LibraryBig },
-        { path: '/formulas', label: 'Formulas', icon: Beaker },
-        { path: '/batches', label: 'Batches', icon: PackageCheck },
-        { path: '/validation', label: 'Validation', icon: NotebookPen },
+        { path: '/formulas', label: 'Formula', icon: Beaker },
+        { path: '/batches', label: 'Batch', icon: PackageCheck },
+        { path: '/validation', label: 'Validasi', icon: NotebookPen },
         { path: '/production-costing', label: 'Biaya Produksi', icon: Calculator },
         { path: '/authenticator', label: 'Authenticator', icon: KeyRound },
       ],
@@ -88,13 +88,13 @@ const AppShell = ({ children }) => {
       items: [
         { path: '/studio/products', label: 'Produk', icon: PackagePlus },
         { path: '/studio/product-categories', label: 'Kategori', icon: Tags },
-        { path: '/studio/vouchers', label: 'Vouchers', icon: BadgePercent },
+        { path: '/studio/vouchers', label: 'Voucher', icon: BadgePercent },
         { path: '/studio/shipping', label: 'Ongkir', icon: Truck },
-        { path: '/studio/orders', label: 'Orders', icon: PackageCheck },
+        { path: '/studio/orders', label: 'Order', icon: PackageCheck },
         { path: '/studio/customers', label: 'Customer', icon: UsersRound },
-        { path: '/studio/shipments', label: 'Fulfillment', icon: Truck },
-        { path: '/studio/site-images', label: 'Site Images', icon: ImagePlus },
-        { path: '/studio/stories', label: 'Story Editor', icon: Sparkles },
+        { path: '/studio/shipments', label: 'Pengiriman', icon: Truck },
+        { path: '/studio/site-images', label: 'Gambar Situs', icon: ImagePlus },
+        { path: '/studio/stories', label: 'Editor Cerita', icon: Sparkles },
         { path: '/home', label: 'Toko', icon: ShoppingBag, aliases: ['/catalog', '/products', '/cart', '/payment', '/customer'] },
       ],
     },
@@ -199,7 +199,7 @@ const AppShell = ({ children }) => {
               {!desktopSidebarCollapsed && (
                 <span>
                   <span className="app-brand-title">Solivagant</span>
-                  <span className="app-brand-subtitle">Formulation workspace</span>
+                  <span className="app-brand-subtitle">Ruang kerja formulasi</span>
                 </span>
               )}
               </Link>
@@ -222,7 +222,7 @@ const AppShell = ({ children }) => {
             <div className={`mt-auto rounded-3xl border border-white/70 bg-white/85 p-4 shadow-sm ${desktopSidebarCollapsed ? 'px-2 py-3' : ''}`}>
               {!desktopSidebarCollapsed && (
                 <>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Session</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Sesi</p>
                   <p className="mt-2 text-sm font-semibold text-foreground">{displayName} is building formulas</p>
                 </>
               )}
@@ -257,7 +257,7 @@ const AppShell = ({ children }) => {
                       </span>
                       <span>
                         <span className="app-brand-title">Solivagant</span>
-                        <span className="app-brand-subtitle">Formulation workspace</span>
+                        <span className="app-brand-subtitle">Ruang kerja formulasi</span>
                       </span>
                     </Link>
                     <div className="mt-6">
