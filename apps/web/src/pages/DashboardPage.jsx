@@ -544,7 +544,7 @@ const DashboardPage = () => {
           </div>
         </DashboardSection>
 
-        <DashboardSection title="Workspace areas" subtitle="Dashboard dibagi dua area besar: Studio untuk proses perfumery, E-commerce untuk toko dan order.">
+        <DashboardSection title="Area kerja" subtitle="Dashboard dibagi dua area besar: Studio untuk proses perfumery, E-commerce untuk toko dan order.">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <section className="rounded-2xl border border-white/70 bg-white/86 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -588,7 +588,7 @@ const DashboardPage = () => {
               <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                 <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Catalog</span><strong>{catalogProducts.length}</strong></div>
                 <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Custom</span><strong>{customProducts.length}</strong></div>
-                <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Orders</span><strong>{orderSummary.total}</strong></div>
+                <div className="rounded-2xl bg-[#fbfaf7] p-3"><span className="block text-xs font-bold uppercase text-muted-foreground">Order</span><strong>{orderSummary.total}</strong></div>
               </div>
             </section>
 
