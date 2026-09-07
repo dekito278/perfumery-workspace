@@ -10108,3 +10108,15 @@
   opacity: 0.22;
   pointer-events: none;
 }
+
+/* "Tersisa 2 botol" — only appears on a genuinely short shelf (utils/stockScarcity.js). Brass, quiet,
+   sitting under the price where a buyer weighing the decision will meet it. */
+.pdp-scarcity {
+  margin-top: 6px;
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editorial-brass, #b08b4f);
+}
