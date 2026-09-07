@@ -103,11 +103,20 @@ export const upsertStory = async (productSlug, data) => {
 };
 
 export const deleteStory = async (productSlug) => {
-  const { error } = await supabase
+  // product_stories is is_admin() gated, and is_admin() needs an aal2 JWT. An admin session that never
+  // verified its authenticator is still `authenticated`, so the delete is filtered rather than rejected:
+  // 200, zero rows, error === null. Without .select() this returned normally and the story stayed live on
+  // the product page — while the media cleanup below still ran, leaving a surviving row pointing at files
+  // that no longer exist. Failing here is what keeps that from being a half-delete.
+  const { data: deleted, error } = await supabase
     .from(TABLE)
     .delete()
-    .eq('product_slug', productSlug);
+    .eq('product_slug', productSlug)
+    .select('product_slug');
   if (error) throw new Error(error.message);
+  if (!deleted?.length) {
+    throw new Error('Story tidak terhapus di server dan masih tampil di halaman produk. Sesi admin mungkin belum terverifikasi authenticator — muat ulang, verifikasi, lalu coba lagi.');
+  }
 
   // The row is gone, so its whole media folder is now orphaned — clear it (best-effort).
   try {
