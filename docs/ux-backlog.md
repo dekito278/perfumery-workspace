@@ -37,7 +37,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
       "DOKU Checkout" tampil seperti kartu informasi statis: tanpa radio, tanpa keadaan terpilih
       yang jelas. Beri penanda pilihan yang tegas.
 
-- [ ] **U-7 · Tiga indikator progres bersaing di checkout**: "LANGKAH 3/6", "2/6 BERES", dan
+- [x] (PR #50) **U-7 · Tiga indikator progres bersaing di checkout**: "LANGKAH 3/6", "2/6 BERES", dan
       "Lengkapi: Area, Kurir — 2 KURANG" tampil bersamaan dengan arti yang tumpang tindih.
       Sisakan satu yang jujur.
 
