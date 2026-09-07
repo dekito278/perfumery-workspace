@@ -17,7 +17,10 @@ import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTERAJA', jne: 'JNE' };
 
-const CheckoutProgress = ({ steps }) => {
+// One progress panel, not two. This used to sit above a second strip that repeated the same idea in
+// different numbers: "Langkah 3/6", "2/6 beres", "Lengkapi: Area, Kurir" and "2 kurang" all at once.
+// What a buyer needs is where they are and what is still missing (UX backlog U-7).
+const CheckoutProgress = ({ steps, missing = [], ready = false }) => {
   const firstIncompleteIndex = steps.findIndex((step) => !step.complete);
   const currentIndex = firstIncompleteIndex === -1 ? steps.length - 1 : Math.max(firstIncompleteIndex, 0);
   const currentStep = steps[currentIndex] || steps[steps.length - 1];
@@ -30,9 +33,14 @@ const CheckoutProgress = ({ steps }) => {
           <div className="text-[10px] font-bold uppercase text-amber-700">Langkah {Math.min(currentIndex + 1, steps.length)}/{steps.length}</div>
           <div className="mt-0.5 text-sm font-bold leading-snug text-[#1f2937]">{currentStep.label}</div>
         </div>
-        <span className="mobile-commerce-chip shrink-0 px-3 py-1 text-[10px] uppercase">{completedCount}/{steps.length} beres</span>
+        {ready ? <span className="mobile-commerce-chip shrink-0 px-3 py-1 text-[10px] uppercase">Siap</span> : null}
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-editorial-ivory"><div className="h-full rounded-full bg-[#b08b4f]" style={{ width: `${progressPercent}%` }} /></div>
+      {ready ? null : (
+        <p className="mt-2 text-[11px] font-bold leading-snug text-[#6b7280]">
+          Masih perlu: {missing.map((item) => item.label).join(', ')}
+        </p>
+      )}
     </section>
   );
 };
@@ -177,17 +185,7 @@ const MobileCheckoutPage = () => {
             </div>
           ) : null}
         </section>
-        <CheckoutProgress steps={checkoutSteps} />
-        <section className="mobile-commerce-panel px-3 py-2">
-          <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 text-[11px] font-bold leading-snug text-[#6b7280]">
-              {canSubmitCheckout ? 'Semua data siap.' : `Lengkapi: ${missingRequirements.map((item) => item.label).join(', ')}`}
-            </p>
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${canSubmitCheckout ? 'bg-editorial-ivory text-editorial-charcoal' : 'bg-amber-50 text-amber-800'}`}>
-              {canSubmitCheckout ? 'Siap' : `${missingRequirements.length} kurang`}
-            </span>
-          </div>
-        </section>
+        <CheckoutProgress steps={checkoutSteps} missing={missingRequirements} ready={canSubmitCheckout} />
         <CheckoutSection
           step="1"
           title="Kontak"
