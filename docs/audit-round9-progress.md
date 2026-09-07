@@ -463,3 +463,13 @@ buang fallback localStorage dari semua jalur tulis (biarkan hanya di jalur baca 
 - Insiden malam 2026-09-07 (order DKT-MTQ270FV): admin tanpa faktor TOTP terkunci diam-diam oleh `is_admin()` aal2
   → `AdminSessionNotice`; upload bukti transfer ditolak sejak 19 Agustus karena path lowercase vs RPC uppercase → fix;
   ongkir palsu di halaman bayar → fix; brief bespoke dirender terbaca (`BriefText`); reset password minta TOTP dulu.
+
+## Update 2026-09-07 (batch item kecil)
+- Ditutup: A-3 (reset tanpa sesi recovery → pesan jelas), A-4 (`signup()` mati dihapus), A-5 (copy manual key pakai
+  util clipboard), R-2 (`/articles` → redirect `/journal`), P-4 (fallback deduksi stok klien dihapus; RPC gagal = error),
+  S-3 (preview promo pakai `getDateTime`), D-2 (SUCCESS tanpa `amount` tidak lagi lolos; selfcheck ditambah).
+- Ditinggalkan dengan alasan: A-2 (gate klien fail-open — gate server aal2 sudah fail-closed dan `AdminSessionNotice`
+  menampakkannya; memaksa fail-closed di klien hanya menambah kunci-diri saat jaringan goyah), D-3 (cek kesegaran
+  timestamp webhook — dampak sudah diredam guard transisi; menambah toleransi jam tanpa bisa diuji terhadap DOKU live
+  berisiko menolak notifikasi sah), P-5 (struktur `tags` — perlu migrasi data), I-2 (CSP `unsafe-inline` — butuh
+  nonce untuk skrip inline di index.html).

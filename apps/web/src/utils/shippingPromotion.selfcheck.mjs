@@ -47,4 +47,12 @@ assert.equal(toSolo.cost, 0, 'Solo is Java and ships free');
 const [untouched] = applyShippingPromotionToRates([rate], { provinceName: 'DKI Jakarta' }, { ...promo, minimumSubtotal: 1000000 }, { subtotal: 500000 });
 assert.equal(untouched.cost, 45000);
 
+// S-3: a date-only 'endsAt' is a local day; formatting it as a UTC instant showed the previous day in WIB.
+{
+  const { getShippingPromotionPreview } = await import('./shippingPromotion.js');
+  const preview = getShippingPromotionPreview({ enabled: true, type: 'free', endsAt: '2026-09-07' });
+  const text = typeof preview === 'string' ? preview : JSON.stringify(preview);
+  assert.match(text, /7 Sep 2026/, `preview should name 7 Sep 2026, got: ${text}`);
+}
+
 console.log('shippingPromotion selfcheck OK');

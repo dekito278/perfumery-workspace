@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { copyTextToClipboard } from '@/utils/clipboard.js';
 
 const steps = [
   { icon: Smartphone, label: 'Open app', text: 'Use Google Authenticator, Microsoft Authenticator, 1Password, or another TOTP app.' },
@@ -117,8 +118,8 @@ const SetupContent = ({ mobile = false }) => {
 
   const copySecret = async () => {
     if (!factor?.totp?.secret) return;
-    await navigator.clipboard.writeText(factor.totp.secret);
-    toast.success('Manual key copied');
+    const copied = await copyTextToClipboard(factor.totp.secret);
+    copied ? toast.success('Manual key copied') : toast.error('Kunci belum bisa disalin. Tekan lama kunci lalu salin manual.');
   };
 
   const handleDisableAuthenticator = async (factorId) => {

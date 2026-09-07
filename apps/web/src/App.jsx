@@ -449,6 +449,7 @@ function AppRoutes() {
         <Route path="/jaipong" element={<Navigate to="/catalog" replace />} />
         <Route path="/porte-vers-le-paradis" element={<Navigate to="/catalog" replace />} />
         <Route path="/trace-daventure" element={<Navigate to="/catalog" replace />} />
+        <Route path="/articles" element={<Navigate to="/journal" replace />} />
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />

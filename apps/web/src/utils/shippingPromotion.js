@@ -260,8 +260,8 @@ export const getShippingPromotionPreview = (settings) => {
     ? ` Berlaku untuk belanja minimal ${formatRupiah(normalizedSettings.minimumSubtotal)}.`
     : '';
   const periodText = [
-    normalizedSettings.startsAt ? `mulai ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(normalizedSettings.startsAt))}` : '',
-    normalizedSettings.endsAt ? `sampai ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(normalizedSettings.endsAt))}` : '',
+    normalizedSettings.startsAt ? `mulai ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(getDateTime(normalizedSettings.startsAt))}` : '',
+    normalizedSettings.endsAt ? `sampai ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(getDateTime(normalizedSettings.endsAt, true))}` : '',
   ].filter(Boolean).join(' ');
 
   const suffix = `${minimumText}${periodText ? ` Periode ${periodText}.` : ''}`;
