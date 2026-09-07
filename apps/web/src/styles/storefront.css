@@ -8755,6 +8755,31 @@
   box-shadow: 0 8px 20px -18px rgba(27, 26, 22, 0.3);
 }
 
+/* The radio mark on a .mobile-commerce-choice. The tint alone was too quiet to read as "chosen". */
+.mobile-choice-radio {
+  margin-top: 2px;
+  display: grid;
+  height: 20px;
+  width: 20px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1.5px solid rgba(27, 26, 22, 0.28);
+  border-radius: 999px;
+  background: #fff;
+  transition:
+    border-color var(--mobile-motion-base) var(--mobile-ease-standard),
+    background-color var(--mobile-motion-base) var(--mobile-ease-standard);
+}
+
+.mobile-choice-radio.is-on {
+  border-color: #1b1a16;
+  border-width: 6px;
+}
+
+.mobile-commerce-choice[aria-checked="true"] {
+  border-color: rgba(27, 26, 22, 0.55);
+}
+
 .mobile-commerce-control {
   min-height: 44px;
   background: #fff;

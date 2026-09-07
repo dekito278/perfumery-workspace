@@ -390,7 +390,29 @@ const MobileCheckoutPage = () => {
             description={shippingComplete ? 'Ongkir sudah masuk total. Pilih metode pembayaran.' : 'Lengkapi ongkir dulu supaya total bayar final.'}
             complete={paymentComplete}
           >
-            {checkoutPaymentMethods.map((method) => <button key={method.id} type="button" onClick={() => choosePaymentMethod(method)} className={`mobile-commerce-choice px-3 py-3 ${selectedPaymentMethod === method.id ? 'is-active' : ''}`}><div className="text-sm font-bold">{method.label}</div><p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{method.description}</p></button>)}
+            {/* A radiogroup, not two info cards: the old buttons carried no radio and only a faint tint
+                when chosen, so nothing said a choice was being asked for (UX backlog U-6). */}
+            <div role="radiogroup" aria-label="Metode pembayaran" className="grid gap-2">
+              {checkoutPaymentMethods.map((method) => {
+                const active = selectedPaymentMethod === method.id;
+                return (
+                  <button
+                    key={method.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => choosePaymentMethod(method)}
+                    className={`mobile-commerce-choice flex items-start gap-3 px-3 py-3 ${active ? 'is-active' : ''}`}
+                  >
+                    <span className={`mobile-choice-radio${active ? ' is-on' : ''}`} aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold">{method.label}</span>
+                      <span className="mt-1 block text-[11px] font-semibold text-[#6b7280]">{method.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" aria-label="Catatan pengiriman" rows={2} autoComplete="off" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </CheckoutSection>
         </div>
