@@ -12,6 +12,7 @@ import { featuredProducts } from '@/data/storefront.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import { LineDivider } from '@/components/line/LineArt.jsx';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
@@ -125,6 +126,8 @@ const HomePage = () => {
           </div>
         </section>
 
+        <LineDivider className="line-divider" draw data-reveal />
+
         {/* ── 3. Horizontal Scroll Carousel — "Current Collection" ── */}
         <section className="home-section home-section--flush" data-reveal>
           <div className="home-carousel__header">
@@ -221,6 +224,8 @@ const HomePage = () => {
             </div>
           </div>
         </section>
+
+        <LineDivider className="line-divider" draw data-reveal />
 
         {/* ── 6. Journal Section ── */}
         {publishedArticles.length ? (

@@ -10047,3 +10047,50 @@
   padding-top: 24px;
   border-top: 1px solid #e5e7eb;
 }
+
+/* --- Hand-drawn line motifs (components/line/LineArt.jsx) ------------------------------------ */
+/* Ornament only. Stroke inherits currentColor so one motif serves both cream and charcoal grounds. */
+.line-motif {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  color: var(--editorial-charcoal, #1b1a16);
+}
+
+.line-divider {
+  width: min(var(--content-max, 1200px), calc(100% - 64px));
+  margin: 0 auto;
+  opacity: 0.5;
+}
+
+@media (max-width: 767px) {
+  .line-divider {
+    width: calc(100% - 32px);
+  }
+}
+
+/* The stroke draws itself in when the section arrives. pathLength is not set, so the dash values are
+   deliberately larger than any path here; the excess simply finishes early. */
+.line-motif--draw path {
+  stroke-dasharray: 4000;
+  stroke-dashoffset: 4000;
+}
+
+.line-motif--draw.is-visible path,
+.is-visible .line-motif--draw path {
+  animation: line-motif-draw 2.4s cubic-bezier(0.22, 1, 0.3, 1) forwards;
+}
+
+@keyframes line-motif-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-motif--draw path,
+  .line-motif--draw.is-visible path,
+  .is-visible .line-motif--draw path {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}
