@@ -38,7 +38,7 @@ const formatScore = (value) => Number.isFinite(Number(value)) ? Math.round(Numbe
 
 const MetricTile = ({ label, value, helper }) => (
   <div className="rounded-xl bg-[#f8f7f4] p-3">
-    <div className="text-[10px] font-bold uppercase text-[#9ca3af]">{label}</div>
+    <div className="text-[10px] font-bold uppercase text-[#6b7280]">{label}</div>
     <div className="mt-1 text-sm font-bold text-[#1f2937]">{value}</div>
     {helper ? <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{helper}</div> : null}
   </div>
@@ -209,7 +209,7 @@ const MobileFormulaDetailPage = () => {
               ['Type', 'Standalone formula'],
               ['Last updated', formatDate(formula.updated || formula.created)],
               ['Notes', formula.notes || '-'],
-            ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#9ca3af]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
+            ].map(([label, value]) => <div key={label} className="mobile-card p-4"><div className="text-xs font-bold uppercase text-[#6b7280]">{label}</div><div className="mt-1 text-sm font-semibold text-[#1f2937]">{value}</div></div>)}
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" className="mobile-interactive mobile-pressable h-11 rounded-2xl bg-white text-xs font-bold" onClick={handleExportPdf}><Download className="mr-1 h-4 w-4" />Formula PDF</Button>
               <Button className="mobile-interactive mobile-pressable h-11 rounded-2xl text-xs font-bold" onClick={markReadyForBatch} disabled={updatingStatus}><Calculator className="mr-1 h-4 w-4" />Ready Batch</Button>
@@ -218,7 +218,7 @@ const MobileFormulaDetailPage = () => {
             <section className="mobile-card p-4">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-sm font-bold text-[#1f2937]">Journal links</h2>
-                <span className="text-[11px] font-bold text-[#9ca3af]">{linkedJournalPosts.length}</span>
+                <span className="text-[11px] font-bold text-[#6b7280]">{linkedJournalPosts.length}</span>
               </div>
               {linkedJournalPosts.length ? (
                 <div className="mt-3 space-y-2">
@@ -249,7 +249,7 @@ const MobileFormulaDetailPage = () => {
                 <div className="mt-1 text-xs font-semibold text-[#6b7280]">{compositionRows.length} material rows in full composition</div>
               </div>
               <div className="mobile-card overflow-hidden">
-                <div className="grid grid-cols-[1.6fr_62px_62px] gap-2 border-b border-[#ece8df] bg-[#faf9f6] px-3 py-2 text-[10px] font-bold uppercase text-[#9ca3af]">
+                <div className="grid grid-cols-[1.6fr_62px_62px] gap-2 border-b border-[#ece8df] bg-[#faf9f6] px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280]">
                   <span>Material</span>
                   <span className="text-right">Gram</span>
                   <span className="text-right">%</span>

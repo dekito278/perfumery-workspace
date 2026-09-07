@@ -167,7 +167,7 @@ const MobileRawMaterialDetailPage = () => {
             <div className="mt-2 grid gap-2">
               {rows.map(([label, value]) => (
                 <div key={label} className="rounded-xl bg-[#f8f7f4] p-2">
-                  <div className="text-[10px] font-bold uppercase text-[#9ca3af]">{label}</div>
+                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">{label}</div>
                   <div className="mt-0.5 text-xs font-semibold text-[#1f2937]">{value}</div>
                 </div>
               ))}

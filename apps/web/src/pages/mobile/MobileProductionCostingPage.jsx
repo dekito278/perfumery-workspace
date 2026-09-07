@@ -72,7 +72,7 @@ const CostLine = ({ label, quantity, total, unit }) => (
     </div>
     <div className="shrink-0 text-right">
       <div className="text-xs font-bold text-[#1f2937]">{formatPrice(total)}</div>
-      {unit ? <div className="mt-0.5 text-[10px] font-semibold text-[#9ca3af]">{unit}</div> : null}
+      {unit ? <div className="mt-0.5 text-[10px] font-semibold text-[#6b7280]">{unit}</div> : null}
     </div>
   </div>
 );
@@ -104,7 +104,7 @@ const FieldInput = ({ label, onChange, suffix, value }) => (
         type="text"
         className="h-10 min-w-0 rounded-xl bg-white pr-10 text-xs font-bold"
       />
-      {suffix ? <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#9ca3af]">{suffix}</span> : null}
+      {suffix ? <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#6b7280]">{suffix}</span> : null}
     </div>
   </div>
 );

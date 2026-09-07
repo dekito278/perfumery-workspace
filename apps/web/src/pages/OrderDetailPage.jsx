@@ -1088,7 +1088,7 @@ const OrderDetailPage = () => {
                     <span className="text-right font-bold text-amber-700">
                       {hasDiscount ? (
                         <>
-                          <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                          <span className="block text-[11px] text-[#6b7280] line-through">{formatTotal(line.originalTotal)}</span>
                           <span className="block">{formatTotal(line.discountedTotal)}</span>
                         </>
                       ) : item.price || formatTotal(line.originalTotal)}

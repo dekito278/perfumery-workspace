@@ -129,7 +129,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
               <span className="hidden text-right text-[#1f2937] sm:block">
                 {hasDiscount ? (
                   <>
-                    <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(item.priceNumber)}</span>
+                    <span className="block text-[11px] text-[#6b7280] line-through">{formatTotal(item.priceNumber)}</span>
                     <span className="block">{formatTotal(line.discountedUnitPrice)}</span>
                   </>
                 ) : item.price || formatTotal(item.priceNumber)}
@@ -137,7 +137,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
               <span className="text-right font-bold text-amber-700">
                 {hasDiscount ? (
                   <>
-                    <span className="block text-[11px] text-[#9ca3af] line-through">{formatTotal(line.originalTotal)}</span>
+                    <span className="block text-[11px] text-[#6b7280] line-through">{formatTotal(line.originalTotal)}</span>
                     <span className="block">{formatTotal(line.discountedTotal)}</span>
                   </>
                 ) : formatTotal(line.originalTotal)}

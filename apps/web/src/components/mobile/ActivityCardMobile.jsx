@@ -9,7 +9,7 @@ const ActivityCardMobile = ({ title, meta, date, onClick }) => (
       <span className="block truncate text-sm font-bold text-[#1f2937]">{title}</span>
       <span className="mt-1 block truncate text-xs text-[#6b7280]">{meta} · {formatDate(date)}</span>
     </span>
-    <ChevronRight className="h-4 w-4 shrink-0 text-[#9ca3af]" />
+    <ChevronRight className="h-4 w-4 shrink-0 text-[#6b7280]" />
   </button>
 );
 
