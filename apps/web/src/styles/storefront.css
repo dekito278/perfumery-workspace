@@ -10094,3 +10094,15 @@
     animation: none;
   }
 }
+
+/* A single drawn coil inside the mood swatch. Sits above the wash, under the family name, and stays
+   quiet — this is texture, not a symbol anyone has to read. */
+.m-editorial-mood-card__mark {
+  position: absolute;
+  top: 14%;
+  right: 10%;
+  width: 46%;
+  color: var(--editorial-charcoal, #1b1a16);
+  opacity: 0.22;
+  pointer-events: none;
+}

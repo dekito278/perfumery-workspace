@@ -5,6 +5,7 @@ import {
   getProductImageSrcSet,
 } from '@/services/productImageStorageService.js';
 import { logMobileRenderIssue } from '@/utils/mobileRenderMonitoring.js';
+import { LineVessel } from '@/components/line/LineArt.jsx';
 
 const fallbackGradients = [
   'linear-gradient(135deg,#f5d78f 0%,#f8efe1 52%,#d7b98b 100%)',
@@ -52,16 +53,15 @@ const ProductVisual = ({
       style={{ background: getFallbackGradient(product) }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_14%,rgba(255,255,255,0.34),transparent_34%),linear-gradient(180deg,rgba(5,7,5,0.02),rgba(5,7,5,0.36))]" />
-      <div className="absolute inset-0 flex items-center justify-center p-8">
-        <img
-          src="/brand/solivagant-logo.png"
-          alt=""
-          aria-hidden="true"
-          className={cn('max-h-28 w-full max-w-[72%] object-contain transition-opacity duration-150', hasImage && imageLoaded ? 'opacity-0' : 'opacity-95')}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-          width="320"
-          height="128"
+      {/* Placeholder while a photo loads, and the whole picture for a product that has none yet. The
+          drawn vessel says "bottle" where the wordmark only said "brand" — and the wordmark already
+          sits in the header on every one of these pages. */}
+      <div className="absolute inset-0 flex items-center justify-center p-6">
+        <LineVessel
+          className={cn(
+            'h-full w-auto max-w-[62%] text-[#1b1a16] transition-opacity duration-200',
+            hasImage && imageLoaded ? 'opacity-0' : 'opacity-30',
+          )}
         />
       </div>
       {hasImage && !imageLoaded ? (

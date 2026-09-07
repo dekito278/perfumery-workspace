@@ -96,6 +96,11 @@ const motifs = {
       ...stroke([[96, 232], [140, 258], [196, 252], [238, 220]], { passes: 1, amp: 2.4, width: 1.2, seed: 11 }).map((s) => ({ ...s, opacity: 0.55 })),
     ],
   },
+  // A single coil, square, for use inside a small tile.
+  mark: {
+    viewBox: '0 0 120 120',
+    strokes: stroke(coil(60, 60, 34, { turns: 2.8, n: 120, squash: 0.78 }), { passes: 1, amp: 2.2, width: 1.6, seed: 41 }),
+  },
   scribble: {
     viewBox: '0 0 900 150',
     strokes: [
