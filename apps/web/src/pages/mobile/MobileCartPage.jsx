@@ -170,13 +170,13 @@ const MobileCartPage = () => {
                     </p>
                   ) : null}
                 </div>
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-[10px]" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-muted)' }} onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
+                <Button type="button" size="icon" variant="outline" aria-label="Hapus dari keranjang" className="h-10 w-10 shrink-0 rounded-[10px]" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-muted)' }} onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
               </div>
               <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-paper)', padding: 4 }}>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Kurangi jumlah" className="h-8 w-8 rounded-lg" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span style={{ display: 'grid', height: 32, minWidth: 40, placeItems: 'center', fontSize: '0.875rem', fontWeight: 600 }}>{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Tambah jumlah" className="h-8 w-8 rounded-lg" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {hasLineDiscount ? (

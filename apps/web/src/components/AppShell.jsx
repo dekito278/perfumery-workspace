@@ -245,7 +245,7 @@ const AppShell = ({ children }) => {
             <div className="flex items-center gap-3">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="lg:hidden">
-                  <Button variant="outline" size="icon" className="rounded-xl border-white/60 bg-white/70">
+                  <Button variant="outline" size="icon" className="rounded-xl border-white/60 bg-white/70" aria-label="Buka menu">
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>

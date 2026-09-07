@@ -134,7 +134,7 @@ const MobileValidationPage = () => {
           title="Validasi"
           subtitle="Tes dan catatan revisi"
           action={(
-            <Button type="button" size="icon" onClick={openNewLog} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl">
+            <Button type="button" size="icon" aria-label="Tambah log validasi" onClick={openNewLog} className="mobile-interactive mobile-add-action mobile-pressable h-11 w-11 rounded-2xl">
               <Plus className="h-5 w-5" />
             </Button>
           )}

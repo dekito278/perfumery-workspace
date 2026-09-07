@@ -35,7 +35,7 @@ const RawMaterialsToolbar = ({
         />
       </div>
       <div className="flex items-end">
-        <Button onClick={onRefresh} variant="outline" size="icon" disabled={loading} className="h-11 w-11 rounded-xl">
+        <Button onClick={onRefresh} variant="outline" size="icon" aria-label="Muat ulang" disabled={loading} className="h-11 w-11 rounded-xl">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>

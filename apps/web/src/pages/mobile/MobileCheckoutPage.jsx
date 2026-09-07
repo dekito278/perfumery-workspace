@@ -428,9 +428,9 @@ const MobileCheckoutPage = () => {
                   </div>
                 </div>
                 <div className="mt-3 inline-flex items-center rounded-[14px] border border-editorial-stone/10 bg-white p-1">
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Kurangi jumlah" className="h-8 w-8 rounded-xl" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label="Tambah jumlah" className="h-8 w-8 rounded-xl" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
               </div>
               );
