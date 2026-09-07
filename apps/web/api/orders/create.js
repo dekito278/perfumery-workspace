@@ -326,6 +326,25 @@ export default async function handler(req, res) {
     }
     const [order] = await insertRes.json();
 
+    // Reserve voucher quota here, server-side, before stock. The page flows used to do this from the
+    // browser after create returned, so a closed tab between the two left a discounted order that never
+    // consumed quota (audit round 9, V-2). The RPC is idempotent per order. Release paths are already
+    // server-side: api/doku/notification (terminal cancel) and api/orders/expire-reservations (sweep).
+    if (voucherSnapshot) {
+      try {
+        await sbRpc('storefront_record_voucher_usage', {
+          p_voucher_code: voucherSnapshot.code, p_order_id: order.id, p_order_number: order.order_number, p_amount: 1,
+        });
+      } catch (voucherError) {
+        await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(order.order_number)}`, {
+          method: 'PATCH',
+          headers: { ...headers, Prefer: 'return=minimal' },
+          body: JSON.stringify({ status: 'cancelled', payment_status: 'expired' }),
+        }).catch(() => {});
+        return jsonResponse(res, 409, { message: `Voucher ${voucherSnapshot.code} sudah tidak tersedia (kemungkinan kuota habis). Checkout ulang tanpa voucher tersebut.` });
+      }
+    }
+
     // Reserve stock for catalog lines (bespoke has none). The RPC is atomic + idempotent and raises on
     // insufficient stock — if it does, cancel the just-created order so no orphan holds a payment window,
     // then surface the error (the client falls back / shows "stok tidak cukup").
@@ -338,14 +357,13 @@ export default async function handler(req, res) {
           headers: { ...headers, Prefer: 'return=minimal' },
           body: JSON.stringify({ status: 'cancelled', payment_status: 'expired' }),
         }).catch(() => {});
+        // A cancelled order is never swept, so give the quota back here or it stays burned.
+        if (voucherSnapshot) {
+          await sbRpc('storefront_release_voucher_usage', { p_order_id: order.id, p_order_number: order.order_number }).catch(() => {});
+        }
         throw new Error(stockError.message || 'Stok tidak cukup untuk salah satu produk');
       }
     }
-
-    // NOTE: voucher-usage reservation is intentionally NOT done here — the current page flows call
-    // recordVoucherUsageForOrder() after the order is created, so doing it here too would double count.
-    // If those client calls are ever removed, record usage here (storefront_record_voucher_usage:
-    // p_voucher_code, p_order_id, p_order_number, p_amount:1) instead.
 
     // Tell the owner. Awaited (serverless freezes after the response) but never fatal — sendOrderAlert
     // swallows its own failures, so a dead webhook cannot cost us a paid order.

@@ -4,7 +4,6 @@ import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
   getAppliedVoucherCode,
-  getVouchers,
   normalizeVoucherCode,
   setAppliedVoucherCode,
   VOUCHER_UPDATED_EVENT,
@@ -29,11 +28,6 @@ export const useAppliedVoucher = (subtotal = 0, items = []) => {
       const nextCode = getAppliedVoucherCode();
       setVoucherCode(nextCode);
       setInputCode((current) => current || nextCode);
-      try {
-        await getVouchers();
-      } catch (error) {
-        console.warn('Failed to refresh vouchers:', error.message || error);
-      }
     };
 
     window.addEventListener('storage', syncAppliedVoucher);

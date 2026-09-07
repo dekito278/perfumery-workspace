@@ -26,7 +26,6 @@ import {
 import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
-  recordVoucherUsageForOrder,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 
@@ -560,14 +559,6 @@ const BespokePage = () => {
           voucherSnapshot,
           createdAt: new Date().toISOString(),
         }));
-        if (voucherSnapshot?.code) {
-          await recordVoucherUsageForOrder({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            voucherSnapshot,
-            items: bespokeVoucherItems,
-          });
-        }
         (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
         toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
         navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
@@ -603,14 +594,6 @@ const BespokePage = () => {
         voucherSnapshot,
         createdAt: new Date().toISOString(),
       }));
-      if (voucherSnapshot?.code) {
-        await recordVoucherUsageForOrder({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          voucherSnapshot,
-          items: bespokeVoucherItems,
-        });
-      }
       (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
       toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
       navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);

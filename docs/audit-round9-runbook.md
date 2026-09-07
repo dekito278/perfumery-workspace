@@ -278,14 +278,20 @@ SQL = JS.
 **Bonus (bisa kapan pun): `20260907050000_payment_session_lookup_returns_items.sql`** — halaman bayar pembeli
 menampilkan rincian produk + ongkir sungguhan, bukan hanya total. Klien sudah siap sejak PR #25.
 
-**V-1 / V-2 — voucher. DITUNDA, ada jebakan.**
-V-2 (catat pemakaian voucher di `api/orders/create.js`) terdengar sepele tapi memindahkan reservasi kuota
-ke saat order dibuat. Hari ini bespoke dan DOKU mencatat pemakaian **setelah** `createDokuCheckout`
-berhasil, jadi kegagalan DOKU tidak memakan kuota. Kalau dipindah ke create, kegagalan DOKU akan menghanguskan
-kuota secara permanen — karena pelepasannya (`storefront_release_voucher_usage`) dicabut dari `anon`, jadi
-pembatalan dari browser tidak bisa mengembalikannya. Urutan yang benar: pindahkan **pelepasan** ke server
-lebih dulu, baru pencatatannya. V-1 (RPC lookup + cabut SELECT publik) aman dikerjakan sendiri, tapi
-sebaiknya satu paket dengan V-2 supaya `voucherService` tidak diaduk dua kali.
+**V-1 / V-2 — voucher. SIAP (2026-09-07), urutan WAJIB:**
+Jebakan lama (pencatatan di create menghanguskan kuota kalau DOKU gagal) sudah tidak berlaku: pelepasan
+kuota sudah server-side di `api/doku/notification` (cancel terminal) dan `api/orders/expire-reservations`
+(sweep), jadi order yang ditinggalkan mengembalikan kuota paling lambat di sweep harian.
+
+1. Jalankan `20260907063000_storefront_voucher_lookup_rpc.sql` (additive: RPC lookup satu kode).
+2. Merge PR klien (`claude/voucher-server-side`), tunggu build. Klien: lookup via RPC, tidak lagi mencatat
+   pemakaian dari browser; `api/orders/create.js` mencatat pemakaian (sebelum reservasi stok; kalau stok
+   gagal, kuota dilepas lagi). Selfcheck `voucherPaths.selfcheck.mjs` menjaga semua itu.
+3. Jalankan `20260907063100_storefront_vouchers_admin_only.sql`: tabel voucher SELECT admin-only, RPC
+   record hanya service_role, tabel usage records admin-only (dulu terbaca semua customer Google).
+   Verifikasi ada di file. **Jangan dibalik** — klien lama akan membaca `[]` dan semua voucher "tidak ditemukan".
+
+Setelah itu uji satu checkout dengan voucher: `storefront_voucher_usage_records` harus bertambah satu baris.
 
 **Rate limiting endpoint terbuka — DITUNDA, sebagian besar teater.**
 Di Vercel Hobby tidak ada Redis dan instance-nya berumur pendek serta tidak berbagi memori, jadi penghitung

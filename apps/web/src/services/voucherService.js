@@ -187,21 +187,19 @@ export const migrateLocalVouchersToSupabase = async () => {
 // voucherValidation.js for isomorphic use.
 export const findVoucherByCode = (code, vouchers = getCachedVouchers()) => coreFindVoucherByCode(code, vouchers);
 
+// Exact-code lookup through an RPC: storefront_vouchers SELECT is admin-only, so the public can no longer
+// list every code, value, quota and expiry (audit round 9, V-1). One code in, that row or null out.
 export const findVoucherByCodeAsync = async (code) => {
   const normalizedCode = normalizeVoucherCode(code);
   if (!normalizedCode) return null;
 
-  const { data, error } = await supabase
-    .from(VOUCHER_TABLE)
-    .select('*')
-    .eq('code', normalizedCode)
-    .maybeSingle();
-
+  const { data, error } = await supabase.rpc('storefront_voucher_lookup', { p_code: normalizedCode });
   if (error) {
     throw new Error(error.message || 'Gagal mencari voucher');
   }
 
-  return data ? normalizeVoucher(data) : null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ? normalizeVoucher(row) : null;
 };
 
 export const saveVoucher = async (input) => {
@@ -252,16 +250,6 @@ export const deleteVoucher = async (idOrCode) => {
   ));
   persistCachedVouchers(nextVouchers);
   return nextVouchers;
-};
-
-export const resetVouchers = async () => {
-  const { error } = await supabase.from(VOUCHER_TABLE).delete().neq('code', '');
-  if (error) {
-    throw new Error(error.message || 'Gagal menghapus semua voucher');
-  }
-  cacheVouchers([]);
-  writeStoredVouchers([]);
-  return [];
 };
 
 export const applyVoucherToSubtotal = ({ code, voucher, subtotal = 0, items = [], vouchers, now } = {}) => {
@@ -328,64 +316,7 @@ export const getLocalVoucherUsageRecords = () => readStoredUsageRecords().map((r
   usedAt: record.usedAt || record.used_at || new Date().toISOString(),
 })).filter((record) => record.voucherCode && (record.orderId || record.orderNumber));
 
-export const recordVoucherUsageForOrder = async ({
-  orderId = '',
-  orderNumber = '',
-  voucherCode = '',
-  voucherSnapshot = null,
-  items = [],
-  amount = 1,
-} = {}) => {
-  const code = normalizeVoucherCode(voucherCode || voucherSnapshot?.code);
-  const orderIdValue = String(orderId || '').trim();
-  const orderNumberValue = String(orderNumber || '').trim();
-  const orderKey = orderNumberValue || orderIdValue;
-  if (!code || !orderKey) {
-    return { tracked: false, alreadyTracked: false, voucher: null };
-  }
-
-  const subtotal = toAmount(voucherSnapshot?.subtotalBeforeDiscount || voucherSnapshot?.subtotal_before_discount);
-  const validation = await applyVoucherToSubtotalAsync({ code, subtotal, items });
-  if (!validation.valid) {
-    throw new Error(validation.message || 'Voucher tidak bisa digunakan');
-  }
-
-  const { data, error } = await supabase.rpc('storefront_record_voucher_usage', {
-    p_voucher_code: code,
-    p_order_id: isUuid(orderIdValue) ? orderIdValue : null,
-    p_order_number: orderNumberValue || null,
-    p_amount: Math.max(toAmount(amount), 1),
-  });
-  if (error) {
-    throw new Error(error.message || 'Gagal mencatat pemakaian voucher');
-  }
-
-  const payload = Array.isArray(data) ? data[0] : data;
-  const updatedVoucher = payload?.voucher ? normalizeVoucher(payload.voucher) : await findVoucherByCodeAsync(code);
-  const record = payload?.record ? {
-    id: payload.record.id,
-    voucherCode: normalizeVoucherCode(payload.record.voucher_code),
-    orderId: String(payload.record.order_id || '').trim(),
-    orderNumber: String(payload.record.order_number || '').trim(),
-    amount: Math.max(toAmount(payload.record.amount), 1),
-    usedAt: payload.record.used_at || new Date().toISOString(),
-  } : null;
-
-  if (updatedVoucher) {
-    persistCachedVouchers(getCachedVouchers().map((item) => (
-      item.id === updatedVoucher.id || normalizeVoucherCode(item.code) === updatedVoucher.code
-        ? updatedVoucher
-        : item
-    )));
-  }
-
-  return {
-    tracked: Boolean(payload?.tracked),
-    alreadyTracked: Boolean(payload?.already_tracked),
-    record,
-    voucher: updatedVoucher,
-  };
-};
+// Usage is recorded by api/orders/create.js (service role) at creation, never from the browser.
 
 // Release voucher quota reserved at order creation when the order is cancelled or its
 // payment fails/expires. Safe to call unconditionally (idempotent; no-op when the order
