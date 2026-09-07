@@ -17,7 +17,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
       `postal-code`, `tel`) + `inputmode` yang tepat di checkout desktop dan mobile.
       Verifikasi: `document.querySelectorAll('input')` di /mobile/checkout, semua punya autocomplete.
 
-- [ ] **U-2 · Toast "added to cart" masih Inggris.** `MobileProductDetailPage.jsx:89` menulis
+- [x] (PR #46) **U-2 · Toast "added to cart" masih Inggris.** `MobileProductDetailPage.jsx:89` menulis
       `${product.name} added to cart` di storefront yang selebihnya Indonesia — muncul tepat di
       aksi paling penting. Ganti "…masuk keranjang". Sisir juga toast pembeli lain.
 
