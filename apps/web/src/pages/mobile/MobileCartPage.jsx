@@ -75,30 +75,7 @@ const MobileCartPage = () => {
               </div>
             )}
           </div>
-          {items.length ? (
-            <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-              {featuredCartItems.map(({ item, product }) => (
-                <div key={item.slug} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'var(--editorial-ivory)', borderRadius: 10, padding: '8px 12px' }}>
-                  <div style={{ display: 'flex', minWidth: 0, alignItems: 'center', gap: 8 }}>
-                    <ProductVisual product={product} className="h-10 w-10 shrink-0 rounded-[8px]" label={false} sizes="40px" />
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: '0.78rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--editorial-charcoal)' }}>{item.name}</p>
-                      <p style={{ marginTop: 2, fontSize: '0.65rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--editorial-muted)' }}>{item.size} / x{item.quantity}</p>
-                    </div>
-                  </div>
-                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                    {discountedLineMap.get(item.slug)?.discount ? (
-                      <div style={{ fontSize: '0.65rem', fontWeight: 500, color: '#9ca3af', textDecoration: 'line-through' }}>{formatTotal(discountedLineMap.get(item.slug).originalTotal)}</div>
-                    ) : null}
-                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{formatTotal(discountedLineMap.get(item.slug)?.discountedTotal ?? Number(item.priceNumber || 0) * Number(item.quantity || 0))}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          {items.length ? (
-            <Button type="button" className="mt-4 h-12 w-full rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/checkout')}><PackageCheck className="h-4 w-4" />Lanjut bayar</Button>
-          ) : (
+          {items.length ? null : (
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
                 <ShoppingBag className="h-4 w-4" />
