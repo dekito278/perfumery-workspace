@@ -267,7 +267,7 @@ const MobileRawMaterialsPage = () => {
       setMaterials((current) => current.filter((material) => material.id !== deleteTarget.id));
       setDeleteTarget(null);
       triggerMobileHaptic('success');
-      toast.success('Material deleted');
+      toast.success('Material dihapus');
       await loadMaterials();
     } catch (error) {
       toast.error(error.message || 'Failed to delete material');

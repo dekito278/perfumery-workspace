@@ -41,11 +41,11 @@ const MobileLoginPage = () => {
         toast.info('Enter your authenticator code');
         return;
       }
-      toast.success('Login successful');
+      toast.success('Berhasil masuk');
       const redirectTo = location.state?.from?.pathname || '/mobile/studio';
       navigate(redirectTo, { replace: true });
     } catch (loginError) {
-      const message = loginError.message || 'Login failed';
+      const message = loginError.message || 'Login gagal';
       setError(message);
       toast.error(message);
     } finally {
@@ -59,11 +59,11 @@ const MobileLoginPage = () => {
     setError('');
     try {
       await verifyMfaCode(authenticatorCode);
-      toast.success('Authenticator verified');
+      toast.success('Authenticator terverifikasi');
       const redirectTo = location.state?.from?.pathname || '/mobile/studio';
       navigate(redirectTo, { replace: true });
     } catch (mfaError) {
-      const message = mfaError.message || 'Invalid authenticator code';
+      const message = mfaError.message || 'Kode authenticator salah';
       setError(message);
       toast.error(message);
     } finally {
@@ -99,9 +99,9 @@ const MobileLoginPage = () => {
     setError('');
     try {
       await requestPasswordReset(email.trim(), `${window.location.origin}/mobile/reset-password`);
-      toast.success('Password reset email sent');
+      toast.success('Email reset password terkirim');
     } catch (resetError) {
-      const message = resetError.message || 'Failed to send reset email';
+      const message = resetError.message || 'Gagal mengirim email reset';
       setError(message);
       toast.error(message);
     } finally {
@@ -112,7 +112,7 @@ const MobileLoginPage = () => {
   return (
     <div className={cn('mobile-app min-h-[100dvh] px-4 py-6', keyboardActive && 'mobile-keyboard-active')}>
       <Helmet>
-        <title>Mobile Login - Solivagant</title>
+        <title>Masuk - Solivagant</title>
       </Helmet>
       <div className={cn('mobile-page flex min-h-[calc(100dvh-48px)] flex-col justify-center', keyboardActive && 'min-h-0 justify-start pt-6')}>
         <div className="mobile-soft-card p-5">
@@ -124,10 +124,10 @@ const MobileLoginPage = () => {
             <form onSubmit={handleMfaSubmit} className="mt-5 space-y-4">
               {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
-                Open your authenticator app and enter the 6 digit code for {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
+                Buka aplikasi authenticator dan masukkan kode 6 digit untuk {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
               </div>
               <div className="space-y-2">
-                <Label htmlFor="mobile-authenticator-code">Authenticator code</Label>
+                <Label htmlFor="mobile-authenticator-code">Kode authenticator</Label>
                 <Input
                   id="mobile-authenticator-code"
                   inputMode="numeric"
@@ -140,10 +140,10 @@ const MobileLoginPage = () => {
                 />
               </div>
               <Button type="submit" disabled={mfaLoading || authenticatorCode.length < 6} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
-                {mfaLoading ? 'Verifying...' : 'Verify authenticator'}
+                {mfaLoading ? 'Memverifikasi...' : 'Verifikasi authenticator'}
               </Button>
               <Button type="button" variant="ghost" className="h-11 w-full rounded-2xl" onClick={() => { void handleBackToPassword(); }}>
-                Back to password
+                Kembali ke password
               </Button>
             </form>
           ) : (
@@ -158,7 +158,7 @@ const MobileLoginPage = () => {
               <Input id="mobile-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required className="h-12 rounded-2xl bg-white" />
             </div>
             <Button type="submit" disabled={loading} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Masuk...' : 'Masuk'}
             </Button>
             <div className="flex items-center gap-3 text-xs font-semibold text-[#9ca3af]">
               <span className="h-px flex-1 bg-[#e5e7eb]" />atau<span className="h-px flex-1 bg-[#e5e7eb]" />
@@ -167,7 +167,7 @@ const MobileLoginPage = () => {
               Masuk dengan Google
             </Button>
             <Button type="button" variant="ghost" disabled={resetLoading} onClick={handlePasswordReset} className="h-11 w-full rounded-2xl">
-              {resetLoading ? 'Sending reset link...' : 'Forgot password?'}
+              {resetLoading ? 'Mengirim link reset...' : 'Lupa password?'}
             </Button>
           </form>
           )}

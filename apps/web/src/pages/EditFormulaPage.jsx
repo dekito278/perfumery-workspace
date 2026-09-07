@@ -301,7 +301,7 @@ const EditFormulaPage = () => {
         total_amount: totalGrams,
       }, itemsForSubmit);
 
-      toast.success('Formula updated successfully');
+      toast.success('Formula diperbarui');
       navigate(`/formulas/${id}`);
     } catch (error) {
       toast.error(error.message || 'Failed to update formula');

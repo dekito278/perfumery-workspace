@@ -153,7 +153,7 @@ const MobileFormulaDetailPage = () => {
     setDeleting(true);
     try {
       await deleteFormula(id);
-      toast.success('Formula deleted');
+      toast.success('Formula dihapus');
       navigate('/mobile/formulas');
     } catch (error) {
       toast.error(error.message || 'Failed to delete formula');

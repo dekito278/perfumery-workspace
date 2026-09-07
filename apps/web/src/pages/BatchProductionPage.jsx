@@ -338,7 +338,7 @@ const BatchProductionPage = () => {
       if (selectedFormula.status === 'draft' || selectedFormula.status === 'approved') {
         await updateFormulaStatus(selectedFormula.id, 'ready_for_batch');
       }
-      toast.success(nextUsageRecords.length ? 'Batch saved dan material stock deducted' : 'Batch saved');
+      toast.success(nextUsageRecords.length ? 'Batch saved dan material stock deducted' : 'Batch disimpan');
       return batch;
     } catch (error) {
       toast.error(error.message || 'Gagal save batch');

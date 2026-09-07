@@ -87,7 +87,7 @@ const SetupContent = ({ mobile = false }) => {
       const challenge = await challengeAuthenticatorEnrollment(enrollment.id);
       setFactor(enrollment);
       setChallengeId(challenge.id);
-      toast.success('Authenticator setup started');
+      toast.success('Setup authenticator dimulai');
     } catch (error) {
       toast.error(error.message || 'Failed to start authenticator setup');
     } finally {
@@ -106,11 +106,11 @@ const SetupContent = ({ mobile = false }) => {
         challengeId,
         code,
       });
-      toast.success('Authenticator enabled');
+      toast.success('Authenticator aktif');
       await loadFactors();
       navigate(mobile ? '/mobile/studio' : '/studio', { replace: true });
     } catch (error) {
-      toast.error(error.message || 'Invalid authenticator code');
+      toast.error(error.message || 'Kode authenticator salah');
     } finally {
       setVerifying(false);
     }
@@ -119,7 +119,7 @@ const SetupContent = ({ mobile = false }) => {
   const copySecret = async () => {
     if (!factor?.totp?.secret) return;
     const copied = await copyTextToClipboard(factor.totp.secret);
-    copied ? toast.success('Manual key copied') : toast.error('Kunci belum bisa disalin. Tekan lama kunci lalu salin manual.');
+    copied ? toast.success('Kunci manual disalin') : toast.error('Kunci belum bisa disalin. Tekan lama kunci lalu salin manual.');
   };
 
   const handleDisableAuthenticator = async (factorId) => {
@@ -136,7 +136,7 @@ const SetupContent = ({ mobile = false }) => {
       setChallengeId('');
       setCode('');
       await loadFactors();
-      toast.success('Authenticator disabled');
+      toast.success('Authenticator dinonaktifkan');
     } catch (error) {
       toast.error(error.message || 'Failed to disable authenticator');
     } finally {
@@ -207,7 +207,7 @@ const SetupContent = ({ mobile = false }) => {
           </div>
           <div className="dashboard-hero-panel">
             <div className="dashboard-hero-stat">
-              <span className="dashboard-hero-stat-label">Method</span>
+              <span className="dashboard-hero-stat-label">Metode</span>
               <strong>TOTP</strong>
             </div>
             <div className="dashboard-hero-stat">
@@ -223,7 +223,7 @@ const SetupContent = ({ mobile = false }) => {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <KeyRound className="h-6 w-6" />
           </div>
-          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Authenticator app</h1>
+          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Aplikasi authenticator</h1>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
             Scan once, then use the rotating 6 digit code every time this account needs a stronger login check.
           </p>
@@ -237,8 +237,8 @@ const SetupContent = ({ mobile = false }) => {
       <section className={setupSectionClassName}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase text-amber-700">Setup</div>
-            <h2 className="mt-1 text-base font-bold text-[#1f2937]">Link your authenticator</h2>
+            <div className="text-[10px] font-bold uppercase text-amber-700">Pengaturan</div>
+            <h2 className="mt-1 text-base font-bold text-[#1f2937]">Hubungkan authenticator</h2>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
               Start setup, scan the QR, then verify the current code from your authenticator app.
             </p>
@@ -264,7 +264,7 @@ const SetupContent = ({ mobile = false }) => {
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-amber-700">Manual key</div>
+                    <div className="text-[10px] font-bold uppercase text-amber-700">Kunci manual</div>
                     <div className="mt-1 break-all text-sm font-bold text-[#1f2937]">{secret}</div>
                   </div>
                   <Button type="button" size="icon" variant="outline" onClick={copySecret} className="h-10 w-10 shrink-0 rounded-xl bg-white" aria-label="Copy manual key">
@@ -275,7 +275,7 @@ const SetupContent = ({ mobile = false }) => {
             ) : null}
 
             <div className="space-y-2">
-              <Label htmlFor="authenticator-setup-code">6 digit code</Label>
+              <Label htmlFor="authenticator-setup-code">Kode 6 digit</Label>
               <Input
                 id="authenticator-setup-code"
                 inputMode="numeric"
@@ -365,7 +365,7 @@ const SetupContent = ({ mobile = false }) => {
       <section className={setupSectionClassName}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase text-rose-700">MFA settings</div>
+            <div className="text-[10px] font-bold uppercase text-rose-700">Pengaturan MFA</div>
             <h2 className="mt-1 text-base font-bold text-[#1f2937]">Nonaktifkan authenticator</h2>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
               Matikan MFA hanya untuk perangkat/account yang memang aman. Setelah dimatikan, login tidak akan meminta kode 6 digit.

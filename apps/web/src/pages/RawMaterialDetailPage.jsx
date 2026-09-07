@@ -160,7 +160,7 @@ const RawMaterialDetailPage = () => {
     setDeleting(true);
     try {
       await deleteMaterial(id);
-      toast.success('Material deleted successfully');
+      toast.success('Material dihapus');
       navigate('/raw-materials');
     } catch (error) {
       toast.error(error.message || 'Failed to delete material');

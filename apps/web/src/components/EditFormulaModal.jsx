@@ -339,7 +339,7 @@ const EditFormulaModal = ({ open, onOpenChange, formula, onSuccess }) => {
         total_amount: totalAmount
       }, itemsForSubmit);
       
-      toast.success('Formula updated successfully');
+      toast.success('Formula diperbarui');
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error) {

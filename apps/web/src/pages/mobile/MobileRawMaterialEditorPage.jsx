@@ -157,7 +157,7 @@ const MobileRawMaterialEditorPage = () => {
       if (isEditing) {
         await updateMaterial(id, buildPayload(formState, material || {}));
         triggerMobileHaptic('success');
-        toast.success('Material updated');
+        toast.success('Material diperbarui');
         navigate(`/mobile/raw-material/${id}`);
       } else {
         const created = await addMaterial(buildPayload(formState));

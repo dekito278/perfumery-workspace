@@ -308,7 +308,7 @@ const AddFormulaModal = ({ open, onOpenChange, onSuccess }) => {
         notes: notes || null
       }, itemsForSubmit);
       
-      toast.success('Formula created successfully');
+      toast.success('Formula dibuat');
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error) {

@@ -13,7 +13,7 @@ const DeleteFormulaModal = ({ isOpen, onClose, formulaId, formulaName, onDeleteS
     setLoading(true);
     try {
       await deleteFormula(formulaId);
-      toast.success('Formula deleted successfully');
+      toast.success('Formula dihapus');
       onDeleteSuccess();
       onClose();
     } catch (error) {
