@@ -172,7 +172,7 @@ const MobileProductDetailPage = () => {
         {related.length ? (
           <section className="m-editorial-section m-editorial-pdp__related">
             <div className="m-editorial-section__head">
-              <p className="m-editorial-eyebrow">YOU MAY ALSO LIKE</p>
+              <p className="m-editorial-eyebrow">MUNGKIN KAMU SUKA</p>
             </div>
             <div className="m-editorial-product-grid">
               {related.map((item) => (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { activateWaitingServiceWorker, subscribeToPwaUpdates } from '@/utils/pwa.js';
@@ -7,11 +7,12 @@ import { activateWaitingServiceWorker, subscribeToPwaUpdates } from '@/utils/pwa
 // Dismissal is remembered for the session: the "update available" event fires again on every page load
 // while a new worker is waiting, so without this the card came back on every navigation. It also stays
 // out of the way while someone is paying — a reload prompt mid-checkout is the wrong moment.
+// Only admins see it: a stale studio can mis-save, but a shopper simply gets the new build next visit —
+// and on a phone the card sat over the sticky add-to-cart / "Lanjut" bars of every storefront page.
 const DISMISS_KEY = 'solivagant.pwa.update-dismissed';
-const QUIET_ROUTES = /^\/(mobile\/)?(checkout|payment)/;
 
 const PwaUpdatePrompt = () => {
-  const { pathname } = useLocation();
+  const { isAdmin } = useAuth();
   const [visible, setVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -30,7 +31,7 @@ const PwaUpdatePrompt = () => {
     await activateWaitingServiceWorker();
   };
 
-  if (!visible || QUIET_ROUTES.test(pathname)) {
+  if (!visible || !isAdmin) {
     return null;
   }
 

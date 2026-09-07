@@ -11,10 +11,10 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 
 const moodCategories = [
-  { name: 'Quiet & Minimal', family: 'Fresh' },
-  { name: 'Warm & Nostalgic', family: 'Gourmand' },
-  { name: 'Dark & Moody', family: 'Woody' },
-  { name: 'Soft & Romantic', family: 'Floral' },
+  { name: 'Tenang & Minimal', family: 'Fresh' },
+  { name: 'Hangat & Nostalgia', family: 'Gourmand' },
+  { name: 'Gelap & Moody', family: 'Woody' },
+  { name: 'Lembut & Romantis', family: 'Floral' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -47,20 +47,20 @@ export const MobileStorefrontContent = ({ active = true }) => {
       {active ? (
         <Helmet>
           <title>SOLIVAGANT - Artisan Perfumery</title>
-          <meta name="description" content="SOLIVAGANT artisan perfumery atelier by Dekito. Quiet olfactive works crafted from raw materials, memory, and personal ritual." />
+          <meta name="description" content="SOLIVAGANT, atelier parfum artisan oleh Dekito. Karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
         </Helmet>
       ) : null}
 
       <main className="mobile-page m-editorial-page">
         {/* Hero — fullscreen image */}
         <section className="m-editorial-hero">
-          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Solivagant artisan perfumery" className="m-editorial-hero__image" loading="eager" />
+          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" />
           <div className="m-editorial-hero__overlay">
-            <p className="m-editorial-eyebrow">ARTISAN PERFUMERY ATELIER</p>
-            <h1>Fragrance as a memory object.</h1>
-            <p className="m-editorial-hero__lede">Quiet olfactive works from raw materials, memory, and ritual.</p>
+            <p className="m-editorial-eyebrow">ATELIER PARFUM ARTISAN</p>
+            <h1>Aroma sebagai objek kenangan.</h1>
+            <p className="m-editorial-hero__lede">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
-              Explore Collection <ArrowRight className="h-4 w-4" />
+              Lihat koleksi <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </section>
@@ -69,8 +69,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
         {collection.length ? (
           <section className="m-editorial-section">
             <div className="m-editorial-section__head">
-              <p className="m-editorial-eyebrow">COLLECTION</p>
-              <h2>Current fragrances</h2>
+              <p className="m-editorial-eyebrow">KOLEKSI SAAT INI</p>
+              <h2>Fragrance pilihan</h2>
             </div>
             <div className="m-editorial-product-grid">
               {collection.map((product) => (
@@ -85,7 +85,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               ))}
             </div>
             <div className="m-editorial-section__action">
-              <Link to="/mobile/catalog">View all <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/mobile/catalog">Lihat semua <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           </section>
         ) : null}
@@ -93,8 +93,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
         {/* Mood categories */}
         <section className="m-editorial-section">
           <div className="m-editorial-section__head">
-            <p className="m-editorial-eyebrow">EXPLORE BY MOOD</p>
-            <h2>Find your direction</h2>
+            <p className="m-editorial-eyebrow">JELAJAHI LEWAT MOOD</p>
+            <h2>Temukan arah aromamu</h2>
           </div>
           <div className="m-editorial-mood-grid">
             {moodCategories.map((mood) => (
@@ -110,12 +110,12 @@ export const MobileStorefrontContent = ({ active = true }) => {
 
         {/* Statement block */}
         <section className="m-editorial-statement">
-          <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer at work" className="m-editorial-statement__image" loading="lazy" />
+          <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" />
           <div className="m-editorial-statement__overlay">
-            <p className="m-editorial-eyebrow">THE ATELIER</p>
-            <h2>Fragrance as personal atmosphere.</h2>
+            <p className="m-editorial-eyebrow">ATELIER</p>
+            <h2>Aroma sebagai atmosfer pribadi.</h2>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/bespoke')}>
-              Book Bespoke <ArrowRight className="h-4 w-4" />
+              Request parfum custom <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </section>
@@ -124,8 +124,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
         {articles.length ? (
           <section className="m-editorial-section">
             <div className="m-editorial-section__head">
-              <p className="m-editorial-eyebrow">JOURNAL</p>
-              <h2>Field notes</h2>
+              <p className="m-editorial-eyebrow">JURNAL</p>
+              <h2>Catatan lapangan</h2>
             </div>
             <div className="m-editorial-journal-list">
               {articles.map((article) => (
@@ -137,7 +137,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               ))}
             </div>
             <div className="m-editorial-section__action">
-              <Link to="/mobile/articles">Read journal <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/mobile/articles">Baca jurnal <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           </section>
         ) : null}

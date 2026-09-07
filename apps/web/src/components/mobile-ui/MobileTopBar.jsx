@@ -8,7 +8,7 @@ const MobileTopBar = ({
   subtitle,
   eyebrow,
   onBack,
-  backLabel = 'Back',
+  backLabel = 'Kembali',
   action,
   className,
 }) => (

@@ -9,7 +9,7 @@ const DetailPageHeader = ({
   subtitle, 
   badge, 
   onBack, 
-  backLabel = 'Back',
+  backLabel = 'Kembali',
   actions,
   meta
 }) => {
