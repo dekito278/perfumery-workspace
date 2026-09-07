@@ -1,5 +1,6 @@
--- FINAL LOCKDOWN for finding #1 — do NOT apply yet. Kept OUT of supabase/migrations on purpose so a
--- routine `supabase db push` can't apply it early and break live checkout.
+-- FINAL LOCKDOWN for finding #1. Kept OUT of supabase/migrations on purpose so a routine
+-- `supabase db push` can't apply it early and break live checkout — paste it in the SQL editor instead,
+-- once the preconditions below hold. As of audit round 9 the only one still outstanding is the deploy.
 --
 -- This is what actually enforces server-authoritative pricing: once anon can no longer INSERT orders,
 -- the ONLY way to create one is POST /api/orders/create (service role), which recomputes every price
@@ -12,8 +13,21 @@
 --      verify Vercel logs show POST /api/orders/create 200 for real orders of each type, no fallback warnings.
 --   3. Confirm a real catalog order still deducts stock (endpoint calls storefront_deduct_inventory_for_order)
 --      and a voucher order still records usage once (page calls it; the endpoint intentionally does not).
+--   4. A THIRD order-creation path existed and this checklist missed it: CustomerPortalPage's "Pesan lagi"
+--      priced the reorder in the browser and called orderService.createOrder() directly.
+--      FIXED (audit round 9): reorder now fills the cart and hands over to the normal checkout, so it goes
+--      through /api/orders/create like everything else. The whole second checkout implementation in the
+--      portal (its own payment picker, DOKU call and voucher recheck) is gone with it.
+--      Re-verify before applying: `grep -rn 'createOrder(' apps/web/src` must show only the two gated
+--      escape hatches — useCheckoutFlow.js and orderService.createBespokeRequest, both behind
+--      authoritativeOrdersEnabled().
+--   5. VITE_AUTHORITATIVE_ORDERS must NOT be set to 'false' in Vercel. It defaults to true, and the two
+--      remaining createOrder() call sites are only reachable when it is explicitly 'false' — which is the
+--      client-priced path this file exists to kill.
 --
--- Apply (as a new timestamped migration, or straight in the SQL editor) only after 1–3 hold:
+-- APPLY ONLY AFTER the reorder change is deployed and one real reorder has been completed end to end.
+--
+-- Apply (as a new timestamped migration, or straight in the SQL editor) only after 1–5 hold:
 
 drop policy if exists "storefront orders public insert" on public.storefront_orders;
 

@@ -39,7 +39,7 @@ const CheckoutPage = () => {
     securityChallenge, securityAnswer, setSecurityAnswer, verifyCustomerSecurity,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
     shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod,
-    canSubmitCheckout, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
+    canSubmitCheckout, blockedItems, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
     setSelectedPaymentMethod, lookupCustomer, submitOrder,
   } = checkout;
@@ -56,6 +56,9 @@ const CheckoutPage = () => {
     !selectedCourier ? 'kurir' : '',
     !selectedShipping ? 'ongkir' : '',
     !selectedPaymentMethod ? 'metode pembayaran' : '',
+    // canSubmitCheckout also refuses lines whose product is gone or sold out; name them, otherwise the
+    // notice reads "Lengkapi: data checkout" with nothing to act on (audit round 9).
+    blockedItems.length ? `hapus ${blockedItems.map((item) => item.name).join(', ')} (sudah tidak tersedia)` : '',
   ].filter(Boolean).join(', ');
 
   const handleGoogleLogin = async () => {

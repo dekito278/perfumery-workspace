@@ -1,3 +1,4 @@
+import BriefText from '@/components/BriefText.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -542,11 +543,16 @@ const MobileOrderDetailPage = () => {
     // Move the order out of the paid queue, exactly as the desktop detail page does — printing a resi from
     // a phone used to leave the order sitting in "sudah dibayar" forever (audit round 7).
     if (!hasShippingLabelPrinted(order) && !isShippedOrder(order) && !isArchivedOrder(order)) {
-      await updateOrderShipment(order.id || order.orderNumber, {
-        ...shipmentDraft,
-        shipmentStatus: 'packing',
-        packingNotes: shipmentDraft.packingNotes || 'Resi PDF dicetak dari Detail Order mobile.',
-      });
+      try {
+        await updateOrderShipment(order.id || order.orderNumber, {
+          ...shipmentDraft,
+          shipmentStatus: 'packing',
+          packingNotes: shipmentDraft.packingNotes || 'Resi PDF dicetak dari Detail Order mobile.',
+        });
+      } catch (error) {
+        toast.error(`Resi PDF siap, tapi status order gagal dipindah ke Label/resi: ${error.message || 'coba lagi'}`);
+        return;
+      }
       setOrder(await getOrderById(orderId) || order);
       toast.success('Resi PDF siap. Order masuk Label/resi.');
       return;
@@ -807,8 +813,8 @@ const MobileOrderDetailPage = () => {
             <div className="mt-3 grid gap-2">
               {noteRows.map((row) => (
                 <div key={`${row.label}-${row.value}`} className="rounded-2xl bg-[#f8f7f4] px-3 py-2 text-xs font-semibold">
-                  <span className="text-[#6b7280]">{row.label}: </span>
-                  <span className="text-[#1f2937]">{row.value}</span>
+                  <span className="block text-[10px] font-bold uppercase text-[#6b7280]">{row.label}</span>
+                  <BriefText text={row.value} className="text-[#1f2937]" />
                 </div>
               ))}
             </div>
@@ -1214,7 +1220,7 @@ const MobileOrderDetailPage = () => {
               {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                 <div key={label} className="grid grid-cols-[76px_1fr] gap-2 text-xs font-semibold leading-snug">
                   <span className="text-[#6b7280]">{label}</span>
-                  <span className="text-[#1f2937]">{value}</span>
+                  <BriefText text={value} className="text-[#1f2937]" />
                 </div>
               ))}
             </div>

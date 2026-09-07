@@ -1,4 +1,5 @@
 import React from 'react';
+import AdminSessionNotice from '@/components/AdminSessionNotice.jsx';
 import MobileBottomNavigation from '@/components/mobile/MobileBottomNavigation.jsx';
 import MobileFloatingActionButton from '@/components/mobile/MobileFloatingActionButton.jsx';
 import MobileSessionActions from '@/components/mobile/MobileSessionActions.jsx';
@@ -18,6 +19,7 @@ const MobileAppShell = ({ children, showFab = true, taskMode = false }) => {
   return (
     <div className={cn('mobile-app', keyboardActive && 'mobile-keyboard-active')}>
       <div className="mobile-app-shell" data-mobile-primary-scroller="true">
+        <AdminSessionNotice mobile />
         {children}
       </div>
       <MobileSessionActions />

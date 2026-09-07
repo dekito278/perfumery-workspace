@@ -189,13 +189,20 @@ export const deleteBespokeOption = async (collectionKey, optionId) => {
   };
 
   try {
-    const { error } = await supabase
+    // `.select('id')` is what makes a refusal visible: an RLS-filtered DELETE is 200 with zero rows and
+    // error === null, so the throw below never fired and the option was removed from localStorage and
+    // reported as deleted while customers kept seeing it on the bespoke form (audit round 9).
+    const { data, error } = await supabase
       .from('storefront_bespoke_options')
       .delete()
       .eq('collection_key', collectionKey)
-      .eq('id', optionId);
+      .eq('id', optionId)
+      .select('id');
 
     if (error) throw error;
+    if (!data?.length) {
+      throw new Error('tidak ada baris yang terhapus di server');
+    }
 
     writeSettings(nextSettings);
     // Option is gone — remove its image so it isn't orphaned in storage.
@@ -204,7 +211,7 @@ export const deleteBespokeOption = async (collectionKey, optionId) => {
     }
   } catch (error) {
     console.warn('Bespoke option delete failed:', error.message || error);
-    throw new Error('Gagal menghapus opsi bespoke di server. Coba lagi.');
+    throw new Error(`Gagal menghapus opsi bespoke di server (${error.message || 'tidak diketahui'}). Muat ulang halaman — sesi admin mungkin sudah kedaluwarsa.`);
   }
 
   return nextSettings;

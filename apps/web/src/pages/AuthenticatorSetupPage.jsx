@@ -168,11 +168,14 @@ const SetupContent = ({ mobile = false }) => {
       if (hasPasswordIdentity) {
         await reauthenticateWithPassword(currentPassword);
       }
+      // updatePassword signs the session out — proving the old password re-mints it at aal1, so the only
+      // safe end state is a fresh login with the authenticator step (audit round 9).
       await updatePassword(newPassword);
       setCurrentPassword('');
       setNewPassword('');
       setNewPasswordConfirm('');
-      toast.success('Password berhasil diubah');
+      toast.success('Password berhasil diubah. Login ulang dengan password baru.');
+      navigate(mobile ? '/mobile/login' : '/login', { replace: true });
     } catch (error) {
       toast.error(error.message || 'Gagal mengubah password');
     } finally {

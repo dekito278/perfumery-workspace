@@ -10,7 +10,7 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof, updateOrderPaymentStatus } from '@/services/orderService.js';
+import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
@@ -874,17 +874,8 @@ const PaymentPageContent = ({ isMobile }) => {
         items: order.items || [],
         callbackPath: isMobile ? '/mobile/payment' : '/payment',
       });
-      await updateOrderPaymentStatus(order.id || order.orderNumber, {
-        paymentStatus: 'pending',
-        paymentProvider: 'doku',
-        paymentReference: checkout.requestId || '',
-        paymentUrl: checkout.paymentUrl,
-        paymentExpiresAt: checkout.paymentExpiresAt || '',
-        paymentSessionId: checkout.paymentSessionId || '',
-        paymentResponse: checkout.dokuResponse || {},
-        status: 'pending_payment',
-        audit: false,
-      });
+      // api/doku/checkout.js already persisted this payment session server-side with the service role;
+      // the browser copy was filtered by RLS for every buyer and now throws (audit round 9).
       const recoveredSession = buildDokuSessionFromCheckout(order, checkout);
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(recoveredSession));
       return recoveredSession;

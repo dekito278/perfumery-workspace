@@ -224,57 +224,57 @@ export const saveStorefrontCategory = async (input) => {
     sortOrder: Number(input.sortOrder ?? input.sort_order ?? 100),
   };
 
-  try {
-    const payload = {
-      name: category.name,
-      description: category.description,
-      accent: category.accent,
-      sort_order: category.sortOrder,
-    };
-    const query = category.id && !String(category.id).startsWith('local-category-') && !String(category.id).startsWith('product-category-')
-      ? supabase.from('storefront_product_categories').update(payload).eq('id', category.id)
-      : supabase.from('storefront_product_categories').upsert(payload, { onConflict: 'name' });
-    const { data, error } = await query.select('*').single();
+  const payload = {
+    name: category.name,
+    description: category.description,
+    accent: category.accent,
+    sort_order: category.sortOrder,
+  };
+  const query = category.id && !String(category.id).startsWith('local-category-') && !String(category.id).startsWith('product-category-')
+    ? supabase.from('storefront_product_categories').update(payload).eq('id', category.id)
+    : supabase.from('storefront_product_categories').upsert(payload, { onConflict: 'name' });
+  // `.single()` is what makes a refusal observable — an RLS-filtered UPDATE returns zero rows, which
+  // becomes a PGRST116 error instead of a silent success. The old catch invented a `local-category-*`
+  // row, wrote it to localStorage and returned it, so the admin was told a category was saved that no
+  // customer would ever see, and it reappeared on every page mount (audit round 9).
+  const { data, error } = await query.select('*').single();
 
-    if (error) {
-      throw error;
-    }
-
-    const savedCategory = mapCategory(data);
-    upsertStoredCategory(savedCategory);
-    dispatchStorefrontCategoryUpdate();
-    return savedCategory;
-  } catch (error) {
-    console.warn('Saving storefront category locally because database save failed:', error.message || error);
-    const storedCategories = readStoredCategories();
-    const nextCategory = mapCategory({ ...category, sort_order: category.sortOrder, source: 'custom' });
-    const nextCategories = storedCategories.some((item) => item.id === nextCategory.id || item.name.toLowerCase() === nextCategory.name.toLowerCase())
-      ? storedCategories.map((item) => (
-        item.id === nextCategory.id || item.name.toLowerCase() === nextCategory.name.toLowerCase()
-          ? { ...item, ...nextCategory, id: item.id }
-          : item
-      ))
-      : [...storedCategories, nextCategory];
-    writeStoredCategories(nextCategories);
-    return nextCategory;
+  if (error) {
+    throw new Error(`Kategori gagal disimpan ke server: ${error.message}. Perubahan belum tersimpan — muat ulang halaman dan coba lagi.`);
   }
+
+  const savedCategory = mapCategory(data);
+  upsertStoredCategory(savedCategory);
+  dispatchStorefrontCategoryUpdate();
+  return savedCategory;
 };
 
 export const deleteStorefrontCategory = async (id) => {
-  try {
-    const { error } = await supabase
-      .from('storefront_product_categories')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      throw error;
-    }
-
+  // A `local-category-*` id never reached the database — it is a leftover from the old save fallback,
+  // which invented one whenever a save failed. Its id is not a uuid, so sending it to PostgREST answers
+  // 22P02 rather than deleting anything; evicting it locally IS the whole delete. Keeping this branch is
+  // what stops those leftovers becoming permanently undeletable now that real failures throw.
+  if (String(id).startsWith('local-category-')) {
     removeStoredCategory(id);
     dispatchStorefrontCategoryUpdate();
-  } catch (error) {
-    console.warn('Deleting local storefront category fallback:', error.message || error);
-    writeStoredCategories(readStoredCategories().filter((category) => category.id !== id));
+    return;
   }
+
+  const { data, error } = await supabase
+    .from('storefront_product_categories')
+    .delete()
+    .eq('id', id)
+    .select('id');
+
+  if (error) {
+    throw new Error(`Kategori gagal dihapus: ${error.message}`);
+  }
+  // Zero rows means RLS refused the delete (200 + empty, error === null). Dropping it from localStorage
+  // and reporting success hid a category that was still live for every customer.
+  if (!data?.length) {
+    throw new Error('Kategori tidak terhapus di server. Muat ulang halaman — sesi admin mungkin sudah kedaluwarsa.');
+  }
+
+  removeStoredCategory(id);
+  dispatchStorefrontCategoryUpdate();
 };

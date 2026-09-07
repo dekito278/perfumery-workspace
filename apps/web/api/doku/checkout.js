@@ -278,6 +278,12 @@ export default async function handler(request, response) {
         method: 'PATCH',
         headers: { ...headers, Prefer: 'return=minimal' },
         body: JSON.stringify({
+          // The browser used to set this to 'pending' after minting the session, but storefront_orders
+          // UPDATE is admin-only so that write was refused for every buyer — DOKU orders have always sat
+          // at the 'unpaid' create.js gives them. Now that the browser copy is gone (audit round 9), the
+          // session's own writer owns it. Both values are in the sweep's ACTIVE_PAYMENT_STATUSES and
+          // neither is closed for the transition guards, so this only makes the state honest.
+          payment_status: 'pending',
           payment_provider: 'doku',
           payment_url: paymentUrl,
           payment_reference: requestId,

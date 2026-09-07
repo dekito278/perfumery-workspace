@@ -1,19 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getCustomers, getCustomerSummary, getLocalCustomers } from '@/services/customerService.js';
+import { getCustomers, getCustomerSummary } from '@/services/customerService.js';
 
 export const useCustomers = () => {
-  const [customers, setCustomers] = useState(getLocalCustomers);
+  // Seeded empty rather than from localStorage: the customer cache is gone, and getCustomers now throws
+  // instead of quietly answering [] — an admin being shown "0 pelanggan" because a fetch failed is the
+  // same lie as a write that reports success (audit round 9).
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
 
     const syncCustomers = async () => {
       setLoading(true);
-      const nextCustomers = await getCustomers();
-      if (mounted) {
-        setCustomers(nextCustomers);
-        setLoading(false);
+      try {
+        const nextCustomers = await getCustomers();
+        if (mounted) {
+          setCustomers(nextCustomers);
+          setError('');
+        }
+      } catch (loadError) {
+        if (mounted) setError(loadError.message || 'Gagal memuat pelanggan');
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
 
@@ -30,5 +40,6 @@ export const useCustomers = () => {
 
   const summary = useMemo(() => getCustomerSummary(customers), [customers]);
 
-  return { customers, summary, loading, refresh: async () => setCustomers(await getCustomers()) };
+  // `refresh` had no consumer (both pages destructure only customers/summary/loading), so it is gone.
+  return { customers, summary, loading, error };
 };

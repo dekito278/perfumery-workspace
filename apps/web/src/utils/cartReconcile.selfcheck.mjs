@@ -29,14 +29,31 @@ assert.equal(line.previousPriceNumber, 250000);
 assert.equal(line.maxStock, 2);                   // the stepper finally has a real cap
 assert.equal(line.quantity, 2);                   // and the stored quantity is clamped to it
 assert.equal(line.imageUrl, 'https://example.test/rain.jpg');
+assert.equal(line.outOfStock, false);
+assert.equal(line.unavailable, false);
+
+// A sold-out variant (stock 0) is flagged, not treated as "no cap" — checkout blocks on this.
+const [soldOut] = reconcileCartLines([{ ...stored[0], slug: 'rain-letter-50-ml', variantId: '50-ml', size: '50 ml' }], catalog);
+assert.equal(soldOut.outOfStock, true);
+assert.equal(soldOut.maxStock, 0);
+
+// A line that was flagged while the product was away clears once it is back in stock.
+const [recovered] = reconcileCartLines([{ ...stored[0], unavailable: true, outOfStock: true }], catalog);
+assert.equal(recovered.unavailable, false);
+assert.equal(recovered.outOfStock, false);
 
 // An unchanged price is not flagged
 const [same] = reconcileCartLines([{ ...stored[0], priceNumber: 320000 }], catalog);
 assert.equal(same.priceChanged, false);
 
-// A product that left the catalog is left exactly as stored, and an empty catalog is a no-op
+// A product that left the catalog keeps its stored fields but is flagged unavailable
 const gone = [{ ...stored[0], productId: 'gone', productSlug: 'deleted', slug: 'deleted' }];
-assert.deepEqual(reconcileCartLines(gone, catalog), gone);
+const [goneLine] = reconcileCartLines(gone, catalog);
+assert.equal(goneLine.unavailable, true);
+assert.equal(goneLine.priceNumber, 250000);
+assert.deepEqual({ ...goneLine, unavailable: undefined, outOfStock: undefined }, { ...gone[0], unavailable: undefined, outOfStock: undefined });
+
+// An empty catalog is still a no-op (it means "not loaded", not "everything is gone")
 assert.deepEqual(reconcileCartLines(stored, []), stored);
 
 console.log('cartReconcile selfcheck OK');

@@ -12,7 +12,7 @@ import {
 import { createDokuCheckout, createDokuQris } from '@/services/dokuCheckoutService.js';
 import { getCustomerAccount, lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder, updateOrderPaymentStatus, updateOrderStatus } from '@/services/orderService.js';
+import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder, updateOrderStatus } from '@/services/orderService.js';
 import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
@@ -51,6 +51,21 @@ const writeCheckoutDraft = (draft) => {
     // Safari private mode / quota: don't throw on every checkout keystroke.
     console.warn('Failed to persist checkout draft:', error.message || error);
   }
+};
+
+// Seed the checkout draft from somewhere else in the app (the customer portal's "Pesan lagi" hands over
+// the saved name/contact/address so a code-only portal visitor does not retype it). Only fills fields the
+// draft does not already have, so a half-typed checkout is never clobbered.
+export const seedCheckoutDraft = (values = {}) => {
+  const draft = readCheckoutDraft();
+  const next = { ...draft };
+  for (const [key, value] of Object.entries(values)) {
+    const text = String(value || '').trim();
+    if (text && !String(next[key] || '').trim()) {
+      next[key] = text;
+    }
+  }
+  writeCheckoutDraft({ ...next, updatedAt: new Date().toISOString() });
 };
 
 const clearCheckoutDraft = () => {
@@ -132,8 +147,13 @@ export const useCheckoutFlow = ({
     setShippingOptions([]);
   }, [shippingWeight]);
   const validPhoneContact = hasValidWhatsAppPhoneNumber(contact);
+  // reconcileCartLines flags lines whose product left the catalog or ran out of stock. Letting them
+  // through meant the buyer filled in the whole form and only hit the wall at submit, with the
+  // endpoint's raw "Unknown product" / "Stok tidak cukup" (audit round 9).
+  const blockedItems = items.filter((item) => item.unavailable || item.outOfStock);
   const canSubmitCheckout = Boolean(
     items.length
+    && !blockedItems.length
     && customerName.trim()
     && validPhoneContact
     && deliveryAddress.trim()
@@ -465,6 +485,11 @@ export const useCheckoutFlow = ({
       toast.error('Keranjang masih kosong');
       return;
     }
+    if (blockedItems.length) {
+      const names = blockedItems.map((item) => item.name).filter(Boolean).join(', ');
+      toast.error(`${names || 'Beberapa item'} sudah tidak tersedia. Hapus dari keranjang dulu.`);
+      return;
+    }
     if (!customerName.trim() || !deliveryAddress.trim()) {
       toast.error('Nama dan alamat pengiriman wajib diisi');
       return;
@@ -557,17 +582,10 @@ export const useCheckoutFlow = ({
           accountName: paymentMethodDetails.accountName,
           amount: paymentAmount,
         };
-        await updateOrderPaymentStatus(order.id || order.orderNumber, {
-          paymentStatus: 'pending',
-          paymentProvider: paymentMethodDetails.provider,
-          paymentReference: `${paymentMethodDetails.bankName}-${order.orderNumber}`,
-          paymentUrl: '',
-          paymentExpiresAt: '',
-          paymentSessionId: '',
-          paymentResponse: manualPaymentResponse,
-          status: 'pending_payment',
-          audit: false,
-        });
+        // No write here. api/orders/create.js already stored payment_status 'pending' and status
+        // 'pending_payment' for manual transfer, and storefront_orders UPDATE is admin-only — this call
+        // was filtered by RLS for every buyer and only looked like it worked. The bank details the buyer
+        // needs come from MANUAL_TRANSFER_PAYMENT, which PaymentPage already falls back to (audit round 9).
         if (voucherSnapshot?.code) {
           try {
             await recordVoucherUsageForOrder({
@@ -642,17 +660,11 @@ export const useCheckoutFlow = ({
         toast.success(`Pesanan ${order.orderNumber} tersimpan. Kode customer: ${order.customerCode || customerCode}`);
         onSuccess?.(order);
         navigate(paymentPath);
-        void updateOrderPaymentStatus(order.id || order.orderNumber, {
-          paymentStatus: 'pending',
-          paymentProvider: 'doku-qris',
-          paymentReference: qris.referenceNo || '',
-          paymentUrl: '',
-          paymentExpiresAt: qris.expiresAt || '',
-          paymentSessionId: '',
-          paymentResponse: {},
-          status: 'pending_payment',
-          audit: false,
-        }).catch((persistError) => console.warn('Deferred QRIS session persist failed:', persistError.message || persistError));
+        // No client write. Unlike api/doku/checkout.js, api/doku/qris.js does NOT persist its session to
+        // the order — but this browser copy never did either: storefront_orders UPDATE is admin-only, so
+        // RLS filtered every buyer's write. When QRIS is finally enabled (see the warning in
+        // services/cartService.js), qris.js must PATCH payment_reference/payment_expires_at with the
+        // service role the way checkout.js already does (audit round 9).
         return;
       }
 
@@ -705,19 +717,10 @@ export const useCheckoutFlow = ({
       // navigate NOW. The order number rides along so the payment link stays recoverable if this tab is
       // lost — PaymentPage still prefers the stored session when it matches, so the fast path is intact.
       navigate(`${paymentPath}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
-      // Persist the DOKU session to the order OFF the critical path — enables refresh-recovery + the
-      // 60-min payment_expires_at. If it fails, worst case is a refresh re-mints the session (guarded).
-      void updateOrderPaymentStatus(order.id || order.orderNumber, {
-        paymentStatus: 'pending',
-        paymentProvider: 'doku',
-        paymentReference: checkout.requestId || '',
-        paymentUrl: checkout.paymentUrl,
-        paymentExpiresAt: checkout.paymentExpiresAt || '',
-        paymentSessionId: checkout.paymentSessionId || '',
-        paymentResponse: checkout.dokuResponse || {},
-        status: 'pending_payment',
-        audit: false,
-      }).catch((persistError) => console.warn('Deferred DOKU session persist failed:', persistError.message || persistError));
+      // api/doku/checkout.js already persisted the whole payment session (url, reference, session id,
+      // expiry, response) with the service role. Repeating it from the browser was a no-op for buyers —
+      // storefront_orders UPDATE is admin-only, so RLS filtered it and PostgREST still answered 200. Now
+      // that writes fail loudly it would break checkout outright (audit round 9).
     } catch (error) {
       if (createdOrder) {
         try {
@@ -767,6 +770,7 @@ export const useCheckoutFlow = ({
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
+    blockedItems,
     setCustomerName,
     setContact,
     setDeliveryAddress: updateDeliveryAddress,

@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, X, Menu } from 'lucide-react';
 import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { storefrontCategories } from '@/data/storefront.js';
 
 const megaMenuColumns = [
@@ -32,26 +30,11 @@ const megaMenuColumns = [
 ];
 
 const PublicHeader = () => {
-  const { items, removeItem, summary } = useCart();
-  const catalogProducts = useCatalogProducts();
-  const productsLoading = Boolean(catalogProducts.loading);
-  const validCartSlugs = useMemo(() => new Set(
-    catalogProducts
-      .filter(isProductVisibleInStorefront)
-      .flatMap((product) => [product.slug, ...(product.variants || []).map((variant) => variant.cartSlug || `${product.slug}-${variant.id || variant.size}`)])
-      .filter(Boolean)
-  ), [catalogProducts]);
-
-  useEffect(() => {
-    if (productsLoading || !items.length) return;
-    // Guard against an empty/failed catalog response wiping the whole cart:
-    // if we have no known-valid slugs, we can't distinguish stale items from
-    // items whose catalog simply hasn't loaded, so skip the cleanup entirely.
-    if (validCartSlugs.size === 0) return;
-    items
-      .filter((item) => !validCartSlugs.has(item.productSlug || item.slug) && !validCartSlugs.has(item.slug))
-      .forEach((item) => removeItem(item.slug));
-  }, [items, productsLoading, removeItem, validCartSlugs]);
+  const { summary } = useCart();
+  // The header used to delete any cart line whose slug was not in the visible catalog, silently. A shopper
+  // whose product went out of stock or got unpublished just found their cart shorter, with no reason given
+  // — and it ran only here, so desktop and mobile disagreed. reconcileCartLines now flags those lines
+  // instead, the cart pages name them, and checkout refuses them (audit round 9).
 
   const [megaOpen, setMegaOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);

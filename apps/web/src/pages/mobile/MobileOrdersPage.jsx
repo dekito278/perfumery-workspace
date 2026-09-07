@@ -1,3 +1,4 @@
+import BriefText from '@/components/BriefText.jsx';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { buildOrderCopyText } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -290,7 +291,8 @@ const MobileOrdersPage = () => {
       toast.error('Pilih order paid untuk print resi');
       return;
     }
-    await Promise.all(selectedPrintableOrders.map((order) => (
+    // Promise.all rejects on the first failure and would leave the rest unreported, so settle and count.
+    const moves = await Promise.allSettled(selectedPrintableOrders.map((order) => (
       hasShippingLabelPrinted(order) || isShippedOrder(order) || isArchivedOrder(order)
         ? Promise.resolve()
         : updateOrderShipment(order.id || order.orderNumber, {
@@ -303,6 +305,11 @@ const MobileOrdersPage = () => {
     )));
     await reload();
     setOrderFilter('packing');
+    const failed = moves.filter((result) => result.status === 'rejected').length;
+    if (failed) {
+      toast.error(`${printedCount} resi PDF siap, tapi ${failed} order gagal dipindah ke Label/resi. Muat ulang lalu coba lagi.`);
+      return;
+    }
     toast.success(`${printedCount} resi PDF siap. Order dipindah ke Label/resi.`);
   };
 
@@ -664,7 +671,7 @@ const MobileOrdersPage = () => {
                       {bespokeDetailRows(bespokeItem).map(([label, value]) => (
                         <div key={label} className="grid grid-cols-[72px_1fr] gap-2 text-xs font-semibold leading-snug">
                           <span className="text-[#6b7280]">{label}</span>
-                          <span className="min-w-0 text-[#1f2937]">{value}</span>
+                          <BriefText text={value} className="min-w-0 text-[#1f2937]" />
                         </div>
                       ))}
                     </div>

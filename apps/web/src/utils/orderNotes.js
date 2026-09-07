@@ -5,7 +5,15 @@
 // label printed a truncated address (audit round 7). Parse by key instead: a value runs until the next
 // known key.
 
-export const ORDER_NOTE_KEYS = ['Address', 'Area', 'Shipping', 'Payment', 'Notes'];
+// Cart orders (cartService.buildOrderNotes) and bespoke orders (bespokeOrder.buildBespokeNotes) share this
+// parser. Every label either builder emits must be listed, or its line is glued onto the previous value —
+// which is how 'Area' used to carry the entire 1,500-character aroma brief on a bespoke order.
+export const ORDER_NOTE_KEYS = [
+  'Address', 'Area', 'Shipping', 'Payment', 'Notes',
+  'Perfume name', 'Mood', 'Occasion', 'Budget', 'Size', 'Preferred aroma', 'Avoided notes', 'Story',
+  'Bottle type', 'Cap design', 'Label design', 'Exotic material', 'Shipping fee', 'Voucher', 'Voucher discount',
+  'Estimated total', 'Pre-order acknowledgement', 'Reference scent',
+];
 
 const keyOf = (line) => ORDER_NOTE_KEYS.find((key) => (
   line.toLowerCase().startsWith(`${key.toLowerCase()}:`)
