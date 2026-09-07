@@ -63,11 +63,11 @@ const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const statusSteps = ['pending_payment', 'paid', 'processing', 'shipped', 'completed'];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 const orderSections = [
-  { value: 'task', label: 'Task' },
-  { value: 'payment', label: 'Payment' },
-  { value: 'fulfillment', label: 'Ship' },
-  { value: 'production', label: 'Make' },
-  { value: 'history', label: 'History' },
+  { value: 'task', label: 'Tugas' },
+  { value: 'payment', label: 'Bayar' },
+  { value: 'fulfillment', label: 'Kirim' },
+  { value: 'production', label: 'Racik' },
+  { value: 'history', label: 'Riwayat' },
 ];
 
 const paymentProofStatusLabels = {
@@ -110,17 +110,30 @@ const getPaymentLogTone = (status) => {
 };
 
 const getNextOrderTask = (order) => {
-  if (!order) return { label: 'Review order', helper: 'Open the order workspace.' };
+  if (!order) return { label: 'Tinjau order', helper: 'Buka ruang kerja order.' };
   if (order.paymentStatus !== 'paid') {
-    return { label: 'Resolve payment', helper: 'Check proof, DOKU status, or customer payment link.' };
+    return { label: 'Selesaikan pembayaran', helper: 'Cek bukti transfer, status DOKU, atau link bayar customer.' };
+  }
+  if (order.shipmentStatus !== 'packing' && !['shipped', 'delivered'].includes(order.shipmentStatus)) {
+    return { label: 'Mulai packing', helper: 'Siapkan paket, lalu tandai masuk packing.' };
   }
   if (!['shipped', 'delivered'].includes(order.shipmentStatus)) {
-    return { label: 'Prepare fulfillment', helper: 'Pack, add tracking, then mark as shipped.' };
+    return { label: 'Kirim paket', helper: 'Isi resi di tab Kirim, lalu tandai dikirim.' };
   }
   if (order.status !== 'completed') {
-    return { label: 'Close the order', helper: 'Review timeline and update final status.' };
+    return { label: 'Tutup order', helper: 'Cek timeline, lalu ubah status akhir.' };
   }
-  return { label: 'Order complete', helper: 'Everything important is already closed.' };
+  return { label: 'Order selesai', helper: 'Semua yang penting sudah beres.' };
+};
+
+// The single fulfillment step an order is at. The task card, its big button and the bottom bar all read
+// this, so the screen never offers "Packing", "Mulai packing" and "Tandai dikirim" at the same time —
+// which it used to, for an order that had only just been paid (UI/UX pass 2026-09-07).
+const getFulfillmentStep = (order) => {
+  if (!order || order.paymentStatus !== 'paid') return null;
+  if (['shipped', 'delivered'].includes(order.shipmentStatus)) return null;
+  if (order.shipmentStatus === 'packing') return { status: 'shipped', label: 'Tandai dikirim' };
+  return { status: 'packing', label: 'Mulai packing' };
 };
 
 
@@ -629,8 +642,9 @@ const MobileOrderDetailPage = () => {
     if (!order) return;
 
     if (orderSection === 'task') {
-      if (order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus)) {
-        quickShipmentUpdate('packing');
+      const step = getFulfillmentStep(order);
+      if (step) {
+        quickShipmentUpdate(step.status);
         return;
       }
       setOrderSection(order.paymentStatus === 'paid' ? 'fulfillment' : 'payment');
@@ -655,9 +669,9 @@ const MobileOrderDetailPage = () => {
     copyDraft();
   };
 
-  const canStartPacking = order?.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order?.shipmentStatus);
+  const fulfillmentStep = getFulfillmentStep(order);
   const primaryActionLabel = {
-    task: canStartPacking ? 'Mulai packing' : 'Buka tugas berikutnya',
+    task: fulfillmentStep ? fulfillmentStep.label : (order?.paymentStatus === 'paid' ? 'Buka tab Kirim' : 'Cek pembayaran'),
     payment: hasPaymentProofPath && paymentProofStatus !== 'approved' ? 'Setujui bukti' : 'Sinkron DOKU',
     fulfillment: savingShipment ? 'Menyimpan pengiriman...' : 'Simpan pengiriman',
     production: savingProductionLinks ? 'Menyimpan link...' : 'Simpan link',
@@ -770,14 +784,12 @@ const MobileOrderDetailPage = () => {
         <section className="mobile-card p-3">
           <div className="mb-3 text-[10px] font-bold uppercase text-editorial-charcoal">Aksi cepat</div>
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100" onClick={() => quickShipmentUpdate('shipped')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
-              <Send className="h-5 w-5" />
-              Tandai dikirim
-            </Button>
-            <Button type="button" variant="outline" className="h-14 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={() => quickShipmentUpdate('packing')} disabled={savingShipment || order.paymentStatus !== 'paid'}>
-              <PackageCheck className="h-4 w-4" />
-              Packing
-            </Button>
+            {fulfillmentStep ? (
+              <Button type="button" className="col-span-2 h-16 rounded-2xl gap-2 text-base font-bold shadow-lg shadow-amber-100" onClick={() => quickShipmentUpdate(fulfillmentStep.status)} disabled={savingShipment}>
+                {fulfillmentStep.status === 'shipped' ? <Send className="h-5 w-5" /> : <PackageCheck className="h-5 w-5" />}
+                {fulfillmentStep.label}
+              </Button>
+            ) : null}
             <Button type="button" className="h-14 rounded-2xl gap-2 text-xs font-bold" onClick={openSmartWhatsAppNotification}>
               <MessageCircle className="h-4 w-4" />
               WA customer
