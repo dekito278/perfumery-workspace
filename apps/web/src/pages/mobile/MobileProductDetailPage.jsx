@@ -15,6 +15,14 @@ import { useCart } from '@/hooks/useCart.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 
+// 'Custom perfume profile' is stored on every product as a system default, in English — not a mood
+// anyone chose, so it is not worth a chip on the page.
+const PLACEHOLDER_MOODS = ['custom perfume profile', 'profil parfum custom', 'profil parfum bespoke'];
+const isPlaceholderMood = (mood) => !mood || PLACEHOLDER_MOODS.includes(String(mood).trim().toLowerCase());
+
+
+
+
 const MobileProductDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -162,7 +170,7 @@ const MobileProductDetailPage = () => {
 
           {/* Meta */}
           <div className="m-editorial-pdp__meta">
-            {product.mood ? <span>{product.mood}</span> : null}
+            {isPlaceholderMood(product.mood) ? null : <span>{product.mood}</span>}
             {product.concentration ? <span>{product.concentration}</span> : null}
             {product.sizeVariants?.length ? <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span> : null}
           </div>

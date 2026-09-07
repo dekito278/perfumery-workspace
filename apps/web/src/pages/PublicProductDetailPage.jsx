@@ -15,15 +15,24 @@ import useProductStory from '@/hooks/useProductStory.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
+import BriefText from '@/components/BriefText.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
+
+
   DEFAULT_SHARE_IMAGE,
   buildBreadcrumbJsonLd,
   buildProductJsonLd,
   getSiteOrigin,
   toAbsoluteUrl,
 } from '@/utils/seo.js';
+
+// 'Custom perfume profile' is stored on every product as a system default, in English — not a mood
+// anyone chose, so it is not worth a chip on the page.
+const PLACEHOLDER_MOODS = ['custom perfume profile', 'profil parfum custom', 'profil parfum bespoke'];
+const isPlaceholderMood = (mood) => !mood || PLACEHOLDER_MOODS.includes(String(mood).trim().toLowerCase());
+
 
 const relatedFor = (product, catalog) => {
   const relatedSlugs = product.relatedFragrances || [];
@@ -197,7 +206,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
             <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
-            <p className="pdp-story hero-animate-text hero-animate-text--d4">{product.story}</p>
+            {/* The written description carries blank lines the author typed; a bare {story} collapsed
+                them into one run-on block, the same way bespoke briefs used to render. */}
+            <div className="pdp-story hero-animate-text hero-animate-text--d4">
+              <BriefText text={product.story} />
+            </div>
 
             {/* Scent pyramid */}
             <div data-reveal>
@@ -206,7 +219,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
             {/* Meta details */}
             <div className="pdp-meta" data-reveal>
-              <span>{product.mood}</span>
+              {isPlaceholderMood(product.mood) ? null : <span>{product.mood}</span>}
               <span>{product.concentration}</span>
               <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
             </div>
