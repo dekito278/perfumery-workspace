@@ -50,8 +50,14 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
 - [x] (PR #52) **U-9 · Target sentuh di bawah 44px** di keranjang dan checkout (tombol jumlah 32×32,
       beberapa 40px). Naikkan ke minimal 44×44 tanpa mengubah tampilan visual (padding/inset).
 
-- [ ] **U-10 · Fokus keyboard nyaris tidak ada di studio.** `studio.css` tidak punya satu pun
-      aturan `focus-visible`. Tambahkan cincin fokus yang konsisten.
+- [x] **U-10 · TIDAK PERLU — temuan saya keliru.** Dugaan awal datang dari menghitung `focus-visible`
+      per berkas: `studio.css` memang nol. Tapi semua stylesheet dimuat global di `main.jsx`, dan
+      `storefront.css` memuat aturan tanpa scope
+      `:is(a, button, input, select, textarea, [tabindex]):focus-visible` yang juga berlaku di studio.
+      Diuji di production dengan menekan Tab sungguhan (bukan `focus()` lewat skrip, yang tidak selalu
+      memicu `:focus-visible`): dua kontrol studio berbeda sama-sama menghasilkan
+      `outline: solid 2px rgb(176,139,79)` dan `matches(':focus-visible') === true`. Tidak ada yang
+      perlu diperbaiki.
 
 ## Gelombang 3 — tampilan (menyiapkan foto asli)
 
