@@ -278,7 +278,12 @@ SQL = JS.
 **Bonus (bisa kapan pun): `20260907050000_payment_session_lookup_returns_items.sql`** — halaman bayar pembeli
 menampilkan rincian produk + ongkir sungguhan, bukan hanya total. Klien sudah siap sejak PR #25.
 
-**V-1 / V-2 — voucher. SIAP (2026-09-07), urutan WAJIB:**
+**V-1 / V-2 / V-3 — voucher. ✅ SELESAI 2026-09-07 ±07:15 WIB.** Kedua migrasi diterapkan owner, PR #33 live.
+Verifikasi anon: tabel voucher `[]`, usage records `[]`, RPC record → `42501`, lookup kode palsu `[]`, lookup
+kode asli 1 baris (dicek sebelum policy; fungsi security definer tidak terpengaruh RLS). Uji akhir yang
+tersisa di tangan owner: satu checkout dengan voucher → `storefront_voucher_usage_records` +1.
+
+Riwayat urutan yang dipakai:
 Jebakan lama (pencatatan di create menghanguskan kuota kalau DOKU gagal) sudah tidak berlaku: pelepasan
 kuota sudah server-side di `api/doku/notification` (cancel terminal) dan `api/orders/expire-reservations`
 (sweep), jadi order yang ditinggalkan mengembalikan kuota paling lambat di sweep harian.
