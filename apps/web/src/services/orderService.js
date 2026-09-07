@@ -3,6 +3,7 @@ import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
 import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '@/utils/bespokeOrder.js';
+import { getClientContext } from '@/utils/clientContext.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -369,6 +370,7 @@ const normalizeOrder = (order) => {
     customerCode: order.customer_code || order.customerCode || '',
     customerId: order.customer_id || order.customerId || '',
     contact: order.contact || '-',
+    clientContext: order.client_context || order.clientContext || {},
     notes: order.notes || '',
     items,
     voucherSnapshot,
@@ -1172,10 +1174,12 @@ export const authoritativeOrdersEnabled = () => {
 // and inserts via the service role. Returns a normalized order, or throws so the caller can fall back to
 // the direct-insert path.
 const postAuthoritativeOrder = async (body) => {
+  // Attached here rather than at each call site: this is the single choke point every order goes
+  // through, cart checkout and bespoke alike, so neither path can forget it.
   const response = await fetch('/api/orders/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, client: getClientContext() }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data?.order) {

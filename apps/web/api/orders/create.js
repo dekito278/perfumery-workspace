@@ -17,6 +17,7 @@ import { Buffer } from 'node:buffer';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '../../src/utils/bespokeOrder.js';
 import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
+import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const jsonResponse = (res, status, body) => {
@@ -183,6 +184,8 @@ export default async function handler(req, res) {
   try {
     const input = JSON.parse((await readBody(req)) || '{}');
     const baseUrl = `https://${req.headers.host}`;
+    const clientContext = sanitizeClientContext(input.client);
+
     const isBespoke = input.source === 'bespoke' || Boolean(input.bespoke);
 
     // 1. Item prices (authoritative, from DB)
@@ -311,6 +314,7 @@ export default async function handler(req, res) {
       // Real provider ids are 'manual_transfer_bca'/'doku'; ['manual','whatsapp'] never matched.
       payment_status: ['manual_transfer_bca', 'manual'].includes(paymentProvider) ? 'pending' : 'unpaid',
       source: isBespoke ? 'bespoke_request' : (input.source || 'storefront'),
+      client_context: clientContext,
       ...(isBespoke ? { bespoke_production_status: 'review_brief' } : {}),
     };
 

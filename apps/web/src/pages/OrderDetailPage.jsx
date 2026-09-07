@@ -77,6 +77,7 @@ import {
   isShippedOrder,
   paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
+import { formatClientContext } from '@/utils/clientContext.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -719,6 +720,7 @@ const OrderDetailPage = () => {
             </div>
             <p className="mt-2 max-w-2xl text-base text-muted-foreground">
               {formatDate(order.createdAt)} / {order.quantity} item / {formatTotal(order.subtotal)}
+              {formatClientContext(order.clientContext) ? ` / ${formatClientContext(order.clientContext)}` : ''}
             </p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
               {order.inventoryDeducted ? (
