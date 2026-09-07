@@ -301,7 +301,7 @@ const MobileDashboardPage = () => {
             <StudioChip label="Perlu tindakan" value={loadedSections.logs && loadedSections.materials ? attentionCount : '-'} tone="rose" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button className="rounded-2xl" onClick={() => navigate('/mobile/studio/products')}>Products</Button>
+            <Button className="rounded-2xl" onClick={() => navigate('/mobile/studio/products')}>Produk</Button>
             <Button variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/studio/fulfillment')}>Pengiriman</Button>
           </div>
         </section>
@@ -310,14 +310,14 @@ const MobileDashboardPage = () => {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold">Prioritas hari ini</h2>
-              <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Orders</Button>
+              <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate('/mobile/studio/orders')}>Order</Button>
             </div>
             <div className="grid gap-3">
               <PriorityCard
                 icon={FileCheck2}
                 label="Bukti transfer"
                 title={`${proofReviewOrders.length} bukti perlu dicek`}
-                helper="Approve atau reject dari detail order"
+                helper="Setujui atau tolak dari detail order"
                 tone={proofReviewOrders.length ? 'amber' : 'emerald'}
                 onClick={() => navigate('/mobile/studio/orders?filter=proof_review')}
               />
@@ -325,7 +325,7 @@ const MobileDashboardPage = () => {
                 icon={Truck}
                 label="Siap packing"
                 title={`${paidReadyOrders.length} order siap packing`}
-                helper="Input resi dan mark shipped"
+                helper="Isi resi lalu tandai dikirim"
                 tone={paidReadyOrders.length ? 'emerald' : 'amber'}
                 onClick={() => navigate('/mobile/studio/fulfillment')}
               />
@@ -333,7 +333,7 @@ const MobileDashboardPage = () => {
                 icon={MessageCircle}
                 label="Follow-up"
                 title={`${paymentFollowUps.length} payment pending`}
-                helper={`${shippedFollowUps.length} shipped perlu dicek delivery`}
+                helper={`${shippedFollowUps.length} dikirim perlu dicek sampai`}
                 tone={paymentFollowUps.length || shippedFollowUps.length ? 'amber' : 'emerald'}
                 onClick={() => navigate('/mobile/studio/orders')}
               />
