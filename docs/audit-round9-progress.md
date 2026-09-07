@@ -454,3 +454,12 @@ buang fallback localStorage dari semua jalur tulis (biarkan hanya di jalur baca 
 5. **S-1** — cocokkan kata kunci Jawa per token, bukan substring.
 6. **X-1** — mulai dari `orderService` jalur tulis: `.select()` + gagal kalau 0 baris, buang fallback lokal.
 7. Sisanya (P-3, O-2, O-7, D-1, S-2, V-1, V-2, I-1, R-1) sesuai prioritas.
+
+
+## Update 2026-09-07
+- P-1b ditutup: publik membaca `storefront_products_public` (tanpa draft, tanpa 16 prefix tag internal); tabel
+  `storefront_products` SELECT hanya `is_admin()`. Diverifikasi anon: tabel `[]`, view 18 baris, 0 tag internal.
+- `storefront_payment_session_lookup` mengembalikan `items`; halaman bayar menampilkan rincian sungguhan.
+- Insiden malam 2026-09-07 (order DKT-MTQ270FV): admin tanpa faktor TOTP terkunci diam-diam oleh `is_admin()` aal2
+  → `AdminSessionNotice`; upload bukti transfer ditolak sejak 19 Agustus karena path lowercase vs RPC uppercase → fix;
+  ongkir palsu di halaman bayar → fix; brief bespoke dirender terbaca (`BriefText`); reset password minta TOTP dulu.

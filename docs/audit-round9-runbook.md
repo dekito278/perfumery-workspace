@@ -251,7 +251,15 @@ di bawah.
 
 ### Ditunda, dengan alasan
 
-**P-1b — tag internal produk. SIAP (2026-09-07), urutan WAJIB ini:**
+**P-1b — tag internal produk. ✅ SELESAI 2026-09-07 ±05:30 WIB.** Ketiga langkah di bawah sudah dijalankan owner
+dan diverifikasi dari luar: view 18 baris / 0 tag internal (kontrol: tabel saat masih publik memuat 24 tag
+internal dari 42); setelah langkah 3 tabel via anon → `[]`, view → 18; katalog storefront tampil di build baru;
+studio Produk tampil 18 (aal2). Bonus lookup-items juga sudah diterapkan: halaman bayar DKT-MTQ270FV kini
+menampilkan Rp 215.000 + ongkir Rp 10.000. Catatan pemeliharaan: kolom baru di `storefront_products` butuh
+`create or replace view storefront_products_public` ulang; prefix internal baru harus ditambah di SQL DAN JS
+(selfcheck `publicProductsView.selfcheck.mjs` menjaga keduanya sama).
+
+Riwayat urutan yang dipakai:
 Bentuk yang benar (lihat alasan di riwayat git): tabel jadi admin-only, publik membaca view
 `storefront_products_public` yang membuang baris draft dan tag internal. Klien: `getCatalogProductsAsync`
 dan `validateOrderStock` (jalur pembeli) membaca view; halaman admin (`editableOnly`) tetap ke tabel; baris
