@@ -28,7 +28,7 @@ merge, lalu tandai `[x]` di sini beserta nomor PR. Jangan gabungkan dua item dal
 - [x] (PR #47) **U-4 · Kotak voucher berada di bawah tombol "Lanjut bayar" pertama.** Pembeli bisa
       checkout tanpa pernah melihatnya. Pindahkan voucher ke atas tombol utama.
 
-- [ ] **U-5 · Placeholder dipakai sebagai label.** "KODE VOUCHER", "Catatan pengiriman atau
+- [x] (PR #48) **U-5 · Placeholder dipakai sebagai label.** "KODE VOUCHER", "Catatan pengiriman atau
       request", "Nama pembeli" hanya placeholder abu besar; begitu diketik, konteksnya hilang,
       dan pembaca layar membacanya tanpa nama. Beri `<Label>` (boleh visually-hidden bila desain
       tidak boleh berubah) atau `aria-label` di semua field checkout dan bespoke.
