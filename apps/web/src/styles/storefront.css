@@ -10072,7 +10072,9 @@
 
 /* The stroke draws itself in when the section arrives. pathLength is not set, so the dash values are
    deliberately larger than any path here; the excess simply finishes early. */
-.line-motif--draw path {
+/* Only dash out once the observer has had a chance to run. A motif whose page has no observer at all
+   must still be drawn, so the hidden state is opt-in via .line-motif--armed, set on mount. */
+.line-motif--draw.line-motif--armed path {
   stroke-dasharray: 4000;
   stroke-dashoffset: 4000;
 }
