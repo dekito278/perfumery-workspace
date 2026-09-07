@@ -115,7 +115,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
             <p className="m-editorial-eyebrow">ATELIER</p>
             <h2>Aroma sebagai atmosfer pribadi.</h2>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/bespoke')}>
-              Request parfum custom <ArrowRight className="h-4 w-4" />
+              Konsultasi bespoke <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </section>

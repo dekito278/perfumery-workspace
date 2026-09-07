@@ -647,7 +647,7 @@ const MobileBespokePage = () => {
         <div className="grid gap-3">
           <div className="mobile-commerce-summary p-4 text-xs font-bold text-editorial-charcoal">
             <div className="flex justify-between gap-3"><span>Nama parfum</span><span>{form.perfumeName || '-'}</span></div>
-            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Custom perfume</span><span>Dikonfirmasi Studio</span></div>
+            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Parfum bespoke</span><span>Dikonfirmasi Studio</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Voucher</span><span>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
             <div className="mt-3 flex items-end justify-between gap-3 border-t border-editorial-stone/10 pt-3 text-sm text-editorial-charcoal">
@@ -753,7 +753,7 @@ const MobileBespokePage = () => {
       return;
     }
     if (estimatedTotal <= 0) {
-      toast.error('Harga custom belum terhitung. Pilih ulang opsi botol.');
+      toast.error('Harga bespoke belum terhitung. Pilih ulang opsi botol.');
       return;
     }
 
@@ -852,7 +852,7 @@ const MobileBespokePage = () => {
           reference: referenceProduct?.name || '',
           createdAt: new Date().toISOString(),
         });
-        toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+        toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
         clearBespokeDraft();
         (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
         navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
@@ -901,7 +901,7 @@ const MobileBespokePage = () => {
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),
       });
-      toast.success(`Custom perfume request saved to Studio: ${order.orderNumber}`);
+      toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
       clearBespokeDraft();
       (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
       navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
@@ -922,16 +922,16 @@ const MobileBespokePage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>Parfum Custom - Solivagant</title>
-        <meta name="description" content="Create a custom perfume request with aroma, bottle size, cap design, exotic materials, and payment preference." />
+        <title>Parfum Bespoke - Solivagant</title>
+        <meta name="description" content="Ajukan request parfum bespoke SOLIVAGANT: arah aroma, ukuran botol, desain cap, material eksotis, dan pembayaran." />
       </Helmet>
       <main className="mobile-page mobile-bespoke-page">
         <section className="mobile-soft-card p-2.5">
           <div className="mobile-commerce-chip gap-2 bg-white px-3 py-1 text-[10px] uppercase">
             <Sparkles className="h-3.5 w-3.5" />
-            Brief custom
+            Brief bespoke
           </div>
-          <h1 className="mt-1.5 text-lg font-bold leading-tight text-editorial-charcoal">Request parfum custom.</h1>
+          <h1 className="mt-1.5 text-lg font-bold leading-tight text-editorial-charcoal">Request parfum bespoke.</h1>
           <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
             Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat.
           </p>
@@ -1047,7 +1047,7 @@ const MobileBespokePage = () => {
         <StickyBottomActionBar
           fixed
           reserveSpace
-          aria-label="Aksi request custom"
+          aria-label="Aksi request bespoke"
           className="mobile-bespoke-action-bar"
           contentClassName="rounded-2xl border-editorial-stone/10 bg-white/95"
         >

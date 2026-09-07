@@ -14,7 +14,7 @@ const commerceNavItems = [
   { path: '/mobile/dashboard', label: 'Beranda', icon: Home },
   { path: '/mobile/catalog', label: 'Belanja', icon: Search, aliases: ['/mobile/products'] },
   { path: '/mobile/articles', label: 'Artikel', icon: BookOpenText },
-  { path: '/mobile/bespoke', label: 'Custom', icon: MessageCircle },
+  { path: '/mobile/bespoke', label: 'Bespoke', icon: MessageCircle },
   { path: '/mobile/cart', label: 'Keranjang', icon: ShoppingBag },
   { path: '/mobile/customer', label: 'Cek Order', icon: ClipboardCheck },
 ];

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
@@ -454,7 +454,7 @@ const BespokePage = () => {
     if (!form.contact.trim()) return 'Email atau WhatsApp wajib diisi.';
     if (!form.scentDescription.trim()) return 'Ceritakan arah aroma dulu.';
     if (!form.size) return 'Pilih ukuran botol.';
-    if (estimatedTotal <= 0) return 'Harga custom belum terhitung. Pilih ulang opsi botol.';
+    if (estimatedTotal <= 0) return 'Harga bespoke belum terhitung. Pilih ulang opsi botol.';
     if (!form.deliveryAddress.trim()) return 'Alamat pengiriman wajib diisi.';
     if (!selectedDestination) return 'Pilih area ongkir dari hasil pencarian.';
     if (!selectedCourier) return 'Pilih kurir pengiriman.';
@@ -616,7 +616,7 @@ const BespokePage = () => {
     <>
       <Helmet>
         <title>Parfum Bespoke - SOLIVAGANT</title>
-        <meta name="description" content="Ajukan konsultasi parfum custom SOLIVAGANT lewat pilihan aroma, botol, data pengiriman, dan pembayaran." />
+        <meta name="description" content="Ajukan konsultasi parfum bespoke SOLIVAGANT lewat pilihan aroma, botol, data pengiriman, dan pembayaran." />
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
@@ -740,7 +740,7 @@ const BespokePage = () => {
                   <div><dt>Nama parfum</dt><dd>{form.perfumeName || 'Belum diisi'}</dd></div>
                   <div><dt>Aroma</dt><dd>{form.scentDescription || 'Belum diisi'}</dd></div>
                   <div><dt>Botol</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div><dt>Subtotal custom</dt><dd>{formatRupiah(estimatedTotal)}</dd></div>
+                  <div><dt>Subtotal bespoke</dt><dd>{formatRupiah(estimatedTotal)}</dd></div>
                 </dl>
               </div>
               <div className="editorial-bespoke-next__action">
@@ -856,7 +856,7 @@ const BespokePage = () => {
                   ) : null}
                 </div>
                 <div className="editorial-cart-summary">
-                  <div className="editorial-cart-summary__row"><span>Subtotal custom</span><strong>{formatRupiah(estimatedTotal)}</strong></div>
+                  <div className="editorial-cart-summary__row"><span>Subtotal bespoke</span><strong>{formatRupiah(estimatedTotal)}</strong></div>
                   {discountAmount ? <div className="editorial-cart-summary__row"><span>Voucher</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
                   <div className="editorial-cart-summary__row"><span>Ongkir</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
                   <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{formatRupiah(totalDue)}</strong></div>
