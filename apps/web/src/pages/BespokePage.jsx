@@ -627,7 +627,7 @@ const BespokePage = () => {
           <div className="bespoke-hero__copy">
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KONSULTASI BESPOKE</p>
             <TextReveal as="h1" text="Racik Parfum Versimu" />
-            <p className="hero-animate-text hero-animate-text--d3">Ceritakan arah aromamu, pilih detail botol, lalu kirim permintaan. Parfum custom dikerjakan dalam 7–14 hari.</p>
+            <p className="hero-animate-text hero-animate-text--d3">Ceritakan arah aromamu, pilih detail botol, lalu kirim permintaan. Parfum bespoke dikerjakan dalam 7–14 hari.</p>
           </div>
           <ol className="bespoke-hero__steps hero-animate-fade">
             {steps.map((step, index) => (
