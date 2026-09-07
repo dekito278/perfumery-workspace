@@ -247,7 +247,7 @@ const MobileEditFormulaPage = () => {
           concentrate_amount: item.concentrate_amount ?? null,
         }))],
       );
-      toast.success('Revision saved');
+      toast.success('Revisi disimpan');
       navigate(`/mobile/formulas/${id}`);
     } catch (error) {
       toast.error(error.message || 'Failed to save revision');

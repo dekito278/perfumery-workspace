@@ -259,7 +259,7 @@ const CreateFormulaPage = () => {
         notes: notes || null,
       }, itemsForSubmit);
 
-      toast.success('Formula created successfully');
+      toast.success('Formula dibuat');
       navigate(`/formulas/${createdFormula.id}`);
     } catch (error) {
       toast.error(error.message || 'Failed to create formula');

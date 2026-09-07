@@ -40,12 +40,12 @@ const LoginPage = () => {
         toast.info('Enter your authenticator code');
         return;
       }
-      toast.success('Login successful');
+      toast.success('Berhasil masuk');
       const redirectTo = location.state?.from?.pathname || '/studio';
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
-      toast.error(err.message || 'Login failed');
+      toast.error(err.message || 'Login gagal');
     } finally {
       setLoading(false);
     }
@@ -58,12 +58,12 @@ const LoginPage = () => {
 
     try {
       await verifyMfaCode(authenticatorCode);
-      toast.success('Authenticator verified');
+      toast.success('Authenticator terverifikasi');
       const redirectTo = location.state?.from?.pathname || '/studio';
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.message || 'Invalid authenticator code');
-      toast.error(err.message || 'Invalid authenticator code');
+      setError(err.message || 'Kode authenticator salah');
+      toast.error(err.message || 'Kode authenticator salah');
     } finally {
       setMfaLoading(false);
     }
@@ -96,10 +96,10 @@ const LoginPage = () => {
     setError('');
     try {
       await requestPasswordReset(email.trim(), `${window.location.origin}/reset-password`);
-      toast.success('Password reset email sent');
+      toast.success('Email reset password terkirim');
     } catch (resetError) {
-      setError(resetError.message || 'Failed to send reset email');
-      toast.error(resetError.message || 'Failed to send reset email');
+      setError(resetError.message || 'Gagal mengirim email reset');
+      toast.error(resetError.message || 'Gagal mengirim email reset');
     } finally {
       setResetLoading(false);
     }
@@ -108,14 +108,14 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Login - Solivagant</title>
-        <meta name="description" content="Sign in to your Solivagant account to manage materials, formulas, and validation work." />
+        <title>Masuk - Solivagant</title>
+        <meta name="description" content="Masuk ke akun Solivagant untuk mengelola material, formula, dan validasi." />
       </Helmet>
       <div className="flex min-h-screen items-center justify-center bg-[#121110] p-4">
         <Card className="w-full max-w-md border-white/10 bg-editorial-paper shadow-2xl shadow-black/40">
           <CardHeader className="space-y-1">
             <img src="/brand/solivagant-logo.png" alt="Solivagant" className="mb-5 h-16 w-auto rounded-2xl object-contain" />
-            <CardTitle className="text-2xl font-bold">Welcome back, Solivagant</CardTitle>
+            <CardTitle className="text-2xl font-bold">Selamat datang kembali</CardTitle>
             <CardDescription>Masuk dan lanjut racik hari ini.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -127,10 +127,10 @@ const LoginPage = () => {
                   </div>
                 )}
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
-                  Open your authenticator app and enter the 6 digit code for {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
+                  Buka aplikasi authenticator dan masukkan kode 6 digit untuk {mfaChallenge?.friendlyName || 'Solivagant Studio'}.
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="authenticator-code">Authenticator code</Label>
+                  <Label htmlFor="authenticator-code">Kode authenticator</Label>
                   <Input
                     id="authenticator-code"
                     inputMode="numeric"
@@ -143,10 +143,10 @@ const LoginPage = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={mfaLoading || authenticatorCode.length < 6}>
-                  {mfaLoading ? 'Verifying...' : 'Verify authenticator'}
+                  {mfaLoading ? 'Memverifikasi...' : 'Verifikasi authenticator'}
                 </Button>
                 <Button type="button" variant="ghost" className="w-full" onClick={() => { void handleBackToPassword(); }}>
-                  Back to password
+                  Kembali ke password
                 </Button>
               </form>
             ) : (
@@ -161,7 +161,7 @@ const LoginPage = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder="nama@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -173,7 +173,7 @@ const LoginPage = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Masukkan password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -181,7 +181,7 @@ const LoginPage = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Masuk...' : 'Masuk'}
               </Button>
               <div className="flex items-center gap-3 py-1 text-xs font-semibold text-muted-foreground">
                 <span className="h-px flex-1 bg-border" />atau<span className="h-px flex-1 bg-border" />
@@ -190,7 +190,7 @@ const LoginPage = () => {
                 Masuk dengan Google
               </Button>
               <Button type="button" variant="ghost" className="w-full" onClick={handlePasswordReset} disabled={resetLoading}>
-                {resetLoading ? 'Sending reset link...' : 'Forgot password?'}
+                {resetLoading ? 'Mengirim link reset...' : 'Lupa password?'}
               </Button>
             </form>
             )}

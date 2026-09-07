@@ -27,7 +27,7 @@ const EditRawMaterialModal = ({ open, onOpenChange, material, onSuccess }) => {
         name: formatName(form.formData.name),
       });
 
-      toast.success('Material updated successfully');
+      toast.success('Material diperbarui');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {

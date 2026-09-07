@@ -514,7 +514,7 @@ const MobileBatchesPage = () => {
         await updateFormulaStatus(selectedFormula.id, 'ready_for_batch');
       }
 
-      toast.success(usageRecords.length ? 'Batch saved and material stock deducted' : 'Batch saved');
+      toast.success(usageRecords.length ? 'Batch saved and material stock deducted' : 'Batch disimpan');
       return batch;
     } catch (error) {
       toast.error(error.message || 'Failed to save batch');

@@ -284,7 +284,7 @@ const MobileCreateFormulaPage = () => {
         });
         await updateOrderBespokeProductionStatus(orderContext.id || orderContext.orderNumber, 'formula');
       }
-      toast.success('Formula created');
+      toast.success('Formula dibuat');
       navigate(`/mobile/formulas/${created.id}`);
     } catch (error) {
       toast.error(error.message || 'Failed to create formula');

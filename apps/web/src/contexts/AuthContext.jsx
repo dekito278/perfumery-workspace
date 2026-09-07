@@ -352,7 +352,7 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(null);
       setMfaResolutionPending(false);
       console.error('Login error:', error);
-      throw new Error(error.message || 'Login failed');
+      throw new Error(error.message || 'Login gagal');
     } finally {
       loginInProgressRef.current = false;
     }
@@ -366,7 +366,7 @@ export const AuthProvider = ({ children }) => {
 
     if (error) {
       console.error('Google login error:', error);
-      throw new Error(error.message || 'Google login failed');
+      throw new Error(error.message || 'Login Google gagal');
     }
 
     return data;
@@ -383,7 +383,7 @@ export const AuthProvider = ({ children }) => {
   const verifyMfaCode = async (code) => {
     const activeChallenge = mfaChallengeRef.current || mfaChallenge;
     if (!activeChallenge?.factorId || !activeChallenge?.challengeId) {
-      throw new Error('No authenticator challenge is active');
+      throw new Error('Tidak ada verifikasi authenticator yang aktif');
     }
 
     const { data, error } = await supabase.auth.mfa.verify({
@@ -393,7 +393,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (error) {
-      throw new Error(error.message || 'Invalid authenticator code');
+      throw new Error(error.message || 'Kode authenticator salah');
     }
 
     const {
@@ -416,7 +416,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (error) {
-      throw new Error(error.message || 'Failed to create authenticator setup');
+      throw new Error(error.message || 'Gagal memulai setup authenticator');
     }
 
     return data;
@@ -430,7 +430,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (error) {
-      throw new Error(error.message || 'Invalid authenticator code');
+      throw new Error(error.message || 'Kode authenticator salah');
     }
 
     setSession(data.session);
@@ -518,7 +518,7 @@ export const AuthProvider = ({ children }) => {
 
     if (error) {
       console.error('Password reset request error:', error);
-      throw new Error(error.message || 'Failed to send password reset email');
+      throw new Error(error.message || 'Gagal mengirim email reset password');
     }
   };
 
@@ -527,7 +527,7 @@ export const AuthProvider = ({ children }) => {
 
     if (error) {
       console.error('Password update error:', error);
-      throw new Error(error.message || 'Failed to update password');
+      throw new Error(error.message || 'Gagal memperbarui password');
     }
 
     // Sign out afterwards, always. Both callers reach here on a session that is only aal1:

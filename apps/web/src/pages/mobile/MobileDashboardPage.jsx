@@ -234,7 +234,7 @@ const MobileDashboardPage = () => {
   const shippedFollowUps = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
-    ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula updated', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
+    ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula diperbarui', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
     ...logs.map((log) => ({
       id: `validation-${log.id}`,
       title: formulasById.get(log.formula_id)?.name || 'Validation log',
@@ -262,7 +262,7 @@ const MobileDashboardPage = () => {
     setDeleting(true);
     try {
       await deleteFormula(deleteTarget.id);
-      toast.success('Formula deleted');
+      toast.success('Formula dihapus');
       setDeleteTarget(null);
       await loadData();
     } catch (error) {

@@ -15,10 +15,10 @@ const MobileSessionActions = () => {
     setLoggingOut(true);
     try {
       await logout();
-      toast.success('Logged out');
+      toast.success('Berhasil keluar');
       navigate('/mobile/login', { replace: true });
     } catch (error) {
-      toast.error(error.message || 'Failed to log out');
+      toast.error(error.message || 'Gagal keluar');
       setLoggingOut(false);
     }
   };

@@ -71,7 +71,7 @@ const MobileRawMaterialDetailPage = () => {
     setDeleting(true);
     try {
       await runDeleteWithTimeout(deleteMaterial(id), 30000);
-      toast.success('Material deleted');
+      toast.success('Material dihapus');
       navigate('/mobile/raw-materials');
     } catch (error) {
       toast.error(error.message || 'Failed to delete material');

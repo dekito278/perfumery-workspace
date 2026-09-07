@@ -29,10 +29,10 @@ const ResetPasswordPage = ({ mobile = false }) => {
     : 'w-full max-w-md rounded-3xl border bg-white p-6 shadow-sm';
 
   const helperText = useMemo(() => {
-    if (password.length === 0) return 'Use at least 8 characters.';
-    if (password.length < 8) return 'Password is too short.';
-    if (passwordConfirm && password !== passwordConfirm) return 'Passwords do not match yet.';
-    return 'Ready to update.';
+    if (password.length === 0) return 'Minimal 8 karakter.';
+    if (password.length < 8) return 'Password terlalu pendek.';
+    if (passwordConfirm && password !== passwordConfirm) return 'Konfirmasi belum sama.';
+    return 'Siap disimpan.';
   }, [password, passwordConfirm]);
 
   const handleSubmit = async (event) => {
@@ -40,22 +40,22 @@ const ResetPasswordPage = ({ mobile = false }) => {
     setError('');
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError('Password minimal 8 karakter.');
       return;
     }
 
     if (password !== passwordConfirm) {
-      setError('Password confirmation does not match.');
+      setError('Konfirmasi password belum sama.');
       return;
     }
 
     setSaving(true);
     try {
       await updatePassword(password);
-      toast.success('Password updated');
+      toast.success('Password diperbarui');
       navigate(loginPath, { replace: true });
     } catch (updateError) {
-      const message = updateError.message || 'Failed to update password';
+      const message = updateError.message || 'Gagal memperbarui password';
       setError(message);
       toast.error(message);
     } finally {
@@ -73,7 +73,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
     try {
       await verifyMfaCode(code);
     } catch (verifyError) {
-      setError(verifyError.message || 'Invalid authenticator code');
+      setError(verifyError.message || 'Kode authenticator salah');
     } finally {
       setVerifying(false);
     }
@@ -109,14 +109,14 @@ const ResetPasswordPage = ({ mobile = false }) => {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
             <KeyRound className="h-6 w-6" />
           </div>
-          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Verify authenticator first</h1>
+          <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Verifikasi authenticator dulu</h1>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
-            Enter the 6 digit code for {mfaChallenge.friendlyName || 'Solivagant Studio'} to unlock the password form.
+            Masukkan kode 6 digit untuk {mfaChallenge.friendlyName || 'Solivagant Studio'} untuk membuka form password.
           </p>
           <form onSubmit={handleVerify} className="mt-5 space-y-4">
             {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
             <div className="space-y-2">
-              <Label htmlFor="reset-mfa-code">Authenticator code</Label>
+              <Label htmlFor="reset-mfa-code">Kode authenticator</Label>
               <Input
                 id="reset-mfa-code"
                 inputMode="numeric"
@@ -129,7 +129,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
               />
             </div>
             <Button type="submit" disabled={verifying || code.length < 6} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
-              {verifying ? 'Verifying...' : 'Verify authenticator'}
+              {verifying ? 'Memverifikasi...' : 'Verifikasi authenticator'}
             </Button>
           </form>
         </div>
@@ -144,14 +144,14 @@ const ResetPasswordPage = ({ mobile = false }) => {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200">
           <KeyRound className="h-6 w-6" />
         </div>
-        <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Reset password</h1>
+        <h1 className="mt-5 text-2xl font-bold leading-tight text-[#1f2937]">Atur ulang password</h1>
         <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
-          Enter a new password for your Solivagant studio account.
+          Masukkan password baru untuk akun studio Solivagant.
         </p>
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {error ? <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</div> : null}
           <div className="space-y-2">
-            <Label htmlFor="reset-password">New password</Label>
+            <Label htmlFor="reset-password">Password baru</Label>
             <Input
               id="reset-password"
               type="password"
@@ -163,7 +163,7 @@ const ResetPasswordPage = ({ mobile = false }) => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reset-password-confirm">Confirm password</Label>
+            <Label htmlFor="reset-password-confirm">Konfirmasi password</Label>
             <Input
               id="reset-password-confirm"
               type="password"
@@ -176,10 +176,10 @@ const ResetPasswordPage = ({ mobile = false }) => {
             <p className="text-xs font-semibold text-[#6b7280]">{helperText}</p>
           </div>
           <Button type="submit" disabled={saving} className="h-12 w-full rounded-2xl bg-[#f59e0b] text-white hover:bg-[#d97706]">
-            {saving ? 'Updating...' : 'Update password'}
+            {saving ? 'Menyimpan...' : 'Simpan password baru'}
           </Button>
           <Button type="button" variant="ghost" className="h-11 w-full rounded-2xl" onClick={() => navigate(loginPath)}>
-            Back to login
+            Ke halaman login
           </Button>
         </form>
       </div>
