@@ -10,11 +10,13 @@ import { isProductVisibleInStorefront } from '@/services/productCatalogService.j
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 
+// The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
+// pastel square holding one italic word, which reads as unfinished rather than minimal (UX backlog U-11).
 const moodCategories = [
-  { name: 'Tenang & Minimal', family: 'Fresh' },
-  { name: 'Hangat & Nostalgia', family: 'Gourmand' },
-  { name: 'Gelap & Moody', family: 'Woody' },
-  { name: 'Lembut & Romantis', family: 'Floral' },
+  { name: 'Tenang & Minimal', family: 'Fresh', notes: 'Citrus · Musk · Ringan' },
+  { name: 'Hangat & Nostalgia', family: 'Gourmand', notes: 'Vanila · Tonka · Hangat' },
+  { name: 'Gelap & Moody', family: 'Woody', notes: 'Cedar · Vetiver · Mineral' },
+  { name: 'Lembut & Romantis', family: 'Floral', notes: 'Mawar · Melati · Powdery' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -103,6 +105,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
                   <span>{mood.family}</span>
                 </div>
                 <h3>{mood.name}</h3>
+                <p className="m-editorial-mood-card__notes">{mood.notes}</p>
               </Link>
             ))}
           </div>
