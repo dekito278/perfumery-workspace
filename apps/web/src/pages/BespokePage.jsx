@@ -774,7 +774,7 @@ const BespokePage = () => {
                       type="text"
                       value={destinationSearch}
                       onChange={(event) => updateDestinationSearch(event.target.value)}
-                      placeholder="Kecamatan / kota tujuan"
+                      placeholder="Kecamatan / kota tujuan" aria-label="Cari kecamatan atau kota tujuan"
                     />
                     <button type="button" className="editorial-button" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
                       {shippingLoading ? 'Mencari...' : 'Cari'}
