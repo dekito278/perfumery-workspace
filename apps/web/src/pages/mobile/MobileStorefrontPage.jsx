@@ -8,7 +8,7 @@ import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
-import { LineDivider } from '@/components/line/LineArt.jsx';
+import { LineDivider, LineMark } from '@/components/line/LineArt.jsx';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
@@ -105,6 +105,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
             {moodCategories.map((mood) => (
               <Link key={mood.name} to={`/mobile/catalog?category=${mood.family}`} className="m-editorial-mood-card">
                 <div className="m-editorial-mood-card__visual" data-family={mood.family.toLowerCase()}>
+                  <LineMark className="m-editorial-mood-card__mark" />
                   <span>{mood.family}</span>
                 </div>
                 <h3>{mood.name}</h3>

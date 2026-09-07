@@ -39,5 +39,6 @@ const LineMotif = ({ name, className = '', style, draw = false, ...rest }) => {
 export const LineDivider = (props) => <LineMotif name="divider" {...props} />;
 export const LineVessel = (props) => <LineMotif name="vessel" {...props} />;
 export const LineScribble = (props) => <LineMotif name="scribble" {...props} />;
+export const LineMark = (props) => <LineMotif name="mark" {...props} />;
 
 export default LineMotif;
