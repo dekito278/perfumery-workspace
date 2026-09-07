@@ -40,7 +40,7 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
 
   return (
     <article className="mobile-card mobile-list-card p-3">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3">
         <div className="grid min-w-0 flex-1 grid-cols-[72px_1fr] gap-3">
           <ProductVisual product={product} className="h-20 rounded-2xl" label={false} />
           <div className="min-w-0">
@@ -89,11 +89,13 @@ const ProductListCard = ({ onCopyLink, onDelete, onEdit, onOpenBatch, onPreview,
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 flex-col gap-1">
+        {/* One row, not a 4-high column: the column made every card ~2 screens tall and put the red
+            delete button directly under edit, one thumb-slip apart (UI/UX pass 2026-09-07). */}
+        <div className="flex items-center gap-2">
           <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => onPreview(product)} disabled={!canOpenPublic} aria-label={`Preview ${product.name}`}><ExternalLink className="h-4 w-4" /></Button>
           <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => onCopyLink(product)} disabled={!canOpenPublic} aria-label={`Salin link ${product.name}`}><Copy className="h-4 w-4" /></Button>
-          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl bg-white" onClick={() => onEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="h-4 w-4" /></Button>
-          <Button type="button" size="icon" variant="outline" className="h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => onDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
+          <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white px-3 text-xs font-bold" onClick={() => onEdit(product)} aria-label={`Edit ${product.name}`}><Edit3 className="mr-1.5 h-4 w-4" />Edit</Button>
+          <Button type="button" size="icon" variant="outline" className="ml-auto h-10 w-10 rounded-2xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => onDelete(product)} aria-label={`Hapus ${product.name}`}><Trash2 className="h-4 w-4" /></Button>
         </div>
       </div>
     </article>
