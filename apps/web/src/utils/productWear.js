@@ -66,9 +66,12 @@ export const toggleWearValue = (wear, facet, value) => {
 export const matchesWear = (wear, selection = {}) => {
   const w = normalizeWear(wear);
   return WEAR_KEYS.every((facet) => {
-    const wanted = Array.isArray(selection[facet]) ? selection[facet].filter(Boolean) : [];
+    // Accept a bare string as well as an array. A caller passing 'kerja' used to fall through to
+    // "no filter set", which reads as a working filter that quietly returns the whole catalogue.
+    const raw = selection[facet];
+    const wanted = (Array.isArray(raw) ? raw : [raw]).filter((v) => typeof v === 'string' && v.trim());
     if (!wanted.length) return true;
-    return wanted.some((value) => w[facet].includes(value));
+    return wanted.some((value) => w[facet].includes(value.trim().toLowerCase()));
   });
 };
 
