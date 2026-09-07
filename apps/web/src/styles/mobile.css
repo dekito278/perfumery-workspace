@@ -1151,6 +1151,16 @@
   backdrop-filter: blur(18px);
 }
 
+/* On a desktop viewport a full-width card hides the footer and a third of every page; keep it a toast. */
+@media (min-width: 768px) {
+  .mobile-pwa-update {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    max-width: 380px;
+  }
+}
+
 .mobile-pwa-update-mark {
   display: grid;
   width: 38px;
