@@ -49,9 +49,9 @@ const isFulfillmentReady = (order) => isPaid(order) && isOpenShipment(order) && 
 const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumber;
 
 const queueFilterOptions = [
-  { value: 'paid', label: 'Paid' },
+  { value: 'paid', label: 'Dibayar' },
   { value: 'packing', label: 'Label/resi' },
-  { value: 'shipped', label: 'Shipped' },
+  { value: 'shipped', label: 'Dikirim' },
   { value: 'follow_up', label: 'Follow-up' },
   { value: 'need_resi', label: 'Butuh resi' },
   { value: 'blocked', label: 'Tertahan' },
@@ -384,10 +384,10 @@ const MobileFulfillmentPage = () => {
 
   return (
     <MobileAuthenticatedLayout>
-      <Helmet><title>Fulfillment - Solivagant</title></Helmet>
+      <Helmet><title>Pengiriman - Solivagant</title></Helmet>
       <main className="mobile-page space-y-4">
         <MobileTopBar
-          title="Fulfillment"
+          title="Pengiriman"
           subtitle={`${readyOrders.length} paid siap kirim`}
           eyebrow="Studio mobile"
           action={<PackageOpen className="h-5 w-5 text-amber-700" />}
@@ -411,7 +411,7 @@ const MobileFulfillmentPage = () => {
           <div className="mt-4 grid grid-cols-2 gap-2">
             <FulfillmentMetric label="Siap" value={loading ? '-' : readyOrders.length} tone="emerald" />
             <FulfillmentMetric label="Label/resi" value={loading ? '-' : packingOrders.length} tone="amber" />
-            <FulfillmentMetric label="Paid tertahan" value={loading ? '-' : blockedPaidOrders.length} tone={blockedPaidOrders.length ? 'rose' : 'stone'} />
+            <FulfillmentMetric label="Dibayar, tertahan" value={loading ? '-' : blockedPaidOrders.length} tone={blockedPaidOrders.length ? 'rose' : 'stone'} />
             <FulfillmentMetric label="Dikirim hari ini" value={loading ? '-' : shippedToday.length} tone="stone" />
           </div>
           <MobileFilterChips
@@ -469,7 +469,7 @@ const MobileFulfillmentPage = () => {
                 <PackageCheck className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase text-amber-800">Paid tapi belum siap</div>
+                <div className="text-[10px] font-bold uppercase text-amber-800">Dibayar tapi belum siap</div>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">
                   {blockedPaidOrders.length} bespoke order masih menunggu workflow produksi sebelum masuk packing.
                 </p>
@@ -667,7 +667,7 @@ const MobileFulfillmentPage = () => {
             <MobileStatePanel
               tone="loading"
               title="Memuat antrean fulfillment"
-              description="Sebentar, order paid sedang disiapkan."
+              description="Sebentar, order yang sudah dibayar sedang disiapkan."
             />
           ) : null}
         </section>
