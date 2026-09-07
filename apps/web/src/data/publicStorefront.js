@@ -6,6 +6,7 @@ import {
   normalizeProductImages,
   normalizeProductVariants,
 } from '@/services/productCatalogService.js';
+import { normalizeWear } from '@/utils/productWear.js';
 
 const splitList = (value) => {
   if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
@@ -129,6 +130,7 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     visual: product.visual,
     availability: product.availability || publicStatus,
     publicStatus,
+    wear: normalizeWear(product.wear),
     materialHighlights: product.materialHighlights || inferMaterialHighlights(product),
     relatedFragrances: product.relatedFragrances || [],
     featured: Boolean(product.featured || index < 3),
