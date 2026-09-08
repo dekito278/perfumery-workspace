@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Helmet } from 'react-helmet';
 import { BadgePercent, CalendarDays, Copy, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -362,12 +363,9 @@ const MobileVoucherManagementPage = () => {
                 </label>
                 <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
                   Nilai
-                  <input
+                  <LocalizedNumberInput
                     value={draft.discountValue}
-                    onChange={(event) => updateDraft('discountValue', event.target.value)}
-                    type="number"
-                    min="0"
-                    step="1"
+                    onChange={(value) => updateDraft('discountValue', value)}
                     placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
                     className="mobile-form-control"
                   />
@@ -376,12 +374,9 @@ const MobileVoucherManagementPage = () => {
 
               <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
                 Minimum order
-                <input
+                <LocalizedNumberInput
                   value={draft.minimumOrder}
-                  onChange={(event) => updateDraft('minimumOrder', event.target.value)}
-                  type="number"
-                  min="0"
-                  step="1000"
+                  onChange={(value) => updateDraft('minimumOrder', value)}
                   placeholder="0"
                   className="mobile-form-control"
                 />

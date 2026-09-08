@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ExternalLink, ImageOff, ImagePlus, PackagePlus, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -343,11 +344,11 @@ const ProductForm = ({ product = null, onSaved }) => {
         <TabsContent value="commercial" className="mt-5 grid gap-4 sm:grid-cols-2">
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Harga</span>
-            <input type="number" value={form.priceNumber} onChange={(event) => updateField('priceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+            <LocalizedNumberInput value={form.priceNumber} onChange={(value) => updateField('priceNumber', value === '' ? 0 : value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
           </label>
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Harga coret</span>
-            <input type="number" value={form.compareAtPriceNumber || 0} onChange={(event) => updateField('compareAtPriceNumber', Number(event.target.value))} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+            <LocalizedNumberInput value={form.compareAtPriceNumber || 0} onChange={(value) => updateField('compareAtPriceNumber', value === '' ? 0 : value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
           </label>
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Stok total</span>
@@ -370,9 +371,9 @@ const ProductForm = ({ product = null, onSaved }) => {
               {(form.variants || []).map((variant, index) => (
                 <div key={variant.id || index} className="grid gap-2 rounded-2xl border bg-white p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
                   <input value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)} placeholder="30 ml" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <input type="number" value={variant.priceNumber} onChange={(event) => updateVariant(index, 'priceNumber', event.target.value)} placeholder="Harga" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <input type="number" value={variant.compareAtPriceNumber || 0} onChange={(event) => updateVariant(index, 'compareAtPriceNumber', event.target.value)} placeholder="Harga coret" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-                  <input type="number" value={variant.stock} onChange={(event) => updateVariant(index, 'stock', event.target.value)} placeholder="Stok" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <LocalizedNumberInput value={variant.priceNumber} onChange={(value) => updateVariant(index, 'priceNumber', value)} placeholder="Harga" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <LocalizedNumberInput value={variant.compareAtPriceNumber || 0} onChange={(value) => updateVariant(index, 'compareAtPriceNumber', value)} placeholder="Harga coret" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+                  <LocalizedNumberInput value={variant.stock} onChange={(value) => updateVariant(index, 'stock', value)} placeholder="Stok" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <Button type="button" size="icon" variant="outline" aria-label="Hapus varian" className="h-10 w-10 rounded-xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeVariant(index)} disabled={(form.variants || []).length <= 1}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               ))}

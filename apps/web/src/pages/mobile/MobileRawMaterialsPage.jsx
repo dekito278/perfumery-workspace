@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { FolderTree, Package, PackageCheck, Plus, SlidersHorizontal } from 'lucide-react';
@@ -415,47 +416,35 @@ const MobileRawMaterialsPage = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Stock on hand</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.001"
+              <LocalizedNumberInput as={Input}
                 value={stockForm.stock_quantity}
-                onChange={(event) => setStockForm((current) => ({ ...current, stock_quantity: event.target.value }))}
+                onChange={(value) => setStockForm((current) => ({ ...current, stock_quantity: value }))}
                 className="rounded-2xl bg-white"
               />
             </div>
             <div className="space-y-2">
               <Label>Minimum stock</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.001"
+              <LocalizedNumberInput as={Input}
                 value={stockForm.minimum_stock}
-                onChange={(event) => setStockForm((current) => ({ ...current, minimum_stock: event.target.value }))}
+                onChange={(value) => setStockForm((current) => ({ ...current, minimum_stock: value }))}
                 className="rounded-2xl bg-white"
               />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Low stock alert</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.001"
+            <LocalizedNumberInput as={Input}
               value={stockForm.low_stock_threshold}
-              onChange={(event) => setStockForm((current) => ({ ...current, low_stock_threshold: event.target.value }))}
+              onChange={(value) => setStockForm((current) => ({ ...current, low_stock_threshold: value }))}
               className="rounded-2xl bg-white"
               placeholder="Optional"
             />
           </div>
           <div className="space-y-2">
             <Label>Unit price per 10 {stockTarget?.unit || 'g'}</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
+            <LocalizedNumberInput as={Input}
               value={stockForm.cost_per_unit}
-              onChange={(event) => setStockForm((current) => ({ ...current, cost_per_unit: event.target.value }))}
+              onChange={(value) => setStockForm((current) => ({ ...current, cost_per_unit: value }))}
               className="rounded-2xl bg-white"
             />
           </div>

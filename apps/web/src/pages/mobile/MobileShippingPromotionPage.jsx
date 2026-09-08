@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
 import { BadgePercent, Save, Truck } from 'lucide-react';
@@ -110,35 +111,26 @@ const MobileShippingPromotionPage = () => {
           <section className="mobile-commerce-panel grid gap-3 p-4">
             <label className="grid gap-2">
               <span className="text-[10px] font-bold uppercase text-editorial-muted">Minimal belanja</span>
-              <input
-                type="number"
-                min="0"
-                step="1000"
+              <LocalizedNumberInput
                 value={settings.minimumSubtotal}
-                onChange={(event) => updateSetting('minimumSubtotal', Number(event.target.value || 0))}
+                onChange={(value) => updateSetting('minimumSubtotal', value === '' ? 0 : value)}
                 className="h-12 rounded-2xl border border-editorial-charcoal/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-editorial-charcoal"
               />
             </label>
             <label className={`grid gap-2 ${needsJavaAmount ? '' : 'opacity-50'}`}>
               <span className="text-[10px] font-bold uppercase text-editorial-muted">Maksimal Pulau Jawa</span>
-              <input
-                type="number"
-                min="0"
-                step="1000"
+              <LocalizedNumberInput
                 value={settings.javaAmount}
-                onChange={(event) => updateSetting('javaAmount', Number(event.target.value || 0))}
+                onChange={(value) => updateSetting('javaAmount', value === '' ? 0 : value)}
                 disabled={!needsJavaAmount}
                 className="h-12 rounded-2xl border border-editorial-charcoal/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-editorial-charcoal disabled:cursor-not-allowed"
               />
             </label>
             <label className={`grid gap-2 ${needsOtherAmount ? '' : 'opacity-50'}`}>
               <span className="text-[10px] font-bold uppercase text-editorial-muted">Diskon luar Jawa / semua area</span>
-              <input
-                type="number"
-                min="0"
-                step="1000"
+              <LocalizedNumberInput
                 value={settings.otherAmount}
-                onChange={(event) => updateSetting('otherAmount', Number(event.target.value || 0))}
+                onChange={(value) => updateSetting('otherAmount', value === '' ? 0 : value)}
                 disabled={!needsOtherAmount}
                 className="h-12 rounded-2xl border border-editorial-charcoal/10 bg-[#fbfaf7] px-4 text-sm font-bold outline-none focus:border-editorial-charcoal disabled:cursor-not-allowed"
               />

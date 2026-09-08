@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Helmet } from 'react-helmet';
 import { BadgePercent, CalendarDays, CheckCircle2, Copy, Edit3, Plus, Save, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -290,12 +291,9 @@ const VoucherManagementPage = () => {
                   </label>
                   <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Nilai diskon
-                    <input
+                    <LocalizedNumberInput
                       value={draft.discountValue}
-                      onChange={(event) => updateDraft('discountValue', event.target.value)}
-                      type="number"
-                      min="0"
-                      step="1"
+                      onChange={(value) => updateDraft('discountValue', value)}
                       placeholder={draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? '10' : '25000'}
                       className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
@@ -305,12 +303,9 @@ const VoucherManagementPage = () => {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Minimum order
-                    <input
+                    <LocalizedNumberInput
                       value={draft.minimumOrder}
-                      onChange={(event) => updateDraft('minimumOrder', event.target.value)}
-                      type="number"
-                      min="0"
-                      step="1000"
+                      onChange={(value) => updateDraft('minimumOrder', value)}
                       placeholder="0"
                       className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
