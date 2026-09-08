@@ -40,7 +40,7 @@ const getArticleExcerpt = (article) =>
 const HomePage = () => {
   const fetchedProducts = useCatalogProducts();
   const catalogProducts = fetchedProducts.length ? fetchedProducts : featuredProducts;
-  const { images: siteImages } = useSiteImages();
+  const { images: siteImages, loading: siteImagesLoading } = useSiteImages();
   const [publishedArticles, setPublishedArticles] = useState([]);
   const [activeMood, setActiveMood] = useState(0);
   const revealRef = useScrollReveal();
@@ -100,7 +100,11 @@ const HomePage = () => {
 
         {/* ── 1. Hero Slideshow ── */}
         <section className="home-hero">
-          <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+          {/* No photograph until the upload list settles: the bundled fallback is a different
+              picture, so seeding with it flashed the old hero on every first paint. */}
+          {siteImagesLoading ? null : (
+            <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+          )}
           <div className="home-hero__overlay home-hero__overlay--editorial">
             <p className="home-hero__eyebrow">ATELIER PARFUM ARTISAN</p>
             <h1 className="home-hero__title" data-text-reveal>
@@ -179,7 +183,11 @@ const HomePage = () => {
 
         {/* ── 4. Full-bleed Editorial Statement ── */}
         <section className="home-statement" data-reveal="scale">
-          <img src={img(siteImages['home-statement'], 1280) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
+          {/* No photograph until the upload list settles: the bundled fallback is a different
+              picture, so seeding with it flashed the old hero on every first paint. */}
+          {siteImagesLoading ? null : (
+            <img src={img(siteImages['home-statement'], 1280) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
+          )}
           <div className="home-statement__overlay">
             <TextReveal text="Rasa di Atas Formula." />
             <p>Kami tidak mengejar tren atau selera pasar. Setiap fragrance SOLIVAGANT adalah sebuah atmosfer — dirakit dari obsesi, intuisi, dan keyakinan bahwa parfum seharusnya mengubah cara kamu membawa diri di sebuah ruangan.</p>
@@ -253,7 +261,11 @@ const HomePage = () => {
 
         {/* ── 7. Newsletter Section ── */}
         <section className="home-newsletter" data-reveal>
-          <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} alt="Atelier Solivagant" className="home-newsletter__bg" />
+          {/* No photograph until the upload list settles: the bundled fallback is a different
+              picture, so seeding with it flashed the old hero on every first paint. */}
+          {siteImagesLoading ? null : (
+            <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} alt="Atelier Solivagant" className="home-newsletter__bg" />
+          )}
           <div className="home-newsletter__inner">
             <p className="editorial-eyebrow">KOLABORASI</p>
             <h2>Mari berkolaborasi dengan atelier.</h2>

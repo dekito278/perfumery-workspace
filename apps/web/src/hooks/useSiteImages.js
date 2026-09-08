@@ -2,8 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { listSiteImages, SITE_IMAGES_CHANGED_EVENT } from '@/services/siteImageStorageService.js';
 
 /**
- * Default static fallbacks for site images.
- * Used when no uploaded image exists for a slot.
+ * Bundled fallbacks, used only once we know a slot has no upload.
+ *
+ * They are deliberately NOT the initial state. Seeding with them meant every first paint showed
+ * /brand/home/raw-material-library.jpg in the hero — so replacing the hero in the studio still flashed the
+ * old photograph on load, until the storage list came back and swapped it. Showing a photograph the owner
+ * has removed, however briefly, is worse than showing the section's own background for a moment.
  */
 const DEFAULT_IMAGES = {
   'home-hero': '/brand/home/raw-material-library.jpg',
@@ -17,7 +21,8 @@ const DEFAULT_IMAGES = {
  * Merges uploaded images over defaults.
  */
 export const useSiteImages = () => {
-  const [imageMap, setImageMap] = useState(DEFAULT_IMAGES);
+  // Empty until the real list settles: '' means "not known yet", not "nothing here".
+  const [imageMap, setImageMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -31,7 +36,8 @@ export const useSiteImages = () => {
         return merged;
       });
     } catch {
-      // Keep defaults on error
+      // Only now do the bundled images become the answer: the upload list is genuinely unavailable.
+      setImageMap(DEFAULT_IMAGES);
     } finally {
       setLoading(false);
     }
