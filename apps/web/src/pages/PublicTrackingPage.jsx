@@ -114,6 +114,7 @@ const PublicTrackingPage = () => {
       <Helmet>
         <title>Lacak Pesanan - SOLIVAGANT</title>
         <meta name="description" content="Lacak status pesanan SOLIVAGANT." />
+        <meta name="robots" content="noindex,follow" />
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>

@@ -394,7 +394,7 @@ const CustomerInvoicePage = () => {
   if (isMobileRoute) {
     return (
       <MobileCommerceLayout>
-        <Helmet><title>Invoice {orderNumber} - Solivagant</title></Helmet>
+        <Helmet><title>Invoice {orderNumber} - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
         {content}
       </MobileCommerceLayout>
     );
@@ -402,7 +402,7 @@ const CustomerInvoicePage = () => {
 
   return (
     <>
-      <Helmet><title>Invoice {orderNumber} - Solivagant</title></Helmet>
+      <Helmet><title>Invoice {orderNumber} - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
       <div className="min-h-screen bg-editorial-paper text-editorial-charcoal">
         {content}
       </div>
