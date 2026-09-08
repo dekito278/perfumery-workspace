@@ -98,4 +98,10 @@ export const buildBespokeNotes = (request = {}) => [
   request.totalPrice ? formatLine('Estimated total', rupiah(request.totalPrice)) : '',
   formatLine('Pre-order acknowledgement', request.preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
   formatLine('Reference scent', request.referenceProductName),
-].join('\n');
+]
+  // Four of the lines above are conditional and yield '' when they do not apply, so a brief for an order
+  // without a voucher used to carry two blank lines in the middle of it — between the shipping fee and
+  // the total, where they read as a formatting fault rather than an absence. Every line that survives is
+  // still a `Label: value` row, so the parsers that read Address/Area/Shipping back out are untouched.
+  .filter(Boolean)
+  .join('\n');
