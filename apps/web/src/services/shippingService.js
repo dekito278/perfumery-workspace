@@ -60,6 +60,8 @@ export const getShippingRates = async ({
 };
 
 export const getCheckoutShippingWeight = (items) => {
+  // Paired with DEFAULT_ITEM_WEIGHT_GRAM on the order endpoint, which reprices shipping authoritatively.
+  // assertPairedEnvAgrees() in tools/build.mjs fails the build if the two ever disagree.
   const defaultItemWeight = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || 300);
   const quantity = Array.isArray(items)
     ? items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)

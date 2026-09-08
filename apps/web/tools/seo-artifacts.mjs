@@ -23,7 +23,7 @@ const escapeHtml = (value = '') =>
 
 // --- env ---------------------------------------------------------------
 
-const loadDotEnv = (webRoot) => {
+export const loadDotEnv = (webRoot) => {
   const envPath = path.join(webRoot, '.env');
   if (!fs.existsSync(envPath)) return {};
   const out = {};
