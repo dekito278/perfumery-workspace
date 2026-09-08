@@ -21,3 +21,15 @@ const sqlPrefixes = new Set([...sql.match(/like any \(array\[([\s\S]*?)\]\)/)[1]
 assert.ok(jsPrefixes.size >= 10, 'JS prefix list looks truncated');
 assert.deepEqual([...sqlPrefixes].sort(), [...jsPrefixes].sort(), 'SQL view prefix list and PRODUCT_INTERNAL_TAG_PREFIXES differ');
 console.log(`publicProductsView selfcheck OK (${jsPrefixes.size} prefixes)`);
+
+// The build's own product fetch must read the view, not the base table. Pointing it at
+// storefront_products silently emptied the sitemap and every prerendered product page the moment read
+// RLS moved to is_admin(), because the anon key then answered 200 with zero rows.
+const seo = readFileSync(join(here, '..', '..', 'tools', 'seo-artifacts.mjs'), 'utf8');
+const productQuery = seo.match(/const fetchPublicProducts[\s\S]*?restGet\([\s\S]*?'([^']+)'/);
+assert.ok(productQuery, 'could not find the build-time product query — update this guard');
+assert.ok(
+  productQuery[1].startsWith('storefront_products_public?'),
+  `the build fetches SEO data from "${productQuery[1].split('?')[0]}"; the anon key cannot read the base table, so this yields an empty sitemap and no prerendered product pages`,
+);
+console.log('publicProductsView selfcheck OK (build reads the public view)');
