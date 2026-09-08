@@ -65,4 +65,34 @@ for (const line of noVoucher.split('\n')) {
 }
 assert.match(noVoucher, /^Shipping fee: Rp 10\.000\nEstimated total: Rp 400\.000$/m, 'the hole between fee and total is back');
 
+// Fields the customer left blank are named once instead of costing a "Label: -" row each.
+const sparse = buildBespokeNotes({
+  deliveryAddress: 'Jl. Melati 3', deliveryArea: 'Jakarta Selatan', perfumeName: 'Hujan Sore',
+  scentDescription: 'Aroma hujan di tanah kering.', shippingSummary: 'JNE REG - Rp 10.000',
+  shippingFee: 10000, totalPrice: 400000,
+});
+assert.equal(sparse.split('\n').filter((line) => line.trim().endsWith(': -')).length, 0, `placeholder rows are back:\n${sparse}`);
+assert.match(sparse, /^Tidak diisi: .+$/m, 'the blank fields are not named anywhere');
+assert.match(sparse, /Tidak diisi:.*\bMood\b/, 'Mood was blank but is not listed');
+// Voucher, fee and total are absent because the order had none — nobody declined to answer them.
+assert.doesNotMatch(sparse, /Tidak diisi:.*Voucher/, 'an absent voucher is not an unanswered question');
+
+// The summary must survive the parser as its own row. An unregistered label would be glued onto the
+// previous value, which is how Area once carried an entire aroma brief.
+const sparseRows = parseOrderNoteRows(sparse);
+const summaryRow = sparseRows.find((row) => row.label === 'Tidak diisi');
+assert.ok(summaryRow, 'Tidak diisi did not parse as its own row — is it in ORDER_NOTE_KEYS?');
+assert.ok(summaryRow.value.includes('Story'), 'the summary lost its content in parsing');
+assert.equal(sparseRows.find((row) => row.label === 'Pre-order acknowledgement')?.value.includes('Tidak diisi'), false, 'the summary was glued onto the row above it');
+
+// A brief with nothing missing must not carry the line at all.
+const complete = buildBespokeNotes({
+  deliveryAddress: 'Jl. Melati 3', deliveryArea: 'Jakarta Selatan', perfumeName: 'Hujan Sore',
+  mood: 'Tenang', occasion: 'Hadiah', budget: 'Rp 500.000', size: '50 ml', scentDescription: 'Hujan.',
+  avoidedNotes: 'Vanila', story: 'Untuk ibu.', bottleType: 'Classic', capDesign: 'Basic',
+  labelDesign: 'Tulis tangan', exoticMaterial: 'Oud', shippingSummary: 'JNE REG', shippingFee: 10000,
+  totalPrice: 400000, preorderAcknowledged: true, referenceProductName: 'La Rose',
+});
+assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mention missing fields');
+
 console.log('bespokeOrder self-check OK');

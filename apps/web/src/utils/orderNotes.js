@@ -13,6 +13,8 @@ export const ORDER_NOTE_KEYS = [
   'Perfume name', 'Mood', 'Occasion', 'Budget', 'Size', 'Preferred aroma', 'Avoided notes', 'Story',
   'Bottle type', 'Cap design', 'Label design', 'Exotic material', 'Shipping fee', 'Voucher', 'Voucher discount',
   'Estimated total', 'Pre-order acknowledgement', 'Reference scent',
+  // One line naming every brief field the customer left blank, instead of a "Label: -" row for each.
+  'Tidak diisi',
 ];
 
 const keyOf = (line) => ORDER_NOTE_KEYS.find((key) => (
