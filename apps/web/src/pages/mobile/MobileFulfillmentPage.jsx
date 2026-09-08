@@ -255,8 +255,10 @@ const MobileFulfillmentPage = () => {
       '',
       'Packing list:',
       ...getOrderProductItems(order).map((item) => `- ${item.name} x${item.quantity}${item.size ? ` / ${item.size}` : ''}`),
-      draft.packingNotes || order.packingNotes ? `\nCatatan: ${draft.packingNotes || order.packingNotes}` : '',
-    ].filter(Boolean);
+      draft.packingNotes || order.packingNotes ? `\nCatatan: ${draft.packingNotes || order.packingNotes}` : null,
+      // The '' above separates the order header from the packing list itself. filter(Boolean) dropped it
+      // along with the absent notes line, so everything ran together in one block on the clipboard.
+    ].filter((line) => line != null);
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
       toast.success('Packing list disalin');

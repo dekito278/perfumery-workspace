@@ -306,13 +306,16 @@ const OrderDetailPage = () => {
     `Halo ${order?.customerName || 'Kak'},`,
     '',
     `Ini link pembayaran untuk order ${order?.orderNumber || '-'}:`,
-    order?.paymentUrl || '',
+    order?.paymentUrl || null,
     '',
     `Total: ${formatTotal(order?.subtotal)}`,
-    order?.customerCode ? `Customer code: ${order.customerCode}` : '',
+    order?.customerCode ? `Customer code: ${order.customerCode}` : null,
     '',
     'Kalau sudah dibayar, status order akan kami update. Terima kasih.',
-  ].filter((line) => line !== '').join('\n'), [order]);
+    // Optional lines are null; the '' entries above are deliberate blank lines. Filtering on '' removed
+    // both, so the reminder a buyer receives arrived as one unbroken block — the same fault as the order
+    // notifications, the checkout draft and the owner's own alerts.
+  ].filter((line) => line != null).join('\n'), [order]);
   const auditAdmins = useMemo(() => (
     Array.from(new Set(auditLogs.map((log) => log.actorEmail || log.actorName || 'system'))).filter(Boolean)
   ), [auditLogs]);
