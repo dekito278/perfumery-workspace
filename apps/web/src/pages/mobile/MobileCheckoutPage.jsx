@@ -184,6 +184,13 @@ const MobileCheckoutPage = () => {
             <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{formatTotal(totalDue)}</div></div>
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>Edit keranjang</Button>
           </div>
+          {/* Sits under TOTAL BAYAR on purpose: this is the number the buyer is about to transfer, and a
+              total that moved since they filled the cart needs a reason next to it. */}
+          {items.some((item) => item.priceChanged) ? (
+            <p role="status" className="mt-2 text-[11px] font-bold leading-snug text-[#6b7280]">
+              Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+            </p>
+          ) : null}
           {discountAmount ? (
             <div className="mt-3 rounded-2xl border border-editorial-stone/12 bg-white/82 px-3 py-2">
               <div className="flex items-center justify-between gap-3 text-xs font-bold text-editorial-charcoal">

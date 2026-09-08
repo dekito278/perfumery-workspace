@@ -314,6 +314,11 @@ const CheckoutPage = () => {
             </fieldset>
 
             {/* Submit */}
+            {/* Said on the cart page, and again here: this is the screen where the number becomes a
+                transfer instruction, and a total that moved without explanation is a total nobody trusts. */}
+            {items.some((item) => item.priceChanged) ? (
+              <p className="checkout-notice" role="status">Harga beberapa item sudah diperbarui mengikuti katalog terbaru.</p>
+            ) : null}
             {!canSubmitCheckout && items.length ? <p className="checkout-notice is-error">Lengkapi: {missingFields || 'data checkout'}.</p> : null}
             <button type="submit" className="checkout-submit" disabled={!items.length || saving}>
               <CreditCard className="h-4 w-4" />

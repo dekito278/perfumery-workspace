@@ -122,6 +122,13 @@ const MobileCartPage = () => {
             ) : null}
           </section>
         ) : null}
+        {/* The cart reprices every line against the live catalogue on read, so a total can change between
+            visits. The desktop cart has always said so; this one did not, and most buyers are here. */}
+        {items.some((item) => item.priceChanged) ? (
+          <p role="status" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#f9fafb', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#6b7280' }}>
+            Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+          </p>
+        ) : null}
         {unavailableItems.length ? (
           <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
             {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
