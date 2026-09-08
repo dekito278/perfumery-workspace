@@ -53,8 +53,8 @@ const templates = {
     formatItemLines(order),
     `Total: ${formatTotal(order.subtotal)}`,
     `Status pembayaran: ${order.paymentStatus || '-'}`,
-    order.customerCode ? `Kode customer: ${order.customerCode}` : '',
-    getInvoiceUrl(order) ? `Invoice: ${getInvoiceUrl(order)}` : '',
+    order.customerCode ? `Kode customer: ${order.customerCode}` : null,
+    getInvoiceUrl(order) ? `Invoice: ${getInvoiceUrl(order)}` : null,
     '',
     'Kami akan update lagi setelah pembayaran terkonfirmasi. Terima kasih.',
   ],
@@ -72,13 +72,13 @@ const templates = {
     buildGreeting(order),
     '',
     `Bukti transfer untuk order ${order.orderNumber} belum bisa kami validasi.`,
-    order.paymentProofNotes ? `Catatan admin: ${order.paymentProofNotes}` : '',
+    order.paymentProofNotes ? `Catatan admin: ${order.paymentProofNotes}` : null,
     '',
     'Mohon upload ulang bukti transfer yang jelas lewat link berikut:',
     getManualPaymentUploadUrl(order),
     '',
     `Total order: ${formatTotal(order.subtotal)}`,
-    order.customerCode ? `Kode customer: ${order.customerCode}` : '',
+    order.customerCode ? `Kode customer: ${order.customerCode}` : null,
     '',
     'Status order tetap pending sampai bukti transfer baru kami cek. Terima kasih.',
   ],
@@ -96,9 +96,9 @@ const templates = {
     buildGreeting(order),
     '',
     `Order ${order.orderNumber} sudah dikirim.`,
-    order.courierName ? `Kurir: ${order.courierName}` : '',
-    order.trackingNumber ? `Resi: ${order.trackingNumber}` : '',
-    order.trackingUrl ? `Tracking: ${order.trackingUrl}` : getCustomerDashboardUrl(order) ? `Cek progress: ${getCustomerDashboardUrl(order)}` : '',
+    order.courierName ? `Kurir: ${order.courierName}` : null,
+    order.trackingNumber ? `Resi: ${order.trackingNumber}` : null,
+    order.trackingUrl ? `Tracking: ${order.trackingUrl}` : getCustomerDashboardUrl(order) ? `Cek progress: ${getCustomerDashboardUrl(order)}` : null,
     '',
     'Mohon cek paket saat diterima. Semoga aromanya sampai dengan aman.',
   ],
@@ -108,7 +108,7 @@ const templates = {
     `Order ${order.orderNumber} sudah selesai. Terima kasih sudah memilih Solivagant.`,
     '',
     'Kalau ada feedback soal aroma, packaging, atau experience, boleh langsung balas pesan ini ya.',
-    getInvoiceUrl(order) ? `Invoice/receipt: ${getInvoiceUrl(order)}` : '',
+    getInvoiceUrl(order) ? `Invoice/receipt: ${getInvoiceUrl(order)}` : null,
   ],
 };
 
@@ -116,7 +116,10 @@ export const getNotificationEventLabels = () => notificationEventLabels;
 
 export const buildNotificationMessage = (order, eventKey) => (
   templates[eventKey]?.(order || {})
-    .filter((line) => line !== '')
+    // Drop only the optional lines that were not applicable — they are null. An empty string here is a
+    // deliberate paragraph break, and filtering those out too glued every message into one block: the
+    // greeting ran straight into the order number and the closing sentence into the customer code.
+    .filter((line) => line != null)
     .join('\n')
     .trim()
   || ''
