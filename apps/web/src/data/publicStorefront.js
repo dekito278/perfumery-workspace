@@ -28,6 +28,14 @@ const formatVariantPrice = (variant, fallbackPrice) => (
 );
 
 const inferPublicCategory = (product = {}, tags = []) => {
+  // What the owner actually set wins. Inferring over the top of it split the shop into two vocabularies
+  // on one screen: the cards read "Limited" and "Fresh" from this field while the filter pills read the
+  // guessed one and offered "Aquatic", which no card ever showed. Ten of eighteen products are Limited —
+  // the most expensive ones — and there was no way to filter for them.
+  const explicit = String(product.category || '').trim();
+  if (explicit) return explicit;
+
+  // Only a product with no category at all falls back to guessing from its notes and description.
   const searchText = [
     product.category,
     product.collection,
