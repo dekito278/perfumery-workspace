@@ -247,6 +247,20 @@ const generateSeoArtifacts = async () => {
     console.warn('[seo] Supabase fetch failed, skipping product prerender/sitemap products:', error.message || error);
   }
 
+  // A shop that builds with zero products is a configuration bug, not an empty catalogue: it shipped for
+  // months as an unindexable storefront because nothing complained. Only fatal when the fetch itself
+  // succeeded — a Supabase outage lands in the catch above and must not block an urgent deploy. The
+  // escape hatch is for a genuinely empty environment.
+  if (!products.length && journal.length && !process.env.SEO_ALLOW_EMPTY_CATALOG) {
+    console.error(
+      '[seo] Supabase answered but returned zero products, while the journal fetch worked — so this is not '
+      + 'connectivity. Check that fetchPublicProducts still reads a table the anon key can see '
+      + '(storefront_products_public), and that RLS on it has not changed. Set SEO_ALLOW_EMPTY_CATALOG=1 to '
+      + 'build anyway.',
+    );
+    process.exit(1);
+  }
+
   if (env.siteUrl && (products.length || journal.length)) {
     const baseHtml = fs.readFileSync(indexPath, 'utf8');
     if (products.length) {

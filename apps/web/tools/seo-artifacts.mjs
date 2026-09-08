@@ -91,7 +91,13 @@ const firstImage = (row) => {
 export const fetchPublicProducts = async (env) => {
   const rows = await restGet(
     env,
-    'storefront_products?select=slug,name,category,price_number,notes,description,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
+    // storefront_products_public, NOT storefront_products. The base table became admin-only when write
+    // and read RLS moved to is_admin(), so this build-time fetch — which authenticates with the anon key —
+    // started answering 200 with zero rows. Not an error, just an empty shop: every product silently
+    // dropped out of the sitemap and lost its prerendered title, description and JSON-LD, while the
+    // journal still resolved and made the sitemap look populated. The view exists for exactly this and
+    // already drops drafts and strips internal tags.
+    'storefront_products_public?select=slug,name,category,price_number,notes,description,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
   );
   if (!Array.isArray(rows)) return [];
   return rows
