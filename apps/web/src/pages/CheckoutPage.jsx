@@ -23,7 +23,6 @@ const CheckoutPage = () => {
   const { items, summary, clear } = useCart();
   const { currentUser, loginWithGoogle, logout } = useAuth();
   const voucher = useAppliedVoucher(summary.subtotal, items);
-  const [showAreaSearch, setShowAreaSearch] = useState(false);
   const checkout = useCheckoutFlow({
     items,
     summary,
@@ -83,14 +82,19 @@ const CheckoutPage = () => {
     submitCheckout(event);
   };
 
+  // Derived, never latched. A returning buyer arrives with selectedCourier already restored from the
+  // saved draft, so handleCourierChange never runs — the old useState stayed false and the page asked for
+  // a destination while showing no field to type one into. The only way out was changing the courier and
+  // changing it back, which nobody would guess. Anyone who has a courier but no shipping service yet needs
+  // this field, however the courier got there.
+  const showAreaSearch = Boolean(selectedCourier && !selectedShipping) || Boolean(shippingError) || destinationOptions.length > 0;
+
   const handleCourierChange = (courierCode) => {
     chooseShippingCourier(courierCode);
     if (!courierCode) return;
     const searchText = destinationSearch.trim() || deliveryAddress.trim();
     if (searchText.length >= 3) {
       autoCalculateShipping({ courierCode, searchText, autoSelectBest: true });
-    } else {
-      setShowAreaSearch(true);
     }
   };
 
@@ -215,7 +219,7 @@ const CheckoutPage = () => {
                   <ChevronDown className="h-4 w-4" />
                 </div>
               </label>
-              {showAreaSearch || shippingError || destinationOptions.length ? (
+              {showAreaSearch ? (
                 <label className="checkout-field">
                   <span>Area tujuan</span>
                   <div className="checkout-field__inline">
