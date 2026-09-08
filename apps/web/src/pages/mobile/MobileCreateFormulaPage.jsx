@@ -88,6 +88,19 @@ const MobileCreateFormulaPage = () => {
   const [needsGuidanceMaterialId, setNeedsGuidanceMaterialId] = useState('');
   const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
   const [guidanceEditorMaterial, setGuidanceEditorMaterial] = useState(null);
+  // A composition in progress is real work — the back arrow used to discard it with no prompt. Fixed on
+  // the desktop page in audit round 8; on a phone an accidental back tap is the likelier way to lose it.
+  const hasUnsavedComposition = items.some((item) => item.item_id || Number(item.gram_amount || 0) > 0)
+    || Boolean(name.trim())
+    || Boolean(code.trim());
+
+  const handleBack = () => {
+    if (hasUnsavedComposition && !window.confirm('Formula ini belum disimpan. Tinggalkan dan buang perubahan?')) {
+      return;
+    }
+    navigate('/mobile/formulas');
+  };
+
   const itemsRef = useRef(items);
   const metadataRef = useRef(null);
 
@@ -295,7 +308,7 @@ const MobileCreateFormulaPage = () => {
     <MobileAuthenticatedLayout>
       <Helmet><title>New Mobile Formula - Solivagant</title></Helmet>
       <main className="mobile-page space-y-3">
-        <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={() => navigate('/mobile/formulas')} action={<MobileStatusBadge status={status} />} />
+        <MobileTopBar title={name || 'New Formula'} subtitle={code || undefined} onBack={handleBack} action={<MobileStatusBadge status={status} />} />
         {loadingData ? <MobileLoadingState eyebrow="Formula composer" title="Loading composer..." subtitle="Preparing material guidance." className="min-h-[calc(100dvh-260px)]" /> : (
           <>
             {orderContext ? (
