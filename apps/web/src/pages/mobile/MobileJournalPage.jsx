@@ -59,12 +59,21 @@ const MobileJournalPage = () => {
   const [status, setStatus] = useState('all');
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [publishingId, setPublishingId] = useState('');
+  // Without this a failed load rendered "Mulai tulis Journal" — telling the owner they have written
+  // nothing yet, when in fact nothing could be read. The desktop page has said so since round 8.
+  const [loadError, setLoadError] = useState('');
 
   const loadJournal = useCallback(async (isActive = () => true) => {
+    setLoadError('');
     try {
       const [postRows, formulaRows] = await Promise.all([
         getJournalPosts(),
-        getFormulas(),
+        // The related-formula name is decoration. A failed formulas query used to reject the whole
+        // Promise.all and take the journal list down with it.
+        getFormulas().catch((error) => {
+          console.warn('Related formula names unavailable:', error?.message || error);
+          return [];
+        }),
       ]);
 
       if (!isActive()) {
@@ -75,6 +84,7 @@ const MobileJournalPage = () => {
       setFormulas(formulaRows);
     } catch (err) {
       if (isActive()) {
+        setLoadError(err?.message || 'Journal belum bisa dimuat. Cek koneksi lalu coba lagi.');
         toast.error('Failed to load journal');
       }
     }
@@ -320,10 +330,12 @@ const MobileJournalPage = () => {
         ) : (
           <MobileEmptyState
             icon={query || category !== 'all' || status !== 'all' ? FileText : BookOpenText}
-            title={posts.length ? 'Artikel tidak ditemukan' : 'Mulai tulis Journal'}
-            description={posts.length ? 'Coba kata kunci, kategori, atau status lain.' : 'Mulai dari satu catatan kecil: accord, material, proses, pengalaman, atau ide produk dari HP.'}
-            action="Buat artikel"
-            onAction={() => navigate('/mobile/journal/new')}
+            title={loadError ? 'Journal belum bisa dimuat' : posts.length ? 'Artikel tidak ditemukan' : 'Mulai tulis Journal'}
+            description={loadError
+              ? `${loadError} Daftar ini kosong karena gagal dibaca, bukan karena belum ada tulisan.`
+              : posts.length ? 'Coba kata kunci, kategori, atau status lain.' : 'Mulai dari satu catatan kecil: accord, material, proses, pengalaman, atau ide produk dari HP.'}
+            action={loadError ? 'Coba lagi' : 'Buat artikel'}
+            onAction={() => { if (loadError) { void loadJournal(); } else { navigate('/mobile/journal/new'); } }}
           />
         )}
       </div>
