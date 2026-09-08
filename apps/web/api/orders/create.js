@@ -201,8 +201,10 @@ export default async function handler(req, res) {
     if ((ship.courier || ship.service || ship.destination) && !ship.destinationId) {
       return jsonResponse(res, 422, { message: 'Shipping destination is required to price shipping' });
     }
-    // Keep the per-item weight in sync with the client (shippingService.js VITE_DEFAULT_ITEM_WEIGHT_GRAM);
-    // a hardcoded 300 here would under/over-quote shipping vs the client once ops change the default.
+    // This must equal what the browser quoted with, because the fee computed here is the one the order is
+    // created at. assertPairedEnvAgrees() in apps/web/tools/build.mjs refuses to build when they differ.
+    // Note RAJAONGKIR_DEFAULT_WEIGHT_GRAM is NOT this: it is a total-weight fallback inside
+    // api/shipping/rates.js for callers that send no weight, which this one never does.
     const itemWeight = Number(process.env.DEFAULT_ITEM_WEIGHT_GRAM || process.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || 300);
     const weight = Math.max((catalog.quantity || (isBespoke ? 1 : 0)) * itemWeight, itemWeight);
     const { fee: shippingFee, summary: shippingSummary } = await computeShippingFee(baseUrl, {

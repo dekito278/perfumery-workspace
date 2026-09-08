@@ -264,35 +264,67 @@ const generateSeoArtifacts = async () => {
   }
 };
 
-// Two environment variables decide the same deadline, and only a comment kept them together. The cron
-// (api/orders/expire-reservations.js) reads PAYMENT_RESERVATION_TTL_HOURS; the browser reads
-// VITE_PAYMENT_RESERVATION_TTL_HOURS, which is baked in at build time. Both actively cancel unpaid
-// reservations and the studio prints the client value as "Batas reserved N jam", so a mismatch either
-// cancels orders the cron would have kept or tells a buyer a deadline that is not the one enforced.
-// Setting one in Vercel and forgetting the other is a silent, money-losing config drift; make it loud.
-const assertReservationTtlAgrees = () => {
-  const read = (name) => String(process.env[name] ?? '').trim();
-  const server = read('PAYMENT_RESERVATION_TTL_HOURS');
-  const client = read('VITE_PAYMENT_RESERVATION_TTL_HOURS');
-  if (!server && !client) {
-    console.log('[ttl] payment reservation TTL: 24h on both sides (neither override set).');
-    return;
-  }
+// Some numbers are configured twice — once for the cron or the order endpoint, once for the browser,
+// where the value is baked in at build time. Each pair used to be held together by a comment asking
+// whoever changed one to remember the other. Both sides act on these, so a mismatch is silent and costs
+// money: an unpaid order cancelled early is a lost sale, and a shipping weight that differs from the
+// buyer's quote means the order is created at a fee they never saw.
+//
+// Each entry resolves both sides the way the shipped code actually does, including its fallbacks.
+const PAIRED_ENV = [
+  {
+    what: 'payment reservation TTL (hours)',
+    server: (env) => env('PAYMENT_RESERVATION_TTL_HOURS'),
+    client: (env) => env('VITE_PAYMENT_RESERVATION_TTL_HOURS'),
+    fallback: 24,
+    names: ['PAYMENT_RESERVATION_TTL_HOURS', 'VITE_PAYMENT_RESERVATION_TTL_HOURS'],
+    consequence: 'the cron and the browser would cancel unpaid reservations at different times, and the studio would show the buyer a deadline nobody enforces',
+  },
+  {
+    what: 'per-item shipping weight (grams)',
+    // api/orders/create.js reads DEFAULT_ITEM_WEIGHT_GRAM and falls back to the client's own variable,
+    // so setting only the VITE one keeps both sides equal — only an explicit server override can drift.
+    server: (env) => env('DEFAULT_ITEM_WEIGHT_GRAM') || env('VITE_DEFAULT_ITEM_WEIGHT_GRAM'),
+    client: (env) => env('VITE_DEFAULT_ITEM_WEIGHT_GRAM'),
+    fallback: 300,
+    names: ['DEFAULT_ITEM_WEIGHT_GRAM', 'VITE_DEFAULT_ITEM_WEIGHT_GRAM'],
+    consequence: 'the buyer would be quoted one ongkir at checkout and the order created with another, because api/orders/create.js reprices shipping from its own weight',
+  },
+];
 
-  const hours = (value) => (value ? Number(value) : 24);
-  if (!Number.isFinite(hours(server)) || !Number.isFinite(hours(client)) || hours(server) <= 0 || hours(client) <= 0) {
-    console.error(`[ttl] PAYMENT_RESERVATION_TTL_HOURS="${server}" / VITE_PAYMENT_RESERVATION_TTL_HOURS="${client}" — both must be positive numbers.`);
-    process.exit(1);
+const assertPairedEnvAgrees = async () => {
+  // Read what Vite will actually bake in, not just the shell: on Vercel the project variables arrive in
+  // process.env, but locally they live in apps/web/.env, and comparing only process.env would report a
+  // clean pair while the bundle carried a different number.
+  const { loadDotEnv } = await import('./seo-artifacts.mjs');
+  const fileEnv = loadDotEnv(webRoot);
+  const env = (name) => process.env[name] ?? fileEnv[name];
+
+  for (const pair of PAIRED_ENV) {
+    const rawServer = String(pair.server(env) ?? '').trim();
+    const rawClient = String(pair.client(env) ?? '').trim();
+    const server = rawServer ? Number(rawServer) : pair.fallback;
+    const client = rawClient ? Number(rawClient) : pair.fallback;
+
+    if (!Number.isFinite(server) || !Number.isFinite(client) || server <= 0 || client <= 0) {
+      console.error(`[env] ${pair.names[0]}="${rawServer}" / ${pair.names[1]}="${rawClient}" — ${pair.what} must be a positive number.`);
+      process.exit(1);
+    }
+    if (server !== client) {
+      // Name only the side that is actually missing. Saying "one of them is unset" when both are set
+      // sends whoever reads this looking in the wrong place.
+      const unset = [!rawServer && pair.names[0], !rawClient && pair.names[1]].filter(Boolean);
+      const hint = unset.length
+        ? `${unset.join(' and ')} ${unset.length > 1 ? 'are' : 'is'} unset and defaulting to ${pair.fallback}`
+        : 'both are set, to different values';
+      console.error(
+        `[env] ${pair.what}: server ${server}, browser ${client} — ${hint}. Set ${pair.names[0]} and `
+        + `${pair.names[1]} to the same value. Left as is, ${pair.consequence}.`,
+      );
+      process.exit(1);
+    }
+    console.log(`[env] ${pair.what}: ${server} on both sides${rawServer || rawClient ? '' : ' (default)'}.`);
   }
-  if (hours(server) !== hours(client)) {
-    console.error(
-      `[ttl] the cron cancels unpaid reservations after ${hours(server)}h but the browser was built for `
-      + `${hours(client)}h. Set PAYMENT_RESERVATION_TTL_HOURS and VITE_PAYMENT_RESERVATION_TTL_HOURS to the `
-      + 'same value — one of them is currently unset and defaulting to 24.',
-    );
-    process.exit(1);
-  }
-  console.log(`[ttl] payment reservation TTL: ${hours(server)}h on both sides.`);
 };
 
 // Every prerendered page must still be a page. Eighteen product pages and a journal article shipped as
@@ -403,7 +435,7 @@ const assertDeferredChunksStayLazy = () => {
   console.log(`[bundle] ${deferred.length} deferred chunk(s) stay out of the entry graph (${seen.size} chunks walked).`);
 };
 
-assertReservationTtlAgrees();
+await assertPairedEnvAgrees();
 
 if (viteResult.status === 0) {
   assertDeferredChunksStayLazy();
