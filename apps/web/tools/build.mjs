@@ -47,18 +47,22 @@ const staticPublicPages = [
   {
     route: '/catalog',
     title: 'Fragrance Collection - SOLIVAGANT',
-    description: 'Explore the SOLIVAGANT fragrance collection: Hug, Chant Nocturne, Jaipong, Porte vers le Paradis, and Trace d Aventure with notes, concentration, sizes, and price.',
+    // Deliberately names no products. The previous description listed five, and four of them —
+    // Chant Nocturne, Jaipong, Porte vers le Paradis, Trace d'Aventure — had been discontinued; their
+    // routes now redirect to this page. Search results were advertising perfumes that cannot be bought.
+    // A description that describes the collection instead of enumerating it cannot go stale.
+    description: 'Explore the SOLIVAGANT fragrance collection: limited artisan perfume objects and quiet daily signatures, each with its notes, concentration, sizes, and price.',
     eyebrow: 'Fragrance Collection',
     heading: 'Fragrance Collection',
     headline: 'Quiet signatures for skin, atmosphere, and ritual.',
     intro: 'Browse SOLIVAGANT public fragrance previews with product stories, notes pyramid, concentration, size variants, Rupiah price, and customer-facing availability.',
+    // Replaced at build time by the live catalogue. This stays only for a build that cannot reach
+    // Supabase, so it names no products — the previous list outlived four of the five it advertised.
     sections: [
-      ['Hug', 'Clean musk, iris, warm cotton. Eau de Parfum, 30 ml from Rp 289.000.'],
-      ['Chant Nocturne', 'Tuberose, pink pepper, amberwood. Eau de Parfum, 30 ml from Rp 329.000.'],
-      ['Jaipong', 'Calamansi, clove leaf, vetiver. Eau de Toilette, 30 ml from Rp 279.000.'],
-      ['Porte vers le Paradis', 'Neroli, incense, vanilla resin. Eau de Parfum, 30 ml from Rp 349.000.'],
-      ['Trace d Aventure', 'Fig leaf, cedar rain, moss. Eau de Parfum, 30 ml from Rp 309.000.'],
+      ['Objek terbatas', 'Small-batch artisan perfumes, released in limited runs.'],
+      ['Signature harian', 'Quiet daily wear built for skin and atmosphere.'],
     ],
+
     items: ['Semua', 'Gourmand', 'Aquatic', 'Woody', 'Floral'],
   },
   {
@@ -152,14 +156,25 @@ const renderStaticFallback = (page) => {
 \t\t\t</noscript>`;
 };
 
-const writeStaticPublicPages = (siteUrl) => {
+// `products` are the live rows the sitemap is built from. The catalogue snapshot lists them instead of a
+// hand-written array: that array had gone stale and was advertising four discontinued perfumes with
+// prices to every crawler and every visitor without JavaScript.
+const writeStaticPublicPages = (siteUrl, products = []) => {
   const distRoot = path.join(webRoot, 'dist');
   const indexPath = path.join(distRoot, 'index.html');
   if (!fs.existsSync(indexPath)) return;
 
   const baseHtml = fs.readFileSync(indexPath, 'utf8');
 
-  staticPublicPages.forEach((page) => {
+  const catalogSections = products
+    .slice(0, 12)
+    .map((product) => [product.name, [product.description, product.concentration, product.priceNumber ? `Rp ${product.priceNumber.toLocaleString('id-ID')}` : ''].filter(Boolean).join('. ')]);
+
+  staticPublicPages.forEach((rawPage) => {
+    // Only the catalogue is generated; the rest are stable descriptions of the flow, not of stock.
+    const page = rawPage.route === '/catalog' && catalogSections.length
+      ? { ...rawPage, sections: catalogSections }
+      : rawPage;
     const routeName = page.route.replace(/^\/+/, '');
     const routeDir = path.join(distRoot, routeName);
     const routePath = path.join(routeDir, 'index.html');
@@ -220,9 +235,6 @@ const generateSeoArtifacts = async () => {
   }
 
   assertAdvertisedRoutesExist(STATIC_PUBLIC_ROUTES);
-  writeStaticPublicPages(env.siteUrl);
-  writeLlmsTxt(distRoot, env.siteUrl);
-
   let products = [];
   let journal = [];
   try {
@@ -244,6 +256,9 @@ const generateSeoArtifacts = async () => {
     );
     process.exit(1);
   }
+
+  writeStaticPublicPages(env.siteUrl, products);
+  writeLlmsTxt(distRoot, env.siteUrl);
 
   if (env.siteUrl && (products.length || journal.length)) {
     const baseHtml = fs.readFileSync(indexPath, 'utf8');
