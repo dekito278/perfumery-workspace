@@ -264,6 +264,64 @@ const generateSeoArtifacts = async () => {
   }
 };
 
+// The bespoke option prices live in storefront_bespoke_options. defaultBespokeSettings in
+// services/bespokeSettingsService.js is the copy the app falls back to when that table cannot be reached,
+// and it had drifted a long way: 30 ml read Rp 350.000 there against Rp 200.000 in the shop, with
+// different labels besides. Nothing compared them, and nothing would have.
+//
+// A warning, never a failure. Prices are changed in the studio, not in a deploy, so a stale fallback must
+// not block shipping an unrelated fix — and a build that cannot reach Supabase must still succeed.
+const warnIfBespokeDefaultsDrifted = async () => {
+  const COLLECTIONS = { bottleSizes: 'bottleSizes', bottleTypes: 'bottleTypes', capDesigns: 'capDesigns', labelDesigns: 'labelDesigns', exoticMaterials: 'exoticMaterials' };
+  try {
+    const { resolveEnv } = await import('./seo-artifacts.mjs');
+    const { supabaseUrl, supabaseKey } = resolveEnv(webRoot);
+    if (!supabaseUrl || !supabaseKey) return;
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/storefront_bespoke_options?select=collection_key,label,price,enabled`, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return;
+    const rows = await response.json();
+    if (!Array.isArray(rows) || !rows.length) return;
+
+    const source = fs.readFileSync(path.join(webRoot, 'src', 'services', 'bespokeSettingsService.js'), 'utf8');
+    const block = source.slice(source.indexOf('export const defaultBespokeSettings'), source.indexOf('const toSlug'));
+
+    const differences = [];
+    for (const key of Object.keys(COLLECTIONS)) {
+      const section = block.slice(block.indexOf(`${key}: [`), block.indexOf(']', block.indexOf(`${key}: [`)));
+      // Accept either quote style: one description contains a newline, so those entries are written with
+      // double quotes and JSON escaping rather than single quotes.
+      const bundled = new Map([...section.matchAll(/label: (?:'([^']*)'|"((?:[^"\\]|\\.)*)")[\s\S]*?price: (\d+)/g)]
+        .map((m) => [m[1] ?? JSON.parse(`"${m[2]}"`), Number(m[3])]));
+      const live = new Map(rows.filter((row) => row.collection_key === key && row.enabled !== false).map((row) => [row.label, Number(row.price || 0)]));
+
+      for (const [label, price] of live) {
+        if (!bundled.has(label)) differences.push(`${key}: the shop has "${label}" (${price}); the fallback does not`);
+        else if (bundled.get(label) !== price) differences.push(`${key}: "${label}" is ${price} in the shop, ${bundled.get(label)} in the fallback`);
+      }
+      for (const label of bundled.keys()) {
+        if (!live.has(label)) differences.push(`${key}: the fallback still offers "${label}"; the shop does not`);
+      }
+    }
+
+    if (differences.length) {
+      console.warn(
+        `[bespoke] WARNING: ${differences.length} difference(s) between the bundled fallback prices and the `
+        + `shop. Customers only see the fallback while storefront_bespoke_options is unreachable, but while `
+        + `it drifts that view is wrong:\n  ${differences.join('\n  ')}\n  Update defaultBespokeSettings in `
+        + 'src/services/bespokeSettingsService.js.',
+      );
+    } else {
+      console.log('[bespoke] fallback option prices match the shop.');
+    }
+  } catch {
+    // Offline, timed out, or the table moved: none of that should stop a deploy.
+  }
+};
+
 // Some numbers are configured twice — once for the cron or the order endpoint, once for the browser,
 // where the value is baked in at build time. Each pair used to be held together by a comment asking
 // whoever changed one to remember the other. Both sides act on these, so a mismatch is silent and costs
@@ -501,6 +559,7 @@ const assertDeferredChunksStayLazy = () => {
 
 await assertPairedEnvAgrees();
 await assertCanonicalOriginAgrees();
+await warnIfBespokeDefaultsDrifted();
 
 if (viteResult.status === 0) {
   assertDeferredChunksStayLazy();
