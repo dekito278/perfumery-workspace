@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Helmet } from 'react-helmet';
 import { Edit3, ImageOff, ImagePlus, Save, SlidersHorizontal, Trash2, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -168,7 +169,7 @@ const MobileBespokeSettingsPage = () => {
           <div className="mt-3 grid gap-2">
             <input value={form.label} onChange={(event) => updateField('label', event.target.value)} placeholder="Nama opsi" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <input value={form.value} onChange={(event) => updateField('value', event.target.value)} placeholder="Value internal, boleh sama dengan nama" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-            <input type="number" value={form.price} onChange={(event) => updateField('price', Number(event.target.value))} placeholder="Harga tambahan" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <LocalizedNumberInput value={form.price} onChange={(value) => updateField('price', value === '' ? 0 : value)} placeholder="Harga tambahan" className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <textarea value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Deskripsi pendek untuk customer" rows={3} className="rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
             <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
               {form.imageUrl ? (

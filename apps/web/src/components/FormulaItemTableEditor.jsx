@@ -1,4 +1,5 @@
 import React from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -248,14 +249,9 @@ const FormulaItemTableEditor = ({
                         Amount
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Input
-                          type="number"
-                          step="0.001"
-                          min="0.001"
-                          max="999999"
+                        <LocalizedNumberInput as={Input}
                           value={item.gram_amount || ''}
-                          onChange={(event) => onGramAmountChange(index, event.target.value)}
-                          onWheel={blurNumberInputOnWheel}
+                          onChange={(value) => onGramAmountChange(index, value)}
                           onFocus={() => onActivateRow?.(index)}
                           placeholder="0.000"
                           className="h-9 w-full rounded-xl border-[#d8cfbf] px-3 text-right text-sm"
@@ -399,14 +395,9 @@ const FormulaItemTableEditor = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Input
-                    type="number"
-                    step="0.001"
-                    min="0.001"
-                    max="999999"
+                  <LocalizedNumberInput as={Input}
                     value={item.gram_amount || ''}
-                    onChange={(event) => onGramAmountChange(index, event.target.value)}
-                    onWheel={blurNumberInputOnWheel}
+                    onChange={(value) => onGramAmountChange(index, value)}
                     onFocus={() => onActivateRow?.(index)}
                     placeholder="0.000"
                     className="h-8 rounded-md border-[#d8cfbf] px-2 text-right text-sm"

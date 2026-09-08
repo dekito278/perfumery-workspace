@@ -258,7 +258,8 @@ const RawMaterialFormDialog = ({
                 <FormNumber
                   label={`Unit price (per 10 ${form.formData.unit || 'ml'})`}
                   value={form.formData.cost_per_unit}
-                  onChange={(event) => form.handleChange('cost_per_unit', event.target.value)}
+                  onChange={(value) => form.handleChange('cost_per_unit', value === '' ? '' : String(value))}
+                  localized
                   onBlur={() => form.handleBlur('cost_per_unit')}
                   error={form.errors.cost_per_unit}
                   placeholder="e.g., 25000"
@@ -276,7 +277,8 @@ const RawMaterialFormDialog = ({
               <FormNumber
                 label="Stock on hand"
                 value={form.formData.stock_quantity}
-                onChange={(event) => form.handleChange('stock_quantity', event.target.value)}
+                onChange={(value) => form.handleChange('stock_quantity', value === '' ? '' : String(value))}
+                localized
                 onBlur={() => form.handleBlur('stock_quantity')}
                 error={form.errors.stock_quantity}
                 placeholder="0"
@@ -287,7 +289,8 @@ const RawMaterialFormDialog = ({
               <FormNumber
                 label="Minimum stock"
                 value={form.formData.minimum_stock}
-                onChange={(event) => form.handleChange('minimum_stock', event.target.value)}
+                onChange={(value) => form.handleChange('minimum_stock', value === '' ? '' : String(value))}
+                localized
                 onBlur={() => form.handleBlur('minimum_stock')}
                 error={form.errors.minimum_stock}
                 placeholder="0"
@@ -298,7 +301,8 @@ const RawMaterialFormDialog = ({
               <FormNumber
                 label="Low alert"
                 value={form.formData.low_stock_threshold}
-                onChange={(event) => form.handleChange('low_stock_threshold', event.target.value)}
+                onChange={(value) => form.handleChange('low_stock_threshold', value === '' ? '' : String(value))}
+                localized
                 onBlur={() => form.handleBlur('low_stock_threshold')}
                 error={form.errors.low_stock_threshold}
                 placeholder="Optional"

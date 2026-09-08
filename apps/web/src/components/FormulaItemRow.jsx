@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -85,14 +86,9 @@ const FormulaItemRow = ({
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Amount (g)</Label>
                 <div className="flex gap-2 items-center">
-                  <Input
-                    type="number"
-                    step="0.001"
-                    min="0.001"
-                    max="999999"
+                  <LocalizedNumberInput as={Input}
                     value={item.gram_amount || ''}
-                    onChange={(e) => onGramAmountChange(index, e.target.value)}
-                    onWheel={blurNumberInputOnWheel}
+                    onChange={(value) => onGramAmountChange(index, value)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
                         event.preventDefault();
