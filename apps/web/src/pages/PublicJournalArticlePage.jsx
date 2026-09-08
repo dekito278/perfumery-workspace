@@ -54,7 +54,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
     <Helmet>
       <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
       <meta name="description" content={description} />
-      <link rel="canonical" href={canonicalUrl} />
+      {failed ? <meta name="robots" content="noindex,follow" /> : <link rel="canonical" href={canonicalUrl} />}
       <meta property="og:type" content="article" />
       <meta property="og:site_name" content="Solivagant" />
       <meta property="og:url" content={canonicalUrl} />
@@ -255,7 +255,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
       <Helmet>
         <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href={canonicalUrl} />
+        {failed ? <meta name="robots" content="noindex,follow" /> : <link rel="canonical" href={canonicalUrl} />}
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="Solivagant" />
         <meta property="og:url" content={canonicalUrl} />

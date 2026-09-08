@@ -8,6 +8,7 @@ const NotFoundPage = () => (
   <>
     <Helmet>
       <title>Halaman Tidak Ditemukan - SOLIVAGANT</title>
+      <meta name="robots" content="noindex,follow" />
     </Helmet>
 
     <main className="solivagant-editorial-home">
