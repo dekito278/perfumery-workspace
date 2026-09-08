@@ -255,11 +255,55 @@ const generateSeoArtifacts = async () => {
     }
   }
 
+  assertPrerenderedPagesAreIntact();
+
   const urls = writeSitemap(distRoot, env.siteUrl, { products, journal });
   if (urls) {
     finalizeRobots(distRoot, env.siteUrl);
     console.log(`[seo] Wrote sitemap.xml with ${urls} URL(s).`);
   }
+};
+
+// Every prerendered page must still be a page. Eighteen product pages and a journal article shipped as
+// blank documents because the title replacement started matching at a <title> written inside an HTML
+// comment and ran to the real </title>, eating the comment's closing --> along the way. The rest of the
+// file — the stylesheet, #root and the module script — was then swallowed by an unterminated comment.
+// Nothing noticed: the files were the right size, returned 200, and carried correct meta tags.
+const assertPrerenderedPagesAreIntact = () => {
+  const distRoot = path.join(webRoot, 'dist');
+  if (!fs.existsSync(distRoot)) return;
+
+  const pages = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory() && entry.name !== 'assets') walk(full);
+      else if (entry.name === 'index.html') pages.push(full);
+    }
+  };
+  walk(distRoot);
+
+  const broken = [];
+  for (const page of pages) {
+    const html = fs.readFileSync(page, 'utf8');
+    const opens = (html.match(/<!--/g) || []).length;
+    const closes = (html.match(/-->/g) || []).length;
+    const rel = path.relative(distRoot, page);
+    if (opens !== closes) broken.push(`${rel}: ${opens} <!-- but ${closes} --> (an unterminated comment hides the rest of the page)`);
+    else if (!html.includes('id="root"')) broken.push(`${rel}: no #root element`);
+    else if (!/<script[^>]+type="module"/.test(html)) broken.push(`${rel}: no module script, so the app never boots`);
+    else if ((html.match(/<title>/g) || []).length !== 1) {
+      // A <title> written inside a comment counts here on purpose: that is exactly what the title
+      // replacement used to latch onto, and keeping the tag out of prose keeps the trap from returning.
+      broken.push(`${rel}: ${(html.match(/<title>/g) || []).length} <title> tags — one of them may be inside a comment, which is what broke the prerender before; do not write the tag name as markup in prose`);
+    }
+  }
+
+  if (broken.length) {
+    console.error(`[prerender] ${broken.length} of ${pages.length} prerendered page(s) would render blank:\n  ${broken.join('\n  ')}`);
+    process.exit(1);
+  }
+  console.log(`[prerender] ${pages.length} page(s) intact.`);
 };
 
 // Everything the build advertises must be a route the app actually serves. /materials was in the sitemap,

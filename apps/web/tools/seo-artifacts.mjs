@@ -222,7 +222,7 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
     const description = `${product.name} — ${product.description}`.slice(0, 155);
     const image = abs(siteUrl, product.image);
 
-    let html = baseHtml.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+    let html = baseHtml.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
     html = upsertMeta(html, 'name', 'description', description);
     html = upsertCanonical(html, canonical);
     html = upsertMeta(html, 'property', 'og:type', 'product');
@@ -283,7 +283,7 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     const description = (post.excerpt || post.title).slice(0, 155);
     const image = abs(siteUrl, post.image);
 
-    let html = baseHtml.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+    let html = baseHtml.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
     html = upsertMeta(html, 'name', 'description', description);
     html = upsertCanonical(html, canonical);
     html = upsertMeta(html, 'property', 'og:type', 'article');
