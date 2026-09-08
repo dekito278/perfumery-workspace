@@ -11,6 +11,9 @@ const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const SITE_IMAGE_SLOTS = [
   { key: 'home-hero', label: 'Home Hero', hint: '1920×1080 landscape' },
   { key: 'home-statement', label: 'Home Statement', hint: '1920×1080 landscape' },
+  // HomePage reads this key but there was no slot for it, so the section could only ever show the
+  // bundled fallback — the same raw-material photo as the hero.
+  { key: 'home-newsletter', label: 'Home Newsletter', hint: '1920×1080 landscape' },
   { key: 'mood-fresh', label: 'Mood: Fresh', hint: '800×800 square' },
   { key: 'mood-gourmand', label: 'Mood: Gourmand', hint: '800×800 square' },
   { key: 'mood-woody', label: 'Mood: Woody', hint: '800×800 square' },
