@@ -1,4 +1,5 @@
 import BriefText from '@/components/BriefText.jsx';
+import { fromDatetimeLocal, toDatetimeLocal } from '@/utils/datetimeLocalInput.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -245,8 +246,8 @@ const MobileOrderDetailPage = () => {
       courierName: nextOrder?.courierName || '',
       trackingNumber: nextOrder?.trackingNumber || '',
       trackingUrl: nextOrder?.trackingUrl || '',
-      shippedAt: nextOrder?.shippedAt ? nextOrder.shippedAt.slice(0, 16) : '',
-      deliveredAt: nextOrder?.deliveredAt ? nextOrder.deliveredAt.slice(0, 16) : '',
+      shippedAt: toDatetimeLocal(nextOrder?.shippedAt),
+      deliveredAt: toDatetimeLocal(nextOrder?.deliveredAt),
       packingNotes: nextOrder?.packingNotes || '',
     });
   };
@@ -390,8 +391,8 @@ const MobileOrderDetailPage = () => {
     try {
       const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
         ...shipmentDraft,
-        shippedAt: shipmentDraft.shippedAt ? new Date(shipmentDraft.shippedAt).toISOString() : '',
-        deliveredAt: shipmentDraft.deliveredAt ? new Date(shipmentDraft.deliveredAt).toISOString() : '',
+        shippedAt: fromDatetimeLocal(shipmentDraft.shippedAt),
+        deliveredAt: fromDatetimeLocal(shipmentDraft.deliveredAt),
       });
       setOrder(nextOrder || order);
       setShipmentFromOrder(nextOrder || order);
@@ -410,8 +411,8 @@ const MobileOrderDetailPage = () => {
       const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
         ...nextShipmentDraft,
         shipmentStatus,
-        shippedAt: shipmentStatus === 'shipped' ? new Date().toISOString() : nextShipmentDraft.shippedAt ? new Date(nextShipmentDraft.shippedAt).toISOString() : '',
-        deliveredAt: nextShipmentDraft.deliveredAt ? new Date(nextShipmentDraft.deliveredAt).toISOString() : '',
+        shippedAt: shipmentStatus === 'shipped' ? new Date().toISOString() : fromDatetimeLocal(nextShipmentDraft.shippedAt),
+        deliveredAt: fromDatetimeLocal(nextShipmentDraft.deliveredAt),
       });
       setOrder(nextOrder || order);
       setShipmentFromOrder(nextOrder || order);

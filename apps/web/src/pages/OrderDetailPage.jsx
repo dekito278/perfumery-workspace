@@ -1,4 +1,5 @@
 import BriefText from '@/components/BriefText.jsx';
+import { fromDatetimeLocal, toDatetimeLocal } from '@/utils/datetimeLocalInput.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -236,16 +237,6 @@ const getNextOperationalTask = (order, bespoke) => {
   return { title: 'Order selesai', helper: 'Order sudah masuk arsip operasional.' };
 };
 
-// <input type="datetime-local"> speaks local time. Slicing the stored UTC string handed it the UTC clock
-// reading as if it were local, so every save shifted shipped_at/delivered_at by the WIB offset — seven
-// hours per save, compounding (audit round 7). 'sv' formats as YYYY-MM-DD HH:mm in local time.
-const toDatetimeLocal = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleString('sv').slice(0, 16).replace(' ', 'T');
-};
-const fromDatetimeLocal = (value) => (value ? new Date(value).toISOString() : '');
 
 const OrderDetailPage = () => {
   const navigate = useNavigate();
