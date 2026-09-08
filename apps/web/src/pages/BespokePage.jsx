@@ -150,6 +150,11 @@ const BespokePage = () => {
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
   const settings = useBespokeSettings();
+  // The option prices live in the database. Until they arrive, useBespokeSettings hands back the bundled
+  // defaults, and those are simply out of date — 30 ml reads Rp 350.000 there against Rp 200.000 in the
+  // shop. Showing a first-time visitor a price 75% too high for a tenth of a second is worse than showing
+  // them a dash, so the summary waits rather than guessing.
+  const priceReady = !settings.loading;
   const bottleSizeOptions = useMemo(() => settings.bottleSizes.filter((option) => option.enabled), [settings.bottleSizes]);
   const bottleTypeOptions = useMemo(() => settings.bottleTypes.filter((option) => option.enabled), [settings.bottleTypes]);
   const capDesignOptions = useMemo(() => settings.capDesigns.filter((option) => option.enabled), [settings.capDesigns]);
@@ -741,7 +746,7 @@ const BespokePage = () => {
                   <div><dt>Nama parfum</dt><dd>{form.perfumeName || 'Belum diisi'}</dd></div>
                   <div><dt>Aroma</dt><dd>{form.scentDescription || 'Belum diisi'}</dd></div>
                   <div><dt>Botol</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div><dt>Subtotal bespoke</dt><dd>{formatRupiah(estimatedTotal)}</dd></div>
+                  <div><dt>Subtotal bespoke</dt><dd>{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
                 </dl>
               </div>
               <div className="editorial-bespoke-next__action">
@@ -857,10 +862,10 @@ const BespokePage = () => {
                   ) : null}
                 </div>
                 <div className="editorial-cart-summary">
-                  <div className="editorial-cart-summary__row"><span>Subtotal bespoke</span><strong>{formatRupiah(estimatedTotal)}</strong></div>
+                  <div className="editorial-cart-summary__row"><span>Subtotal bespoke</span><strong>{priceReady ? formatRupiah(estimatedTotal) : '—'}</strong></div>
                   {discountAmount ? <div className="editorial-cart-summary__row"><span>Voucher</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
                   <div className="editorial-cart-summary__row"><span>Ongkir</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
-                  <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{formatRupiah(totalDue)}</strong></div>
+                  <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{priceReady ? formatRupiah(totalDue) : '—'}</strong></div>
                 </div>
                 <label>Pembayaran<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
                 <label className="editorial-checkbox-row">
