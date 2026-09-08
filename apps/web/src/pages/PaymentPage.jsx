@@ -781,17 +781,21 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   );
 };
 
-const EmptyPaymentState = ({ isMobile, orderNumber, loading = false, onRefresh }) => (
+const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading = false, onRefresh }) => (
   <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
     <h1 className={isMobile ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>
-      {orderNumber ? 'Pembayaran sedang diproses' : 'Belum ada sesi pembayaran'}
+      {orderNumber
+        ? (orderFound === false ? 'Order tidak ditemukan' : 'Pembayaran sedang diproses')
+        : 'Belum ada sesi pembayaran'}
     </h1>
     <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
       {orderNumber
-        ? `Order ${orderNumber} sudah kembali ke Solivagant. Status final akan mengikuti notifikasi pembayaran.`
+        ? (orderFound === false
+          ? `Order ${orderNumber} tidak ada di sistem kami. Cek lagi nomornya, atau lacak pesanan dengan nomor order atau resi.`
+          : `Order ${orderNumber} sudah kembali ke Solivagant. Status final akan mengikuti notifikasi pembayaran.`)
         : 'Mulai dari cart agar Solivagant bisa membuat order dan membuka panel pembayaran.'}
     </p>
     <div className="mt-5 flex justify-center gap-2">
@@ -834,6 +838,10 @@ const PaymentPageContent = ({ isMobile }) => {
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  // Whether the lookup actually found the order. Without this the page told anyone arriving with an
+  // order number — a typo, an old link, a cancelled order — that their payment was being processed and
+  // had "returned to Solivagant", which is a reassurance about something that does not exist.
+  const [orderFound, setOrderFound] = useState(null);
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const orderNumber = searchParams.get('order');
   const paymentReturn = searchParams.get('payment');
@@ -913,6 +921,7 @@ const PaymentPageContent = ({ isMobile }) => {
     setLoadingOrder(true);
     try {
       const order = await getPublicOrderPaymentSession(orderNumber) || await getOrderById(orderNumber);
+      setOrderFound(Boolean(order));
       if (order?.paymentUrl) {
         const restoredSession = {
           paymentUrl: order.paymentUrl,
@@ -961,6 +970,8 @@ const PaymentPageContent = ({ isMobile }) => {
       setSession(isSessionForOrder(storedSession) ? storedSession : null);
     } catch (error) {
       console.warn('Failed to restore payment session:', error.message || error);
+      // A lookup that threw leaves us genuinely unsure; say nothing rather than claim the order is gone.
+      setOrderFound(null);
       // Fall back to any session we already had and tell the buyer, instead of
       // silently showing an empty "no payment session" state.
       setSession(isSessionForOrder(storedSession) ? storedSession : null);
@@ -1005,7 +1016,7 @@ const PaymentPageContent = ({ isMobile }) => {
           />
           {(loadingOrder || refreshingStatus) && !session ? <MobilePaymentSkeleton /> : isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} compact onProofSubmitted={setSession} />
-          ) : session?.qrContent ? <QrisPanel session={session} compact onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          ) : session?.qrContent ? <QrisPanel session={session} compact onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} compact /> : <EmptyPaymentState isMobile orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
           {session && !sessionIsQris ? (
             <StickyBottomActionBar
               fixed
@@ -1042,7 +1053,7 @@ const PaymentPageContent = ({ isMobile }) => {
         <section className="tracking-content" style={{ paddingTop: 'var(--space-block)' }}>
           {isManualTransferPayment(session?.paymentProvider || session?.paymentType) ? (
             <ManualTransferPanel session={session} onProofSubmitted={setSession} />
-          ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
+          ) : session?.qrContent ? <QrisPanel session={session} onPaid={setSession} /> : session?.paymentUrl ? <PaymentFrame session={session} /> : <EmptyPaymentState orderNumber={orderNumber} orderFound={orderFound} loading={loadingOrder || refreshingStatus} onRefresh={refreshPaymentSession} />}
         </section>
         <StorefrontFooter />
       </main>
