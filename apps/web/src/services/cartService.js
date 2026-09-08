@@ -179,7 +179,7 @@ export const buildCheckoutDraft = ({
     'Solivagant order draft',
     '',
     `Customer: ${customerName || '-'}`,
-    customerCode ? `Customer code: ${customerCode}` : '',
+    customerCode ? `Customer code: ${customerCode}` : null,
     `Contact: ${contact || '-'}`,
     `Address: ${deliveryAddress || '-'}`,
     `Area: ${deliveryArea || '-'}`,
@@ -191,11 +191,15 @@ export const buildCheckoutDraft = ({
     '',
     `Total items: ${quantity}`,
     `Subtotal: Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}`,
-    voucherCode && discount ? `Voucher ${voucherCode}: -Rp ${new Intl.NumberFormat('id-ID').format(discount)}` : '',
-    shippingFee ? `Shipping fee: Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee))}` : '',
+    voucherCode && discount ? `Voucher ${voucherCode}: -Rp ${new Intl.NumberFormat('id-ID').format(discount)}` : null,
+    shippingFee ? `Shipping fee: Rp ${new Intl.NumberFormat('id-ID').format(Number(shippingFee))}` : null,
     `Total: Rp ${new Intl.NumberFormat('id-ID').format(total)}`,
     notes ? `Notes: ${notes}` : 'Notes: -',
-  ].filter((line) => line !== '').join('\n');
+    // Drop only the optional lines that did not apply — they are null. An empty string here is a
+    // deliberate paragraph break, and filtering those out too collapsed the draft an admin copies and
+    // sends to the buyer into one unbroken block: the title glued to Customer, Payment glued to Items,
+    // and the last item glued to the totals.
+  ].filter((line) => line != null).join('\n');
 };
 
 export const buildWhatsAppCheckoutUrl = (message, phoneNumber = getStorefrontWhatsAppNumber()) => {
