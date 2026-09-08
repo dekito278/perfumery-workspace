@@ -51,11 +51,21 @@ const getReferenceStatusBadgeClassName = (status) => {
   }
 };
 
-const renderDeleteDependencySummary = (dependencies, loading) => {
+const renderDeleteDependencySummary = (dependencies, loading, checkFailed) => {
   if (loading) {
     return (
       <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
         Checking where this material is still used...
+      </div>
+    );
+  }
+
+  // A check that threw tells us nothing. Saying "ready to delete" here turns a failed lookup into a
+  // safety guarantee, which is the one thing it cannot be.
+  if (checkFailed) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        Gagal memeriksa di mana material ini masih dipakai. Coba lagi sebentar; jangan hapus sebelum hasilnya keluar.
       </div>
     );
   }
@@ -97,6 +107,7 @@ const RawMaterialDetailPage = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteDependencies, setDeleteDependencies] = useState([]);
   const [deleteDependencyLoading, setDeleteDependencyLoading] = useState(false);
+  const [deleteDependencyFailed, setDeleteDependencyFailed] = useState(false);
 
   useEffect(() => {
     const loadDeleteDependencies = async () => {
@@ -106,11 +117,13 @@ const RawMaterialDetailPage = () => {
       }
 
       setDeleteDependencyLoading(true);
+      setDeleteDependencyFailed(false);
       try {
         const blockers = await getRawMaterialDeletionDependencies(id);
         setDeleteDependencies(blockers);
       } catch (error) {
         console.error('Failed to load raw material delete dependencies:', error);
+        setDeleteDependencyFailed(true);
         setDeleteDependencies([]);
       } finally {
         setDeleteDependencyLoading(false);
@@ -119,6 +132,7 @@ const RawMaterialDetailPage = () => {
 
     if (!deleteDialogOpen) {
       setDeleteDependencies([]);
+      setDeleteDependencyFailed(false);
       return;
     }
 
@@ -624,7 +638,7 @@ const RawMaterialDetailPage = () => {
         confirmText={deleting ? 'Deleting...' : 'Delete'}
         confirmDisabled={deleting}
       >
-        {renderDeleteDependencySummary(deleteDependencies, deleteDependencyLoading)}
+        {renderDeleteDependencySummary(deleteDependencies, deleteDependencyLoading, deleteDependencyFailed)}
       </ConfirmDialog>
 
       <ManualReferenceMatchModal

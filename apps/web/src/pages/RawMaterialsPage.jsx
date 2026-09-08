@@ -238,6 +238,7 @@ const RawMaterialsPage = () => {
         <RawMaterialsDeleteDependencySummary
           dependencies={page.deleteDependencies}
           loading={page.deleteDependencyLoading}
+          checkFailed={page.deleteDependencyFailed}
           selectedMaterial={page.selectedMaterial}
           selectedMaterials={page.selectedMaterials}
         />

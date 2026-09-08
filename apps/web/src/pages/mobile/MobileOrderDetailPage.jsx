@@ -205,6 +205,8 @@ const MobileOrderDetailPage = () => {
   const handleBack = useMobileBackNavigation('/mobile/studio/orders');
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
+  // Unsure is not the same as absent: a failed load used to render "Order tidak ditemukan".
+  const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingShipment, setSavingShipment] = useState(false);
@@ -259,6 +261,7 @@ const MobileOrderDetailPage = () => {
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
       const nextOrder = await getOrderById(orderId);
       const [nextPaymentLogs, nextAuditLogs] = await Promise.all([
@@ -272,6 +275,7 @@ const MobileOrderDetailPage = () => {
       setShipmentFromOrder(nextOrder);
       setProductionLinksFromOrder(nextOrder);
     } catch (error) {
+      setLoadFailed(true);
       setOrder(null);
       setPaymentLogs([]);
       setAuditLogs([]);
@@ -706,7 +710,14 @@ const MobileOrderDetailPage = () => {
     return (
       <MobileAuthenticatedLayout taskMode>
         <main className="mobile-page space-y-4">
-          <MobileTopBar title="Order tidak ditemukan" subtitle="Order Studio" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
+          <MobileTopBar title={loadFailed ? 'Order gagal dimuat' : 'Order tidak ditemukan'} subtitle="Order Studio" eyebrow="E-commerce" action={<PackageCheck className="h-5 w-5 text-amber-700" />} />
+          {loadFailed ? (
+            <StateBlock
+              className="mobile-card"
+              title="Belum bisa dibaca"
+              description="Order ini gagal dimuat, jadi belum tentu tidak ada. Coba muat ulang."
+            />
+          ) : null}
           <Button type="button" className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/studio/orders')}>
             <ArrowLeft className="h-4 w-4" />
             Kembali ke order
