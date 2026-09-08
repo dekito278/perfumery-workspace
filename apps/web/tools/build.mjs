@@ -264,6 +264,37 @@ const generateSeoArtifacts = async () => {
   }
 };
 
+// Two environment variables decide the same deadline, and only a comment kept them together. The cron
+// (api/orders/expire-reservations.js) reads PAYMENT_RESERVATION_TTL_HOURS; the browser reads
+// VITE_PAYMENT_RESERVATION_TTL_HOURS, which is baked in at build time. Both actively cancel unpaid
+// reservations and the studio prints the client value as "Batas reserved N jam", so a mismatch either
+// cancels orders the cron would have kept or tells a buyer a deadline that is not the one enforced.
+// Setting one in Vercel and forgetting the other is a silent, money-losing config drift; make it loud.
+const assertReservationTtlAgrees = () => {
+  const read = (name) => String(process.env[name] ?? '').trim();
+  const server = read('PAYMENT_RESERVATION_TTL_HOURS');
+  const client = read('VITE_PAYMENT_RESERVATION_TTL_HOURS');
+  if (!server && !client) {
+    console.log('[ttl] payment reservation TTL: 24h on both sides (neither override set).');
+    return;
+  }
+
+  const hours = (value) => (value ? Number(value) : 24);
+  if (!Number.isFinite(hours(server)) || !Number.isFinite(hours(client)) || hours(server) <= 0 || hours(client) <= 0) {
+    console.error(`[ttl] PAYMENT_RESERVATION_TTL_HOURS="${server}" / VITE_PAYMENT_RESERVATION_TTL_HOURS="${client}" — both must be positive numbers.`);
+    process.exit(1);
+  }
+  if (hours(server) !== hours(client)) {
+    console.error(
+      `[ttl] the cron cancels unpaid reservations after ${hours(server)}h but the browser was built for `
+      + `${hours(client)}h. Set PAYMENT_RESERVATION_TTL_HOURS and VITE_PAYMENT_RESERVATION_TTL_HOURS to the `
+      + 'same value — one of them is currently unset and defaulting to 24.',
+    );
+    process.exit(1);
+  }
+  console.log(`[ttl] payment reservation TTL: ${hours(server)}h on both sides.`);
+};
+
 // Every prerendered page must still be a page. Eighteen product pages and a journal article shipped as
 // blank documents because the title replacement started matching at a <title> written inside an HTML
 // comment and ran to the real </title>, eating the comment's closing --> along the way. The rest of the
@@ -371,6 +402,8 @@ const assertDeferredChunksStayLazy = () => {
   }
   console.log(`[bundle] ${deferred.length} deferred chunk(s) stay out of the entry graph (${seen.size} chunks walked).`);
 };
+
+assertReservationTtlAgrees();
 
 if (viteResult.status === 0) {
   assertDeferredChunksStayLazy();
