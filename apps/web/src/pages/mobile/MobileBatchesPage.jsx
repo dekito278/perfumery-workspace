@@ -323,6 +323,11 @@ const MobileBatchesPage = () => {
   }, [selectedFormulaId, targetGrams]);
 
   useEffect(() => {
+    // Both halves of this were fixed on the desktop page in audit round 8 and never carried over here.
+    // Switching formulas quickly could let the earlier request resolve last, leaving savedBatch pointing
+    // at another formula's batch — which the save path then updates by id, and which the stock deduction
+    // acts on by id too.
+    let cancelled = false;
     const loadBatchHistory = async () => {
       if (!selectedFormulaId) {
         setBatchHistory([]);
@@ -334,19 +339,39 @@ const MobileBatchesPage = () => {
       }
 
       const rows = await getBatches({ formulaId: selectedFormulaId });
+      if (cancelled) return;
       setBatchHistory(rows);
-      setSavedBatch(rows[0] || null);
+      const latest = rows[0] || null;
+      setSavedBatch(latest);
       setUsageRecords([]);
-      setQcStatus(rows[0]?.qc_status || 'pending');
-      setQcNotes(rows[0]?.qc_notes || '');
-      if (rows[0]?.status) {
-        setBatchStatus(rows[0].status);
-      } else {
-        setBatchStatus('planned');
+      setQcStatus(latest?.qc_status || 'pending');
+      setQcNotes(latest?.qc_notes || '');
+      setBatchStatus(latest?.status || 'planned');
+      // Saving updates THIS batch by id, so the form has to show its parameters. Keeping the page
+      // defaults meant that simply opening a formula armed a save that would rewrite the last batch's
+      // volume, ratio, bottle size, loss and price with values nobody typed.
+      if (latest) {
+        if (latest.target_quantity) setTargetGrams(String(latest.target_quantity));
+        if (latest.bottle_ml) setBottleSizeMl(String(latest.bottle_ml));
+        if (latest.loss_percent !== null && latest.loss_percent !== undefined) setProductLossPercent(String(latest.loss_percent));
+        if (latest.solvent_id) setSelectedSolventId(latest.solvent_id);
+        if (latest.selling_price) setProductPrice(String(latest.selling_price));
+        if (latest.formula_percentage) updateRetailInput('formulaPercentage', String(latest.formula_percentage));
       }
     };
 
-    loadBatchHistory();
+    loadBatchHistory().catch((error) => {
+      if (cancelled) return;
+      // Without this the whole effect rejected unhandled and every setter above was skipped, so the
+      // previously selected formula's batch stayed on screen — and armed — under the new formula.
+      console.error('Failed to load batch history:', error);
+      setBatchHistory([]);
+      setSavedBatch(null);
+      setUsageRecords([]);
+      toast.error('Riwayat batch gagal dimuat. Pilih ulang formulanya sebelum menyimpan.');
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFormulaId]);
 
   useEffect(() => {

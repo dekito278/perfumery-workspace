@@ -110,6 +110,9 @@ const RawMaterialDetailPage = () => {
   const [deleteDependencyFailed, setDeleteDependencyFailed] = useState(false);
 
   useEffect(() => {
+    // Open the dialog for one material, close it, open another: the first lookup can resolve last and
+    // answer for the material now on screen. This dialog's whole job is to say whether deleting is safe.
+    let cancelled = false;
     const loadDeleteDependencies = async () => {
       if (!deleteDialogOpen || !id) {
         setDeleteDependencyLoading(false);
@@ -120,13 +123,15 @@ const RawMaterialDetailPage = () => {
       setDeleteDependencyFailed(false);
       try {
         const blockers = await getRawMaterialDeletionDependencies(id);
+        if (cancelled) return;
         setDeleteDependencies(blockers);
       } catch (error) {
+        if (cancelled) return;
         console.error('Failed to load raw material delete dependencies:', error);
         setDeleteDependencyFailed(true);
         setDeleteDependencies([]);
       } finally {
-        setDeleteDependencyLoading(false);
+        if (!cancelled) setDeleteDependencyLoading(false);
       }
     };
 
@@ -137,6 +142,7 @@ const RawMaterialDetailPage = () => {
     }
 
     loadDeleteDependencies();
+    return () => { cancelled = true; };
   }, [deleteDialogOpen, id]);
 
   const loadMaterial = useCallback(async () => {
