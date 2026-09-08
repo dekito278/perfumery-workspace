@@ -106,7 +106,10 @@ const MobileCheckoutPage = () => {
     { label: 'Nomor WA', complete: validPhoneContact },
     { label: 'Alamat', complete: Boolean(deliveryAddress.trim()) },
     { label: 'Area', complete: Boolean(selectedDestination) },
-    { label: 'Kurir', complete: Boolean(selectedCourier && selectedShipping) },
+    // Two requirements, not one. Folding them together told a buyer who had already chosen JNE that they
+    // still needed to choose a courier, which reads as the app ignoring them.
+    { label: 'Kurir', complete: Boolean(selectedCourier) },
+    { label: 'Ongkir', complete: Boolean(selectedShipping) },
     // Mirrors canSubmitCheckout: lines whose product is gone or sold out block the order (audit round 9).
     { label: 'Hapus item tidak tersedia', complete: !blockedItems.length },
   ];
@@ -135,7 +138,12 @@ const MobileCheckoutPage = () => {
       setShowManualShippingArea(true);
     }
   };
-  const showShippingAreaFallback = showManualShippingArea || Boolean(shippingError);
+  // A returning buyer arrives with selectedCourier restored from the saved draft, so the automatic lookup
+  // that normally runs on courier change never fires. Without this they saw "Masih perlu: Area" and no area
+  // field, and had to find "Edit ongkir manual" to get one. Gated on !shippingLoading so it does not flash
+  // during a lookup that is about to succeed.
+  const showShippingAreaFallback = showManualShippingArea || Boolean(shippingError)
+    || Boolean(selectedCourier && !selectedShipping && !shippingLoading);
   const showShippingAlternatives = showManualShippingArea || Boolean(shippingError);
   const showShippingServiceChoices = Boolean(visibleShippingOptions.length && (!selectedShipping || showManualShippingArea));
   const recalculateShipping = () => {
