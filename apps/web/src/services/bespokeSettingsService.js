@@ -6,23 +6,28 @@ export const BESPOKE_SETTINGS_UPDATED_EVENT = 'dekito:bespoke-settings-updated';
 
 export const optionCollections = ['bottleSizes', 'bottleTypes', 'capDesigns', 'labelDesigns', 'exoticMaterials'];
 
+// A snapshot of storefront_bespoke_options, used only while that table cannot be reached. It had
+// drifted a long way from the shop — 30 ml read Rp 350.000 here against Rp 200.000 there — so an
+// outage would have quoted prices nobody charges. warnIfBespokeDefaultsDrifted() in tools/build.mjs
+// prints every difference on each build; keep this in step with what it reports.
 export const defaultBespokeSettings = {
   bottleSizes: [
-    { id: '30-ml', label: '30 ml', value: '30 ml', price: 350000, description: 'Ukuran default bespoke.', enabled: true, sortOrder: 10 },
-    { id: '50-ml', label: '50 ml', value: '50 ml', price: 500000, description: 'Ukuran lebih besar untuk pemakaian rutin.', enabled: true, sortOrder: 20 },
+    { id: "30-ml", label: "30 ml", value: "30 ml", price: 200000, description: "Ukuran default bespoke.", enabled: true, sortOrder: 10 },
+    { id: "100-ml-1779544165314", label: "100 ml", value: "100 ml", price: 600000, description: "100 ml", enabled: true, sortOrder: 30 },
+    { id: "50-ml-1778532231031", label: "50 ml", value: "50 ml", price: 330000, description: "", enabled: true, sortOrder: 30 },
   ],
   bottleTypes: [
-    { id: 'classic-clear', label: 'Classic clear bottle', value: 'Classic clear bottle', price: 0, description: 'Botol kaca bening dengan bentuk clean.', enabled: true, sortOrder: 10 },
-    { id: 'square-premium', label: 'Square premium bottle', value: 'Square premium bottle', price: 45000, description: 'Bentuk kotak yang lebih tegas dan premium.', enabled: true, sortOrder: 20 },
+    { id: "classic-clear", label: "Classic", value: "Classic", price: 10000, description: "Bentuk botol basic, cap by request", enabled: true, sortOrder: 10 },
+    { id: "square-premium", label: "Thematic Botol", value: "Thematic Botol", price: 50000, description: "Bentuk botol abstrak by request", enabled: true, sortOrder: 20 },
   ],
   capDesigns: [
-    { id: 'cap-biasa', label: 'Cap biasa', value: 'Cap biasa', price: 0, description: 'Simple, clean, ready stock.', enabled: true, sortOrder: 10 },
-    { id: 'cap-batu', label: 'Cap batu', value: 'Cap batu', price: 75000, description: 'Statement cap dengan feel natural stone.', enabled: true, sortOrder: 20 },
-    { id: 'cap-custom-akrilik', label: 'Cap custom akrilik', value: 'Cap custom akrilik', price: 125000, description: 'Custom color/form acrylic look.', enabled: true, sortOrder: 30 },
+    { id: "cap-custom-akrilik", label: "Cap custom Abstrak", value: "Cap custom Abstrak", price: 50000, description: "Custom color/form abstrak look.", enabled: true, sortOrder: 30 },
+    { id: "cap-basic-1778533418244", label: "Cap Basic", value: "Cap Basic", price: 5000, description: "Cap basic, cap bulet, cap kotak", enabled: true, sortOrder: 40 },
   ],
   labelDesigns: [
-    { id: 'minimal-label', label: 'Minimal label', value: 'Minimal label', price: 0, description: 'Label clean dengan nama parfum dan detail basic.', enabled: true, sortOrder: 10 },
-    { id: 'custom-name-label', label: 'Custom name label', value: 'Custom name label', price: 35000, description: 'Label dengan nama atau pesan personal.', enabled: true, sortOrder: 20 },
+    { id: "minimal-label", label: "Tulis tangan", value: "Tulis tangan", price: 0, description: "Label stiker dengan tulisan tangan saya", enabled: true, sortOrder: 10 },
+    { id: "custom-name-label", label: "Custom name label", value: "Custom name label", price: 75000, description: "Label dengan nama atau pesan personal.\n+ penambahan waktu pengerjaan 14 hari", enabled: true, sortOrder: 20 },
+    { id: "none-1778533982963", label: "None", value: "None", price: 0, description: "Tidak mengunakan stiker", enabled: true, sortOrder: 30 },
   ],
   exoticMaterials: [],
 };
