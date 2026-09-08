@@ -27,7 +27,7 @@ const getArticleExcerpt = (article) =>
 export const MobileStorefrontContent = ({ active = true }) => {
   const navigate = useNavigate();
   const catalogProducts = useCatalogProducts({ active });
-  const { images: siteImages } = useSiteImages();
+  const { images: siteImages, loading: siteImagesLoading } = useSiteImages();
   const [articles, setArticles] = useState([]);
 
   const visibleProducts = useMemo(
@@ -58,7 +58,11 @@ export const MobileStorefrontContent = ({ active = true }) => {
       <main className="mobile-page m-editorial-page">
         {/* Hero — fullscreen image */}
         <section className="m-editorial-hero">
-          <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" />
+          {/* No photograph until the upload list settles: the bundled fallback is a different
+              picture, so seeding with it flashed the old hero on every first paint. */}
+          {siteImagesLoading ? null : (
+            <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" />
+          )}
           <div className="m-editorial-hero__overlay">
             <p className="m-editorial-eyebrow">ATELIER PARFUM ARTISAN</p>
             <h1>Aroma sebagai objek kenangan.</h1>
@@ -118,7 +122,11 @@ export const MobileStorefrontContent = ({ active = true }) => {
 
         {/* Statement block */}
         <section className="m-editorial-statement">
-          <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" />
+          {/* No photograph until the upload list settles: the bundled fallback is a different
+              picture, so seeding with it flashed the old hero on every first paint. */}
+          {siteImagesLoading ? null : (
+            <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" />
+          )}
           <div className="m-editorial-statement__overlay">
             <p className="m-editorial-eyebrow">ATELIER</p>
             <h2>Aroma sebagai atmosfer pribadi.</h2>
