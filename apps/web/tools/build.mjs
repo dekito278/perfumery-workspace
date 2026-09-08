@@ -278,7 +278,55 @@ const generateSeoArtifacts = async () => {
   }
 };
 
+// Chunks listed as deferred in vite.config.js must never be reachable from the entry by a STATIC import.
+// They were not, and then Rollup hoisted Vite's preload helper into pdf-export-vendor: because every chunk
+// that uses a dynamic import must statically import that helper, the entry chunk gained
+// `import { _ } from './pdf-export-vendor.js'` and every visitor to a product page downloaded 520 kB of
+// jspdf and html2canvas. Nothing in the bundle output showed it — the chunk was still listed as separate,
+// still absent from modulepreload, and still only imported dynamically in the source.
+const assertDeferredChunksStayLazy = () => {
+  const distRoot = path.join(webRoot, 'dist');
+  const indexPath = path.join(distRoot, 'index.html');
+  if (!fs.existsSync(indexPath)) return;
+
+  const viteConfig = fs.readFileSync(path.join(webRoot, 'vite.config.js'), 'utf8');
+  const deferred = [...(viteConfig.match(/const deferredPreloadChunks = \[([\s\S]*?)\]/)?.[1] || '')
+    .matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  if (!deferred.length) return;
+
+  const entry = fs.readFileSync(indexPath, 'utf8').match(/<script[^>]+src="\/assets\/([^"]+\.js)"/)?.[1];
+  if (!entry) return;
+
+  // Walk only STATIC imports. `import("./x.js")` has a paren before the quote and never matches.
+  const staticImports = (file) => {
+    const full = path.join(distRoot, 'assets', file);
+    if (!fs.existsSync(full)) return [];
+    const code = fs.readFileSync(full, 'utf8');
+    return [...code.matchAll(/(?:\bimport|\bfrom)\s*["']\.\/([^"']+\.js)["']/g)].map((m) => m[1]);
+  };
+
+  const seen = new Set();
+  const queue = [entry];
+  while (queue.length) {
+    const file = queue.shift();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const offender = deferred.find((name) => file.startsWith(name));
+    if (offender) {
+      console.error(
+        `[bundle] "${offender}" is reachable from the entry chunk by a static import, so every visitor `
+        + `downloads it. Chain reached ${file}. Check what Rollup hoisted into that chunk — the preload `
+        + 'helper is the usual culprit — and pin it in getManualChunk.',
+      );
+      process.exit(1);
+    }
+    queue.push(...staticImports(file));
+  }
+  console.log(`[bundle] ${deferred.length} deferred chunk(s) stay out of the entry graph (${seen.size} chunks walked).`);
+};
+
 if (viteResult.status === 0) {
+  assertDeferredChunksStayLazy();
   await generateSeoArtifacts();
 }
 

@@ -381,6 +381,13 @@ const manualChunkGroups = [
 
 const getManualChunk = (id) => {
 	const normalizedId = id.replace(/\\/g, '/');
+	// Vite's preload helper is imported statically by every chunk that uses a dynamic import. Left to
+	// Rollup it was hoisted into pdf-export-vendor, so `import { _ } from './pdf-export-vendor.js'`
+	// appeared in the entry chunk and every visitor downloaded 520 kB of jspdf and html2canvas to read a
+	// product page. Pin it to a chunk that is loaded on every route anyway.
+	if (normalizedId.includes('vite/preload-helper')) {
+		return 'react-vendor';
+	}
 	if (!normalizedId.includes('/node_modules/')) {
 		return undefined;
 	}
