@@ -30,7 +30,6 @@ const publicStorefrontPaths = [
   '/catalog',
   '/products',
   '/bespoke',
-  '/materials',
   '/journal',
   '/track-order',
   '/cart',
