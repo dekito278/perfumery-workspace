@@ -251,6 +251,9 @@ const OrderDetailPage = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
+  // A load that threw leaves us unsure. Without this the page reported "Order tidak ditemukan"
+  // for a network blip, which reads as "this order was deleted".
+  const [loadFailed, setLoadFailed] = useState(false);
   const [paymentLogs, setPaymentLogs] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditFilters, setAuditFilters] = useState({ admin: 'all', event: 'all', query: '' });
@@ -386,6 +389,7 @@ const OrderDetailPage = () => {
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
       const nextOrder = await getOrderById(orderId);
       const nextPaymentLogs = await getOrderPaymentLogs(orderId);
@@ -397,6 +401,7 @@ const OrderDetailPage = () => {
       setShipmentFromOrder(nextOrder);
     } catch (error) {
       toast.error(error.message || 'Gagal memuat detail order');
+      setLoadFailed(true);
       setOrder(null);
       setPaymentLogs([]);
       setAuditLogs([]);
@@ -662,7 +667,19 @@ const OrderDetailPage = () => {
             <ArrowLeft className="h-4 w-4" />
             Orders
           </Button>
-          <StateBlock className="mt-5" title="Order tidak ditemukan" description={`Order ${orderId} tidak ditemukan.`} icon={PackageCheck} />
+          <StateBlock
+            className="mt-5"
+            title={loadFailed ? 'Order gagal dimuat' : 'Order tidak ditemukan'}
+            description={loadFailed
+              ? `Order ${orderId} belum bisa dibaca, jadi belum tentu tidak ada. Coba muat ulang.`
+              : `Order ${orderId} tidak ditemukan.`}
+            icon={PackageCheck}
+          />
+          {loadFailed ? (
+            <Button type="button" variant="outline" className="mt-3 h-10 rounded-2xl" onClick={() => { void loadOrder(); }}>
+              Coba lagi
+            </Button>
+          ) : null}
         </main>
       </AuthenticatedLayout>
     );

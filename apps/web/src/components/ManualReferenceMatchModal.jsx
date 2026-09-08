@@ -27,6 +27,7 @@ const ManualReferenceMatchModal = ({
 }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [searchFailed, setSearchFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -48,12 +49,16 @@ const ManualReferenceMatchModal = ({
     const loadResults = async () => {
       setLoading(true);
       try {
+        setSearchFailed(false);
         const nextResults = await searchReferenceProfiles(query, 12);
         if (!cancelled) {
           setResults(nextResults);
         }
       } catch (_error) {
         if (!cancelled) {
+          // "No profiles found" is an answer; a failed search is not. Saying the first sends the owner
+          // off to create a duplicate material.
+          setSearchFailed(true);
           setResults([]);
         }
       } finally {
@@ -203,7 +208,9 @@ const ManualReferenceMatchModal = ({
                 );
               }) : (
                 <div className="rounded-2xl border border-dashed border-border/60 bg-white/80 p-5 text-sm text-muted-foreground">
-                  No reference profiles found for that search yet.
+                  {searchFailed
+                    ? 'Pencarian gagal, jadi belum tentu tidak ada yang cocok. Coba lagi.'
+                    : 'No reference profiles found for that search yet.'}
                 </div>
               )}
             </div>

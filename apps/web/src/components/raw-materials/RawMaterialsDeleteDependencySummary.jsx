@@ -3,6 +3,7 @@ import React from 'react';
 const RawMaterialsDeleteDependencySummary = ({
   dependencies,
   loading,
+  checkFailed,
   selectedMaterial,
   selectedMaterials,
 }) => {
@@ -18,6 +19,16 @@ const RawMaterialsDeleteDependencySummary = ({
     return (
       <div className="rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
         Checking where this material is still used...
+      </div>
+    );
+  }
+
+  // A lookup that threw knows nothing about references. Falling through to the green panel below would
+  // turn that failure into a safety guarantee.
+  if (checkFailed) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        Gagal memeriksa di mana material ini masih dipakai. Coba lagi sebentar; jangan hapus sebelum hasilnya keluar.
       </div>
     );
   }

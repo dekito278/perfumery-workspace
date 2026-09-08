@@ -73,6 +73,7 @@ export const useRawMaterialsPage = ({ navigate }) => {
   const [deletingId, setDeletingId] = useState(null);
   const [deleteDependencies, setDeleteDependencies] = useState([]);
   const [deleteDependencyLoading, setDeleteDependencyLoading] = useState(false);
+  const [deleteDependencyFailed, setDeleteDependencyFailed] = useState(false);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalMaterials, setTotalMaterials] = useState(0);
@@ -208,11 +209,13 @@ export const useRawMaterialsPage = ({ navigate }) => {
       }
 
       setDeleteDependencyLoading(true);
+      setDeleteDependencyFailed(false);
       try {
         const blockers = await getRawMaterialDeletionDependencies(selectedMaterial.id);
         setDeleteDependencies(blockers);
       } catch (error) {
         console.error('Failed to load raw material delete dependencies:', error);
+        setDeleteDependencyFailed(true);
         setDeleteDependencies([]);
       } finally {
         setDeleteDependencyLoading(false);
@@ -221,6 +224,7 @@ export const useRawMaterialsPage = ({ navigate }) => {
 
     if (!deleteDialogOpen || !selectedMaterial) {
       setDeleteDependencies([]);
+      setDeleteDependencyFailed(false);
       setDeleteDependencyLoading(false);
       return;
     }
@@ -513,6 +517,7 @@ export const useRawMaterialsPage = ({ navigate }) => {
     deletingId,
     deleteDependencies,
     deleteDependencyLoading,
+    deleteDependencyFailed,
     selectedMaterialIds,
     currentPage,
     setCurrentPage,
