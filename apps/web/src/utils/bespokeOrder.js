@@ -76,32 +76,46 @@ export const buildBespokeCheckoutDraft = (request = {}) => [
   formatLine('Payment rail', request.paymentProvider || 'manual'),
 ].filter((line) => line !== '').join('\n');
 
-export const buildBespokeNotes = (request = {}) => [
-  formatLine('Address', request.deliveryAddress),
-  formatLine('Area', request.deliveryArea),
-  formatLine('Perfume name', request.perfumeName),
-  formatLine('Mood', request.mood),
-  formatLine('Occasion', request.occasion),
-  formatLine('Budget', request.budget),
-  formatLine('Size', request.size),
-  formatLine('Preferred aroma', request.preferredNotes || request.scentDescription),
-  formatLine('Avoided notes', request.avoidedNotes),
-  formatLine('Story', request.story),
-  formatLine('Bottle type', request.bottleType),
-  formatLine('Cap design', request.capDesign),
-  formatLine('Label design', request.labelDesign),
-  formatLine('Exotic material', request.exoticMaterial),
-  formatLine('Shipping', request.shippingSummary),
-  request.shippingFee ? formatLine('Shipping fee', rupiah(request.shippingFee)) : '',
-  request.voucherCode ? formatLine('Voucher', request.voucherCode) : '',
-  request.voucherDiscount ? formatLine('Voucher discount', rupiah(request.voucherDiscount)) : '',
-  request.totalPrice ? formatLine('Estimated total', rupiah(request.totalPrice)) : '',
-  formatLine('Pre-order acknowledgement', request.preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'),
-  formatLine('Reference scent', request.referenceProductName),
-]
-  // Four of the lines above are conditional and yield '' when they do not apply, so a brief for an order
-  // without a voucher used to carry two blank lines in the middle of it — between the shipping fee and
-  // the total, where they read as a formatting fault rather than an absence. Every line that survives is
-  // still a `Label: value` row, so the parsers that read Address/Area/Shipping back out are untouched.
-  .filter(Boolean)
-  .join('\n');
+// The rows a customer was asked for but left blank used to print one "Label: -" each — six of the
+// twenty-one rows on a realistic brief, so a third of the document you read was placeholder. They are
+// collapsed into a single line now, which keeps the signal that the question was asked and answered with
+// nothing, without spending a line on each. 'Tidak diisi' is registered in ORDER_NOTE_KEYS: an
+// unregistered label would be glued onto the previous row's value by parseOrderNoteRows.
+export const buildBespokeNotes = (request = {}) => {
+  const rows = [
+    ['Address', request.deliveryAddress],
+    ['Area', request.deliveryArea],
+    ['Perfume name', request.perfumeName],
+    ['Mood', request.mood],
+    ['Occasion', request.occasion],
+    ['Budget', request.budget],
+    ['Size', request.size],
+    ['Preferred aroma', request.preferredNotes || request.scentDescription],
+    ['Avoided notes', request.avoidedNotes],
+    ['Story', request.story],
+    ['Bottle type', request.bottleType],
+    ['Cap design', request.capDesign],
+    ['Label design', request.labelDesign],
+    ['Exotic material', request.exoticMaterial],
+    ['Shipping', request.shippingSummary],
+    ['Shipping fee', request.shippingFee ? rupiah(request.shippingFee) : ''],
+    ['Voucher', request.voucherCode],
+    ['Voucher discount', request.voucherDiscount ? rupiah(request.voucherDiscount) : ''],
+    ['Estimated total', request.totalPrice ? rupiah(request.totalPrice) : ''],
+    ['Pre-order acknowledgement', request.preorderAcknowledged ? 'Accepted, 7-14 days after brief confirmation' : 'Not accepted'],
+    ['Reference scent', request.referenceProductName],
+  ];
+
+  const filled = rows.filter(([, value]) => String(value ?? '').trim());
+  // Only the rows the customer fills are worth naming as missing. Voucher, fee and total are absent
+  // because the order had none, not because anybody declined to answer.
+  const optional = new Set(['Voucher', 'Voucher discount', 'Shipping fee', 'Estimated total']);
+  const blank = rows
+    .filter(([label, value]) => !String(value ?? '').trim() && !optional.has(label))
+    .map(([label]) => label);
+
+  return [
+    ...filled.map(([label, value]) => formatLine(label, value)),
+    blank.length ? formatLine('Tidak diisi', blank.join(', ')) : null,
+  ].filter(Boolean).join('\n');
+};
