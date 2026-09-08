@@ -29,6 +29,7 @@ import {
 } from '@/services/shippingService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
+import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 const BESPOKE_DRAFT_STORAGE_KEY = 'dekito.storefront.bespokeDraft.v1';
@@ -90,7 +91,7 @@ const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
   >
     {imageUrl ? (
       <span className="mb-2 block aspect-square w-full overflow-hidden rounded-[12px] bg-[#f8f7f4]">
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" width="240" height="240" />
+        <img src={img(imageUrl, 240)} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" width="240" height="240" />
       </span>
     ) : null}
     <span className="block px-1 py-0.5">{children}</span>
@@ -106,7 +107,7 @@ const CapMockup = ({ cap, bottle, label }) => {
   if (visualImage) {
     return (
       <div className="mobile-commerce-panel relative aspect-square w-full overflow-hidden bg-[#f8f7f4] p-0">
-        <img src={visualImage} alt={cap?.label || bottle?.label || label?.label || 'Opsi custom'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
+        <img src={img(visualImage, 360)} alt={cap?.label || bottle?.label || label?.label || 'Opsi custom'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-3">
           <div className="flex flex-wrap gap-1">
             {[bottle?.label, cap?.label, label?.label].filter(Boolean).map((item) => (

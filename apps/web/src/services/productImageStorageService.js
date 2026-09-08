@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient.js';
+import { getOptimizedStorageImageUrl } from '@/utils/storageImage.js';
 
 export const PRODUCT_IMAGES_BUCKET = 'storefront-product-images';
 const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -7,7 +8,6 @@ const MAX_IMAGE_DIMENSION = 1600;
 const MIN_IMAGE_DIMENSION = 760;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const PRODUCT_STORAGE_PUBLIC_PATH = `/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`;
-const PRODUCT_STORAGE_RENDER_PATH = `/storage/v1/render/image/public/${PRODUCT_IMAGES_BUCKET}/`;
 const PRODUCT_IMAGE_WIDTHS = [240, 360, 520, 720];
 
 const canvasToBlob = (canvas, type, quality) => new Promise((resolve, reject) => {
@@ -28,25 +28,9 @@ const sanitizeName = (value) => String(value || 'product')
   .replace(/^-+|-+$/g, '')
   || 'product';
 
-export const getOptimizedProductImageUrl = (imageUrl, width = 520) => {
-  const sourceUrl = String(imageUrl || '').trim();
-  if (!sourceUrl) return '';
-
-  try {
-    const url = new URL(sourceUrl);
-    if (!url.pathname.includes(PRODUCT_STORAGE_PUBLIC_PATH)) {
-      return sourceUrl;
-    }
-
-    url.pathname = url.pathname.replace(PRODUCT_STORAGE_PUBLIC_PATH, PRODUCT_STORAGE_RENDER_PATH);
-    url.searchParams.set('width', String(width));
-    url.searchParams.set('quality', '76');
-    url.searchParams.set('resize', 'contain');
-    return url.toString();
-  } catch {
-    return sourceUrl;
-  }
-};
+// Kept as the product-facing name; the rewrite itself is bucket-agnostic and shared with site and
+// bespoke images (utils/storageImage.js).
+export const getOptimizedProductImageUrl = (imageUrl, width = 520) => getOptimizedStorageImageUrl(imageUrl, width);
 
 export const getProductImageSrcSet = (imageUrl) => {
   const sourceUrl = String(imageUrl || '').trim();
