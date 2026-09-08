@@ -897,18 +897,15 @@ export const getPublicOrderPaymentSession = async (orderNumber) => {
   const normalizedOrderNumber = String(orderNumber || '').trim();
   if (!normalizedOrderNumber) return null;
 
-  try {
-    const { data, error } = await supabase.rpc('storefront_payment_session_lookup', {
-      p_order_number: normalizedOrderNumber,
-    });
+  // Throws when the lookup itself fails; returns null only when the RPC answered and had no such order.
+  // Collapsing both into null let PaymentPage tell a buyer their real order did not exist whenever the
+  // network hiccuped — the opposite mistake to the one it was fixing.
+  const { data, error } = await supabase.rpc('storefront_payment_session_lookup', {
+    p_order_number: normalizedOrderNumber,
+  });
 
-    if (error) throw error;
-    if (!data?.order_number) return null;
-    return normalizeOrder(data);
-  } catch (error) {
-    console.warn('Using empty public payment session fallback:', error.message || error);
-    return null;
-  }
+  if (error) throw new Error(error.message || 'Gagal memuat sesi pembayaran');
+  return data?.order_number ? normalizeOrder(data) : null;
 };
 
 export const reviewOrderPaymentProof = async (orderId, {
