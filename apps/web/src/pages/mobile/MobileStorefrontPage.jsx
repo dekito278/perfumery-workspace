@@ -10,6 +10,7 @@ import { isProductVisibleInStorefront } from '@/services/productCatalogService.j
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { LineDivider, LineMark } from '@/components/line/LineArt.jsx';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
+import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
 // pastel square holding one italic word, which reads as unfinished rather than minimal (UX backlog U-11).
@@ -57,7 +58,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
       <main className="mobile-page m-editorial-page">
         {/* Hero — fullscreen image */}
         <section className="m-editorial-hero">
-          <img src={siteImages['home-hero'] || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" />
+          <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" />
           <div className="m-editorial-hero__overlay">
             <p className="m-editorial-eyebrow">ATELIER PARFUM ARTISAN</p>
             <h1>Aroma sebagai objek kenangan.</h1>
@@ -117,7 +118,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
 
         {/* Statement block */}
         <section className="m-editorial-statement">
-          <img src={siteImages['home-statement'] || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" />
+          <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" />
           <div className="m-editorial-statement__overlay">
             <p className="m-editorial-eyebrow">ATELIER</p>
             <h2>Aroma sebagai atmosfer pribadi.</h2>
