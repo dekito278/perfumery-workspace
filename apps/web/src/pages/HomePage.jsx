@@ -27,7 +27,7 @@ import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 const moodCategories = [
   // `family` is the display label; `filter` is the real catalog category used in the link
   // (the catalog has no "Fresh" category — those scents live under "Aquatic").
-  { name: 'Tenang & Minimal', family: 'Fresh', filter: 'aquatic', description: 'Citrus bersih, musk lembut, dan tekstur ringan untuk pemakaian harian.', siteImageKey: 'mood-fresh' },
+  { name: 'Tenang & Minimal', family: 'Fresh', filter: 'fresh', description: 'Citrus bersih, musk lembut, dan tekstur ringan untuk pemakaian harian.', siteImageKey: 'mood-fresh' },
   { name: 'Hangat & Nostalgia', family: 'Gourmand', filter: 'gourmand', description: 'Vanila, tonka, dan kehangatan panggang — kenyamanan yang disuling jadi aroma.', siteImageKey: 'mood-gourmand' },
   { name: 'Gelap & Moody', family: 'Woody', filter: 'woody', description: 'Cedar, vetiver, dan kedalaman mineral untuk kehadiran yang tegas.', siteImageKey: 'mood-woody' },
   { name: 'Lembut & Romantis', family: 'Floral', filter: 'floral', description: 'Mawar, melati, dan musk powdery — lembut tanpa terlalu manis.', siteImageKey: 'mood-floral' },
