@@ -576,6 +576,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
       };
       sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(nextSession));
       onProofSubmitted?.(nextSession);
+
+      // Tell the owner. The proof is recorded by a Postgres RPC straight from here, so no server code
+      // runs on this path and nothing else can send the alert — the webhook URL is a server secret. The
+      // endpoint verifies the proof for itself; this only nudges it. Deliberately not awaited and never
+      // surfaced: the upload has already succeeded, and a failed notification must not tell the buyer
+      // otherwise.
+      fetch('/api/orders/notify-proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber }),
+      }).catch(() => {});
       setProofFile(null);
       toast.success('Bukti transfer terkirim. Admin akan cek pembayaran.');
     } catch (error) {

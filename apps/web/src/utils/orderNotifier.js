@@ -24,27 +24,37 @@ export const buildOrderAlert = ({ order, event = 'created', siteUrl = '' }) => {
   const provider = String(order?.payment_provider || order?.paymentProvider || '').trim();
   const isManual = ['manual', 'manual_transfer_bca'].includes(provider);
 
+  // 'proof' is the manual-transfer equivalent of 'paid': the buyer has sent the money and uploaded the
+  // slip, and nothing moves until someone looks at it. It had no alert at all, which is how a paid order
+  // can sit unnoticed for days.
   const heading = event === 'paid'
     ? `PEMBAYARAN MASUK — ${orderNumber}`
-    : `ORDER BARU — ${orderNumber}`;
+    : event === 'proof'
+      ? `BUKTI TRANSFER MASUK — ${orderNumber}`
+      : `ORDER BARU — ${orderNumber}`;
 
   // The next action is the point of the message. A manual-transfer order needs the owner to review a
   // proof; a paid one needs packing.
   const nextStep = event === 'paid'
     ? 'Siap diproses — cek Orders > Sudah bayar.'
-    : isManual
-      ? 'Transfer manual: pembeli akan upload bukti. Cek Orders > Review bukti.'
-      : 'Menunggu pembayaran gateway.';
+    : event === 'proof'
+      ? 'Pembeli sudah upload bukti transfer. Cek dan setujui di Orders > Review bukti.'
+      : isManual
+        ? 'Transfer manual: pembeli akan upload bukti. Cek Orders > Review bukti.'
+        : 'Menunggu pembayaran gateway.';
 
   const lines = [
     heading,
     `Total   : ${total}`,
     `Pembeli : ${customer}${contact ? ` (${contact})` : ''}`,
-    provider ? `Bayar   : ${provider}` : '',
+    provider ? `Bayar   : ${provider}` : null,
     '',
     nextStep,
-    siteUrl ? `${siteUrl.replace(/\/+$/, '')}/studio/orders` : '',
-  ].filter(Boolean);
+    siteUrl ? `${siteUrl.replace(/\/+$/, '')}/studio/orders` : null,
+    // Optional lines are null; the '' above is a deliberate blank line separating the facts from the
+    // action. filter(Boolean) removed both, so every alert arrived as one block with the next step glued
+    // to the payment method — the same fault as the customer notifications and the checkout draft.
+  ].filter((line) => line != null);
 
   const text = lines.join('\n');
 
