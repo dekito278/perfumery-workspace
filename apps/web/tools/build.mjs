@@ -25,7 +25,7 @@ const vitePackageJsonPath = require.resolve('vite/package.json', {
 const viteBinPath = path.join(path.dirname(vitePackageJsonPath), 'bin', 'vite.js');
 const viteResult = runNode([viteBinPath, 'build', '--outDir', 'dist']);
 
-const BRAND_SUMMARY = 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual. Public storefront with a fragrance collection, bespoke consultation, a raw material archive, and an editorial journal.';
+const BRAND_SUMMARY = 'An artisan perfume atelier by Dekito, crafting quiet olfactive works from raw materials, memory, and personal ritual. Public storefront with a fragrance collection, bespoke consultation, and an editorial journal.';
 
 const staticPublicPages = [
   {
@@ -77,22 +77,6 @@ const staticPublicPages = [
       ['Bayar', 'Continue toward a public checkout placeholder when the request is ready.'],
     ],
     items: ['Aroma', 'Preferensi', 'Botol', 'Ongkir', 'Bayar'],
-  },
-  {
-    route: '/materials',
-    title: 'Raw Material Archive - SOLIVAGANT',
-    description: 'A public SOLIVAGANT raw material storytelling archive with origin, olfactive family, sensory description, mood, and usage story.',
-    eyebrow: 'Raw Material Archive',
-    heading: 'Raw Material Archive',
-    headline: 'Materials as stories, not inventory.',
-    intro: 'A public archive for material storytelling: origin, olfactive family, sensory texture, mood, usage story, and related fragrance references.',
-    sections: [
-      ['Orris butter', 'Powdered woods with cool violet dust, suede, and cosmetic softness.'],
-      ['Green fig leaf', 'Green aromatic material direction with milky leaf, pear skin, and wet stem.'],
-      ['Tuberose absolute', 'White floral material with creamed petals, warm skin, and night air.'],
-      ['Amberwood accord', 'Amber woods for dry resin, modern woods, and polished depth.'],
-    ],
-    items: ['Origin', 'Olfactive family', 'Sensory description', 'Mood'],
   },
   {
     route: '/journal',
@@ -161,7 +145,6 @@ const renderStaticFallback = (page) => {
 \t\t\t\t\t\t\t<a href="/">Homepage</a>
 \t\t\t\t\t\t\t<a href="/catalog">Collection</a>
 \t\t\t\t\t\t\t<a href="/bespoke">Bespoke</a>
-\t\t\t\t\t\t\t<a href="/materials">Materials</a>
 \t\t\t\t\t\t\t<a href="/journal">Journal</a>
 \t\t\t\t\t\t</div>
 \t\t\t\t\t</div>
@@ -227,7 +210,7 @@ const generateSeoArtifacts = async () => {
   if (!fs.existsSync(indexPath)) return;
 
   const {
-    resolveEnv, fetchPublicProducts, fetchPublishedJournal,
+    STATIC_PUBLIC_ROUTES, resolveEnv, fetchPublicProducts, fetchPublishedJournal,
     writeProductPages, writeJournalPages, writeSitemap, finalizeRobots,
   } = await import('./seo-artifacts.mjs');
 
@@ -236,6 +219,7 @@ const generateSeoArtifacts = async () => {
     console.warn('[seo] No site URL configured (set VITE_PUBLIC_SITE_URL). Skipping canonical URLs, product prerender, and sitemap.');
   }
 
+  assertAdvertisedRoutesExist(STATIC_PUBLIC_ROUTES);
   writeStaticPublicPages(env.siteUrl);
   writeLlmsTxt(distRoot, env.siteUrl);
 
@@ -276,6 +260,25 @@ const generateSeoArtifacts = async () => {
     finalizeRobots(distRoot, env.siteUrl);
     console.log(`[seo] Wrote sitemap.xml with ${urls} URL(s).`);
   }
+};
+
+// Everything the build advertises must be a route the app actually serves. /materials was in the sitemap,
+// had a prerendered page with its own title and description, and was listed in llms.txt for AI crawlers —
+// while App.jsx had no route for it, so every arrival got the 404 page. The page component exists and is
+// finished; it was simply never wired up, and nothing connected the advertising to the routing.
+const assertAdvertisedRoutesExist = (staticRoutes) => {
+  const app = fs.readFileSync(path.join(webRoot, 'src', 'App.jsx'), 'utf8');
+  const routed = new Set([...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]));
+  const missing = staticRoutes.filter((route) => !routed.has(route));
+  if (missing.length) {
+    console.error(
+      `[routes] the build advertises ${missing.join(', ')} in the sitemap, the prerendered pages and `
+      + 'llms.txt, but App.jsx has no matching <Route path>. Visitors from search land on the 404 page. '
+      + 'Either add the route or stop advertising the path.',
+    );
+    process.exit(1);
+  }
+  console.log(`[routes] ${staticRoutes.length} advertised static route(s) exist in App.jsx.`);
 };
 
 // Chunks listed as deferred in vite.config.js must never be reachable from the entry by a STATIC import.

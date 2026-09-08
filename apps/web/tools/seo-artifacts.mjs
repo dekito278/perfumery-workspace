@@ -5,6 +5,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// The public routes the sitemap, the prerendered pages and llms.txt all advertise. build.mjs checks
+// each one against App.jsx before a deploy can ship a link to a 404.
+export const STATIC_PUBLIC_ROUTES = ['/home', '/catalog', '/journal', '/bespoke'];
+
 const DRAFT_TAG = 'studio draft';
 const BRAND = 'SOLIVAGANT';
 // Canonical production origin (overridable via VITE_PUBLIC_SITE_URL / SITE_URL env).
@@ -324,7 +328,7 @@ const urlEntry = (loc, lastmod) => {
 
 export const writeSitemap = (distRoot, siteUrl, { products = [], journal = [] } = {}) => {
   if (!siteUrl) return 0;
-  const staticRoutes = ['/home', '/catalog', '/journal', '/bespoke', '/materials'];
+  const staticRoutes = STATIC_PUBLIC_ROUTES;
   const entries = [
     ...staticRoutes.map((r) => urlEntry(abs(siteUrl, r))),
     ...products.map((p) => urlEntry(abs(siteUrl, `/catalog/${p.slug}`), p.updatedAt)),
