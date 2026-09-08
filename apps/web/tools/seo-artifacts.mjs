@@ -48,7 +48,9 @@ export const resolveEnv = (webRoot) => {
   // Deliberately NOT falling back to VERCEL_PROJECT_PRODUCTION_URL / VERCEL_URL: those
   // resolve to whatever hostname Vercel assigned (the bare apex, or a preview URL), so
   // they emitted canonicals pointing at a 307 redirect instead of the live www origin.
-  // Mirrors src/utils/seo.js getSiteOrigin() exactly — one canonical origin, two places.
+  // NOT an exact mirror of src/utils/seo.js getSiteOrigin(): that chain cannot include SITE_URL, because a
+  // non-VITE variable never reaches the bundle. assertCanonicalOriginAgrees() in tools/build.mjs compares
+  // the two resolved origins and refuses to build when they differ.
   const siteUrl = (
     get('VITE_PUBLIC_SITE_URL')
     || get('SITE_URL')

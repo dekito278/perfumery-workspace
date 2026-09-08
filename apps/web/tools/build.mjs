@@ -292,6 +292,70 @@ const PAIRED_ENV = [
   },
 ];
 
+// The canonical origin is resolved twice, and the two chains are not the same. tools/seo-artifacts.mjs
+// also honours SITE_URL, which the browser cannot see — a non-VITE variable is never exposed to the
+// bundle. Set only SITE_URL and the prerendered pages carry one canonical while every runtime canonical,
+// og:url and JSON-LD carries another: two different origins claiming to be the same page, which is how
+// a search engine is told to ignore the hint entirely.
+//
+// The default is also written out as a literal in both files, so that is compared here rather than
+// trusted to stay equal.
+const assertCanonicalOriginAgrees = async () => {
+  const { loadDotEnv } = await import('./seo-artifacts.mjs');
+  const fileEnv = loadDotEnv(webRoot);
+  const env = (name) => String(process.env[name] ?? fileEnv[name] ?? '').trim();
+
+  const runtimeSource = fs.readFileSync(path.join(webRoot, 'src', 'utils', 'seo.js'), 'utf8');
+  const runtimeDefault = runtimeSource.match(/DEFAULT_SITE_URL = '([^']+)'/)?.[1];
+  const buildSource = fs.readFileSync(path.join(webRoot, 'tools', 'seo-artifacts.mjs'), 'utf8');
+  const buildDefault = buildSource.match(/DEFAULT_SITE_URL = '([^']+)'/)?.[1];
+  if (!runtimeDefault || !buildDefault) {
+    console.error('[origin] could not read DEFAULT_SITE_URL from both resolvers — update this guard.');
+    process.exit(1);
+  }
+  if (runtimeDefault !== buildDefault) {
+    console.error(`[origin] DEFAULT_SITE_URL is "${buildDefault}" in tools/seo-artifacts.mjs but "${runtimeDefault}" in src/utils/seo.js.`);
+    process.exit(1);
+  }
+
+  const trim = (value) => value.replace(/\/+$/, '');
+  // Exactly the chains the two files use today.
+  const built = trim(env('VITE_PUBLIC_SITE_URL') || env('SITE_URL') || env('VITE_SITE_URL') || buildDefault);
+  const runtime = trim(env('VITE_PUBLIC_SITE_URL') || env('VITE_SITE_URL') || runtimeDefault);
+
+  if (built !== runtime) {
+    console.error(
+      `[origin] prerendered pages would claim ${built} while the running app claims ${runtime}. SITE_URL is `
+      + 'set but the browser cannot read it — only VITE_ variables reach the bundle. Set '
+      + 'VITE_PUBLIC_SITE_URL to the origin you want.',
+    );
+    process.exit(1);
+  }
+  console.log(`[origin] canonical origin: ${built} in both the prerender and the app.`);
+
+  // Whichever origin is configured, it has to be the one that actually answers. Pointing the sitemap and
+  // every canonical at a host that 307s to another host tells a crawler the page lives somewhere it does
+  // not: the URLs it is given all redirect, and a canonical aimed at a redirect is a weak signal at best.
+  // A warning, never a failure — the build must not depend on the network being up.
+  try {
+    const probe = await fetch(`${built}/catalog`, {
+      method: 'HEAD',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (probe.status >= 300 && probe.status < 400) {
+      const target = probe.headers.get('location') || '(unknown)';
+      console.warn(
+        `[origin] WARNING: ${built} answers ${probe.status} and redirects to ${target}. Every sitemap URL `
+        + 'and every canonical tag currently points at a redirect. Set VITE_PUBLIC_SITE_URL to the origin '
+        + 'that serves 200 directly.',
+      );
+    }
+  } catch {
+    // Offline, DNS not resolving, or the site is down: none of that should stop a deploy.
+  }
+};
+
 const assertPairedEnvAgrees = async () => {
   // Read what Vite will actually bake in, not just the shell: on Vercel the project variables arrive in
   // process.env, but locally they live in apps/web/.env, and comparing only process.env would report a
@@ -436,6 +500,7 @@ const assertDeferredChunksStayLazy = () => {
 };
 
 await assertPairedEnvAgrees();
+await assertCanonicalOriginAgrees();
 
 if (viteResult.status === 0) {
   assertDeferredChunksStayLazy();
