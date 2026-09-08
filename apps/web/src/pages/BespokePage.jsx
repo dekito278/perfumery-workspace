@@ -28,6 +28,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
+import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -84,7 +85,7 @@ const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', 
   >
     <span className="editorial-bespoke-option__media">
       {imageUrl ? (
-        <img src={imageUrl} alt="" loading="lazy" decoding="async" />
+        <img src={img(imageUrl, 240)} alt="" loading="lazy" decoding="async" />
       ) : (
         <span className="editorial-bespoke-option__fallback" aria-hidden="true">
           <span />
@@ -119,7 +120,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
     <div className="editorial-bespoke-preview">
       <div className="editorial-bespoke-preview__visual">
         {visualImage ? (
-          <img className="editorial-bespoke-preview__backdrop" src={visualImage} alt={activeLabel} loading="lazy" decoding="async" />
+          <img className="editorial-bespoke-preview__backdrop" src={img(visualImage, 720)} alt={activeLabel} loading="lazy" decoding="async" />
         ) : null}
         <div className="editorial-bespoke-preview__mockup" aria-hidden="true">
           <span className={`editorial-bespoke-preview__bottle${isSquare ? ' is-square' : ''}${isLarge ? ' is-large' : ''}${isSmall ? ' is-small' : ''}`} />
