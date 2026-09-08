@@ -69,4 +69,28 @@ for (const page of ['pages/CreateFormulaPage.jsx', 'pages/mobile/MobileCreateFor
     `${page} must ask before discarding a composition in progress`);
 }
 
-console.log('mobileParityFixes selfcheck OK (shipment times round-trip, both composers guard unsaved work)');
+// --- 4. The journal list must survive its decoration, and must not call a failure "nothing written" ---
+// Both journal pages fetch posts and formulas in one Promise.all. The formula name is decoration on a
+// post; a failed formulas query used to reject the pair and take the journal list with it — the same
+// shape audit round 8 fixed for the formula list's own metrics.
+for (const page of ['pages/JournalPage.jsx', 'pages/mobile/MobileJournalPage.jsx']) {
+  assert.match(read(page), /getFormulas\(\)\.catch\(/,
+    `${page} must let a failed formulas query fall back to [], not take the journal list down with it`);
+}
+
+// The mobile empty state said "Mulai tulis Journal" after a failed load — telling the owner they have
+// written nothing, when in fact nothing could be read.
+const mobileJournal = read('pages/mobile/MobileJournalPage.jsx');
+assert.match(mobileJournal, /setLoadError\(/, 'MobileJournalPage must record that the load failed');
+assert.match(mobileJournal, /loadError \? 'Journal belum bisa dimuat'/,
+    'MobileJournalPage must say the list failed to load instead of inviting the owner to start writing');
+
+// --- 5. A percent voucher above 100 must not be storable ---------------------------------------------
+// The storefront caps the discount at 100 when applying, so a stored 150 only shows the owner a number
+// the checkout will never honour.
+for (const page of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVoucherManagementPage.jsx']) {
+  assert.match(read(page), /PERCENT\s*\n?\s*\?\s*Math\.min\(|Math\.min\(rawDiscountValue, 100\)/,
+    `${page} must clamp a percent voucher to 100 before saving`);
+}
+
+console.log('mobileParityFixes selfcheck OK (5 fixes held on both the desktop and the mobile copy)');

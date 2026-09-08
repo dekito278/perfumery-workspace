@@ -233,7 +233,11 @@ const MobileVoucherManagementPage = () => {
     try {
       const savedVoucher = await saveVoucher({
         ...draft,
-        discountValue: Number(draft.discountValue || 0),
+        // A percent discount above 100 is meaningless: the storefront caps it at 100 when applying, so
+        // storing 150 only makes the list show a number the checkout will never honour. Desktop clamps here.
+        discountValue: draft.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT
+          ? Math.min(Number(draft.discountValue || 0), 100)
+          : Number(draft.discountValue || 0),
         minimumOrder: Number(draft.minimumOrder || 0),
         minimumQuantity: Number(draft.minimumQuantity || 0),
         usageLimitTotal: Number(draft.usageLimitTotal || 0),
@@ -584,7 +588,7 @@ const MobileVoucherManagementPage = () => {
                 <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-editorial-charcoal">
                   <div className="rounded-2xl bg-editorial-paper px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Diskon</span>
-                    {voucher.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? `${voucher.discountValue}%` : formatTotal(voucher.discountValue)}
+                    {voucher.discountType === VOUCHER_DISCOUNT_TYPES.PERCENT ? `${Math.min(Number(voucher.discountValue) || 0, 100)}%` : formatTotal(voucher.discountValue)}
                   </div>
                   <div className="rounded-2xl bg-editorial-paper px-3 py-2">
                     <span className="block text-[10px] font-bold uppercase text-[#8b949e]">Minimum</span>

@@ -59,7 +59,12 @@ const JournalPage = () => {
     try {
       const [postRows, formulaRows] = await Promise.all([
         getJournalPosts(),
-        getFormulas(),
+        // The related-formula name is decoration. A failed formulas query used to reject the whole
+        // Promise.all and take the journal list down with it.
+        getFormulas().catch((error) => {
+          console.warn('Related formula names unavailable:', error?.message || error);
+          return [];
+        }),
       ]);
       setPosts(postRows);
       setFormulas(formulaRows);
