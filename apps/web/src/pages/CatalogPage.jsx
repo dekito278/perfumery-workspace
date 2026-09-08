@@ -9,7 +9,6 @@ import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
-import { featuredProducts } from '@/data/storefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
@@ -21,7 +20,11 @@ import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
   const fetchedProducts = useCatalogProducts();
-  const allProducts = fetchedProducts.length ? fetchedProducts : featuredProducts;
+  // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
+  // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
+  // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
+  // honest empty state is better than a shop that appears to stock things it does not.
+  const allProducts = fetchedProducts;
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('family') || '';
   // Start at 'All'; the effect below promotes it to the URL family only when that
@@ -213,11 +216,24 @@ const CatalogPage = () => {
             </div>
           ) : (
             <div className="catalog-empty">
-              <p className="editorial-eyebrow">TIDAK ADA</p>
-              <h2>Tidak ada fragrance yang cocok dengan filter ini.</h2>
-              <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
-                Reset Katalog
-              </button>
+              {/* Two different situations, two different messages: nothing matched the filter, or the
+                  catalogue itself did not load. Offering "Reset Katalog" for an outage sends the customer
+                  round a loop that cannot help them. */}
+              <p className="editorial-eyebrow">{products.length ? 'TIDAK ADA' : 'KOLEKSI BELUM TERMUAT'}</p>
+              <h2>
+                {products.length
+                  ? 'Tidak ada fragrance yang cocok dengan filter ini.'
+                  : 'Koleksi belum bisa dimuat. Coba muat ulang halaman sebentar lagi.'}
+              </h2>
+              {products.length ? (
+                <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
+                  Reset Katalog
+                </button>
+              ) : (
+                <button type="button" className="editorial-button" onClick={() => window.location.reload()}>
+                  Muat ulang
+                </button>
+              )}
             </div>
           )}
 
