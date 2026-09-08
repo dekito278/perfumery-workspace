@@ -25,8 +25,6 @@ import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
 import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
-import ProductWearTaggingPage from '@/pages/ProductWearTaggingPage.jsx';
-import MobileProductWearTaggingPage from '@/pages/mobile/MobileProductWearTaggingPage.jsx';
 
 const LAZY_ROUTE_RECOVERY_KEY = 'solivagant.lazy-route-recovered';
 const LAZY_IMPORT_RETRY_DELAY_MS = 350;
@@ -87,6 +85,7 @@ const AuthenticatorSetupPage = lazyRoute(() => import('@/pages/AuthenticatorSetu
 const DashboardPage = lazyRoute(() => import('@/pages/DashboardPage.jsx'));
 const ProductListPage = lazyRoute(() => import('@/pages/ProductListPage.jsx'));
 const ProductCreatePage = lazyRoute(() => import('@/pages/ProductCreatePage.jsx'));
+const ProductWearTaggingPage = lazyRoute(() => import('@/pages/ProductWearTaggingPage.jsx'));
 const ProductEditPage = lazyRoute(() => import('@/pages/ProductEditPage.jsx'));
 const ProductInventoryPage = lazyRoute(() => import('@/pages/ProductInventoryPage.jsx'));
 const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
@@ -122,6 +121,7 @@ const MobileBespokePage = lazyRoute(() => import('@/pages/mobile/MobileBespokePa
 const MobileCartPage = lazyRoute(() => import('@/pages/mobile/MobileCartPage.jsx'));
 const MobileCheckoutPage = lazyRoute(() => import('@/pages/mobile/MobileCheckoutPage.jsx'));
 const MobileProductListPage = lazyRoute(() => import('@/pages/mobile/MobileProductListPage.jsx'));
+const MobileProductWearTaggingPage = lazyRoute(() => import('@/pages/mobile/MobileProductWearTaggingPage.jsx'));
 const MobileProductCreatePage = lazyRoute(() => import('@/pages/mobile/MobileProductCreatePage.jsx'));
 const MobileProductEditPage = lazyRoute(() => import('@/pages/mobile/MobileProductEditPage.jsx'));
 const MobileProductCategoriesPage = lazyRoute(() => import('@/pages/mobile/MobileProductCategoriesPage.jsx'));
