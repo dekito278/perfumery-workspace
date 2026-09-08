@@ -44,8 +44,11 @@ const localOnlyStatuses = {
 const BESPOKE_SOURCE = 'bespoke_request';
 const VOUCHER_DISCOUNT_ITEM_TYPE = 'voucher_discount';
 const INVENTORY_RESTORE_PAYMENT_STATUSES = ['failed', 'expired', 'refunded'];
-// Keep this in sync with the server cron's PAYMENT_RESERVATION_TTL_HOURS (api/orders/expire-reservations.js):
-// both actively cancel manual-transfer reservations, so a mismatch lets the client sweep override the cron.
+// The server cron reads PAYMENT_RESERVATION_TTL_HOURS; this reads VITE_PAYMENT_RESERVATION_TTL_HOURS and
+// is baked in at build time. Both actively cancel manual-transfer reservations and the studio prints this
+// value as the buyer's deadline, so a mismatch either cancels orders the cron would have kept or shows a
+// deadline nobody enforces. assertReservationTtlAgrees() in tools/build.mjs refuses to build when the two
+// disagree — this is no longer a comment anyone has to remember.
 export const PAYMENT_RESERVATION_TTL_HOURS = Number(import.meta.env?.VITE_PAYMENT_RESERVATION_TTL_HOURS || 24);
 
 // A cancelled/expired/failed/refunded order is closed: its stock was restored on cancel and may already
