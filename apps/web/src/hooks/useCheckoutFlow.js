@@ -26,32 +26,9 @@ import {
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { hasValidWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
+import { clearCheckoutDraft, readCheckoutDraft, writeCheckoutDraft } from '@/utils/checkoutDraftStorage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
-const CHECKOUT_DRAFT_STORAGE_KEY = 'dekito.storefront.checkoutDraft.v1';
-
-const readCheckoutDraft = () => {
-  if (typeof window === 'undefined') return {};
-
-  try {
-    const rawValue = window.localStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
-    const parsedValue = rawValue ? JSON.parse(rawValue) : {};
-    return parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue) ? parsedValue : {};
-  } catch {
-    return {};
-  }
-};
-
-const writeCheckoutDraft = (draft) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-  } catch (error) {
-    // Safari private mode / quota: don't throw on every checkout keystroke.
-    console.warn('Failed to persist checkout draft:', error.message || error);
-  }
-};
-
 // Seed the checkout draft from somewhere else in the app (the customer portal's "Pesan lagi" hands over
 // the saved name/contact/address so a code-only portal visitor does not retype it). Only fills fields the
 // draft does not already have, so a half-typed checkout is never clobbered.
@@ -65,11 +42,6 @@ export const seedCheckoutDraft = (values = {}) => {
     }
   }
   writeCheckoutDraft({ ...next, updatedAt: new Date().toISOString() });
-};
-
-const clearCheckoutDraft = () => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
 };
 
 const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
