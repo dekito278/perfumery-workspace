@@ -12,7 +12,7 @@ import {
 import { createDokuCheckout, createDokuQris } from '@/services/dokuCheckoutService.js';
 import { getCustomerAccount, lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder, updateOrderStatus } from '@/services/orderService.js';
+import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder } from '@/services/orderService.js';
 import {
   applyVoucherToSubtotalAsync,
   clearAppliedVoucherCode,
@@ -42,6 +42,17 @@ export const seedCheckoutDraft = (values = {}) => {
     }
   }
   writeCheckoutDraft({ ...next, updatedAt: new Date().toISOString() });
+};
+
+// The payment session is a hand-off, not a record: PaymentPage rebuilds it from the order number when it
+// is missing. A browser that refuses storage (site data blocked, private mode, quota) must not be able to
+// turn a placed order into an error.
+const rememberPaymentSession = (payload) => {
+  try {
+    sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.warn('Failed to hand the payment session to the payment page:', error?.message || error);
+  }
 };
 
 const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
@@ -557,7 +568,7 @@ export const useCheckoutFlow = ({
         // 'pending_payment' for manual transfer, and storefront_orders UPDATE is admin-only — this call
         // was filtered by RLS for every buyer and only looked like it worked. The bank details the buyer
         // needs come from MANUAL_TRANSFER_PAYMENT, which PaymentPage already falls back to (audit round 9).
-        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+        rememberPaymentSession({
           paymentType: paymentMethodDetails.provider,
           paymentProvider: paymentMethodDetails.provider,
           invoiceNumber: order.orderNumber,
@@ -573,7 +584,7 @@ export const useCheckoutFlow = ({
           voucherDiscount: checkoutDiscountAmount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
-        }));
+        });
         clearCart();
         clearCheckoutDraft();
         (clearVoucher || clearAppliedVoucherCode)();
@@ -586,7 +597,7 @@ export const useCheckoutFlow = ({
 
       if (isQrisPayment) {
         const qris = await createDokuQris(order.orderNumber);
-        sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+        rememberPaymentSession({
           paymentType: 'doku-qris',
           paymentProvider: 'doku-qris',
           qrContent: qris.qrContent,
@@ -603,7 +614,7 @@ export const useCheckoutFlow = ({
           voucherDiscount: checkoutDiscountAmount,
           voucherSnapshot,
           createdAt: new Date().toISOString(),
-        }));
+        });
         clearCart();
         clearCheckoutDraft();
         (clearVoucher || clearAppliedVoucherCode)();
@@ -627,7 +638,7 @@ export const useCheckoutFlow = ({
         items: order.items || items,
         callbackPath: paymentPath,
       });
-      sessionStorage.setItem(PAYMENT_SESSION_KEY, JSON.stringify({
+      rememberPaymentSession({
         paymentUrl: checkout.paymentUrl,
         invoiceNumber: checkout.invoiceNumber || order.orderNumber,
         orderNumber: order.orderNumber,
@@ -643,7 +654,7 @@ export const useCheckoutFlow = ({
         voucherDiscount: checkoutDiscountAmount,
         voucherSnapshot,
         createdAt: new Date().toISOString(),
-      }));
+      });
       clearCart();
       clearCheckoutDraft();
       (clearVoucher || clearAppliedVoucherCode)();
@@ -659,14 +670,27 @@ export const useCheckoutFlow = ({
       // storefront_orders UPDATE is admin-only, so RLS filtered it and PostgREST still answered 200. Now
       // that writes fail loudly it would break checkout outright (audit round 9).
     } catch (error) {
-      if (createdOrder) {
-        try {
-          await updateOrderStatus(createdOrder.id || createdOrder.orderNumber, 'cancelled');
-        } catch (restoreError) {
-          console.warn('Failed to cancel checkout order after payment session error:', restoreError.message || restoreError);
-        }
+      // Nothing was created yet: "the order was not saved" is the truth.
+      if (!createdOrder) {
+        toast.error(error.message || 'Gagal menyimpan pesanan');
+        return;
       }
-      toast.error(error.message || 'Gagal menyimpan pesanan');
+
+      // The order exists — api/orders/create.js wrote it with the service role. What failed is the step
+      // after it, which for QRIS and card is a network call to DOKU. Saying "Gagal menyimpan pesanan"
+      // here is false, and a buyer who believes it submits again and pays for two orders.
+      //
+      // The rollback that used to sit here could never work from a buyer's browser: updateOrderStatus
+      // writes storefront_orders, which is admin-only, so RLS filtered it and it only warned. Leaving the
+      // order pending is correct anyway — api/orders/expire-reservations.js cancels it and releases the
+      // stock if nobody pays, and PaymentPage can rebuild the payment session on arrival.
+      console.warn('Payment session could not be prepared:', error?.message || error);
+      clearCart();
+      clearCheckoutDraft();
+      (clearVoucher || clearAppliedVoucherCode)();
+      setSubmittedOrder(createdOrder);
+      toast.error(`Pesanan ${createdOrder.orderNumber} sudah tersimpan, tapi halaman pembayaran belum siap. Jangan checkout ulang — buka halaman pembayaran dan coba lagi.`);
+      navigate(`${paymentPath}?order=${encodeURIComponent(createdOrder.orderNumber)}`);
     } finally {
       setSaving(false);
     }

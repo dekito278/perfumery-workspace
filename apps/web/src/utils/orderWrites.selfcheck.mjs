@@ -103,7 +103,11 @@ const ADMIN_ONLY_WRITERS = [
 ];
 
 for (const relative of BUYER_FACING) {
-  const buyerSource = readFileSync(join(here, '..', relative), 'utf8');
+  // Strip comments first. A comment explaining why a writer is NOT called used to trip these rules —
+  // the same blind spot the other source scanners in this folder had.
+  const buyerSource = readFileSync(join(here, '..', relative), 'utf8')
+    .replace(/^[ \t]*\/\/.*$/gm, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ');
   // updateOrderPaymentStatus is the one that broke checkout; it must not appear at all.
   assert.ok(
     !/\bupdateOrderPaymentStatus\b/.test(buyerSource),
