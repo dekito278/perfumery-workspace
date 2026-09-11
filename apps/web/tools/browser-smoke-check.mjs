@@ -6,7 +6,9 @@ import { createClient } from '@supabase/supabase-js';
 import { chromium } from 'playwright';
 import { ensureDirectoryExists, parseArgs, writeJsonFile } from './material-reference-common.mjs';
 
-const DEFAULT_BASE_URL = 'http://127.0.0.1:3002';
+// `npm run dev` serves 3000. The old default pointed at 3002, which nothing in this project serves —
+// on a machine running something else there, the suite silently tested the wrong app.
+const DEFAULT_BASE_URL = 'http://127.0.0.1:3000';
 const DEFAULT_OUTPUT_DIR = path.resolve('../../docs/browser-smoke-check');
 const DEFAULT_ENV_PATH = path.resolve('apps/web/.env');
 const DESKTOP_VIEWPORT = { width: 1440, height: 960 };
@@ -16,12 +18,17 @@ const protectedDesktopRoutes = [
   { id: 'dashboard', route: '/dashboard', titlePattern: /dashboard|studio|solivagant/i },
   { id: 'materials', route: '/raw-materials', titlePattern: /raw materials|materials|solivagant/i },
   { id: 'formulas', route: '/formulas', titlePattern: /formulas|formula|solivagant/i },
-  { id: 'journal', route: '/journal', titlePattern: /journal|solivagant/i },
+  // The admin journal moved under /studio; /journal is the storefront's public one and must NOT
+  // redirect. Asserting the old path made this suite fail on correct behaviour, and left the real
+  // admin journal untested.
+  { id: 'journal', route: '/studio/journal', titlePattern: /journal|solivagant/i },
 ];
 
 const smokeSteps = [
   { id: 'login', label: 'Login page', route: '/login', viewport: DESKTOP_VIEWPORT, auth: 'public', titlePattern: /login|solivagant/i },
   ...protectedDesktopRoutes.map((step) => ({ ...step, viewport: DESKTOP_VIEWPORT, auth: 'protected' })),
+  // The other half of the same move: the storefront journal must stay reachable without logging in.
+  { id: 'public-journal', label: 'Public journal', route: '/journal', viewport: DESKTOP_VIEWPORT, auth: 'public', titlePattern: /journal|solivagant/i },
   { id: 'mobile-dashboard', label: 'Mobile dashboard', route: '/mobile/dashboard', viewport: MOBILE_VIEWPORT, auth: 'public', titlePattern: /katalog|beranda|solivagant/i },
   { id: 'mobile-journal', label: 'Mobile journal', route: '/mobile/journal', viewport: MOBILE_VIEWPORT, auth: 'protected-mobile', titlePattern: /journal|mobile login|solivagant/i },
 ];
