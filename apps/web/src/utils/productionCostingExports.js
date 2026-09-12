@@ -125,11 +125,8 @@ export const buildProductionQuotationExportConfig = ({
   const validDays = Math.max(parseNumberInput(quotationInputs.validDays), 0);
   // This document is sent to the brand. It used to carry our COGS per ml and per litre, total COGS,
   // handling and overhead, the markup percentage and the quoted margin — everything a buyer needs to know
-  // exactly how far we can be pushed. Only the price we are asking belongs here; the same numbers are
-  // still on the internal costing export, which is the one that should have them.
-  const volumeInLitres = (Number(selectedQuotationRow.volumeMl) || 0) / 1000;
-  const sellPricePerLiter = volumeInLitres > 0 ? selectedQuotationRow.sellPrice / volumeInLitres : 0;
-
+  // exactly how far we can be pushed. The brand needs one number, the total; the rest stays on the
+  // internal costing export, which is the one that should have it.
   return {
     // The internal exports keep the workbook heading; a document going to a client should not carry the
     // name of the tool that made it.
@@ -146,8 +143,7 @@ export const buildProductionQuotationExportConfig = ({
       { label: 'Solvent', value: selectedSolvent?.name || '-' },
       { label: 'Concentration', value: formatPercentage(bulkComputed.concentration) },
       { label: 'Volume', value: `${selectedQuotationRow.volumeValue} ${selectedQuotationRow.volumeUnit}` },
-      { label: 'Price / quote', value: formatPrice(selectedQuotationRow.sellPrice) },
-      { label: 'Price / liter', value: formatCurrency(sellPricePerLiter) },
+      { label: 'Total harga', value: formatPrice(selectedQuotationRow.sellPrice) },
     ],
     tableTitle: 'Quotation Details',
     columns: [
@@ -175,11 +171,6 @@ export const buildProductionQuotationExportConfig = ({
         item: 'Quote volume',
         value: `${selectedQuotationRow.volumeValue} ${selectedQuotationRow.volumeUnit}`,
         notes: `${formatQuantity(selectedQuotationRow.volumeMl)} ml equivalent`,
-      },
-      {
-        item: 'Selling price',
-        value: formatPrice(selectedQuotationRow.sellPrice),
-        notes: 'Quoted bulk supply price',
       },
     ],
     footerRows: [
