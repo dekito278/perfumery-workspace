@@ -4,6 +4,7 @@ dist/
 .env
 .env.*
 !.env.example
+!apps/web/.env.e2e
 
 apps/pocketbase/pb_data/
 apps/pocketbase/*.db

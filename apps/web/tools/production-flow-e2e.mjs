@@ -376,8 +376,8 @@ const main = async () => {
     adminFlow = 'skipped';
     adminSkipReason = `/studio/shipments bounced to ${landedOn}: the seeded session for `
       + `${E2E_ADMIN_EMAIL} is authenticated but not an admin, and ProtectedRoute sends non-admins to the `
-      + 'customer portal. VITE_ADMIN_EMAILS, in the env the dev server was started with, is authoritative '
-      + '— add that address to it, or set E2E_ADMIN_EMAIL to one already on the list.';
+      + 'customer portal. Run the app with `npm run dev:e2e` (port 3001), which loads apps/web/.env.e2e '
+      + 'and puts that address on VITE_ADMIN_EMAILS for that mode only, then point --base-url at it.';
     console.warn(`[admin flow skipped] ${adminSkipReason}`);
   }
 
