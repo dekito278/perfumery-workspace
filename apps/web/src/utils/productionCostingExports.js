@@ -116,7 +116,6 @@ export const buildProductionCostExportConfig = ({
 
 export const buildProductionQuotationExportConfig = ({
   bulkComputed,
-  bulkScenarios,
   parseNumberInput,
   quotationInputs,
   selectedFormula,
@@ -124,11 +123,17 @@ export const buildProductionQuotationExportConfig = ({
   selectedSolvent,
 }) => {
   const validDays = Math.max(parseNumberInput(quotationInputs.validDays), 0);
-  const pricingMode = bulkScenarios.find((scenario) => scenario.id === selectedQuotationRow.id)?.mode === 'margin'
-    ? 'target margin'
-    : 'markup';
+  // This document is sent to the brand. It used to carry our COGS per ml and per litre, total COGS,
+  // handling and overhead, the markup percentage and the quoted margin — everything a buyer needs to know
+  // exactly how far we can be pushed. Only the price we are asking belongs here; the same numbers are
+  // still on the internal costing export, which is the one that should have them.
+  const volumeInLitres = (Number(selectedQuotationRow.volumeMl) || 0) / 1000;
+  const sellPricePerLiter = volumeInLitres > 0 ? selectedQuotationRow.sellPrice / volumeInLitres : 0;
 
   return {
+    // The internal exports keep the workbook heading; a document going to a client should not carry the
+    // name of the tool that made it.
+    brandLine: 'SOLIVAGANT',
     typeLabel: 'Brand Quotation',
     title: quotationInputs.brandName || selectedFormula.name,
     subtitle: 'Quotation for bulk perfume formula supply',
@@ -142,9 +147,7 @@ export const buildProductionQuotationExportConfig = ({
       { label: 'Concentration', value: formatPercentage(bulkComputed.concentration) },
       { label: 'Volume', value: `${selectedQuotationRow.volumeValue} ${selectedQuotationRow.volumeUnit}` },
       { label: 'Price / quote', value: formatPrice(selectedQuotationRow.sellPrice) },
-      { label: 'COGS / quote', value: formatPrice(selectedQuotationRow.totalCogs) },
-      { label: 'COGS / liter', value: formatCurrency(selectedQuotationRow.cogsPerLiter) },
-      { label: 'Pricing mode', value: selectedQuotationRow.markupPercent ? `${selectedQuotationRow.markupPercent}% ${pricingMode}` : '-' },
+      { label: 'Price / liter', value: formatCurrency(sellPricePerLiter) },
     ],
     tableTitle: 'Quotation Details',
     columns: [
@@ -183,22 +186,10 @@ export const buildProductionQuotationExportConfig = ({
       {
         item: 'TOTAL QUOTATION',
         value: formatPrice(selectedQuotationRow.sellPrice),
-        notes: `COGS ${formatPrice(selectedQuotationRow.totalCogs)}`,
+        notes: validDays > 0 ? `Berlaku ${validDays} hari sejak tanggal quotation` : 'Harga berlaku sesuai kesepakatan',
       },
     ],
     sections: [
-      {
-        title: 'Quote Breakdown',
-        entries: [
-          { label: 'Formula COGS / ml', value: formatCurrency(bulkComputed.formulaCogsPerMl) },
-          { label: 'Solvent COGS / ml', value: formatCurrency(bulkComputed.solventCogsPerMl) },
-          { label: 'Handling / liter', value: formatCurrency(bulkComputed.handlingCostPerLiter) },
-          { label: 'Overhead / liter', value: formatCurrency(bulkComputed.overheadPerLiter) },
-          { label: 'Total COGS / quote', value: formatPrice(selectedQuotationRow.totalCogs) },
-          { label: 'Quoted margin', value: formatPercentage(selectedQuotationRow.margin) },
-        ],
-        columns: 2,
-      },
       {
         title: 'Commercial Notes',
         body: quotationInputs.notes || 'No additional notes.',
@@ -208,6 +199,5 @@ export const buildProductionQuotationExportConfig = ({
         body: quotationInputs.terms || 'No additional terms.',
       },
     ],
-    notes: 'Generated from Production Costing quotation module.',
   };
 };
