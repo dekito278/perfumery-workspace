@@ -63,7 +63,7 @@ const drawFooter = (doc) => {
   }
 };
 
-const drawHeader = (doc, { typeLabel, title, subtitle }) => {
+const drawHeader = (doc, { brandLine = 'Perfumer Workbook', typeLabel, title, subtitle }) => {
   let cursorY = MARGIN;
 
   doc.setFillColor(...BRAND.soft);
@@ -74,7 +74,7 @@ const drawHeader = (doc, { typeLabel, title, subtitle }) => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(...BRAND.ink);
-  doc.text('Perfumer Workbook', MARGIN + 5, cursorY + 8.5);
+  doc.text(brandLine, MARGIN + 5, cursorY + 8.5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -275,6 +275,7 @@ const drawMachineReadableSection = (doc, lines, cursorY) => {
 };
 
 const buildWorkbookPdf = ({
+  brandLine,
   typeLabel,
   title,
   subtitle,
@@ -289,7 +290,7 @@ const buildWorkbookPdf = ({
   notes,
 }) => {
   const doc = createDocument();
-  let cursorY = drawHeader(doc, { typeLabel, title, subtitle });
+  let cursorY = drawHeader(doc, { brandLine, typeLabel, title, subtitle });
 
   if (summaryEntries.length) {
     cursorY = drawSectionTitle(doc, 'Summary', cursorY);

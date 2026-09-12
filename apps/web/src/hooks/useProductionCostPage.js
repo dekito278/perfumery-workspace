@@ -443,7 +443,6 @@ export const useProductionCostPage = () => {
 
     return buildProductionQuotationExportConfig({
       bulkComputed,
-      bulkScenarios,
       parseNumberInput,
       quotationInputs,
       selectedFormula,
