@@ -47,12 +47,13 @@ await drawShippingLabel(doc, {
     perfumeName: 'Youzu 08',
     size: '30 ml',
     bottleType: 'Classic',
-    capDesign: 'Cap custom Abstrak',
+    capDesign: 'Cap custom Abstrak dengan ukiran tangan dan finishing kuningan gelap',
     labelDesign: 'Tulis tangan',
-    exoticMaterial: 'Oud Kalimantan tua',
-    preferredNotes: 'Top: yuzu, pink pepper, mandarin orange, green tea, bergamot, neroli. '
-      + 'Mid: hinoki, lily of the valley, green hojari, oolong tea, bamboo, cypress, cardamom, jasmine. '
-      + 'Base: white musk, cedarwood, vetiver, ambergris, sandalwood, tonka, labdanum, benzoin.',
+    // Long enough to overrun the block on its own. The scent composition is deliberately not printed on
+    // the label any more, so the overflow has to come from a field that still is.
+    exoticMaterial: 'Oud Kalimantan tua potongan besar, ambergris grey Selat Madura, musk deer '
+      + 'substitute sintetis premium, resin benzoin Siam, sandalwood Mysore tua, tonka bean Venezuela, '
+      + 'orris butter Firenze, saffron Kashmir pilihan, dan hyraceum Afrika Selatan.',
   }],
 });
 
