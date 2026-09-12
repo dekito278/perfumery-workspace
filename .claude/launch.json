@@ -26,6 +26,17 @@
         "--strictPort"
       ],
       "port": 4173
+    },
+    {
+      "name": "web-e2e",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:e2e",
+        "--prefix",
+        "apps/web"
+      ],
+      "port": 3001
     }
   ]
 }
