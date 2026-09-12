@@ -55,12 +55,14 @@ const getOrderShipping = (order) => getOrderNoteField(order?.notes, 'Shipping');
 
 const getBespokeBriefItem = (order) => (order?.items || []).find((item) => item.type === 'bespoke_request');
 
+// What the person packing the box needs to identify and assemble it: which perfume, which bottle, which
+// cap and label, which material. Deliberately NOT the scent composition — that is the formula, it is no
+// help at the packing table, and a courier label is the last place it should be travelling.
 const bespokeBriefRows = (item) => [
   ['Nama parfum', item.perfumeName || 'Belum diberi nama'],
   ['Botol', [item.size, item.bottleType].filter(Boolean).join(' / ')],
   ['Cap / label', [item.capDesign, item.labelDesign].filter(Boolean).join(' / ')],
   ['Material', item.exoticMaterial],
-  ['Aroma', item.preferredNotes || item.notes || item.mood],
 ].filter(([, value]) => String(value || '').trim());
 
 export const canExportShippingLabel = (order) => Boolean(
