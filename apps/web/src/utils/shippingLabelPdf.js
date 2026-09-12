@@ -7,6 +7,12 @@ const PAGE_WIDTH = 105;
 const PAGE_HEIGHT = 148;
 const MARGIN = 8;
 const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
+// The QR block is pinned to the bottom of the label. Everything above it has to respect that, which is
+// what the brief did not do: its loop had no bound, so a long aroma wrote straight through the box and
+// came out overlapping the order number, cut mid-word.
+const QR_BLOCK_TOP = PAGE_HEIGHT - 28;
+const BRIEF_BOTTOM = QR_BLOCK_TOP - 4;
+const BRIEF_LINE = 3.8;
 const BRAND = {
   ink: [23, 32, 22],
   muted: [91, 103, 83],
@@ -54,8 +60,7 @@ const bespokeBriefRows = (item) => [
   ['Botol', [item.size, item.bottleType].filter(Boolean).join(' / ')],
   ['Cap / label', [item.capDesign, item.labelDesign].filter(Boolean).join(' / ')],
   ['Material', item.exoticMaterial],
-  // ponytail: aroma truncated to ~140 chars so the A6 brief block can't overrun the fixed QR box; full brief lives in the app
-  ['Aroma', String(item.preferredNotes || item.notes || item.mood || '').slice(0, 140)],
+  ['Aroma', item.preferredNotes || item.notes || item.mood],
 ].filter(([, value]) => String(value || '').trim());
 
 export const canExportShippingLabel = (order) => Boolean(
@@ -69,7 +74,7 @@ const drawDivider = (doc, y) => {
   doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
 };
 
-const drawLabelValue = (doc, label, value, x, y, width = CONTENT_WIDTH) => {
+const drawLabelValue = (doc, label, value, x, y, width = CONTENT_WIDTH, maxY = Infinity) => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.8);
   doc.setTextColor(...BRAND.muted);
@@ -78,8 +83,14 @@ const drawLabelValue = (doc, label, value, x, y, width = CONTENT_WIDTH) => {
   doc.setFontSize(8.5);
   doc.setTextColor(...BRAND.ink);
   const lines = doc.splitTextToSize(asText(value), width);
-  doc.text(lines, x, y + 4.2);
-  return y + 5 + (lines.length * 3.7);
+  // maxY is the last line the caller can afford; without it a long packing list ran under the QR block.
+  const room = Math.floor((maxY - (y + 4.2)) / 3.7) + 1;
+  const shown = Number.isFinite(maxY) ? lines.slice(0, Math.max(room, 1)) : lines;
+  if (shown.length < lines.length) {
+    shown[shown.length - 1] = `${String(shown[shown.length - 1]).replace(/[\s,.;/]+$/, '')}...`;
+  }
+  doc.text(shown, x, y + 4.2);
+  return y + 5 + (shown.length * 3.7);
 };
 
 const createTrackingQrDataUrl = async (value) => {
@@ -127,21 +138,21 @@ const drawShippingLabel = async (doc, order) => {
   doc.setTextColor(...BRAND.muted);
   doc.text('KIRIM KE', MARGIN, y);
   y += 6;
-  doc.setFontSize(15);
+  doc.setFontSize(13.5);
   doc.setTextColor(...BRAND.ink);
   doc.text(doc.splitTextToSize(asText(order.customerName, 'Customer'), CONTENT_WIDTH), MARGIN, y);
-  y += 11;
+  y += 9;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text(`Telp: ${asText(order.contact)}`, MARGIN, y);
   y += 7;
   doc.setFontSize(9.2);
   doc.text(doc.splitTextToSize(asText(address, 'Alamat belum tersedia'), CONTENT_WIDTH), MARGIN, y);
-  y += Math.max(12, doc.splitTextToSize(asText(address, 'Alamat belum tersedia'), CONTENT_WIDTH).length * 4.4);
+  y += Math.max(10, doc.splitTextToSize(asText(address, 'Alamat belum tersedia'), CONTENT_WIDTH).length * 4.1);
   if (area) {
     doc.setFont('helvetica', 'bold');
     doc.text(doc.splitTextToSize(area, CONTENT_WIDTH), MARGIN, y);
-    y += 8;
+    y += 6.5;
   }
 
   drawDivider(doc, y);
@@ -163,37 +174,60 @@ const drawShippingLabel = async (doc, order) => {
     doc.setTextColor(...BRAND.muted);
     doc.text('BRIEF BESPOKE', MARGIN, y);
     y += 4.4;
+    let clipped = false;
     for (const [label, value] of bespokeBriefRows(bespokeItem)) {
+      const lines = doc.splitTextToSize(asText(value), CONTENT_WIDTH - 24);
+      // How many lines still fit above the QR block. Nothing is drawn — not even the label — for a row
+      // with no room, so the label can never end up stranded over the box on its own.
+      const room = Math.floor((BRIEF_BOTTOM - y) / BRIEF_LINE) + 1;
+      if (room < 1) {
+        clipped = true;
+        break;
+      }
+
+      const shown = lines.slice(0, room);
+      if (shown.length < lines.length) {
+        clipped = true;
+        shown[shown.length - 1] = `${String(shown[shown.length - 1]).replace(/[\s,.;/]+$/, '')}...`;
+      }
+
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.4);
       doc.setTextColor(...BRAND.accent);
       doc.text(`${label}:`, MARGIN, y);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...BRAND.ink);
-      const lines = doc.splitTextToSize(asText(value), CONTENT_WIDTH - 24);
-      doc.text(lines, MARGIN + 24, y);
-      y += Math.max(4.4, lines.length * 3.8);
+      doc.text(shown, MARGIN + 24, y);
+      y += Math.max(4.4, shown.length * BRIEF_LINE);
+    }
+
+    // Pinned just above the QR block rather than after the last row, so it is there whenever the brief
+    // was cut — otherwise the one case that needs the note is the case with no room left to print it.
+    if (clipped) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(6.4);
+      doc.setTextColor(...BRAND.muted);
+      doc.text('Brief dipotong — selengkapnya di app.', MARGIN, QR_BLOCK_TOP - 2.2);
     }
   } else {
-    y = drawLabelValue(doc, 'Isi paket', itemSummary || `${order.quantity || 0} item`, MARGIN, y);
+    y = drawLabelValue(doc, 'Isi paket', itemSummary || `${order.quantity || 0} item`, MARGIN, y, CONTENT_WIDTH, BRIEF_BOTTOM);
   }
 
-  y = Math.min(y + 2, PAGE_HEIGHT - 33);
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(...BRAND.ink);
-  doc.roundedRect(MARGIN, PAGE_HEIGHT - 31, CONTENT_WIDTH, 22, 2, 2, 'S');
+  doc.roundedRect(MARGIN, QR_BLOCK_TOP, CONTENT_WIDTH, 20, 2, 2, 'S');
   if (publicTrackingQr) {
-    doc.addImage(publicTrackingQr, 'PNG', MARGIN + 2, PAGE_HEIGHT - 29, 18, 18);
+    doc.addImage(publicTrackingQr, 'PNG', MARGIN + 2, QR_BLOCK_TOP + 1.6, 16.8, 16.8);
   }
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(12.5);
   doc.setTextColor(...BRAND.ink);
-  doc.text(asText(order.orderNumber), PAGE_WIDTH - MARGIN - 3, PAGE_HEIGHT - 22, { align: 'right' });
+  doc.text(asText(order.orderNumber), PAGE_WIDTH - MARGIN - 3, QR_BLOCK_TOP + 7, { align: 'right' });
   doc.setFontSize(7);
   doc.setTextColor(...BRAND.muted);
-  doc.text('Scan QR / cek publik:', PAGE_WIDTH - MARGIN - 3, PAGE_HEIGHT - 17.4, { align: 'right' });
+  doc.text('Scan QR / cek publik:', PAGE_WIDTH - MARGIN - 3, QR_BLOCK_TOP + 11.4, { align: 'right' });
   doc.setFontSize(6.2);
-  doc.text(doc.splitTextToSize(publicTrackingUrl, CONTENT_WIDTH - 28), PAGE_WIDTH - MARGIN - 3, PAGE_HEIGHT - 13.8, { align: 'right' });
+  doc.text(doc.splitTextToSize(publicTrackingUrl.replace(/^https?:\/\//, ''), CONTENT_WIDTH - 26), PAGE_WIDTH - MARGIN - 3, QR_BLOCK_TOP + 15, { align: 'right' });
 };
 
 export const exportShippingLabelPdf = async (order) => {
