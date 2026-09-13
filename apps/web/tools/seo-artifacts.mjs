@@ -3,6 +3,7 @@
 // tools/build.mjs. Never throws in a way that fails the build — SEO is best-effort.
 
 import fs from 'node:fs';
+import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import path from 'node:path';
 
 // The public routes the sitemap, the prerendered pages and llms.txt all advertise. build.mjs checks
@@ -103,7 +104,7 @@ export const fetchPublicProducts = async (env) => {
     // dropped out of the sitemap and lost its prerendered title, description and JSON-LD, while the
     // journal still resolved and made the sitemap look populated. The view exists for exactly this and
     // already drops drafts and strips internal tags.
-    'storefront_products_public?select=slug,name,category,price_number,notes,description,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
+    'storefront_products_public?select=slug,name,category,price_number,stock,variants,notes,description,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
   );
   if (!Array.isArray(rows)) return [];
   return rows
@@ -114,6 +115,9 @@ export const fetchPublicProducts = async (env) => {
       name: String(row.name).trim(),
       category: row.category || 'Atelier fragrance',
       priceNumber: Number(row.price_number || 0),
+      // Carried so the Offer can state real availability instead of assuming every product is in stock.
+      stock: row.stock,
+      variants: Array.isArray(row.variants) ? row.variants : [],
       description: String(row.notes || row.description || `Objek parfum ${BRAND} oleh Dekito.`).trim(),
       image: firstImage(row),
       topNotes: toList(row.top_notes),
@@ -197,7 +201,7 @@ const productJsonLd = (product, siteUrl, canonical) => {
       '@type': 'Offer',
       priceCurrency: 'IDR',
       price: product.priceNumber,
-      availability: 'https://schema.org/InStock',
+      availability: schemaAvailability({ stock: product.stock, variants: product.variants }),
       url: canonical,
       seller: { '@type': 'Organization', name: BRAND },
     };
