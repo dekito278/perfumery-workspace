@@ -381,7 +381,7 @@ const ProductForm = ({ product = null, onSaved }) => {
             </div>
             <div className="mt-3 grid gap-2">
               {(form.variants || []).map((variant, index) => (
-                <div key={variant.id || index} className="grid gap-2 rounded-2xl border bg-white p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+                <div key={variant.id || index} className="grid gap-2 rounded-2xl border bg-white p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                   <input value={variant.size} onChange={(event) => updateVariant(index, 'size', event.target.value)} placeholder="30 ml" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <LocalizedNumberInput value={variant.priceNumber} onChange={(value) => updateVariant(index, 'priceNumber', value)} placeholder="Harga" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <LocalizedNumberInput value={variant.compareAtPriceNumber || 0} onChange={(value) => updateVariant(index, 'compareAtPriceNumber', value)} placeholder="Harga coret" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />

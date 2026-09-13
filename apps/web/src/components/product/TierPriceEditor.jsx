@@ -70,14 +70,22 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
 
   // Row '' applies to every size; a row with a variant id overrides it for that size only. Same merge
   // the order endpoint does, so what is shown here is what a buyer is charged.
-  const rows = useMemo(() => ([
-    { id: '', label: 'Semua ukuran', retail: 0 },
-    ...variants.map((variant) => ({
+  //
+  // With a single size those two rows mean the same bottle, so only one is drawn — and it is the '' row,
+  // labelled with the size. That keeps anything already saved visible instead of hiding a price that is
+  // still being applied, and it stops the form asking the same question twice.
+  const rows = useMemo(() => {
+    const sizes = variants.map((variant) => ({
       id: String(variant.id || ''),
       label: variant.size || variant.id || 'Varian',
       retail: Number(variant.priceNumber || 0),
-    })).filter((row) => row.id),
-  ]), [variants]);
+    })).filter((row) => row.id);
+
+    if (sizes.length <= 1) {
+      return [{ id: '', label: sizes[0]?.label || 'Semua ukuran', retail: sizes[0]?.retail || 0 }];
+    }
+    return [{ id: '', label: 'Semua ukuran', retail: 0 }, ...sizes];
+  }, [variants]);
 
   const dirtyKeys = useMemo(
     () => Object.keys({ ...saved, ...draft }).filter((key) => (draft[key] ?? '') !== (saved[key] ?? '')),
@@ -152,7 +160,7 @@ const TierPriceEditor = ({ productId = '', variants = [], compact = false }) => 
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="text-xs font-bold uppercase text-editorial-charcoal">{row.label}</span>
               <span className="text-[11px] font-semibold text-muted-foreground">
-                {row.id ? `Retail ${formatRupiah(row.retail)}` : 'Dipakai untuk ukuran yang kosong di bawah'}
+                {row.retail ? `Retail ${formatRupiah(row.retail)}` : 'Dipakai untuk ukuran yang kosong di bawah'}
               </span>
             </div>
             <div className={`mt-2 grid gap-2 ${compact ? 'grid-cols-1' : 'sm:grid-cols-3'}`}>
