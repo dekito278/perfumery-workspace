@@ -177,6 +177,7 @@ const MobileProductDetailPage = () => {
           <div className="m-editorial-pdp__meta">
             {isPlaceholderMood(product.mood) ? null : <span>{product.mood}</span>}
             {product.concentration ? <span>{product.concentration}</span> : null}
+            {product.intensity ? <span>Intensitas {product.intensity.toLowerCase()}</span> : null}
             {product.sizeVariants?.length ? <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span> : null}
           </div>
         </div>

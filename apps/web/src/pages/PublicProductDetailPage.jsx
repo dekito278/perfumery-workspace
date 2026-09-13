@@ -225,6 +225,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="pdp-meta" data-reveal>
               {isPlaceholderMood(product.mood) ? null : <span>{product.mood}</span>}
               <span>{product.concentration}</span>
+              {product.intensity ? <span>Intensitas {product.intensity.toLowerCase()}</span> : null}
               <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
             </div>
 
