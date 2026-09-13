@@ -216,7 +216,12 @@ const BespokePage = () => {
     priceNumber: estimatedTotal,
   }], [estimatedTotal, form.perfumeName]);
   const voucher = useAppliedVoucher(estimatedTotal, bespokeVoucherItems);
-  const shippingWeight = useMemo(() => getCheckoutShippingWeight([{ quantity: 1 }]), []);
+  // The chosen bottle size, not a flat one: the order endpoint now weighs the bespoke bottle by the size
+  // option it priced, so quoting a different weight here would show one courier fee and charge another.
+  const shippingWeight = useMemo(
+    () => getCheckoutShippingWeight([{ quantity: 1, size: getOptionDisplayValue(selectedSize, form.size) }]),
+    [selectedSize, form.size],
+  );
   const shippingFee = Number(selectedShipping?.cost || 0);
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
   const discountAmount = Number(voucher.discountAmount || 0);

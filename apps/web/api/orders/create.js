@@ -19,6 +19,7 @@ import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
+import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const jsonResponse = (res, status, body) => {
@@ -264,8 +265,17 @@ export default async function handler(req, res) {
     // created at. assertPairedEnvAgrees() in apps/web/tools/build.mjs refuses to build when they differ.
     // Note RAJAONGKIR_DEFAULT_WEIGHT_GRAM is NOT this: it is a total-weight fallback inside
     // api/shipping/rates.js for callers that send no weight, which this one never does.
-    const itemWeight = Number(process.env.DEFAULT_ITEM_WEIGHT_GRAM || process.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || 300);
-    const weight = Math.max((catalog.quantity || (isBespoke ? 1 : 0)) * itemWeight, itemWeight);
+    const itemWeight = Number(process.env.DEFAULT_ITEM_WEIGHT_GRAM || process.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || DEFAULT_ITEM_WEIGHT_GRAM);
+    // Per size, from the same table getCheckoutShippingWeight reads. `catalog.resolved` carries the size
+    // this endpoint decided on, not the one the client sent, so the weight is as authoritative as the
+    // price. A bespoke order is one bottle whose size is the option the endpoint just priced.
+    // A bespoke brief is one bottle, whose size is the option this endpoint just priced. Appended rather
+    // than branched: an order carrying both a brief and catalog lines weighs both, which the old
+    // quantity-based formula silently did not.
+    const weighedLines = isBespoke
+      ? [...catalog.resolved, { size: bespoke.labels?.size || '', quantity: 1 }]
+      : catalog.resolved;
+    const weight = totalItemWeightGram(weighedLines, itemWeight);
     const { fee: shippingFee, summary: shippingSummary } = await computeShippingFee(baseUrl, {
       destinationId: input.shipping?.destinationId,
       destination: input.shipping?.destination,
