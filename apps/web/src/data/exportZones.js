@@ -37,3 +37,44 @@ export const EXPORT_ZONE_BY_COUNTRY = {
 };
 
 export const EXPORT_ZONES = [1, 2, 3, 4, 5, 6, 7, 8];
+
+// Intl.DisplayNames turns an ISO code into an Indonesian country name, so the 233 names do not have to be
+// transcribed and kept in step with it. These seven are the carrier's own codes rather than ISO regions,
+// and Intl hands them straight back — so they are the only ones written out.
+const NON_ISO_NAMES = {
+  // XA and XB are reserved by CLDR for pseudo-locales, so Intl answers 'Pseudo-Bidi' for the
+  // carrier's Bonaire code instead of a country. It resolves to *something*, which is why it slipped
+  // past the check for codes Intl cannot name at all.
+  XB: 'Bonaire',
+  XC: 'Curacao',
+  KV: 'Kosovo',
+  XN: 'Nevis',
+  XS: 'Somaliland',
+  XY: 'St. Barthelemy',
+  XE: 'St. Eustatius',
+  XM: 'St. Maarten',
+};
+
+const displayNames = (() => {
+  try {
+    return new Intl.DisplayNames(['id'], { type: 'region' });
+  } catch {
+    return null;
+  }
+})();
+
+export const getCountryName = (code) => {
+  const key = String(code || '').trim().toUpperCase();
+  if (NON_ISO_NAMES[key]) return NON_ISO_NAMES[key];
+  try {
+    return displayNames?.of(key) || key;
+  } catch {
+    return key;
+  }
+};
+
+/** Every destination the carrier serves, named and sorted for a picker. */
+export const listExportDestinations = () => Object.entries(EXPORT_ZONE_BY_COUNTRY)
+  .map(([code, zone]) => ({ code, zone, name: getCountryName(code) }))
+  .sort((a, b) => a.name.localeCompare(b.name, 'id'));
+
