@@ -78,4 +78,32 @@ for (const tier of ['member', 'reseller', 'overseas']) {
 assert.match(tierEditor, /const \{ rows: freshRows[\s\S]{0,200}listTierPricesForProduct\(productId\)/,
   'the editor must re-read after saving rather than trusting its own draft');
 
+// --- one size, one row -------------------------------------------------------------------------------
+// The '' row is the default for sizes left blank. With a single size it and the size row are the same
+// bottle, so drawing both asked the same question twice — and the owner filled one and left the other
+// empty, which looks like a half-finished form. Every live product has exactly one variant today.
+assert.match(tierEditor, /if \(sizes\.length <= 1\)/, 'a single-size product must not be shown two rows');
+assert.match(tierEditor, /return \[\{ id: '', label: sizes\[0\]\?\.label/,
+  "the one row must stay the '' row, or a price already saved there would vanish from the form while "
+  + 'still being applied to orders');
+assert.match(tierEditor, /row\.retail \? `Retail \$\{formatRupiah\(row\.retail\)\}`/,
+  'the row must show the retail price it is being compared against when it knows one');
+
+// --- grids that hold inputs must be allowed to shrink -------------------------------------------------
+// `1fr` is minmax(auto,1fr): the column may not shrink below its content's minimum width. Four text
+// inputs plus a button overflowed their card by 238px on a 1440px screen — measured, not guessed.
+for (const [file, source] of [
+  ['components/product/ProductForm.jsx', read('components', 'product', 'ProductForm.jsx')],
+  ['pages/CustomersPage.jsx', read('pages', 'CustomersPage.jsx')],
+]) {
+  for (const template of source.match(/grid-cols-\[[^\]]*\]/g) || []) {
+    // NOT \b1fr\b: `_` is a word character, so there is no boundary in `_1fr` and every column after
+    // the first went uncounted — this guard passed its own sabotage until that was fixed.
+    const flexible = (template.match(/(?<![,\d.])1fr/g) || []).length;
+    assert.ok(flexible < 2,
+      `${file} has a grid with ${flexible} bare 1fr columns (${template}). Use minmax(0,1fr) so the `
+      + 'columns can shrink instead of pushing the row out of its card.');
+  }
+}
+
 console.log('tierPricingStudio.selfcheck: ok');
