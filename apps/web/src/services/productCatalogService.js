@@ -354,6 +354,26 @@ export const getProductPriceRange = (variants = []) => {
   return Math.min(...prices);
 };
 
+/**
+ * Which variant represents this product wherever ONE number has to stand for all of them — the catalog
+ * card, the JSON-LD Offer, the og:price meta, the saved price_number column.
+ *
+ * The cheapest, because that is what getProductPriceRange has always displayed. The trap it closes:
+ * the forms used to save variants[0]'s price while the storefront rendered the minimum, so the two
+ * agreed only while the first variant happened to be the cheapest. Add a smaller size at the end of the
+ * list and Google, Facebook and the catalog card each quote a different number from the product page.
+ *
+ * Price, compare-at price and size all come from here, so the headline always describes one bottle
+ * rather than mixing the cheapest price with the first variant's size.
+ */
+export const getPrimaryVariant = (variants = []) => {
+  const priced = variants.filter((variant) => Number(variant?.priceNumber || 0) > 0);
+  if (!priced.length) return variants[0] || null;
+  return priced.reduce((cheapest, variant) => (
+    Number(variant.priceNumber) < Number(cheapest.priceNumber) ? variant : cheapest
+  ));
+};
+
 export const getProductStockTotal = (variants = []) => variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
 
 export const getProductLowStock = (product) => {

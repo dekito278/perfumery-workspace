@@ -1,5 +1,6 @@
 import {
   formatRupiah,
+  getPrimaryVariant,
   getProductPriceRange,
   getProductStockTotal,
   getVisibleProductTags,
@@ -138,7 +139,9 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     intensity: product.intensity || '',
     variants,
     sizeVariants: variants,
-    size: variants[0]?.size || product.size || '30 ml',
+    // The same bottle the price came from — getProductPriceRange is a minimum, so pairing it with
+    // variants[0]'s size would label the cheapest price with a size that is not the cheapest.
+    size: getPrimaryVariant(variants)?.size || product.size || '30 ml',
     price,
     priceNumber,
     // Which tier this price came from, and what retail would have been. Display only — the order
@@ -147,7 +150,7 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     retailPriceNumber: product.retailPriceNumber,
     // "Harga coret". Four Studio inputs wrote this and every one of them was inert, because this mapper
     // lists its fields by hand and this one was never on the list.
-    compareAtPriceNumber: Number(product.compareAtPriceNumber || 0),
+    compareAtPriceNumber: Number(getPrimaryVariant(variants)?.compareAtPriceNumber || product.compareAtPriceNumber || 0),
     imageUrl: images[0] || product.imageUrl || '',
     images,
     visual: product.visual,
