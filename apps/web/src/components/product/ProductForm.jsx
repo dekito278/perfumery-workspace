@@ -12,6 +12,7 @@ import {
   buildStockCorrection,
   formatRupiah,
   getProductPublishChecklist,
+  getPrimaryVariant,
   getProductRestockThreshold,
   getProductSlugConflicts,
   getProductStockCorrections,
@@ -237,10 +238,10 @@ const ProductForm = ({ product = null, onSaved }) => {
         restockThreshold: Number(form.restockThreshold || 0),
         stockCorrections,
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
-        priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
-        compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+        priceNumber: Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0),
+        compareAtPriceNumber: Number(getPrimaryVariant(form.variants || [])?.compareAtPriceNumber || 0),
         stock: variantStockTotal,
-        size: form.variants?.[0]?.size || form.size,
+        size: getPrimaryVariant(form.variants || [])?.size || form.size,
         price: formatRupiah(form.priceNumber),
       });
       const nextForm = toEditableProduct(saved);
@@ -273,10 +274,10 @@ const ProductForm = ({ product = null, onSaved }) => {
     const preview = normalizeProduct({
       ...form,
       tags: getTagsForVisibility(form.tags, form.catalogVisible),
-      priceNumber: Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0),
-      compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+      priceNumber: Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0),
+      compareAtPriceNumber: Number(getPrimaryVariant(form.variants || [])?.compareAtPriceNumber || 0),
       stock: variantStockTotal,
-      size: form.variants?.[0]?.size || form.size,
+      size: getPrimaryVariant(form.variants || [])?.size || form.size,
     }, products);
     navigate(getProductStorefrontPath(preview), {
       state: {

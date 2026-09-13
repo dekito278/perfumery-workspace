@@ -19,7 +19,7 @@ import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import BriefText from '@/components/BriefText.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
 
 
@@ -101,7 +101,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   // Pick the selected size variant (default the first), so desktop buyers can choose size and are
   // charged that variant's price — matching mobile, instead of always the product default.
   const variants = Array.isArray(product.variants) ? product.variants : [];
-  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
+  // Default to the bottle the headline price belongs to, not whichever variant happens to be first —
+  // otherwise the page can open quoting Rp 129.000 above a button that charges Rp 310.000.
+  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';

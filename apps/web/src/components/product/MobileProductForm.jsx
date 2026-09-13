@@ -15,6 +15,7 @@ import {
   getProductBatchDetails,
   getProductFormulaId,
   getProductPublishChecklist,
+  getPrimaryVariant,
   getProductRestockThreshold,
   getProductSlugConflicts,
   getProductStockCorrections,
@@ -152,7 +153,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
   const linkedFormulaId = getProductFormulaId(form);
   const batchDetails = getProductBatchDetails(form);
   const totalVariantStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
-  const primaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
+  const primaryVariantPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
   const requiredReady = Boolean(form.name.trim() && form.category.trim() && form.notes.trim());
   const publishChecklist = useMemo(() => getProductPublishChecklist(form), [form]);
   const canPublish = publishChecklist.ready;
@@ -246,7 +247,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
     }
     setSavingProduct(true);
     try {
-      const nextPrimaryVariantPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
+      const nextPrimaryVariantPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
       // Record a stock-correction audit entry on edit, same as desktop, so mobile stock changes are traceable.
       const previousProduct = products.find((item) => item.id === form.id);
       const stockCorrection = buildStockCorrection({ form, previousProduct });
@@ -257,9 +258,9 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         ...form,
         stockCorrections,
         priceNumber: nextPrimaryVariantPrice,
-        compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+        compareAtPriceNumber: Number(getPrimaryVariant(form.variants || [])?.compareAtPriceNumber || 0),
         stock: totalVariantStock,
-        size: form.variants?.[0]?.size || form.size,
+        size: getPrimaryVariant(form.variants || [])?.size || form.size,
         price: formatRupiah(nextPrimaryVariantPrice),
         tags: getTagsForVisibility(form.tags, form.catalogVisible),
       });
@@ -291,13 +292,13 @@ const MobileProductForm = ({ product = null, onSaved }) => {
     })) {
       return;
     }
-    const previewPrice = Number(form.variants?.[0]?.priceNumber || form.priceNumber || 0);
+    const previewPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
     const preview = normalizeProduct({
       ...form,
       priceNumber: previewPrice,
-      compareAtPriceNumber: Number(form.variants?.[0]?.compareAtPriceNumber || 0),
+      compareAtPriceNumber: Number(getPrimaryVariant(form.variants || [])?.compareAtPriceNumber || 0),
       stock: form.variants?.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) || Number(form.stock || 0),
-      size: form.variants?.[0]?.size || form.size,
+      size: getPrimaryVariant(form.variants || [])?.size || form.size,
       price: formatRupiah(previewPrice),
       tags: getTagsForVisibility(form.tags, form.catalogVisible),
     }, products);

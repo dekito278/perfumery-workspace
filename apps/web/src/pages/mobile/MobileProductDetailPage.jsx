@@ -15,7 +15,7 @@ import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
-import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
 
@@ -44,7 +44,8 @@ const MobileProductDetailPage = () => {
 
   const selectedVariant = useMemo(() => {
     const variants = Array.isArray(product?.variants) ? product.variants : [];
-    return variants.find((v) => (v.id || v.size) === selectedVariantId) || variants[0] || null;
+    // Same as desktop: the size the headline price belongs to.
+    return variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   }, [product, selectedVariantId]);
 
   if (!product && allProducts.loading) {
