@@ -189,7 +189,14 @@ const MobileProductForm = ({ product = null, onSaved }) => {
   }));
   const addVariant = () => setForm((current) => ({
     ...current,
-    variants: [...current.variants, { id: `variant-${Date.now()}`, size: '50 ml', priceNumber: current.priceNumber, compareAtPriceNumber: current.compareAtPriceNumber || 0, stock: 0 }],
+    variants: [...current.variants, {
+      id: `variant-${Date.now()}`,
+      size: '50 ml',
+      // Seeded from the bottle that represents the product; the product-level price is derived now.
+      priceNumber: Number(getPrimaryVariant(current.variants || [])?.priceNumber || current.priceNumber || 0),
+      compareAtPriceNumber: Number(getPrimaryVariant(current.variants || [])?.compareAtPriceNumber || 0),
+      stock: 0,
+    }],
   }));
   const removeVariant = (index) => setForm((current) => ({
     ...current,
@@ -467,17 +474,14 @@ const MobileProductForm = ({ product = null, onSaved }) => {
       <ProductFormSection
         eyebrow="Commercial"
         title="Varian, harga, dan stok"
-        description="Varian pertama dipakai sebagai harga utama di katalog. Total stok dihitung dari semua varian."
+        description="Harga katalog dan total stok dihitung dari varian di bawah. Ubah per ukuran."
         action={<Button type="button" variant="outline" className="h-10 rounded-2xl bg-white gap-1 px-3 text-xs" onClick={addVariant}><Plus className="h-4 w-4" />Tambah</Button>}
       >
         <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
           <div className="grid gap-1.5">
-            <ProductInputLabel>Harga dasar</ProductInputLabel>
-            <LocalizedNumberInput value={form.priceNumber} onChange={(value) => updateField('priceNumber', value === '' ? 0 : value)} className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-          </div>
-          <div className="grid gap-1.5">
-            <ProductInputLabel>Harga coret</ProductInputLabel>
-            <LocalizedNumberInput value={form.compareAtPriceNumber || 0} onChange={(value) => updateField('compareAtPriceNumber', value === '' ? 0 : value)} placeholder="Harga coret" className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
+            <ProductInputLabel>Harga katalog</ProductInputLabel>
+            <input value={formatRupiah(primaryVariantPrice)} readOnly disabled className="h-11 rounded-xl border border-[#e5e7eb] bg-[#f3f1ec] px-3 text-sm font-semibold text-muted-foreground outline-none" />
+            <span className="text-[11px] font-semibold text-[#8b949e]">Otomatis dari varian termurah. Ubah harga per ukuran di bawah.</span>
           </div>
           <div className="grid gap-1.5">
             <ProductInputLabel>Stok total</ProductInputLabel>

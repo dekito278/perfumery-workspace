@@ -62,4 +62,22 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile'
     `${page.join('/')} must show intensity — carrying it through the mapper alone still renders nothing`);
 }
 
+// --- a derived value must not be offered as an input ---------------------------------------------------
+// The save has taken the catalog price from the variants since #124, so the product-level "Harga" box
+// was ignored on every save while still looking editable. Dekito found it the way anyone would: two
+// prices on one screen and no way to tell which one counts. Stock had already been read-only for the
+// same reason; price and compare-at now match it.
+for (const file of [['components', 'product', 'ProductForm.jsx'], ['components', 'product', 'MobileProductForm.jsx']]) {
+  const source = read(...file);
+  for (const field of ['priceNumber', 'compareAtPriceNumber']) {
+    assert.doesNotMatch(source, new RegExp(`updateField\\('${field}'`),
+      `${file.join('/')} must not offer a product-level ${field} input — it is derived from the variants, `
+      + 'so editing it does nothing and the screen shows two prices that disagree');
+  }
+  assert.match(source, /readOnly disabled/, `${file.join('/')} must show the derived catalog price read-only`);
+  // A new variant must copy the representative bottle, not the field that is no longer editable.
+  assert.match(source, /priceNumber: Number\(getPrimaryVariant\(current\.variants \|\| \[\]\)\?\.priceNumber/,
+    `${file.join('/')} must seed a new variant from the representative variant`);
+}
+
 console.log(`deadProductInputs selfcheck OK (${fields.length} form fields, ${Object.keys(STUDIO_ONLY).length} reasoned exceptions)`);

@@ -141,6 +141,9 @@ const ProductForm = ({ product = null, onSaved }) => {
   // Stock lives per-variant; the product-level number is just their sum. Single source of truth so the
   // storefront (which reads variant stock) never disagrees with what admin shows.
   const variantStockTotal = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+  // What the catalog will show. Derived, never typed: the save has taken it from the variants since #124,
+  // so an editable field here was a box that quietly did nothing.
+  const primaryPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -151,7 +154,15 @@ const ProductForm = ({ product = null, onSaved }) => {
   }));
   const addVariant = () => setForm((current) => ({
     ...current,
-    variants: [...current.variants, { id: `variant-${Date.now()}`, size: '50 ml', priceNumber: current.priceNumber, compareAtPriceNumber: current.compareAtPriceNumber || 0, stock: 0 }],
+    variants: [...current.variants, {
+      id: `variant-${Date.now()}`,
+      size: '50 ml',
+      // Seeded from the bottle that represents the product, since the product-level price is no longer
+      // an input anyone can edit — it is derived from these rows.
+      priceNumber: Number(getPrimaryVariant(current.variants || [])?.priceNumber || current.priceNumber || 0),
+      compareAtPriceNumber: Number(getPrimaryVariant(current.variants || [])?.compareAtPriceNumber || 0),
+      stock: 0,
+    }],
   }));
   const removeVariant = (index) => setForm((current) => ({
     ...current,
@@ -355,12 +366,9 @@ const ProductForm = ({ product = null, onSaved }) => {
 
         <TabsContent value="commercial" className="mt-5 grid gap-4 sm:grid-cols-2">
           <label>
-            <span className="text-xs font-bold uppercase text-muted-foreground">Harga</span>
-            <LocalizedNumberInput value={form.priceNumber} onChange={(value) => updateField('priceNumber', value === '' ? 0 : value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
-          </label>
-          <label>
-            <span className="text-xs font-bold uppercase text-muted-foreground">Harga coret</span>
-            <LocalizedNumberInput value={form.compareAtPriceNumber || 0} onChange={(value) => updateField('compareAtPriceNumber', value === '' ? 0 : value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" />
+            <span className="text-xs font-bold uppercase text-muted-foreground">Harga katalog</span>
+            <input value={formatRupiah(primaryPrice)} readOnly disabled className="mt-2 h-11 w-full rounded-2xl border bg-[#f3f1ec] px-4 text-sm font-semibold text-muted-foreground outline-none" />
+            <span className="mt-1 block text-[11px] font-semibold text-muted-foreground">Otomatis dari varian termurah di bawah. Ubah harga per ukuran.</span>
           </label>
           <label>
             <span className="text-xs font-bold uppercase text-muted-foreground">Stok total</span>
