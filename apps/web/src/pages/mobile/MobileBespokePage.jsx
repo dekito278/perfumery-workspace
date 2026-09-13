@@ -230,7 +230,12 @@ const MobileBespokePage = () => {
   const discountedEstimatedTotal = Number(voucher.subtotalAfterDiscount ?? estimatedTotal);
   const totalDue = discountedEstimatedTotal + shippingFee;
   const shippingSummary = selectedShipping ? describeShippingRate(selectedShipping) : '';
-  const shippingWeight = useMemo(() => getCheckoutShippingWeight([{ quantity: 1 }]), []);
+  // Same as desktop: weigh the chosen bottle size, or the fee quoted here disagrees with the one the
+  // order endpoint charges.
+  const shippingWeight = useMemo(
+    () => getCheckoutShippingWeight([{ quantity: 1, size: selectedSize?.label || form.size || '' }]),
+    [selectedSize, form.size],
+  );
   const visibleShippingOptions = selectedCourier
     ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier)
     : shippingOptions;

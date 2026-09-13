@@ -2,6 +2,7 @@ import {
   applyShippingPromotionToRates,
   getShippingPromotionSettingsAsync,
 } from '@/services/shippingPromotionService.js';
+import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '@/utils/itemWeight.js';
 
 export const SHIPPING_STORAGE_KEY = 'solivagant.checkout.shipping.v1';
 
@@ -60,14 +61,11 @@ export const getShippingRates = async ({
 };
 
 export const getCheckoutShippingWeight = (items) => {
-  // Paired with DEFAULT_ITEM_WEIGHT_GRAM on the order endpoint, which reprices shipping authoritatively.
-  // assertPairedEnvAgrees() in tools/build.mjs fails the build if the two ever disagree.
-  const defaultItemWeight = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || 300);
-  const quantity = Array.isArray(items)
-    ? items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
-    : 0;
-
-  return Math.max(quantity * defaultItemWeight, defaultItemWeight);
+  // Weight is per SIZE now, from the one table the order endpoint also reads — a 10 ml is 100 g and a
+  // 100 ml is 650 g, not 300 g each. The env value is only the fallback for a size nobody weighed.
+  // assertPairedEnvAgrees() in tools/build.mjs fails the build if the two sides' fallback disagrees.
+  const fallback = Number(import.meta.env.VITE_DEFAULT_ITEM_WEIGHT_GRAM || DEFAULT_ITEM_WEIGHT_GRAM);
+  return totalItemWeightGram(items, fallback);
 };
 
 export const describeShippingRate = (rate) => {
