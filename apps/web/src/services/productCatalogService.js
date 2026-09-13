@@ -115,9 +115,23 @@ export const getProductPublishChecklist = (product = {}) => {
   };
 };
 
+/**
+ * Where a product lives publicly. This has to be the URL the build PRERENDERS, which is
+ * /catalog/<slug> — seo-artifacts writes dist/catalog/<slug>/index.html and puts the same path in the
+ * sitemap and the canonical tag.
+ *
+ * It used to return /products/<slug>. That route exists and renders the same page, but nothing is
+ * prerendered there, so the server hands back the generic app shell: site title, stock image, no
+ * JSON-LD. WhatsApp and Facebook do not run JavaScript, so a link shared from Studio's "Salin link
+ * produk" previewed as "SOLIVAGANT - Artisan Perfumery Atelier" instead of the perfume.
+ *
+ * Mobile keeps /mobile/products/<slug>: there is no /mobile/catalog/:slug route, and those pages are
+ * not prerendered or indexed anyway.
+ */
 export const getProductStorefrontPath = (product = {}, { mobile = false } = {}) => {
   const slug = toSlug(product.slug || product.name);
-  return slug ? `${mobile ? '/mobile' : ''}/products/${slug}` : '';
+  if (!slug) return '';
+  return mobile ? `/mobile/products/${slug}` : `/catalog/${slug}`;
 };
 
 export const getProductSlugConflicts = (product = {}, products = []) => {
