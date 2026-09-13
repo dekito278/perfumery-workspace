@@ -18,6 +18,7 @@ import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '
 import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
+import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 
 const jsonResponse = (res, status, body) => {
@@ -58,6 +59,46 @@ const sbRpc = async (fn, body) => {
   return r.json();
 };
 
+// Reads a table that may not exist yet: the tier pricing migration is applied by hand, and until it is,
+// every buyer is simply retail. A missing table is not an error here.
+const sbSelectOptional = async (path) => {
+  try {
+    return await sbSelect(path);
+  } catch {
+    return [];
+  }
+};
+
+// Who is buying, taken from their own access token and nothing else. The customer code the browser sends
+// is printed on every invoice, so resolving a tier from it would let anyone paste a reseller's code and
+// buy at reseller prices. No token, or a token that does not verify, is retail.
+const resolveBuyerTier = async (req) => {
+  const header = String(req.headers?.authorization || '');
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!token) return 'retail';
+
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+  const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return 'retail';
+
+  try {
+    const response = await fetch(`${url}/auth/v1/user`, {
+      headers: { apikey: key, Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return 'retail';
+    const user = await response.json();
+    if (!user?.id) return 'retail';
+
+    const rows = await sbSelectOptional(
+      `storefront_customers?auth_user_id=eq.${encodeURIComponent(user.id)}&select=tier&limit=1`,
+    );
+    // Signed in at all makes someone a member; only a row an admin wrote makes them a reseller.
+    return rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member';
+  } catch {
+    return 'retail';
+  }
+};
+
 // --- authoritative price recompute (never trust a client price) ------------------------------------
 
 // This endpoint is unauthenticated and reserves stock, so an unbounded item list is an amplifier: each
@@ -67,7 +108,7 @@ const sbRpc = async (fn, body) => {
 const MAX_ORDER_LINES = 50;
 const MAX_LINE_QUANTITY = 100;
 
-const priceCatalogItems = async (items = []) => {
+const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
   if (items.length > MAX_ORDER_LINES) {
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
@@ -80,7 +121,7 @@ const priceCatalogItems = async (items = []) => {
       throw new Error(`Quantity out of range for ${slug || 'item'} (max ${MAX_LINE_QUANTITY})`);
     }
     if (!slug) throw new Error('Item missing productSlug');
-    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=slug,name,category,price_number,variants`);
+    const rows = await sbSelect(`storefront_products?slug=eq.${encodeURIComponent(slug)}&select=id,slug,name,category,price_number,variants`);
     const product = rows?.[0];
     if (!product) throw new Error(`Unknown product: ${slug}`);
     let unitPrice = Number(product.price_number || 0);
@@ -97,6 +138,23 @@ const priceCatalogItems = async (items = []) => {
       unitPrice = Number(variant.priceNumber ?? variant.price_number ?? product.price_number ?? 0);
       size = variant.size || size;
     }
+
+    // The buyer's tier price, from the same rule the storefront displays with — a buyer shown one price
+    // and charged another is the worst version of two implementations disagreeing. `overseas` is false:
+    // overseas sales are quoted by hand and entered in Studio, they do not come through this endpoint.
+    const tierRows = await sbSelectOptional(
+      `storefront_product_prices?product_id=eq.${encodeURIComponent(product.id)}&select=variant_id,tier,price_number`,
+    );
+    if (tierRows.length) {
+      const index = indexTierPrices(tierRows.map((row) => ({ ...row, slug })));
+      unitPrice = resolveTierPrice({
+        retailPrice: unitPrice,
+        tierPrices: tierPricesForLine(index, slug, variant?.id || ''),
+        tier: buyerTier,
+        overseas: false,
+      });
+    }
+
     subtotal += unitPrice * qty;
     // Preserve the client line's display fields (image, name, ...) but enforce the DB price AND category —
     // voucher category-restrictions read item.category, so a client-sent category must never be trusted.
@@ -189,7 +247,8 @@ export default async function handler(req, res) {
     const isBespoke = input.source === 'bespoke' || Boolean(input.bespoke);
 
     // 1. Item prices (authoritative, from DB)
-    const catalog = await priceCatalogItems(input.items || []);
+    const buyerTier = await resolveBuyerTier(req);
+    const catalog = await priceCatalogItems(input.items || [], buyerTier);
     const bespoke = isBespoke ? await priceBespokeOptions(input.bespoke?.optionIds || {}) : { subtotal: 0, labels: {} };
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
     if (itemsSubtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no priced items' });
