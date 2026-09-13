@@ -11,6 +11,7 @@ import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
@@ -67,7 +68,7 @@ const CheckoutPage = () => {
       // parse (session then only appears after a manual refresh). useCheckoutFlow prefills once logged in.
       await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
     } catch (error) {
-      toast.error(error.message || 'Gagal masuk dengan Google');
+      toast.error(publicErrorMessage(error, 'Gagal masuk dengan Google'));
     }
   };
 

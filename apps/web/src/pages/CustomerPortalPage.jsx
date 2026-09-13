@@ -39,6 +39,7 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 const formatDate = (value) => (value
@@ -821,7 +822,7 @@ const CustomerPortalPage = () => {
     try {
       await loginWithGoogle(`${window.location.origin}${isMobileRoute ? '/mobile/customer' : '/customer'}`);
     } catch (error) {
-      toast.error(error.message || 'Gagal masuk dengan Google');
+      toast.error(publicErrorMessage(error, 'Gagal masuk dengan Google'));
     }
   };
 
@@ -860,7 +861,7 @@ const CustomerPortalPage = () => {
       setCustomerCode(result.customer.customerCode);
       toast.success('Profil & alamat tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Gagal menyimpan profil');
+      toast.error(publicErrorMessage(error, 'Gagal menyimpan profil'));
     } finally {
       setProfileLoading(false);
     }
@@ -883,7 +884,7 @@ const CustomerPortalPage = () => {
       setClaimAnswer('');
       toast.success(`${result.customer.customerCode} ditautkan ke akunmu`);
     } catch (error) {
-      toast.error(error.message || 'Gagal menautkan kode');
+      toast.error(publicErrorMessage(error, 'Gagal menautkan kode'));
     } finally {
       setClaimLoading(false);
     }
@@ -1023,7 +1024,7 @@ const CustomerPortalPage = () => {
       setSecurityFormOpen(false);
       toast.success('Pertanyaan keamanan tersimpan');
     } catch (error) {
-      toast.error(error.message || 'Gagal menyimpan pertanyaan keamanan');
+      toast.error(publicErrorMessage(error, 'Gagal menyimpan pertanyaan keamanan'));
     } finally {
       setSavingSecurity(false);
     }
@@ -1043,7 +1044,7 @@ const CustomerPortalPage = () => {
         toast.warning('Pembayaran dicek, status belum berubah');
       }
     } catch (error) {
-      toast.error(error.message || 'Gagal refresh pembayaran');
+      toast.error(publicErrorMessage(error, 'Gagal refresh pembayaran'));
     } finally {
       setRefreshingPaymentOrder('');
     }
@@ -1069,7 +1070,7 @@ const CustomerPortalPage = () => {
       toast.success('Link DOKU baru siap dipakai');
       navigate(buildPaymentPath({ isMobileRoute, order: { ...order, paymentProvider: 'doku' } }));
     } catch (error) {
-      toast.error(error.message || 'Gagal membuat link DOKU baru');
+      toast.error(publicErrorMessage(error, 'Gagal membuat link DOKU baru'));
     } finally {
       setRefreshingPaymentOrder('');
     }

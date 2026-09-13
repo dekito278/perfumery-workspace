@@ -7,6 +7,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { buildCourierTrackingSearchUrl, getPublicTrackingOrder } from '@/services/publicTrackingService.js';
 import { formatDate } from '@/utils/formatting.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const steps = [
   { key: 'pending_payment', label: 'Order diterima' },
@@ -84,7 +85,7 @@ const PublicTrackingPage = () => {
       }
     } catch (err) {
       setOrder(null);
-      setError(err.message || 'Gagal memuat tracking order.');
+      setError(publicErrorMessage(err, 'Gagal memuat tracking order.'));
     } finally {
       setLoading(false);
     }

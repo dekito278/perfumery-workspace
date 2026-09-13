@@ -13,6 +13,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
 const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTERAJA', jne: 'JNE' };
@@ -76,7 +77,7 @@ const MobileCheckoutPage = () => {
       // hash on window.location.href produces ##access_token, which only resolves after a manual refresh.
       await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
     } catch (error) {
-      toast.error(error.message || 'Gagal masuk dengan Google');
+      toast.error(publicErrorMessage(error, 'Gagal masuk dengan Google'));
     }
   };
   const voucher = useAppliedVoucher(summary.subtotal, items);
