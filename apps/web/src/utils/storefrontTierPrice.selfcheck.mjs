@@ -91,6 +91,20 @@ assert.doesNotMatch(hook, /toast|role="alert"|schemaReady/,
   'the storefront must not announce a missing tier schema — retail is a correct answer there');
 assert.match(hook, /onAuthStateChange/, 'signing in is what makes someone a member; prices must follow the session');
 
+// --- one lookup for the page, not one per hook call ---------------------------------------------------
+// This hook is reached from the page, the cart and the header. Measured on the live site before the
+// shared cache: FOURTEEN calls to each tier RPC for one product page view. useCatalogProducts already
+// had a warm cache; this is the same pattern.
+assert.match(hook, /let tierState =/, 'the resolved tier must live outside the hook, or every mount refetches it');
+assert.match(hook, /if \(inFlight\) return inFlight;/,
+  'concurrent mounts must share one request instead of racing a dozen identical ones');
+assert.match(hook, /listeners\.add\(setState\)/, 'every mount must read the one shared result');
+assert.match(hook, /if \(event === 'INITIAL_SESSION'\) return;/,
+  'onAuthStateChange fires INITIAL_SESSION the moment it subscribes; acting on it doubles every load');
+// The subscription belongs to the module, not to each mount, or it multiplies with the hook again.
+assert.doesNotMatch(hook, /useEffect\([\s\S]{0,400}onAuthStateChange/,
+  'the auth subscription must be module-level, not inside the hook');
+
 // --- every buyer-facing surface reads the tiered catalog --------------------------------------------
 // Missing one is not a crash, it is a page quoting retail next to a page quoting member.
 for (const file of [
