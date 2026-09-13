@@ -469,6 +469,8 @@ const assertPairedEnvAgrees = async () => {
   const fileEnv = loadDotEnv(webRoot);
   const env = (name) => process.env[name] ?? fileEnv[name];
 
+  reportStorefrontWhatsApp((name) => String(env(name) ?? ''));
+
   for (const pair of PAIRED_ENV) {
     const rawServer = String(pair.server(env) ?? '').trim();
     const rawClient = String(pair.client(env) ?? '').trim();
@@ -494,6 +496,21 @@ const assertPairedEnvAgrees = async () => {
     }
     console.log(`[env] ${pair.what}: ${server} on both sides${rawServer || rawClient ? '' : ' (default)'}.`);
   }
+};
+
+// The overseas-enquiry button hides itself when no WhatsApp number is configured — deliberately, since a
+// button that opens WhatsApp with no recipient is worse than no button. The cost of that choice is that
+// a missing variable removes a storefront feature in complete silence, which is exactly the sort of thing
+// nobody notices until a buyer asks why they cannot contact anyone. So the build says which it is.
+const reportStorefrontWhatsApp = (env) => {
+  const raw = env('VITE_STOREFRONT_WHATSAPP_NUMBER') || '';
+  const digits = raw.replace(/[^0-9]/g, '');
+  if (!digits) {
+    console.warn('[env] VITE_STOREFRONT_WHATSAPP_NUMBER is empty — the "Tanya ongkir" button will not '
+      + 'appear on the storefront. Set it here and in Vercel.');
+    return;
+  }
+  console.log(`[env] storefront WhatsApp: ${digits} (overseas enquiry button is live).`);
 };
 
 // Every prerendered page must still be a page. Eighteen product pages and a journal article shipped as
