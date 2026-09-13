@@ -11,25 +11,48 @@ import supabase from '@/lib/supabaseClient.js';
 // Every failure is silent on purpose. Retail is a real price, so a visitor who sees it has not been told
 // anything false; a red banner on a shop front because a lookup timed out would be worse than the
 // answer being slightly less generous. Studio is where the same condition has to be loud.
+//
+// ONE lookup for the whole page, not one per hook call. This hook is reached from the page, from the
+// cart, and from the header, and each mount used to run its own pair of RPCs — measured at fourteen
+// round trips for a single product page, before counting the extra pair that onAuthStateChange fires
+// the moment it subscribes. useCatalogProducts already had a warm cache for exactly this reason; this
+// is the same pattern, module-level so no provider has to be mounted.
+let tierState = { tier: 'retail', index: {} };
+let tierLoaded = false;
+let inFlight = null;
+const listeners = new Set();
+
+const notify = () => { for (const listener of listeners) listener(tierState); };
+
+const loadTierPrices = () => {
+  if (inFlight) return inFlight;
+  inFlight = Promise.all([getMyPriceTier(), getTierPricesFor()])
+    .then(([{ tier }, { index }]) => {
+      tierState = { tier, index };
+      tierLoaded = true;
+      notify();
+    })
+    .finally(() => { inFlight = null; });
+  return inFlight;
+};
+
+// Signing in is what makes someone a member, so the prices on screen have to follow the session. One
+// subscription for the app, and INITIAL_SESSION is ignored: it fires on subscribe and would only repeat
+// the load this module already does.
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'INITIAL_SESSION') return;
+  tierLoaded = false;
+  loadTierPrices();
+});
+
 export const useTierPrices = () => {
-  const [state, setState] = useState({ tier: 'retail', index: {} });
+  const [state, setState] = useState(tierState);
 
   useEffect(() => {
-    let mounted = true;
-
-    const load = async () => {
-      const [{ tier }, { index }] = await Promise.all([getMyPriceTier(), getTierPricesFor()]);
-      if (mounted) setState({ tier, index });
-    };
-
-    load();
-    // Signing in is what makes someone a member, so the prices on screen have to follow the session.
-    const { data } = supabase.auth.onAuthStateChange(() => { load(); });
-
-    return () => {
-      mounted = false;
-      data?.subscription?.unsubscribe?.();
-    };
+    listeners.add(setState);
+    if (!tierLoaded) loadTierPrices();
+    else setState(tierState);
+    return () => { listeners.delete(setState); };
   }, []);
 
   return state;
