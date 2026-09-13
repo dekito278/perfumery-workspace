@@ -34,6 +34,7 @@ import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterial
 import { buildComposerItemsFromMaterialIds } from '@/utils/formulaPipeline.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
@@ -140,8 +141,8 @@ const CreateFormulaPage = () => {
     || Boolean(name.trim())
     || Boolean(code.trim());
 
-  const handleBackToFormulas = () => {
-    if (hasUnsavedComposition && !window.confirm('Formula ini belum disimpan. Tinggalkan dan buang perubahan?')) {
+  const handleBackToFormulas = async () => {
+    if (hasUnsavedComposition && !await confirmAction({ title: 'Buang perubahan?', message: 'Formula ini belum disimpan. Tinggalkan dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
       return;
     }
     navigate('/formulas');

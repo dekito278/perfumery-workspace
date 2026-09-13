@@ -26,6 +26,7 @@ import { deleteProductImages, uploadProductImage } from '@/services/productImage
 import { moodForEditing } from '@/utils/productMood.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
 import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 export const emptyProduct = {
   name: '',
@@ -166,12 +167,17 @@ const ProductForm = ({ product = null, onSaved }) => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  const confirmDiscardChanges = () => (
-    !hasUnsavedChanges || window.confirm('Ada perubahan produk yang belum disimpan. Lanjut dan buang perubahan?')
+  const confirmDiscardChanges = async () => (
+    !hasUnsavedChanges || confirmAction({
+      title: 'Buang perubahan?',
+      message: 'Ada perubahan produk yang belum disimpan. Lanjut dan buang perubahan?',
+      confirmText: 'Buang',
+      destructive: true,
+    })
   );
 
-  const resetForm = () => {
-    if (!confirmDiscardChanges()) return;
+  const resetForm = async () => {
+    if (!await confirmDiscardChanges()) return;
     setForm(initialForm);
     setSavedFormSnapshot(snapshotProductForm(initialForm));
   };
@@ -256,8 +262,12 @@ const ProductForm = ({ product = null, onSaved }) => {
     }
   };
 
-  const previewCurrentProduct = () => {
-    if (hasUnsavedChanges && !window.confirm('Preview akan membuka halaman produk memakai data form saat ini. Perubahan belum tersimpan tetap belum masuk katalog. Lanjut preview?')) {
+  const previewCurrentProduct = async () => {
+    if (hasUnsavedChanges && !await confirmAction({
+      title: 'Preview tanpa menyimpan?',
+      message: 'Preview akan membuka halaman produk memakai data form saat ini. Perubahan belum tersimpan tetap belum masuk katalog. Lanjut preview?',
+      confirmText: 'Preview',
+    })) {
       return;
     }
     const preview = normalizeProduct({

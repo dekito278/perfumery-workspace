@@ -26,6 +26,7 @@ import { enrichCompositionItems } from '@/utils/mobileFormulaInsights.js';
 import { enrichMaterialsWithGuidance, getResolvedGuidanceValues } from '@/utils/mobileRawMaterialGuidance.js';
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const createItem = (material, gramAmount = '1') => ({
   row_key: `${material.id}-${Date.now()}`,
@@ -94,8 +95,8 @@ const MobileCreateFormulaPage = () => {
     || Boolean(name.trim())
     || Boolean(code.trim());
 
-  const handleBack = () => {
-    if (hasUnsavedComposition && !window.confirm('Formula ini belum disimpan. Tinggalkan dan buang perubahan?')) {
+  const handleBack = async () => {
+    if (hasUnsavedComposition && !await confirmAction({ title: 'Buang perubahan?', message: 'Formula ini belum disimpan. Tinggalkan dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
       return;
     }
     navigate('/mobile/formulas');

@@ -16,6 +16,7 @@ import {
   getProductStorefrontPath,
 } from '@/services/productCatalogService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const productStatusFilters = [
   { key: 'all', label: 'Semua' },
@@ -138,7 +139,7 @@ const MobileProductListPage = () => {
   };
 
   const handleDelete = async (product) => {
-    if (!window.confirm(`Hapus produk "${product.name || product.id}"?`)) return;
+    if (!await confirmAction({ message: `Hapus produk "${product.name || product.id}"?`, destructive: true })) return;
     try {
       await deleteCustomProduct(product.id);
       toast.success('Produk dihapus');

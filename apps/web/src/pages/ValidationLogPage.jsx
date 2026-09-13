@@ -20,6 +20,7 @@ import { useFormulas } from '@/hooks/useFormulas.js';
 import { useValidationLogs } from '@/hooks/useValidationLogs.js';
 import FormulaEvaluationPanel from '@/components/FormulaEvaluationPanel.jsx';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const createEmptyLog = (formulaId = 'none') => ({
   formula_id: formulaId,
@@ -145,7 +146,7 @@ const ValidationLogPage = () => {
   };
 
   const handleDeleteLog = async (log) => {
-    const confirmed = window.confirm('Delete this validation log?');
+    const confirmed = await confirmAction({ message: 'Hapus catatan validasi ini?', destructive: true });
     if (!confirmed) {
       return;
     }

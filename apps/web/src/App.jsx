@@ -3,6 +3,7 @@ import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
+import ConfirmHost from '@/components/ConfirmHost.jsx';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import ScrollRevealEffects from '@/components/ScrollRevealEffects.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
@@ -958,6 +959,7 @@ function AppRoutes() {
         <PwaUpdatePrompt />
         <PwaOfflineBanner />
       <Toaster />
+      <ConfirmHost />
     </Router>
   );
 }
