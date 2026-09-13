@@ -3,6 +3,8 @@
 // tools/build.mjs. Never throws in a way that fails the build — SEO is best-effort.
 
 import fs from 'node:fs';
+import { getOptimizedStorageImageUrl } from '../src/utils/storageImage.js';
+import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
 import { schemaAvailability } from '../src/utils/schemaAvailability.js';
 import path from 'node:path';
 
@@ -226,7 +228,9 @@ export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
     const canonical = abs(siteUrl, `/catalog/${product.slug}`);
     const title = `${product.name} - ${BRAND}`;
     const description = `${product.name} — ${product.description}`.slice(0, 155);
-    const image = abs(siteUrl, product.image);
+    // The page renders its images through the transform; the share tag pointed at the raw object, so a
+    // preview fetch pulled 600 kB-1.2 MB. 1200px is the size social scrapers actually want.
+    const image = getOptimizedStorageImageUrl(abs(siteUrl, product.image), 1200);
 
     let html = baseHtml.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
     html = upsertMeta(html, 'name', 'description', description);
@@ -287,7 +291,8 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
     const canonical = abs(siteUrl, `/articles/${post.slug}`);
     const title = `${post.seoTitle || post.title} - ${BRAND}`;
     const description = (post.excerpt || post.title).slice(0, 155);
-    const image = abs(siteUrl, post.image);
+    // An article with no cover used to ship no og:image at all, so sharing it previewed as bare text.
+    const image = getOptimizedStorageImageUrl(abs(siteUrl, post.image || SHARE_IMAGE_PATH), 1200);
 
     let html = baseHtml.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
     html = upsertMeta(html, 'name', 'description', description);
