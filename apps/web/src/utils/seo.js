@@ -1,3 +1,4 @@
+import { schemaAvailability } from './schemaAvailability.js';
 // Shared SEO helpers: canonical URLs + JSON-LD structured data builders.
 
 export const SITE_NAME = 'SOLIVAGANT';
@@ -24,13 +25,12 @@ export const toAbsoluteUrl = (value, origin = getSiteOrigin()) => {
   return origin ? `${origin}${path}` : path;
 };
 
-// Map the storefront's human availability label to a schema.org ItemAvailability.
-const availabilityUrl = (product) => {
-  const status = String(product?.availability || product?.publicStatus || '').toLowerCase();
-  if (/made to order|pre.?order|pesan/.test(status)) return 'https://schema.org/PreOrder';
-  if (/out|habis|sold/.test(status)) return 'https://schema.org/OutOfStock';
-  return 'https://schema.org/InStock';
-};
+// Shared with the build-time prerender so the two cannot drift again.
+const availabilityUrl = (product) => schemaAvailability({
+  status: product?.availability || product?.publicStatus || '',
+  stock: product?.stock,
+  variants: product?.variants,
+});
 
 export const buildOrganizationJsonLd = (origin = getSiteOrigin()) => ({
   '@context': 'https://schema.org',
