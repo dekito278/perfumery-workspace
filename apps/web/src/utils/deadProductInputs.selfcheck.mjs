@@ -69,12 +69,15 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile'
 // same reason; price and compare-at now match it.
 for (const file of [['components', 'product', 'ProductForm.jsx'], ['components', 'product', 'MobileProductForm.jsx']]) {
   const source = read(...file);
-  for (const field of ['priceNumber', 'compareAtPriceNumber']) {
+  for (const field of ['priceNumber', 'compareAtPriceNumber', 'size']) {
     assert.doesNotMatch(source, new RegExp(`updateField\\('${field}'`),
       `${file.join('/')} must not offer a product-level ${field} input — it is derived from the variants, `
-      + 'so editing it does nothing and the screen shows two prices that disagree');
+      + 'so editing it does nothing while looking like it does');
   }
   assert.match(source, /readOnly disabled/, `${file.join('/')} must show the derived catalog price read-only`);
+  // The media preview shows a bottle with a size on it; reading the field nobody edits any more would
+  // draw a size the catalog never uses.
+  assert.match(source, /size: primarySize/, `${file.join('/')} must preview the size the catalog will show`);
   // A new variant must copy the representative bottle, not the field that is no longer editable.
   assert.match(source, /priceNumber: Number\(getPrimaryVariant\(current\.variants \|\| \[\]\)\?\.priceNumber/,
     `${file.join('/')} must seed a new variant from the representative variant`);

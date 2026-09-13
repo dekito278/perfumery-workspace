@@ -154,6 +154,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
   const batchDetails = getProductBatchDetails(form);
   const totalVariantStock = (form.variants || []).reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
   const primaryVariantPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
+  const primarySize = getPrimaryVariant(form.variants || [])?.size || form.size;
   const requiredReady = Boolean(form.name.trim() && form.category.trim() && form.notes.trim());
   const publishChecklist = useMemo(() => getProductPublishChecklist(form), [form]);
   const canPublish = publishChecklist.ready;
@@ -488,10 +489,6 @@ const MobileProductForm = ({ product = null, onSaved }) => {
             <input type="number" value={totalVariantStock} readOnly disabled className="h-11 rounded-xl border border-[#e5e7eb] bg-[#f3f1ec] px-3 text-sm font-semibold text-muted-foreground outline-none" />
             <span className="text-[11px] font-semibold text-[#8b949e]">Otomatis dari total stok varian. Ubah stok per ukuran di bawah.</span>
           </div>
-          <div className="grid gap-1.5">
-            <ProductInputLabel>Ukuran dasar</ProductInputLabel>
-            <input value={form.size} onChange={(event) => updateField('size', event.target.value)} placeholder="30 ml" className="h-11 rounded-xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-amber-300" />
-          </div>
         </div>
         <div className="grid gap-2">
           {(form.variants || []).map((variant, index) => (
@@ -522,7 +519,7 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         description="Preview gambar utama, upload WebP ringan, atau paste URL gambar satu per baris."
       >
         <div className="rounded-2xl border border-[#e5e7eb] bg-[#fbfaf7] p-3">
-          <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="h-40" />
+          <ProductVisual product={{ ...form, category: form.category, size: primarySize }} className="h-40" />
           <textarea value={(form.images || []).join('\n')} onChange={(event) => updateImagesFromText(event.target.value)} placeholder="URL gambar produk, satu per baris" rows={4} className="mt-3 w-full rounded-2xl border border-[#e5e7eb] px-3 py-3 text-sm font-semibold outline-none focus:border-amber-300" />
           <label className="mt-2 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border bg-white px-3 text-xs font-bold">
             <ImagePlus className="h-4 w-4" />
