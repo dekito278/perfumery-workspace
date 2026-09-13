@@ -72,6 +72,7 @@ const normalizePublicVariants = (product = {}, publicPrice) => (
     // Every field here is listed by hand, so anything not named is silently dropped — which is exactly
     // how the member-price note came out blank the first time.
     retailPriceNumber: variant.retailPriceNumber,
+    compareAtPriceNumber: Number(variant.compareAtPriceNumber || 0),
     stock: Math.max(0, Math.floor(Number(variant.stock ?? product.stock ?? 0)) || 0),
     availability: Number(variant.stock ?? product.stock ?? 0) > 0 ? 'Available' : 'Inquire',
   }))
@@ -141,6 +142,9 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     // endpoint resolves both again from the buyer's own session.
     priceTier: product.priceTier || 'retail',
     retailPriceNumber: product.retailPriceNumber,
+    // "Harga coret". Four Studio inputs wrote this and every one of them was inert, because this mapper
+    // lists its fields by hand and this one was never on the list.
+    compareAtPriceNumber: Number(product.compareAtPriceNumber || 0),
     imageUrl: images[0] || product.imageUrl || '',
     images,
     visual: product.visual,

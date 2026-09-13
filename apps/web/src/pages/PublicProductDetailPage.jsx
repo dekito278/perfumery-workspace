@@ -7,7 +7,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScentPyramid from '@/components/storefront/ScentPyramid.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
-import TierPriceNote from '@/components/storefront/TierPriceNote.jsx';
+import PriceNote from '@/components/storefront/PriceNote.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
@@ -208,7 +208,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
             <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
-            <TierPriceNote product={product} variant={selectedVariant} />
+            <PriceNote product={product} variant={selectedVariant} />
             {scarcity ? <p className="pdp-scarcity hero-animate-text hero-animate-text--d3">{scarcity}</p> : null}
             {/* The written description carries blank lines the author typed; a bare {story} collapsed
                 them into one run-on block, the same way bespoke briefs used to render. */}

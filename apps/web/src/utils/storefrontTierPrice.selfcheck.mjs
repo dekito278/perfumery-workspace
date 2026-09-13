@@ -118,4 +118,33 @@ assert.match(enquiry, /belum memesan stok/,
   'the message must say the enquiry does not reserve stock, or someone believes a bottle is being held');
 assert.doesNotMatch(enquiry, /addItem|addCartItem|useCart/, 'asking about overseas shipping must not place anything in a cart');
 
+// --- the mapper that lists its fields by hand -------------------------------------------------------
+// toPublicFragrance rebuilds every field explicitly, so anything not named is dropped in silence. That
+// is how the member-price note rendered blank while the price itself was right, and how four Studio
+// inputs for "harga coret" were inert for as long as they existed. Both are named now; a third field
+// added upstream will be dropped the same way unless it is added here too.
+const mapper = read('data', 'publicStorefront.js');
+const variantMapper = mapper.slice(mapper.indexOf('const normalizePublicVariants'), mapper.indexOf('const inferMaterialHighlights'));
+const productMapper = mapper.slice(mapper.indexOf('export const toPublicFragrance'), mapper.indexOf('export const getPublicFragranceCatalog'));
+
+// Per-variant: the detail page reads the variant's own price, so its comparisons must travel with it.
+for (const field of ['retailPriceNumber', 'compareAtPriceNumber']) {
+  assert.match(variantMapper, new RegExp(`${field}:`), `${field} must survive normalizePublicVariants`);
+  assert.match(productMapper, new RegExp(`${field}:`), `${field} must survive toPublicFragrance`);
+}
+// priceTier is deliberately product-level only: it answers "why is this price different for you", which
+// is a fact about the buyer, not about one size.
+assert.match(productMapper, /priceTier:/);
+assert.doesNotMatch(variantMapper, /priceTier:/);
+
+// --- one note under a price, never two ---------------------------------------------------------------
+// A member buying a discounted product would otherwise see two struck-through numbers and no way to tell
+// which comparison is the real one.
+const note = read('components', 'storefront', 'PriceNote.jsx');
+const tierBranch = note.slice(note.indexOf('const tierLabel'), note.indexOf('const compareAt'));
+assert.match(tierBranch, /return \(/, 'the tier reason must return before the compare-at one is considered');
+assert.match(note, /!\(compareAt > price\)/,
+  'a compare-at at or below the selling price is not a comparison — two live products hold stray values '
+  + 'of Rp10 and Rp5 exactly because nothing ever displayed this field');
+
 console.log('storefrontTierPrice selfcheck OK (retail is the quiet default; one bottle, one price)');
