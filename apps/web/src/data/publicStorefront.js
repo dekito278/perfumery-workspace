@@ -133,6 +133,9 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     mood: product.mood || product.character || 'Quiet, composed, personal',
     character: product.character || product.mood || 'A refined signature with measured projection.',
     concentration: product.concentration || 'Eau de Parfum',
+    // Both product forms have an "Intensitas" select and it was landing nowhere: written, stored, and
+    // dropped here. Same omission as compareAtPriceNumber, found the same way.
+    intensity: product.intensity || '',
     variants,
     sizeVariants: variants,
     size: variants[0]?.size || product.size || '30 ml',
