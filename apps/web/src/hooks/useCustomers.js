@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCustomers, getCustomerSummary } from '@/services/customerService.js';
+import { customerTierSchemaReady } from '@/services/tierPricingService.js';
 
 export const useCustomers = () => {
   // Seeded empty rather than from localStorage: the customer cache is gone, and getCustomers now throws
@@ -8,6 +9,9 @@ export const useCustomers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // The tier column arrives with a hand-applied migration; both customer lists have to say so out loud
+  // rather than showing a control that silently refuses every write.
+  const [tierSchemaReady, setTierSchemaReady] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -27,6 +31,8 @@ export const useCustomers = () => {
       }
     };
 
+    customerTierSchemaReady().then((ready) => { if (mounted) setTierSchemaReady(ready); });
+
     window.addEventListener('storage', syncCustomers);
     window.addEventListener('dekito:customers-updated', syncCustomers);
     syncCustomers();
@@ -41,5 +47,5 @@ export const useCustomers = () => {
   const summary = useMemo(() => getCustomerSummary(customers), [customers]);
 
   // `refresh` had no consumer (both pages destructure only customers/summary/loading), so it is gone.
-  return { customers, summary, loading, error };
+  return { customers, summary, loading, error, tierSchemaReady };
 };

@@ -25,6 +25,7 @@ import {
 import { deleteProductImages, uploadProductImage } from '@/services/productImageStorageService.js';
 import { moodForEditing } from '@/utils/productMood.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
+import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 
 export const emptyProduct = {
   name: '',
@@ -378,6 +379,11 @@ const ProductForm = ({ product = null, onSaved }) => {
                 </div>
               ))}
             </div>
+          </div>
+          <div className="sm:col-span-2 rounded-2xl border bg-[#fbfaf7] p-4">
+            <div className="text-xs font-bold uppercase text-muted-foreground">Harga member, reseller, luar negeri</div>
+            <p className="mb-3 mt-1 text-xs font-semibold text-muted-foreground">Kosong berarti pembeli membayar harga retail di atas.</p>
+            <TierPriceEditor productId={form.id || ''} variants={form.variants || []} />
           </div>
           <label className="sm:col-span-2">
             <span className="text-xs font-bold uppercase text-muted-foreground">Catatan koreksi stok</span>

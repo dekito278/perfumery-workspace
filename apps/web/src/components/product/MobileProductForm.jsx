@@ -29,6 +29,7 @@ import { deleteProductImages, uploadProductImage } from '@/services/productImage
 import { formatQuantity } from '@/utils/formatting.js';
 import { moodForEditing } from '@/utils/productMood.js';
 import WearPicker from '@/components/product/WearPicker.jsx';
+import TierPriceEditor from '@/components/product/TierPriceEditor.jsx';
 
 export const emptyProduct = {
   name: '',
@@ -490,6 +491,14 @@ const MobileProductForm = ({ product = null, onSaved }) => {
             </div>
           ))}
         </div>
+      </ProductFormSection>
+
+      <ProductFormSection
+        eyebrow="Commercial"
+        title="Harga member, reseller, luar negeri"
+        description="Kosong berarti pembeli membayar harga retail. Disimpan terpisah dari tombol Simpan produk."
+      >
+        <TierPriceEditor productId={form.id || ''} variants={form.variants || []} compact />
       </ProductFormSection>
 
       <ProductFormSection

@@ -119,6 +119,21 @@ export const deleteTierPrice = async ({ productId, variantId = '', tier }) => {
   return null;
 };
 
+/**
+ * Whether storefront_customers.tier exists yet. Reading the customer list cannot tell us: select('*')
+ * succeeds and simply omits the column, so without this probe the Studio would show every customer as
+ * retail and only fail on the first save.
+ */
+export const customerTierSchemaReady = async () => {
+  const { error } = await supabase.from('storefront_customers').select('tier').limit(1);
+  if (!error) return true;
+  if (isSchemaMissing(error)) return false;
+  // A different failure (network, auth) says nothing about the column; assume it is there rather than
+  // showing a migration warning that is not true.
+  console.warn('Customer tier probe failed:', error.message || error);
+  return true;
+};
+
 /** Promote or demote a customer. Member needs no row — it follows from having an account. */
 export const setCustomerTier = async (customerId, tier) => {
   if (!customerId) throw new Error('Pelanggan tidak dikenal');

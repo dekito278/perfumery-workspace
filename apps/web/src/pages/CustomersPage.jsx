@@ -1,10 +1,11 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, UsersRound } from 'lucide-react';
+import { AlertTriangle, Clipboard, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCustomers } from '@/hooks/useCustomers.js';
+import CustomerTierSelect from '@/components/CustomerTierSelect.jsx';
 
 const formatDate = (value) => (
   value
@@ -13,7 +14,7 @@ const formatDate = (value) => (
 );
 
 const CustomersPage = () => {
-  const { customers, summary, loading, error } = useCustomers();
+  const { customers, summary, loading, error, tierSchemaReady } = useCustomers();
 
   const copyCode = async (customer) => {
     await navigator.clipboard.writeText(customer.customerCode);
@@ -50,17 +51,28 @@ const CustomersPage = () => {
             <h2 className="text-xl font-bold">Customer</h2>
             <span className="text-sm font-bold text-amber-700">Format kode: SOLIxxxxx</span>
           </div>
+          {!tierSchemaReady ? (
+            <div role="alert" className="mt-4 flex gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <p className="text-xs font-semibold text-amber-900">
+                Kolom tingkat pelanggan belum ada di database. Jalankan migrasi
+                <code className="mx-1 rounded bg-white/70 px-1">20260913090000_customer_tiers_and_tier_prices.sql</code>
+                dulu — sampai itu jalan, semua pembeli dikenakan harga retail dan tingkat di sini tidak bisa diubah.
+              </p>
+            </div>
+          ) : null}
           <div className="mt-5 overflow-hidden rounded-2xl border">
-            <div className="hidden grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto] gap-3 bg-editorial-paper px-4 py-3 text-xs font-bold uppercase text-muted-foreground lg:grid">
+            <div className="hidden grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto_auto] gap-3 bg-editorial-paper px-4 py-3 text-xs font-bold uppercase text-muted-foreground lg:grid">
               <span>Customer</span>
               <span>Kontak</span>
               <span>Alamat</span>
               <span>Order</span>
               <span>Order terakhir</span>
+              <span>Tingkat</span>
               <span>Kode</span>
             </div>
             {customers.map((customer) => (
-              <article key={customer.id || customer.customerCode} className="grid gap-3 border-t bg-white px-4 py-4 text-sm font-semibold lg:grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto] lg:items-center">
+              <article key={customer.id || customer.customerCode} className="grid gap-3 border-t bg-white px-4 py-4 text-sm font-semibold lg:grid-cols-[1fr_1fr_1fr_0.6fr_0.8fr_auto_auto] lg:items-center">
                 <div>
                   <div className="font-bold text-editorial-charcoal">{customer.customerName}</div>
                   {customer.persistence === 'local' ? <div className="mt-1 text-xs font-bold uppercase text-stone-500">Fallback lokal</div> : null}
@@ -69,6 +81,7 @@ const CustomersPage = () => {
                 <div className="text-muted-foreground">{customer.deliveryAddress || customer.deliveryArea || '-'}</div>
                 <div>{customer.orderCount}</div>
                 <div className="text-muted-foreground">{formatDate(customer.lastOrderAt)}</div>
+                <CustomerTierSelect customer={customer} disabled={!tierSchemaReady} />
                 <Button type="button" variant="outline" className="rounded-2xl gap-2 bg-white" onClick={() => copyCode(customer)}>
                   <Clipboard className="h-4 w-4" />
                   {customer.customerCode}
