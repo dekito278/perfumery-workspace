@@ -29,6 +29,15 @@ assert.equal(getExportZone('ZZ'), null, 'an unknown country must return null, ne
 assert.equal(isExportDestination('ID'), false);
 assert.equal(isExportDestination('MY'), true);
 
+// Every destination needs a name a human can pick from a list. Intl answers 'Pseudo-Bidi' for XB, a
+// CLDR pseudo-locale, so "Intl returned something" is not the same as "Intl named a country".
+const named = (await import('../data/exportZones.js')).listExportDestinations();
+const unnamed = named.filter(({ code, name }) => !name || name === code || /pseudo/i.test(name));
+assert.deepEqual(unnamed, [], `these destinations have no usable name: ${unnamed.map((d) => d.code).join(', ')}`);
+assert.equal(named.length, 233);
+assert.equal(named.find((d) => d.code === 'MY')?.name, 'Malaysia');
+assert.equal(named.find((d) => d.code === 'XB')?.name, 'Bonaire');
+
 // --- brackets ----------------------------------------------------------------------------------------
 // One 30 g... one 300 g bottle is billed at 0.5 kg, the smallest bracket there is.
 assert.equal(quoteExportShipping({ countryCode: 'MY', weightGram: 300 }).chargeableKg, 0.5);
