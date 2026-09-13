@@ -20,14 +20,14 @@ import { formatDate } from '@/utils/formatting.js';
 // The shared helpers fall back to the production site URL; this page had its own copies that fell back to
 // window.location.origin, so an article viewed on a Vercel preview or a bare domain published a canonical,
 // og:url and JSON-LD @id pointing at that host (audit round 8).
-import { getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
+import { DEFAULT_SHARE_IMAGE, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 
 const getReadingMinutes = (content) => {
   const wordCount = String(content || '').trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(wordCount / 180));
 };
 
-const FALLBACK_SHARE_IMAGE = '/brand/home/perfumer-at-work.jpg';
+
 const DEFAULT_DESCRIPTION = 'Read a Solivagant perfumery journal article.';
 
 
@@ -195,7 +195,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
   const canonicalPath = post?.slug ? `/articles/${post.slug}` : `/articles/${slug || ''}`;
   const siteOrigin = getSiteOrigin();
   const canonicalUrl = toAbsoluteUrl(canonicalPath, siteOrigin);
-  const shareImageUrl = toAbsoluteUrl(post?.cover_image_url || FALLBACK_SHARE_IMAGE, siteOrigin);
+  const shareImageUrl = toAbsoluteUrl(post?.cover_image_url || DEFAULT_SHARE_IMAGE, siteOrigin);
   const publishedDate = post?.published_at || post?.created;
   const modifiedDate = post?.updated || post?.published_at || post?.created;
   const jsonLd = post ? {

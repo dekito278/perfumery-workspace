@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
+import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -188,6 +189,11 @@ const writeStaticPublicPages = (siteUrl, products = []) => {
     html = replaceMetaContent(html, 'property="og:site_name"', 'SOLIVAGANT');
     html = replaceMetaContent(html, 'property="og:title"', page.title);
     html = replaceMetaContent(html, 'property="og:description"', page.description);
+    // These four pages claimed a large-image card while offering no image at all, so a link shared to
+    // WhatsApp or Instagram previewed as bare text — on the four pages most likely to be shared.
+    const shareImage = siteUrl ? `${siteUrl}${SHARE_IMAGE_PATH}` : SHARE_IMAGE_PATH;
+    html = replaceMetaContent(html, 'property="og:image"', shareImage);
+    html = replaceMetaContent(html, 'name="twitter:image"', shareImage);
     html = replaceMetaContent(html, 'name="twitter:card"', 'summary_large_image');
     html = replaceMetaContent(html, 'name="twitter:title"', page.title);
     html = replaceMetaContent(html, 'name="twitter:description"', page.description);
@@ -207,6 +213,31 @@ const writeStaticPublicPages = (siteUrl, products = []) => {
 // than scraped from src/pages, which is how the previous generator ended up
 // publishing the studio surface (/dashboard, /orders, /customers, /vouchermanagement,
 // …) under filename-derived URLs that were mostly not real routes.
+// Every prerendered page must offer a share image. Four of them claimed a large-image card while
+// providing none, so sharing the home page, the catalogue, the journal or the bespoke page to WhatsApp
+// previewed as bare text — and those are the four most likely to be shared.
+const assertEveryPageHasShareImage = (distRoot) => {
+  const bare = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name === 'index.html') {
+        const html = fs.readFileSync(full, 'utf8');
+        const match = html.match(/<meta property="og:image" content="([^"]*)"/);
+        if (!match || !match[1].trim()) bare.push(path.relative(distRoot, full) || 'index.html');
+      }
+    }
+  };
+  walk(distRoot);
+
+  if (bare.length) {
+    throw new Error(
+      `these prerendered pages ship no og:image, so a shared link previews as bare text:\n  ${bare.join('\n  ')}`,
+    );
+  }
+};
+
 const writeLlmsTxt = (distRoot, siteUrl) => {
   const absolute = (route) => (siteUrl ? `${siteUrl}${route}` : route);
   const body = staticPublicPages
@@ -271,6 +302,7 @@ const generateSeoArtifacts = async () => {
   }
 
   assertPrerenderedPagesAreIntact();
+  assertEveryPageHasShareImage(distRoot);
 
   const urls = writeSitemap(distRoot, env.siteUrl, { products, journal });
   if (urls) {
