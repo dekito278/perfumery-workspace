@@ -30,6 +30,7 @@ import {
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 const BESPOKE_DRAFT_STORAGE_KEY = 'dekito.storefront.bespokeDraft.v1';
@@ -919,7 +920,7 @@ const MobileBespokePage = () => {
           console.warn('Failed to cancel bespoke order after payment session error:', restoreError.message || restoreError);
         }
       }
-      toast.error(error.message || 'Failed to save bespoke request');
+      toast.error(publicErrorMessage(error, 'Failed to save bespoke request'));
     } finally {
       setSaving(false);
     }

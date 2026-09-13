@@ -29,6 +29,7 @@ import {
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
@@ -617,7 +618,7 @@ const BespokePage = () => {
           console.warn('Failed to cancel bespoke order after payment session error:', cancelError.message || cancelError);
         }
       }
-      toast.error(error.message || 'Gagal menyimpan request bespoke.');
+      toast.error(publicErrorMessage(error, 'Gagal menyimpan request bespoke.'));
     } finally {
       setSaving(false);
     }
