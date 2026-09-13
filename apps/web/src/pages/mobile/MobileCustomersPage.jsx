@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { Clipboard, UsersRound } from 'lucide-react';
+import { AlertTriangle, Clipboard, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
@@ -8,6 +8,7 @@ import MobileStatePanel from '@/components/mobile-ui/MobileStatePanel.jsx';
 import PaginationOrLoadMore from '@/components/mobile-ui/PaginationOrLoadMore.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useCustomers } from '@/hooks/useCustomers.js';
+import CustomerTierSelect from '@/components/CustomerTierSelect.jsx';
 import { MOBILE_PAGE_SIZE } from '@/pages/mobile/mobilePageUtils.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 
@@ -18,7 +19,7 @@ const formatDate = (value) => (
 );
 
 const MobileCustomersPage = () => {
-  const { customers, summary, loading, error } = useCustomers();
+  const { customers, summary, loading, error, tierSchemaReady } = useCustomers();
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const visibleCustomers = customers.slice(0, visibleCount);
 
@@ -51,6 +52,16 @@ const MobileCustomersPage = () => {
           </div>
         </section>
 
+        {!tierSchemaReady ? (
+          <div role="alert" className="mobile-soft-card flex gap-2 border border-amber-300 bg-amber-50 p-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+            <p className="text-xs font-semibold text-amber-900">
+              Kolom tingkat pelanggan belum ada di database. Jalankan migrasi 20260913090000_customer_tiers_and_tier_prices.sql
+              dulu — sampai itu jalan semua pembeli dikenakan harga retail dan tingkat di sini tidak bisa diubah.
+            </p>
+          </div>
+        ) : null}
+
         <section className="space-y-3">
           {visibleCustomers.map((customer) => (
             <article key={customer.id || customer.customerCode} className="mobile-card mobile-list-card p-3">
@@ -70,6 +81,10 @@ const MobileCustomersPage = () => {
               <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-[#f8f7f4] p-3 text-xs font-semibold text-[#6b7280]">
                 <p><strong className="block text-[10px] uppercase text-editorial-charcoal">Order</strong>{customer.orderCount}</p>
                 <p><strong className="block text-[10px] uppercase text-editorial-charcoal">Order terakhir</strong>{formatDate(customer.lastOrderAt)}</p>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase text-editorial-charcoal">Tingkat harga</span>
+                <CustomerTierSelect customer={customer} disabled={!tierSchemaReady} className="mobile-interactive" />
               </div>
               <Button type="button" variant="outline" className="mobile-interactive mobile-pressable mt-3 w-full rounded-2xl gap-2 bg-white" onClick={() => copyCode(customer)}>
                 <Clipboard className="h-4 w-4" />

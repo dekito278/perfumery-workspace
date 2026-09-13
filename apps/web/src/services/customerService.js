@@ -13,6 +13,8 @@ const normalizeCustomer = (customer = {}) => ({
   deliveryAddress: customer.delivery_address || customer.deliveryAddress || '',
   deliveryArea: customer.delivery_area || customer.deliveryArea || '',
   notes: customer.notes || '',
+  // Absent until the tier migration runs; retail is the right answer either way.
+  tier: customer.tier || 'retail',
   orderCount: Number(customer.order_count || customer.orderCount || 0),
   lastOrderAt: customer.last_order_at || customer.lastOrderAt || '',
   securityQuestion: customer.security_question || customer.securityQuestion || '',
