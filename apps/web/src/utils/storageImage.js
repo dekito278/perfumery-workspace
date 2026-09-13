@@ -27,4 +27,27 @@ export const getOptimizedStorageImageUrl = (imageUrl, width = 1280) => {
   }
 };
 
+/**
+ * A srcset so the browser picks a width instead of every visitor taking the largest one.
+ *
+ * The home page asked for width=1600 and width=1280 whatever the screen, so a 390px phone downloaded
+ * 742 KB of hero — 92% of its image payload — to display it at a quarter of that size. The product
+ * cards next to it already did this properly; site images simply never got a srcset.
+ *
+ * Returns undefined when the URL cannot be transformed (a local /brand/ fallback, an external host), so
+ * the caller emits no srcset at all rather than four copies of one unchanged file.
+ */
+export const getStorageImageSrcSet = (imageUrl, widths = [480, 768, 1080, 1600]) => {
+  const sourceUrl = String(imageUrl || '').trim();
+  if (!sourceUrl) return undefined;
+
+  try {
+    if (!new URL(sourceUrl).pathname.includes(PUBLIC_PATH)) return undefined;
+  } catch {
+    return undefined;
+  }
+
+  return widths.map((width) => `${getOptimizedStorageImageUrl(sourceUrl, width)} ${width}w`).join(', ');
+};
+
 export default getOptimizedStorageImageUrl;

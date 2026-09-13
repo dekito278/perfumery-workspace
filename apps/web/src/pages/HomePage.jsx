@@ -22,7 +22,7 @@ import {
   getSiteOrigin,
   toAbsoluteUrl,
 } from '@/utils/seo.js';
-import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
+import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 
 const moodCategories = [
   // `family` is the display label; `filter` is the real catalog category used in the link
@@ -104,7 +104,7 @@ const HomePage = () => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+            <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero'])} sizes="100vw" alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
           )}
           <div className="home-hero__overlay home-hero__overlay--editorial">
             <p className="home-hero__eyebrow">ATELIER PARFUM ARTISAN</p>
@@ -187,7 +187,7 @@ const HomePage = () => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-statement'], 1280) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
+            <img src={img(siteImages['home-statement'], 1280) || '/brand/home/perfumer-pipettes.jpg'} srcSet={srcSet(siteImages['home-statement'])} sizes="100vw" loading="lazy" decoding="async" alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
           )}
           <div className="home-statement__overlay">
             <TextReveal text="Rasa di Atas Formula." />
@@ -265,7 +265,7 @@ const HomePage = () => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} alt="Atelier Solivagant" className="home-newsletter__bg" />
+            <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter'])} sizes="100vw" loading="lazy" decoding="async" alt="Atelier Solivagant" className="home-newsletter__bg" />
           )}
           <div className="home-newsletter__inner">
             <p className="editorial-eyebrow">KOLABORASI</p>

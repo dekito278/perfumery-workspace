@@ -8,7 +8,10 @@
 // anything else is returned untouched. Rewriting a local /brand/ fallback would point it at a path that
 // does not exist, which is worse than a large image.
 import assert from 'node:assert/strict';
-import { getOptimizedStorageImageUrl } from './storageImage.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { getOptimizedStorageImageUrl, getStorageImageSrcSet } from './storageImage.js';
 
 const supabase = (bucket, file) => `https://x.supabase.co/storage/v1/object/public/${bucket}/${file}`;
 
@@ -36,5 +39,37 @@ assert.equal(getOptimizedStorageImageUrl(signed, 800), signed);
 // Calling it twice must not double-rewrite or stack parameters.
 const once = getOptimizedStorageImageUrl(supabase('site-images', 'a.png'), 800);
 assert.equal(getOptimizedStorageImageUrl(once, 800), once, 'a second pass changed the URL');
+
+
+// --- a srcset, so a phone does not take the desktop hero -----------------------------------------------
+// Measured on the live site at a 390px viewport: home-hero at width=1600 and home-statement at
+// width=1280, 371 KB each — 742 KB of an 802 KB image payload, to be drawn at a quarter of that size.
+// The product cards beside them already had a srcset; the site images never got one.
+assert.equal(typeof getStorageImageSrcSet, 'function', 'site images need a srcset helper of their own');
+
+const heroSet = getStorageImageSrcSet(supabase('site-images', 'home-hero.png'));
+assert.ok(heroSet.includes('480w'), 'the smallest candidate must be phone-sized');
+assert.ok(heroSet.includes('1600w'), 'the largest must still cover a wide desktop');
+assert.equal(heroSet.split(', ').length, 4, 'four candidates is enough; more is just more URLs');
+for (const entry of heroSet.split(', ')) {
+  const [url, descriptor] = entry.split(' ');
+  assert.ok(url.includes('/render/image/public/'), 'every candidate must go through the transform');
+  assert.ok(url.includes(`width=${descriptor.replace('w', '')}`), 'the descriptor must match the width asked for');
+}
+
+// A URL the transform cannot touch must produce NO srcset, not four copies of one unchanged file.
+assert.equal(getStorageImageSrcSet('/brand/home/raw-material-library.jpg'), undefined);
+assert.equal(getStorageImageSrcSet('https://example.com/a.jpg'), undefined);
+assert.equal(getStorageImageSrcSet(''), undefined);
+assert.equal(getStorageImageSrcSet(null), undefined);
+
+// The three full-bleed images on the home page must carry both halves: a srcset is inert without sizes.
+const home = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'HomePage.jsx'), 'utf8');
+for (const slot of ['home-hero', 'home-statement', 'home-newsletter']) {
+  const tag = home.split('\n').find((line) => line.includes(`siteImages['${slot}']`) && line.includes('<img'));
+  assert.ok(tag, `${slot} must still be rendered`);
+  assert.ok(tag.includes('srcSet={srcSet('), `${slot} must offer the browser a choice of widths`);
+  assert.ok(tag.includes('sizes="100vw"'), `${slot} is full-bleed; without sizes the browser assumes 100vw anyway but says so`);
+}
 
 console.log('storageImage selfcheck OK');
