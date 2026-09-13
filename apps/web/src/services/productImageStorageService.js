@@ -101,6 +101,40 @@ const getScaledSize = (width, height, maxDimension) => {
   };
 };
 
+// canvas.toBlob falls back to PNG when it cannot encode the type you asked for, and says nothing. Asking
+// for WebP on a browser without a WebP encoder (older Safari, iOS) therefore produced a PNG — which this
+// code then wrapped as `<name>.webp` with contentType 'image/webp' and uploaded. Seven of the twelve
+// product images checked in the live bucket are PNGs under a .webp name, 200-900 kB against 7-69 kB for
+// the ones that really are WebP. Every buyer downloads the difference.
+const EXTENSION_FOR_TYPE = {
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+};
+
+const encodedAs = (blob, requested) => (blob?.type === requested ? blob : null);
+
+// JPEG is far smaller than PNG for a photograph but has no alpha channel, so only offer it when the
+// image has none to lose. A single pass over the alpha bytes; anything we cannot read stays PNG.
+const hasTransparency = (context, width, height) => {
+  try {
+    const { data } = context.getImageData(0, 0, width, height);
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 255) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+};
+
+const namedForType = (file, blob) => {
+  const type = blob.type || 'application/octet-stream';
+  const extension = EXTENSION_FOR_TYPE[type];
+  if (!extension) return new File([blob], sanitizeName(file.name), { type });
+  return new File([blob], `${sanitizeName(file.name)}.${extension}`, { type });
+};
+
 export const compressProductImage = async (file) => {
   validateProductImageFile(file);
 
@@ -129,14 +163,34 @@ export const compressProductImage = async (file) => {
     context.imageSmoothingQuality = 'high';
     context.drawImage(source, 0, 0, width, height);
 
-    for (const quality of [0.86, 0.78, 0.7, 0.62, 0.54, 0.46]) {
-      const blob = await canvasToBlob(canvas, 'image/webp', quality);
-      if (!bestBlob || blob.size < bestBlob.size) {
-        bestBlob = blob;
+    // Whatever the browser can actually encode, best first. PNG is last because for a photograph it is
+    // the one that balloons.
+    const formats = ['image/webp'];
+    if (!hasTransparency(context, width, height)) {
+      formats.push('image/jpeg');
+    }
+    formats.push('image/png');
+
+    for (const format of formats) {
+      let encoderWorks = true;
+      for (const quality of [0.86, 0.78, 0.7, 0.62, 0.54, 0.46]) {
+        const blob = encodedAs(await canvasToBlob(canvas, format, quality), format);
+        if (!blob) {
+          // This browser has no encoder for that type; toBlob quietly returned something else.
+          encoderWorks = false;
+          break;
+        }
+        if (!bestBlob || blob.size < bestBlob.size) {
+          bestBlob = blob;
+        }
+        if (blob.size <= TARGET_IMAGE_SIZE_BYTES) {
+          return namedForType(file, blob);
+        }
+        // PNG ignores the quality argument, so repeating it just burns time.
+        if (format === 'image/png') break;
       }
-      if (blob.size <= TARGET_IMAGE_SIZE_BYTES) {
-        return new File([blob], `${sanitizeName(file.name)}.webp`, { type: 'image/webp' });
-      }
+      if (encoderWorks) break;
+      console.warn(`This browser cannot encode ${format}; falling back to a larger format.`);
     }
 
     maxDimension = Math.floor(maxDimension * 0.82);
@@ -146,7 +200,7 @@ export const compressProductImage = async (file) => {
     return file;
   }
 
-  return new File([bestBlob], `${sanitizeName(file.name)}.webp`, { type: 'image/webp' });
+  return namedForType(file, bestBlob);
 };
 
 // Remove product images from storage by their public URL. Best-effort: URLs that don't point at our
@@ -170,7 +224,10 @@ export const uploadProductImage = async (file, productName = 'product') => {
   const uploadFile = await compressProductImage(file);
 
   const safeName = sanitizeName(productName);
-  const path = `${safeName}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+  // Name the object for what it holds. It used to be .webp unconditionally, so a PNG fallback was stored
+  // under a name and a content type that both claimed otherwise.
+  const extension = EXTENSION_FOR_TYPE[uploadFile.type] || 'webp';
+  const path = `${safeName}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
 
   const { error } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
