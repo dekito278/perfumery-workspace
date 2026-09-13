@@ -144,6 +144,7 @@ const ProductForm = ({ product = null, onSaved }) => {
   // What the catalog will show. Derived, never typed: the save has taken it from the variants since #124,
   // so an editable field here was a box that quietly did nothing.
   const primaryPrice = Number(getPrimaryVariant(form.variants || [])?.priceNumber || form.priceNumber || 0);
+  const primarySize = getPrimaryVariant(form.variants || [])?.size || form.size;
 
   const updateField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const updateVariant = (index, key, value) => setForm((current) => ({
@@ -338,10 +339,6 @@ const ProductForm = ({ product = null, onSaved }) => {
               {form.category && !categories.some((category) => category.name === form.category) ? <option value={form.category}>{form.category}</option> : null}
             </select>
           </label>
-          <label>
-            <span className="text-xs font-bold uppercase text-muted-foreground">Default size</span>
-            <input value={form.size} onChange={(event) => updateField('size', event.target.value)} className="mt-2 h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-amber-300" placeholder="30 ml" />
-          </label>
           <label className="sm:col-span-2">
             <span className="text-xs font-bold uppercase text-muted-foreground">Cocok dipakai kapan</span>
             <div className="mt-2">
@@ -412,7 +409,7 @@ const ProductForm = ({ product = null, onSaved }) => {
 
         <TabsContent value="media" className="mt-5">
           <div className="grid gap-4 rounded-2xl border bg-[#fbfaf7] p-4 sm:grid-cols-[0.9fr_1.1fr]">
-            <ProductVisual product={{ ...form, category: form.category, size: form.size }} className="min-h-[220px]" />
+            <ProductVisual product={{ ...form, category: form.category, size: primarySize }} className="min-h-[220px]" />
             <div className="grid content-start gap-3">
               <label>
                 <span className="text-xs font-bold uppercase text-muted-foreground">Product image URLs</span>
