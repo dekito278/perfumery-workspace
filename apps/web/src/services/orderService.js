@@ -1176,9 +1176,17 @@ export const authoritativeOrdersEnabled = () => {
 const postAuthoritativeOrder = async (body) => {
   // Attached here rather than at each call site: this is the single choke point every order goes
   // through, cart checkout and bespoke alike, so neither path can forget it.
+  // The buyer's own token, so the endpoint can tell a member from a reseller without trusting the
+  // customer code in the payload — that code is printed on every invoice.
+  const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: null }));
+  const accessToken = sessionData?.session?.access_token;
+
   const response = await fetch('/api/orders/create', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: JSON.stringify({ ...body, client: getClientContext() }),
   });
   const data = await response.json().catch(() => ({}));
