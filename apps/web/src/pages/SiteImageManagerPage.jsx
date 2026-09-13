@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 import {
   deleteSiteImage,
   groupDuplicateSlots,
@@ -33,7 +34,7 @@ const ImageSlotCard = ({ slot, currentUrl, duplicateLabels = [], onUpload, onDel
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`Hapus gambar "${slot.label}" dari situs? Slot ini akan kosong di storefront sampai kamu upload ulang.`)) return;
+    if (!await confirmAction({ message: `Hapus gambar "${slot.label}" dari situs? Slot ini akan kosong di storefront sampai kamu upload ulang.`, destructive: true })) return;
     try {
       await onDelete(slot.key);
       toast.success(`${slot.label} removed`);

@@ -16,6 +16,7 @@ import {
 } from '@/services/productCatalogService.js';
 import { deleteProductImages } from '@/services/productImageStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const productStatusFilters = [
   { key: 'all', label: 'Semua' },
@@ -66,7 +67,7 @@ const ProductListPage = () => {
   };
 
   const handleDelete = async (product) => {
-    if (!window.confirm(`Hapus produk "${product.name || product.id}" dari katalog? Tindakan ini tidak bisa dibatalkan.`)) return;
+    if (!await confirmAction({ message: `Hapus produk "${product.name || product.id}" dari katalog? Tindakan ini tidak bisa dibatalkan.`, destructive: true })) return;
     try {
       await deleteCustomProduct(product.id);
       // The product is gone, so its images are orphaned — remove them from storage (best-effort).

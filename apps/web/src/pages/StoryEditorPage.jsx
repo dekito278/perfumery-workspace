@@ -19,6 +19,7 @@ import {
   sweepUnreferencedStoryMedia,
 } from '@/services/productStoryService.js';
 import { invalidateStoryCache } from '@/hooks/useProductStory.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const SECTION_TYPES = [
   { type: 'quote', label: 'Quote', icon: Quote },
@@ -278,8 +279,8 @@ const StoryEditorPage = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const selectProduct = (slug) => {
-    if (isDirty && !window.confirm('Story ini belum disimpan. Pindah produk dan buang perubahan?')) {
+  const selectProduct = async (slug) => {
+    if (isDirty && !await confirmAction({ title: 'Buang perubahan?', message: 'Story ini belum disimpan. Pindah produk dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
       return;
     }
     setSearchParams(slug ? { product: slug } : {});
@@ -357,7 +358,7 @@ const StoryEditorPage = () => {
 
   const handleDelete = async () => {
     if (!selectedSlug) return;
-    if (!window.confirm('Hapus story page untuk produk ini?')) return;
+    if (!await confirmAction({ message: 'Hapus story page untuk produk ini?', destructive: true })) return;
     try {
       await deleteStory(selectedSlug);
       invalidateStoryCache(selectedSlug);

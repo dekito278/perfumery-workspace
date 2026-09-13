@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { useStorefrontCategories } from '@/hooks/useStorefrontCategories.js';
 import { deleteStorefrontCategory, saveStorefrontCategory } from '@/services/storefrontCategoryService.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const MobileProductCategoriesPage = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const MobileProductCategoriesPage = () => {
   };
 
   const handleCategoryDelete = async (category) => {
-    if (!window.confirm(`Hapus kategori "${category.name}"?`)) return;
+    if (!await confirmAction({ message: `Hapus kategori "${category.name}"?`, destructive: true })) return;
     try {
       await deleteStorefrontCategory(category.id);
       toast.success('Kategori dihapus');

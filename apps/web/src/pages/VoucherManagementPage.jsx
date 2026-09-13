@@ -22,6 +22,7 @@ import {
 } from '@/services/voucherService.js';
 import { buildVoucherPreview } from '@/utils/voucherPreview.js';
 import { buildVoucherAnalytics, buildVoucherUsageReport } from '@/utils/voucherUsageReport.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const emptyDraft = {
   id: '',
@@ -209,7 +210,7 @@ const VoucherManagementPage = () => {
   };
 
   const removeVoucher = async (voucher) => {
-    if (!window.confirm(`Hapus voucher ${voucher.code} permanen? Kode ini akan lepas dari analitik pemakaian dan tidak bisa dikembalikan.`)) return;
+    if (!await confirmAction({ message: `Hapus voucher ${voucher.code} permanen? Kode ini akan lepas dari analitik pemakaian dan tidak bisa dikembalikan.`, destructive: true })) return;
     try {
       await deleteVoucher(voucher.id || voucher.code);
       if (draft.id === voucher.id || draft.code === voucher.code) {

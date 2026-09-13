@@ -27,6 +27,7 @@ import {
   getJournalStatusBadgeClassName,
 } from '@/services/journalPostsSupabaseService.js';
 import { formatDate, formatStatus } from '@/utils/formatting.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 
 const pageSize = 8;
 
@@ -77,7 +78,7 @@ const JournalPage = () => {
   }, [getFormulas, getJournalPosts]);
 
   const handleDeletePost = useCallback(async (post) => {
-    if (!window.confirm(`Hapus artikel "${post.title}" permanen? Tindakan ini tidak bisa dibatalkan.`)) return;
+    if (!await confirmAction({ message: `Hapus artikel "${post.title}" permanen? Tindakan ini tidak bisa dibatalkan.`, destructive: true })) return;
     try {
       await deleteJournalPost(post.id);
       setPosts((current) => current.filter((item) => item.id !== post.id));

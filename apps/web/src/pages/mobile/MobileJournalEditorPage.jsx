@@ -15,6 +15,7 @@ import MobileLoadingSkeleton from '@/components/mobile-ui/MobileLoadingSkeleton.
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { confirmAction } from '@/utils/confirmAction.js';
 import {
   JOURNAL_CATEGORIES,
   JOURNAL_STATUSES,
@@ -125,8 +126,8 @@ const MobileJournalEditorPage = () => {
     }));
   };
 
-  const handleBack = () => {
-    if (isDirty && !window.confirm('Ada tulisan yang belum disimpan. Lanjut dan buang perubahan?')) {
+  const handleBack = async () => {
+    if (isDirty && !await confirmAction({ title: 'Buang perubahan?', message: 'Ada tulisan yang belum disimpan. Lanjut dan buang perubahan?', confirmText: 'Buang', destructive: true })) {
       return;
     }
     if (location.state?.from) {
