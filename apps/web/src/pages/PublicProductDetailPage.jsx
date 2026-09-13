@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScentPyramid from '@/components/storefront/ScentPyramid.jsx';
+import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import TierPriceNote from '@/components/storefront/TierPriceNote.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
@@ -16,7 +18,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import BriefText from '@/components/BriefText.jsx';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
 
@@ -47,7 +49,7 @@ const relatedFor = (product, catalog) => {
 const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const { slug: slugParam = '' } = useParams();
   const slug = slugProp || slugParam;
-  const studioProducts = useCatalogProducts();
+  const studioProducts = useStorefrontProducts();
   const visibleProducts = studioProducts.filter(isProductVisibleInStorefront);
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(slug, visibleProducts);
@@ -206,6 +208,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
             <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
+            <TierPriceNote product={product} variant={selectedVariant} />
             {scarcity ? <p className="pdp-scarcity hero-animate-text hero-animate-text--d3">{scarcity}</p> : null}
             {/* The written description carries blank lines the author typed; a bare {story} collapsed
                 them into one run-on block, the same way bespoke briefs used to render. */}
@@ -276,6 +279,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {selectedPriceLabel}</>
                 )}
               </button>
+              <OverseasInquiryButton product={product} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
             </div>
           </div>
         </section>

@@ -10,7 +10,7 @@ import TextReveal from '@/components/storefront/TextReveal.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -19,7 +19,7 @@ import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
-  const fetchedProducts = useCatalogProducts();
+  const fetchedProducts = useStorefrontProducts();
   // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
   // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An

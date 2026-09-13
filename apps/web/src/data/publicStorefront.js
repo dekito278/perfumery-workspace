@@ -68,6 +68,10 @@ const normalizePublicVariants = (product = {}, publicPrice) => (
     size: variant.size || product.size || '30 ml',
     price: formatVariantPrice(variant, publicPrice),
     priceNumber: Number(variant.priceNumber || product.priceNumber || 0),
+    // Carried, not recomputed: a tier price rewrote priceNumber upstream and this is what it replaced.
+    // Every field here is listed by hand, so anything not named is silently dropped — which is exactly
+    // how the member-price note came out blank the first time.
+    retailPriceNumber: variant.retailPriceNumber,
     stock: Math.max(0, Math.floor(Number(variant.stock ?? product.stock ?? 0)) || 0),
     availability: Number(variant.stock ?? product.stock ?? 0) > 0 ? 'Available' : 'Inquire',
   }))
@@ -133,6 +137,10 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     size: variants[0]?.size || product.size || '30 ml',
     price,
     priceNumber,
+    // Which tier this price came from, and what retail would have been. Display only — the order
+    // endpoint resolves both again from the buyer's own session.
+    priceTier: product.priceTier || 'retail',
+    retailPriceNumber: product.retailPriceNumber,
     imageUrl: images[0] || product.imageUrl || '',
     images,
     visual: product.visual,

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -26,7 +26,7 @@ const getArticleExcerpt = (article) =>
 
 export const MobileStorefrontContent = ({ active = true }) => {
   const navigate = useNavigate();
-  const catalogProducts = useCatalogProducts({ active });
+  const catalogProducts = useStorefrontProducts({ active });
   const { images: siteImages, loading: siteImagesLoading } = useSiteImages();
   const [articles, setArticles] = useState([]);
 

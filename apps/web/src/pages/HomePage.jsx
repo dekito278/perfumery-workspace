@@ -8,7 +8,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { LineDivider } from '@/components/line/LineArt.jsx';
@@ -37,7 +37,7 @@ const getArticleExcerpt = (article) =>
   article?.excerpt || String(article?.content || '').replace(/[`*_>#-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
 
 const HomePage = () => {
-  const fetchedProducts = useCatalogProducts();
+  const fetchedProducts = useStorefrontProducts();
   // Same reason as CatalogPage: the bundled seed is six perfumes this shop does not sell, and showing
   // them during an outage put phantom stock on the front page.
   const catalogProducts = fetchedProducts;

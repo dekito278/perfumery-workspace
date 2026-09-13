@@ -8,7 +8,7 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import { Button } from '@/components/ui/button.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
@@ -19,7 +19,7 @@ const MobileCartPage = () => {
   const { items, summary, updateQuantity, removeItem } = useCart();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
-  const products = useCatalogProducts();
+  const products = useStorefrontProducts();
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   // Lines whose product left the catalog or ran out of stock — checkout refuses them, so say so here
   // rather than at the end of the form (audit round 9).
