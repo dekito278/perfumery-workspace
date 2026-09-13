@@ -12,7 +12,7 @@ import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
-import TierPriceNote from '@/components/storefront/TierPriceNote.jsx';
+import PriceNote from '@/components/storefront/PriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -125,7 +125,7 @@ const MobileProductDetailPage = () => {
           <p className="m-editorial-eyebrow">{product.category}</p>
           <h1>{product.name}</h1>
           <p className="m-editorial-pdp__price">{product.price}</p>
-          <TierPriceNote product={product} variant={selectedVariant} />
+          <PriceNote product={product} variant={selectedVariant} />
           {scarcity ? <p className="pdp-scarcity">{scarcity}</p> : null}
 
           {previewMode ? (
