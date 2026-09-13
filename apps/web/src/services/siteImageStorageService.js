@@ -156,6 +156,60 @@ export const listSiteImages = async () => {
 };
 
 /**
+ * Which slots are holding the very same picture.
+ *
+ * The owner uploads a hero, sees it land, and has no way to know the identical file is also sitting in
+ * three other slots — which is how the storefront ended up showing one photo as the hero, the statement,
+ * the about header and the Floral mood tile at once. Storage hands us an eTag per object, and that is the
+ * MD5 of its contents, so identical uploads group for free.
+ *
+ * Pure so it can be tested without a network: pass { key: eTag }, get back { key: [other keys] }.
+ */
+export const groupDuplicateSlots = (fingerprints = {}) => {
+  const byFingerprint = new Map();
+  for (const [key, fingerprint] of Object.entries(fingerprints)) {
+    const id = String(fingerprint || '').trim();
+    if (!id) continue;
+    byFingerprint.set(id, [...(byFingerprint.get(id) || []), key]);
+  }
+
+  const duplicates = {};
+  for (const keys of byFingerprint.values()) {
+    if (keys.length < 2) continue;
+    for (const key of keys) {
+      duplicates[key] = keys.filter((other) => other !== key).sort();
+    }
+  }
+  return duplicates;
+};
+
+/**
+ * { slotKey: eTag } for every uploaded slot. Same listing the URLs come from.
+ */
+export const listSiteImageFingerprints = async () => {
+  const { data: files, error } = await supabase.storage
+    .from(SITE_IMAGES_BUCKET)
+    .list('site', { limit: 100 });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to list site images.');
+  }
+
+  const fingerprints = {};
+  for (const file of [...(files || [])].sort((a, b) => (
+    new Date(b.updated_at || b.created_at || 0).getTime()
+    - new Date(a.updated_at || a.created_at || 0).getTime()
+  ))) {
+    const dotIndex = file.name.lastIndexOf('.');
+    const key = dotIndex > 0 ? file.name.slice(0, dotIndex) : file.name;
+    if (!(key in fingerprints)) {
+      fingerprints[key] = String(file.metadata?.eTag || '').replace(/"/g, '');
+    }
+  }
+  return fingerprints;
+};
+
+/**
  * Get a single site image URL by key, or null if not uploaded.
  */
 export const getSiteImageUrl = async (key) => {

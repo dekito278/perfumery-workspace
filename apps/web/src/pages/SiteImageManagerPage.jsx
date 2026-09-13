@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { ImagePlus, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button.jsx';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import {
   deleteSiteImage,
+  groupDuplicateSlots,
+  listSiteImageFingerprints,
   SITE_IMAGE_SLOTS,
   uploadSiteImage,
 } from '@/services/siteImageStorageService.js';
 
-const ImageSlotCard = ({ slot, currentUrl, onUpload, onDelete }) => {
+const ImageSlotCard = ({ slot, currentUrl, duplicateLabels = [], onUpload, onDelete }) => {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
@@ -59,6 +61,13 @@ const ImageSlotCard = ({ slot, currentUrl, onUpload, onDelete }) => {
           <h3>{slot.label}</h3>
           <p>{slot.hint}</p>
           <code>{slot.key}</code>
+          {/* An uploaded slot looks finished whether or not the same file is in three others. Storage
+              gives us the content hash, so say it here rather than letting the storefront say it. */}
+          {duplicateLabels.length ? (
+            <p className="site-image-slot__duplicate" role="status">
+              Gambar sama persis dengan: {duplicateLabels.join(', ')}.
+            </p>
+          ) : null}
         </div>
         <div className="site-image-slot__actions">
           <input
@@ -102,6 +111,21 @@ const SiteImageManagerPage = () => {
     await refresh();
   };
 
+  const [duplicates, setDuplicates] = useState({});
+  const loadDuplicates = useCallback(async () => {
+    try {
+      setDuplicates(groupDuplicateSlots(await listSiteImageFingerprints()));
+    } catch (error) {
+      // A failed fingerprint read must not take the manager down with it: the slots and their previews
+      // are still usable, we just cannot point out the repeats.
+      console.warn('Could not check for repeated site images:', error?.message || error);
+      setDuplicates({});
+    }
+  }, []);
+  useEffect(() => { loadDuplicates(); }, [loadDuplicates, images]);
+
+  const labelFor = (key) => SITE_IMAGE_SLOTS.find((slot) => slot.key === key)?.label || key;
+
   return (
     <AuthenticatedLayout>
       <Helmet>
@@ -125,6 +149,7 @@ const SiteImageManagerPage = () => {
                 key={slot.key}
                 slot={slot}
                 currentUrl={images[slot.key] || ''}
+                duplicateLabels={(duplicates[slot.key] || []).map(labelFor)}
                 onUpload={handleUpload}
                 onDelete={handleDelete}
               />

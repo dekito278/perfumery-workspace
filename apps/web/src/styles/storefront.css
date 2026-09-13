@@ -6266,6 +6266,19 @@
   margin-top: 2px;
 }
 
+/* A slot repeating another slot's picture: amber, because it is worth a look but nothing is broken. */
+.site-image-slot__info .site-image-slot__duplicate {
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  background: #fffbeb;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #92400e;
+}
+
 .site-image-slot__info code {
   display: inline-block;
   margin-top: 4px;
