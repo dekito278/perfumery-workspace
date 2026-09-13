@@ -447,7 +447,7 @@ const ProductForm = ({ product = null, onSaved }) => {
                 <div className="text-sm font-bold">{canPublish ? 'Siap publish ke katalog' : 'Belum siap tampil di katalog'}</div>
                 <p className="mt-1 text-xs font-semibold leading-relaxed opacity-80">
                   {canPublish
-                    ? `Slug publik: /products/${publishChecklist.slug}`
+                    ? `Slug publik: /catalog/${publishChecklist.slug}`
                     : publishChecklist.blocking.map((item) => item.label).join(', ')}
                 </p>
               </div>
