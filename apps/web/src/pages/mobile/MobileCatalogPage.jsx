@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Search } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 
@@ -13,7 +13,7 @@ const PAGE_SIZE = 12;
 export const MobileCatalogContent = ({ active = true }) => {
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('category') || searchParams.get('family') || '';
-  const catalogProducts = useCatalogProducts({ active });
+  const catalogProducts = useStorefrontProducts({ active });
   // Mirror CatalogPage.jsx:35 — without this the page told the buyer "No fragrance matches" during the very
   // first fetch, and kept saying it forever if that fetch failed (audit round 7).
   const isLoading = Boolean(catalogProducts.loading) && !catalogProducts.length;

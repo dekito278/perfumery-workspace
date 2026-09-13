@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import TierPriceNote from '@/components/storefront/TierPriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -26,7 +28,7 @@ const MobileProductDetailPage = () => {
   const location = useLocation();
   const handleBack = useMobileBackNavigation('/mobile/catalog');
   const { slug } = useParams();
-  const allProducts = useCatalogProducts();
+  const allProducts = useStorefrontProducts();
   const visibleProducts = useMemo(() => allProducts.filter(isProductVisibleInStorefront), [allProducts]);
   const catalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
   const previewProduct = location.state?.previewMode && location.state?.previewProduct?.slug === slug
@@ -123,6 +125,7 @@ const MobileProductDetailPage = () => {
           <p className="m-editorial-eyebrow">{product.category}</p>
           <h1>{product.name}</h1>
           <p className="m-editorial-pdp__price">{product.price}</p>
+          <TierPriceNote product={product} variant={selectedVariant} />
           {scarcity ? <p className="pdp-scarcity">{scarcity}</p> : null}
 
           {previewMode ? (
@@ -167,6 +170,8 @@ const MobileProductDetailPage = () => {
               </select>
             </div>
           ) : null}
+
+          <OverseasInquiryButton product={product} size={selectedSize} price={formatRupiah(selectedPrice)} compact className="mt-4" />
 
           {/* Meta */}
           <div className="m-editorial-pdp__meta">

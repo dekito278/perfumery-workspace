@@ -10,7 +10,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -25,7 +25,7 @@ const CartPage = () => {
   const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);
   const revealRef = useScrollReveal();
   const { magnetic, tilt, resetTilt } = useMicroInteractions();
-  const catalogProducts = useCatalogProducts();
+  const catalogProducts = useStorefrontProducts();
   // Lines whose product left the catalog or ran out of stock — checkout refuses them, so say so here
   // rather than at the end of the form (audit round 9).
   const unavailableItems = items.filter((item) => item.unavailable || item.outOfStock);

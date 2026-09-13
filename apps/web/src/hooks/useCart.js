@@ -8,11 +8,11 @@ import {
   removeCartItem,
   updateCartQuantity,
 } from '@/services/cartService.js';
-import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 
 export const useCart = () => {
   const [storedItems, setStoredItems] = useState(getCartItems);
-  const catalog = useCatalogProducts();
+  const catalog = useStorefrontProducts();
   // Everything downstream — the cart page, the summary, and the order the buyer is charged for — reads
   // the reconciled lines, so a stale localStorage cart cannot carry an old price or a dead stock cap.
   const items = useMemo(() => reconcileCartLines(storedItems, catalog), [storedItems, catalog]);
