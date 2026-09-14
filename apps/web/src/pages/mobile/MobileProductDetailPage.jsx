@@ -8,12 +8,15 @@ import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import BriefText from '@/components/BriefText.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
+import OverseasPriceNote from '@/components/storefront/OverseasPriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
+import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
@@ -48,6 +51,10 @@ const MobileProductDetailPage = () => {
     // Same as desktop: the size the headline price belongs to.
     return variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   }, [product, selectedVariantId]);
+
+  // Above the early returns: this page bails out for "loading" and "not found", and a hook that runs on
+  // some renders and not others is a crash, not a bug report.
+  const overseasPrice = useOverseasPrice(product, selectedVariant);
 
   if (!product && allProducts.loading) {
     return (
@@ -131,6 +138,7 @@ const MobileProductDetailPage = () => {
           <h1>{product.name}</h1>
           <p className="m-editorial-pdp__price">{product.price}</p>
           <PriceNote product={product} variant={selectedVariant} />
+          <OverseasPriceNote product={product} variant={selectedVariant} />
           {scarcity ? <p className="pdp-scarcity">{scarcity}</p> : null}
 
           {previewMode ? (
@@ -140,7 +148,9 @@ const MobileProductDetailPage = () => {
             </div>
           ) : null}
 
-          <p className="m-editorial-pdp__story">{product.story || product.description}</p>
+          {/* BriefText, same as desktop: a bare <p> collapses every newline, so a story written in
+              paragraphs arrives on the phone as one wall of text. */}
+          <BriefText text={product.story || product.description} className="m-editorial-pdp__story" />
 
           {/* Notes */}
           <div className="m-editorial-pdp__notes">
@@ -220,7 +230,11 @@ const MobileProductDetailPage = () => {
             <div className="m-editorial-pdp__sticky-info">
               <span className="m-editorial-pdp__sticky-name">{product.name}</span>
               <span className="m-editorial-pdp__sticky-price">{formatRupiah(selectedPrice)}</span>
-              {selectedVariant?.memberPriceNumber || product.memberPriceNumber ? (
+              {/* Silent for a visitor being quoted internationally: their price is the export price in
+                  the panel above, so offering the member price here promises a number they will never be
+                  charged. This bar is a SECOND member nudge, outside PriceNote — which is exactly why it
+                  kept showing Rp 550.000 under a Rp 1.400.000 panel until it was caught on the phone. */}
+              {!overseasPrice && (selectedVariant?.memberPriceNumber || product.memberPriceNumber) ? (
                 <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(selectedVariant?.memberPriceNumber || product.memberPriceNumber)}</span>
               ) : null}
             </div>

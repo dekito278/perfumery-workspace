@@ -95,4 +95,17 @@ for (const page of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVouch
     `${page} must clamp a percent voucher to 100 before saving`);
 }
 
+// The product story renders through BriefText on BOTH surfaces. Desktop has always split paragraphs;
+// mobile printed a bare {product.story}, and the browser collapses every newline — so a story written in
+// paragraphs arrived on the phone as one unbroken wall. Caught the day the 18 descriptions were written.
+{
+  const desktop = read('pages/PublicProductDetailPage.jsx');
+  const mobile = read('pages/mobile/MobileProductDetailPage.jsx');
+  assert.match(desktop, /<BriefText text=\{product\.story\}/, 'desktop renders the story through BriefText');
+  assert.match(mobile, /<BriefText text=\{product\.story \|\| product\.description\}/,
+    'and so does mobile — a bare <p> there collapses the paragraphs');
+  assert.doesNotMatch(mobile, /<p className="m-editorial-pdp__story">\{product\.story/,
+    'the bare paragraph must not come back');
+}
+
 console.log('mobileParityFixes selfcheck OK (5 fixes held on both the desktop and the mobile copy)');
