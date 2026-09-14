@@ -59,6 +59,9 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'home.tabMobile',   // same
   'home.atelier',     // "atelier" is the word used in both, and it is the section's name
   'mood.woody.short', // Cedar · Vetiver · Mineral — three material names, identical in both
+  'cart.voucher',     // the loanword, used on Indonesian receipts already
+  'cart.brief',       // "Brief" is the word used for a bespoke brief in both
+  'cart.subtotal',    // Subtotal is Subtotal
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -145,6 +148,12 @@ const LEFTOVERS = [
   'Fragrance pilihan', 'Lihat Koleksi', 'Lihat semua', 'Geser kiri', 'Geser kanan',
   'Koleksi baru sedang disiapkan', 'JELAJAHI', 'Temukan arah', 'Baca Selengkapnya', 'Baca jurnal',
   'Lihat koleksi', 'Lihat Koleksi',
+  // cart
+  'Tinjau fragrance', 'Keranjang masih kosong', 'RINGKASAN', 'Ringkasan pesanan', 'Punya kode voucher',
+  'Setelah voucher', 'Ongkir dihitung', 'Lanjut ke Checkout', 'Tambah Produk Dulu', 'Lanjut Belanja',
+  'LENGKAPI RITUALMU', 'Mungkin kamu suka', 'Mulai belanja', 'Kode voucher', 'Hapus voucher',
+  'Kurangi jumlah', 'Tambah jumlah', 'Keranjang kosong', 'Rekomendasi', 'Ready stock', 'Tambah aroma',
+  'Aroma bespoke', 'Aksi keranjang', 'Pengiriman ke luar negeri tidak',
   'Tenang & Minimal', 'Hangat & Nostalgia', 'Gelap & Moody', 'Lembut & Romantis',
   'Aroma sebagai', 'Konsultasi bespoke', 'Catatan lapangan', 'Parfum artisan yang',
   'Rasa di Atas Formula', 'Kami tidak mengejar', 'Konsultasi Bespoke', 'KOLABORASI',
@@ -152,6 +161,9 @@ const LEFTOVERS = [
   'Perfumer bekerja', 'Atelier Solivagant',
 ];
 for (const file of [
+  ['pages', 'CartPage.jsx'],
+  ['pages', 'mobile', 'MobileCartPage.jsx'],
+  ['components', 'storefront', 'InternationalCheckoutNotice.jsx'],
   ['pages', 'HomePage.jsx'],
   ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['components', 'storefront', 'PublicHeader.jsx'],

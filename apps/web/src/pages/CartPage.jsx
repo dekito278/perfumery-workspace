@@ -1,3 +1,5 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
+import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -20,6 +22,7 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Numbe
 
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem } = useCart();
+  const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
   const totalAfterVoucher = Math.max(subtotal - voucher.discountAmount, 0);
@@ -41,7 +44,7 @@ const CartPage = () => {
   return (
     <>
       <Helmet>
-        <title>Cart - SOLIVAGANT</title>
+        <title>{t('cart.tab')}</title>
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
@@ -49,9 +52,9 @@ const CartPage = () => {
         <PublicHeader />
 
         <section className="cart-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KERANJANG</p>
-          <TextReveal as="h1" text="Keranjang" />
-          <p className="hero-animate-text hero-animate-text--d3">Tinjau fragrance pilihanmu sebelum checkout.</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('cart.eyebrow')}</p>
+          <TextReveal as="h1" text={t('cart.title')} />
+          <p className="hero-animate-text hero-animate-text--d3">{t('cart.lead')}</p>
         </section>
 
         <section className="cart-layout" data-reveal>
@@ -64,16 +67,16 @@ const CartPage = () => {
             ) : null}
             {unavailableItems.length ? (
               <p className="checkout-notice is-error" role="alert">
-                {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
+                {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
               </p>
             ) : null}
             {!items.length ? (
               <div className="cart-empty">
                 <ShoppingBag className="h-10 w-10" />
-                <h2>Keranjang masih kosong</h2>
-                <p>Pilih fragrance dari koleksi, lalu item akan muncul di sini.</p>
+                <h2>{t('cart.empty')}</h2>
+                <p>{t('cart.emptyBody')}</p>
                 <Link to="/catalog" className="cart-empty__cta">
-                  Lihat Koleksi <ArrowRight className="h-4 w-4" />
+                  {t('home.seeCollection')} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             ) : (
@@ -88,15 +91,15 @@ const CartPage = () => {
                     <span className="cart-line__price">{item.price}</span>
                   </div>
                   <div className="cart-line__qty">
-                    <button type="button" onClick={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))} aria-label={`Kurangi ${item.name}`}>
+                    <button type="button" onClick={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))} aria-label={t('cart.decreaseOf', { name: item.name })}>
                       <Minus className="h-3.5 w-3.5" />
                     </button>
                     <span>{item.quantity}</span>
-                    <button type="button" onClick={() => updateQuantity(item.slug, item.quantity + 1)} aria-label={`Tambah ${item.name}`}>
+                    <button type="button" onClick={() => updateQuantity(item.slug, item.quantity + 1)} aria-label={t('cart.increaseOf', { name: item.name })}>
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <button type="button" className="cart-line__remove" onClick={() => removeItem(item.slug)} aria-label={`Hapus ${item.name}`}>
+                  <button type="button" className="cart-line__remove" onClick={() => removeItem(item.slug)} aria-label={t('cart.removeOf', { name: item.name })}>
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -106,13 +109,14 @@ const CartPage = () => {
 
           {/* Order summary sidebar */}
           <aside className="cart-summary">
-            <p className="editorial-eyebrow">RINGKASAN</p>
-            <h2>Ringkasan pesanan</h2>
+            <InternationalCheckoutNotice className="mb-4" />
+            <p className="editorial-eyebrow">{t('cart.summaryEyebrow')}</p>
+            <h2>{t('cart.summary')}</h2>
 
             {/* Voucher */}
             <div className="cart-voucher">
               <label className="cart-voucher__label">
-                {voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Punya kode voucher?'}
+                {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('cart.voucherPrompt')}
               </label>
               <div className="cart-voucher__input">
                 <input
@@ -124,13 +128,13 @@ const CartPage = () => {
                 />
                 <button type="button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
                   <BadgePercent className="h-4 w-4" />
-                  {voucher.loading ? 'Cek...' : 'Pakai'}
+                  {voucher.loading ? t('cart.voucherChecking') : t('cart.voucherApply')}
                 </button>
               </div>
               {voucher.message ? <p className={`cart-voucher__msg${voucher.appliedVoucher ? ' is-success' : ''}`}>{voucher.message}</p> : null}
               {voucher.appliedVoucher ? (
                 <button type="button" className="cart-voucher__remove" onClick={voucher.removeVoucher}>
-                  <X className="h-3.5 w-3.5" /> Hapus voucher
+                  <X className="h-3.5 w-3.5" /> {t('cart.voucherRemove')}
                 </button>
               ) : null}
             </div>
@@ -138,7 +142,7 @@ const CartPage = () => {
             {/* Totals */}
             <div className="cart-totals">
               <div className="cart-totals__row">
-                <span>Subtotal</span>
+                <span>{t('cart.subtotal')}</span>
                 <strong>{formatTotal(subtotal)}</strong>
               </div>
               {voucher.discountAmount ? (
@@ -148,24 +152,24 @@ const CartPage = () => {
                     <strong>-{formatTotal(voucher.discountAmount)}</strong>
                   </div>
                   <div className="cart-totals__row">
-                    <span>Setelah voucher</span>
+                    <span>{t('cart.afterVoucher')}</span>
                     <strong>{formatTotal(totalAfterVoucher)}</strong>
                   </div>
                 </>
               ) : null}
               <div className="cart-totals__note">
-                <span>Ongkir dihitung di checkout</span>
+                <span>{t('cart.shippingAtCheckout')}</span>
               </div>
             </div>
 
             {/* Actions */}
             <div className="cart-actions">
               {items.length ? (
-                <Link to="/checkout" className="cart-actions__primary magnetic-hover" onMouseMove={magnetic}>Lanjut ke Checkout</Link>
+                <Link to="/checkout" className="cart-actions__primary magnetic-hover" onMouseMove={magnetic}>{t('cart.toCheckout')}</Link>
               ) : (
-                <Link to="/catalog" className="cart-actions__primary magnetic-hover" onMouseMove={magnetic}>Tambah Produk Dulu</Link>
+                <Link to="/catalog" className="cart-actions__primary magnetic-hover" onMouseMove={magnetic}>{t('cart.addProductsFirst')}</Link>
               )}
-              <Link to="/catalog" className="cart-actions__secondary">Lanjut Belanja</Link>
+              <Link to="/catalog" className="cart-actions__secondary">{t('cart.keepShopping')}</Link>
             </div>
           </aside>
         </section>
@@ -174,8 +178,8 @@ const CartPage = () => {
         {items.length && recommendations.length ? (
           <section className="cart-recommend" data-reveal>
             <div className="home-section__head">
-              <p className="editorial-eyebrow">LENGKAPI RITUALMU</p>
-              <h2>Mungkin kamu suka</h2>
+              <p className="editorial-eyebrow">{t('cart.completeEyebrow')}</p>
+              <h2>{t('cart.complete')}</h2>
             </div>
             <div className="catalog-grid catalog-grid--four" data-reveal data-stagger-children>
               {recommendations.map((item) => (

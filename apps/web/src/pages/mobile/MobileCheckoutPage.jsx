@@ -1,3 +1,4 @@
+import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
@@ -206,6 +207,7 @@ const MobileCheckoutPage = () => {
           ) : null}
         </section>
         <CheckoutProgress steps={checkoutSteps} missing={missingRequirements} ready={canSubmitCheckout} />
+        <InternationalCheckoutNotice className="mb-3" />
         <CheckoutSection
           step="1"
           title="Kontak"
