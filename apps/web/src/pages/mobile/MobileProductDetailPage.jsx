@@ -12,6 +12,7 @@ import BriefText from '@/components/BriefText.jsx';
 import ProductGallery from '@/components/storefront/ProductGallery.jsx';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import OverseasPriceNote from '@/components/storefront/OverseasPriceNote.jsx';
@@ -122,6 +123,7 @@ const MobileProductDetailPage = () => {
       </Helmet>
 
       <main className="mobile-page m-editorial-page m-editorial-pdp">
+        <StaleCatalogNotice stale={allProducts.stale} className="mx-4 mt-3" />
         {/* Back button */}
         <nav className="m-editorial-pdp__nav">
           <button type="button" onClick={previewMode ? () => navigate(previewBackTo) : handleBack} className="m-editorial-pdp__back">

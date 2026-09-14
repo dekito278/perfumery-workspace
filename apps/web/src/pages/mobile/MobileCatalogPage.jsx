@@ -5,6 +5,7 @@ import { ArrowRight, Search } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
@@ -68,6 +69,7 @@ export const MobileCatalogContent = ({ active = true }) => {
       ) : null}
 
       <main className="mobile-page m-editorial-page">
+        <StaleCatalogNotice stale={catalogProducts.stale} className="mx-4 mt-3" />
         {/* Header */}
         <section className="m-editorial-catalog-header">
           <p className="m-editorial-eyebrow">KOLEKSI FRAGRANCE</p>
