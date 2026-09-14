@@ -1,3 +1,4 @@
+import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, X, Menu, UserRound } from 'lucide-react';
@@ -90,6 +91,7 @@ const PublicHeader = () => {
           SOLIVAGANT
         </Link>
 
+        <RegionSwitch className="mr-1" />
         <nav className="editorial-nav" aria-label="Navigasi storefront">
           <button
             type="button"

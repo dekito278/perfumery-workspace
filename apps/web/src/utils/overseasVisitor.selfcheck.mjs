@@ -84,17 +84,21 @@ assert.match(catalog, /overseas: false/,
 // --- 7. Detection runs after mount, never during render -------------------------------------------------
 // 18 product pages are prerendered at build time. Detecting during render bakes an English export panel
 // into the HTML Google indexes, and flashes it at every Indonesian visitor on hydration.
-const hook = read('hooks', 'useOverseasPrice.js');
+const hook = read('hooks', 'useStorefrontRegion.js');
 // Two hooks, deliberately. The price exists for everyone; being QUOTED in it is a guess. Collapsing them
 // would either hide the price from an Indonesian visitor with a reason to see it — Dekito checking his
 // own shop — or silence the member nudge for people who can still use it.
-assert.match(hook, /export const useExportPrice = \(product, variant = null\) =>/, 'the price, for anyone');
-assert.match(hook, /export const useOverseasPrice = \(product, variant = null\) => \{[\s\S]{0,240}?return overseasVisitor \? price : null;/,
-  'and the price only for a visitor the detection says is abroad');
-assert.match(hook, /useEffect\(\(\) => \{ setOverseasVisitor\(detectOverseasVisitor\(\)\); \}, \[\]\);/,
+const exportHook = read('hooks', 'useOverseasPrice.js');
+assert.match(exportHook, /export const useExportPrice = \(product, variant = null\) =>/, 'the price, for anyone');
+assert.match(exportHook, /export const useOverseasPrice = \(product, variant = null\) => \{[\s\S]{0,240}?return overseasVisitor \? price : null;/,
+  'and the price only for a visitor looking at the international shop');
+// Detection now reaches the page through the region hook, which resolves it in an effect. Asserted here
+// too, not only in storefrontRegion.selfcheck: this is the file that explains WHY it must never run
+// during render, and a rule whose reason lives somewhere else is one the next reader deletes.
+assert.match(hook, /useEffect\(\(\) => \{[\s\S]{0,400}?publish\(resolveRegion\(readStoredRegion\(\), detectOverseasVisitor\(\)\)\);/,
   'detection belongs in an effect');
-// Starts false, so the first render — the one that matches the prerendered HTML — quotes nobody.
-assert.match(hook, /const \[overseasVisitor, setOverseasVisitor\] = useState\(false\);/,
+// Starts on the Indonesian shop, so the first render — the one matching the prerendered HTML — quotes nobody.
+assert.match(hook, /let current = REGION_ID;/,
   'nothing is quoted internationally until the effect has run');
 
 // --- 8. One detection, shared ------------------------------------------------------------------------------
@@ -102,10 +106,13 @@ assert.match(hook, /const \[overseasVisitor, setOverseasVisitor\] = useState\(fa
 // contradict each other ON THE SAME SCREEN: the panel announcing Rp 1.400.000 while the line above offers
 // Rp 550.000 to anyone who signs in.
 const priceNote = read('components', 'storefront', 'PriceNote.jsx');
+const priceHook = read('hooks', 'useOverseasPrice.js');
 for (const [name, source] of [['the panel', note], ['PriceNote', priceNote]]) {
   assert.match(source, /useOverseasPrice\(product, variant\)/, `${name} asks the shared hook`);
   assert.doesNotMatch(source, /detectOverseasVisitor/, `${name} must not detect for itself`);
 }
+assert.doesNotMatch(priceHook, /detectOverseasVisitor/,
+  'and the price hook itself reads the chosen region, not the raw guess');
 
 // The member nudge must be silent for an international visitor: their price is the export price, so
 // inviting them to sign in for the member price promises a number they will never be charged.
@@ -131,7 +138,7 @@ for (const [name, source] of [['PriceNote', priceNote], ['the mobile sticky bar'
 // toPublicFragrance rebuilds the public product field by field, so a price attached upstream has to be
 // named there too. A member price nudge shipped invisible exactly that way (#147). Reading the index in
 // the hook means there is no field for that mapper to drop.
-assert.match(hook, /tierPricesForLine\(index, product\.slug, variant\?\.id \|\| ''\)/,
+assert.match(priceHook, /tierPricesForLine\(index, product\.slug, variant\?\.id \|\| ''\)/,
   'the export price comes from the tier index, not from a field on the product');
 
 // --- 9. On both storefronts, and in English -------------------------------------------------------------
