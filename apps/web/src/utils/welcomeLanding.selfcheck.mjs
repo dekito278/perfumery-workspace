@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import { isMobileCommercePath } from './mobileFirstScreen.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,8 +29,12 @@ assert.equal(isMobileCommercePath('/mobile/welcome'), true, 'the phone page gets
 
 // --- 2. The page itself ---------------------------------------------------------------------------------
 const page = read('pages', 'WelcomePage.jsx');
+assert.match(page, /const \{ t \} = useTranslate\(\);/, 'the page reads its copy from the message file');
 assert.match(page, /<meta name="robots" content="noindex,follow" \/>/, 'a door for card holders is not a page to be found');
-assert.match(page, /Masuk dengan Google — harga member/, 'the way in says what it is for');
+// The copy now lives in the message file, because this page speaks two languages. The rules below
+// therefore check the MESSAGES, not the JSX — a claim moved into a data file is a claim that escaped
+// its guard unless the guard follows it.
+assert.match(MESSAGES.id['welcome.signIn'], /harga member/, 'the Indonesian way in says what it is for');
 assert.match(page, /loginWithGoogle\(`\$\{window\.location\.origin\}\$\{mobile \? '\/mobile\/customer' : '\/customer'\}`\)/, 'signing in lands on the account, on the right surface');
 assert.match(page, /currentUser \? \(/, 'a buyer already signed in is not asked to sign in again');
 assert.match(page, /<WhyBuyDirect mobile \/>/, 'the reasons come from the one shared source on the phone');
@@ -40,9 +45,25 @@ assert.match(page, /useScrollReveal\(\)/, 'the desktop shell has a reveal contai
 // Dekito confirmed on 2026-09-15 that his marketplace listings are priced above the shop's retail, so
 // "below the marketplace" is a true statement of policy. It stays a statement: a percentage goes stale the
 // day a listing changes, and naming a competitor in a price claim is a legal and tone risk.
-assert.match(page, /di bawah marketplace/, 'the verified claim is made — it is the strongest true thing the page can say');
-assert.doesNotMatch(page, /shopee|tokopedia|lazada|tiktok shop/i, 'never name a marketplace in a price claim');
-assert.doesNotMatch(page, /\d+\s*%|\d+ ?persen|termurah/i, 'never a number, never a superlative — those go stale or cannot be proven');
-assert.doesNotMatch(page, /\d{9,}/, 'no phone number on the page; WhyBuyDirect carries the one source');
+assert.match(MESSAGES.id['welcome.lead'], /di bawah marketplace/,
+  'the verified claim is made — it is the strongest true thing the page can say');
+
+// Every rule below now has to hold in BOTH languages. The English copy is a second place the same claim
+// could go wrong, and it is the one Dekito cannot proofread as easily.
+for (const language of ['id', 'en']) {
+  for (const key of Object.keys(MESSAGES[language]).filter((k) => k.startsWith('welcome.'))) {
+    const text = MESSAGES[language][key];
+    assert.doesNotMatch(text, /shopee|tokopedia|lazada|tiktok shop/i, `${language}.${key}: never name a marketplace in a price claim`);
+    assert.doesNotMatch(text, /termurah|cheapest|lowest price/i, `${language}.${key}: never a superlative — it cannot be proven`);
+    assert.doesNotMatch(text, /\d{9,}/, `${language}.${key}: no phone number; WhyBuyDirect carries the one source`);
+  }
+}
+// A percentage goes stale the day a price changes. The Indonesian page says "harga member" without a
+// figure on purpose; the English one must not introduce one.
+for (const key of Object.keys(MESSAGES.en).filter((k) => k.startsWith('welcome.'))) {
+  assert.doesNotMatch(MESSAGES.en[key], /\d+\s*%/, `en.${key}: never a number in a price claim`);
+}
+assert.doesNotMatch(MESSAGES.id['welcome.lead'], /\d+\s*%|\d+ ?persen/, 'nor the Indonesian lead');
+assert.doesNotMatch(page, /\d{9,}/, 'no phone number hardcoded in the page either');
 
 console.log('welcomeLanding selfcheck OK (a door for the card, on both surfaces, claiming only what is true)');
