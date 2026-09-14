@@ -3,6 +3,7 @@ import { Globe } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useExportPrice } from '@/hooks/useOverseasPrice.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 /**
  * Asking about an overseas order. Deliberately NOT a checkout: international shipping is quoted by
@@ -24,6 +25,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // Shown here only when the English panel is NOT already showing it, which is exactly the two cases
   // this component is used in: the panel passes english, everything else does not.
   const { price: exportPrice, overseasVisitor } = useExportPrice(product, variant);
+  const { t } = useTranslate();
   const showExportPrice = Boolean(exportPrice) && !english && !overseasVisitor;
 
   if (!phoneNumber || !product?.name) return null;
@@ -55,7 +57,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper ${compact ? 'min-h-[2.75rem]' : 'min-h-[3rem]'} ${className}`}
     >
       <Globe className="h-4 w-4" />
-      {english ? 'Ask about shipping to my country' : 'Kirim ke luar negeri? Tanya ongkir'}
+      {english ? 'Ask about shipping to my country' : t('export.ask')}
     </a>
   );
 
@@ -64,9 +66,9 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   return (
     <div>
       <p className="mb-2 mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
-        Harga untuk pengiriman ke luar negeri:{' '}
+        {t('export.priceLine')}{' '}
         <strong className="font-bold text-editorial-charcoal">{formatRupiah(exportPrice)}</strong>
-        {' '}— belum termasuk ongkir.
+        {' '}{t('export.notIncluded')}
       </p>
       {link}
     </div>

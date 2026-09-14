@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import {
   USD_PER_RUPIAH_RATE,
   approximateUsd,
@@ -147,8 +148,11 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile'
     `${page.join('/')} shows the export panel — desktop and mobile drifting apart is this repo's commonest defect`);
 }
 const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
-assert.match(button, /english \? 'Ask about shipping to my country' : 'Kirim ke luar negeri\? Tanya ongkir'/,
+// The Indonesian label moved into the message file when the storefront learned English; the English one
+// stays inline because it belongs to the English panel and exists in one language by definition.
+assert.match(button, /english \? 'Ask about shipping to my country' : t\('export\.ask'\)/,
   'the enquiry button speaks the language the buyer was just reading');
+assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
 assert.match(button, /Hello SOLIVAGANT/, 'and so does the message it drafts');
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
 assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
@@ -164,8 +168,12 @@ assert.match(button, /const \{ price: exportPrice, overseasVisitor \} = useExpor
   'the always-visible enquiry button knows the export price');
 assert.match(button, /const showExportPrice = Boolean\(exportPrice\) && !english && !overseasVisitor;/,
   'shown exactly when the English panel is not already showing it');
-assert.match(button, /Harga untuk pengiriman ke luar negeri/, 'in Indonesian, on the Indonesian button');
-assert.match(button, /belum termasuk ongkir/, 'and it says shipping is not in that number');
+assert.match(button, /t\('export\.priceLine'\)/, 'the price line is translated');
+assert.match(MESSAGES.id['export.priceLine'], /Harga untuk pengiriman ke luar negeri/, 'in Indonesian, on the Indonesian button');
+// Shipping being excluded is a money statement, so it has to survive translation in both languages.
+assert.match(MESSAGES.id['export.notIncluded'], /belum termasuk ongkir/);
+assert.match(MESSAGES.en['export.notIncluded'], /shipping not included/i,
+  'and the English must say it too — an international price read as final is the surprise this prevents');
 
 // Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup
 // finds nothing and the line silently never appears — the exact shape of the bug that shipped in #147.

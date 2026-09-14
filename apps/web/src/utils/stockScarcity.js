@@ -14,10 +14,21 @@ export const getScarcityCount = (stock) => {
   return count <= SCARCITY_THRESHOLD ? count : 0;
 };
 
-export const getScarcityLabel = (stock) => {
+/**
+ * The scarcity line, in the language of the shop the visitor chose.
+ *
+ * Takes the translator rather than returning Indonesian: this sentence is on the product page, and the
+ * page speaks two languages now. There is deliberately no default — a default would render Indonesian in
+ * the English shop and nothing would say so, which is the silent half-translation this whole step exists
+ * to avoid.
+ *
+ * @param translate (key, vars) => string, from useTranslate
+ */
+export const getScarcityLabel = (stock, translate) => {
   const count = getScarcityCount(stock);
   if (!count) return '';
-  return count === 1 ? 'Tersisa 1 botol' : `Tersisa ${count} botol`;
+  if (typeof translate !== 'function') return '';
+  return count === 1 ? translate('stock.one') : translate('stock.many', { count });
 };
 
 export default getScarcityLabel;

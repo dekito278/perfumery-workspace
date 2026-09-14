@@ -18,6 +18,7 @@ import PriceNote from '@/components/storefront/PriceNote.jsx';
 import OverseasPriceNote from '@/components/storefront/OverseasPriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
@@ -56,6 +57,7 @@ const MobileProductDetailPage = () => {
   // Above the early returns: this page bails out for "loading" and "not found", and a hook that runs on
   // some renders and not others is a crash, not a bug report.
   const overseasPrice = useOverseasPrice(product, selectedVariant);
+  const { t } = useTranslate();
 
   if (!product && allProducts.loading) {
     return (
@@ -70,13 +72,13 @@ const MobileProductDetailPage = () => {
   if (!product) {
     return (
       <MobileCommerceLayout>
-        <Helmet><title>Tidak ditemukan - SOLIVAGANT</title></Helmet>
+        <Helmet><title>{t('pdp.notFoundTab')}</title></Helmet>
         <main className="mobile-page m-editorial-page">
           <div className="m-editorial-empty">
-            <p className="m-editorial-eyebrow">NOT FOUND</p>
-            <h2>Fragrance ini tidak ditemukan.</h2>
+            <p className="m-editorial-eyebrow">{t('pdp.notFoundEyebrow')}</p>
+            <h2>{t('pdp.notFoundTitle')}</h2>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
-              Back to Collection <ChevronLeft className="h-3.5 w-3.5" />
+              {t('pdp.backToCollection')} <ChevronLeft className="h-3.5 w-3.5" />
             </button>
           </div>
         </main>
@@ -90,12 +92,12 @@ const MobileProductDetailPage = () => {
   // Public catalog objects expose `availability`/`publicStatus`, not a raw stock count (see
   // publicStorefront.js). Mirror the desktop PDP — reading `.stock` here always yields 0 → sold out.
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
-  const scarcity = selectedAvailable ? getScarcityLabel(selectedVariant?.stock) : '';
+  const scarcity = selectedAvailable ? getScarcityLabel(selectedVariant?.stock, t) : '';
   const soldOut = !selectedAvailable;
 
   const addSelectedVariant = () => {
-    if (previewMode) { toast.error('Mode preview — keranjang dimatikan'); return; }
-    if (soldOut) { toast.error('Stok habis'); return; }
+    if (previewMode) { toast.error(t('pdp.previewDisabled')); return; }
+    if (soldOut) { toast.error(t('pdp.outOfStockToast')); return; }
     addItem({
       ...product,
       cartSlug: `${product.slug}-${selectedVariant?.id || selectedSize}`,
@@ -105,7 +107,7 @@ const MobileProductDetailPage = () => {
       priceNumber: selectedPrice,
     }, 1);
     setLastAddedItem({ name: product.name, size: selectedSize, price: formatRupiah(selectedPrice) });
-    toast.success(`${product.name}${selectedSize ? ` (${selectedSize})` : ''} masuk ke keranjang`);
+    toast.success(t('pdp.addedToast', { name: `${product.name}${selectedSize ? ` (${selectedSize})` : ''}` }));
     setCartPromptOpen(true);
   };
 
@@ -127,7 +129,7 @@ const MobileProductDetailPage = () => {
         {/* Back button */}
         <nav className="m-editorial-pdp__nav">
           <button type="button" onClick={previewMode ? () => navigate(previewBackTo) : handleBack} className="m-editorial-pdp__back">
-            <ChevronLeft className="h-4 w-4" /> Back
+            <ChevronLeft className="h-4 w-4" /> {t('pdp.back')}
           </button>
         </nav>
 
@@ -146,7 +148,7 @@ const MobileProductDetailPage = () => {
           {previewMode ? (
             <div className="m-editorial-pdp__preview-badge">
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>Preview admin — keranjang dimatikan</span>
+              <span>{t('pdp.previewBadge')}</span>
             </div>
           ) : null}
 
@@ -173,7 +175,7 @@ const MobileProductDetailPage = () => {
           {/* Variant selector */}
           {product.variants?.length > 1 ? (
             <div className="m-editorial-pdp__variants">
-              <label className="m-editorial-eyebrow" htmlFor="m-variant-select">SIZE</label>
+              <label className="m-editorial-eyebrow" htmlFor="m-variant-select">{t('pdp.size')}</label>
               <select
                 id="m-variant-select"
                 value={selectedVariantKey}
@@ -182,7 +184,7 @@ const MobileProductDetailPage = () => {
               >
                 {product.variants.map((v) => {
                   const key = v.id || v.size;
-                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? ' (Stok habis)' : ''}</option>;
+                  return <option key={key} value={key}>{v.size} — {formatRupiah(v.priceNumber)}{v.availability !== 'Available' ? t('pdp.soldOutOption') : ''}</option>;
                 })}
               </select>
             </div>
@@ -194,7 +196,7 @@ const MobileProductDetailPage = () => {
           <div className="m-editorial-pdp__meta">
             {isPlaceholderMood(product.mood) ? null : <span>{product.mood}</span>}
             {product.concentration ? <span>{product.concentration}</span> : null}
-            {product.intensity ? <span>Intensitas {product.intensity.toLowerCase()}</span> : null}
+            {product.intensity ? <span>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</span> : null}
             {product.sizeVariants?.length ? <span>{product.sizeVariants.map((v) => v.size).join(' / ')}</span> : null}
           </div>
         </div>
@@ -203,7 +205,7 @@ const MobileProductDetailPage = () => {
         {related.length ? (
           <section className="m-editorial-section m-editorial-pdp__related">
             <div className="m-editorial-section__head">
-              <p className="m-editorial-eyebrow">MUNGKIN KAMU SUKA</p>
+              <p className="m-editorial-eyebrow">{t('pdp.youMayLike')}</p>
             </div>
             <div className="m-editorial-product-grid">
               {related.map((item) => (
@@ -237,12 +239,12 @@ const MobileProductDetailPage = () => {
                   charged. This bar is a SECOND member nudge, outside PriceNote — which is exactly why it
                   kept showing Rp 550.000 under a Rp 1.400.000 panel until it was caught on the phone. */}
               {!overseasPrice && (selectedVariant?.memberPriceNumber || product.memberPriceNumber) ? (
-                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(selectedVariant?.memberPriceNumber || product.memberPriceNumber)}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(selectedVariant?.memberPriceNumber || product.memberPriceNumber) })}</span>
               ) : null}
             </div>
             <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
               <ShoppingBag className="h-4 w-4" />
-              {previewMode ? 'Preview' : soldOut ? 'Stok habis' : 'Masukkan keranjang'}
+              {previewMode ? 'Preview' : soldOut ? t('pdp.soldOut') : t('pdp.addToCart')}
             </button>
           </div>
         </StickyBottomActionBar>
@@ -251,15 +253,15 @@ const MobileProductDetailPage = () => {
       <MobileBottomSheet
         open={cartPromptOpen}
         onOpenChange={setCartPromptOpen}
-        title="Added to cart"
-        description="Continue shopping or proceed to checkout."
+        title={t('pdp.addedSheetTitle')}
+        description={t('pdp.addedSheetBody')}
         footer={(
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="h-12 rounded-2xl bg-white" onClick={() => setCartPromptOpen(false)}>
-              Continue
+              {t('pdp.continueShopping')}
             </Button>
             <Button className="h-12 rounded-2xl gap-2" onClick={() => navigate('/mobile/cart')}>
-              Checkout <ArrowRight className="h-4 w-4" />
+              {t('pdp.checkout')} <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}
