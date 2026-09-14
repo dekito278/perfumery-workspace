@@ -27,6 +27,7 @@ import { enrichMaterialsWithGuidance, getResolvedGuidanceValues } from '@/utils/
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 import { confirmAction } from '@/utils/confirmAction.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 
 const createItem = (material, gramAmount = '1') => ({
   row_key: `${material.id}-${Date.now()}`,
@@ -94,6 +95,8 @@ const MobileCreateFormulaPage = () => {
   const hasUnsavedComposition = items.some((item) => item.item_id || Number(item.gram_amount || 0) > 0)
     || Boolean(name.trim())
     || Boolean(code.trim());
+  // Closing the tab or reloading used to take the whole composition with it.
+  useUnsavedChangesWarning(hasUnsavedComposition);
 
   const handleBack = async () => {
     if (hasUnsavedComposition && !await confirmAction({ title: 'Buang perubahan?', message: 'Formula ini belum disimpan. Tinggalkan dan buang perubahan?', confirmText: 'Buang', destructive: true })) {

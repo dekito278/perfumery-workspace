@@ -27,6 +27,8 @@ import { enrichMaterialsWithGuidance, getResolvedGuidanceValues } from '@/utils/
 import { parseLocalizedNumber } from '@/utils/numberInputs.js';
 import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
+import { formulaComposerSnapshot, isFormulaComposerDirty } from '@/utils/formulaComposerDirty.js';
 
 const createItem = (material, gramAmount = '1', item = {}) => ({
   row_key: `${material.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -73,6 +75,9 @@ const MobileEditFormulaPage = () => {
   const [status, setStatus] = useState('draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([]);
+  // The formula as it was loaded. Wizard seed rows are deliberately NOT in here: they are unsaved
+  // additions, so a page opened with seeds is dirty from the first frame — leaving would lose them.
+  const [savedSnapshot, setSavedSnapshot] = useState('');
   const [seededCount, setSeededCount] = useState(0);
   const [composerOverlayOpen, setComposerOverlayOpen] = useState(false);
   const [quickCreateIntent, setQuickCreateIntent] = useState(null);
@@ -118,6 +123,15 @@ const MobileEditFormulaPage = () => {
         const seededItems = wizardSeedItems.length ? [...wizardSeedItems, ...formatted] : formatted;
         setOriginalItems(formatted);
         setItems(seededItems);
+        setSavedSnapshot(formulaComposerSnapshot({
+          name: formulaRow.name || '',
+          code: formulaRow.code || '',
+          category: formulaRow.category || 'perfume',
+          version: formulaRow.version || '',
+          status: formulaRow.status || 'draft',
+          notes: formulaRow.notes || '',
+          formulaItems: formatted,
+        }));
         setSeededCount(wizardSeedItems.length);
         if (wizardSeedItems.length) {
           toast.success(`${wizardSeedItems.length} wizard materials loaded`);
@@ -253,6 +267,10 @@ const MobileEditFormulaPage = () => {
       toast.error(error.message || 'Failed to save revision');
     }
   };
+
+  const currentSnapshot = formulaComposerSnapshot({ name, code, category, version, status, notes, formulaItems: items });
+  // Same gap as the desktop editor: no warning of any kind before this.
+  useUnsavedChangesWarning(isFormulaComposerDirty(currentSnapshot, savedSnapshot));
 
   if (loadingData) {
     return (

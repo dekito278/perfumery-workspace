@@ -35,6 +35,8 @@ import { formatGramAmount } from '@/utils/formatting.js';
 import { createRawMaterial, getRawMaterialOptions } from '@/services/rawMaterialsService.js';
 import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pacePriority.js';
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
+import { formulaComposerSnapshot, isFormulaComposerDirty } from '@/utils/formulaComposerDirty.js';
 
 const normalizeFormulaItemType = (item, material) => {
   if (item?.item_type === 'accord') {
@@ -67,6 +69,9 @@ const EditFormulaPage = () => {
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
+  // What the formula looked like when it loaded. An edit page starts FULL, so "touched"
+  // can only mean "differs from this".
+  const [savedSnapshot, setSavedSnapshot] = useState('');
   const [mobileComposerTab, setMobileComposerTab] = useState('compose');
   const [mobileLibraryOpen, setMobileLibraryOpen] = useState(false);
   const [guidanceEditorOpen, setGuidanceEditorOpen] = useState(false);
@@ -168,6 +173,15 @@ const EditFormulaPage = () => {
         setStatus(formulaData.status || 'draft');
         setNotes(formulaData.notes || '');
         replaceFormulaItems(formattedItems);
+        setSavedSnapshot(formulaComposerSnapshot({
+          name: formulaData.name || '',
+          code: formulaData.code || '',
+          category: formulaData.category || 'perfume',
+          version: formulaData.version || '',
+          status: formulaData.status || 'draft',
+          notes: formulaData.notes || '',
+          formulaItems: formattedItems,
+        }));
       } catch (error) {
         toast.error('Failed to load formula data');
         navigate('/formulas');
@@ -307,6 +321,10 @@ const EditFormulaPage = () => {
       toast.error(error.message || 'Failed to update formula');
     }
   };
+
+  const currentSnapshot = formulaComposerSnapshot({ name, code, category, version, status, notes, formulaItems });
+  // This page had no protection at all: open a formula, change it, close the tab, and the edit was gone.
+  useUnsavedChangesWarning(isFormulaComposerDirty(currentSnapshot, savedSnapshot));
 
   const hasErrors = Object.keys(validationErrors).length > 0;
   const hasLegacyAccordItems = legacyAccordItems.length > 0;
