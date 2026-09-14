@@ -19,7 +19,6 @@ import {
 } from '@/utils/pacePriority.js';
 import {
   buildPacedRevisionItems,
-  buildPacedRevisionVersion,
 } from '@/utils/formulaDetail.js';
 import { calculateTotalCost } from '@/utils/pricingUtils.js';
 import {
@@ -28,12 +27,15 @@ import {
   buildFormulaReferenceAdvisorySummary,
   buildWorkbookBoardStats,
 } from '@/utils/formulaDetailData.js';
+import { buildLineageChain, diffFormulaItems, nextRevisionVersion } from '@/utils/formulaRevisionLineage.js';
 
 export const useFormulaDetailPage = (id) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { createFormula } = useFormulas();
+  const { createFormula, getFormulas } = useFormulas();
+  const [lineageFormulas, setLineageFormulas] = useState([]);
+  const [parentItems, setParentItems] = useState(null);
   const { getFormulaItems } = useFormulaItems();
   const { getValidationLogs } = useValidationLogs();
   const [formula, setFormula] = useState(null);
@@ -195,7 +197,11 @@ export const useFormulaDetailPage = (id) => {
         ].filter(Boolean).join('\n\n'),
         category: formula.category || null,
         status: 'draft',
-        version: buildPacedRevisionVersion(formula.version),
+        version: nextRevisionVersion(formula.version),
+        // The link that makes the chain real. Until 20260914140000 is applied these two are dropped by
+        // createFormula and the revision is created exactly as it is today.
+        parent_formula_id: formula.id,
+        revision_note: `Applied ${recommendations.length} PACE adjustment${recommendations.length === 1 ? '' : 's'} (${priorityModeMeta.label}).`,
       }, pacedItems);
 
       toast.success('PACED revision created');
@@ -224,6 +230,64 @@ export const useFormulaDetailPage = (id) => {
     navigate('/formulas');
   };
 
+  // The chain is assembled client-side from rows RLS already returned, so a formula belonging to someone
+  // else can never join it — its parent_formula_id simply resolves to nothing.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLineage = async () => {
+      try {
+        const allFormulas = await getFormulas();
+        if (!cancelled) setLineageFormulas(Array.isArray(allFormulas) ? allFormulas : []);
+      } catch (error) {
+        // Lineage is decoration on a formula. A failed list must not take the detail page down with it.
+        console.warn('Failed to load formula lineage:', error);
+        if (!cancelled) setLineageFormulas([]);
+      }
+    };
+
+    loadLineage();
+    return () => { cancelled = true; };
+  }, [getFormulas, id]);
+
+  const lineageChain = useMemo(
+    () => buildLineageChain(lineageFormulas, id),
+    [lineageFormulas, id],
+  );
+
+  const parentFormula = useMemo(() => {
+    const parentId = formula?.parent_formula_id ? String(formula.parent_formula_id) : null;
+    return parentId ? lineageFormulas.find((candidate) => String(candidate.id) === parentId) || null : null;
+  }, [formula?.parent_formula_id, lineageFormulas]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!parentFormula?.id) {
+      setParentItems(null);
+      return undefined;
+    }
+
+    const loadParentItems = async () => {
+      try {
+        const rows = await getFormulaItems(parentFormula.id);
+        if (!cancelled) setParentItems(Array.isArray(rows) ? rows : []);
+      } catch (error) {
+        // No diff is honest. A diff against an empty list would report every material as newly added.
+        console.warn('Failed to load the parent formula items:', error);
+        if (!cancelled) setParentItems(null);
+      }
+    };
+
+    loadParentItems();
+    return () => { cancelled = true; };
+  }, [parentFormula?.id, getFormulaItems]);
+
+  const revisionDiff = useMemo(
+    () => (parentItems ? diffFormulaItems(parentItems, items) : null),
+    [parentItems, items],
+  );
+
   const openRawMaterial = (itemId) => {
     navigate(`/raw-material/${itemId}`, {
       state: { from: `${location.pathname}${location.search}` },
@@ -232,6 +296,9 @@ export const useFormulaDetailPage = (id) => {
 
   return {
     compactCompositionRows,
+    lineageChain,
+    parentFormula,
+    revisionDiff,
     dilutedItemCount,
     formula,
     formulaReferenceAdvisories,

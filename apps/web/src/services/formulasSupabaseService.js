@@ -13,7 +13,33 @@ const normalizeFormulaPayload = (formulaData) => ({
   category: formulaData.category || null,
   status: formulaData.status || 'draft',
   version: formulaData.version ? String(formulaData.version) : null,
+  // Lineage is written only when the caller asks for it, for the same reason author_name is: this
+  // payload is a hand-written field list shared by create AND update, and every edit page omits these.
+  // Forcing null here would erase a revision's parent on its first save.
+  ...(formulaData.parent_formula_id === undefined ? {} : {
+    parent_formula_id: formulaData.parent_formula_id || null,
+  }),
+  ...(formulaData.revision_note === undefined ? {} : {
+    revision_note: formulaData.revision_note ? String(formulaData.revision_note).trim() : null,
+  }),
 });
+
+// 20260914140000_formula_revision_lineage.sql is applied by hand, so the insert has to survive the
+// columns not being there yet. Dropping them and retrying keeps revisions working exactly as they do
+// today — detached, linked only by the notes sentence — instead of failing the create outright.
+const LINEAGE_FIELDS = ['parent_formula_id', 'revision_note'];
+
+const isMissingLineageColumn = (error) => Boolean(
+  error
+  && (error.code === '42703' || /schema cache/i.test(error.message || ''))
+  && LINEAGE_FIELDS.some((field) => String(error.message || '').includes(field)),
+);
+
+const withoutLineageFields = (payload) => {
+  const next = { ...payload };
+  for (const field of LINEAGE_FIELDS) delete next[field];
+  return next;
+};
 
 const VERSIONED_CODE_PATTERN = /-V(\d+)$/i;
 
@@ -151,6 +177,12 @@ export const createFormula = async (formulaData, items) => {
         ...payload,
         code: await getNextAvailableFormulaCode(userId, payload.code),
       };
+      continue;
+    }
+
+    if (isMissingLineageColumn(error)) {
+      console.warn('Formula lineage columns are not applied yet; creating this revision without ancestry.');
+      payload = withoutLineageFields(payload);
       continue;
     }
 
