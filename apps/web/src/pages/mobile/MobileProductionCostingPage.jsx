@@ -17,6 +17,7 @@ import { PACKAGING_FIELDS } from '@/utils/productionCosting.js';
 import { formatCurrency, formatQuantity } from '@/utils/formatting.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
+import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
 
 const modeOptions = [
   { value: 'retail', label: 'Bottle' },
@@ -321,6 +322,7 @@ const MobileProductionCostingPage = () => {
                       <div className="py-3 text-xs font-semibold text-[#6b7280]">Bottle, sticker, box, labor, dan overhead belum diisi.</div>
                     ) : null}
                   </div>
+                  <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mx-4 mb-4" />
                   <div className="grid grid-cols-2 gap-2 border-t border-[#ece8df] bg-[#faf9f6] p-4">
                     <MoneyTile label="Total batch cost" value={formatPrice(retailComputed.totalProductionCost)} helper={`${retailComputed.bottleCount} bottles`} tone="amber" />
                     <MoneyTile label="COGS / bottle" value={formatPrice(retailComputed.costPerBottle)} helper={`${formatCurrency(retailComputed.cogsPerMl)} / ml`} tone="emerald" />

@@ -36,6 +36,7 @@ import { calculateIngredientCost, formatPrice } from '@/utils/pricingUtils.js';
 import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
 import { formatQuantity } from '@/utils/formatting.js';
 import { BATCH_STATUSES } from '@/utils/constants.js';
+import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
 
 const workflowStatuses = BATCH_STATUSES.filter((status) => ['planned', 'produced', 'qc', 'ready_for_product', 'converted_to_product'].includes(status.value));
 const stockDeductingStatuses = new Set(['produced', 'qc', 'ready_for_product', 'converted_to_product']);
@@ -662,6 +663,7 @@ const BatchProductionPage = () => {
                 </div>
                 <StatusChip tone={concentrateRows.length ? 'success' : 'neutral'}>{concentrateRows.length} materials</StatusChip>
               </div>
+              <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-4" />
               <div className="mt-4 overflow-x-auto rounded-2xl border">
                 <table className="min-w-[920px] w-full text-left text-sm">
                   <thead className="bg-[#fbfaf7] text-xs uppercase text-muted-foreground">

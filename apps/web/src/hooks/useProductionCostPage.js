@@ -25,6 +25,7 @@ import {
   buildProductionQuotationExportConfig,
 } from '@/utils/productionCostingExports.js';
 import { runWithTimeout } from '@/utils/asyncTimeout.js';
+import { buildFormulaProductionReadiness } from '@/utils/formulaProductionReadiness.js';
 
 // Sentinel so we can tell a genuine empty result apart from a timeout — costing must
 // never silently show Rp 0 because a slow request quietly resolved to an empty fallback.
@@ -222,6 +223,14 @@ export const useProductionCostPage = () => {
           totalGrams,
           totalMaterialCost,
           costPerMl: totalGrams > 0 ? totalMaterialCost / totalGrams : 0,
+          // Computed here, once, because all three costing screens read this same profile. Every cost
+          // below is grams x (cost_per_unit || 0), so a material with no price is worth Rp 0 and says
+          // nothing — the totals come out too low in the direction that loses money.
+          readiness: buildFormulaProductionReadiness(enrichedItems),
+          // Computed here, once, because all three costing screens read this same profile. Every cost
+          // below is grams x (cost_per_unit || 0), so a material with no price is worth Rp 0 and says
+          // nothing — the totals come out too low in the direction that loses money.
+
         });
       } catch (error) {
         if (cancelled) return;

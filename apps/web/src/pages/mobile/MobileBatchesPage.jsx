@@ -47,6 +47,7 @@ import { buildFormulaWorkbookExportConfig } from '@/utils/formulaWorkbookExport.
 import { clampPercentage, parseNumberInput } from '@/utils/productionCosting.js';
 import { normalizeLocalizedDecimalInput } from '@/utils/numberInputs.js';
 import { BATCH_STATUSES } from '@/utils/constants.js';
+import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
 
 const DEFAULT_TARGET_GRAMS = '100';
 const BATCH_ROW_PAGE_SIZE = 8;
@@ -1044,6 +1045,8 @@ const MobileBatchesPage = () => {
                     <MetricTile label="Batch" value={formatGramAmount(targetValue)} helper={`${concentrateRows.length} materials`} />
                     <MetricTile label="COGS" value={formatPrice(concentrateCost)} helper={`${formatCurrency(concentrateCostPerGram)} / g`} tone="amber" />
                   </div>
+                  <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-3" />
+
                 </div>
               </div>
             </section> : null}
