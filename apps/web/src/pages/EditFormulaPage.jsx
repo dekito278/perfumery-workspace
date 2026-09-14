@@ -37,6 +37,7 @@ import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pace
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
 import { formulaComposerSnapshot, isFormulaComposerDirty } from '@/utils/formulaComposerDirty.js';
+import { hasBlockingErrors } from '@/utils/formulaValidationErrors.js';
 
 const normalizeFormulaItemType = (item, material) => {
   if (item?.item_type === 'accord') {
@@ -326,7 +327,9 @@ const EditFormulaPage = () => {
   // This page had no protection at all: open a formula, change it, close the tab, and the edit was gone.
   useUnsavedChangesWarning(isFormulaComposerDirty(currentSnapshot, savedSnapshot));
 
-  const hasErrors = Object.keys(validationErrors).length > 0;
+  // Orphans do not block. An error left behind by a row that no longer exists renders nowhere, so
+  // counting it greys out the save button with nothing on screen to explain why.
+  const hasErrors = hasBlockingErrors(validationErrors, formulaItems);
   const hasLegacyAccordItems = legacyAccordItems.length > 0;
 
   return (

@@ -5,6 +5,7 @@ import { buildFallbackReferenceProfileFromRawMaterial } from '@/utils/referenceG
 import { buildWorkbookSimulation } from '@/utils/formulaWorkbookSimulation.js';
 import { extractWorkbookClassDistribution } from '@/utils/workbookAbcClassification.js';
 import { resolveRawMaterialGuidanceSnapshot } from '@/utils/rawMaterialGuidanceResolver.js';
+import { pruneOrphanRowErrors, rowErrorKey } from '@/utils/formulaValidationErrors.js';
 
 export const composerSectionClass = 'rounded-[28px] border border-[#e6deca] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(249,246,239,0.98)_100%)] p-4 shadow-sm sm:p-6';
 
@@ -93,7 +94,7 @@ export const validateComposerFields = ({ name, code, formulaItems, activeFormula
   const materialIds = new Set();
   formulaItems.forEach((item, index) => {
     if (item.item_id && materialIds.has(item.item_id)) {
-      errors[`item_${item.row_key || index}`] = 'Duplicate material';
+      errors[rowErrorKey(item.row_key || index)] = 'Duplicate material';
     } else if (item.item_id) {
       materialIds.add(item.item_id);
     }
@@ -206,16 +207,23 @@ export const useFormulaComposer = ({
       }
       return Math.max(0, current > index ? current - 1 : current);
     });
-    const removedRowKey = formulaItems[index]?.row_key;
-    setValidationErrors((current) => {
-      const nextErrors = { ...current };
-      delete nextErrors[`item_${index}`];
-      if (removedRowKey) delete nextErrors[`item_${removedRowKey}`];
-      return nextErrors;
-    });
+    // Sweep against the list that actually lands in state: normalizeFormulaItems can add or reorder rows,
+    // so filtering the old array is not the same set.
+    setValidationErrors((current) => pruneOrphanRowErrors(current, nextItems));
   };
 
   const updateItem = (index, itemId, materialOverride = null) => {
+    // "Duplicate material" is only ever decided by validateComposerFields, which runs on submit — and
+    // submit is exactly what the error disables. So changing this row's material has to clear this row's
+    // error right here, or the button stays grey for a problem that is already gone and the only way out
+    // is a reload that costs the whole composition.
+    const editedRowErrorKey = rowErrorKey(formulaItemsRef.current[index]?.row_key || index);
+    setValidationErrors((current) => {
+      const nextErrors = { ...current };
+      delete nextErrors[editedRowErrorKey];
+      return nextErrors;
+    });
+
     setFormulaItems((currentItems) => {
       const updated = [...currentItems];
       const previousItem = updated[index] || createEmptyFormulaItem();
@@ -291,12 +299,13 @@ export const useFormulaComposer = ({
     setActiveRowIndex(index);
 
     const error = validateGramAmount(gramAmount);
+    const errorKey = rowErrorKey(updated[index]?.row_key || index);
     setValidationErrors((current) => {
       const nextErrors = { ...current };
       if (error) {
-        nextErrors[`item_${index}`] = error;
+        nextErrors[errorKey] = error;
       } else {
-        delete nextErrors[`item_${index}`];
+        delete nextErrors[errorKey];
       }
       return nextErrors;
     });
@@ -328,10 +337,11 @@ export const useFormulaComposer = ({
     setFormulaItems(updated);
     activeRowIndexRef.current = index;
     setActiveRowIndex(index);
+    const dilutionErrorKey = rowErrorKey(updated[index]?.row_key || index);
     setValidationErrors((current) => {
       const nextErrors = { ...current };
       delete nextErrors.ingredients;
-      delete nextErrors[`item_${index}`];
+      delete nextErrors[dilutionErrorKey];
       return nextErrors;
     });
   };
@@ -364,9 +374,10 @@ export const useFormulaComposer = ({
     if (updatedIndex >= 0) {
       activeRowIndexRef.current = updatedIndex;
       setActiveRowIndex(updatedIndex);
+      const paceErrorKey = rowErrorKey(formulaItemsRef.current[updatedIndex]?.row_key || updatedIndex);
       setValidationErrors((current) => {
         const nextErrors = { ...current };
-        delete nextErrors[`item_${updatedIndex}`];
+        delete nextErrors[paceErrorKey];
         return nextErrors;
       });
     }
