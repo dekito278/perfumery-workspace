@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -28,13 +29,15 @@ import {
 } from '@/utils/seo.js';
 import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
 
+// `family` is the perfumery family and stays as it is in both languages — Fresh, Gourmand, Woody, Floral
+// are the same words on an Indonesian shelf. `filter` is the real catalog category used in the link (the
+// catalog has no "Fresh" category — those scents live under "Aquatic"). Only the mood name and the
+// description are copy.
 const moodCategories = [
-  // `family` is the display label; `filter` is the real catalog category used in the link
-  // (the catalog has no "Fresh" category — those scents live under "Aquatic").
-  { name: 'Tenang & Minimal', family: 'Fresh', filter: 'fresh', description: 'Citrus bersih, musk lembut, dan tekstur ringan untuk pemakaian harian.', siteImageKey: 'mood-fresh' },
-  { name: 'Hangat & Nostalgia', family: 'Gourmand', filter: 'gourmand', description: 'Vanila, tonka, dan kehangatan panggang — kenyamanan yang disuling jadi aroma.', siteImageKey: 'mood-gourmand' },
-  { name: 'Gelap & Moody', family: 'Woody', filter: 'woody', description: 'Cedar, vetiver, dan kedalaman mineral untuk kehadiran yang tegas.', siteImageKey: 'mood-woody' },
-  { name: 'Lembut & Romantis', family: 'Floral', filter: 'floral', description: 'Mawar, melati, dan musk powdery — lembut tanpa terlalu manis.', siteImageKey: 'mood-floral' },
+  { nameKey: 'mood.fresh.name', family: 'Fresh', filter: 'fresh', bodyKey: 'mood.fresh.body', siteImageKey: 'mood-fresh' },
+  { nameKey: 'mood.gourmand.name', family: 'Gourmand', filter: 'gourmand', bodyKey: 'mood.gourmand.body', siteImageKey: 'mood-gourmand' },
+  { nameKey: 'mood.woody.name', family: 'Woody', filter: 'woody', bodyKey: 'mood.woody.body', siteImageKey: 'mood-woody' },
+  { nameKey: 'mood.floral.name', family: 'Floral', filter: 'floral', bodyKey: 'mood.floral.body', siteImageKey: 'mood-floral' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -42,6 +45,7 @@ const getArticleExcerpt = (article) =>
 
 const HomePage = () => {
   const fetchedProducts = useStorefrontProducts();
+  const { t } = useTranslate();
   // Same reason as CatalogPage: the bundled seed is six perfumes this shop does not sell, and showing
   // them during an outage put phantom stock on the front page.
   const catalogProducts = fetchedProducts;
@@ -83,7 +87,7 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>SOLIVAGANT - Artisan Perfumery Atelier by Dekito</title>
+        <title>{t('home.tab')}</title>
         <meta name="description" content="SOLIVAGANT adalah atelier parfum artisan oleh Dekito — merakit karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
         <link rel="canonical" href={homeCanonical} />
         <meta property="og:title" content="SOLIVAGANT - Artisan Perfumery Atelier" />
@@ -112,23 +116,34 @@ const HomePage = () => {
             <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero'])} sizes="100vw" alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
           )}
           <div className="home-hero__overlay home-hero__overlay--editorial">
-            <p className="home-hero__eyebrow">ATELIER PARFUM ARTISAN</p>
+            <p className="home-hero__eyebrow">{t('home.eyebrow')}</p>
+            {/* One word per span is what the reveal animation staggers, and word ORDER differs between
+                languages — the Indonesian sentence and the English one are not a word-for-word
+                match. So the words come from the sentence rather than being written out here, and the
+                message carries the line break that keeps the two-line hero shape in both. */}
             <h1 className="home-hero__title" data-text-reveal>
-              <span className="text-reveal-word"><span>Aroma</span></span>{' '}
-              <span className="text-reveal-word"><span>sebagai</span></span><br />
-              <span className="text-reveal-word"><span>objek</span></span>{' '}
-              <span className="text-reveal-word"><span>kenangan.</span></span>
+              {t('home.heroTitle').split('\n').map((line, lineIndex) => (
+                <React.Fragment key={line}>
+                  {lineIndex ? <br /> : null}
+                  {line.split(' ').filter(Boolean).map((word, wordIndex) => (
+                    <React.Fragment key={`${line}-${word}-${wordIndex}`}>
+                      {wordIndex ? ' ' : null}
+                      <span className="text-reveal-word"><span>{word}</span></span>
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              ))}
             </h1>
-            <p className="home-hero__subtitle">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
+            <p className="home-hero__subtitle">{t('home.lead')}</p>
             {/* The one line that says why to buy here rather than on a marketplace. Brand voice stays; a reason
                 is added under it, not instead of it. */}
-            <p className="home-hero__note">Harga member, langsung dari atelier.</p>
+            <p className="home-hero__note">{t('home.note')}</p>
             <div className="home-hero__actions">
               <Link to="/catalog" className="home-hero__cta magnetic-hover" onMouseMove={handleMagnetic}>
-                LIHAT KOLEKSI <ArrowRight className="h-4 w-4" />
+                {t('home.seeCollection').toUpperCase()} <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/customer" className="home-hero__cta home-hero__cta--quiet">
-                {currentUser ? 'AKUN MEMBER' : 'MASUK UNTUK HARGA MEMBER'}
+                {t(currentUser ? 'nav.account' : 'nav.accountSub').toUpperCase()}
               </Link>
             </div>
           </div>
@@ -138,9 +153,9 @@ const HomePage = () => {
         <section className="home-brandmark" data-reveal>
           <div className="home-brandmark__inner">
             <span className="home-brandmark__logo">SOLIVAGANT</span>
-            <TextReveal as="h2" className="home-brandmark__tagline" text="Parfum artisan yang dirakit dari kenangan, material, dan ritual pribadi." />
+            <TextReveal as="h2" className="home-brandmark__tagline" text={t('home.brandTagline')} />
             <Link to="/catalog" className="home-brandmark__cta magnetic-hover" onMouseMove={handleMagnetic}>
-              Lihat Koleksi <ArrowRight className="h-4 w-4" />
+              {t('home.seeCollection')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>
@@ -151,14 +166,14 @@ const HomePage = () => {
         <section className="home-section home-section--flush" data-reveal>
           <div className="home-carousel__header">
             <div>
-              <p className="editorial-eyebrow">KOLEKSI SAAT INI</p>
-              <h2>Fragrance pilihan</h2>
+              <p className="editorial-eyebrow">{t('home.currentCollection')}</p>
+              <h2>{t('home.featured')}</h2>
             </div>
-            <Link to="/catalog" className="home-carousel__see-all">Lihat Koleksi <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/catalog" className="home-carousel__see-all">{t('home.seeCollection')} <ArrowRight className="h-4 w-4" /></Link>
           </div>
           {collectionProducts.length ? (
             <div className="home-carousel__wrapper">
-              <button className="home-carousel__arrow home-carousel__arrow--left" onClick={() => scrollCarousel('left')} aria-label="Geser kiri">&larr;</button>
+              <button className="home-carousel__arrow home-carousel__arrow--left" onClick={() => scrollCarousel('left')} aria-label={t('home.scrollLeft')}>&larr;</button>
               <div className="home-carousel__track" ref={carouselRef}>
                 {collectionProducts.map((product, index) => (
                   <Link
@@ -186,11 +201,11 @@ const HomePage = () => {
                   </Link>
                 ))}
               </div>
-              <button className="home-carousel__arrow home-carousel__arrow--right" onClick={() => scrollCarousel('right')} aria-label="Geser kanan">&rarr;</button>
+              <button className="home-carousel__arrow home-carousel__arrow--right" onClick={() => scrollCarousel('right')} aria-label={t('home.scrollRight')}>&rarr;</button>
             </div>
           ) : (
             <div className="editorial-empty-state editorial-empty-state--inline">
-              <p>Koleksi baru sedang disiapkan. Nantikan rilis fragrance berikutnya.</p>
+              <p>{t('home.emptyCollection')}</p>
             </div>
           )}
         </section>
@@ -205,13 +220,13 @@ const HomePage = () => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-statement'], 1280) || '/brand/home/perfumer-pipettes.jpg'} srcSet={srcSet(siteImages['home-statement'])} sizes="100vw" loading="lazy" decoding="async" alt="Perfumer bekerja di atelier Solivagant" className="home-statement__image" />
+            <img src={img(siteImages['home-statement'], 1280) || '/brand/home/perfumer-pipettes.jpg'} srcSet={srcSet(siteImages['home-statement'])} sizes="100vw" loading="lazy" decoding="async" alt={t('home.statementAlt')} className="home-statement__image" />
           )}
           <div className="home-statement__overlay">
-            <TextReveal text="Rasa di Atas Formula." />
-            <p>Kami tidak mengejar tren atau selera pasar. Setiap fragrance SOLIVAGANT adalah sebuah atmosfer — dirakit dari obsesi, intuisi, dan keyakinan bahwa parfum seharusnya mengubah cara kamu membawa diri di sebuah ruangan.</p>
+            <TextReveal text={t('home.statementTitle')} />
+            <p>{t('home.statementBody')}</p>
             <Link to="/bespoke" className="home-statement__cta magnetic-hover" onMouseMove={handleMagnetic}>
-              Konsultasi Bespoke <ArrowRight className="h-4 w-4" />
+              {t('home.statementCta')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>
@@ -219,18 +234,18 @@ const HomePage = () => {
         {/* ── 5. Tabbed "Explore by Mood" ── */}
         <section className="home-section" data-reveal>
           <div className="home-section__head">
-            <p className="editorial-eyebrow">JELAJAHI BERDASARKAN MOOD</p>
-            <TextReveal text="Temukan arah aromamu" />
+            <p className="editorial-eyebrow">{t('home.byMood')}</p>
+            <TextReveal text={t('home.moodLead')} />
           </div>
           <div className="home-moods">
             <div className="home-moods__tabs">
               {moodCategories.map((mood, i) => (
                 <button
-                  key={mood.name}
+                  key={mood.nameKey}
                   className={`home-moods__tab ${i === activeMood ? 'home-moods__tab--active' : ''}`}
                   onClick={() => setActiveMood(i)}
                 >
-                  <span className="home-moods__tab-name">{mood.name}</span>
+                  <span className="home-moods__tab-name">{t(mood.nameKey)}</span>
                   <ArrowRight className="home-moods__tab-arrow h-4 w-4" />
                 </button>
               ))}
@@ -238,15 +253,15 @@ const HomePage = () => {
             <div className="home-moods__panel">
               <div className="home-moods__panel-visual" data-family={moodCategories[activeMood].family.toLowerCase()}>
                 {siteImages[moodCategories[activeMood].siteImageKey] ? (
-                  <img src={img(siteImages[moodCategories[activeMood].siteImageKey], 720)} alt={moodCategories[activeMood].name} className="home-moods__panel-image" />
+                  <img src={img(siteImages[moodCategories[activeMood].siteImageKey], 720)} alt={t(moodCategories[activeMood].nameKey)} className="home-moods__panel-image" />
                 ) : null}
                 <span className="home-moods__panel-family">{moodCategories[activeMood].family}</span>
               </div>
               <div className="home-moods__panel-body">
-                <h3>{moodCategories[activeMood].name}</h3>
-                <p>{moodCategories[activeMood].description}</p>
+                <h3>{t(moodCategories[activeMood].nameKey)}</h3>
+                <p>{t(moodCategories[activeMood].bodyKey)}</p>
                 <Link to={`/catalog?family=${moodCategories[activeMood].filter}`} className="home-moods__panel-link">
-                  Belanja {moodCategories[activeMood].name} <ArrowRight className="h-4 w-4" />
+                  {t('home.shopMood', { mood: t(moodCategories[activeMood].nameKey) })} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -259,7 +274,7 @@ const HomePage = () => {
         {publishedArticles.length ? (
           <section className="home-section" data-reveal>
             <div className="home-section__head">
-              <p className="editorial-eyebrow">JURNAL</p>
+              <p className="editorial-eyebrow">{t('home.journal')}</p>
               <TextReveal text="Catatan dari atelier" />
             </div>
             <div className="home-journal-grid" data-reveal data-stagger-children>
@@ -268,12 +283,12 @@ const HomePage = () => {
                   <span className="home-journal-card__category">{getJournalCategoryLabel(article.category)}</span>
                   <h3>{article.title}</h3>
                   <p>{getArticleExcerpt(article)}</p>
-                  <span className="home-journal-card__read-more">Baca Selengkapnya <ArrowRight className="h-3 w-3" /></span>
+                  <span className="home-journal-card__read-more">{t('home.readMore')} <ArrowRight className="h-3 w-3" /></span>
                 </Link>
               ))}
             </div>
             <div className="home-section__action">
-              <Link to="/journal">Baca jurnal <ArrowRight className="h-4 w-4" /></Link>
+              <Link to="/journal">{t('home.readJournal')} <ArrowRight className="h-4 w-4" /></Link>
             </div>
           </section>
         ) : null}
@@ -283,20 +298,20 @@ const HomePage = () => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter'])} sizes="100vw" loading="lazy" decoding="async" alt="Atelier Solivagant" className="home-newsletter__bg" />
+            <img src={img(siteImages['home-newsletter'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-newsletter'])} sizes="100vw" loading="lazy" decoding="async" alt={t('home.atelierAlt')} className="home-newsletter__bg" />
           )}
           <div className="home-newsletter__inner">
-            <p className="editorial-eyebrow">KOLABORASI</p>
-            <h2>Mari berkolaborasi dengan atelier.</h2>
-            <p className="home-newsletter__sub">Untuk kolaborasi, bespoke khusus, atau sekadar berbagi ide — hubungi Dekito langsung lewat WhatsApp.</p>
+            <p className="editorial-eyebrow">{t('home.collabEyebrow')}</p>
+            <h2>{t('home.collabHeading')}</h2>
+            <p className="home-newsletter__sub">{t('home.collabBody')}</p>
             <a
-              href={buildWhatsAppCheckoutUrl('Halo Dekito, saya tertarik berkolaborasi dengan SOLIVAGANT.')}
+              href={buildWhatsAppCheckoutUrl(t('home.collabMessage'))}
               target="_blank"
               rel="noopener noreferrer"
               className="home-newsletter__wa magnetic-hover"
               onMouseMove={handleMagnetic}
             >
-              <MessageCircle className="h-4 w-4" /> Hubungi WhatsApp Dekito
+              <MessageCircle className="h-4 w-4" /> {t('home.collabCta')}
             </a>
           </div>
         </section>

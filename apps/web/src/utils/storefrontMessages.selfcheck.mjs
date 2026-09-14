@@ -55,6 +55,10 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'why.atelier.cta',  // "Bespoke ritual" is the name of the service, not a description of it
   'region.enTitle',   // the international option is named in English on BOTH sides on purpose: it is
                       // what an Indonesian reader is switching TO, so translating it hides the switch
+  'home.tab',         // the browser tab is the shop's name, already in English on the Indonesian site
+  'home.tabMobile',   // same
+  'home.atelier',     // "atelier" is the word used in both, and it is the section's name
+  'mood.woody.short', // Cedar · Vetiver · Mineral — three material names, identical in both
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -136,8 +140,20 @@ const LEFTOVERS = [
   'Atelier Parfum Artisan', 'WhatsApp atelier', 'Tetap terhubung', 'Email kamu', 'Langganan',
   'Menyiapkan Solivagant', 'Sebentar, halaman', 'KENAPA BELI LANGSUNG', 'Yang tidak kamu dapat',
   'Halo Solivagant', 'Navigasi', 'Artikel',
+  // home
+  'ATELIER PARFUM ARTISAN', 'Karya olfaktori', 'Harga member, langsung', 'KOLEKSI SAAT INI',
+  'Fragrance pilihan', 'Lihat Koleksi', 'Lihat semua', 'Geser kiri', 'Geser kanan',
+  'Koleksi baru sedang disiapkan', 'JELAJAHI', 'Temukan arah', 'Baca Selengkapnya', 'Baca jurnal',
+  'Lihat koleksi', 'Lihat Koleksi',
+  'Tenang & Minimal', 'Hangat & Nostalgia', 'Gelap & Moody', 'Lembut & Romantis',
+  'Aroma sebagai', 'Konsultasi bespoke', 'Catatan lapangan', 'Parfum artisan yang',
+  'Rasa di Atas Formula', 'Kami tidak mengejar', 'Konsultasi Bespoke', 'KOLABORASI',
+  'Mari berkolaborasi', 'Untuk kolaborasi', 'Hubungi WhatsApp', 'Halo Dekito',
+  'Perfumer bekerja', 'Atelier Solivagant',
 ];
 for (const file of [
+  ['pages', 'HomePage.jsx'],
+  ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['components', 'storefront', 'PublicHeader.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
   ['components', 'storefront', 'StorefrontHeader.jsx'],
@@ -174,11 +190,19 @@ for (const file of [
   ['components', 'storefront', 'StorefrontHeader.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
   ['layouts', 'MobileCommerceLayout.jsx'],
+  ['pages', 'HomePage.jsx'],
+  ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
+  ['pages', 'CatalogPage.jsx'],
+  ['pages', 'mobile', 'MobileCatalogPage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'],
+  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
 ]) {
   // React `key=` props legitimately use the message key as an identity — it is never shown — so they are
   // removed before the scan. What is left is text the browser would print.
   const source = read(...file).replace(/\bkey=\{[^}]*\}/g, '');
-  const rendered = source.match(/\{\s*\w+(?:\.\w+)*Key\s*\}/g) || [];
+  // Named suffixes, not "anything ending in Key": `{selectedVariantKey}` is a variant id, not a message
+  // key, and a regex broad enough to catch it would cry wolf until someone deletes this check.
+  const rendered = source.match(/\{\s*\w+\.(?:label|title|body|cta|name|notes|caption)Key\s*\}/g) || [];
   assert.deepEqual(rendered, [],
     `${file.join('/')} renders a message KEY instead of translating it: ${rendered.join(', ')}`);
 }
@@ -190,6 +214,8 @@ for (const file of [
 // So the storefront is forbidden from reading the Indonesian `label` at all. Studio reads it; the
 // storefront reads `labelKey` and translates.
 for (const file of [
+  ['pages', 'HomePage.jsx'],
+  ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
   ['layouts', 'MobileCommerceLayout.jsx'],

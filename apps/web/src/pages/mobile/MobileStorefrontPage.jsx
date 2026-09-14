@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
@@ -27,10 +28,12 @@ import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
 // pastel square holding one italic word, which reads as unfinished rather than minimal (UX backlog U-11).
 const moodCategories = [
-  { name: 'Tenang & Minimal', family: 'Fresh', notes: 'Citrus · Musk · Ringan' },
-  { name: 'Hangat & Nostalgia', family: 'Gourmand', notes: 'Vanila · Tonka · Hangat' },
-  { name: 'Gelap & Moody', family: 'Woody', notes: 'Cedar · Vetiver · Mineral' },
-  { name: 'Lembut & Romantis', family: 'Floral', notes: 'Mawar · Melati · Powdery' },
+  // `family` is the catalogue category in the link AND the perfumery family shown on the card — the same
+  // word in both languages. Only the mood name and the note summary are copy.
+  { nameKey: 'mood.fresh.name', family: 'Fresh', notesKey: 'mood.fresh.short' },
+  { nameKey: 'mood.gourmand.name', family: 'Gourmand', notesKey: 'mood.gourmand.short' },
+  { nameKey: 'mood.woody.name', family: 'Woody', notesKey: 'mood.woody.short' },
+  { nameKey: 'mood.floral.name', family: 'Floral', notesKey: 'mood.floral.short' },
 ];
 
 const getArticleExcerpt = (article) =>
@@ -38,6 +41,7 @@ const getArticleExcerpt = (article) =>
 
 export const MobileStorefrontContent = ({ active = true }) => {
   const navigate = useNavigate();
+  const { t } = useTranslate();
   const catalogProducts = useStorefrontProducts({ active });
   const { images: siteImages, loading: siteImagesLoading } = useSiteImages();
   const [articles, setArticles] = useState([]);
@@ -63,9 +67,9 @@ export const MobileStorefrontContent = ({ active = true }) => {
     <>
       {active ? (
         <Helmet>
-          <title>SOLIVAGANT - Artisan Perfumery</title>
+          <title>{t('home.tabMobile')}</title>
           <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/dashboard'))} />
-          <meta name="description" content="SOLIVAGANT, atelier parfum artisan oleh Dekito. Karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
+          <meta name="description" content={t('home.metaMobile')} />
         </Helmet>
       ) : null}
 
@@ -75,18 +79,18 @@ export const MobileStorefrontContent = ({ active = true }) => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" srcSet={srcSet(siteImages['home-hero'], HERO_WIDTHS)} sizes="100vw" />
+            <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt={t('home.heroAlt')} className="m-editorial-hero__image" loading="eager" srcSet={srcSet(siteImages['home-hero'], HERO_WIDTHS)} sizes="100vw" />
           )}
           <div className="m-editorial-hero__overlay">
-            <p className="m-editorial-eyebrow">ATELIER PARFUM ARTISAN</p>
-            <h1>Aroma sebagai objek kenangan.</h1>
-            <p className="m-editorial-hero__lede">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
-            <p className="m-editorial-hero__note">Harga member, langsung dari atelier.</p>
+            <p className="m-editorial-eyebrow">{t('home.eyebrow')}</p>
+            <h1>{t('home.headlineMobile')}</h1>
+            <p className="m-editorial-hero__lede">{t('home.lead')}</p>
+            <p className="m-editorial-hero__note">{t('home.note')}</p>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
-              Lihat koleksi <ArrowRight className="h-4 w-4" />
+              {t('home.seeCollection')} <ArrowRight className="h-4 w-4" />
             </button>
             <Link to="/mobile/customer" className="m-editorial-cta m-editorial-cta--quiet">
-              {currentUser ? 'Akun member' : 'Masuk untuk harga member'}
+              {t(currentUser ? 'nav.account' : 'nav.accountSub')}
             </Link>
           </div>
         </section>
@@ -95,8 +99,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
         {collection.length ? (
           <section className="m-editorial-section">
             <div className="m-editorial-section__head">
-              <p className="m-editorial-eyebrow">KOLEKSI SAAT INI</p>
-              <h2>Fragrance pilihan</h2>
+              <p className="m-editorial-eyebrow">{t('home.currentCollection')}</p>
+              <h2>{t('home.featured')}</h2>
             </div>
             <div className="m-editorial-product-grid">
               {collection.map((product) => (
@@ -114,7 +118,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               ))}
             </div>
             <div className="m-editorial-section__action">
-              <Link to="/mobile/catalog">Lihat semua <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/mobile/catalog">{t('home.seeAll')} <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           </section>
         ) : null}
@@ -128,18 +132,18 @@ export const MobileStorefrontContent = ({ active = true }) => {
         {/* Mood categories */}
         <section className="m-editorial-section">
           <div className="m-editorial-section__head">
-            <p className="m-editorial-eyebrow">JELAJAHI LEWAT MOOD</p>
-            <h2>Temukan arah aromamu</h2>
+            <p className="m-editorial-eyebrow">{t('home.byMoodMobile')}</p>
+            <h2>{t('home.moodLead')}</h2>
           </div>
           <div className="m-editorial-mood-grid">
             {moodCategories.map((mood) => (
-              <Link key={mood.name} to={`/mobile/catalog?category=${mood.family}`} className="m-editorial-mood-card">
+              <Link key={mood.nameKey} to={`/mobile/catalog?category=${mood.family}`} className="m-editorial-mood-card">
                 <div className="m-editorial-mood-card__visual" data-family={mood.family.toLowerCase()}>
                   <LineMark className="m-editorial-mood-card__mark" />
                   <span>{mood.family}</span>
                 </div>
-                <h3>{mood.name}</h3>
-                <p className="m-editorial-mood-card__notes">{mood.notes}</p>
+                <h3>{t(mood.nameKey)}</h3>
+                <p className="m-editorial-mood-card__notes">{t(mood.notesKey)}</p>
               </Link>
             ))}
           </div>
@@ -150,13 +154,13 @@ export const MobileStorefrontContent = ({ active = true }) => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" srcSet={srcSet(siteImages['home-statement'], STATEMENT_WIDTHS)} sizes="100vw" />
+            <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt={t('home.statementAlt')} className="m-editorial-statement__image" loading="lazy" srcSet={srcSet(siteImages['home-statement'], STATEMENT_WIDTHS)} sizes="100vw" />
           )}
           <div className="m-editorial-statement__overlay">
-            <p className="m-editorial-eyebrow">ATELIER</p>
-            <h2>Aroma sebagai atmosfer pribadi.</h2>
+            <p className="m-editorial-eyebrow">{t('home.atelier')}</p>
+            <h2>{t('home.atelierHeading')}</h2>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/bespoke')}>
-              Konsultasi bespoke <ArrowRight className="h-4 w-4" />
+              {t('home.bespokeCta')} <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </section>
@@ -165,8 +169,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
         {articles.length ? (
           <section className="m-editorial-section">
             <div className="m-editorial-section__head">
-              <p className="m-editorial-eyebrow">JURNAL</p>
-              <h2>Catatan lapangan</h2>
+              <p className="m-editorial-eyebrow">{t('home.journal')}</p>
+              <h2>{t('home.journalHeading')}</h2>
             </div>
             <div className="m-editorial-journal-list">
               {articles.map((article) => (
@@ -178,7 +182,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               ))}
             </div>
             <div className="m-editorial-section__action">
-              <Link to="/mobile/articles">Baca jurnal <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/mobile/articles">{t('home.readJournal')} <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           </section>
         ) : null}
