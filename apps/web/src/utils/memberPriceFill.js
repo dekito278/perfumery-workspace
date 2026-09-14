@@ -1,4 +1,4 @@
-// Working out a member price from a retail one, in bulk.
+// Working out a member price — and an overseas price — from a retail one, in bulk.
 //
 // Tier prices are edited inside the product form, one product at a time — which is why 17 of 18 products
 // still had none weeks after the feature shipped. This is the rule behind the "isi semua" button on the
@@ -8,10 +8,15 @@
 
 export const DEFAULT_MEMBER_DISCOUNT_PERCENT = 10;
 
+// Dekito's one filled overseas price is Maskumambang at Rp 1.400.000 against Rp 550.000 retail — 2,55x.
+// 2.5 is that, rounded to something a person would actually type into the multiplier box.
+export const DEFAULT_OVERSEAS_MULTIPLIER = 2.5;
+
 // Prices here are five and six figures, and 296.100 is not a price anyone writes on a shelf. Rounding is
 // DOWN to the nearest thousand, always — so the rounding can only ever favour the buyer. A member paying
 // slightly less than the stated cut is a rounding choice; paying slightly more would be a broken promise.
 const ROUND_TO = 1000;
+const OVERSEAS_ROUND_TO = 10000;
 
 const toPositiveNumber = (value) => {
   const parsed = Number(value);
@@ -36,6 +41,29 @@ export const memberPriceFromRetail = (retailPrice, percent = DEFAULT_MEMBER_DISC
   return rounded;
 };
 
+/**
+ * The overseas price for a retail one.
+ *
+ * Rounds UP, to the nearest ten thousand — the opposite direction to the member price above, and on
+ * purpose. A member discount that rounds down costs a few hundred rupiah and keeps a promise; an export
+ * price that rounds down eats into the margin that covers customs, handling and the hand-quoted shipping,
+ * on an order that is already the most expensive one to get wrong.
+ *
+ * @returns null when there is nothing sensible to suggest — no retail price, a multiplier outside
+ *   1.01..10, or a result that would not actually be above retail. Null means "leave this row alone".
+ */
+export const overseasPriceFromRetail = (retailPrice, multiplier = DEFAULT_OVERSEAS_MULTIPLIER) => {
+  const retail = toPositiveNumber(retailPrice);
+  const factor = Number(multiplier);
+  if (retail === null || !Number.isFinite(factor) || factor <= 1 || factor > 10) return null;
+
+  // No "is it actually above retail?" check here, unlike the member price above: the multiplier is
+  // already forced above 1 and rounding only ever goes up, so the result cannot land at or below retail.
+  // A sabotage proved that branch unreachable — dead code that reads like a safeguard is worse than none,
+  // because the next reader trusts it. The screen still flags a hand-typed price below retail.
+  return Math.ceil((retail * factor) / OVERSEAS_ROUND_TO) * OVERSEAS_ROUND_TO;
+};
+
 /** What the buyer saves, for the preview column. */
 export const memberSaving = (retailPrice, memberPrice) => {
   const retail = toPositiveNumber(retailPrice);
@@ -49,7 +77,7 @@ export const memberSaving = (retailPrice, memberPrice) => {
  * table is keyed by variant, so building rows from the variants is what keeps a second variant from
  * silently sharing the first one's price.
  */
-export const buildCurationRows = (products = [], memberPriceByKey = {}) => {
+export const buildCurationRows = (products = [], memberPriceByKey = {}, overseasPriceByKey = {}) => {
   const rows = [];
   for (const product of products || []) {
     if (!product?.id) continue;
@@ -70,6 +98,7 @@ export const buildCurationRows = (products = [], memberPriceByKey = {}) => {
         retail,
         featured: product.featured === true,
         savedMember: toPositiveNumber(memberPriceByKey[`${product.id}|${variantId}`]),
+        savedOverseas: toPositiveNumber(overseasPriceByKey[`${product.id}|${variantId}`]),
       });
     }
   }
@@ -84,10 +113,13 @@ export const collectCurationChanges = (rows = [], draft = {}) => {
   for (const row of rows || []) {
     const next = draft?.[row.key] || {};
 
-    if (Object.prototype.hasOwnProperty.call(next, 'member')) {
-      const value = next.member === '' || next.member === null ? null : toPositiveNumber(next.member);
-      if (value !== (row.savedMember ?? null)) {
-        priceChanges.push({ productId: row.productId, variantId: row.variantId, priceNumber: value, row });
+    // One loop, both tiers: a second copy of this comparison is how member and overseas drift apart.
+    for (const [field, tier, saved] of [['member', 'member', row.savedMember], ['overseas', 'overseas', row.savedOverseas]]) {
+      if (!Object.prototype.hasOwnProperty.call(next, field)) continue;
+      const raw = next[field];
+      const value = raw === '' || raw === null ? null : toPositiveNumber(raw);
+      if (value !== (saved ?? null)) {
+        priceChanges.push({ productId: row.productId, variantId: row.variantId, tier, priceNumber: value, row });
       }
     }
 
