@@ -2,19 +2,6 @@ import { calculatePercentages } from '@/utils/formulaCalculations.js';
 
 export const roundToThree = (value) => Math.round(Number(value || 0) * 1000) / 1000;
 
-export const buildPacedRevisionVersion = (currentVersion) => {
-  const normalized = String(currentVersion || '').trim();
-  if (!normalized) {
-    return 'PACED';
-  }
-
-  if (/paced/i.test(normalized)) {
-    return `${normalized}-R2`;
-  }
-
-  return `${normalized}-PACED`;
-};
-
 export const buildPacedRevisionItems = (items, recommendations) => {
   const recommendationMap = new Map((recommendations || []).map((recommendation) => [recommendation.itemId, recommendation]));
   const adjustedItems = (items || []).map((item, index) => {
