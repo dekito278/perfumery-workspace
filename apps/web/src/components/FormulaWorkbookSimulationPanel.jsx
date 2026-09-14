@@ -13,44 +13,7 @@ import {
   normalizePacePriorityMode,
 } from '@/utils/pacePriority.js';
 import FormulaSensoryChartLayer from '@/components/FormulaSensoryChartLayer.jsx';
-
-const SCORE_BANDS = [
-  {
-    label: 'Strong',
-    helper: '75+',
-    tone: 'success',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-  },
-  {
-    label: 'Healthy',
-    helper: '60-74',
-    tone: 'accent',
-    className: 'border-primary/20 bg-primary/5 text-primary',
-  },
-  {
-    label: 'Needs work',
-    helper: '40-59',
-    tone: 'default',
-    className: 'border-border bg-background text-foreground',
-  },
-  {
-    label: 'Weak',
-    helper: '<40',
-    tone: 'danger',
-    className: 'border-destructive/25 bg-destructive/5 text-destructive',
-  },
-];
-
-const PACE_TARGETS = {
-  opening: 60,
-  heart: 60,
-  drydown: 62,
-  diffusion: 58,
-  tenacity: 62,
-  harmony: 68,
-  smoothness: 64,
-  bridgeQuality: 62,
-};
+import { PACE_TARGETS, SCORE_BANDS, getScoreBand } from '@/utils/paceScoreBands.js';
 
 const formatHours = (value) => {
   if (value === null || value === undefined) {
@@ -73,22 +36,6 @@ const PACE_METRIC_HELP = {
   'Heart -> Base': 'How well the heart continues into the drydown.',
   'Contributor Diversity': 'How evenly the formula is supported instead of leaning on one dominant material.',
   'Pyramid Balance': 'How close the formula is to a balanced top / middle / base structure.',
-};
-
-const getScoreBand = (value) => {
-  if (value >= 75) {
-    return SCORE_BANDS[0];
-  }
-
-  if (value >= 60) {
-    return SCORE_BANDS[1];
-  }
-
-  if (value >= 40) {
-    return SCORE_BANDS[2];
-  }
-
-  return SCORE_BANDS[3];
 };
 
 const sortRowsByWeight = (rows) => (
