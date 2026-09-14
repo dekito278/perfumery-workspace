@@ -5,7 +5,7 @@ import { ArrowRight, Search } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
-import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
+import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
@@ -115,6 +115,9 @@ export const MobileCatalogContent = ({ active = true }) => {
                   <span className="m-editorial-product-card__category">{product.category || 'Atelier'}</span>
                   <h3>{product.name}</h3>
                   <span className="m-editorial-product-card__price">{product.price}</span>
+                  {product.memberPriceNumber ? (
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(product.memberPriceNumber)}</span>
+                  ) : null}
                 </div>
               </Link>
             ))}

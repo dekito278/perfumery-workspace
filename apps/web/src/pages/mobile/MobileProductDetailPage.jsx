@@ -220,6 +220,9 @@ const MobileProductDetailPage = () => {
             <div className="m-editorial-pdp__sticky-info">
               <span className="m-editorial-pdp__sticky-name">{product.name}</span>
               <span className="m-editorial-pdp__sticky-price">{formatRupiah(selectedPrice)}</span>
+              {selectedVariant?.memberPriceNumber || product.memberPriceNumber ? (
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(selectedVariant?.memberPriceNumber || product.memberPriceNumber)}</span>
+              ) : null}
             </div>
             <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
               <ShoppingBag className="h-4 w-4" />

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { getMyPriceTier, getTierPricesFor } from '@/services/tierPricingService.js';
+import { getMyPriceTier, getPublicMemberPrices, getTierPricesFor } from '@/services/tierPricingService.js';
 import { applyTierPrices } from '@/utils/tierPricedCatalog.js';
+import { attachMemberPrices } from '@/utils/memberPriceNudge.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import supabase from '@/lib/supabaseClient.js';
 
@@ -45,6 +46,39 @@ supabase.auth.onAuthStateChange((event) => {
   loadTierPrices();
 });
 
+// The member prices everyone may see, so a visitor who is not signed in can be shown the reason to.
+// Not tied to the session: the same index applies before and after signing in, so it is loaded once
+// per app rather than once per auth change.
+let memberState = { index: {} };
+let memberLoaded = false;
+let memberInFlight = null;
+const memberListeners = new Set();
+
+const loadMemberPrices = () => {
+  if (memberInFlight) return memberInFlight;
+  memberInFlight = getPublicMemberPrices()
+    .then(({ index }) => {
+      memberState = { index };
+      memberLoaded = true;
+      for (const listener of memberListeners) listener(memberState);
+    })
+    .finally(() => { memberInFlight = null; });
+  return memberInFlight;
+};
+
+export const useMemberPrices = () => {
+  const [state, setState] = useState(memberState);
+
+  useEffect(() => {
+    memberListeners.add(setState);
+    if (!memberLoaded) loadMemberPrices();
+    else setState(memberState);
+    return () => { memberListeners.delete(setState); };
+  }, []);
+
+  return state;
+};
+
 export const useTierPrices = () => {
   const [state, setState] = useState(tierState);
 
@@ -62,7 +96,13 @@ export const useTierPrices = () => {
 export const useStorefrontProducts = (options) => {
   const products = useCatalogProducts(options);
   const { tier, index } = useTierPrices();
-  return useMemo(() => applyTierPrices(products, tier, index, formatRupiah), [products, tier, index]);
+  const { index: memberIndex } = useMemberPrices();
+  return useMemo(
+    // Tier first, then the nudge: once a member's price has been lowered to the member price, the nudge
+    // finds nothing lower and stays away. The order is what keeps a member from being told to sign in.
+    () => attachMemberPrices(applyTierPrices(products, tier, index, formatRupiah), memberIndex),
+    [products, tier, index, memberIndex],
+  );
 };
 
 export default useStorefrontProducts;
