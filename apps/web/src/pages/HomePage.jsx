@@ -5,6 +5,8 @@ import { ArrowRight, MessageCircle } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import WhyBuyDirect from '@/components/storefront/WhyBuyDirect.jsx';
+import { buildWhatsAppCheckoutUrl } from '@/services/cartService.js';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -193,6 +195,11 @@ const HomePage = () => {
           )}
         </section>
 
+        <LineDivider className="line-divider" draw data-reveal />
+
+        {/* ── 3b. Why buy here — the four things a marketplace cannot offer ── */}
+        <WhyBuyDirect />
+
         {/* ── 4. Full-bleed Editorial Statement ── */}
         <section className="home-statement" data-reveal="scale">
           {/* No photograph until the upload list settles: the bundled fallback is a different
@@ -283,7 +290,7 @@ const HomePage = () => {
             <h2>Mari berkolaborasi dengan atelier.</h2>
             <p className="home-newsletter__sub">Untuk kolaborasi, bespoke khusus, atau sekadar berbagi ide — hubungi Dekito langsung lewat WhatsApp.</p>
             <a
-              href="https://wa.me/6287774026625?text=Halo%20Dekito%2C%20saya%20tertarik%20berkolaborasi%20dengan%20SOLIVAGANT."
+              href={buildWhatsAppCheckoutUrl('Halo Dekito, saya tertarik berkolaborasi dengan SOLIVAGANT.')}
               target="_blank"
               rel="noopener noreferrer"
               className="home-newsletter__wa magnetic-hover"
