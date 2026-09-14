@@ -73,31 +73,49 @@ const sbSelectOptional = async (path) => {
 // Who is buying, taken from their own access token and nothing else. The customer code the browser sends
 // is printed on every invoice, so resolving a tier from it would let anyone paste a reseller's code and
 // buy at reseller prices. No token, or a token that does not verify, is retail.
-const resolveBuyerTier = async (req) => {
+// Returns the account id as well as the tier: a per-account voucher limit can only be counted against a
+// verified identity, and this is the only place one exists. ANON is the safe answer for both — retail
+// prices, and no account, which a per-account voucher refuses rather than waves through.
+const ANONYMOUS_BUYER = { tier: 'retail', authUserId: null };
+
+const resolveBuyer = async (req) => {
   const header = String(req.headers?.authorization || '');
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  if (!token) return 'retail';
+  if (!token) return ANONYMOUS_BUYER;
 
   const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
   const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return 'retail';
+  if (!url || !key) return ANONYMOUS_BUYER;
 
   try {
     const response = await fetch(`${url}/auth/v1/user`, {
       headers: { apikey: key, Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) return 'retail';
+    if (!response.ok) return ANONYMOUS_BUYER;
     const user = await response.json();
-    if (!user?.id) return 'retail';
+    if (!user?.id) return ANONYMOUS_BUYER;
 
     const rows = await sbSelectOptional(
       `storefront_customers?auth_user_id=eq.${encodeURIComponent(user.id)}&select=tier&limit=1`,
     );
     // Signed in at all makes someone a member; only a row an admin wrote makes them a reseller.
-    return rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member';
+    return { tier: rows?.[0]?.tier === 'reseller' ? 'reseller' : 'member', authUserId: user.id };
   } catch {
-    return 'retail';
+    return ANONYMOUS_BUYER;
   }
+};
+
+// How much of this code the account has already redeemed. Advisory: it lets checkout be refused with the
+// right message before an order exists, but storefront_record_voucher_usage is what actually enforces
+// the limit, inside the lock. A missing auth_user_id column (migration not applied) reads as 0, which is
+// exactly right — without the column there is no per-account limit to enforce either.
+const countAccountRedemptions = async (code, authUserId) => {
+  if (!authUserId) return 0;
+  const rows = await sbSelectOptional(
+    `storefront_voucher_usage_records?voucher_code=eq.${encodeURIComponent(code)}`
+    + `&auth_user_id=eq.${encodeURIComponent(authUserId)}&select=amount`,
+  );
+  return (rows || []).reduce((sum, row) => sum + (Number(row?.amount) || 0), 0);
 };
 
 // --- authoritative price recompute (never trust a client price) ------------------------------------
@@ -248,7 +266,8 @@ export default async function handler(req, res) {
     const isBespoke = input.source === 'bespoke' || Boolean(input.bespoke);
 
     // 1. Item prices (authoritative, from DB)
-    const buyerTier = await resolveBuyerTier(req);
+    const buyer = await resolveBuyer(req);
+    const buyerTier = buyer.tier;
     const catalog = await priceCatalogItems(input.items || [], buyerTier);
     const bespoke = isBespoke ? await priceBespokeOptions(input.bespoke?.optionIds || {}) : { subtotal: 0, labels: {} };
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
@@ -291,7 +310,14 @@ export default async function handler(req, res) {
     const voucherCode = String(input.voucherCode || '').trim().toUpperCase();
     if (voucherCode) {
       const [voucherRow] = await sbSelect(`storefront_vouchers?code=eq.${encodeURIComponent(voucherCode)}&select=*`);
-      const verdict = validateVoucher({ code: voucherCode, voucher: voucherRow, subtotal: itemsSubtotal, items: catalog.resolved });
+      const verdict = validateVoucher({
+        code: voucherCode,
+        voucher: voucherRow,
+        subtotal: itemsSubtotal,
+        items: catalog.resolved,
+        accountId: buyer.authUserId,
+        accountRedemptions: await countAccountRedemptions(voucherCode, buyer.authUserId),
+      });
       // Dropping an invalid voucher server-side charged the buyer more than the total they confirmed.
       // Refuse instead, so checkout can re-price and show them the real number (audit round 7).
       if (!verdict.valid) {
@@ -407,9 +433,21 @@ export default async function handler(req, res) {
     // server-side: api/doku/notification (terminal cancel) and api/orders/expire-reservations (sweep).
     if (voucherSnapshot) {
       try {
-        await sbRpc('storefront_record_voucher_usage', {
+        const usageArgs = {
           p_voucher_code: voucherSnapshot.code, p_order_id: order.id, p_order_number: order.order_number, p_amount: 1,
-        });
+        };
+        try {
+          await sbRpc('storefront_record_voucher_usage', { ...usageArgs, p_auth_user_id: buyer.authUserId });
+        } catch (rpcError) {
+          // PostgREST resolves a function by its argument NAMES, so passing p_auth_user_id to the
+          // pre-migration 4-argument version is "function not found" — not a refusal. Retrying without it
+          // keeps every existing voucher checkout working until Dekito applies the migration; a real
+          // refusal (quota, per-account) does not match this and is rethrown to the handler below.
+          const missingSignature = /PGRST202|Could not find the function|does not exist/i.test(String(rpcError?.message || ''));
+          if (!missingSignature) throw rpcError;
+          console.warn('Per-account voucher migration not applied; recording usage without the account.');
+          await sbRpc('storefront_record_voucher_usage', usageArgs);
+        }
       } catch (voucherError) {
         await fetch(`${restUrl}/storefront_orders?order_number=eq.${encodeURIComponent(order.order_number)}`, {
           method: 'PATCH',

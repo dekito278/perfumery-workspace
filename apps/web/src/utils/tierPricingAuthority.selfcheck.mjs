@@ -16,26 +16,32 @@ const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const endpoint = readFileSync(join(webRoot, 'api', 'orders', 'create.js'), 'utf8');
 const orderService = readFileSync(join(webRoot, 'src', 'services', 'orderService.js'), 'utf8');
 
-const resolver = endpoint.slice(endpoint.indexOf('const resolveBuyerTier'), endpoint.indexOf('// --- authoritative price recompute'));
+const resolver = endpoint.slice(endpoint.indexOf('const resolveBuyer'), endpoint.indexOf('// --- authoritative price recompute'));
 assert.ok(resolver, 'the endpoint no longer resolves a buyer tier');
 
 // Identity comes from the token, and only the token.
 assert.match(resolver, /req\.headers\?\.authorization/, 'the tier must be read from the Authorization header');
-assert.match(resolver, /if \(!token\) return 'retail';/, 'no token is retail, not an error and not a guess');
+// The anonymous answer is a named constant now, because the resolver returns an identity as well as a
+// tier and both halves have to be safe: retail prices, and NO account — which a per-account voucher
+// refuses rather than waves through. Assert the invariant, not the spelling.
+assert.match(endpoint, /const ANONYMOUS_BUYER = \{ tier: 'retail', authUserId: null \}/,
+  'the anonymous buyer must be retail with no account');
+assert.match(resolver, /if \(!token\) return ANONYMOUS_BUYER;/, 'no token is anonymous, not an error and not a guess');
 assert.match(resolver, /auth\/v1\/user/, 'the token has to be verified with Supabase, not merely decoded');
 assert.doesNotMatch(resolver, /customer_code|customerCode|input\./,
   'the tier must never be resolved from the customer code — it is printed on every invoice');
 
 // Every failure path lands on retail. A thrown error must not become a free reseller discount, nor a
 // crash that blocks an honest order.
-assert.equal((resolver.match(/return 'retail'/g) || []).length, 5,
+assert.equal((resolver.match(/return ANONYMOUS_BUYER;/g) || []).length, 5,
   'all five ways this can fail land on retail: no token, no env, the check rejecting the token, a '
   + 'response with no user id, and anything thrown');
 assert.match(resolver, /rows\?\.\[0\]\?\.tier === 'reseller' \? 'reseller' : 'member'/,
   'only a row an admin wrote makes a reseller; being signed in at all makes a member');
 
 // The resolved tier is what prices the order.
-assert.match(endpoint, /const buyerTier = await resolveBuyerTier\(req\);/);
+assert.match(endpoint, /const buyer = await resolveBuyer\(req\);\s*\n\s*const buyerTier = buyer\.tier;/,
+  'the recompute must be fed the tier this endpoint resolved itself');
 assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier\)/,
   'the recompute must be given the resolved tier, or it silently prices everything at retail');
 
