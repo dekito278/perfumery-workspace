@@ -43,10 +43,14 @@ const PwaInstallPrompt = () => {
   // threshold is crossed — there is nothing more to learn after that.
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
+    // Distance travelled SINCE MOUNT, not the absolute position. Browsers restore scroll on a revisit
+    // (history.scrollRestoration = 'auto', bfcache, tab restore) and fire a scroll event for it — seen live:
+    // a first visit with scrollY already at 800 opened the gate for a scroll nobody made.
+    const startY = window.scrollY || 0;
     const onScroll = () => {
-      const y = window.scrollY || 0;
-      setScrolledPx(y);
-      if (y >= INSTALL_PROMPT_SCROLL_PX) window.removeEventListener('scroll', onScroll);
+      const travelled = Math.max(0, (window.scrollY || 0) - startY);
+      setScrolledPx(travelled);
+      if (travelled >= INSTALL_PROMPT_SCROLL_PX) window.removeEventListener('scroll', onScroll);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
