@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 
 const TIER_LABELS = { member: 'Harga member', reseller: 'Harga reseller' };
 
@@ -17,6 +18,7 @@ const TIER_LABELS = { member: 'Harga member', reseller: 'Harga reseller' };
  */
 const PriceNote = ({ product, variant = null, className = '' }) => {
   const { loginWithGoogle } = useAuth();
+  const overseasPrice = useOverseasPrice(product, variant);
   const price = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);
 
   const tierLabel = TIER_LABELS[product?.priceTier];
@@ -36,8 +38,13 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   // attachMemberPrices only sets memberPriceNumber when it is strictly below the price on the line, so
   // this branch cannot fire for a signed-in member (their price already IS the member price) nor for a
   // product with no member price — which, until Dekito fills them in, is every product.
+  //
+  // Not shown to a visitor being quoted internationally. Their price is the export price — Rp 1.400.000
+  // where this line would offer Rp 550.000 — so inviting them to sign in for the member price promises
+  // a number they will never be charged. That is the same bait-and-switch the export panel exists to
+  // prevent, pointing the other way, and a broken promise is worse than a missed nudge.
   const memberPrice = Number(variant?.memberPriceNumber ?? product?.memberPriceNumber ?? 0);
-  if (price && memberPrice && memberPrice < price) {
+  if (!overseasPrice && price && memberPrice && memberPrice < price) {
     return (
       <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
         <span>Member {formatRupiah(memberPrice)}</span>
