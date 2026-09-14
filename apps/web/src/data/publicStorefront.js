@@ -134,6 +134,14 @@ export const toPublicFragrance = (product = {}) => {
     heartNotes: heartNotes.length ? heartNotes : ['Atelier heart'],
     baseNotes: baseNotes.length ? baseNotes : ['Lasting trace'],
     notes: product.notes || [...topNotes.slice(0, 1), ...heartNotes.slice(0, 1), ...baseNotes.slice(0, 1)].filter(Boolean).join(', '),
+    // The English copy, carried through untouched and WITHOUT a fallback: an empty string here means
+    // "not translated yet", and productCopyFor decides what to show instead. Filling in an Indonesian
+    // fallback at this layer would make "translated" indistinguishable from "not".
+    descriptionEn: product.descriptionEn || '',
+    notesEn: product.notesEn || '',
+    topNotesEn: Array.isArray(product.topNotesEn) ? product.topNotesEn : [],
+    heartNotesEn: Array.isArray(product.heartNotesEn) ? product.heartNotesEn : [],
+    baseNotesEn: Array.isArray(product.baseNotesEn) ? product.baseNotesEn : [],
     mood: product.mood || product.character || 'Quiet, composed, personal',
     character: product.character || product.mood || 'A refined signature with measured projection.',
     concentration: product.concentration || 'Eau de Parfum',

@@ -22,6 +22,7 @@ import BriefText from '@/components/BriefText.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { productCopyFor } from '@/utils/productCopy.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
 
@@ -53,10 +54,15 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const { slug: slugParam = '' } = useParams();
   const slug = slugProp || slugParam;
   const studioProducts = useStorefrontProducts();
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
   const visibleProducts = studioProducts.filter(isProductVisibleInStorefront);
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(slug, visibleProducts);
+  // The product's own words, in the language of the shop being read. Per field: a bottle with an
+  // English description but no English notes shows both rather than hiding the half that is done.
+  // Declared AFTER `product` — putting it above threw "Cannot access before initialization" and killed
+  // the whole page while the build stayed green.
+  const copy = productCopyFor(product, region);
   const productsLoading = Boolean(studioProducts.loading);
   const { story: supabaseStory, loading: storyLoading } = useProductStory(slug);
   const { addItem } = useCart();
@@ -221,12 +227,12 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             {/* The written description carries blank lines the author typed; a bare {story} collapsed
                 them into one run-on block, the same way bespoke briefs used to render. */}
             <div className="pdp-story hero-animate-text hero-animate-text--d4">
-              <BriefText text={product.story} />
+              <BriefText text={copy.description} />
             </div>
 
             {/* Scent pyramid */}
             <div data-reveal>
-              <ScentPyramid product={product} />
+              <ScentPyramid product={{ ...product, ...copy }} />
             </div>
 
             {/* Meta details */}

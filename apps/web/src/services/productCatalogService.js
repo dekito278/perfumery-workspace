@@ -604,6 +604,13 @@ const fromDatabaseRow = (row) => normalizeProduct({
   mood: row.mood,
   wear: normalizeWear(row.wear),
   description: row.description,
+  // English copy. Named explicitly because this list is hand-written: a field not named here simply does
+  // not exist downstream, which is how the member price nudge shipped invisible in #147.
+  descriptionEn: row.description_en || '',
+  notesEn: row.notes_en || '',
+  topNotesEn: row.top_notes_en || [],
+  heartNotesEn: row.heart_notes_en || [],
+  baseNotesEn: row.base_notes_en || [],
   concentration: row.concentration,
   stock: row.stock,
   variants: row.variants,
