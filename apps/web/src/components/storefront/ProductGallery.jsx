@@ -2,6 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { getOptimizedProductImageUrl } from '@/services/productImageStorageService.js';
+import { getStorageImageSrcSet } from '@/utils/storageImage.js';
+
+// 64 CSS px on screen, so 192 covers a 3x phone. Capped deliberately — an uncapped list would hand a
+// high-DPR phone a candidate far larger than a thumbnail needs.
+const THUMB_WIDTHS = [96, 192];
 import { cn } from '@/lib/utils.js';
 
 const ProductGallery = ({ product, className = '', visualClassName = '', compact = false, priority = false }) => {
@@ -154,7 +159,20 @@ const ProductGallery = ({ product, className = '', visualClassName = '', compact
           <div className={cn('flex gap-2 overflow-x-auto pb-1', compact ? 'px-0' : '')}>
             {images.map((image, index) => (
               <button key={image} type="button" onClick={() => setActiveIndex(index)} className={cn('h-16 w-16 shrink-0 overflow-hidden rounded-2xl border bg-white', index === activeIndex ? 'border-editorial-stone ring-2 ring-editorial-charcoal/18' : 'border-[#e5e7eb]')} aria-label={`Select product image ${index + 1}`}>
-                <img src={image} alt="" className="h-full w-full object-contain p-1" loading="lazy" decoding="async" width="96" height="96" />
+                {/* These render at 64 CSS px. They used to be the RAW storage object: on
+                    /mobile/products/patchouli-so-sexy that was five originals, 4.9 MB, for a strip of
+                    thumbnails — the main image beside them went through the transform all along. */}
+                <img
+                  src={getOptimizedProductImageUrl(image, THUMB_WIDTHS[0]) || image}
+                  srcSet={getStorageImageSrcSet(image, THUMB_WIDTHS)}
+                  sizes="64px"
+                  alt=""
+                  className="h-full w-full object-contain p-1"
+                  loading="lazy"
+                  decoding="async"
+                  width="96"
+                  height="96"
+                />
               </button>
             ))}
           </div>
