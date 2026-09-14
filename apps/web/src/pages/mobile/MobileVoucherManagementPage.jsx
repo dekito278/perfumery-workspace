@@ -36,6 +36,7 @@ const emptyDraft = {
   expiresAt: '',
   active: true,
   usageLimitTotal: '',
+  usageLimitPerAccount: '',
   eligibleProductSlugs: '',
   eligibleCategories: '',
 };
@@ -81,6 +82,7 @@ const toDraft = (voucher) => ({
   expiresAt: voucher?.expiresAt || '',
   active: voucher?.active !== false,
   usageLimitTotal: voucher?.usageLimitTotal || '',
+  usageLimitPerAccount: voucher?.usageLimitPerAccount || '',
   eligibleProductSlugs: (voucher?.eligibleProductSlugs || []).join(', '),
   eligibleCategories: (voucher?.eligibleCategories || []).join(', '),
 });
@@ -241,6 +243,7 @@ const MobileVoucherManagementPage = () => {
         minimumOrder: Number(draft.minimumOrder || 0),
         minimumQuantity: Number(draft.minimumQuantity || 0),
         usageLimitTotal: Number(draft.usageLimitTotal || 0),
+        usageLimitPerAccount: Number(draft.usageLimitPerAccount || 0),
         eligibleProductSlugs: draft.eligibleProductSlugs,
         eligibleCategories: draft.eligibleCategories,
       });
@@ -417,6 +420,22 @@ const MobileVoucherManagementPage = () => {
                   />
                 </label>
               </div>
+
+              <label className="grid gap-1 text-[10px] font-bold uppercase text-[#6b7280]">
+                Limit per akun
+                <input
+                  value={draft.usageLimitPerAccount}
+                  onChange={(event) => updateDraft('usageLimitPerAccount', event.target.value)}
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0 = tanpa limit"
+                  className="mobile-form-control"
+                />
+                <span className="text-[10px] font-semibold normal-case text-[#6b7280]">
+                  Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun. Butuh migrasi 20260915020000.
+                </span>
+              </label>
 
               <button
                 type="button"

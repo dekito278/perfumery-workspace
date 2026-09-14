@@ -75,6 +75,7 @@ const voucherToPayload = (voucher) => ({
   expires_at: voucher.expiresAt || null,
   active: voucher.active,
   usage_limit_total: voucher.usageLimitTotal,
+  usage_limit_per_account: voucher.usageLimitPerAccount,
   usage_count: voucher.usageCount,
   eligible_product_slugs: normalizeSlugList(voucher.eligibleProductSlugs),
   eligible_categories: normalizeTextList(voucher.eligibleCategories),
@@ -218,7 +219,19 @@ export const saveVoucher = async (input) => {
     ? supabase.from(VOUCHER_TABLE).update(payload).eq('id', voucher.id).select('*').single()
     : supabase.from(VOUCHER_TABLE).upsert(payload, { onConflict: 'code' }).select('*').single();
 
-  const { data, error } = await request;
+  let { data, error } = await request;
+  // 20260915020000 is applied by hand. Until it is, usage_limit_per_account does not exist and every
+  // voucher save would fail — so drop that one field and retry, exactly as the formula lineage write does.
+  // A per-account limit set before the migration is silently not saved, which is why the Studio field
+  // says so; everything else keeps saving.
+  if (error && /usage_limit_per_account/.test(String(error.message || ''))) {
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.usage_limit_per_account;
+    const retry = voucher.id && !String(voucher.id).startsWith('voucher-')
+      ? supabase.from(VOUCHER_TABLE).update(fallbackPayload).eq('id', voucher.id).select('*').single()
+      : supabase.from(VOUCHER_TABLE).upsert(fallbackPayload, { onConflict: 'code' }).select('*').single();
+    ({ data, error } = await retry);
+  }
   if (error) {
     throw new Error(error.message || 'Gagal menyimpan voucher');
   }
@@ -276,9 +289,44 @@ export const applyVoucherToSubtotal = ({ code, voucher, subtotal = 0, items = []
   };
 };
 
+/**
+ * How much of this code the signed-in caller has already redeemed. ADVISORY ONLY — it exists so checkout
+ * can refuse with the right message before the buyer fills the whole form. The authority is
+ * storefront_record_voucher_usage, which counts inside the lock that reserves the quota.
+ *
+ * The RPC reads auth.uid() and nothing else, so it cannot be asked about another account. 0 whenever it
+ * cannot be answered: signed out, or the migration not applied. 0 never grants anything by itself — a
+ * per-account voucher still needs an accountId to pass validateVoucher.
+ */
+export const getMyVoucherRedemptions = async (code) => {
+  const normalizedCode = normalizeVoucherCode(code);
+  if (!normalizedCode) return 0;
+  try {
+    const { data, error } = await supabase.rpc('storefront_voucher_redeemed_by_me', { p_code: normalizedCode });
+    if (error) throw error;
+    return Number(data) || 0;
+  } catch {
+    return 0;
+  }
+};
+
+const getSignedInAccountId = async () => {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
 export const applyVoucherToSubtotalAsync = async ({ code, voucher, subtotal = 0, items = [], vouchers, now } = {}) => {
   const normalizedCode = normalizeVoucherCode(code || voucher?.code);
   const matchedVoucher = voucher || findVoucherByCode(normalizedCode, vouchers || getCachedVouchers()) || await findVoucherByCodeAsync(normalizedCode);
+  // Only asked when the voucher actually has a per-account limit: every other code is unaffected, and an
+  // extra round trip on every keystroke of an ordinary code would be paid by everyone for nothing.
+  const perAccount = Number(matchedVoucher?.usageLimitPerAccount || 0) > 0;
+  const accountId = perAccount ? await getSignedInAccountId() : null;
+  const accountRedemptions = perAccount && accountId ? await getMyVoucherRedemptions(normalizedCode) : 0;
   const validation = validateVoucher({
     code: normalizedCode,
     voucher: matchedVoucher,
@@ -286,6 +334,8 @@ export const applyVoucherToSubtotalAsync = async ({ code, voucher, subtotal = 0,
     items,
     vouchers,
     now,
+    accountId,
+    accountRedemptions,
   });
   const orderSubtotal = toAmount(subtotal);
 

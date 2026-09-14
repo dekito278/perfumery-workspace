@@ -18,6 +18,8 @@ export const VOUCHER_VALIDATION_REASONS = {
   MINIMUM_ORDER: 'minimum_order',
   MINIMUM_QUANTITY: 'minimum_quantity',
   USAGE_LIMIT_REACHED: 'usage_limit_reached',
+  ACCOUNT_REQUIRED: 'account_required',
+  ACCOUNT_LIMIT_REACHED: 'account_limit_reached',
   NOT_APPLICABLE: 'not_applicable',
   INVALID_DISCOUNT: 'invalid_discount',
 };
@@ -140,6 +142,9 @@ export const normalizeVoucher = (input = {}, existingVouchers = []) => {
     expiresAt: String(input.expiresAt ?? input.expires_at ?? '').trim(),
     active: input.active === undefined ? true : Boolean(input.active),
     usageLimitTotal: toAmount(input.usageLimitTotal ?? input.usage_limit_total),
+    // 0 = unlimited, exactly as usageLimitTotal reads. A deployment without the migration has no column,
+    // so this is 0 and every voucher behaves as it does today.
+    usageLimitPerAccount: toAmount(input.usageLimitPerAccount ?? input.usage_limit_per_account),
     usageCount: toAmount(input.usageCount ?? input.usage_count ?? currentVoucher?.usageCount),
     eligibleProductSlugs: normalizeSlugList(input.eligibleProductSlugs ?? input.eligible_product_slugs ?? currentVoucher?.eligibleProductSlugs),
     eligibleCategories: normalizeTextList(input.eligibleCategories ?? input.eligible_categories ?? currentVoucher?.eligibleCategories),
@@ -177,6 +182,11 @@ export const validateVoucher = ({
   items = [],
   vouchers,
   now = new Date(),
+  // Who is asking, and how much of this code they have already redeemed. The browser fills these from
+  // the session and an advisory RPC; api/orders/create.js fills them from the buyer's verified token and
+  // a direct count. Defaults are the anonymous case: no account, nothing redeemed.
+  accountId = null,
+  accountRedemptions = 0,
 } = {}) => {
   const normalizedCode = normalizeVoucherCode(code || voucher?.code);
   if (!normalizedCode) {
@@ -288,6 +298,38 @@ export const validateVoucher = ({
       voucher: matchedVoucher,
       discountAmount: 0,
     };
+  }
+
+  // Per-account limit. Checked after the global quota, because an exhausted voucher is exhausted for
+  // everyone and that is the more useful thing to be told.
+  //
+  // No account means REFUSED, never "allowed": an anonymous buyer has no identity to count against, so
+  // letting them through would make the limit bypassable by simply not signing in. This function is the
+  // rule both sides read, but storefront_record_voucher_usage is what enforces it — it takes the count
+  // inside the same lock that reserves the quota, which is the only place two simultaneous checkouts by
+  // one account can be told apart.
+  if (matchedVoucher.usageLimitPerAccount > 0) {
+    if (!accountId) {
+      return {
+        valid: false,
+        reason: VOUCHER_VALIDATION_REASONS.ACCOUNT_REQUIRED,
+        message: `Voucher ${matchedVoucher.code} hanya untuk pembeli yang masuk ke akunnya. Masuk dengan Google dulu — sekalian dapat harga member.`,
+        voucher: matchedVoucher,
+        discountAmount: 0,
+      };
+    }
+
+    if (toAmount(accountRedemptions) >= matchedVoucher.usageLimitPerAccount) {
+      return {
+        valid: false,
+        reason: VOUCHER_VALIDATION_REASONS.ACCOUNT_LIMIT_REACHED,
+        message: matchedVoucher.usageLimitPerAccount === 1
+          ? `Voucher ${matchedVoucher.code} sudah pernah dipakai di akun ini.`
+          : `Voucher ${matchedVoucher.code} sudah dipakai ${formatNumber(accountRedemptions)}x di akun ini (maksimal ${formatNumber(matchedVoucher.usageLimitPerAccount)}x).`,
+        voucher: matchedVoucher,
+        discountAmount: 0,
+      };
+    }
   }
 
   const discountAmount = calculateVoucherDiscount(matchedVoucher, eligibleSubtotal);

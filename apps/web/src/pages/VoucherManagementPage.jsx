@@ -34,6 +34,7 @@ const emptyDraft = {
   expiresAt: '',
   active: true,
   usageLimitTotal: '',
+  usageLimitPerAccount: '',
   eligibleProductSlugs: '',
   eligibleCategories: '',
 };
@@ -71,6 +72,7 @@ const toDraft = (voucher) => ({
   expiresAt: voucher?.expiresAt || '',
   active: voucher?.active !== false,
   usageLimitTotal: voucher?.usageLimitTotal || '',
+  usageLimitPerAccount: voucher?.usageLimitPerAccount || '',
   eligibleProductSlugs: (voucher?.eligibleProductSlugs || []).join(', '),
   eligibleCategories: (voucher?.eligibleCategories || []).join(', '),
 });
@@ -176,6 +178,7 @@ const VoucherManagementPage = () => {
         minimumOrder: Number(draft.minimumOrder || 0),
         minimumQuantity: Number(draft.minimumQuantity || 0),
         usageLimitTotal: Number(draft.usageLimitTotal || 0),
+        usageLimitPerAccount: Number(draft.usageLimitPerAccount || 0),
         eligibleProductSlugs: draft.eligibleProductSlugs,
         eligibleCategories: draft.eligibleCategories,
       });
@@ -337,6 +340,21 @@ const VoucherManagementPage = () => {
                       placeholder="0 = tanpa limit"
                       className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
                     />
+                  </label>
+                  <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
+                    Limit per akun
+                    <input
+                      value={draft.usageLimitPerAccount}
+                      onChange={(event) => updateDraft('usageLimitPerAccount', event.target.value)}
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="0 = tanpa limit"
+                      className="h-12 rounded-2xl border bg-white px-4 text-sm font-bold outline-none focus:border-amber-300"
+                    />
+                    <span className="text-[10px] font-semibold normal-case text-muted-foreground">
+                      Di atas 0, kode ini wajib login dan hanya bisa dipakai sebanyak itu per akun. Butuh migrasi 20260915020000.
+                    </span>
                   </label>
                   <label className="grid gap-1 text-xs font-bold uppercase text-muted-foreground">
                     Expiry date
