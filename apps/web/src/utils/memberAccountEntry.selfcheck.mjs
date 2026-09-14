@@ -45,4 +45,14 @@ assert.match(portal, /const memberActive = priceTier === 'member' \|\| priceTier
   'and must not be inferred from merely being signed in');
 assert.match(portal, /memberActive \? <span[^>]*>Harga member aktif<\/span> : null/, 'the badge is gated on it');
 
+// --- 5. The hero and the tab title are the FIRST thing on the page, and they lead too ------------------
+// Found from a live screenshot after the rest had shipped: the empty state below said "harga member" while the
+// hero above it still said "Cek order dengan kode unik" and the tab read "Cek Order". A page that changes its
+// mind halfway down is read as the thing it says first.
+assert.doesNotMatch(portal, /Cek order dengan kode unik/, 'the hero must not lead with tracking');
+assert.doesNotMatch(portal, /<title>Cek Order - Solivagant<\/title>/, 'the tab title must not call the account "Cek Order"');
+assert.equal((portal.match(/<title>Akun Member - Solivagant<\/title>/g) || []).length, 2, 'both variants title the page as the member account');
+assert.match(portal, /Masuk, dan setiap harga turun ke harga member\./, 'the hero leads with what signing in does to the price');
+assert.match(portal, /Kode order lama tetap bisa dicek di bawah\./, 'and still points the code-holder somewhere');
+
 console.log('memberAccountEntry selfcheck OK (a door to the account on every page, framed around the price)');

@@ -1143,7 +1143,7 @@ const CustomerPortalPage = () => {
     return (
       <MobileCommerceLayout>
         <Helmet>
-          <title>Cek Order - Solivagant</title>
+          <title>Akun Member - Solivagant</title>
           <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
         </Helmet>
         <main className="mobile-page space-y-4">
@@ -1406,7 +1406,7 @@ const CustomerPortalPage = () => {
   return (
     <>
       <Helmet>
-        <title>Cek Order - Solivagant</title>
+        <title>Akun Member - Solivagant</title>
         <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
       </Helmet>
       <main className="min-h-screen bg-editorial-paper text-editorial-charcoal">
@@ -1417,11 +1417,11 @@ const CustomerPortalPage = () => {
             <div className="rounded-[28px] border border-editorial-charcoal/10 bg-white/70 p-6 shadow-sm">
               <div className="inline-flex items-center gap-2 rounded-full border border-editorial-charcoal/15 bg-white px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
                 <UserRound className="h-4 w-4" />
-                Portal customer
+                Akun member
               </div>
-              <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">Cek order dengan kode unik.</h1>
+              <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">Masuk, dan setiap harga turun ke harga member.</h1>
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
-                Lihat status pembayaran, proses produksi, pengiriman, dan detail custom tanpa perlu akun terpisah.
+                Satu akun Google: harga member di seluruh katalog, status pesanan, dan pesan-lagi dalam sekali ketuk. Kode order lama tetap bisa dicek di bawah.
               </p>
             </div>
 
