@@ -1,6 +1,7 @@
 // `node src/utils/productWear.selfcheck.mjs`
 import assert from 'node:assert/strict';
-import { normalizeWear, isWearTagged, toggleWearValue, matchesWear, describeWear, WEAR_KEYS } from './productWear.js';
+import { normalizeWear, isWearTagged, toggleWearValue, matchesWear, describeWear, describeWearStudio, WEAR_KEYS } from './productWear.js';
+import { translate } from '../i18n/messages.js';
 
 // Every row written before the column existed holds {}. The studio opens those every day.
 assert.deepEqual(normalizeWear({}), { occasions: [], times: [], weather: [] });
@@ -31,7 +32,18 @@ assert.equal(matchesWear(bottle, { times: ['pagi'], occasions: ['perayaan'] }), 
 assert.equal(matchesWear(bottle, { weather: ['hujan'] }), false, 'silence is not a yes — untagged cannot match');
 assert.equal(matchesWear({}, { times: ['pagi'] }), false, 'an untagged product stays out of a filtered view');
 
-assert.deepEqual(describeWear(bottle), ['Kerja', 'Pagi']);
+// The storefront version takes the shop's translator; the Studio version does not, because Studio has
+// one reader and he reads Indonesian. Both are held here so the split cannot quietly collapse back into
+// one function that prints Indonesian into the English shop.
+assert.deepEqual(describeWear(bottle, (k) => translate('id', k)), ['Kerja', 'Pagi']);
+assert.deepEqual(describeWear(bottle, (k) => translate('en', k)), ['Work', 'Morning']);
+assert.deepEqual(describeWearStudio(bottle), ['Kerja', 'Pagi'], 'Studio keeps its own Indonesian labels');
+assert.deepEqual(describeWear(bottle), [], 'no translator, no chips — a default would leak Indonesian into the English shop');
+
+// 'malam' means two different things in two facets. One shared key would silently make them one word.
+const evening = { occasions: ['malam'], times: ['malam'] };
+assert.deepEqual(describeWear(evening, (k) => translate('id', k)), ['Malam spesial', 'Malam']);
+assert.deepEqual(describeWear(evening, (k) => translate('en', k)), ['A special evening', 'Night']);
 assert.deepEqual(WEAR_KEYS, ['occasions', 'times', 'weather']);
 
 

@@ -3,32 +3,41 @@
 //
 // Kept small enough to tag eighteen products in a sitting. Anything the owner cannot answer in two
 // seconds per bottle will simply not get filled, and an unfilled facet is worse than no facet.
+// `value` is what is stored in the database and must never change. `label` is what Studio shows Dekito,
+// who reads Indonesian. `labelKey` is what the storefront shows a buyer, who may not — the same option,
+// three jobs, and only the middle one is allowed to stay Indonesian forever.
+//
+// Keys are per facet AND value on purpose: 'malam' is "Malam spesial" under occasions and "Malam" under
+// times, and one shared key would quietly make them the same word.
 export const WEAR_FACETS = {
   occasions: {
     label: 'Momen',
+    labelKey: 'wear.occasions',
     options: [
-      { value: 'kerja', label: 'Kerja' },
-      { value: 'santai', label: 'Santai' },
-      { value: 'malam', label: 'Malam spesial' },
-      { value: 'perayaan', label: 'Perayaan' },
-      { value: 'perjalanan', label: 'Perjalanan' },
+      { value: 'kerja', label: 'Kerja', labelKey: 'wear.occasions.kerja' },
+      { value: 'santai', label: 'Santai', labelKey: 'wear.occasions.santai' },
+      { value: 'malam', label: 'Malam spesial', labelKey: 'wear.occasions.malam' },
+      { value: 'perayaan', label: 'Perayaan', labelKey: 'wear.occasions.perayaan' },
+      { value: 'perjalanan', label: 'Perjalanan', labelKey: 'wear.occasions.perjalanan' },
     ],
   },
   times: {
     label: 'Waktu',
+    labelKey: 'wear.times',
     options: [
-      { value: 'pagi', label: 'Pagi' },
-      { value: 'siang', label: 'Siang' },
-      { value: 'sore', label: 'Sore' },
-      { value: 'malam', label: 'Malam' },
+      { value: 'pagi', label: 'Pagi', labelKey: 'wear.times.pagi' },
+      { value: 'siang', label: 'Siang', labelKey: 'wear.times.siang' },
+      { value: 'sore', label: 'Sore', labelKey: 'wear.times.sore' },
+      { value: 'malam', label: 'Malam', labelKey: 'wear.times.malam' },
     ],
   },
   weather: {
     label: 'Cuaca',
+    labelKey: 'wear.weather',
     options: [
-      { value: 'panas', label: 'Panas' },
-      { value: 'hujan', label: 'Hujan' },
-      { value: 'sejuk', label: 'Sejuk' },
+      { value: 'panas', label: 'Panas', labelKey: 'wear.weather.panas' },
+      { value: 'hujan', label: 'Hujan', labelKey: 'wear.weather.hujan' },
+      { value: 'sejuk', label: 'Sejuk', labelKey: 'wear.weather.sejuk' },
     ],
   },
 };
@@ -75,9 +84,26 @@ export const matchesWear = (wear, selection = {}) => {
   });
 };
 
-export const describeWear = (wear) => {
+/**
+ * The chips under "wear it for" on a product page, in the shop's language.
+ *
+ * Like getScarcityLabel, the translator is required and there is no default: falling back to the
+ * Indonesian `label` would leave "Malam spesial" sitting in the English shop with nothing to flag it.
+ */
+export const describeWearStudio = (wear) => {
   const w = normalizeWear(wear);
   return WEAR_KEYS.flatMap((facet) => (
     w[facet].map((value) => WEAR_FACETS[facet].options.find((o) => o.value === value)?.label).filter(Boolean)
+  ));
+};
+
+export const describeWear = (wear, translate) => {
+  if (typeof translate !== 'function') return [];
+  const w = normalizeWear(wear);
+  return WEAR_KEYS.flatMap((facet) => (
+    w[facet]
+      .map((value) => WEAR_FACETS[facet].options.find((o) => o.value === value)?.labelKey)
+      .filter(Boolean)
+      .map((key) => translate(key))
   ));
 };

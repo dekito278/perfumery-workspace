@@ -120,8 +120,17 @@ const LEFTOVERS = [
   'Signature tenang lainnya', 'Intensitas ', 'Tidak ditemukan -', 'masuk ke keranjang',
   'Masukkan keranjang', 'Stok habis', 'Preview admin', 'PIRAMIDA AROMA', 'Harga member',
   'Masuk dengan Google', 'Tersisa ', 'Pembuka ·', 'Inti ·', 'Dasar ·',
+  // catalogue
+  'KOLEKSI FRAGRANCE', 'Objek parfum terbatas', 'Cari notes, mood', 'Tidak ada fragrance',
+  'Koleksi belum bisa dimuat', 'Katalog belum bisa dimuat', 'sedang habis', 'stok habis',
+  'Pakai untuk momen apa', 'Filter berdasarkan', 'Koneksi ke server gagal', 'Coba muat ulang',
+  'Ditambahkan', '> Keranjang<', 'kategori',
 ];
 for (const file of [
+  ['pages', 'CatalogPage.jsx'],
+  ['pages', 'mobile', 'MobileCatalogPage.jsx'],
+  ['components', 'storefront', 'WearFilter.jsx'],
+  ['components', 'storefront', 'StaleCatalogNotice.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'],
   ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['components', 'storefront', 'ScentPyramid.jsx'],
@@ -136,6 +145,34 @@ for (const file of [
   }
   assert.match(source, /useTranslate\(\)|\btranslate\b/, `${file.join('/')} reads the message file`);
 }
+
+// Scanning for Indonesian LITERALS cannot see this one: `{option.label}` contains no Indonesian text at
+// all, and the words arrive from productWear.js at runtime. A sabotage walked straight through the
+// literal scan by swapping labelKey back to label in the filter pills.
+//
+// So the storefront is forbidden from reading the Indonesian `label` at all. Studio reads it; the
+// storefront reads `labelKey` and translates.
+for (const file of [
+  ['components', 'storefront', 'WearFilter.jsx'],
+  ['pages', 'CatalogPage.jsx'],
+  ['pages', 'mobile', 'MobileCatalogPage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'],
+]) {
+  const source = read(...file);
+  assert.doesNotMatch(source, /\.label\b(?!Key)/,
+    `${file.join('/')} must read labelKey and translate it — reading .label prints Indonesian with no literal to find`);
+}
+assert.match(read('components', 'product', 'WearPicker.jsx'), /\.label\b(?!Key)/,
+  'Studio still reads the Indonesian label, which is the point of keeping both');
+
+// The wear chips take the translator too, and Studio keeps a separate function with the Indonesian
+// labels — collapsing the two is how "Malam spesial" ends up in the English shop.
+const wear = read('utils', 'productWear.js');
+assert.match(wear, /export const describeWear = \(wear, translate\) => \{\s*if \(typeof translate !== 'function'\) return \[\];/,
+  'the storefront chips require a translator');
+assert.match(wear, /export const describeWearStudio = \(wear\) =>/, 'and Studio has its own');
+assert.match(read('components', 'product', 'ProductWearTagger.jsx'), /describeWearStudio\(wear\)/,
+  'which is what the Studio tagger uses');
 
 // The scarcity line takes the translator and has NO default. A default would print Indonesian into the
 // English shop and nothing would say so.

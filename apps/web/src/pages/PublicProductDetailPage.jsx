@@ -120,7 +120,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
   const handleAddToCart = () => {
     if (soldOut) {
-      toast.error(`${product.name} sedang habis`);
+      toast.error(t('catalog.outOfStockToast', { name: product.name }));
       return;
     }
     addItem({
@@ -239,11 +239,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
             {/* The catalogue filter promises this bottle suits a moment; the product page has to
                 say the same thing, or a customer arriving from search never sees the claim. */}
-            {describeWear(product.wear).length ? (
+            {describeWear(product.wear, t).length ? (
               <div className="pdp-materials" data-reveal>
                 <p className="editorial-eyebrow">{t('pdp.wearFor')}</p>
                 <div className="pdp-meta">
-                  {describeWear(product.wear).map((label) => <span key={label}>{label}</span>)}
+                  {describeWear(product.wear, t).map((label) => <span key={label}>{label}</span>)}
                 </div>
               </div>
             ) : null}

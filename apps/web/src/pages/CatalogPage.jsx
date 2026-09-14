@@ -12,6 +12,7 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
@@ -21,6 +22,7 @@ import WearFilter from '@/components/storefront/WearFilter.jsx';
 
 const CatalogPage = () => {
   const fetchedProducts = useStorefrontProducts();
+  const { t } = useTranslate();
   // No fallback to the bundled seed data. featuredProducts is six invented perfumes — Santal Morn,
   // Petal Smoke and so on — that this shop has never sold. When the catalogue query came back empty, a
   // customer was shown all six with prices, and clicking one landed on "Halaman tidak ditemukan". An
@@ -46,19 +48,19 @@ const CatalogPage = () => {
     event.preventDefault();
     event.stopPropagation();
     if (product.publicStatus !== 'Available') {
-      toast.error(`${product.name} sedang habis`);
+      toast.error(t('catalog.outOfStockToast', { name: product.name }));
       return;
     }
     addItem(product, 1);
     setAddedSlug(product.slug);
-    toast.success(`${product.name} masuk ke keranjang`, {
-      description: 'Keranjang sudah diperbarui.',
-      action: { label: 'Lihat cart', onClick: () => navigate('/cart') },
+    toast.success(t('pdp.addedToast', { name: product.name }), {
+      description: t('pdp.cartUpdated'),
+      action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
     });
     window.setTimeout(() => {
       setAddedSlug((current) => (current === product.slug ? '' : current));
     }, 1800);
-  }, [addItem, navigate]);
+  }, [addItem, navigate, t]);
 
   const products = useMemo(() => {
     const visible = allProducts.filter(isProductVisibleInStorefront);
@@ -106,14 +108,14 @@ const CatalogPage = () => {
   const siteOrigin = getSiteOrigin();
   const catalogCanonical = toAbsoluteUrl('/catalog', siteOrigin);
   const catalogBreadcrumb = buildBreadcrumbJsonLd([
-    { name: 'Beranda', path: '/home' },
-    { name: 'Koleksi', path: '/catalog' },
+    { name: t('pdp.home'), path: '/home' },
+    { name: t('pdp.collection'), path: '/catalog' },
   ], siteOrigin);
 
   return (
     <>
       <Helmet>
-        <title>Fragrance Collection - SOLIVAGANT</title>
+        <title>{t('catalog.tab')}</title>
         <meta name="description" content="Explore the SOLIVAGANT fragrance collection by perfumer Dekito." />
         <link rel="canonical" href={catalogCanonical} />
         <meta property="og:type" content="website" />
@@ -131,15 +133,15 @@ const CatalogPage = () => {
         <PublicHeader />
 
         <section className="catalog-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KOLEKSI FRAGRANCE</p>
-          <TextReveal as="h1" text="Koleksi" />
-          <p className="hero-animate-text hero-animate-text--d3">Objek parfum terbatas dan signature harian yang tenang dari atelier.</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('catalog.eyebrow')}</p>
+          <TextReveal as="h1" text={t('catalog.title')} />
+          <p className="hero-animate-text hero-animate-text--d3">{t('catalog.lead')}</p>
         </section>
 
         <section className="catalog-section">
           {/* Toolbar: category pills + search */}
           <div className="catalog-toolbar">
-            <div className="catalog-pills" role="list" aria-label="Filter berdasarkan kategori">
+            <div className="catalog-pills" role="list" aria-label={t('catalog.filterBy', { facet: t('catalog.category') })}>
               {catalogCategories.map((category) => (
                 <button
                   key={category}
@@ -147,7 +149,7 @@ const CatalogPage = () => {
                   className={`catalog-pill ${category === activeCategory ? 'is-active' : ''}`}
                   onClick={() => setActiveCategory(category)}
                 >
-                  {category === 'All' ? 'Semua' : category}
+                  {category === 'All' ? t('catalog.all') : category}
                 </button>
               ))}
             </div>
@@ -156,8 +158,8 @@ const CatalogPage = () => {
               className="catalog-search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari notes, mood, atau nama..."
-              aria-label="Cari fragrance berdasarkan nama, notes, atau mood"
+              placeholder={t('catalog.searchPlaceholder')}
+              aria-label={t('catalog.searchLabel')}
             />
           </div>
 
@@ -196,15 +198,15 @@ const CatalogPage = () => {
                       type="button"
                       className={`catalog-card__quick-add${addedSlug === product.slug ? ' is-added' : ''}`}
                       onClick={(event) => handleQuickAdd(event, product)}
-                      aria-label={product.publicStatus !== 'Available' ? `${product.name} stok habis` : `Tambah ${product.name} ke keranjang`}
+                      aria-label={product.publicStatus !== 'Available' ? t('catalog.soldOutAria', { name: product.name }) : t('catalog.addAria', { name: product.name })}
                       disabled={product.publicStatus !== 'Available'}
                     >
                       {product.publicStatus !== 'Available' ? (
-                        <>Habis</>
+                        <>{t('catalog.soldOutShort')}</>
                       ) : addedSlug === product.slug ? (
-                        <><CheckCircle2 className="h-4 w-4" /> Ditambahkan</>
+                        <><CheckCircle2 className="h-4 w-4" /> {t('catalog.added')}</>
                       ) : (
-                        <><Plus className="h-4 w-4" /> Keranjang</>
+                        <><Plus className="h-4 w-4" /> {t('catalog.quickAdd')}</>
                       )}
                     </button>
                   </div>
@@ -213,7 +215,7 @@ const CatalogPage = () => {
                     <h3>{product.name}</h3>
                     <span className="catalog-card__price">{product.price || `Rp ${(product.priceNumber || 0).toLocaleString('id-ID')}`}</span>
                     {product.memberPriceNumber ? (
-                      <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(product.memberPriceNumber)}</span>
+                      <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(product.memberPriceNumber) })}</span>
                     ) : null}
                   </div>
                 </Link>
@@ -224,11 +226,11 @@ const CatalogPage = () => {
               {/* Two different situations, two different messages: nothing matched the filter, or the
                   catalogue itself did not load. Offering "Reset Katalog" for an outage sends the customer
                   round a loop that cannot help them. */}
-              <p className="editorial-eyebrow">{products.length ? 'TIDAK ADA' : 'KOLEKSI BELUM TERMUAT'}</p>
+              <p className="editorial-eyebrow">{products.length ? t('catalog.noMatchEyebrow') : t('catalog.notLoadedEyebrow')}</p>
               <h2>
                 {products.length
-                  ? 'Tidak ada fragrance yang cocok dengan filter ini.'
-                  : 'Koleksi belum bisa dimuat. Coba muat ulang halaman sebentar lagi.'}
+                  ? t('catalog.noMatch')
+                  : t('catalog.notLoaded')}
               </h2>
               {products.length ? (
                 <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
