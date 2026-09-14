@@ -9,6 +9,8 @@ import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import TextReveal from '@/components/storefront/TextReveal.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { CURATED_LIMIT_DESKTOP, pickCuratedProducts } from '@/utils/curatedProducts.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { LineDivider } from '@/components/line/LineArt.jsx';
@@ -53,7 +55,8 @@ const HomePage = () => {
     [catalogProducts]
   );
   const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
-  const collectionProducts = publicCatalog.slice(0, 8);
+  const collectionProducts = useMemo(() => pickCuratedProducts(publicCatalog, CURATED_LIMIT_DESKTOP), [publicCatalog]);
+  const { currentUser } = useAuth();
 
   // Journal articles
   useEffect(() => {
@@ -115,9 +118,17 @@ const HomePage = () => {
               <span className="text-reveal-word"><span>kenangan.</span></span>
             </h1>
             <p className="home-hero__subtitle">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
-            <Link to="/catalog" className="home-hero__cta magnetic-hover" onMouseMove={handleMagnetic}>
-              LIHAT KOLEKSI <ArrowRight className="h-4 w-4" />
-            </Link>
+            {/* The one line that says why to buy here rather than on a marketplace. Brand voice stays; a reason
+                is added under it, not instead of it. */}
+            <p className="home-hero__note">Harga member, langsung dari atelier.</p>
+            <div className="home-hero__actions">
+              <Link to="/catalog" className="home-hero__cta magnetic-hover" onMouseMove={handleMagnetic}>
+                LIHAT KOLEKSI <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/customer" className="home-hero__cta home-hero__cta--quiet">
+                {currentUser ? 'AKUN MEMBER' : 'MASUK UNTUK HARGA MEMBER'}
+              </Link>
+            </div>
           </div>
         </section>
 

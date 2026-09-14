@@ -4504,6 +4504,41 @@
   transition: background 0.25s, border-color 0.25s, transform 0.25s;
 }
 
+.home-hero__note {
+  pointer-events: auto;
+  margin-top: 10px;
+  color: rgba(255, 250, 240, 0.86);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.home-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-hero__cta--quiet {
+  border-color: rgba(255, 250, 240, 0.18);
+  color: rgba(255, 250, 240, 0.8);
+}
+
+.m-editorial-hero__note {
+  margin: 10px 0 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 250, 240, 0.86);
+}
+
+.m-editorial-cta--quiet {
+  margin-top: 8px;
+  opacity: 0.85;
+}
+
 .home-hero__cta:hover {
   background: rgba(255, 250, 240, 0.12);
   border-color: rgba(255, 250, 240, 0.6);

@@ -106,7 +106,7 @@ const inferMaterialHighlights = (product = {}) => {
   )).slice(0, 3);
 };
 
-export const toPublicFragrance = (product = {}, index = 0) => {
+export const toPublicFragrance = (product = {}) => {
   const variants = normalizePublicVariants(product, product.price || 'Price on request');
   const priceNumber = getProductPriceRange(normalizeProductVariants(product)) || Number(product.priceNumber || 0);
   const price = priceNumber > 0 ? formatRupiah(priceNumber) : (product.price || 'Price on request');
@@ -163,7 +163,9 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     wear: normalizeWear(product.wear),
     materialHighlights: product.materialHighlights || inferMaterialHighlights(product),
     relatedFragrances: product.relatedFragrances || [],
-    featured: Boolean(product.featured || index < 3),
+    // The flag as set in Studio, nothing more. Forcing the first three to true made "featured" mean
+    // "sorted first" and left the real flag with nothing to do — see utils/featuredProducts.js.
+    featured: Boolean(product.featured),
     source: product.source === 'custom' ? 'studio-public' : (product.source || 'studio-public'),
   };
 };
