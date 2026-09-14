@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import { CURATED_LIMIT_DESKTOP, CURATED_LIMIT_MOBILE, hasCuration, pickCuratedProducts } from './curatedProducts.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,10 +57,18 @@ assert.match(mobile, /pickCuratedProducts\(publicCatalog, CURATED_LIMIT_MOBILE\)
 assert.doesNotMatch(mobile, /publicCatalog\.slice\(0, 4\)/, 'and not take the first four');
 
 // --- 7. The hero says why, and offers the way in — on both homes, following the session -----------------
-assert.match(home, /Harga member, langsung dari atelier\./, 'desktop hero must give the reason to buy here');
-assert.match(home, /to="\/customer"[\s\S]{0,200}?\{currentUser \? 'AKUN MEMBER' : 'MASUK UNTUK HARGA MEMBER'\}/, 'desktop hero second CTA follows the session');
-assert.match(home, /LIHAT KOLEKSI/, 'the original CTA stays — the reason is added, not swapped in');
-assert.match(mobile, /Harga member, langsung dari atelier\./, 'phone hero must give the reason too');
-assert.match(mobile, /to="\/mobile\/customer"[\s\S]{0,200}?\{currentUser \? 'Akun member' : 'Masuk untuk harga member'\}/, 'phone hero second CTA follows the session');
+// The hero line moved into the message file when the storefront learned English. Both surfaces must
+// still carry a reason to buy here, and the second CTA must still follow the session.
+assert.match(home, /\{t\('home\.note'\)\}/, 'desktop hero must give the reason to buy here');
+assert.match(mobile, /\{t\('home\.note'\)\}/, 'phone hero must give the reason too');
+assert.match(MESSAGES.id['home.note'], /Harga member, langsung dari atelier\./, 'and in Indonesian it is the member price');
+// In English it cannot be the member price: an international order does not get one. It still has to say
+// something — a hero with no reason is the state this guard was written to prevent.
+assert.doesNotMatch(MESSAGES.en['home.note'], /member/i, 'the English hero must not promise a member price');
+assert.ok(MESSAGES.en['home.note'].length > 20, 'but it must still give a reason to buy here');
+
+assert.match(home, /to="\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\.toUpperCase\(\)\}/, 'desktop hero second CTA follows the session');
+assert.match(home, /\{t\('home\.seeCollection'\)\}/, 'the original CTA stays — the reason is added, not swapped in');
+assert.match(mobile, /to="\/mobile\/customer"[\s\S]{0,240}?\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\}/, 'phone hero second CTA follows the session');
 
 console.log('curatedProducts selfcheck OK (the featured flag decides the home; the hero says why to buy here)');

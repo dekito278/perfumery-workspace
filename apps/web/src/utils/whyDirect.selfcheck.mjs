@@ -78,7 +78,12 @@ assert.doesNotMatch(footer, /\d{9,}/, 'no hardcoded number in the footer');
 // --- 4. The home page no longer carries its own copy of the number --------------------------------------
 const home = read('pages', 'HomePage.jsx');
 assert.doesNotMatch(home, /wa\.me\/\d/, 'the collaboration button must build its link from the shared source, not a literal number');
-assert.match(home, /buildWhatsAppCheckoutUrl\('Halo Dekito, saya tertarik berkolaborasi dengan SOLIVAGANT\.'\)/, 'and still say what the chat is about');
+assert.match(home, /buildWhatsAppCheckoutUrl\(t\('home\.collabMessage'\)\)/, 'and still say what the chat is about');
+// In the language the visitor was reading when they pressed it: someone who has just read an English
+// page and gets an Indonesian draft has to translate their own message before they can send it, which is
+// where most of them stop.
+assert.match(MESSAGES.id['home.collabMessage'], /Halo Dekito/);
+assert.match(MESSAGES.en['home.collabMessage'], /Hello Dekito/);
 
 // --- 5. data-reveal only where something will reveal it ------------------------------------------------
 // [data-reveal] starts a section at opacity 0. The desktop home has a useScrollReveal container; the phone
