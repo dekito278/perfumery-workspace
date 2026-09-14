@@ -36,6 +36,7 @@ import { PACE_PRIORITY_QUERY_KEY, normalizePacePriorityMode } from '@/utils/pace
 import { buildQuickRawMaterialPayload, getQuickMaterialDuplicateCandidates, normalizeQuickMaterialName, upsertMaterialOption } from '@/utils/formulaMaterialQuickCreate.js';
 import { confirmAction } from '@/utils/confirmAction.js';
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning.js';
+import { hasBlockingErrors } from '@/utils/formulaValidationErrors.js';
 
 const CreateFormulaPage = () => {
   const navigate = useNavigate();
@@ -270,7 +271,9 @@ const CreateFormulaPage = () => {
     }
   };
 
-  const hasErrors = Object.keys(validationErrors).length > 0;
+  // Orphans do not block. An error left behind by a row that no longer exists renders nowhere, so
+  // counting it greys out the save button with nothing on screen to explain why.
+  const hasErrors = hasBlockingErrors(validationErrors, formulaItems);
   const handleMetadataConfirm = () => {
     const nextErrors = {};
 

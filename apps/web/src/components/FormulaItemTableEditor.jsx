@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import IngredientSelect from '@/components/IngredientSelect.jsx';
 import { formatPercentage, formatQuantity } from '@/utils/formatting.js';
 import { blurNumberInputOnWheel } from '@/utils/numberInputs.js';
+import { rowErrorKey } from '@/utils/formulaValidationErrors.js';
 
 const FormulaItemTableEditor = ({
   items,
@@ -224,8 +225,8 @@ const FormulaItemTableEditor = ({
                       onActivate={() => onActivateRow?.(index)}
                       onCreateMissing={(name) => onCreateMissingMaterial?.({ name, rowIndex: index })}
                     />
-                    {validationErrors[`item_${item.row_key || index}`] ? (
-                      <div className="mt-1.5 text-[11px] text-destructive">{validationErrors[`item_${item.row_key || index}`]}</div>
+                    {validationErrors[rowErrorKey(item.row_key || index)] ? (
+                      <div className="mt-1.5 text-[11px] text-destructive">{validationErrors[rowErrorKey(item.row_key || index)]}</div>
                     ) : null}
                     {showNeedsGuidanceNudge ? (
                       <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
@@ -378,8 +379,8 @@ const FormulaItemTableEditor = ({
                       </Button>
                     ) : null}
                   </div>
-                  {validationErrors[`item_${item.row_key || index}`] ? (
-                    <div className="mt-1 truncate text-[10px] text-destructive">{validationErrors[`item_${item.row_key || index}`]}</div>
+                  {validationErrors[rowErrorKey(item.row_key || index)] ? (
+                    <div className="mt-1 truncate text-[10px] text-destructive">{validationErrors[rowErrorKey(item.row_key || index)]}</div>
                   ) : null}
                   {showNeedsGuidanceNudge ? (
                     <button
