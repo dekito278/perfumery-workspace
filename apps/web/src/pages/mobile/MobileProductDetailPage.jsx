@@ -186,7 +186,7 @@ const MobileProductDetailPage = () => {
             </div>
           ) : null}
 
-          <OverseasInquiryButton product={product} size={selectedSize} price={formatRupiah(selectedPrice)} compact className="mt-4" />
+          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={formatRupiah(selectedPrice)} compact className="mt-4" />
 
           {/* Meta */}
           <div className="m-editorial-pdp__meta">

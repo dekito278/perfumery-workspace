@@ -1,6 +1,8 @@
 import React from 'react';
 import { Globe } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
+import { formatRupiah } from '@/services/productCatalogService.js';
+import { useExportPrice } from '@/hooks/useOverseasPrice.js';
 
 /**
  * Asking about an overseas order. Deliberately NOT a checkout: international shipping is quoted by
@@ -12,8 +14,18 @@ import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/service
  * Hidden when no WhatsApp number is configured (VITE_STOREFRONT_WHATSAPP_NUMBER). A button inviting a
  * buyer to ask a question, which opens WhatsApp with no one to send it to, is worse than no button.
  */
-const OverseasInquiryButton = ({ product, size = '', price = '', className = '', compact = false, english = false }) => {
+const OverseasInquiryButton = ({ product, variant = null, size = '', price = '', className = '', compact = false, english = false }) => {
   const phoneNumber = getStorefrontWhatsAppNumber();
+  // The export price belongs to the product, not to a guess about the reader. Detection decides who gets
+  // the English panel; it must not decide who is allowed to know the price at all — a visitor abroad
+  // behind a VPN, on a browser that reports no timezone, or simply misread would otherwise have to open
+  // WhatsApp to find out, and Dekito could never check his own export prices from Indonesia.
+  //
+  // Shown here only when the English panel is NOT already showing it, which is exactly the two cases
+  // this component is used in: the panel passes english, everything else does not.
+  const { price: exportPrice, overseasVisitor } = useExportPrice(product, variant);
+  const showExportPrice = Boolean(exportPrice) && !english && !overseasVisitor;
+
   if (!phoneNumber || !product?.name) return null;
 
   // Written in the language the buyer was reading when they pressed it. A visitor who has just read an
@@ -33,7 +45,7 @@ const OverseasInquiryButton = ({ product, size = '', price = '', className = '',
       'Saya mengerti pertanyaan ini belum memesan stok.',
     ].filter(Boolean).join('\n');
 
-  return (
+  const link = (
     <a
       href={buildWhatsAppCheckoutUrl(message, phoneNumber)}
       target="_blank"
@@ -45,6 +57,19 @@ const OverseasInquiryButton = ({ product, size = '', price = '', className = '',
       <Globe className="h-4 w-4" />
       {english ? 'Ask about shipping to my country' : 'Kirim ke luar negeri? Tanya ongkir'}
     </a>
+  );
+
+  if (!showExportPrice) return link;
+
+  return (
+    <div>
+      <p className="mb-2 mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
+        Harga untuk pengiriman ke luar negeri:{' '}
+        <strong className="font-bold text-editorial-charcoal">{formatRupiah(exportPrice)}</strong>
+        {' '}— belum termasuk ongkir.
+      </p>
+      {link}
+    </div>
   );
 };
 

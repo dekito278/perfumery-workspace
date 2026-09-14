@@ -85,10 +85,17 @@ assert.match(catalog, /overseas: false/,
 // 18 product pages are prerendered at build time. Detecting during render bakes an English export panel
 // into the HTML Google indexes, and flashes it at every Indonesian visitor on hydration.
 const hook = read('hooks', 'useOverseasPrice.js');
+// Two hooks, deliberately. The price exists for everyone; being QUOTED in it is a guess. Collapsing them
+// would either hide the price from an Indonesian visitor with a reason to see it — Dekito checking his
+// own shop — or silence the member nudge for people who can still use it.
+assert.match(hook, /export const useExportPrice = \(product, variant = null\) =>/, 'the price, for anyone');
+assert.match(hook, /export const useOverseasPrice = \(product, variant = null\) => \{[\s\S]{0,240}?return overseasVisitor \? price : null;/,
+  'and the price only for a visitor the detection says is abroad');
 assert.match(hook, /useEffect\(\(\) => \{ setOverseasVisitor\(detectOverseasVisitor\(\)\); \}, \[\]\);/,
   'detection belongs in an effect');
-assert.match(hook, /if \(!overseasVisitor \|\| !product\?\.slug\) return null;/,
-  'and nothing is quoted until it has run');
+// Starts false, so the first render — the one that matches the prerendered HTML — quotes nobody.
+assert.match(hook, /const \[overseasVisitor, setOverseasVisitor\] = useState\(false\);/,
+  'nothing is quoted internationally until the effect has run');
 
 // --- 8. One detection, shared ------------------------------------------------------------------------------
 // Two components each detecting for themselves is this repo's commonest defect, and here the two would
@@ -141,5 +148,24 @@ assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows 
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
 assert.match(button, /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
+
+// --- 10. The export price is reachable without the guess ----------------------------------------------------
+// Detection decides who gets the English panel. It must not decide who is allowed to know the price at
+// all: a visitor abroad behind a VPN or on a browser reporting no timezone would otherwise have to open
+// WhatsApp to find out, and Dekito could never check his own export prices from Indonesia.
+assert.match(button, /const \{ price: exportPrice, overseasVisitor \} = useExportPrice\(product, variant\);/,
+  'the always-visible enquiry button knows the export price');
+assert.match(button, /const showExportPrice = Boolean\(exportPrice\) && !english && !overseasVisitor;/,
+  'shown exactly when the English panel is not already showing it');
+assert.match(button, /Harga untuk pengiriman ke luar negeri/, 'in Indonesian, on the Indonesian button');
+assert.match(button, /belum termasuk ongkir/, 'and it says shipping is not in that number');
+
+// Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup
+// finds nothing and the line silently never appears — the exact shape of the bug that shipped in #147.
+for (const caller of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['components', 'storefront', 'OverseasPriceNote.jsx']]) {
+  assert.match(read(...caller), /<OverseasInquiryButton[\s\S]{0,200}?variant=\{/,
+    `${caller.join('/')} passes the variant to the enquiry button`);
+}
 
 console.log('overseasVisitor selfcheck OK (an export price shown up front, only when real, only to a visitor two signals agree is abroad, and never touching what anyone is charged)');
