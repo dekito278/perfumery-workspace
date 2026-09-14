@@ -68,9 +68,9 @@ assert.equal(memberSaving(0, 100), 0);
 // down eats the margin that covers customs and handling, on the order that is most expensive to get
 // wrong. Two rules pulling in opposite directions in one file is exactly the pair that gets swapped by
 // a careless edit, so both directions are run here.
-assert.equal(DEFAULT_OVERSEAS_MULTIPLIER, 2.5, "Dekito's one hand-set export price, Maskumambang, is 2,55x retail");
-assert.equal(overseasPriceFromRetail(550000), 1380000, 'maskumambang at 2,5x lands near the price Dekito set by hand');
-assert.equal(overseasPriceFromRetail(289000), 730000);
+assert.equal(DEFAULT_OVERSEAS_MULTIPLIER, 3.5, "Dekito's decision, 2026-09-15: a flat 3,5x for every product");
+assert.equal(overseasPriceFromRetail(750000), 2630000, 'maskumambang at 3,5x');
+assert.equal(overseasPriceFromRetail(289000), 1020000);
 assert.equal(overseasPriceFromRetail(200000, 2), 400000, 'an already-round result stays exactly round');
 
 for (const retail of [550000, 289000, 329000, 251000, 267000, 1400000]) {

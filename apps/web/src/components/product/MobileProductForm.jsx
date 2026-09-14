@@ -4,6 +4,7 @@ import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ExternalLink, ImageOff, ImagePlus, Plus, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { autoTierPriceMessage } from '@/utils/autoTierPrices.js';
 import MobileAccordion from '@/components/mobile-ui/MobileAccordion.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -285,6 +286,9 @@ const MobileProductForm = ({ product = null, onSaved }) => {
       setForm(nextForm);
       setSavedFormSnapshot(snapshotProductForm(nextForm));
       toast.success(form.catalogVisible ? 'Produk tersimpan dan tampil di katalog' : 'Produk tersimpan sebagai draft');
+      // The product saved; its member and export prices may not have. Reported, never swallowed.
+      const tierMessage = autoTierPriceMessage(saved.autoTierPrices);
+      if (tierMessage) toast[tierMessage.level](tierMessage.text);
       onSaved?.(saved);
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan produk');

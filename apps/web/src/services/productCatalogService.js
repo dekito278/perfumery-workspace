@@ -2,6 +2,9 @@ import { featuredProducts } from '@/data/storefront.js';
 import supabase from '@/lib/supabaseClient.js';
 import { beginMobileFetchMonitor } from '@/utils/mobileRenderMonitoring.js';
 import { normalizeWear } from '@/utils/productWear.js';
+// No cycle: tierPricingService imports only the supabase client and a pure tier helper.
+import { listTierPricesForProduct, saveTierPrice } from '@/services/tierPricingService.js';
+import { planAutoTierPrices } from '@/utils/autoTierPrices.js';
 
 export const PRODUCT_CATALOG_STORAGE_KEY = 'dekito.storefront.products.v1';
 export const PRODUCT_CATALOG_LAST_VALID_STORAGE_KEY = 'dekito.storefront.products.lastValid.v1';
@@ -770,6 +773,44 @@ export const prefetchCatalogProducts = ({ force = false } = {}) => {
 };
 
 
+/**
+ * Writes the member and export prices that follow this product's retail price.
+ *
+ * Never throws. The product is already saved by the time this runs, so turning a tier-price failure into
+ * a thrown error would tell the admin their product did not save when it did. It reports instead: the
+ * caller gets counts and named failures, and the forms put that in front of the person who can fix it.
+ * Silence would be the one unacceptable outcome — this repo has shipped "saved" that meant "refused"
+ * several times, and money is exactly where that must not happen again.
+ */
+const applyAutoTierPrices = async ({ product, previousProduct }) => {
+  try {
+    const { rows, schemaReady } = await listTierPricesForProduct(product.id);
+    if (!schemaReady) return { written: 0, kept: 0, failures: [], schemaReady: false };
+
+    const { writes, kept } = planAutoTierPrices({ product, previousProduct, savedRows: rows });
+    const failures = [];
+    let written = 0;
+
+    for (const write of writes) {
+      try {
+        await saveTierPrice({
+          productId: product.id,
+          variantId: write.variantId,
+          tier: write.tier,
+          priceNumber: write.priceNumber,
+        });
+        written += 1;
+      } catch (error) {
+        failures.push(`${write.tier}${write.variantId ? ` (${write.variantId})` : ''}: ${error.message}`);
+      }
+    }
+
+    return { written, kept: kept.length, failures, schemaReady: true };
+  } catch (error) {
+    return { written: 0, kept: 0, failures: [error.message || String(error)], schemaReady: true };
+  }
+};
+
 export const saveCustomProduct = async (input) => {
   const editableProducts = await getEditableProducts();
   const product = normalizeProduct(input, [...featuredProducts, ...editableProducts]);
@@ -803,7 +844,17 @@ export const saveCustomProduct = async (input) => {
     const savedProduct = fromDatabaseRow(data);
     upsertStoredProduct(savedProduct);
     dispatchProductsUpdated();
-    return savedProduct;
+
+    // Member and export prices follow the retail price from here. Done after the product write, never
+    // before: a tier price for a product that failed to save is a price attached to nothing.
+    //
+    // It lives in this service rather than in the four screens that call it — the two product forms and
+    // the two batch pages — because a rule repeated four times is a rule that holds in three.
+    const autoTierPrices = await applyAutoTierPrices({
+      product: savedProduct,
+      previousProduct: editableProducts.find((candidate) => candidate.id === savedProduct.id) || null,
+    });
+    return { ...savedProduct, autoTierPrices };
   } catch (error) {
     if (error?.code === PRODUCT_STALE_WRITE) {
       throw error;

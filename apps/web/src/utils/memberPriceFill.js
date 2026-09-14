@@ -8,9 +8,9 @@
 
 export const DEFAULT_MEMBER_DISCOUNT_PERCENT = 10;
 
-// Dekito's one filled overseas price is Maskumambang at Rp 1.400.000 against Rp 550.000 retail — 2,55x.
-// 2.5 is that, rounded to something a person would actually type into the multiplier box.
-export const DEFAULT_OVERSEAS_MULTIPLIER = 2.5;
+// Dekito's decision, 2026-09-15: a flat 3,5x retail for every product, replacing the single 2,55x price
+// he had set by hand on Maskumambang.
+export const DEFAULT_OVERSEAS_MULTIPLIER = 3.5;
 
 // Prices here are five and six figures, and 296.100 is not a price anyone writes on a shelf. Rounding is
 // DOWN to the nearest thousand, always — so the rounding can only ever favour the buyer. A member paying
