@@ -140,6 +140,14 @@ export const registerServiceWorker = () => {
 
   window.addEventListener('load', () => {
     let updateIntervalId = null;
+    // Read BEFORE registering. The service worker calls clients.claim() on activate, so the very first
+    // one takes control of the page that just installed it and fires controllerchange — with nothing to
+    // refresh to, because that page is already running the code the worker was built from.
+    //
+    // Reloading there cost every first-time visitor a second full page load. Measured on the live site
+    // from a clean browser profile: first visit 3 navigations and 6 Supabase calls, second visit 1 and 3.
+    // Only a controller REPLACING an existing one is a real update worth reloading for.
+    const hadControllerAtStartup = Boolean(navigator.serviceWorker.controller);
 
     navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(SERVICE_WORKER_BUILD_ID)}`, { scope: '/' })
       .then((registration) => {
@@ -191,7 +199,7 @@ export const registerServiceWorker = () => {
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) {
+      if (!hadControllerAtStartup || refreshing) {
         return;
       }
       refreshing = true;
