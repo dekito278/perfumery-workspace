@@ -2,33 +2,40 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// `key` is what the code branches on — the WhatsApp link hangs off the info column — and it must not be
+// a translated string, or the branch breaks the moment the shop is read in English.
 const footerColumns = [
   {
-    title: 'Belanja',
+    key: 'shop',
+    titleKey: 'nav.shop',
     links: [
-      { label: 'Semua Fragrance', to: '/catalog' },
-      { label: 'Bespoke Ritual', to: '/bespoke' },
+      { labelKey: 'nav.allFragrances', to: '/catalog' },
+      { labelKey: 'nav.bespoke', to: '/bespoke' },
     ],
   },
   {
-    title: 'Info',
+    key: 'info',
+    titleKey: 'nav.info',
     links: [
-      { label: 'Akun member', to: '/customer' },
-      { label: 'Lacak Pesanan', to: '/track-order' },
+      { labelKey: 'nav.account', to: '/customer' },
+      { labelKey: 'nav.trackOrder', to: '/track-order' },
     ],
   },
   {
-    title: 'Jurnal',
+    key: 'journal',
+    titleKey: 'nav.journal',
     links: [
-      { label: 'Terbaru', to: '/journal' },
+      { labelKey: 'nav.latest', to: '/journal' },
     ],
   },
 ];
 
 const StorefrontFooter = () => {
+  const { t } = useTranslate();
   // One source for the number. Rendered only when configured — a wa.me link with no recipient is a dead end.
   const whatsapp = getStorefrontWhatsAppNumber();
   const [email, setEmail] = useState('');
@@ -39,7 +46,7 @@ const StorefrontFooter = () => {
     e.preventDefault();
     const trimmed = email.trim();
     if (!EMAIL_PATTERN.test(trimmed)) {
-      setError('Masukkan alamat email yang valid.');
+      setError(t('nav.invalidEmail'));
       return;
     }
     // No mailing-list backend yet — route the request to the atelier's WhatsApp so it
@@ -59,39 +66,39 @@ const StorefrontFooter = () => {
       <div className="sf-footer__inner">
         <div className="sf-footer__brand">
           <Link to="/home" className="sf-footer__wordmark">SOLIVAGANT</Link>
-          <p className="sf-footer__tagline">Atelier Parfum Artisan oleh Dekito</p>
+          <p className="sf-footer__tagline">{t('nav.tagline')}</p>
         </div>
 
         <div className="sf-footer__columns">
           {footerColumns.map((col) => (
-            <div key={col.title} className="sf-footer__column">
-              <span className="sf-footer__column-title">{col.title}</span>
+            <div key={col.key} className="sf-footer__column">
+              <span className="sf-footer__column-title">{t(col.titleKey)}</span>
               {col.links.map((link) => (
-                <Link key={link.to} to={link.to}>{link.label}</Link>
+                <Link key={link.to} to={link.to}>{t(link.labelKey)}</Link>
               ))}
-              {col.title === 'Info' && whatsapp ? (
-                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">WhatsApp atelier</a>
+              {col.key === 'info' && whatsapp ? (
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">{t('nav.whatsapp')}</a>
               ) : null}
             </div>
           ))}
         </div>
 
         <div className="sf-footer__newsletter">
-          <span className="sf-footer__column-title">Tetap terhubung</span>
+          <span className="sf-footer__column-title">{t('nav.stayInTouch')}</span>
           {subscribed ? (
-            <p className="sf-footer__subscribed">Terima kasih — lanjutkan di WhatsApp untuk konfirmasi langganan.</p>
+            <p className="sf-footer__subscribed">{t('nav.subscribeThanks')}</p>
           ) : (
             <form onSubmit={handleSubscribe} className="sf-footer__newsletter-form" noValidate>
               <input
                 type="email"
-                placeholder="Email kamu"
+                placeholder={t('nav.emailPlaceholder')}
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
                 required
                 aria-invalid={error ? 'true' : undefined}
                 className="sf-footer__newsletter-input"
               />
-              <button type="submit" className="sf-footer__newsletter-btn" aria-label="Langganan">
+              <button type="submit" className="sf-footer__newsletter-btn" aria-label={t('nav.subscribeAria')}>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>

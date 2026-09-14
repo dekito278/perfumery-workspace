@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag } from 'lucide-react';
@@ -17,9 +18,10 @@ const StorefrontHeader = ({
   previewLabel,
   showLogo = !backLabel,
 }) => {
+  const { t } = useTranslate();
   const headerActions = actions || [
-    { to: '/cart', label: 'Keranjang', icon: 'cart', iconOnly: true },
-    { to: '/catalog', label: 'Katalog' },
+    { to: '/cart', labelKey: 'nav.cart', icon: 'cart', iconOnly: true },
+    { to: '/catalog', labelKey: 'nav.catalog' },
   ];
   const backContent = (
     <>
@@ -64,15 +66,18 @@ const StorefrontHeader = ({
           ) : null}
           {headerActions.map((action) => {
             const icon = renderActionIcon(action.icon);
+            // Callers may still pass a plain `label` (Studio previews do); the storefront's own actions
+            // carry a key. Both render, only one is translated.
+            const label = action.labelKey ? t(action.labelKey) : action.label;
             const content = action.iconOnly ? (
               <>
                 {icon}
-                <span className="sr-only">{action.label}</span>
+                <span className="sr-only">{label}</span>
               </>
             ) : (
               <>
                 {icon}
-                {action.label}
+                {label}
               </>
             );
             const actionClassName = cn(
@@ -83,7 +88,7 @@ const StorefrontHeader = ({
             );
 
             return (
-              <Link key={`${action.to}-${action.label}`} to={action.to} className={actionClassName} aria-label={action.iconOnly ? action.label : undefined}>
+              <Link key={`${action.to}-${action.labelKey || action.label}`} to={action.to} className={actionClassName} aria-label={action.iconOnly ? label : undefined}>
                 {content}
               </Link>
             );

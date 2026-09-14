@@ -6,34 +6,38 @@ import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
+// `titleKey`/`labelKey` go through the message file; a category name is product data, not copy, so it
+// stays as it is written in Studio.
 const megaMenuColumns = [
   {
-    title: 'Koleksi',
+    titleKey: 'pdp.collection',
     links: [
-      { label: 'Semua Fragrance', to: '/catalog' },
-      { label: 'Bespoke Ritual', to: '/bespoke' },
+      { labelKey: 'nav.allFragrances', to: '/catalog' },
+      { labelKey: 'nav.bespoke', to: '/bespoke' },
     ],
   },
   {
-    title: 'Berdasarkan Family',
+    titleKey: 'nav.byFamily',
     links: storefrontCategories.map((cat) => ({
       label: cat.name,
       to: `/catalog?family=${cat.name.toLowerCase()}`,
     })),
   },
   {
-    title: 'Lainnya',
+    titleKey: 'nav.other',
     links: [
-      { label: 'Jurnal', to: '/journal' },
-      { label: 'Akun member', to: '/customer' },
-      { label: 'Lacak Pesanan', to: '/track-order' },
+      { labelKey: 'nav.journal', to: '/journal' },
+      { labelKey: 'nav.account', to: '/customer' },
+      { labelKey: 'nav.trackOrder', to: '/track-order' },
     ],
   },
 ];
 
 const PublicHeader = () => {
   const { summary } = useCart();
+  const { t } = useTranslate();
   const { currentUser } = useAuth();
   // The header used to delete any cart line whose slug was not in the visible catalog, silently. A shopper
   // whose product went out of stock or got unpublished just found their cart shorter, with no reason given
@@ -87,12 +91,12 @@ const PublicHeader = () => {
   return (
     <div ref={menuRef} className={`editorial-header-wrap${headerHidden ? ' is-hidden' : ''}${headerScrolled ? ' is-scrolled' : ''}`}>
       <header className="editorial-header">
-        <Link to="/home" className="editorial-wordmark" aria-label="SOLIVAGANT beranda">
+        <Link to="/home" className="editorial-wordmark" aria-label={t('nav.wordmarkAria')}>
           SOLIVAGANT
         </Link>
 
         <RegionSwitch className="mr-1" />
-        <nav className="editorial-nav" aria-label="Navigasi storefront">
+        <nav className="editorial-nav" aria-label={t('nav.storefrontAria')}>
           <button
             type="button"
             className="editorial-nav__trigger"
@@ -100,9 +104,9 @@ const PublicHeader = () => {
             aria-expanded={megaOpen}
             aria-haspopup="true"
           >
-            Belanja <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
+            {t('nav.shop')} <ChevronDown className={`editorial-nav__chevron ${megaOpen ? 'is-open' : ''}`} />
           </button>
-          <Link to="/journal">Jurnal</Link>
+          <Link to="/journal">{t('nav.journal')}</Link>
         </nav>
 
         <div className="editorial-header__actions">
@@ -112,7 +116,7 @@ const PublicHeader = () => {
             onClick={toggleMega}
             aria-expanded={megaOpen}
             aria-haspopup="true"
-            aria-label={megaOpen ? 'Tutup menu' : 'Buka menu'}
+            aria-label={t(megaOpen ? 'nav.closeMenu' : 'nav.openMenu')}
           >
             {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -121,12 +125,12 @@ const PublicHeader = () => {
           <Link
             to="/customer"
             className="editorial-cart-button"
-            aria-label={currentUser ? 'Akun member' : 'Masuk untuk harga member'}
-            title={currentUser ? 'Akun member' : 'Masuk untuk harga member'}
+            aria-label={t(currentUser ? 'nav.account' : 'nav.accountSub')}
+            title={t(currentUser ? 'nav.account' : 'nav.accountSub')}
           >
             <UserRound className="h-4 w-4" />
           </Link>
-          <Link to="/cart" className="editorial-cart-button" aria-label={`Keranjang, ${summary.quantity} item`}>
+          <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.quantity })}>
             <ShoppingBag className="h-4 w-4" />
             {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
           </Link>
@@ -137,17 +141,17 @@ const PublicHeader = () => {
         <div className="editorial-mega-menu" role="menu">
           <div className="editorial-mega-menu__inner">
             {megaMenuColumns.map((col) => (
-              <div key={col.title} className="editorial-mega-menu__column">
-                <span className="editorial-mega-menu__heading">{col.title}</span>
+              <div key={col.titleKey} className="editorial-mega-menu__column">
+                <span className="editorial-mega-menu__heading">{t(col.titleKey)}</span>
                 {col.links.map((link) => (
-                  <Link key={`${col.title}-${link.label}`} to={link.to} role="menuitem" onClick={() => setMegaOpen(false)}>
-                    {link.label}
+                  <Link key={`${col.titleKey}-${link.to}`} to={link.to} role="menuitem" onClick={() => setMegaOpen(false)}>
+                    {link.labelKey ? t(link.labelKey) : link.label}
                   </Link>
                 ))}
               </div>
             ))}
           </div>
-          <button type="button" className="editorial-mega-menu__close" onClick={() => setMegaOpen(false)} aria-label="Tutup menu">
+          <button type="button" className="editorial-mega-menu__close" onClick={() => setMegaOpen(false)} aria-label={t('nav.closeMenu')}>
             <X className="h-4 w-4" />
           </button>
         </div>

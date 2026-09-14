@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { REGION_EN, REGION_ID } from '@/utils/storefrontRegion.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 /**
  * Indonesia or International, as a control rather than a guess.
@@ -16,16 +17,17 @@ import { REGION_EN, REGION_ID } from '@/utils/storefrontRegion.js';
  */
 const RegionSwitch = ({ className = '' }) => {
   const { region, setRegion } = useStorefrontRegion();
+  const { t } = useTranslate();
 
   return (
     <div
       role="group"
-      aria-label="Wilayah harga / Pricing region"
+      aria-label={t('region.label')}
       className={`inline-flex items-center rounded-full border border-editorial-stone/25 bg-white/90 p-0.5 text-[11px] font-bold ${className}`}
     >
       {[
-        { value: REGION_ID, label: 'ID', title: 'Harga Indonesia' },
-        { value: REGION_EN, label: 'EN', title: 'International pricing' },
+        { value: REGION_ID, label: 'ID', title: t('region.idTitle') },
+        { value: REGION_EN, label: 'EN', title: t('region.enTitle') },
       ].map((option) => (
         <button
           key={option.value}

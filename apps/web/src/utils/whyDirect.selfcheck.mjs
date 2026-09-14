@@ -13,7 +13,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readdirSync } from 'node:fs';
-import { WHY_DIRECT_REASONS } from '../data/whyDirect.js';
+import { WHY_DIRECT_REASONS, whyDirectReasons } from '../data/whyDirect.js';
+import { MESSAGES } from '../i18n/messages.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -21,18 +22,39 @@ const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf
 
 // --- 1. The reasons ------------------------------------------------------------------------------------
 assert.ok(WHY_DIRECT_REASONS.length >= 3 && WHY_DIRECT_REASONS.length <= 5, 'three to five reasons — fewer is thin, more is a list nobody reads');
-for (const reason of WHY_DIRECT_REASONS) {
-  assert.ok(reason.key && reason.title && reason.body && reason.cta, `${reason.key || '?'}: every reason has a key, title, body and cta`);
-  assert.ok(reason.whatsapp || String(reason.to || '').startsWith('/'), `${reason.key}: a reason links somewhere, or is the WhatsApp one`);
-  assert.doesNotMatch(reason.body + reason.title, /\d{9,}/, `${reason.key}: no phone number in the copy — the number has one source`);
+
+// The copy moved into the message file; what stays here is the shape and the destinations. Every reason
+// is checked in BOTH languages, because the English is the half Dekito cannot proofread as easily.
+for (const region of ['id', 'en']) {
+  for (const reason of whyDirectReasons(region)) {
+    assert.ok(reason.key && reason.titleKey && reason.bodyKey && reason.ctaKey,
+      `${reason.key || '?'}: every reason has a key, title, body and cta`);
+    for (const key of [reason.titleKey, reason.bodyKey, reason.ctaKey]) {
+      assert.ok(MESSAGES[region][key], `${region}.${key} must exist — a missing one renders a raw key on the home page`);
+    }
+    assert.ok(reason.whatsapp || String(reason.to || '').startsWith('/'), `${reason.key}: a reason links somewhere, or is the WhatsApp one`);
+    const copy = MESSAGES[region][reason.titleKey] + MESSAGES[region][reason.bodyKey];
+    assert.doesNotMatch(copy, /\d{9,}/, `${region}.${reason.key}: no phone number in the copy — the number has one source`);
+    assert.doesNotMatch(copy, /shopee|tokopedia|lazada|tiktok shop/i, `${region}.${reason.key}: never name a marketplace`);
+    assert.doesNotMatch(copy, /\d+\s*%|\d+ ?persen|termurah|cheapest/i, `${region}.${reason.key}: never a number, never a superlative`);
+  }
 }
-assert.ok(WHY_DIRECT_REASONS.some((r) => r.key === 'member' && r.to === '/customer'), 'the member price reason must lead to the account');
-// The price claim (Dekito, 2026-09-15: marketplace listings are priced above the shop) is policy, not a
-// figure, and names no competitor — the same rule welcomeLanding enforces on the landing page.
-const allCopy = WHY_DIRECT_REASONS.map((r) => `${r.title} ${r.body}`).join(' ');
-assert.match(allCopy, /di bawah marketplace/, 'the strongest true claim — prices below the marketplace — must be made');
-assert.doesNotMatch(allCopy, /shopee|tokopedia|lazada|tiktok shop/i, 'never name a marketplace in a price claim');
-assert.doesNotMatch(allCopy, /\d+\s*%|\d+ ?persen|termurah/i, 'never a number, never a superlative');
+
+// The Indonesian first card offers the member price and leads to the account.
+const idReasons = whyDirectReasons('id');
+assert.ok(idReasons.some((r) => r.key === 'member' && r.to === '/customer'), 'the member price reason must lead to the account');
+assert.match(MESSAGES.id[idReasons[0].bodyKey], /di bawah marketplace/, 'the strongest true claim — prices below the marketplace — must be made');
+
+// The English one cannot. An international order does not get the member discount — outside Indonesia the
+// price is the export price and signing in does not lower it — so this card must neither promise one nor
+// send the reader to a sign-in that does nothing for them. This is a money promise, so it is asserted.
+const enFirst = whyDirectReasons('en')[0];
+assert.notEqual(enFirst.to, '/customer', 'the English first card must not lead to a sign-in that changes nothing for them');
+assert.doesNotMatch(MESSAGES.en[enFirst.bodyKey] + MESSAGES.en[enFirst.titleKey], /member|discount/i,
+  'nor promise a member price an international order cannot get');
+assert.doesNotMatch(MESSAGES.en[enFirst.bodyKey], /below the marketplace|cheaper than/i,
+  'and it must not repeat a marketplace claim that is about Indonesian listings');
+
 assert.ok(WHY_DIRECT_REASONS.some((r) => r.whatsapp === true), 'the WhatsApp reason must exist');
 assert.equal(new Set(WHY_DIRECT_REASONS.map((r) => r.key)).size, WHY_DIRECT_REASONS.length, 'keys are unique (they are React keys)');
 
@@ -41,6 +63,7 @@ const comp = read('components', 'storefront', 'WhyBuyDirect.jsx');
 assert.match(comp, /getStorefrontWhatsAppNumber\(\)/, 'the number comes from the one source');
 assert.match(comp, /filter\(\(reason\) => !reason\.whatsapp \|\| whatsapp\)/, 'the WhatsApp card is hidden when no number is configured');
 assert.match(comp, /to=\{`\$\{prefix\}\$\{reason\.to\}`\}/, 'links are prefixed for the phone');
+assert.match(comp, /whyDirectReasons\(region\)/, 'the component asks for the reasons of the shop being read');
 assert.doesNotMatch(comp, /\d{9,}/, 'no hardcoded number in the component');
 assert.match(read('pages', 'HomePage.jsx'), /<WhyBuyDirect \/>/, 'desktop home renders it');
 assert.match(read('pages', 'mobile', 'MobileStorefrontPage.jsx'), /<WhyBuyDirect mobile \/>/, 'phone home renders it, as mobile');
@@ -49,7 +72,7 @@ assert.match(read('pages', 'mobile', 'MobileStorefrontPage.jsx'), /<WhyBuyDirect
 const footer = read('components', 'storefront', 'StorefrontFooter.jsx');
 assert.match(footer, /const whatsapp = getStorefrontWhatsAppNumber\(\);/, 'footer reads the one source');
 assert.match(footer, /whatsapp \? \(\s*<a href=\{`https:\/\/wa\.me\/\$\{whatsapp\}`\}/, 'and renders the link only when configured');
-assert.match(footer, /\{ label: 'Akun member', to: '\/customer' \}/, 'the account is reachable from the footer too');
+assert.match(footer, /\{ labelKey: 'nav\.account', to: '\/customer' \}/, 'the account is reachable from the footer too');
 assert.doesNotMatch(footer, /\d{9,}/, 'no hardcoded number in the footer');
 
 // --- 4. The home page no longer carries its own copy of the number --------------------------------------
