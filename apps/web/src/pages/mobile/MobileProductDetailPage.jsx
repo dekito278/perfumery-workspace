@@ -19,6 +19,7 @@ import OverseasPriceNote from '@/components/storefront/OverseasPriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { productCopyFor } from '@/utils/productCopy.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
@@ -57,7 +58,9 @@ const MobileProductDetailPage = () => {
   // Above the early returns: this page bails out for "loading" and "not found", and a hook that runs on
   // some renders and not others is a crash, not a bug report.
   const overseasPrice = useOverseasPrice(product, selectedVariant);
-  const { t } = useTranslate();
+  const { t, region } = useTranslate();
+  // Same rule as desktop: the product's own words follow the shop being read, per field.
+  const copy = productCopyFor(product, region);
 
   if (!product && allProducts.loading) {
     return (
@@ -154,21 +157,21 @@ const MobileProductDetailPage = () => {
 
           {/* BriefText, same as desktop: a bare <p> collapses every newline, so a story written in
               paragraphs arrives on the phone as one wall of text. */}
-          <BriefText text={product.story || product.description} className="m-editorial-pdp__story" />
+          <BriefText text={copy.description} className="m-editorial-pdp__story" />
 
           {/* Notes */}
           <div className="m-editorial-pdp__notes">
             <div className="m-editorial-pdp__notes-row">
               <span className="m-editorial-pdp__notes-label">Top</span>
-              <span className="m-editorial-pdp__notes-values">{product.topNotes?.join(', ')}</span>
+              <span className="m-editorial-pdp__notes-values">{copy.topNotes.join(', ')}</span>
             </div>
             <div className="m-editorial-pdp__notes-row">
               <span className="m-editorial-pdp__notes-label">Heart</span>
-              <span className="m-editorial-pdp__notes-values">{product.heartNotes?.join(', ')}</span>
+              <span className="m-editorial-pdp__notes-values">{copy.heartNotes.join(', ')}</span>
             </div>
             <div className="m-editorial-pdp__notes-row">
               <span className="m-editorial-pdp__notes-label">Base</span>
-              <span className="m-editorial-pdp__notes-values">{product.baseNotes?.join(', ')}</span>
+              <span className="m-editorial-pdp__notes-values">{copy.baseNotes.join(', ')}</span>
             </div>
           </div>
 

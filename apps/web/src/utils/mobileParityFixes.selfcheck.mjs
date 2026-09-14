@@ -101,10 +101,13 @@ for (const page of ['pages/VoucherManagementPage.jsx', 'pages/mobile/MobileVouch
 {
   const desktop = read('pages/PublicProductDetailPage.jsx');
   const mobile = read('pages/mobile/MobileProductDetailPage.jsx');
-  assert.match(desktop, /<BriefText text=\{product\.story\}/, 'desktop renders the story through BriefText');
-  assert.match(mobile, /<BriefText text=\{product\.story \|\| product\.description\}/,
+  // The text now comes from productCopyFor, so both surfaces read `copy.description`. What this guard
+  // holds is unchanged: it goes through BriefText on BOTH, because a bare <p> collapses the paragraphs
+  // and a multi-paragraph story arrives on the phone as one unbroken wall.
+  assert.match(desktop, /<BriefText text=\{copy\.description\}/, 'desktop renders the story through BriefText');
+  assert.match(mobile, /<BriefText text=\{copy\.description\}/,
     'and so does mobile — a bare <p> there collapses the paragraphs');
-  assert.doesNotMatch(mobile, /<p className="m-editorial-pdp__story">\{product\.story/,
+  assert.doesNotMatch(mobile, /<p className="m-editorial-pdp__story">\{(product\.story|copy\.description)/,
     'the bare paragraph must not come back');
 }
 
