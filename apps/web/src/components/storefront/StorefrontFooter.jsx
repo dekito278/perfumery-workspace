@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { buildWhatsAppCheckoutUrl } from '@/services/cartService.js';
+import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,6 +16,7 @@ const footerColumns = [
   {
     title: 'Info',
     links: [
+      { label: 'Akun member', to: '/customer' },
       { label: 'Lacak Pesanan', to: '/track-order' },
     ],
   },
@@ -28,6 +29,8 @@ const footerColumns = [
 ];
 
 const StorefrontFooter = () => {
+  // One source for the number. Rendered only when configured — a wa.me link with no recipient is a dead end.
+  const whatsapp = getStorefrontWhatsAppNumber();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [error, setError] = useState('');
@@ -66,6 +69,9 @@ const StorefrontFooter = () => {
               {col.links.map((link) => (
                 <Link key={link.to} to={link.to}>{link.label}</Link>
               ))}
+              {col.title === 'Info' && whatsapp ? (
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">WhatsApp atelier</a>
+              ) : null}
             </div>
           ))}
         </div>

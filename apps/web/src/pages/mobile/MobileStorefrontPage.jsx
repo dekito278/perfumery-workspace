@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import WhyBuyDirect from '@/components/storefront/WhyBuyDirect.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { CURATED_LIMIT_MOBILE, pickCuratedProducts } from '@/utils/curatedProducts.js';
@@ -117,6 +118,10 @@ export const MobileStorefrontContent = ({ active = true }) => {
             </div>
           </section>
         ) : null}
+
+        <LineDivider className="line-divider" draw data-reveal />
+
+        <WhyBuyDirect mobile />
 
         <LineDivider className="line-divider" draw data-reveal />
 
