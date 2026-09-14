@@ -205,6 +205,32 @@ const writeStaticPublicPages = (siteUrl, products = []) => {
     fs.mkdirSync(routeDir, { recursive: true });
     fs.writeFileSync(routePath, html);
   });
+
+  // The shell itself — dist/index.html — is what Vercel's catch-all returns, and that includes the bare
+  // domain: RootRedirect renders HomePage in place on desktop, so "/" is a real page, not a redirect.
+  // It shipped with a RELATIVE og:image, which the Open Graph spec does not allow and crawlers do not
+  // resolve, and with no description at all. Sharing solivagantscent.com therefore previewed as a title
+  // and nothing else, on the one URL most likely to be pasted into a chat.
+  //
+  // Meta only. No canonical: this same file answers /cart, /checkout and every unknown path, and a
+  // canonical here would tell search engines all of them are the home page.
+  const shellPage = staticPublicPages.find((page) => page.route === '/home');
+  if (shellPage) {
+    const shareImage = siteUrl ? `${siteUrl}${SHARE_IMAGE_PATH}` : SHARE_IMAGE_PATH;
+    let shell = baseHtml;
+    shell = replaceMetaContent(shell, 'name="description"', shellPage.description);
+    shell = replaceMetaContent(shell, 'property="og:type"', 'website');
+    shell = replaceMetaContent(shell, 'property="og:site_name"', 'SOLIVAGANT');
+    shell = replaceMetaContent(shell, 'property="og:title"', shellPage.title);
+    shell = replaceMetaContent(shell, 'property="og:description"', shellPage.description);
+    shell = replaceMetaContent(shell, 'property="og:image"', shareImage);
+    shell = replaceMetaContent(shell, 'name="twitter:image"', shareImage);
+    shell = replaceMetaContent(shell, 'name="twitter:card"', 'summary_large_image');
+    shell = replaceMetaContent(shell, 'name="twitter:title"', shellPage.title);
+    shell = replaceMetaContent(shell, 'name="twitter:description"', shellPage.description);
+    fs.writeFileSync(indexPath, shell);
+    console.log(`[seo] Shell meta filled in (share image ${siteUrl ? 'absolute' : 'relative — no site URL configured'}).`);
+  }
 };
 
 // llms.txt describes the site to AI crawlers, so it lists the public storefront and
