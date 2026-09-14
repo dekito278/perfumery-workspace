@@ -81,6 +81,7 @@ const lazyRoute = (loader) => lazy(async () => {
 
 const PaymentPage = lazyRoute(() => import('@/pages/PaymentPage.jsx'));
 const CustomerPortalPage = lazyRoute(() => import('@/pages/CustomerPortalPage.jsx'));
+const WelcomePage = lazyRoute(() => import('@/pages/WelcomePage.jsx'));
 const CustomerInvoicePage = lazyRoute(() => import('@/pages/CustomerInvoicePage.jsx'));
 const LoginPage = lazyRoute(() => import('@/pages/LoginPage.jsx'));
 const ResetPasswordPage = lazyRoute(() => import('@/pages/ResetPasswordPage.jsx'));
@@ -187,6 +188,7 @@ const storefrontRoutePrefixes = [
   '/checkout',
   '/payment',
   '/customer',
+  '/welcome',
   '/track',
   '/track-order',
   '/hug',
@@ -467,6 +469,8 @@ function AppRoutes() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment" element={<PaymentPage />} />
+        {/* The greeting card in every parcel points here. */}
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/customer" element={<CustomerPortalPage />} />
         <Route path="/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
         <Route path="/track-order" element={<PublicTrackingPage />} />
@@ -503,6 +507,7 @@ function AppRoutes() {
 
         <Route path="/mobile/payment" element={<PaymentPage />} />
 
+        <Route path="/mobile/welcome" element={<WelcomePage mobile />} />
         <Route path="/mobile/customer" element={<CustomerPortalPage />} />
 
         <Route path="/mobile/customer/invoice/:orderNumber" element={<CustomerInvoicePage />} />
