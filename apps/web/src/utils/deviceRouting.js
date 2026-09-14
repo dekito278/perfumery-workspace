@@ -22,6 +22,7 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/checkout$/, '/mobile/checkout'],
   [/^\/payment$/, '/mobile/payment'],
   [/^\/customer$/, '/mobile/customer'],
+  [/^\/welcome$/, '/mobile/welcome'],
   [/^\/customer\/invoice\/([^/]+)$/, '/mobile/customer/invoice/$1'],
   [/^\/login$/, '/mobile/login'],
   [/^\/reset-password$/, '/mobile/reset-password'],

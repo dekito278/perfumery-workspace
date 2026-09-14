@@ -20,6 +20,7 @@ const MUST_NOT_BE_INDEXED = [
   ['src/pages/PublicJournalArticlePage.jsx', 'a slug with no published article behind it'],
   ['src/pages/PublicTrackingPage.jsx', 'one URL per order code'],
   ['src/pages/CustomerInvoicePage.jsx', "one URL per order, holding a customer's invoice"],
+  ['src/pages/WelcomePage.jsx', 'the greeting-card landing — a door for buyers who hold the card, not a page to be found'],
 ];
 
 for (const [file, why] of MUST_NOT_BE_INDEXED) {
