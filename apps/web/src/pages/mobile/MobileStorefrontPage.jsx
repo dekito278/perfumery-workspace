@@ -10,7 +10,15 @@ import { isProductVisibleInStorefront } from '@/services/productCatalogService.j
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { LineDivider, LineMark } from '@/components/line/LineArt.jsx';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
-import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
+import { getOptimizedStorageImageUrl as img, getStorageImageSrcSet as srcSet } from '@/utils/storageImage.js';
+
+// A phone viewport is ~390 CSS px, so sizes="100vw" asks for ~1170 on a 3x screen and an uncapped
+// candidate list answers with 1600 — heavier than the fixed 900 this page used to request. Capped here
+// so a 1x phone takes 480 and a 3x phone tops out at the 900 this page already used: never heavier than
+// Each image keeps the width it already asked for as its ceiling, so a 3x phone is never handed
+// anything heavier than before while a 1x phone drops to 480.
+const HERO_WIDTHS = [480, 720, 900];
+const STATEMENT_WIDTHS = [480, 600, 750];
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
@@ -63,7 +71,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" />
+            <img src={img(siteImages['home-hero'], 900) || '/brand/home/raw-material-library.jpg'} alt="Atelier parfum artisan Solivagant" className="m-editorial-hero__image" loading="eager" srcSet={srcSet(siteImages['home-hero'], HERO_WIDTHS)} sizes="100vw" />
           )}
           <div className="m-editorial-hero__overlay">
             <p className="m-editorial-eyebrow">ATELIER PARFUM ARTISAN</p>
@@ -127,7 +135,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" />
+            <img src={img(siteImages['home-statement'], 750) || '/brand/home/perfumer-pipettes.jpg'} alt="Perfumer bekerja di atelier Solivagant" className="m-editorial-statement__image" loading="lazy" srcSet={srcSet(siteImages['home-statement'], STATEMENT_WIDTHS)} sizes="100vw" />
           )}
           <div className="m-editorial-statement__overlay">
             <p className="m-editorial-eyebrow">ATELIER</p>
