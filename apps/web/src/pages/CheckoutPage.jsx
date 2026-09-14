@@ -1,3 +1,4 @@
+import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -154,6 +155,7 @@ const CheckoutPage = () => {
 
         <section className="checkout-layout">
           {/* Checkout form */}
+          <InternationalCheckoutNotice className="mb-4" />
           <form className="checkout-form" onSubmit={handleSubmitAttempt} noValidate>
             {/* Customer info */}
             <fieldset className="checkout-fieldset">

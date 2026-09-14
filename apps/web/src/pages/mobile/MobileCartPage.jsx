@@ -1,3 +1,5 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
+import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +19,7 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem } = useCart();
+  const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
   const products = useStorefrontProducts();
@@ -43,22 +46,22 @@ const MobileCartPage = () => {
 
   return (
     <MobileCommerceLayout>
-      <Helmet><title>Keranjang - Solivagant</title></Helmet>
+      <Helmet><title>{t('cart.tab')}</title></Helmet>
       <main className="mobile-page mobile-cart-page" style={{ background: 'var(--editorial-paper)' }}>
         <section style={{ padding: '20px 16px', borderBottom: '1px solid var(--editorial-stone)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 86px', gap: 12 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--editorial-brass)' }}>
-                {items.length ? 'Subtotal' : 'Keranjang'}
+                {t(items.length ? 'cart.subtotal' : 'cart.title')}
               </div>
               <div style={{ marginTop: 4, fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.15, color: 'var(--editorial-charcoal)', fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                {items.length ? formatTotal(voucher.subtotalAfterDiscount) : 'Mulai belanja'}
+                {items.length ? formatTotal(voucher.subtotalAfterDiscount) : t('cart.startShopping')}
               </div>
               {items.length && voucher.discountAmount ? (
                 <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
               ) : null}
               <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: 'var(--editorial-muted)' }}>
-                {items.length ? 'Cek item di sini, lalu lanjutkan untuk isi pengiriman dan pembayaran.' : 'Pilih parfum ready stock atau mulai request aroma bespoke.'}
+                {items.length ? t('cart.reviewMobile') : t('cart.emptyMobileBody')}
               </p>
             </div>
             {featuredCartItems[0] ? (
@@ -82,11 +85,12 @@ const MobileCartPage = () => {
                 Belanja
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
-                Bespoke
+                {t('cart.bespoke')}
               </Button>
             </div>
           )}
         </section>
+        <InternationalCheckoutNotice className="mx-4 mt-3" />
         {items.length ? (
           <section style={{ padding: '16px', borderBottom: '1px solid var(--editorial-stone)' }}>
             <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
@@ -94,26 +98,26 @@ const MobileCartPage = () => {
                 <BadgePercent style={{ width: 16, height: 16 }} />
               </span>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>Voucher</h2>
-                <p style={{ marginTop: 4, fontSize: '0.72rem', lineHeight: 1.5, color: 'var(--editorial-muted)' }}>Masukkan kode promo sebelum lanjut checkout.</p>
+                <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{t('cart.voucher')}</h2>
+                <p style={{ marginTop: 4, fontSize: '0.72rem', lineHeight: 1.5, color: 'var(--editorial-muted)' }}>{t('cart.voucherLead')}</p>
               </div>
             </div>
             <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 8 }}>
               <input
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                placeholder="Kode voucher"
+                placeholder={t('cart.voucherPlaceholder')}
                 style={{ height: 48, padding: '0 12px', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', border: '1px solid var(--editorial-stone)', borderRadius: 10, background: 'var(--editorial-ivory)', color: 'var(--editorial-charcoal)', outline: 'none' }}
               />
-              <Button type="button" variant="outline" className="h-12 rounded-xl px-4 text-xs font-bold" style={{ borderColor: 'var(--editorial-stone)', color: 'var(--editorial-charcoal)' }} onClick={voucher.applyVoucher}>Pakai</Button>
+              <Button type="button" variant="outline" className="h-12 rounded-xl px-4 text-xs font-bold" style={{ borderColor: 'var(--editorial-stone)', color: 'var(--editorial-charcoal)' }} onClick={voucher.applyVoucher}>{t('cart.voucherApply')}</Button>
             </div>
             {voucher.appliedVoucher ? (
               <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-ivory)', padding: '8px 12px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{voucher.appliedVoucher.code} diterapkan</div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('cart.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
                   <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: 'var(--editorial-charcoal)' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-lg tap-44" style={{ color: 'var(--editorial-muted)' }} onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-lg tap-44" style={{ color: 'var(--editorial-muted)' }} onClick={voucher.removeVoucher} aria-label={t('cart.voucherRemove')}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -131,7 +135,7 @@ const MobileCartPage = () => {
         ) : null}
         {unavailableItems.length ? (
           <p role="alert" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#b91c1c' }}>
-            {unavailableItems.map((item) => item.name).join(', ')} sudah tidak tersedia. Hapus dari keranjang untuk lanjut checkout.
+            {t('cart.unavailable', { names: unavailableItems.map((item) => item.name).join(', ') })}
           </p>
         ) : null}
         <section style={{ display: 'grid', gap: 0 }}>
@@ -149,17 +153,17 @@ const MobileCartPage = () => {
                   <p style={{ marginTop: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--editorial-brass)' }}>{item.price} / {item.size}</p>
                   {hasLineDiscount ? (
                     <p style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>
-                      Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
+                      {t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}
                     </p>
                   ) : null}
                 </div>
-                <Button type="button" size="icon" variant="outline" aria-label="Hapus dari keranjang" className="h-10 w-10 shrink-0 rounded-[10px] tap-44" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-muted)' }} onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
+                <Button type="button" size="icon" variant="outline" aria-label={t('cart.removeItem')} className="h-10 w-10 shrink-0 rounded-[10px] tap-44" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-muted)' }} onClick={() => removeItem(item.slug)}><Trash2 className="h-4 w-4" /></Button>
               </div>
               <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-paper)', padding: 4 }}>
-                  <Button type="button" size="icon" variant="ghost" aria-label="Kurangi jumlah" className="h-8 w-8 rounded-lg tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.decrease')} className="h-8 w-8 rounded-lg tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span style={{ display: 'grid', height: 32, minWidth: 40, placeItems: 'center', fontSize: '0.875rem', fontWeight: 600 }}>{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" aria-label="Tambah jumlah" className="h-8 w-8 rounded-lg tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increase')} className="h-8 w-8 rounded-lg tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {hasLineDiscount ? (
@@ -178,7 +182,7 @@ const MobileCartPage = () => {
             <section style={{ padding: 20, textAlign: 'center' }}>
               <div style={{ display: 'grid', placeItems: 'center', padding: '24px 0' }}>
                 <ShoppingBag style={{ width: 32, height: 32, color: 'var(--editorial-stone)', marginBottom: 12 }} />
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--editorial-charcoal)', fontFamily: 'Georgia, "Times New Roman", serif' }}>Keranjang kosong</h2>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--editorial-charcoal)', fontFamily: 'Georgia, "Times New Roman", serif' }}>{t('cart.emptyMobile')}</h2>
                 <p style={{ marginTop: 6, fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--editorial-muted)', maxWidth: 260 }}>
                   Pilih parfum ready stock, mulai bespoke, atau lihat rekomendasi di bawah.
                 </p>
@@ -196,8 +200,8 @@ const MobileCartPage = () => {
               {recommendedProducts.length ? (
                 <div style={{ marginTop: 24, textAlign: 'left' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                    <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>Rekomendasi</h2>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--editorial-brass)' }}>Ready stock</span>
+                    <h2 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{t('cart.recommendations')}</h2>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--editorial-brass)' }}>{t('cart.readyStock')}</span>
                   </div>
                   <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     {recommendedProducts.map((product) => (
@@ -224,13 +228,13 @@ const MobileCartPage = () => {
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 16px' }}>
             <button type="button" onClick={() => navigate('/mobile/catalog')} style={{ display: 'flex', minHeight: 78, flexDirection: 'column', justifyContent: 'space-between', border: '1px solid var(--editorial-stone)', borderRadius: 12, padding: 14, background: 'var(--editorial-ivory)', cursor: 'pointer', textAlign: 'left' }}>
               <ShoppingBag style={{ width: 16, height: 16, color: 'var(--editorial-muted)' }} />
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)' }}>Tambah aroma</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-brass)' }}>Katalog <ArrowRight style={{ width: 12, height: 12 }} /></span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)' }}>{t('cart.addScent')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-brass)' }}>{t('cart.catalog')} <ArrowRight style={{ width: 12, height: 12 }} /></span>
             </button>
             <button type="button" onClick={() => navigate('/mobile/bespoke')} style={{ display: 'flex', minHeight: 78, flexDirection: 'column', justifyContent: 'space-between', border: '1px solid var(--editorial-stone)', borderRadius: 12, padding: 14, background: 'var(--editorial-ivory)', cursor: 'pointer', textAlign: 'left' }}>
               <Sparkles style={{ width: 16, height: 16, color: 'var(--editorial-muted)' }} />
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)' }}>Aroma bespoke</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-brass)' }}>Brief <ArrowRight style={{ width: 12, height: 12 }} /></span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)' }}>{t('cart.bespoke')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-brass)' }}>{t('cart.brief')} <ArrowRight style={{ width: 12, height: 12 }} /></span>
             </button>
           </section>
         ) : null}
@@ -238,7 +242,7 @@ const MobileCartPage = () => {
           <StickyBottomActionBar
             fixed
             reserveSpace
-            aria-label="Aksi keranjang"
+            aria-label={t('cart.actionsAria')}
             className="mobile-cart-action-bar"
             contentClassName="rounded-xl"
             style={{ borderColor: 'var(--editorial-stone)' }}
@@ -251,7 +255,7 @@ const MobileCartPage = () => {
               </div>
               <Button type="button" className="h-12 rounded-xl gap-2 px-4" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/checkout')}>
                 <PackageCheck className="h-4 w-4" />
-                Lanjut bayar
+                {t('cart.payNext')}
               </Button>
             </div>
           </StickyBottomActionBar>
