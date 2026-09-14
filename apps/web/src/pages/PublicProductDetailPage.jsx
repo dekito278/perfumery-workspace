@@ -284,7 +284,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {selectedPriceLabel}</>
                 )}
               </button>
-              <OverseasInquiryButton product={product} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
+              <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
             </div>
           </div>
         </section>

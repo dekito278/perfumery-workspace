@@ -15,15 +15,29 @@ import { detectOverseasVisitor, overseasPriceFor } from '@/utils/overseasVisitor
  * Detection runs in an effect, never during render: the product pages are prerendered, and an English
  * export panel baked into that HTML is what Google would index.
  */
-export const useOverseasPrice = (product, variant = null) => {
+export const useExportPrice = (product, variant = null) => {
   const [overseasVisitor, setOverseasVisitor] = useState(false);
   const { index } = useTierPrices();
 
   useEffect(() => { setOverseasVisitor(detectOverseasVisitor()); }, []);
 
-  if (!overseasVisitor || !product?.slug) return null;
+  if (!product?.slug) return { price: null, overseasVisitor };
   const linePrice = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);
-  return overseasPriceFor(tierPricesForLine(index, product.slug, variant?.id || ''), linePrice);
+  const price = overseasPriceFor(tierPricesForLine(index, product.slug, variant?.id || ''), linePrice);
+  return { price, overseasVisitor };
+};
+
+/**
+ * The export price ONLY for a visitor the detection says is abroad — what decides whether the English
+ * panel appears and whether the member nudge goes quiet.
+ *
+ * Kept separate from useExportPrice on purpose. The price exists for everyone; being quoted in it is a
+ * guess. Collapsing the two would either hide the price from Indonesian visitors who have a reason to
+ * see it, or silence the member nudge for people who can still use it.
+ */
+export const useOverseasPrice = (product, variant = null) => {
+  const { price, overseasVisitor } = useExportPrice(product, variant);
+  return overseasVisitor ? price : null;
 };
 
 export default useOverseasPrice;

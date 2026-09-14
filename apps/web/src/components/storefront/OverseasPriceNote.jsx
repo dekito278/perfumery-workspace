@@ -34,6 +34,7 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
       </p>
       <OverseasInquiryButton
         product={product}
+        variant={variant}
         size={variant?.size || product.size || ''}
         price={formatRupiah(price)}
         english
