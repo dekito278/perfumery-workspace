@@ -10,6 +10,8 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import StateBlock from '@/components/ui/state-block.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
+import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
+import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
@@ -71,6 +73,8 @@ const MobileCheckoutPage = () => {
   const [showManualShippingArea, setShowManualShippingArea] = useState(false);
   const { currentUser, loginWithGoogle, logout } = useAuth();
   const { items, summary, updateQuantity, removeItem, clear } = useCart();
+  const { index: memberIndex } = useMemberPrices();
+  const memberSaving = memberSavingForCart(items, memberIndex);
   const handleGoogleLogin = async () => {
     try {
       // Clean redirect (no hash/query) so Supabase appends a single, parseable #access_token — a stale
@@ -216,7 +220,9 @@ const MobileCheckoutPage = () => {
             ) : (
               <Button type="button" variant="outline" className="h-12 w-full rounded-2xl bg-white gap-2 text-xs font-bold" onClick={handleGoogleLogin}>
                 <UserRound className="h-4 w-4" />
-                Masuk dengan Google — data terisi otomatis
+                {memberSaving > 0
+                  ? `Masuk dengan Google — hemat ${formatTotal(memberSaving)} dengan harga member`
+                  : 'Masuk dengan Google — data terisi otomatis'}
               </Button>
             )}
             <div className="grid grid-cols-[1fr_auto] gap-2">

@@ -9,6 +9,8 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
+import { useMemberPrices } from '@/hooks/useStorefrontProducts.js';
+import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { checkoutCourierOptions, useCheckoutFlow } from '@/hooks/useCheckoutFlow.js';
 import { checkoutPaymentMethods } from '@/services/cartService.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
@@ -23,6 +25,10 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 const CheckoutPage = () => {
   const { items, summary, clear } = useCart();
   const { currentUser, loginWithGoogle, logout } = useAuth();
+  // What this cart would save at member prices. 0 whenever there is nothing to say — no member prices
+  // filled in, or the visitor already pays them — and 0 keeps the ordinary "data terisi otomatis" copy.
+  const { index: memberIndex } = useMemberPrices();
+  const memberSaving = memberSavingForCart(items, memberIndex);
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const checkout = useCheckoutFlow({
     items,
@@ -159,7 +165,10 @@ const CheckoutPage = () => {
                 </div>
               ) : (
                 <button type="button" onClick={handleGoogleLogin} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px', borderRadius: '14px', border: '1px solid #d8d2c4', background: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', marginBottom: '12px' }}>
-                  <UserRound size={16} /> Masuk dengan Google — alamat &amp; data terisi otomatis
+                  <UserRound size={16} />
+                  {memberSaving > 0
+                    ? `Masuk dengan Google — hemat ${formatTotal(memberSaving)} dengan harga member`
+                    : 'Masuk dengan Google — alamat & data terisi otomatis'}
                 </button>
               )}
               <label className="checkout-field">

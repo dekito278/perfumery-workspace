@@ -73,6 +73,9 @@ const normalizePublicVariants = (product = {}, publicPrice) => (
     // Every field here is listed by hand, so anything not named is silently dropped — which is exactly
     // how the member-price note came out blank the first time.
     retailPriceNumber: variant.retailPriceNumber,
+    // Member price for a signed-out visitor (#147). Every field this mapper does not name is dropped —
+    // it was rebuilt here without this one and the nudge rendered nowhere on the live site.
+    memberPriceNumber: variant.memberPriceNumber,
     compareAtPriceNumber: Number(variant.compareAtPriceNumber || 0),
     stock: Math.max(0, Math.floor(Number(variant.stock ?? product.stock ?? 0)) || 0),
     availability: Number(variant.stock ?? product.stock ?? 0) > 0 ? 'Available' : 'Inquire',
@@ -148,6 +151,7 @@ export const toPublicFragrance = (product = {}, index = 0) => {
     // endpoint resolves both again from the buyer's own session.
     priceTier: product.priceTier || 'retail',
     retailPriceNumber: product.retailPriceNumber,
+    memberPriceNumber: product.memberPriceNumber,
     // "Harga coret". Four Studio inputs wrote this and every one of them was inert, because this mapper
     // lists its fields by hand and this one was never on the list.
     compareAtPriceNumber: Number(getPrimaryVariant(variants)?.compareAtPriceNumber || product.compareAtPriceNumber || 0),

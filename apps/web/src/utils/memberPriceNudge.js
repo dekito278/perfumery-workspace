@@ -68,3 +68,28 @@ export const attachMemberPrices = (products = [], index = {}) => {
   Object.defineProperty(next, 'loading', { configurable: true, enumerable: false, value: Boolean(products.loading) });
   return next;
 };
+
+/**
+ * What the whole cart would save at member prices — the number that goes on the checkout sign-in button.
+ *
+ * Keyed by productSlug, NOT slug: a cart line's `slug` is the cartSlug (product slug + variant suffix),
+ * which matches nothing in the member index. Keying by the wrong one would make every saving read 0 and
+ * the button would silently keep saying "data terisi otomatis" forever.
+ *
+ * Only lines where the member price is strictly lower count, so a signed-in member (whose lines already
+ * carry member prices) and a cart with no member-priced products both come out at 0 — and 0 means the
+ * caller keeps its ordinary copy.
+ */
+export const memberSavingForCart = (items = [], index = {}) => {
+  if (!Array.isArray(items) || !items.length || !index || !Object.keys(index).length) return 0;
+  let saving = 0;
+  for (const item of items) {
+    const slug = String(item?.productSlug || '').trim();
+    if (!slug) continue;
+    const member = memberPriceFor(index, slug, item?.variantId || '', item?.priceNumber);
+    if (member === null) continue;
+    const quantity = Math.max(Number(item?.quantity) || 0, 0);
+    saving += (Number(item.priceNumber) - member) * quantity;
+  }
+  return saving > 0 ? Math.round(saving) : 0;
+};
