@@ -68,4 +68,12 @@ assert.equal((prompt.match(/shouldShowPrompt\(visits, scrolledPx\)/g) || []).len
 assert.doesNotMatch(prompt, /shouldShowPrompt\(\)/, 'no ungated call may remain');
 assert.match(prompt, /shouldSurfaceInstallPrompt\(\{/, 'the gate is the shared rule, not a local re-guess');
 
+// --- 6. Scroll is measured from where the page STARTED, not from the top ---------------------------------
+// Seen live after #151 shipped: the browser restored scrollY = 800 from an earlier visit to the same URL and
+// fired a scroll event for it, so a first visit with no touch opened the gate. Intent is distance travelled
+// since mount; a restored position is the browser's doing, not the visitor's.
+assert.match(prompt, /const startY = window\.scrollY \|\| 0;/, 'the listener must capture the position at mount');
+assert.match(prompt, /Math\.max\(0, \(window\.scrollY \|\| 0\) - startY\)/, 'and score only the distance travelled since then');
+assert.doesNotMatch(prompt, /setScrolledPx\(window\.scrollY/, 'never the absolute position');
+
 console.log('mobileFirstScreen selfcheck OK (wordmark first, install prompt only once they have shown they want to be here)');
