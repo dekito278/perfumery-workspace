@@ -36,9 +36,13 @@ assert.match(page, /<WhyBuyDirect mobile \/>/, 'the reasons come from the one sh
 assert.match(page, /<WhyBuyDirect \/>/, 'and on desktop');
 assert.match(page, /useScrollReveal\(\)/, 'the desktop shell has a reveal container — WhyBuyDirect carries data-reveal on desktop');
 
-// --- 3. No claim that has not been checked ---------------------------------------------------------------
-assert.doesNotMatch(page, /lebih murah|termurah|shopee|tokopedia|marketplace lebih/i,
-  'the page must not claim to beat the marketplace on price — that has not been verified');
+// --- 3. Price claims: true, as policy, never as a number or a name ---------------------------------------
+// Dekito confirmed on 2026-09-15 that his marketplace listings are priced above the shop's retail, so
+// "below the marketplace" is a true statement of policy. It stays a statement: a percentage goes stale the
+// day a listing changes, and naming a competitor in a price claim is a legal and tone risk.
+assert.match(page, /di bawah marketplace/, 'the verified claim is made — it is the strongest true thing the page can say');
+assert.doesNotMatch(page, /shopee|tokopedia|lazada|tiktok shop/i, 'never name a marketplace in a price claim');
+assert.doesNotMatch(page, /\d+\s*%|\d+ ?persen|termurah/i, 'never a number, never a superlative — those go stale or cannot be proven');
 assert.doesNotMatch(page, /\d{9,}/, 'no phone number on the page; WhyBuyDirect carries the one source');
 
 console.log('welcomeLanding selfcheck OK (a door for the card, on both surfaces, claiming only what is true)');
