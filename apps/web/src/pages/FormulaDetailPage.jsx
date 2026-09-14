@@ -16,6 +16,7 @@ import FormulaDetailCompositionTab from '@/components/formulas/FormulaDetailComp
 import FormulaDetailOverviewTab from '@/components/formulas/FormulaDetailOverviewTab.jsx';
 import FormulaDetailWorkbookTab from '@/components/formulas/FormulaDetailWorkbookTab.jsx';
 import FormulaEvaluationPanel from '@/components/FormulaEvaluationPanel.jsx';
+import FormulaLineagePanel from '@/components/FormulaLineagePanel.jsx';
 import { useFormulaDetailPage } from '@/hooks/useFormulaDetailPage.js';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { formatDate, formatGramAmount, formatStatus } from '@/utils/formatting.js';
@@ -26,6 +27,9 @@ const FormulaDetailPage = () => {
   const { id } = useParams();
   const {
     compactCompositionRows,
+    lineageChain,
+    parentFormula,
+    revisionDiff,
     formula,
     formulaReferenceAdvisories,
     handleBack,
@@ -323,6 +327,19 @@ const FormulaDetailPage = () => {
               </div>
             )}
           </DetailSection>
+
+          {/* DetailSection paints a bordered card even around nothing, so the wrapper is gated too —
+              otherwise every never-revised formula (most of them) grows a stray empty box. */}
+          {lineageChain.length > 1 ? (
+            <DetailSection>
+              <FormulaLineagePanel
+                chain={lineageChain}
+                currentId={id}
+                parentFormula={parentFormula}
+                diff={revisionDiff}
+              />
+            </DetailSection>
+          ) : null}
 
           <DetailSection>
             <DetailMetadata created={formula.created} updated={formula.updated} />
