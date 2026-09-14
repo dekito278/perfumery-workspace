@@ -2,6 +2,7 @@
 // shared pricing rule, so it can be exercised directly by a selfcheck instead of only being read as
 // source — this decides what a buyer is quoted, and reading it is not the same as running it.
 import { resolveTierPrice, tierPricesForLine } from './tierPrice.js';
+import { carryCatalogFlags } from './catalogArrayFlags.js';
 
 /**
  * @param products    the catalog, as normalizeProduct leaves it
@@ -64,10 +65,7 @@ export const applyTierPrices = (products = [], tier = 'retail', index = {}, form
   });
 
   if (!changed) return products;
-  // useCatalogProducts hangs a non-enumerable `loading` off its array, and pages read it to tell "empty
-  // shop" from "not loaded yet". Mapping drops it, so it has to be carried across.
-  Object.defineProperty(priced, 'loading', {
-    configurable: true, enumerable: false, value: Boolean(products.loading),
-  });
-  return priced;
+  // useCatalogProducts hangs non-enumerable flags off its array — `loading`, which pages read to tell
+  // "empty shop" from "not loaded yet", and `stale`. Mapping drops them, so they are carried across.
+  return carryCatalogFlags(priced, products);
 };

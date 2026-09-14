@@ -11,6 +11,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
@@ -125,6 +126,7 @@ const CatalogPage = () => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <StaleCatalogNotice stale={fetchedProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 

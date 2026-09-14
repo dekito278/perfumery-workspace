@@ -14,6 +14,7 @@
 //
 // Import-free apart from the shared tier index helpers, so the guard runs it rather than reads it.
 import { tierPricesForLine } from './tierPrice.js';
+import { carryCatalogFlags } from './catalogArrayFlags.js';
 
 const toPrice = (value) => {
   const parsed = Number(value);
@@ -64,9 +65,7 @@ export const attachMemberPrices = (products = [], index = {}) => {
   });
 
   if (!changed) return products;
-  // useCatalogProducts hangs a non-enumerable `loading` off its array; carry it, as applyTierPrices does.
-  Object.defineProperty(next, 'loading', { configurable: true, enumerable: false, value: Boolean(products.loading) });
-  return next;
+  return carryCatalogFlags(next, products);
 };
 
 /**

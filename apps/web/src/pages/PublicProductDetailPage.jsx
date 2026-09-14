@@ -20,6 +20,7 @@ import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import BriefText from '@/components/BriefText.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
 
@@ -192,6 +193,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
+        <StaleCatalogNotice stale={studioProducts.stale} className="mx-auto mt-4 w-[min(1180px,92vw)]" />
         <ScrollProgress />
         <PublicHeader />
 

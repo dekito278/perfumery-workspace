@@ -9,6 +9,10 @@ import {
 export const useCatalogProducts = ({ editableOnly = false, active = true } = {}) => {
   const [products, setProducts] = useState(() => (editableOnly ? [] : getLocalCatalogProducts()));
   const [loading, setLoading] = useState(active);
+  // Starts false on purpose. The first render shows this browser's stored catalogue while the fetch is
+  // still in flight, and calling that stale would warn about every single page load. It becomes true
+  // only once a fetch has actually failed.
+  const [stale, setStale] = useState(false);
 
   useEffect(() => {
     if (!active) {
@@ -28,11 +32,13 @@ export const useCatalogProducts = ({ editableOnly = false, active = true } = {})
           : await prefetchCatalogProducts({ force });
         if (isMounted) {
           setProducts(Array.isArray(nextProducts) ? nextProducts : []);
+          setStale(Boolean(nextProducts?.stale));
         }
       } catch (error) {
         console.warn('Catalog product sync failed, using local fallback:', error.message || error);
         if (isMounted) {
           setProducts(editableOnly ? [] : getCatalogProducts());
+          setStale(true);
         }
       } finally {
         if (isMounted) {
@@ -67,6 +73,11 @@ export const useCatalogProducts = ({ editableOnly = false, active = true } = {})
     configurable: true,
     enumerable: false,
     value: loading,
+  });
+  Object.defineProperty(products, 'stale', {
+    configurable: true,
+    enumerable: false,
+    value: stale,
   });
   return products;
 };

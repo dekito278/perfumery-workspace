@@ -709,6 +709,13 @@ export const getLocalCatalogProducts = () => getCatalogProducts();
 // tags a product save must carry forward).
 export const PUBLIC_PRODUCTS_VIEW = 'storefront_products_public';
 
+/** Non-enumerable so it survives being handed around but never reaches a payload or a render. */
+const markStale = (products, stale) => {
+  if (!Array.isArray(products)) return products;
+  Object.defineProperty(products, 'stale', { configurable: true, enumerable: false, value: Boolean(stale) });
+  return products;
+};
+
 export const getEditableProducts = async ({ useLastValidFallback = true, timeoutMs = 5000, table = 'storefront_products' } = {}) => {
   const fetchMonitor = beginMobileFetchMonitor('storefront-products', {
     thresholdMs: 2200,
@@ -736,7 +743,9 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
     const products = (data || []).map(fromDatabaseRow);
     if (table === 'storefront_products') cacheFetchedProducts(products);
     fetchMonitor.finish('success', { count: products.length });
-    return products;
+    // Explicitly not stale: a fresh read must clear the flag, or a single failure marks the catalogue
+    // stale for the rest of the session even after the connection comes back.
+    return markStale(products, false);
   } catch (error) {
     console.warn('Using local storefront products fallback:', error.message || error);
     const fallbackProducts = useLastValidFallback ? readLastValidProducts() : [];
@@ -745,7 +754,12 @@ export const getEditableProducts = async ({ useLastValidFallback = true, timeout
       count: products.length,
       error: error.message || String(error),
     });
-    return products;
+    // Marked, not silent. This catalogue came out of this browser's own storage because the server could
+    // not be reached, so its prices and descriptions are as old as the last successful visit. Dekito hit
+    // exactly this through a VPN and was shown a product description replaced two days earlier — the
+    // server no longer held that text anywhere. A buyer cannot tell, and will add a stale price to a
+    // cart the server then prices properly at checkout.
+    return markStale(products, true);
   }
 };
 
