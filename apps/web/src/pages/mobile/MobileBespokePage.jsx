@@ -31,6 +31,7 @@ import { formatRupiah } from '@/services/productCatalogService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
+import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 const BESPOKE_DRAFT_STORAGE_KEY = 'dekito.storefront.bespokeDraft.v1';
@@ -930,6 +931,7 @@ const MobileBespokePage = () => {
     <MobileCommerceLayout>
       <Helmet>
         <title>Parfum Bespoke - Solivagant</title>
+        <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/bespoke'))} />
         <meta name="description" content="Ajukan request parfum bespoke SOLIVAGANT: arah aroma, ukuran botol, desain cap, material eksotis, dan pembayaran." />
       </Helmet>
       <main className="mobile-page mobile-bespoke-page">

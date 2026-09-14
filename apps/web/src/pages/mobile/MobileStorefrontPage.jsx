@@ -11,6 +11,7 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { LineDivider, LineMark } from '@/components/line/LineArt.jsx';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
+import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
 // The notes come from the desktop home page's mood list, shortened. Without them each card was a flat
 // pastel square holding one italic word, which reads as unfinished rather than minimal (UX backlog U-11).
@@ -51,6 +52,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
       {active ? (
         <Helmet>
           <title>SOLIVAGANT - Artisan Perfumery</title>
+          <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/dashboard'))} />
           <meta name="description" content="SOLIVAGANT, atelier parfum artisan oleh Dekito. Karya olfaktori yang tenang dari raw material, kenangan, dan ritual pribadi." />
         </Helmet>
       ) : null}

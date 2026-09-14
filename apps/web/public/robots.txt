@@ -8,6 +8,22 @@ Disallow: /payment
 Disallow: /customer
 Disallow: /cart
 
+# The whole mobile tree is private BY DEFAULT. Every desktop path above has a /mobile twin that these
+# rules did not match — robots.txt compares from the start of the path, so "Disallow: /cart" never
+# covered /mobile/cart — and the mobile Studio (batches, formulas, raw materials, production costing)
+# had no desktop-shaped name to be caught by at all.
+#
+# An allowlist rather than a list of private paths: a mobile route added later is then invisible to
+# crawlers until someone says otherwise, and the cost of that is nothing, because every public mobile
+# page is a copy of a desktop page that IS indexed and that these pages now name as their canonical.
+Disallow: /mobile/
+Allow: /mobile/dashboard
+Allow: /mobile/home
+Allow: /mobile/catalog
+Allow: /mobile/products/
+Allow: /mobile/articles
+Allow: /mobile/bespoke
+
 # The absolute Sitemap URL is injected into dist/robots.txt at build time
 # (tools/build.mjs) once the canonical site URL is known.
 Sitemap: /sitemap.xml

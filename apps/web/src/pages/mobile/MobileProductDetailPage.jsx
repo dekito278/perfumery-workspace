@@ -18,6 +18,7 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
 import { isPlaceholderMood } from '@/utils/productMood.js';
+import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
 
 
@@ -108,6 +109,9 @@ const MobileProductDetailPage = () => {
       <Helmet>
         <title>{product.name} - SOLIVAGANT</title>
         <meta name="description" content={`${product.name}: ${product.story || product.description}`} />
+        {/* This page is a second copy of /catalog/<slug>. Google crawls mobile-first, so without this it
+            is the duplicate the crawler sees and the prerendered twin the sitemap advertises. */}
+        <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath(`/mobile/products/${product.slug}`))} />
       </Helmet>
 
       <main className="mobile-page m-editorial-page m-editorial-pdp">
