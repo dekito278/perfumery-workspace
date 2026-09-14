@@ -3,13 +3,6 @@ import { getOptimizedProductImageUrl } from '@/services/productImageStorageServi
 import { prefetchCatalogProducts } from '@/services/productCatalogService.js';
 import { prefetchStorefrontCategories } from '@/services/storefrontCategoryService.js';
 
-const homeImageUrls = [
-  '/brand/solivagant-logo.png',
-  '/brand/home/perfumer-pipettes.jpg',
-  '/brand/home/raw-material-library.jpg',
-];
-
-let hasPrefetchedMobileCommerceImages = false;
 let hasPrefetchedMobileCommerceData = false;
 
 const preloadImage = (src) => {
@@ -31,15 +24,15 @@ const schedulePrefetch = (callback) => {
   return () => window.clearTimeout(timeoutId);
 };
 
+// The image half of this used to warm three local files — the logo and two /brand/home fallbacks —
+// on EVERY mobile commerce page. Measured on the live site: 521 KB, untransformed originals, downloaded
+// on /mobile/articles and everywhere else.
+//
+// They were fallbacks, shown only when a site-image slot is empty. home-statement is configured, so
+// perfumer-pipettes.jpg (175 KB) could never be displayed at all. And the images the mobile home page
+// actually shows come from Supabase through the transform, so none of them were ever warmed by this.
+// It cost mobile data on every page and bought nothing.
 export const useMobileCommercePrefetch = ({ prefetchCommerceData = true } = {}) => {
-  useEffect(() => {
-    return schedulePrefetch(() => {
-      if (hasPrefetchedMobileCommerceImages) return;
-      hasPrefetchedMobileCommerceImages = true;
-      homeImageUrls.forEach(preloadImage);
-    });
-  }, []);
-
   useEffect(() => {
     if (!prefetchCommerceData || hasPrefetchedMobileCommerceData) return;
 
