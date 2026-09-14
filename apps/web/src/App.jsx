@@ -90,6 +90,7 @@ const DashboardPage = lazyRoute(() => import('@/pages/DashboardPage.jsx'));
 const ProductListPage = lazyRoute(() => import('@/pages/ProductListPage.jsx'));
 const ProductCreatePage = lazyRoute(() => import('@/pages/ProductCreatePage.jsx'));
 const ProductWearTaggingPage = lazyRoute(() => import('@/pages/ProductWearTaggingPage.jsx'));
+const CatalogCurationPage = lazyRoute(() => import('@/pages/CatalogCurationPage.jsx'));
 const ProductEditPage = lazyRoute(() => import('@/pages/ProductEditPage.jsx'));
 const ProductInventoryPage = lazyRoute(() => import('@/pages/ProductInventoryPage.jsx'));
 const ProductCategoriesPage = lazyRoute(() => import('@/pages/ProductCategoriesPage.jsx'));
@@ -759,6 +760,12 @@ function AppRoutes() {
         <Route path="/studio/products" element={
           <ProtectedRoute>
             <ProductListPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/studio/products/curation" element={
+          <ProtectedRoute>
+            <CatalogCurationPage />
           </ProtectedRoute>
         } />
 

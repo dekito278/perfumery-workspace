@@ -88,6 +88,31 @@ export const listTierPricesForProduct = async (productId) => {
  * product_prices is admin-only, so a non-admin write is filtered by RLS and comes back as zero rows
  * rather than an error — which is the silent write this repo has been bitten by repeatedly.
  */
+/**
+ * Every member price in the shop, in ONE read, for the curation screen. Reading them per product would
+ * be 18 sequential round trips before the table could draw a single row.
+ *
+ * Keyed `productId|variantId`, which is how the tier table is keyed — matching on slug instead would tie
+ * the prices to a name the owner is free to change.
+ */
+export const listMemberTierPrices = async () => {
+  const { data, error } = await supabase
+    .from('storefront_product_prices')
+    .select('product_id, variant_id, price_number')
+    .eq('tier', 'member');
+
+  if (error) {
+    if (isSchemaMissing(error)) return { index: {}, schemaReady: false };
+    throw new Error(error.message || 'Gagal memuat harga member');
+  }
+
+  const index = {};
+  for (const row of data || []) {
+    index[`${row.product_id}|${row.variant_id || ''}`] = Number(row.price_number) || 0;
+  }
+  return { index, schemaReady: true };
+};
+
 export const saveTierPrice = async ({ productId, variantId = '', tier, priceNumber }) => {
   if (!productId || !tier) throw new Error('Produk dan tingkat harga wajib diisi');
 

@@ -841,6 +841,26 @@ export const saveProductWear = async (productId, wear) => {
   return normalized;
 };
 
+/**
+ * The featured flag alone, for the curation screen. Written the way saveProductWear is: zero rows back is
+ * an RLS refusal answering 200 with no error, not a missing product — the id came from a row this session
+ * just read. Reporting that as saved is how a change silently fails to reach the shop.
+ */
+export const saveProductFeatured = async (productId, featured) => {
+  const { data, error } = await supabase
+    .from('storefront_products')
+    .update({ featured: Boolean(featured) })
+    .eq('id', productId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw new Error(`Status pilihan gagal disimpan: ${error.message}`);
+  if (!data) {
+    throw new Error('Status pilihan tidak tersimpan di server. Sesi admin mungkin belum terverifikasi authenticator — muat ulang, verifikasi, lalu coba lagi.');
+  }
+  return Boolean(featured);
+};
+
 export const deleteCustomProduct = async (id) => {
   // A `custom-*` id never reached the database — it is a leftover from the old save fallback, which
   // invented one whenever a save failed. storefront_products.id is a uuid, so sending that id to
