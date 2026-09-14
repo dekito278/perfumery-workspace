@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
-import { detectOverseasVisitor, overseasPriceFor } from '@/utils/overseasVisitor.js';
+import { overseasPriceFor } from '@/utils/overseasVisitor.js';
 
 /**
  * The export price for this line, or null — the single answer to "is this visitor being quoted
@@ -16,10 +16,11 @@ import { detectOverseasVisitor, overseasPriceFor } from '@/utils/overseasVisitor
  * export panel baked into that HTML is what Google would index.
  */
 export const useExportPrice = (product, variant = null) => {
-  const [overseasVisitor, setOverseasVisitor] = useState(false);
   const { index } = useTierPrices();
-
-  useEffect(() => { setOverseasVisitor(detectOverseasVisitor()); }, []);
+  // The chosen shop, not the raw guess. The guess is still what decides the default — it just no longer
+  // has the last word, so a visitor it reads wrong can correct it and Dekito can see his own
+  // international shop from Indonesia.
+  const { isInternational: overseasVisitor } = useStorefrontRegion();
 
   if (!product?.slug) return { price: null, overseasVisitor };
   const linePrice = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);

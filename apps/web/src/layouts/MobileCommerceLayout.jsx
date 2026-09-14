@@ -1,3 +1,4 @@
+import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
 import React, { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Beaker, BookOpenText, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
@@ -66,6 +67,7 @@ const MobileCommerceLayout = ({ children }) => {
           <button type="button" onClick={openOwnerAccess} className="mobile-commerce-brand m-editorial-brand" aria-label="Solivagant owner access">
             <span className="m-editorial-wordmark">SOLIVAGANT</span>
           </button>
+          <RegionSwitch />
         </header>
         {children}
       </div>
