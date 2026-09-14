@@ -5,6 +5,8 @@ import { ArrowRight } from 'lucide-react';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
+import { CURATED_LIMIT_MOBILE, pickCuratedProducts } from '@/utils/curatedProducts.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -44,7 +46,8 @@ export const MobileStorefrontContent = ({ active = true }) => {
     [catalogProducts]
   );
   const publicCatalog = useMemo(() => getPublicFragranceCatalog(visibleProducts), [visibleProducts]);
-  const collection = publicCatalog.slice(0, 4);
+  const collection = useMemo(() => pickCuratedProducts(publicCatalog, CURATED_LIMIT_MOBILE), [publicCatalog]);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     if (!active) return;
@@ -77,9 +80,13 @@ export const MobileStorefrontContent = ({ active = true }) => {
             <p className="m-editorial-eyebrow">ATELIER PARFUM ARTISAN</p>
             <h1>Aroma sebagai objek kenangan.</h1>
             <p className="m-editorial-hero__lede">Karya olfaktori yang tenang dari raw material, kenangan, dan ritual.</p>
+            <p className="m-editorial-hero__note">Harga member, langsung dari atelier.</p>
             <button type="button" className="m-editorial-cta" onClick={() => navigate('/mobile/catalog')}>
               Lihat koleksi <ArrowRight className="h-4 w-4" />
             </button>
+            <Link to="/mobile/customer" className="m-editorial-cta m-editorial-cta--quiet">
+              {currentUser ? 'Akun member' : 'Masuk untuk harga member'}
+            </Link>
           </div>
         </section>
 
