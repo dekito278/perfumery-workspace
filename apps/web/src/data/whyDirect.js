@@ -12,7 +12,7 @@ export const WHY_DIRECT_REASONS = [
   {
     key: 'member',
     title: 'Harga member',
-    body: 'Masuk dengan Google dan setiap harga di katalog turun. Potongan yang biasanya jadi biaya marketplace, di sini jadi milikmu.',
+    body: 'Harga di sini sudah di bawah marketplace. Masuk dengan Google, dan setiap harga di katalog turun lagi — potongan yang biasanya jadi biaya marketplace, jadi milikmu.',
     to: '/customer',
     cta: 'Masuk',
   },

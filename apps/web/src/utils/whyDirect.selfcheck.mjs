@@ -27,6 +27,12 @@ for (const reason of WHY_DIRECT_REASONS) {
   assert.doesNotMatch(reason.body + reason.title, /\d{9,}/, `${reason.key}: no phone number in the copy — the number has one source`);
 }
 assert.ok(WHY_DIRECT_REASONS.some((r) => r.key === 'member' && r.to === '/customer'), 'the member price reason must lead to the account');
+// The price claim (Dekito, 2026-09-15: marketplace listings are priced above the shop) is policy, not a
+// figure, and names no competitor — the same rule welcomeLanding enforces on the landing page.
+const allCopy = WHY_DIRECT_REASONS.map((r) => `${r.title} ${r.body}`).join(' ');
+assert.match(allCopy, /di bawah marketplace/, 'the strongest true claim — prices below the marketplace — must be made');
+assert.doesNotMatch(allCopy, /shopee|tokopedia|lazada|tiktok shop/i, 'never name a marketplace in a price claim');
+assert.doesNotMatch(allCopy, /\d+\s*%|\d+ ?persen|termurah/i, 'never a number, never a superlative');
 assert.ok(WHY_DIRECT_REASONS.some((r) => r.whatsapp === true), 'the WhatsApp reason must exist');
 assert.equal(new Set(WHY_DIRECT_REASONS.map((r) => r.key)).size, WHY_DIRECT_REASONS.length, 'keys are unique (they are React keys)');
 

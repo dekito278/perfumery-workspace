@@ -13,9 +13,10 @@ import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 // Where the greeting card in every parcel points. One URL for every buyer who came from a marketplace,
 // so it is noindex — it is a door, not a page to be found.
 //
-// The copy claims exactly one thing about price: the member price on signing in. It does not claim the
-// shop is cheaper than the marketplace, because that has not been checked and a landing page that lies
-// once is not believed twice.
+// Two price claims, both true: the shop's own prices sit below the marketplace (Dekito, 2026-09-15 — his
+// marketplace listings are priced higher), and signing in lowers them again to the member price. Stated as
+// policy, never as a number or against a named marketplace: a figure goes stale and a name is a legal
+// risk, and a landing page that lies once is not believed twice.
 const WelcomeContent = ({ mobile, currentUser, signIn }) => {
   const prefix = mobile ? '/mobile' : '';
   return (
@@ -25,8 +26,9 @@ const WelcomeContent = ({ mobile, currentUser, signIn }) => {
         Terima kasih sudah memilih Solivagant.
       </h1>
       <p className={mobile ? 'mt-3 text-sm font-medium leading-relaxed text-[#6b7280]' : 'mt-4 max-w-xl text-base font-medium leading-relaxed text-muted-foreground'}>
-        Parfum yang barusan sampai diracik di atelier ini. Kalau lain kali memesan langsung di sini, satu akun
-        Google memberimu harga member di seluruh katalog, riwayat pesanan, dan pesan-lagi dalam sekali ketuk.
+        Parfum yang barusan sampai diracik di atelier ini. Harga di sini sudah di bawah marketplace — dan kalau
+        lain kali memesan langsung, satu akun Google menurunkannya lagi ke harga member, plus riwayat pesanan
+        dan pesan-lagi dalam sekali ketuk.
       </p>
       <div className={`mt-6 flex flex-wrap gap-3${mobile ? ' flex-col' : ''}`}>
         {currentUser ? (
