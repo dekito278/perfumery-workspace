@@ -57,7 +57,9 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper ${compact ? 'min-h-[2.75rem]' : 'min-h-[3rem]'} ${className}`}
     >
       <Globe className="h-4 w-4" />
-      {english ? 'Ask about shipping to my country' : t('export.ask')}
+      {/* One label for one action. The panel and the always-visible button used to carry different
+          wording, which an English visitor saw twice on the same page as two different offers. */}
+      {t('export.ask')}
     </a>
   );
 

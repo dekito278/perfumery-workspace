@@ -6,6 +6,7 @@ import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
@@ -16,6 +17,7 @@ export const MobileCatalogContent = ({ active = true }) => {
   const [searchParams] = useSearchParams();
   const initialFamily = searchParams.get('category') || searchParams.get('family') || '';
   const catalogProducts = useStorefrontProducts({ active });
+  const { t } = useTranslate();
   // Mirror CatalogPage.jsx:35 — without this the page told the buyer "No fragrance matches" during the very
   // first fetch, and kept saying it forever if that fetch failed (audit round 7).
   const isLoading = Boolean(catalogProducts.loading) && !catalogProducts.length;
@@ -62,7 +64,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     <>
       {active ? (
         <Helmet>
-          <title>Koleksi - SOLIVAGANT</title>
+          <title>{t('catalog.tab')}</title>
           <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/catalog'))} />
           <meta name="description" content="Jelajahi koleksi fragrance SOLIVAGANT." />
         </Helmet>
@@ -72,8 +74,8 @@ export const MobileCatalogContent = ({ active = true }) => {
         <StaleCatalogNotice stale={catalogProducts.stale} className="mx-4 mt-3" />
         {/* Header */}
         <section className="m-editorial-catalog-header">
-          <p className="m-editorial-eyebrow">KOLEKSI FRAGRANCE</p>
-          <h1>Koleksi</h1>
+          <p className="m-editorial-eyebrow">{t('catalog.eyebrow')}</p>
+          <h1>{t('catalog.title')}</h1>
         </section>
 
         {/* Search */}
@@ -83,7 +85,7 @@ export const MobileCatalogContent = ({ active = true }) => {
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Cari notes, mood, atau nama..."
+            placeholder={t('catalog.searchPlaceholder')}
           />
         </div>
 
@@ -96,7 +98,7 @@ export const MobileCatalogContent = ({ active = true }) => {
               className={`m-editorial-pill ${cat === activeCategory ? 'is-active' : ''}`}
               onClick={() => setActiveCategory(cat)}
             >
-              {cat === 'All' ? 'Semua' : cat}
+              {cat === 'All' ? t('catalog.all') : cat}
             </button>
           ))}
         </div>
@@ -118,7 +120,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                   <h3>{product.name}</h3>
                   <span className="m-editorial-product-card__price">{product.price}</span>
                   {product.memberPriceNumber ? (
-                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(product.memberPriceNumber)}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(product.memberPriceNumber) })}</span>
                   ) : null}
                 </div>
               </Link>
@@ -139,7 +141,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         ) : catalogProducts.length ? (
           <div className="m-editorial-empty">
             <p className="m-editorial-eyebrow">TIDAK ADA HASIL</p>
-            <h2>Tidak ada fragrance yang cocok.</h2>
+            <h2>{t('catalog.noMatchMobile')}</h2>
             <button type="button" className="m-editorial-cta" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
               Reset filter
             </button>
@@ -147,7 +149,7 @@ export const MobileCatalogContent = ({ active = true }) => {
         ) : (
           <div className="m-editorial-empty">
             <p className="m-editorial-eyebrow">KATALOG</p>
-            <h2>Katalog belum bisa dimuat.</h2>
+            <h2>{t('catalog.notLoadedMobile')}</h2>
             <button
               type="button"
               className="m-editorial-cta"

@@ -1,5 +1,6 @@
 import React from 'react';
 import { WifiOff } from 'lucide-react';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 /**
  * Says out loud that this catalogue came from the browser's own storage because the server could not be
@@ -15,6 +16,7 @@ import { WifiOff } from 'lucide-react';
  * they are reading, which is the whole point of saying it.
  */
 const StaleCatalogNotice = ({ stale, className = '' }) => {
+  const { t } = useTranslate();
   if (!stale) return null;
 
   return (
@@ -23,16 +25,13 @@ const StaleCatalogNotice = ({ stale, className = '' }) => {
       className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-semibold leading-relaxed text-amber-900 ${className}`}
     >
       <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="min-w-[12rem] flex-1">
-        Koneksi ke server gagal, jadi katalog ini ditampilkan dari simpanan di perangkatmu. Harga dan
-        deskripsinya bisa sudah tidak berlaku.
-      </span>
+      <span className="min-w-[12rem] flex-1">{t('stale.body')}</span>
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('dekito:products-updated'))}
         className="rounded-xl border border-amber-400 bg-white px-3 py-1.5 font-bold text-amber-900"
       >
-        Coba muat ulang
+        {t('stale.retry')}
       </button>
     </div>
   );

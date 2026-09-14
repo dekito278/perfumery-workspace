@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 import WearPicker from '@/components/product/WearPicker.jsx';
 import { saveProductWear } from '@/services/productCatalogService.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
-import { describeWear, isWearTagged, normalizeWear } from '@/utils/productWear.js';
+import { describeWearStudio, isWearTagged, normalizeWear } from '@/utils/productWear.js';
 
 const sameWear = (a, b) => JSON.stringify(normalizeWear(a)) === JSON.stringify(normalizeWear(b));
 
@@ -83,7 +83,7 @@ const ProductWearTagger = ({ compact = false }) => {
       <div className="grid gap-3">
         {products.map((product) => {
           const wear = draft[product.id] ?? normalizeWear(product.wear);
-          const labels = describeWear(wear);
+          const labels = describeWearStudio(wear);
           const changed = draft[product.id] && !sameWear(draft[product.id], product.wear);
           return (
             <div

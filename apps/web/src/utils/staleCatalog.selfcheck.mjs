@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import { CATALOG_ARRAY_FLAGS, carryCatalogFlags } from './catalogArrayFlags.js';
 import { attachMemberPrices } from './memberPriceNudge.js';
 import { applyTierPrices } from './tierPricedCatalog.js';
@@ -84,8 +85,14 @@ assert.match(hook, /Object\.defineProperty\(products, 'stale', \{[\s\S]{0,120}?v
 // screens out of four is worse than none: it teaches the buyer the other screen is trustworthy.
 const notice = read('components', 'storefront', 'StaleCatalogNotice.jsx');
 assert.match(notice, /if \(!stale\) return null;/, 'silent unless actually stale');
-assert.match(notice, /Koneksi ke server gagal/, 'and plain about what happened when it is');
-assert.match(notice, /bisa sudah tidak berlaku/, 'naming the consequence, not just the cause');
+// The wording moved into the message file when the storefront learned English. Both languages have to
+// carry the consequence, not just the cause: "we could not reach the server" alone reads as a spinner,
+// while "these prices may be out of date" is the sentence that makes a buyer check.
+assert.match(notice, /t\('stale\.body'\)/, 'and plain about what happened when it is');
+assert.match(MESSAGES.id['stale.body'], /Koneksi ke server gagal/);
+assert.match(MESSAGES.id['stale.body'], /bisa sudah tidak berlaku/, 'naming the consequence, not just the cause');
+assert.match(MESSAGES.en['stale.body'], /out of date/i, 'and the English names it too');
+assert.ok(MESSAGES.en['stale.retry'], 'with a way to retry in both languages');
 assert.match(notice, /role="status"/, 'announced to a screen reader too');
 assert.doesNotMatch(notice, /disabled|return null;\s*\}\s*$/m, 'it informs, it does not block the shop');
 

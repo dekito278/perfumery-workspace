@@ -150,9 +150,12 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile'
 const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // The Indonesian label moved into the message file when the storefront learned English; the English one
 // stays inline because it belongs to the English panel and exists in one language by definition.
-assert.match(button, /english \? 'Ask about shipping to my country' : t\('export\.ask'\)/,
-  'the enquiry button speaks the language the buyer was just reading');
+// One label for one action, from the message file. The panel and the always-visible button once carried
+// different wording, which an English visitor saw twice on one page as two different offers.
+assert.match(button, /\{t\('export\.ask'\)\}/, 'the enquiry button speaks the language the buyer was just reading');
+assert.doesNotMatch(button, /english \? 'Ask about/, 'and there is only one label, not one per surface');
 assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
+assert.match(MESSAGES.en['export.ask'], /shipping/i);
 assert.match(button, /Hello SOLIVAGANT/, 'and so does the message it drafts');
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
 assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
