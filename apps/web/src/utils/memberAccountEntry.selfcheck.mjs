@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -21,14 +22,24 @@ const read = (...parts) => stripComments(readFileSync(join(root, ...parts), 'utf
 // --- 1. Desktop header: one door, on every page, that changes with the session ----------------------
 const header = read('components', 'storefront', 'PublicHeader.jsx');
 assert.match(header, /useAuth\(\)/, 'the header must know whether the visitor is signed in');
-assert.match(header, /to="\/customer"[\s\S]{0,400}?aria-label=\{currentUser \? 'Akun member' : 'Masuk untuk harga member'\}/,
+// The labels moved into the message file when the storefront learned English. What still has to hold is
+// that the header link CHANGES with the session — an "Akun member" label shown to a signed-out visitor
+// hides the reason to sign in, which is the whole point of the link.
+assert.match(header, /to="\/customer"[\s\S]{0,400}?aria-label=\{t\(currentUser \? 'nav\.account' : 'nav\.accountSub'\)\}/,
   'the header must link to the account, labelled "Masuk untuk harga member" when signed out and "Akun member" when in');
-assert.match(header, /\{ label: 'Akun member', to: '\/customer' \}/, 'the mega menu must list the account too');
-assert.match(header, /Lacak Pesanan/, 'tracking stays available — it just stops being the only door');
+assert.match(header, /\{ labelKey: 'nav\.account', to: '\/customer' \}/, 'the mega menu must list the account too');
+assert.match(header, /labelKey: 'nav\.trackOrder'/, 'tracking stays available — it just stops being the only door');
+// Both labels have to exist in both languages, or the English header shows a raw key where the reason
+// to sign in should be.
+for (const key of ['nav.account', 'nav.accountSub', 'nav.trackOrder']) {
+  assert.ok(MESSAGES.id[key] && MESSAGES.en[key], `${key} exists in both languages`);
+}
+assert.match(MESSAGES.id['nav.accountSub'], /harga member/, 'and the Indonesian one still names the price');
 
 // --- 2. Phone nav: "Akun", not "Cek Order" -------------------------------------------------------------
 const mobileNav = read('layouts', 'MobileCommerceLayout.jsx');
-assert.match(mobileNav, /\{ path: '\/mobile\/customer', label: 'Akun', icon: UserRound \}/, 'the phone tab must be "Akun"');
+assert.match(mobileNav, /\{ path: '\/mobile\/customer', labelKey: 'nav\.accountShort', icon: UserRound \}/, 'the phone tab must be the account');
+assert.match(MESSAGES.id['nav.accountShort'], /Akun/, 'and it is still called "Akun" in Indonesian');
 assert.doesNotMatch(mobileNav, /Cek Order/, '"Cek Order" framed the account as tracking; it must not come back');
 
 // --- 3. The portal sells the price, not the code ------------------------------------------------------

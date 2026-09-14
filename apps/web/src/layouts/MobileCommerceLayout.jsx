@@ -1,4 +1,5 @@
 import RegionSwitch from '@/components/storefront/RegionSwitch.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Beaker, BookOpenText, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
@@ -12,13 +13,13 @@ import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
 
 const commerceNavItems = [
-  { path: '/mobile/dashboard', label: 'Beranda', icon: Home },
-  { path: '/mobile/catalog', label: 'Belanja', icon: Search, aliases: ['/mobile/products'] },
-  { path: '/mobile/articles', label: 'Artikel', icon: BookOpenText },
-  { path: '/mobile/bespoke', label: 'Bespoke', icon: MessageCircle },
-  { path: '/mobile/cart', label: 'Keranjang', icon: ShoppingBag },
+  { path: '/mobile/dashboard', labelKey: 'nav.home', icon: Home },
+  { path: '/mobile/catalog', labelKey: 'nav.shop', icon: Search, aliases: ['/mobile/products'] },
+  { path: '/mobile/articles', labelKey: 'nav.articles', icon: BookOpenText },
+  { path: '/mobile/bespoke', labelKey: 'nav.bespokeShort', icon: MessageCircle },
+  { path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag },
   // Was "Cek Order": tracking is what an account DOES, not why anyone opens one. The reason is the price.
-  { path: '/mobile/customer', label: 'Akun', icon: UserRound },
+  { path: '/mobile/customer', labelKey: 'nav.accountShort', icon: UserRound },
 ];
 
 const preserveScrollOnCommerceTabTap = (path) => (
@@ -31,6 +32,7 @@ const preserveScrollOnCommerceTabTap = (path) => (
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslate();
   const { isAuthenticated } = useAuth();
   const { summary } = useCart();
   const keyboardActive = useMobileKeyboardState();
@@ -81,7 +83,7 @@ const MobileCommerceLayout = ({ children }) => {
           Studio
         </Link>
       ) : null}
-      <nav className="mobile-bottom-nav mobile-commerce-bottom-nav grid grid-cols-6 gap-1 p-1.5" aria-label="Navigasi belanja mobile">
+      <nav className="mobile-bottom-nav mobile-commerce-bottom-nav grid grid-cols-6 gap-1 p-1.5" aria-label={t('nav.mobileShopAria')}>
         {commerceNavItems.map((item) => {
           const Icon = item.icon;
           const activePaths = [item.path, ...(item.aliases || [])];
@@ -104,7 +106,7 @@ const MobileCommerceLayout = ({ children }) => {
                   {summary.quantity > 99 ? '99+' : summary.quantity}
                 </span>
               ) : null}
-              <span className="max-w-full truncate px-0.5">{item.label}</span>
+              <span className="max-w-full truncate px-0.5">{t(item.labelKey)}</span>
             </Link>
           );
         })}

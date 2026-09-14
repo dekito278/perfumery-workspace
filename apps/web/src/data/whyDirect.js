@@ -8,33 +8,46 @@
 // read through getStorefrontWhatsAppNumber) and the component builds the link — a second copy of the
 // number is how the collaboration button on the home page ended up hardcoding it.
 
+// `titleKey` / `bodyKey` / `ctaKey` go through the message file. `to` is a route and stays here.
+//
+// The member reason carries an `en` override, and that override is the reason this file is not a plain
+// list of translation keys. An international buyer does not get the member discount — outside Indonesia
+// the price is the export price and signing in does not lower it — so in English this card cannot promise
+// one, and its link cannot send them to a sign-in that does nothing for them. Same slot, different true
+// statement, different destination.
 export const WHY_DIRECT_REASONS = [
   {
     key: 'member',
-    title: 'Harga member',
-    body: 'Harga di sini sudah di bawah marketplace. Masuk dengan Google, dan setiap harga di katalog turun lagi — potongan yang biasanya jadi biaya marketplace, jadi milikmu.',
+    titleKey: 'why.member.title',
+    bodyKey: 'why.member.body',
     to: '/customer',
-    cta: 'Masuk',
+    ctaKey: 'why.member.cta',
+    en: { titleKey: 'why.intl.title', bodyKey: 'why.intl.body', to: '/catalog', ctaKey: 'why.intl.cta' },
   },
   {
     key: 'atelier',
-    title: 'Langsung dari perfumer',
-    body: 'Diracik dan dikemas di atelier oleh Dekito sendiri. Tidak lewat gudang, tidak lewat reseller.',
+    titleKey: 'why.atelier.title',
+    bodyKey: 'why.atelier.body',
     to: '/bespoke',
-    cta: 'Bespoke ritual',
+    ctaKey: 'why.atelier.cta',
   },
   {
     key: 'first',
-    title: 'Lebih dulu tahu',
-    body: 'Koleksi baru, ukuran khusus, dan kartu ucapan di tiap paket — hanya untuk yang memesan langsung.',
+    titleKey: 'why.first.title',
+    bodyKey: 'why.first.body',
     to: '/catalog',
-    cta: 'Lihat koleksi',
+    ctaKey: 'why.first.cta',
   },
   {
     key: 'whatsapp',
-    title: 'Tanya langsung',
-    body: 'Ragu antara dua aroma, atau mau tanya stok? WhatsApp atelier dibalas oleh orang yang meraciknya.',
+    titleKey: 'why.whatsapp.title',
+    bodyKey: 'why.whatsapp.body',
     whatsapp: true,
-    cta: 'Chat WhatsApp',
+    ctaKey: 'why.whatsapp.cta',
   },
 ];
+
+/** The reasons as this shop's visitor should read them. */
+export const whyDirectReasons = (region) => WHY_DIRECT_REASONS.map((reason) => (
+  region === 'en' && reason.en ? { ...reason, ...reason.en } : reason
+));

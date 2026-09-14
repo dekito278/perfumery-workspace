@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import {
   REGION_EN,
   REGION_ID,
@@ -75,7 +76,13 @@ const widget = read('components', 'storefront', 'RegionSwitch.jsx');
 assert.doesNotMatch(widget, /Dialog|Modal|overlay|fixed inset-0/,
   'the switch must never become a gate in front of the shop');
 assert.match(widget, /aria-pressed=\{region === option\.value\}/, 'the current choice is announced, not just coloured');
-assert.match(widget, /aria-label="Wilayah harga \/ Pricing region"/, 'labelled in both languages, since it is the one control both read');
+assert.match(widget, /aria-label=\{t\('region\.label'\)\}/, 'the switch is labelled from the message file');
+// Both labels name BOTH languages, because this is the one control a reader of either has to find while
+// the rest of the page is in the other one.
+assert.match(MESSAGES.id['region.label'], /Wilayah harga/);
+assert.match(MESSAGES.id['region.label'], /Pricing region/);
+assert.match(MESSAGES.en['region.label'], /Pricing region/);
+assert.match(MESSAGES.en['region.label'], /Wilayah harga/);
 
 // On both storefronts. Desktop and mobile drifting apart is this repo's commonest defect, and a switch on
 // one of them teaches the visitor the other surface has no choice.

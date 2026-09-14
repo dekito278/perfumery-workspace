@@ -4,15 +4,23 @@ import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { Spinner } from '@/components/ui/spinner.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import { cn } from '@/lib/utils.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
 const previewCards = Array.from({ length: 3 }, (_, index) => `storefront-loading-card-${index}`);
 
 const StorefrontLoadingState = ({
   className,
-  title = 'Menyiapkan Solivagant',
-  description = 'Sebentar, halaman sedang disiapkan.',
+  title = null,
+  description = null,
   mode = 'page',
 }) => {
+  // Defaults come from the message file rather than the parameter list: a default argument is evaluated
+  // outside the component's render and cannot see the chosen region, so the loading screen would have
+  // stayed Indonesian in the English shop.
+  const { t } = useTranslate();
+  const heading = title ?? t('loading.title');
+  const body = description ?? t('loading.body');
+
   return (
     <main
       className={cn('storefront-loading min-h-screen bg-editorial-ivory text-editorial-charcoal', className)}
@@ -26,11 +34,11 @@ const StorefrontLoadingState = ({
         <div className="rounded-[28px] border border-editorial-stone/12 bg-white/86 p-5 shadow-sm">
           <div className="inline-flex items-center gap-2 rounded-full border border-editorial-stone/15 bg-editorial-ivory px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
             <Spinner className="h-4 w-4" />
-            Memuat
+            {t('pdp.loading')}
           </div>
-          <h1 className="mt-5 text-4xl font-bold leading-none sm:text-5xl">{title}</h1>
+          <h1 className="mt-5 text-4xl font-bold leading-none sm:text-5xl">{heading}</h1>
           <p className="mt-4 max-w-xl text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base">
-            {description}
+            {body}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Skeleton className="h-11 w-36 rounded-2xl" />

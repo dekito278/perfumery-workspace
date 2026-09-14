@@ -50,6 +50,11 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'pdp.rawMaterials', // the perfumery term, printed in English on the Indonesian page already
   'pdp.checkout',     // the word Indonesian buyers use for this button
   'price.memberIs',   // "Member Rp 675.000" — "member" is the loanword in both
+  'nav.bespokeShort', // "Bespoke" is the word used in both, and the tab has room for one
+  'nav.info',         // same word, same meaning
+  'why.atelier.cta',  // "Bespoke ritual" is the name of the service, not a description of it
+  'region.enTitle',   // the international option is named in English on BOTH sides on purpose: it is
+                      // what an Indonesian reader is switching TO, so translating it hides the switch
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -125,8 +130,21 @@ const LEFTOVERS = [
   'Koleksi belum bisa dimuat', 'Katalog belum bisa dimuat', 'sedang habis', 'stok habis',
   'Pakai untuk momen apa', 'Filter berdasarkan', 'Koneksi ke server gagal', 'Coba muat ulang',
   'Ditambahkan', '> Keranjang<', 'kategori',
+  // shell
+  'Semua Fragrance', 'Bespoke Ritual', 'Berdasarkan Family', 'Lainnya', 'Akun member',
+  'Lacak Pesanan', 'Masuk untuk harga member', 'Tutup menu', 'Buka menu', 'Beranda',
+  'Atelier Parfum Artisan', 'WhatsApp atelier', 'Tetap terhubung', 'Email kamu', 'Langganan',
+  'Menyiapkan Solivagant', 'Sebentar, halaman', 'KENAPA BELI LANGSUNG', 'Yang tidak kamu dapat',
+  'Halo Solivagant', 'Navigasi', 'Artikel',
 ];
 for (const file of [
+  ['components', 'storefront', 'PublicHeader.jsx'],
+  ['components', 'storefront', 'StorefrontFooter.jsx'],
+  ['components', 'storefront', 'StorefrontHeader.jsx'],
+  ['components', 'storefront', 'StorefrontLoadingState.jsx'],
+  ['components', 'storefront', 'WhyBuyDirect.jsx'],
+  ['components', 'storefront', 'RegionSwitch.jsx'],
+  ['layouts', 'MobileCommerceLayout.jsx'],
   ['pages', 'CatalogPage.jsx'],
   ['pages', 'mobile', 'MobileCatalogPage.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
@@ -146,6 +164,25 @@ for (const file of [
   assert.match(source, /useTranslate\(\)|\btranslate\b/, `${file.join('/')} reads the message file`);
 }
 
+// A third way to leak, invisible to both checks above: rendering the KEY instead of translating it.
+// `{item.labelKey}` puts the literal text "nav.home" on the screen — no Indonesian, no missing key, and
+// the page still looks structurally fine. A sabotage did exactly that to the phone's bottom tabs.
+for (const file of [
+  ['components', 'storefront', 'WhyBuyDirect.jsx'],
+  ['components', 'storefront', 'PublicHeader.jsx'],
+  ['components', 'storefront', 'StorefrontFooter.jsx'],
+  ['components', 'storefront', 'StorefrontHeader.jsx'],
+  ['components', 'storefront', 'WearFilter.jsx'],
+  ['layouts', 'MobileCommerceLayout.jsx'],
+]) {
+  // React `key=` props legitimately use the message key as an identity — it is never shown — so they are
+  // removed before the scan. What is left is text the browser would print.
+  const source = read(...file).replace(/\bkey=\{[^}]*\}/g, '');
+  const rendered = source.match(/\{\s*\w+(?:\.\w+)*Key\s*\}/g) || [];
+  assert.deepEqual(rendered, [],
+    `${file.join('/')} renders a message KEY instead of translating it: ${rendered.join(', ')}`);
+}
+
 // Scanning for Indonesian LITERALS cannot see this one: `{option.label}` contains no Indonesian text at
 // all, and the words arrive from productWear.js at runtime. A sabotage walked straight through the
 // literal scan by swapping labelKey back to label in the filter pills.
@@ -153,6 +190,9 @@ for (const file of [
 // So the storefront is forbidden from reading the Indonesian `label` at all. Studio reads it; the
 // storefront reads `labelKey` and translates.
 for (const file of [
+  ['components', 'storefront', 'WhyBuyDirect.jsx'],
+  ['components', 'storefront', 'StorefrontFooter.jsx'],
+  ['layouts', 'MobileCommerceLayout.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
   ['pages', 'CatalogPage.jsx'],
   ['pages', 'mobile', 'MobileCatalogPage.jsx'],
