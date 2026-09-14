@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { attachMemberPrices, memberPriceFor } from './memberPriceNudge.js';
+import { attachMemberPrices, memberPriceFor, memberSavingForCart } from './memberPriceNudge.js';
 import { indexTierPrices } from './tierPrice.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -116,5 +116,42 @@ for (const surface of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.
 for (const pdp of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
   assert.match(read(...pdp.split('/')), /<PriceNote product=\{product\} variant=\{selectedVariant\}/, `${pdp} must hand PriceNote the chosen variant`);
 }
+
+// --- 9. The cart saving on the checkout button ----------------------------------------------------------
+// A cart line's `slug` is the cartSlug (product slug + variant suffix). The index is keyed by product
+// slug. Keying by the wrong one makes every saving 0 and the button never changes — silently.
+const cartIdx = index([['lintang', '30-ml', 'member', 299000], ['maskumambang', '', 'member', 550000]]);
+const cart = [
+  { slug: 'lintang-30-ml', productSlug: 'lintang', variantId: '30-ml', priceNumber: 329000, quantity: 2 },
+  { slug: 'maskumambang-30-ml', productSlug: 'maskumambang', variantId: '30-ml', priceNumber: 610000, quantity: 1 },
+  { slug: 'other-30-ml', productSlug: 'other', variantId: '30-ml', priceNumber: 200000, quantity: 3 },
+];
+assert.equal(memberSavingForCart(cart, cartIdx), 2 * 30000 + 60000, 'saving is per line x quantity, product-level row applies to any variant');
+assert.equal(memberSavingForCart(cart.map((line) => ({ ...line, productSlug: undefined })), cartIdx), 0, 'without productSlug there is nothing to key on — 0, never a guess');
+assert.equal(memberSavingForCart(cart, {}), 0, 'no member prices, no saving — the ordinary copy stays');
+assert.equal(memberSavingForCart([], cartIdx), 0);
+assert.equal(memberSavingForCart([{ productSlug: 'lintang', variantId: '30-ml', priceNumber: 299000, quantity: 1 }], cartIdx), 0, 'a line already at the member price saves nothing — a signed-in member is not nudged');
+assert.equal(memberSavingForCart([{ productSlug: 'lintang', variantId: '30-ml', priceNumber: 329000, quantity: 0 }], cartIdx), 0, 'quantity 0 saves nothing');
+assert.equal(memberSavingForCart(undefined, cartIdx), 0, 'no crash on nothing');
+
+// --- 10. Both checkout pages say the number, and only when there is one --------------------------------
+for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.jsx']) {
+  const source = read(...page.split('/'));
+  assert.match(source, /memberSavingForCart\(items, memberIndex\)/, `${page} must compute the real saving from the cart`);
+  assert.match(source, /memberSaving > 0\s*\?/, `${page} must fall back to the ordinary copy when there is nothing to save`);
+  assert.match(source, /hemat \$\{formatTotal\(memberSaving\)\}|hemat \{formatTotal\(memberSaving\)\}/, `${page} must print the actual amount, not a vague promise`);
+  // Bound to the button's ELSE branch. "data terisi otomatis" also appears in the signed-in "Masuk
+  // sebagai …" line, so a bare phrase match passed while the button's fallback was empty.
+  assert.match(source, /:\s*'Masuk dengan Google — [^']*data terisi otomatis'/, `${page} must keep the ordinary copy on the button for the no-saving case`);
+}
+
+// --- 11. The public mapper must CARRY the field, not just the pages RENDER it -----------------------------
+// This is the hole the first version of this guard had. toPublicFragrance rebuilds every product and
+// variant from a hand-written field list; it named retailPriceNumber, priceTier and compareAtPriceNumber
+// and not memberPriceNumber, so all seven surfaces dropped it before reading it — and the nudge rendered
+// nowhere on the live site, found only by looking. Same omission compareAtPriceNumber once had, same way.
+const mapper = read('data', 'publicStorefront.js');
+assert.match(mapper, /memberPriceNumber: variant\.memberPriceNumber/, 'the variant mapper must carry memberPriceNumber');
+assert.match(mapper, /memberPriceNumber: product\.memberPriceNumber/, 'the product mapper must carry memberPriceNumber');
 
 console.log('memberPriceNudge selfcheck OK (member price shown to everyone; silent when there is nothing to say)');
