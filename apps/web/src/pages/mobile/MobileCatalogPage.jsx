@@ -7,6 +7,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
+import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
 const PAGE_SIZE = 12;
 
@@ -61,6 +62,7 @@ export const MobileCatalogContent = ({ active = true }) => {
       {active ? (
         <Helmet>
           <title>Koleksi - SOLIVAGANT</title>
+          <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/catalog'))} />
           <meta name="description" content="Jelajahi koleksi fragrance SOLIVAGANT." />
         </Helmet>
       ) : null}
