@@ -66,6 +66,19 @@ assert.match(prompt, /recordVisit\(window\.localStorage, window\.sessionStorage\
 assert.match(prompt, /addEventListener\('scroll', onScroll, \{ passive: true \}\)/, 'and watch the scroll, passively');
 assert.equal((prompt.match(/shouldShowPrompt\(visits, scrolledPx\)/g) || []).length, 3, 'iOS timer, Android deferred prompt and the beforeinstallprompt handler must all pass the gate');
 assert.doesNotMatch(prompt, /shouldShowPrompt\(\)/, 'no ungated call may remain');
+
+// Every effect that READS the gate must list what the gate reads. The Android branch did not, so it kept
+// the values from its first run: beforeinstallprompt fires before any scroll, the gate said no, and the
+// effect never ran again — the scroll path was dead on Android and only a second visit worked. Found from
+// an eslint react-hooks/exhaustive-deps warning that I shipped and then described as "unchanged".
+for (const deps of prompt.match(/\}, \[[^\]]*\]\);/g) || []) {
+  const body = prompt.slice(0, prompt.indexOf(deps));
+  const effectStart = body.lastIndexOf('useEffect(');
+  const effectBody = prompt.slice(effectStart, prompt.indexOf(deps));
+  if (!/shouldShowPrompt\(visits, scrolledPx\)/.test(effectBody)) continue;
+  assert.match(deps, /visits/, 'an effect that reads the gate must re-run when visits changes');
+  assert.match(deps, /scrolledPx/, 'and when the scroll distance changes');
+}
 assert.match(prompt, /shouldSurfaceInstallPrompt\(\{/, 'the gate is the shared rule, not a local re-guess');
 
 // --- 6. Scroll is measured from where the page STARTED, not from the top ---------------------------------

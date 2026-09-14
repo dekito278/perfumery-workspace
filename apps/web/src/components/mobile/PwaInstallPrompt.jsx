@@ -99,7 +99,11 @@ const PwaInstallPrompt = () => {
     if (platform === 'android' && deferredPrompt && shouldShowPrompt(visits, scrolledPx)) {
       setVisible(true);
     }
-  }, [canSurfacePrompt, deferredPrompt, platform]);
+    // visits and scrolledPx belong here: the gate READS them, so leaving them out froze this effect on
+    // the values it saw the first time it ran. On Android beforeinstallprompt fires early, while the gate
+    // is still false — and without scrolledPx in the deps it never ran again, so scrolling past the
+    // threshold never surfaced the prompt. The scroll path was dead on Android; only a second visit worked.
+  }, [canSurfacePrompt, deferredPrompt, platform, visits, scrolledPx]);
 
   const dismiss = () => {
     window.localStorage.setItem(DISMISS_KEY, 'true');
