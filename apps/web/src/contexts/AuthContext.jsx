@@ -1,8 +1,15 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import supabase, { SUPABASE_AUTH_STORAGE_KEY } from '@/lib/supabaseClient.js';
+import { isTransientAuthError } from '@/utils/supabaseFailure.js';
 
 const AuthContext = createContext(null);
+
+// Returned when MFA resolution could not be decided at all. It is deliberately NOT `null`: `null` here
+// means "this session needs no second factor" and grants access immediately, so a swallowed error used
+// to be indistinguishable from "no TOTP enrolled" — block one listFactors request and a password-only
+// login walked straight into the studio. See resolveMfaChallenge.
+const MFA_UNRESOLVED = Symbol('mfa-unresolved');
 const AUTH_INIT_TIMEOUT_MS = 5000;
 const MFA_REMEMBER_STORAGE_KEY = 'solivagant.auth.mfa-remembered.v1';
 const MFA_REMEMBER_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -143,7 +150,7 @@ export const AuthProvider = ({ children }) => {
       setInitialLoading(false);
     };
 
-    const resolveMfaChallenge = async (nextSession, { allowRememberedSession = false } = {}) => {
+    const attemptResolveMfaChallenge = async (nextSession, { allowRememberedSession = false } = {}) => {
       if (!nextSession?.user) {
         return null;
       }
@@ -155,41 +162,88 @@ export const AuthProvider = ({ children }) => {
       // has to enter a code (audit round 8).
       const rememberedMfa = allowRememberedSession ? readRememberedMfaSession() : null;
       if (rememberedMfa?.userId === nextSession.user.id) {
-        const { data: rememberedAssurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        const { data: rememberedAssurance, error: rememberedAssuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (rememberedAssuranceError) {
+          throw rememberedAssuranceError;
+        }
         if (rememberedAssurance?.currentLevel === 'aal2') {
           return null;
         }
         clearRememberedMfaSession();
       }
 
-      try {
-        const [{ data: assurance }, { data: factorsData }] = await Promise.all([
-          supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-          supabase.auth.mfa.listFactors(),
-        ]);
-        const verifiedTotp = factorsData?.totp?.find((factor) => factor.status === 'verified');
+      // Errors from here on are deliberately NOT caught into a "no MFA needed" answer. resolveMfaChallenge
+      // below decides what an undecidable MFA state means, and its answer is: deny.
+      // supabase-js reports API failures in `error`, it does not throw. Without these two checks a
+      // failed listFactors() yields data: null, `verifiedTotp` comes out undefined, and the next line
+      // reads that as "no second factor enrolled" — the exact fail-open this whole path exists to stop.
+      const [{ data: assurance, error: assuranceError }, { data: factorsData, error: factorsError }] = await Promise.all([
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+        supabase.auth.mfa.listFactors(),
+      ]);
 
-        if (!verifiedTotp || assurance?.currentLevel === 'aal2') {
-          return null;
-        }
+      if (assuranceError) {
+        throw assuranceError;
+      }
+      if (factorsError) {
+        throw factorsError;
+      }
 
-        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-          factorId: verifiedTotp.id,
-        });
+      const verifiedTotp = factorsData?.totp?.find((factor) => factor.status === 'verified');
 
-        if (challengeError) {
-          throw challengeError;
-        }
-
-        return {
-          challengeId: challengeData.id,
-          factorId: verifiedTotp.id,
-          friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
-        };
-      } catch (error) {
-        console.warn('Failed to initialize MFA challenge:', error);
+      if (!verifiedTotp || assurance?.currentLevel === 'aal2') {
         return null;
       }
+
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: verifiedTotp.id,
+      });
+
+      if (challengeError) {
+        throw challengeError;
+      }
+
+      return {
+        challengeId: challengeData.id,
+        factorId: verifiedTotp.id,
+        friendlyName: verifiedTotp.friendly_name || 'Authenticator app',
+      };
+    };
+
+    // Fail CLOSED, but retry a momentary blip once first.
+    //
+    // `AbortError: Lock broken` from Supabase's navigator lock is ordinary for a multi-tab user and says
+    // nothing about MFA, so one of those must not sign anybody out. Anything else — or a blip that is
+    // still there on the second try — ends the session rather than resolving to "no MFA needed".
+    const resolveMfaChallenge = async (nextSession, options = {}) => {
+      try {
+        return await attemptResolveMfaChallenge(nextSession, options);
+      } catch (error) {
+        if (isTransientAuthError(error)) {
+          console.warn('MFA challenge initialization hit a transient error - retrying once:', error);
+          await new Promise((resolve) => { setTimeout(resolve, 250); });
+          try {
+            return await attemptResolveMfaChallenge(nextSession, options);
+          } catch (retryError) {
+            console.error('MFA challenge initialization failed after retry - denying access:', retryError);
+            return denyUnresolvedSession();
+          }
+        }
+
+        console.error('MFA challenge initialization failed - denying access:', error);
+        return denyUnresolvedSession();
+      }
+    };
+
+    // Clear the persisted token too, so a reload cannot restore the same undecidable session. signOut
+    // itself can fail offline, which is why the sentinel - not signOut - is what actually denies access.
+    const denyUnresolvedSession = async () => {
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.warn('Sign-out after an undecidable MFA state failed:', signOutError);
+      }
+      return MFA_UNRESOLVED;
     };
 
     const finishWithResolvedMfa = async (nextSession = null, options = {}) => {
@@ -202,6 +256,11 @@ export const AuthProvider = ({ children }) => {
 
       const nextMfaChallenge = await resolveMfaChallenge(nextSession, options);
       if (authResolutionRef.current !== resolutionId) {
+        return;
+      }
+
+      if (nextMfaChallenge === MFA_UNRESOLVED) {
+        finishLoading(null, null, false);
         return;
       }
 
