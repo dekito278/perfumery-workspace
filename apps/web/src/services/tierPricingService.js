@@ -95,15 +95,24 @@ export const listTierPricesForProduct = async (productId) => {
  * Keyed `productId|variantId`, which is how the tier table is keyed — matching on slug instead would tie
  * the prices to a name the owner is free to change.
  */
-export const listMemberTierPrices = async () => {
+/**
+ * Every saved price for ONE tier, keyed `productId|variantId`, for the bulk curation screen.
+ *
+ * The tier is required and always reaches the query: reading the whole table and sorting the tiers out
+ * in JavaScript would hand the member screen the overseas prices and vice versa, and one wrong index
+ * lookup there writes a Rp 1.380.000 export price into the member column.
+ */
+export const listTierPriceIndex = async (tier) => {
+  if (!tier) throw new Error('Tingkat harga wajib diisi');
+
   const { data, error } = await supabase
     .from('storefront_product_prices')
     .select('product_id, variant_id, price_number')
-    .eq('tier', 'member');
+    .eq('tier', tier);
 
   if (error) {
     if (isSchemaMissing(error)) return { index: {}, schemaReady: false };
-    throw new Error(error.message || 'Gagal memuat harga member');
+    throw new Error(error.message || `Gagal memuat harga ${tier}`);
   }
 
   const index = {};
