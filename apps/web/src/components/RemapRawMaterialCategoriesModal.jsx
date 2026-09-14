@@ -6,8 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { CheckCircle2, RefreshCw, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateRawMaterial } from '@/services/rawMaterialsService.js';
-import { PERFUMERS_WORLD_CATEGORY_VALUES } from '@/utils/perfumersWorldCategories.js';
-import { suggestPerfumersWorldCategory } from '@/utils/perfumersWorldCategorySuggestions.js';
+import { isOfficialScentTaxonomyCategory, suggestScentTaxonomyCategory } from '@/utils/scentTaxonomySuggestions.js';
 
 const CONFIDENCE_STYLES = {
   exact: 'default',
@@ -25,13 +24,13 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
     () =>
       (materials || [])
         .map((material) => {
-          const suggestion = suggestPerfumersWorldCategory({
+          const suggestion = suggestScentTaxonomyCategory({
             workbookCode: material.workbook_code,
             name: material.name,
             legacyCategory: material.category,
           });
 
-          const alreadyStandard = PERFUMERS_WORLD_CATEGORY_VALUES.has(String(material.category || '').toLowerCase());
+          const alreadyStandard = isOfficialScentTaxonomyCategory(material.category);
 
           return {
             material,
@@ -102,13 +101,13 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
         <DialogHeader>
           <DialogTitle>Remap raw material categories</DialogTitle>
           <DialogDescription>
-            Review legacy materials and update them into the Perfumer&apos;s Workbook A-Z system one by one with suggested mappings.
+            Review legacy materials and file them under the 11 scent grandfamilies, one by one, with suggested mappings.
           </DialogDescription>
         </DialogHeader>
 
         {candidates.length === 0 ? (
           <div className="rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
-            All loaded raw materials already use the A-Z classification, or no safe suggestions were found.
+            All loaded raw materials already use the scent taxonomy, or no safe suggestions were found.
           </div>
         ) : (
           <div className="space-y-4">
@@ -125,7 +124,7 @@ const RemapRawMaterialCategoriesModal = ({ open, onOpenChange, materials, onSucc
                   <TableRow>
                     <TableHead>Material</TableHead>
                     <TableHead>Current category</TableHead>
-                    <TableHead>Suggested A-Z category</TableHead>
+                    <TableHead>Suggested grandfamily</TableHead>
                     <TableHead>Reason</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
