@@ -1,8 +1,9 @@
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, ChevronDown, X, Menu } from 'lucide-react';
+import { ShoppingBag, ChevronDown, X, Menu, UserRound } from 'lucide-react';
 import BackToTop from '@/components/storefront/BackToTop.jsx';
 import { useCart } from '@/hooks/useCart.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 import { storefrontCategories } from '@/data/storefront.js';
 
 const megaMenuColumns = [
@@ -24,6 +25,7 @@ const megaMenuColumns = [
     title: 'Lainnya',
     links: [
       { label: 'Jurnal', to: '/journal' },
+      { label: 'Akun member', to: '/customer' },
       { label: 'Lacak Pesanan', to: '/track-order' },
     ],
   },
@@ -31,6 +33,7 @@ const megaMenuColumns = [
 
 const PublicHeader = () => {
   const { summary } = useCart();
+  const { currentUser } = useAuth();
   // The header used to delete any cart line whose slug was not in the visible catalog, silently. A shopper
   // whose product went out of stock or got unpublished just found their cart shorter, with no reason given
   // — and it ran only here, so desktop and mobile disagreed. reconcileCartLines now flags those lines
@@ -111,6 +114,16 @@ const PublicHeader = () => {
           >
             {megaOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
+          {/* The one door to the account, on every storefront page. The only entry used to be "Lacak
+              Pesanan" in the menu — framed as tracking, so nobody signed in for the price. */}
+          <Link
+            to="/customer"
+            className="editorial-cart-button"
+            aria-label={currentUser ? 'Akun member' : 'Masuk untuk harga member'}
+            title={currentUser ? 'Akun member' : 'Masuk untuk harga member'}
+          >
+            <UserRound className="h-4 w-4" />
+          </Link>
           <Link to="/cart" className="editorial-cart-button" aria-label={`Keranjang, ${summary.quantity} item`}>
             <ShoppingBag className="h-4 w-4" />
             {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
