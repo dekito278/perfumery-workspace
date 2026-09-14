@@ -46,6 +46,26 @@ export const getTierPricesFor = async (slugs = null) => {
   }
 };
 
+/**
+ * Member prices for everyone, signed in or not — the reason to sign in, made visible. Reseller prices
+ * never come through here: the function names the tier literally. Empty until the migration runs, and
+ * empty again until Dekito fills prices in, so the nudge stays silent on both counts.
+ */
+export const getPublicMemberPrices = async (slugs = null) => {
+  try {
+    const { data, error } = await supabase.rpc('storefront_member_prices', {
+      p_slugs: Array.isArray(slugs) && slugs.length ? slugs : null,
+    });
+    if (error) throw error;
+    return { index: indexTierPrices(data || []), schemaReady: true };
+  } catch (error) {
+    if (!isSchemaMissing(error)) {
+      console.warn('Public member price lookup failed; showing no member prices:', error?.message || error);
+    }
+    return { index: {}, schemaReady: !isSchemaMissing(error) };
+  }
+};
+
 // --- admin ------------------------------------------------------------------------------------------
 
 /** Every tier price on one product, for the Studio editor. */

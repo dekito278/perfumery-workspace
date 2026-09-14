@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatRupiah } from '@/services/productCatalogService.js';
+import { useAuth } from '@/contexts/AuthContext.jsx';
 
 const TIER_LABELS = { member: 'Harga member', reseller: 'Harga reseller' };
 
@@ -15,6 +16,7 @@ const TIER_LABELS = { member: 'Harga member', reseller: 'Harga reseller' };
  * set above the selling price, is every product. The storefront stays exactly as it is.
  */
 const PriceNote = ({ product, variant = null, className = '' }) => {
+  const { loginWithGoogle } = useAuth();
   const price = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);
 
   const tierLabel = TIER_LABELS[product?.priceTier];
@@ -26,6 +28,27 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
         {retail > price ? (
           <span className="font-semibold normal-case tracking-normal text-muted-foreground line-through">{formatRupiah(retail)}</span>
         ) : null}
+      </p>
+    );
+  }
+
+  // Not a member yet, and a member price exists for this line: say so, with the number and the way in.
+  // attachMemberPrices only sets memberPriceNumber when it is strictly below the price on the line, so
+  // this branch cannot fire for a signed-in member (their price already IS the member price) nor for a
+  // product with no member price — which, until Dekito fills them in, is every product.
+  const memberPrice = Number(variant?.memberPriceNumber ?? product?.memberPriceNumber ?? 0);
+  if (price && memberPrice && memberPrice < price) {
+    return (
+      <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
+        <span>Member {formatRupiah(memberPrice)}</span>
+        <span className="font-semibold normal-case tracking-normal text-muted-foreground">hemat {formatRupiah(price - memberPrice)}</span>
+        <button
+          type="button"
+          onClick={() => loginWithGoogle(window.location.href).catch(() => {})}
+          className="font-bold normal-case tracking-normal underline underline-offset-2"
+        >
+          Masuk dengan Google
+        </button>
       </p>
     );
   }
