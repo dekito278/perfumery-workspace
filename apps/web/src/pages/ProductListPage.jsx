@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CalendarClock, Copy, Edit3, ExternalLink, Filter, PackagePlus, Plus, Tags, Trash2 } from 'lucide-react';
+import { AlertTriangle, BadgePercent, CalendarClock, Copy, Edit3, ExternalLink, Filter, PackagePlus, Plus, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -101,6 +101,10 @@ const ProductListPage = () => {
               <Button className="h-11 rounded-2xl gap-2 px-5" onClick={() => navigate('/studio/products/new')}>
                 <Plus className="h-4 w-4" />
                 Tambah produk
+              </Button>
+              <Button variant="outline" className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5" onClick={() => navigate('/studio/products/curation')}>
+                <BadgePercent className="h-4 w-4" />
+                Kurasi katalog
               </Button>
               <Button variant="outline" className="h-11 rounded-2xl gap-2 border-white/70 bg-white/80 px-5" onClick={() => navigate('/studio/products/wear')}>
                 <CalendarClock className="h-4 w-4" />
