@@ -13,7 +13,15 @@ const WhyBuyDirect = ({ mobile = false }) => {
   const reasons = WHY_DIRECT_REASONS.filter((reason) => !reason.whatsapp || whatsapp);
 
   return (
-    <section className={mobile ? 'm-editorial-section' : 'home-section'} data-reveal aria-labelledby="why-direct-title">
+    // data-reveal starts a section at opacity 0 and relies on the page's useScrollReveal container to bring
+    // it back. The desktop home has one; the phone home does not (only its LineDividers observe themselves),
+    // and the safety net only rescues what is already on screen at 1.2/3/6 s. Below the fold on the phone,
+    // this section stayed invisible for good — the fourth time this exact class of bug has hit this repo.
+    <section
+      className={mobile ? 'm-editorial-section' : 'home-section'}
+      data-reveal={mobile ? undefined : true}
+      aria-labelledby="why-direct-title"
+    >
       <div className={mobile ? 'm-editorial-section__head' : 'home-section__head'}>
         <p className={mobile ? 'm-editorial-eyebrow' : 'editorial-eyebrow'}>KENAPA BELI LANGSUNG</p>
         <h2 id="why-direct-title">Yang tidak kamu dapat di marketplace.</h2>
