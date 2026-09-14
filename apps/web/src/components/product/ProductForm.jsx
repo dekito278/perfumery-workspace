@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { compareAtPriceNote } from '@/utils/compareAtPrice.js';
 import LocalizedNumberInput from '@/components/LocalizedNumberInput.jsx';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ExternalLink, ImageOff, ImagePlus, PackagePlus, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
@@ -392,6 +393,9 @@ const ProductForm = ({ product = null, onSaved }) => {
                   <LocalizedNumberInput value={variant.compareAtPriceNumber || 0} onChange={(value) => updateVariant(index, 'compareAtPriceNumber', value)} placeholder="Harga coret" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <LocalizedNumberInput value={variant.stock} onChange={(value) => updateVariant(index, 'stock', value)} placeholder="Stok" className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:border-amber-300" />
                   <Button type="button" size="icon" variant="outline" aria-label="Hapus varian" className="h-10 w-10 rounded-xl border-rose-200 bg-rose-50 text-rose-700" onClick={() => removeVariant(index)} disabled={(form.variants || []).length <= 1}><Trash2 className="h-4 w-4" /></Button>
+                  {compareAtPriceNote(variant) ? (
+                    <p className="text-xs font-semibold text-amber-700 sm:col-span-5">{compareAtPriceNote(variant)}</p>
+                  ) : null}
                 </div>
               ))}
             </div>
