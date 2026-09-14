@@ -40,9 +40,23 @@ for (const language of ['id', 'en']) {
 
 // --- 3. The English is not a copy of the Indonesian ----------------------------------------------------------
 // A key "translated" by pasting the Indonesian is the same silent failure as a missing one, and the
-// pairing check cannot see it. Short shared strings are exempt: some are deliberately bilingual.
+// pairing check above cannot see it.
+//
+// This list was a length heuristic first — "short strings may match" — and a sabotage walked straight
+// through it by putting "Stok Habis" into the English sold-out button. Short strings ARE the buttons.
+// So the exemption is now a named list: every entry is a word that is genuinely the same in both
+// languages, and adding one is a decision somebody has to write down.
+const IDENTICAL_ON_PURPOSE = new Set([
+  'pdp.rawMaterials', // the perfumery term, printed in English on the Indonesian page already
+  'pdp.checkout',     // the word Indonesian buyers use for this button
+  'price.memberIs',   // "Member Rp 675.000" — "member" is the loanword in both
+]);
 for (const key of idKeys) {
-  if (MESSAGES.id[key].length < 25) continue;
+  if (IDENTICAL_ON_PURPOSE.has(key)) {
+    assert.equal(MESSAGES.en[key], MESSAGES.id[key],
+      `${key} is on the identical-on-purpose list but the two no longer match — remove it from the list or fix one side`);
+    continue;
+  }
   assert.notEqual(MESSAGES.en[key], MESSAGES.id[key], `${key} still holds the Indonesian text in en`);
 }
 
@@ -97,4 +111,36 @@ for (const literal of ['DARI KARTU DI PAKETMU', 'Terima kasih sudah memilih Soli
 assert.equal((welcome.match(/t\('welcome\./g) || []).length, 8,
   'every string on the page goes through t() — a missed one is the sentence that stays Indonesian');
 
-console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, and the English never promising a member price an international order cannot get)');
+// --- 9. The product page leaves no Indonesian behind ------------------------------------------------------
+// A page that is 90% translated is worse than one that is not: the buyer stops trusting the parts that
+// ARE English. Both surfaces are scanned for the literals that used to sit in them.
+const LEFTOVERS = [
+  'Memuat produk', 'Keranjang sudah diperbarui', 'Lihat cart', 'COCOK DIPAKAI', 'UKURAN',
+  'Stok Habis', 'Sudah di Keranjang', 'Tambah ke Keranjang', 'MUNGKIN KAMU SUKA',
+  'Signature tenang lainnya', 'Intensitas ', 'Tidak ditemukan -', 'masuk ke keranjang',
+  'Masukkan keranjang', 'Stok habis', 'Preview admin', 'PIRAMIDA AROMA', 'Harga member',
+  'Masuk dengan Google', 'Tersisa ', 'Pembuka ·', 'Inti ·', 'Dasar ·',
+];
+for (const file of [
+  ['pages', 'PublicProductDetailPage.jsx'],
+  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['components', 'storefront', 'ScentPyramid.jsx'],
+  ['components', 'storefront', 'PriceNote.jsx'],
+  ['components', 'storefront', 'OverseasInquiryButton.jsx'],
+  ['utils', 'stockScarcity.js'],
+]) {
+  const source = read(...file);
+  for (const literal of LEFTOVERS) {
+    assert.ok(!source.includes(literal),
+      `${file.join('/')} still hardcodes "${literal}" — it must come from the message file`);
+  }
+  assert.match(source, /useTranslate\(\)|\btranslate\b/, `${file.join('/')} reads the message file`);
+}
+
+// The scarcity line takes the translator and has NO default. A default would print Indonesian into the
+// English shop and nothing would say so.
+const scarcity = read('utils', 'stockScarcity.js');
+assert.match(scarcity, /export const getScarcityLabel = \(stock, translate\) =>/, 'the translator is required');
+assert.match(scarcity, /if \(typeof translate !== 'function'\) return '';/, 'and silence without it');
+
+console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');

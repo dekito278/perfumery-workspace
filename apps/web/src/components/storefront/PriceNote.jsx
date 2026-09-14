@@ -2,8 +2,9 @@ import React from 'react';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
 
-const TIER_LABELS = { member: 'Harga member', reseller: 'Harga reseller' };
+const TIER_LABELS = { member: 'price.memberTier', reseller: 'price.resellerTier' };
 
 /**
  * The one line under a price that explains why it is what it is. Two reasons exist and only one may
@@ -18,15 +19,16 @@ const TIER_LABELS = { member: 'Harga member', reseller: 'Harga reseller' };
  */
 const PriceNote = ({ product, variant = null, className = '' }) => {
   const { loginWithGoogle } = useAuth();
+  const { t } = useTranslate();
   const overseasPrice = useOverseasPrice(product, variant);
   const price = Number(variant?.priceNumber ?? product?.priceNumber ?? 0);
 
-  const tierLabel = TIER_LABELS[product?.priceTier];
+  const tierLabelKey = TIER_LABELS[product?.priceTier];
   const retail = Number(variant?.retailPriceNumber ?? product?.retailPriceNumber ?? 0);
-  if (tierLabel && retail && price && retail !== price) {
+  if (tierLabelKey && retail && price && retail !== price) {
     return (
       <p className={`mt-1 flex flex-wrap items-baseline gap-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
-        {tierLabel}
+        {t(tierLabelKey)}
         {retail > price ? (
           <span className="font-semibold normal-case tracking-normal text-muted-foreground line-through">{formatRupiah(retail)}</span>
         ) : null}
@@ -47,14 +49,14 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   if (!overseasPrice && price && memberPrice && memberPrice < price) {
     return (
       <p className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
-        <span>Member {formatRupiah(memberPrice)}</span>
-        <span className="font-semibold normal-case tracking-normal text-muted-foreground">hemat {formatRupiah(price - memberPrice)}</span>
+        <span>{t('price.memberIs', { price: formatRupiah(memberPrice) })}</span>
+        <span className="font-semibold normal-case tracking-normal text-muted-foreground">{t('price.saveShort', { amount: formatRupiah(price - memberPrice) })}</span>
         <button
           type="button"
           onClick={() => loginWithGoogle(window.location.href).catch(() => {})}
           className="font-bold normal-case tracking-normal underline underline-offset-2"
         >
-          Masuk dengan Google
+          {t('price.signInGoogle')}
         </button>
       </p>
     );
@@ -70,7 +72,7 @@ const PriceNote = ({ product, variant = null, className = '' }) => {
   return (
     <p className={`mt-1 flex flex-wrap items-baseline gap-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-700 ${className}`}>
       <span className="font-semibold normal-case tracking-normal text-muted-foreground line-through">{formatRupiah(compareAt)}</span>
-      Hemat {formatRupiah(compareAt - price)}
+      {t('price.save', { amount: formatRupiah(compareAt - price) })}
     </p>
   );
 };

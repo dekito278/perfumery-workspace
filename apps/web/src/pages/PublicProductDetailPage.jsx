@@ -21,6 +21,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import BriefText from '@/components/BriefText.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
 
@@ -52,6 +53,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const { slug: slugParam = '' } = useParams();
   const slug = slugProp || slugParam;
   const studioProducts = useStorefrontProducts();
+  const { t } = useTranslate();
   const visibleProducts = studioProducts.filter(isProductVisibleInStorefront);
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(slug, visibleProducts);
@@ -91,7 +93,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             aria-busy="true"
             style={{ minHeight: '60vh', display: 'grid', placeItems: 'center', padding: '48px 24px' }}
           >
-            <p className="editorial-eyebrow">Memuat produk…</p>
+            <p className="editorial-eyebrow">{t('pdp.loading')}</p>
           </main>
           <StorefrontFooter />
         </>
@@ -114,7 +116,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   // don't expose exact inventory. Fall back to the product-level publicStatus when there are no variants.
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
   const soldOut = !selectedAvailable;
-  const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock);
+  const scarcity = soldOut ? '' : getScarcityLabel(selectedVariant?.stock, t);
 
   const handleAddToCart = () => {
     if (soldOut) {
@@ -130,9 +132,9 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       priceNumber: selectedPrice,
     }, 1);
     setLastAddedSlug(product.slug);
-    toast.success(`${product.name} (${selectedSize}) masuk ke keranjang`, {
-      description: 'Keranjang sudah diperbarui.',
-      action: { label: 'Lihat cart', onClick: () => navigate('/cart') },
+    toast.success(t('pdp.addedToast', { name: `${product.name} (${selectedSize})` }), {
+      description: t('pdp.cartUpdated'),
+      action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
     });
     window.setTimeout(() => {
       setLastAddedSlug((current) => (current === product.slug ? '' : current));
@@ -147,7 +149,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
       <>
         <PublicHeader />
         <main role="status" aria-live="polite" aria-busy="true" style={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
-          <p className="editorial-eyebrow">Memuat...</p>
+          <p className="editorial-eyebrow">{t('pdp.loading')}</p>
         </main>
         <StorefrontFooter />
       </>
@@ -164,8 +166,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const metaDescription = `${product.name} — ${product.subtitle || product.story || ''}`.trim().slice(0, 155);
   const productJsonLd = buildProductJsonLd(product, { origin: siteOrigin, canonicalUrl });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-    { name: 'Beranda', path: '/home' },
-    { name: 'Koleksi', path: '/catalog' },
+    { name: t('pdp.home'), path: '/home' },
+    { name: t('pdp.collection'), path: '/catalog' },
     { name: product.name, path: `/catalog/${product.slug}` },
   ], siteOrigin);
 
@@ -199,7 +201,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
         {/* Breadcrumb */}
         <nav className="pdp-breadcrumb hero-animate-fade" aria-label="Breadcrumb">
-          <Link to="/catalog">Koleksi</Link>
+          <Link to="/catalog">{t('pdp.collection')}</Link>
           <ChevronRight className="h-3 w-3" />
           <span>{product.name}</span>
         </nav>
@@ -231,7 +233,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="pdp-meta" data-reveal>
               {isPlaceholderMood(product.mood) ? null : <span>{product.mood}</span>}
               <span>{product.concentration}</span>
-              {product.intensity ? <span>Intensitas {product.intensity.toLowerCase()}</span> : null}
+              {product.intensity ? <span>{t('pdp.intensity', { level: product.intensity.toLowerCase() })}</span> : null}
               <span>{(product.sizeVariants || []).map((v) => v.size).join(' / ')}</span>
             </div>
 
@@ -239,7 +241,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 say the same thing, or a customer arriving from search never sees the claim. */}
             {describeWear(product.wear).length ? (
               <div className="pdp-materials" data-reveal>
-                <p className="editorial-eyebrow">COCOK DIPAKAI</p>
+                <p className="editorial-eyebrow">{t('pdp.wearFor')}</p>
                 <div className="pdp-meta">
                   {describeWear(product.wear).map((label) => <span key={label}>{label}</span>)}
                 </div>
@@ -257,7 +259,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
             {variants.length > 1 ? (
               <div className="pdp-variants" data-reveal>
-                <label className="editorial-eyebrow" htmlFor="pdp-variant-select">UKURAN</label>
+                <label className="editorial-eyebrow" htmlFor="pdp-variant-select">{t('pdp.size')}</label>
                 <select
                   id="pdp-variant-select"
                   value={selectedVariantKey}
@@ -279,11 +281,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <div className="pdp-actions" data-reveal>
               <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
                 {soldOut ? (
-                  <>Stok Habis</>
+                  <>{t('pdp.soldOut')}</>
                 ) : lastAddedSlug === product.slug ? (
-                  <><CheckCircle2 className="h-4 w-4" /> Sudah di Keranjang</>
+                  <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
                 ) : (
-                  <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {selectedPriceLabel}</>
+                  <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
                 )}
               </button>
               <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
@@ -295,8 +297,8 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
         {related.length ? (
           <section className="pdp-related" data-reveal>
             <div className="home-section__head">
-              <p className="editorial-eyebrow">MUNGKIN KAMU SUKA</p>
-              <h2>Signature tenang lainnya</h2>
+              <p className="editorial-eyebrow">{t('pdp.youMayLike')}</p>
+              <h2>{t('pdp.youMayLikeSub')}</h2>
             </div>
             <div className="catalog-grid catalog-grid--four" data-reveal data-stagger-children>
               {related.map((item) => (
@@ -337,11 +339,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             disabled={soldOut}
           >
             {soldOut ? (
-              <>Stok Habis</>
+              <>{t('pdp.soldOut')}</>
             ) : lastAddedSlug === product.slug ? (
-              <><CheckCircle2 className="h-4 w-4" /> Sudah di Keranjang</>
+              <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
             ) : (
-              <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang</>
+              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCart')}</>
             )}
           </button>
         </div>

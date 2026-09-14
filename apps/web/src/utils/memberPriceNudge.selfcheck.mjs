@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { MESSAGES } from '../i18n/messages.js';
 import { attachMemberPrices, memberPriceFor, memberSavingForCart } from './memberPriceNudge.js';
 import { indexTierPrices } from './tierPrice.js';
 
@@ -102,16 +103,24 @@ assert.match(hook, /export const useMemberPrices/, 'the public index must be sha
 // --- 7. The note: right branch, right order, right gate -----------------------------------------------------
 const note = read('components', 'storefront', 'PriceNote.jsx');
 assert.match(note, /memberPrice < price/, 'the nudge must require the member price to be strictly lower');
-assert.match(note, /Masuk dengan Google/, 'and must offer the way in, not just the number');
+// The wording moved into the message file when the storefront learned English. What must still hold is
+// that the way in is offered at all, in BOTH languages — a number with no button is a tease.
+assert.match(note, /t\('price\.signInGoogle'\)/, 'and must offer the way in, not just the number');
+assert.match(MESSAGES.id['price.signInGoogle'], /Masuk dengan Google/);
+assert.ok(MESSAGES.en['price.signInGoogle'], 'in English too, or the English shop shows a raw key on the button');
 assert.match(note, /loginWithGoogle\(window\.location\.href\)/, 'signing in must bring the visitor back to the product they were looking at');
 assert.ok(note.indexOf('memberPriceNumber') < note.indexOf('compareAtPriceNumber'), 'the member nudge must come before the compare-at line, or a discounted product hides the reason to sign in');
-assert.ok(note.indexOf('TIER_LABELS[product?.priceTier]') < note.indexOf('memberPriceNumber'), 'a signed-in member sees "Harga member", never the nudge');
+assert.ok(note.indexOf('TIER_LABELS[product?.priceTier]') < note.indexOf('memberPriceNumber'), 'a signed-in member sees the tier label, never the nudge');
+assert.match(MESSAGES.id['price.memberTier'], /Harga member/, 'and that label is still the words Dekito chose');
 
 // --- 8. Every surface that shows a price shows the member one --------------------------------------------
 for (const surface of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx', 'pages/mobile/MobileStorefrontPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
   const source = read(...surface.split('/'));
   assert.match(source, /memberPriceNumber/, `${surface} shows a price, so it must show the member price beside it`);
-  assert.match(source, /Member \{formatRupiah\(/, `${surface} must format it with the app's own formatter`);
+  // Either the raw literal (catalogue cards, still to be translated) or the translated key — what is
+  // being held is that the amount goes through the app's own Rupiah formatter, not a template string.
+  assert.match(source, /Member \{formatRupiah\(|price\.memberIs', \{ price: formatRupiah\(/,
+    `${surface} must format it with the app's own formatter`);
 }
 for (const pdp of ['pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
   assert.match(read(...pdp.split('/')), /<PriceNote product=\{product\} variant=\{selectedVariant\}/, `${pdp} must hand PriceNote the chosen variant`);

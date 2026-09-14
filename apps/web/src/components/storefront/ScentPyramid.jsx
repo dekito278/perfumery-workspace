@@ -1,9 +1,12 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React from 'react';
 
 const TIERS = [
-  { key: 'topNotes', label: 'Top', caption: 'Pembuka · menguar cepat', strength: 34 },
-  { key: 'heartNotes', label: 'Heart', caption: 'Inti · karakter utama', strength: 68 },
-  { key: 'baseNotes', label: 'Base', caption: 'Dasar · jejak terlama', strength: 100 },
+  // Top / Heart / Base stay as they are: they are the perfumery terms in both languages, and an
+  // Indonesian buyer reads them here already. Only the captions around them change.
+  { key: 'topNotes', label: 'Top', caption: 'pyramid.topCaption', strength: 34 },
+  { key: 'heartNotes', label: 'Heart', caption: 'pyramid.heartCaption', strength: 68 },
+  { key: 'baseNotes', label: 'Base', caption: 'pyramid.baseCaption', strength: 100 },
 ];
 
 const toList = (value) => {
@@ -15,6 +18,7 @@ const toList = (value) => {
 };
 
 const ScentPyramid = ({ product, className = '' }) => {
+  const { t } = useTranslate();
   const tiers = TIERS
     .map((tier) => ({ ...tier, notes: toList(product?.[tier.key]) }))
     .filter((tier) => tier.notes.length);
@@ -23,17 +27,17 @@ const ScentPyramid = ({ product, className = '' }) => {
 
   return (
     <div className={`scent-pyramid ${className}`.trim()}>
-      <p className="editorial-eyebrow">PIRAMIDA AROMA</p>
+      <p className="editorial-eyebrow">{t('pyramid.title')}</p>
       <div className="scent-pyramid__tiers">
         {tiers.map((tier) => (
           <div key={tier.key} className="scent-tier">
             <div className="scent-tier__head">
               <span className="scent-tier__label">{tier.label}</span>
-              <span className="scent-tier__caption">{tier.caption}</span>
+              <span className="scent-tier__caption">{t(tier.caption)}</span>
               <span
                 className="scent-tier__meter"
                 role="img"
-                aria-label={`Ketahanan ${tier.label}: ${tier.strength} persen`}
+                aria-label={t('pyramid.strengthLabel', { tier: tier.label, percent: tier.strength })}
               >
                 <span className="scent-tier__meter-fill" style={{ width: `${tier.strength}%` }} />
               </span>
