@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { AlertCircle, ClipboardPaste, CreditCard, ExternalLink, FileCheck2, FileText, History, KeyRound, Loader2, PackageCheck, RefreshCw, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext.jsx';
+import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
@@ -716,6 +717,7 @@ const CustomerPortalPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
+  const { tier: priceTier } = useTierPrices();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCode = searchParams.get('code') || '';
   const [customerCode, setCustomerCode] = useState(initialCode.toUpperCase());
@@ -893,6 +895,9 @@ const CustomerPortalPage = () => {
   // Account + address book panel, shown to logged-in customers on both layouts.
   const renderAccountPanel = () => {
     if (!currentUser) return null;
+    // "Harga member aktif" is a claim, so it comes from the server-resolved tier, never from being signed
+    // in — a signed-in account whose tier row has not resolved yet is not told it has a price it may not.
+    const memberActive = priceTier === 'member' || priceTier === 'reseller';
     const inputClass = 'h-11 w-full rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal';
     return (
       <section className="mobile-card rounded-2xl border bg-white p-4 shadow-sm">
@@ -902,7 +907,10 @@ const CustomerPortalPage = () => {
               <UserRound className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-xs font-bold uppercase text-editorial-charcoal">Akun &amp; alamat</span>
+              <span className="block text-xs font-bold uppercase text-editorial-charcoal">
+                Akun &amp; alamat
+                {memberActive ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800">Harga member aktif</span> : null}
+              </span>
               <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{currentUser.email}</span>
             </span>
           </span>
@@ -1164,7 +1172,7 @@ const CustomerPortalPage = () => {
               ) : (
                 <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-sm font-bold" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
-                  Masuk dengan Google
+                  Masuk dengan Google — harga member
                 </Button>
               )}
 
@@ -1382,9 +1390,9 @@ const CustomerPortalPage = () => {
           ) : (
             <section className="mobile-card p-5 text-center">
               {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
-              <h2 className="mt-3 text-lg font-bold text-editorial-charcoal">{searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}</h2>
+              <h2 className="mt-3 text-lg font-bold text-editorial-charcoal">{searched ? 'Kode customer tidak ditemukan' : 'Harga member menunggu'}</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
+                {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masuk dengan Google dan semua harga di katalog turun ke harga member. Riwayat order dan pesan-lagi ikut tersimpan.'}
               </p>
             </section>
           )}
@@ -1442,7 +1450,7 @@ const CustomerPortalPage = () => {
               ) : (
                 <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-2xl gap-2 text-sm font-bold" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
-                  Masuk dengan Google
+                  Masuk dengan Google — harga member
                 </Button>
               )}
             </form>
@@ -1643,13 +1651,13 @@ const CustomerPortalPage = () => {
                     <StateBlock
                       className="border-0 bg-transparent p-0 shadow-none"
                       icon={searched ? Search : ShoppingBag}
-                      title={searched ? 'Kode customer tidak ditemukan' : 'Dashboard tampil di sini'}
-                      description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masukkan kode customer untuk melihat progres order.'}
+                      title={searched ? 'Kode customer tidak ditemukan' : 'Harga member menunggu'}
+                      description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masuk dengan Google dan semua harga di katalog turun ke harga member. Riwayat order dan pesan-lagi ikut tersimpan.'}
                     />
                   </div>
                   <div className="grid content-center gap-3 bg-editorial-ivory p-5">
                     {[
-                      ['1', 'Masukkan kode SOLI', 'Kode muncul setelah checkout pertama atau dari halaman sukses order.'],
+                      ['1', 'Masuk dengan Google', 'Harga member langsung aktif di seluruh katalog. Kode SOLI lama bisa ditautkan nanti.'],
                       ['2', 'Cek pembayaran dan produksi', 'Status bayar, bukti transfer, custom progress, dan resi tampil di satu tempat.'],
                       ['3', 'Pesan lagi lebih cepat', 'Item order lama langsung masuk keranjang, tinggal checkout.'],
                     ].map(([step, title, description]) => (

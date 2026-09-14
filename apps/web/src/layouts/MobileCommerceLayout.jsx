@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Beaker, BookOpenText, ClipboardCheck, Home, MessageCircle, Search, ShoppingBag } from 'lucide-react';
+import { Beaker, BookOpenText, Home, MessageCircle, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useMobileCommercePrefetch } from '@/hooks/useMobileCommercePrefetch.js';
@@ -16,7 +16,8 @@ const commerceNavItems = [
   { path: '/mobile/articles', label: 'Artikel', icon: BookOpenText },
   { path: '/mobile/bespoke', label: 'Bespoke', icon: MessageCircle },
   { path: '/mobile/cart', label: 'Keranjang', icon: ShoppingBag },
-  { path: '/mobile/customer', label: 'Cek Order', icon: ClipboardCheck },
+  // Was "Cek Order": tracking is what an account DOES, not why anyone opens one. The reason is the price.
+  { path: '/mobile/customer', label: 'Akun', icon: UserRound },
 ];
 
 const preserveScrollOnCommerceTabTap = (path) => (
