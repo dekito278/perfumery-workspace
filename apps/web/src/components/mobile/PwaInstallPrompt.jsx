@@ -3,14 +3,24 @@ import { useLocation } from 'react-router-dom';
 import { Download, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { isAndroidDevice, isIosDevice, isStandaloneDisplayMode } from '@/utils/pwa.js';
+import { INSTALL_PROMPT_SCROLL_PX, recordVisit, shouldSurfaceInstallPrompt } from '@/utils/mobileFirstScreen.js';
 
 const DISMISS_KEY = 'solivagant-pwa-install-dismissed-v2';
 const IOS_PROMPT_DELAY_MS = 9000;
 
-const shouldShowPrompt = () => {
+// The gate is one pure rule (mobileFirstScreen.js): not dismissed, not already installed, and EITHER a
+// second visit OR a real scroll on this one. A prompt on first paint spends the only ask.
+const readDismissed = () => {
+  try { return window.localStorage.getItem(DISMISS_KEY) === 'true'; } catch { return false; }
+};
+const shouldShowPrompt = (visits, scrolledPx) => {
   if (typeof window === 'undefined') return false;
-  if (isStandaloneDisplayMode()) return false;
-  return window.localStorage.getItem(DISMISS_KEY) !== 'true';
+  return shouldSurfaceInstallPrompt({
+    dismissed: readDismissed(),
+    standalone: isStandaloneDisplayMode(),
+    visits,
+    scrolledPx,
+  });
 };
 
 const PwaInstallPrompt = () => {
@@ -24,16 +34,33 @@ const PwaInstallPrompt = () => {
     return 'other';
   }, []);
   const canSurfacePrompt = location.pathname === '/mobile/dashboard';
+  const [visits] = useState(() => (
+    typeof window === 'undefined' ? 0 : recordVisit(window.localStorage, window.sessionStorage)
+  ));
+  const [scrolledPx, setScrolledPx] = useState(0);
+
+  // Track how far this visit has scrolled; the gate reads it. Passive, and it stops listening once the
+  // threshold is crossed — there is nothing more to learn after that.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      setScrolledPx(y);
+      if (y >= INSTALL_PROMPT_SCROLL_PX) window.removeEventListener('scroll', onScroll);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
-    if (!shouldShowPrompt()) {
+    if (readDismissed() || isStandaloneDisplayMode()) {
       return undefined;
     }
 
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
       setDeferredPrompt(event);
-      setVisible(canSurfacePrompt);
+      setVisible(canSurfacePrompt && shouldShowPrompt(visits, scrolledPx));
     };
     const handleInstalled = () => {
       setVisible(false);
@@ -45,7 +72,7 @@ const PwaInstallPrompt = () => {
     window.addEventListener('appinstalled', handleInstalled);
 
     if (platform === 'ios') {
-      const timer = window.setTimeout(() => setVisible(canSurfacePrompt && shouldShowPrompt()), IOS_PROMPT_DELAY_MS);
+      const timer = window.setTimeout(() => setVisible(canSurfacePrompt && shouldShowPrompt(visits, scrolledPx)), IOS_PROMPT_DELAY_MS);
       return () => {
         window.clearTimeout(timer);
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -57,7 +84,7 @@ const PwaInstallPrompt = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleInstalled);
     };
-  }, [canSurfacePrompt, platform]);
+  }, [canSurfacePrompt, platform, visits, scrolledPx]);
 
   useEffect(() => {
     if (!canSurfacePrompt) {
@@ -65,7 +92,7 @@ const PwaInstallPrompt = () => {
       return;
     }
 
-    if (platform === 'android' && deferredPrompt && shouldShowPrompt()) {
+    if (platform === 'android' && deferredPrompt && shouldShowPrompt(visits, scrolledPx)) {
       setVisible(true);
     }
   }, [canSurfacePrompt, deferredPrompt, platform]);

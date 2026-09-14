@@ -26,6 +26,8 @@ import PwaInstallPrompt from '@/components/mobile/PwaInstallPrompt.jsx';
 import PwaUpdatePrompt from '@/components/mobile/PwaUpdatePrompt.jsx';
 import PwaOfflineBanner from '@/components/mobile/PwaOfflineBanner.jsx';
 import MobileLoadingState from '@/components/mobile-ui/MobileLoadingState.jsx';
+import StorefrontSplash from '@/components/mobile-ui/StorefrontSplash.jsx';
+import { isMobileCommercePath } from '@/utils/mobileFirstScreen.js';
 
 const LAZY_ROUTE_RECOVERY_KEY = 'solivagant.lazy-route-recovered';
 const LAZY_IMPORT_RETRY_DELAY_MS = 350;
@@ -251,6 +253,11 @@ const RouteFallback = () => {
         mode={pathname.startsWith('/products/') ? 'product' : 'page'}
       />
     );
+  }
+
+  // The storefront gets the wordmark; the studio keeps "Loading workspace", which is honest there.
+  if (isMobileCommercePath(pathname)) {
+    return <StorefrontSplash />;
   }
 
   if (pathname === '/mobile' || pathname.startsWith('/mobile/')) {
