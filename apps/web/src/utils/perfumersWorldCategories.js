@@ -209,12 +209,6 @@ export const PERFUMERS_WORLD_CATEGORIES = [
   },
 ];
 
-export const getPerfumersWorldCategoryOptions = () =>
-  PERFUMERS_WORLD_CATEGORIES.map((category) => ({
-    value: category.label.toLowerCase(),
-    label: `${category.label} - ${category.description}`,
-  }));
-
 export const findPerfumersWorldCategoryByValue = (value) =>
   PERFUMERS_WORLD_CATEGORIES.find((category) => category.label.toLowerCase() === String(value || '').toLowerCase()) || null;
 

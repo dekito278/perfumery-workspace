@@ -88,46 +88,10 @@ export const ECOFRAGRANTICA_SCENT_TAXONOMY = [
   },
 ];
 
-export const ECOFRAGRANTICA_SENSATIONS_TEXTURES = [
-  'Bitter', 'Clean', 'Cold/Crisp/Fresh', 'Dirty', 'Dry', 'Dull', 'Energizing', 'Fluo/Neon',
-  'Light', 'Mild', 'Narcotic', 'Old/Aged/Mature', 'Pastel', 'Scratchy', 'Warm/Rich', 'Zesty',
-  'Bland', 'Cooling', 'Delicate', 'Dense/Heavy/Pesante', 'Fatty', 'Fibery/Textural', 'Fizzy', 'Flat',
-  'Grainy/Lumpy', 'Granular', 'Hard/Rough/Spiky', 'Harsh', 'Heaty/Hot', 'Hollow', 'Juicy/Pulpy/Fleshy',
-  'Opaque', 'Polished/Silky', 'Round', 'Sandy', 'Shiny/Bright', 'Smooth', 'Soft/Velvety', 'Steamy',
-  'Strong/Pungent/Sharp', 'Tart', 'Transparent/Sheer',
-];
-
-export const getEcofragranticaGrandfamilyOptions = () => ECOFRAGRANTICA_SCENT_TAXONOMY.map((family) => ({
-  value: family.label.toLowerCase(),
-  label: family.label,
-  color: family.color,
-}));
-
-export const getEcofragranticaReferenceFamilyOptions = () => ECOFRAGRANTICA_SCENT_TAXONOMY.map((family) => ({
-  value: family.label,
-  label: `${family.label} - ${family.subfamilies.join(', ')}`,
-}));
-
+// Only the lookup is exported. The port also carried option-builders, a descriptor list and a
+// sensations/textures vocabulary — nothing here calls any of them, and an export with no caller is a
+// promise the next reader has to check. They are three lines each in saas-perfumers if a UI ever needs them.
 export const findEcofragranticaGrandfamilyByValue = (value) => ECOFRAGRANTICA_SCENT_TAXONOMY.find(
   (family) => family.label.toLowerCase() === String(value || '').trim().toLowerCase()
-    || family.key === String(value || '').trim().toLowerCase()
+    || family.key === String(value || '').trim().toLowerCase(),
 ) || null;
-
-export const getEcofragranticaSubfamiliesForGrandfamily = (value) => findEcofragranticaGrandfamilyByValue(value)?.subfamilies || [];
-
-// Canonical label for persistence: form selects use lowercase values, but the
-// database stores taxonomy labels ("Floral", "Sweet/Balsamic") — same casing as
-// library-activated materials — so counts and grouping stay consistent.
-export const toEcofragranticaCanonicalCategory = (value) => {
-  const trimmed = String(value || '').trim();
-  if (!trimmed) return null;
-  return findEcofragranticaGrandfamilyByValue(trimmed)?.label || trimmed;
-};
-
-export const getEcofragranticaDescriptorOptions = () => ECOFRAGRANTICA_SCENT_TAXONOMY.flatMap((family) => (
-  family.descriptors.map((descriptor) => ({
-    value: descriptor,
-    label: `${descriptor} (${family.label})`,
-    grandfamily: family.label,
-  }))
-));
