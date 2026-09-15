@@ -213,7 +213,7 @@ const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, metho
           </Link>
         ) : null}
         <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
-          Belanja lagi
+          {t('pay.shopAgain')}
         </Link>
       </div>
     </div>
@@ -283,7 +283,7 @@ const PaymentFrame = ({ session, compact = false }) => {
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.secureCheckout")}</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-              Order tersimpan. Selesaikan pembayaran di panel ini tanpa meninggalkan nuansa Solivagant.
+              {t('pay.savedBody')}
             </p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
@@ -355,13 +355,13 @@ const PaymentFrame = ({ session, compact = false }) => {
           </div>
           <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
             <Copy className="h-4 w-4" />
-            Salin
+            {t('pay.copy')}
           </Button>
         </div>
       ) : null}
       <div className={compact ? 'grid gap-2 border-t border-editorial-stone/10 bg-[#fbfaf7] p-3' : 'flex flex-wrap items-center justify-between gap-3 border-t border-editorial-stone/10 bg-[#fbfaf7] p-4'}>
         <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-          Kalau panel pembayaran tidak termuat oleh browser, gunakan tombol cadangan ini.
+          {t('pay.fallbackHint')}
         </p>
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
@@ -371,7 +371,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           ) : null}
           <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
             <ExternalLink className="h-4 w-4" />
-            Buka pembayaran
+            {t('pay.openPayment')}
           </Button>
         </div>
       </div>
@@ -451,7 +451,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.qris")}</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-              Scan QR di bawah pakai aplikasi e-wallet atau m-banking. Pembayaran otomatis terkonfirmasi tanpa meninggalkan aplikasi.
+              {t('pay.qrHint')}
             </p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
@@ -486,7 +486,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
         <div className="mx-auto w-full max-w-[360px] rounded-[24px] border border-editorial-stone/15 bg-white p-4 text-center shadow-sm">
           <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-editorial-muted">
             <span className="grid h-5 w-5 place-items-center rounded-md bg-[#c0392b] text-[9px] font-bold text-white">Q</span>
-            QRIS · satu QR untuk semua
+            {t('pay.qrisOne')}
           </div>
           <div className="mt-3 grid aspect-square w-full place-items-center rounded-2xl bg-white">
             {qrDataUrl ? (
@@ -510,7 +510,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
 
         <div className="mx-auto flex max-w-[360px] items-start gap-2 rounded-2xl border border-editorial-stone/10 bg-[#fbfaf7] px-4 py-3 text-xs font-semibold leading-relaxed text-[#54604d]">
           <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-editorial-charcoal" />
-          Buka aplikasi pembayaran → menu Scan/QRIS → arahkan ke QR ini → pastikan nominal sama → bayar. Halaman ini otomatis update saat pembayaran masuk.
+          {t('pay.qrSteps')}
         </div>
 
         <div className="mx-auto flex max-w-[360px] items-center justify-center gap-2 text-xs font-bold text-editorial-muted">
@@ -526,7 +526,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
             </div>
             <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
               <Copy className="h-4 w-4" />
-              Salin
+              {t('pay.copy')}
             </Button>
           </div>
         ) : null}
@@ -615,7 +615,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.manualTransfer")}</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-              Transfer sesuai total bayar ke rekening di bawah, lalu wajib upload bukti transfer di halaman ini. Order baru masuk pengecekan admin setelah bukti transfer terkirim.
+              {t('pay.manualHint')}
             </p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
@@ -653,12 +653,12 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                   {customerCode}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-                  Salin dan simpan kode ini. Kode dipakai untuk cek order dan belanja berikutnya tanpa isi ulang data.
+                  {t('pay.keepCode')}
                 </p>
               </div>
               <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-white gap-2" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
                 <Copy className="h-4 w-4" />
-                Salin kode
+                {t('pay.copyCode')}
               </Button>
             </div>
           </div>
@@ -702,7 +702,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </ol>
           <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue(t("pay.transferTotal"), Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
-            Salin total transfer
+            {t('pay.copyTotal')}
           </Button>
           {customerCode && hasSubmittedProof ? (
             <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-editorial-stone/15 bg-white px-4 text-sm font-bold text-editorial-charcoal">
@@ -794,7 +794,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               {hasSubmittedProof ? t("pay.reuploadProof") : t("pay.uploadProof")}
             </Button>
             <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-              Format JPG, PNG, WebP, atau PDF. Maksimal 5 MB.
+              {t('pay.fileFormats')}
             </p>
           </div>
         </div>
@@ -832,7 +832,7 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
       {orderNumber && onRefresh ? (
         <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
           <RefreshCw className="h-4 w-4" />
-          Refresh
+          {t('pay.refresh')}
         </button>
       ) : null}
     </div>

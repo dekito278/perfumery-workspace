@@ -62,7 +62,7 @@ const CartPage = () => {
           <div className="cart-items">
             {items.some((item) => item.priceChanged) ? (
               <p className="cart-line__meta" role="status">
-                Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+                {t('checkout.pricesUpdated')}
               </p>
             ) : null}
             {unavailableItems.length ? (

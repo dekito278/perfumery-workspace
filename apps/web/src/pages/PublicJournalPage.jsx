@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -26,10 +27,11 @@ const getExcerpt = (article) => article.excerpt || String(article.content || '')
   .slice(0, 180);
 
 // Tabs must use the real category labels — otherwise the filter (which compares against
-// getJournalCategoryLabel) never matches and every non-"Semua" tab shows zero articles.
+// getJournalCategoryLabel) never matches and every non-{t("journal.all")} tab shows zero articles.
 const CATEGORIES = ['All', ...JOURNAL_CATEGORIES.map((category) => category.label)];
 
 const PublicJournalPage = () => {
+  const { t } = useTranslate();
   const revealRef = useScrollReveal();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ const PublicJournalPage = () => {
         const posts = await getPublishedJournalPosts();
         if (active) setArticles(posts);
       } catch (err) {
-        if (active) setError(err.message || 'Gagal memuat journal.');
+        if (active) setError(err.message || t("journal.loadFailed"));
       } finally {
         if (active) setLoading(false);
       }
@@ -60,7 +62,7 @@ const PublicJournalPage = () => {
       active = false;
       window.removeEventListener(JOURNAL_POSTS_CHANGED_EVENT, loadArticles);
     };
-  }, []);
+  }, [t]);
 
   const filtered = useMemo(() => {
     if (activeCategory === 'All') return articles;
@@ -75,13 +77,13 @@ const PublicJournalPage = () => {
   return (
     <>
       <Helmet>
-        <title>Journal - SOLIVAGANT</title>
-        <meta name="description" content="Editorial notes from the SOLIVAGANT perfume atelier." />
+        <title>{t("journal.tab")}</title>
+        <meta name="description" content={t("journal.meta")} />
         <link rel="canonical" href={journalCanonical} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="SOLIVAGANT" />
         <meta property="og:url" content={journalCanonical} />
-        <meta property="og:title" content="Journal - SOLIVAGANT" />
+        <meta property="og:title" content={t("journal.tab")} />
         <meta property="og:description" content="Editorial notes on scent memory, raw materials, atelier process, product stories, and perfumery culture." />
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
@@ -91,9 +93,9 @@ const PublicJournalPage = () => {
         <PublicHeader />
 
         <section className="journal-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JOURNAL / EDITORIAL</p>
-          <TextReveal as="h1" text="Catatan Atelier" />
-          <p className="hero-animate-text hero-animate-text--d3">Tentang memori aroma, raw material, proses atelier, dan cerita di balik objek parfum SOLIVAGANT.</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t("journal.eyebrow")}</p>
+          <TextReveal as="h1" text={t("journal.title")} />
+          <p className="hero-animate-text hero-animate-text--d3">{t("journal.lead")}</p>
         </section>
 
         {/* Category filter tabs */}
@@ -105,7 +107,7 @@ const PublicJournalPage = () => {
               className={`journal-tab${activeCategory === cat ? ' is-active' : ''}`}
               onClick={() => { setActiveCategory(cat); setVisibleCount(9); }}
             >
-              {cat === 'All' ? 'Semua' : cat}
+              {cat === 'All' ? t("journal.all") : cat}
             </button>
           ))}
         </nav>
@@ -129,8 +131,8 @@ const PublicJournalPage = () => {
             </div>
           ) : !filtered.length ? (
             <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">BELUM ADA</p>
-              <h2>Belum ada artikel{activeCategory !== 'All' ? ` di kategori ${activeCategory}` : ''}.</h2>
+              <p className="editorial-eyebrow">{t("journal.emptyEyebrow")}</p>
+              <h2>{activeCategory !== 'All' ? t('journal.emptyCategory', { category: activeCategory }) : t('journal.emptyAll')}</h2>
             </div>
           ) : (
             <>
@@ -143,7 +145,7 @@ const PublicJournalPage = () => {
                     <p>{getExcerpt(featured)}</p>
                     <div className="journal-featured__meta">
                       <time>{formatDate(featured.published_at || featured.updated || featured.created)}</time>
-                      <span className="journal-featured__read">Baca artikel <ArrowRight className="h-4 w-4" /></span>
+                      <span className="journal-featured__read">{t('journal.read')} <ArrowRight className="h-4 w-4" /></span>
                     </div>
                   </div>
                 </Link>

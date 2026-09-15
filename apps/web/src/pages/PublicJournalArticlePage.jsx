@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useParams } from 'react-router-dom';
@@ -49,7 +50,9 @@ const truncateMeta = (value, maxLength = 155) => {
 
 
 /* ─── Mobile article view (unchanged Tailwind-based layout) ─── */
-const MobileArticleView = ({ post, loading, failed, slug, title, description, canonicalUrl, shareImageUrl, publishedDate, modifiedDate, tags, readingMinutes, jsonLd, copyArticleLink, copyState }) => (
+const MobileArticleView = ({ post, loading, failed, slug, title, description, canonicalUrl, shareImageUrl, publishedDate, modifiedDate, tags, readingMinutes, jsonLd, copyArticleLink, copyState }) => {
+  const { t } = useTranslate();
+  return (
   <MobileCommerceLayout>
     <Helmet>
       <title>{post ? `${title} - Solivagant Journal` : 'Journal Article - Solivagant'}</title>
@@ -81,8 +84,8 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
               <ArrowLeft className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Jurnal</span>
-              <span className="block truncate text-sm font-extrabold text-editorial-charcoal">Artikel</span>
+              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">{t("journal.breadcrumb")}</span>
+              <span className="block truncate text-sm font-extrabold text-editorial-charcoal">{t('journal.article')}</span>
             </span>
           </Link>
           <Link to="/mobile/catalog" className="shrink-0 rounded-2xl border border-[#d8d5ca] bg-editorial-ivory px-3 py-2 text-xs font-bold text-editorial-charcoal">
@@ -95,20 +98,20 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
         <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/80 px-4 text-center">
           <div>
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-editorial-stone/20 border-t-editorial-charcoal" />
-            <p className="mt-4 text-sm font-bold text-editorial-charcoal">Memuat artikel...</p>
+            <p className="mt-4 text-sm font-bold text-editorial-charcoal">{t("journal.loading")}</p>
           </div>
         </section>
       ) : failed ? (
         <section className="mx-auto grid min-h-[60svh] max-w-[448px] place-items-center rounded-[28px] bg-white/85 px-4 py-12 text-center shadow-sm">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">Jurnal</p>
-            <h1 className="mt-3 text-3xl font-bold text-[#111827]">Artikel tidak tersedia</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8d7a4f]">{t("journal.breadcrumb")}</p>
+            <h1 className="mt-3 text-3xl font-bold text-[#111827]">{t("journal.unavailable")}</h1>
             <p className="mt-3 text-sm font-medium leading-7 text-[#6b7280]">
-              Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.
+              {t('journal.unavailableBody')}
             </p>
             <Link to="/mobile/articles" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-editorial-charcoal px-5 py-3 text-sm font-bold text-editorial-paper">
               <ArrowLeft className="h-4 w-4" />
-              Kembali ke artikel
+              {t('journal.backToArticles')}
             </Link>
           </div>
         </section>
@@ -132,7 +135,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
                 <Timer className="h-4 w-4 text-editorial-charcoal" />
-                {readingMinutes} menit baca
+                {t('journal.minutesRead', { n: readingMinutes })}
               </span>
             </div>
             {tags.length ? (
@@ -146,7 +149,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
             <section className="box-border w-full min-w-0 max-w-full rounded-[26px] bg-white/90 px-4 py-5 shadow-sm ring-1 ring-[#d8d5ca]/70">
               {post.content ? <JournalMarkdownContent content={post.content} mobile /> : (
                 <p className="mx-auto max-w-3xl rounded-2xl border border-dashed border-[#d8d5ca] bg-white/75 p-6 text-center text-sm font-medium text-[#6b7280]">
-                  Artikel ini belum memiliki isi.
+                  {t('journal.noContent')}
                 </p>
               )}
             </section>
@@ -156,9 +159,11 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
     </main>
   </MobileCommerceLayout>
 );
+};
 
 /* ─── Desktop article view (editorial design system) ─── */
 const PublicJournalArticlePage = ({ mobile = false }) => {
+  const { t } = useTranslate();
   const { slug } = useParams();
   const revealRef = useScrollReveal();
   const [post, setPost] = useState(null);
@@ -282,16 +287,16 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
           <section className="notfound-content">
             <div className="reveal-divider" style={{ width: 40, margin: '0 auto 20px' }} />
             <p className="editorial-eyebrow">MEMUAT</p>
-            <h1 style={{ fontSize: 'var(--text-section)' }}>Memuat artikel...</h1>
+            <h1 style={{ fontSize: 'var(--text-section)' }}>{t("journal.loading")}</h1>
           </section>
         ) : failed ? (
           <section className="notfound-content">
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JURNAL</p>
-            <h1 className="hero-animate-text hero-animate-text--d2">Artikel tidak tersedia</h1>
-            <p className="hero-animate-text hero-animate-text--d3">Artikel ini belum dipublish, sudah dipindah, atau link-nya tidak tersedia.</p>
+            <h1 className="hero-animate-text hero-animate-text--d2">{t("journal.unavailable")}</h1>
+            <p className="hero-animate-text hero-animate-text--d3">{t("journal.unavailableBody")}</p>
             <div className="notfound-actions hero-animate-text hero-animate-text--d4">
               <Link to="/home" className="editorial-button editorial-button--primary">
-                <ArrowLeft className="h-4 w-4" /> Kembali ke Beranda
+                <ArrowLeft className="h-4 w-4" /> {t('notfound.home')}
               </Link>
             </div>
           </section>
@@ -321,7 +326,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                 </span>
                 <span className="journal-article-meta-pill">
                   <Timer />
-                  {readingMinutes} menit baca
+                  {t('journal.minutesRead', { n: readingMinutes })}
                 </span>
               </div>
 
@@ -349,8 +354,8 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                   <JournalMarkdownContent content={post.content} />
                 ) : (
                   <div className="editorial-empty-state">
-                    <p className="editorial-eyebrow">TANPA KONTEN</p>
-                    <h2>Artikel ini belum memiliki isi.</h2>
+                    <p className="editorial-eyebrow">{t("journal.noContentEyebrow")}</p>
+                    <h2>{t("journal.noContent")}</h2>
                   </div>
                 )}
               </section>
@@ -370,7 +375,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                     <div className="journal-article-share__actions">
                       <button type="button" onClick={copyArticleLink}>
                         <Copy />
-                        {copyState === 'copied' ? 'Tersalin' : copyState === 'failed' ? 'Gagal' : 'Salin'}
+                        {copyState === 'copied' ? t("journal.copied") : copyState === 'failed' ? t("journal.copyFailed") : t("journal.copy")}
                       </button>
                       <a href={canonicalUrl} target="_blank" rel="noreferrer">
                         <ExternalLink />

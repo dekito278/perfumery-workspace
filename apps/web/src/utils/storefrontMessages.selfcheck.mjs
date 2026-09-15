@@ -66,6 +66,9 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'checkout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
   'checkout.subtotal', 'checkout.total', 'mcheckout.auto', 'mcheckout.stepArea',
   'pay.tab', // the payment tab title is already English on the Indonesian site
+  // The journal is titled in English on the Indonesian site already — it is the section's name.
+  'journal.tab', 'journal.meta', 'journal.eyebrow',
+  'pay.refresh', // the same word in both
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -180,6 +183,9 @@ for (const file of [
   ['pages', 'PaymentPage.jsx'],
   ['pages', 'PublicTrackingPage.jsx'],
   ['pages', 'NotFoundPage.jsx'],
+  ['pages', 'PublicJournalPage.jsx'],
+  ['pages', 'PublicJournalArticlePage.jsx'],
+  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
   ['pages', 'CheckoutPage.jsx'],
   ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'],
@@ -249,18 +255,32 @@ for (const file of [
 const PROSE_ALLOWED = new Set([
   'RAW MATERIAL HIGHLIGHTS', // a perfumery heading, printed in English on the Indonesian page already
 ]);
-for (const file of [
+// The buyer-facing pages that are fully translated. Every structural check below runs across all of
+// them, so a page added to this list is a page that can no longer leak quietly — and a page left OFF
+// it is the gap to look for first when something Indonesian turns up in the English shop.
+const PAGES_FULLY_TRANSLATED = [
   ['pages', 'PaymentPage.jsx'], ['pages', 'PublicTrackingPage.jsx'], ['pages', 'NotFoundPage.jsx'],
+  ['pages', 'PublicJournalPage.jsx'],
+  ['pages', 'PublicJournalArticlePage.jsx'],
+  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
   ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
   ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['pages', 'WelcomePage.jsx'],
-]) {
+];
+
+for (const file of PAGES_FULLY_TRANSLATED) {
   const source = read(...file);
-  const prose = (source.match(/>([^<>{}\n]{20,})</g) || [])
-    .map((hit) => hit.slice(1, -1).trim())
+  // Newlines are allowed INSIDE the run: JSX puts long sentences on their own line between the tags, and
+  // a regex that stopped at \n missed every one of them — including a whole mobile journal lead that the
+  // browser then showed in Indonesian. Only < > { } end a run of text.
+  const prose = (source.match(/>[^<>{}]{20,}?</g) || [])
+    .map((hit) => hit.slice(1, -1).replace(/\s+/g, ' ').trim())
+    // The 20-character floor applies to the TEXT, not to the indentation around it: a lone "(" padded by
+    // a newline and twenty spaces is JSX code, not a sentence a browser prints.
+    .filter((hit) => hit.length >= 20 && /[A-Za-zÀ-ÿ]{3}/.test(hit))
     // Fragments of a ternary that happen to span a `>` are code, not text: they carry ?, : or an
     // identifier path. Text a browser prints never does.
     .filter((hit) => hit && !/^[\s&;a-z:?.]*$/.test(hit) && !/[?:]|\w\?\.|\w\.\w/.test(hit) && !PROSE_ALLOWED.has(hit));
@@ -321,6 +341,34 @@ assert.match(wear, /export const describeWear = \(wear, translate\) => \{\s*if \
 assert.match(wear, /export const describeWearStudio = \(wear\) =>/, 'and Studio has its own');
 assert.match(read('components', 'product', 'ProductWearTagger.jsx'), /describeWearStudio\(wear\)/,
   'which is what the Studio tagger uses');
+
+// A JSX expression whose whole content is a long string literal is copy too — `{"Tentang memori..."}`
+// renders exactly like text between tags, but the prose check above never sees it, because the browser's
+// text is inside braces. A sabotage swapped a t() call for one and walked straight past.
+for (const file of PAGES_FULLY_TRANSLATED) {
+  const source = read(...file);
+  const literals = source.match(/\{\s*["'][^"']{20,}["']\s*\}/g) || [];
+  assert.deepEqual(literals, [],
+    `${file.join('/')} renders a bare string literal as copy: ${literals.join(' | ')}`);
+}
+
+// A translator parameter must never carry a DEFAULT. Three helpers now take `t` because they run outside
+// a component — getScarcityLabel, describeWear, formatDate — and each time, a default that quietly
+// returns Indonesian would print it into the English shop with nothing to flag it. A sabotage did exactly
+// that to the journal's date helper and walked past every other check here, because the Indonesian never
+// appears as rendered text: it hides in a parameter list.
+for (const file of [
+  ['utils', 'stockScarcity.js'],
+  ['utils', 'productWear.js'],
+  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
+  ['pages', 'PublicTrackingPage.jsx'],
+  ['pages', 'PaymentPage.jsx'],
+]) {
+  const source = read(...file);
+  const defaults = source.match(/[,(]\s*t\s*=\s*[^,)]+/g) || [];
+  assert.deepEqual(defaults, [],
+    `${file.join('/')} gives the translator a default: ${defaults.join(' | ')} — silence is the only safe fallback`);
+}
 
 // The scarcity line takes the translator and has NO default. A default would print Indonesian into the
 // English shop and nothing would say so.
