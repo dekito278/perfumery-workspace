@@ -103,7 +103,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
               <p className="m-editorial-eyebrow">{t('home.currentCollection')}</p>
               <h2>{t('home.featured')}</h2>
             </div>
-            <div className="m-editorial-product-grid">
+            <div className="m-editorial-product-shelf">
               {collection.map((product) => (
                 <Link key={product.slug} to={`/mobile/products/${product.slug}`} className="m-editorial-product-card">
                   <ProductVisual product={product} className="m-editorial-product-card__visual" imageFit="cover" label={false} sizes="(max-width: 480px) 45vw, 200px" />
