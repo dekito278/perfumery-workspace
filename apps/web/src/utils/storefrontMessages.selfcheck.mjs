@@ -60,6 +60,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'home.atelier',     // "atelier" is the word used in both, and it is the section's name
   'mood.woody.short', // Cedar · Vetiver · Mineral — three material names, identical in both
   'cart.voucher',     // the loanword, used on Indonesian receipts already
+  'bsp.voucher',      // same word on the bespoke summary
   'cart.brief',       // "Brief" is the word used for a bespoke brief in both
   'cart.subtotal',    // Subtotal is Subtotal
   // Checkout: the same word is already used on Indonesian receipts and in Indonesian banking.
@@ -72,6 +73,11 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // Bespoke: perfumery and commerce terms that are the same word on an Indonesian bottle.
   'bsp.contact', 'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
   'bsp.preorder', 'bsp.studioOrder', 'bsp.materialLabel', 'bsp.budgetLabel', 'bsp.preorderLabel',
+  // The member account page: commerce and perfumery words an Indonesian receipt already prints in
+  // English, plus the three bespoke production stages named the same way on both sides of the shop.
+  'cust.voucherCode', 'cust.bp.formula', 'cust.bp.sample', 'cust.bp.approval', 'cust.cap',
+  'cust.selfService', 'cust.label', 'cust.material', 'cust.order',
+  'cust.bespokeDetail', 'cust.bespokeProduction',
   'bsp.contactCopied',
 ]);
 for (const key of idKeys) {
@@ -186,6 +192,7 @@ const LEFTOVERS = [
 for (const file of [
   ['pages', 'PaymentPage.jsx'],
   ['pages', 'PublicTrackingPage.jsx'],
+  ['pages', 'CustomerPortalPage.jsx'],
   ['pages', 'NotFoundPage.jsx'],
   ['pages', 'PublicJournalPage.jsx'],
   ['pages', 'PublicJournalArticlePage.jsx'],
@@ -223,22 +230,36 @@ for (const file of [
   assert.match(source, /useTranslate\(\)|\btranslate\b/, `${file.join('/')} reads the message file`);
 }
 
+const PAGES_FULLY_TRANSLATED = [
+  ['pages', 'PaymentPage.jsx'], ['pages', 'PublicTrackingPage.jsx'], ['pages', 'NotFoundPage.jsx'],
+  ['pages', 'PublicJournalPage.jsx'],
+  ['pages', 'PublicJournalArticlePage.jsx'],
+  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
+  ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
+  ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
+  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
+  ['pages', 'WelcomePage.jsx'],
+  ['pages', 'BespokePage.jsx'],
+  ['pages', 'mobile', 'MobileBespokePage.jsx'],
+  ['pages', 'CustomerPortalPage.jsx'],
+];
+
 // A third way to leak, invisible to both checks above: rendering the KEY instead of translating it.
 // `{item.labelKey}` puts the literal text "nav.home" on the screen — no Indonesian, no missing key, and
 // the page still looks structurally fine. A sabotage did exactly that to the phone's bottom tabs.
+// The page list is PAGES_FULLY_TRANSLATED itself: a hand-kept second list is a list that falls behind,
+// and it did — the account page's timeline printed `{step.labelKey}` past a sabotage because this loop
+// had never heard of it.
 for (const file of [
+  ...PAGES_FULLY_TRANSLATED,
   ['components', 'storefront', 'WhyBuyDirect.jsx'],
   ['components', 'storefront', 'PublicHeader.jsx'],
   ['components', 'storefront', 'StorefrontFooter.jsx'],
   ['components', 'storefront', 'StorefrontHeader.jsx'],
   ['components', 'storefront', 'WearFilter.jsx'],
   ['layouts', 'MobileCommerceLayout.jsx'],
-  ['pages', 'HomePage.jsx'],
-  ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
-  ['pages', 'CatalogPage.jsx'],
-  ['pages', 'mobile', 'MobileCatalogPage.jsx'],
-  ['pages', 'PublicProductDetailPage.jsx'],
-  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
 ]) {
   // React `key=` props legitimately use the message key as an identity — it is never shown — so they are
   // removed before the scan. What is left is text the browser would print.
@@ -262,20 +283,6 @@ const PROSE_ALLOWED = new Set([
 // The buyer-facing pages that are fully translated. Every structural check below runs across all of
 // them, so a page added to this list is a page that can no longer leak quietly — and a page left OFF
 // it is the gap to look for first when something Indonesian turns up in the English shop.
-const PAGES_FULLY_TRANSLATED = [
-  ['pages', 'PaymentPage.jsx'], ['pages', 'PublicTrackingPage.jsx'], ['pages', 'NotFoundPage.jsx'],
-  ['pages', 'PublicJournalPage.jsx'],
-  ['pages', 'PublicJournalArticlePage.jsx'],
-  ['pages', 'mobile', 'MobileArticlesPage.jsx'],
-  ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
-  ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
-  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
-  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
-  ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
-  ['pages', 'WelcomePage.jsx'],
-  ['pages', 'BespokePage.jsx'],
-  ['pages', 'mobile', 'MobileBespokePage.jsx'],
-];
 
 for (const file of PAGES_FULLY_TRANSLATED) {
   const source = read(...file);
@@ -382,6 +389,21 @@ for (const file of PAGES_FULLY_TRANSLATED) {
   }
 }
 
+// The *Key check above reads the PROPERTY name, so it never looks inside `const orderStatusKeys = {
+// processing: 'cust.st.processing' }` — the property there is the status, not a *Key. A sabotage put the
+// Indonesian word back as the value and walked past, because translate() renders an unknown key as itself.
+//
+// So a map NAMED for keys must hold nothing but keys.
+for (const file of PAGES_FULLY_TRANSLATED) {
+  const source = read(...file);
+  for (const map of source.matchAll(/const \w*Keys\s*=\s*\{([^}]*)\}/g)) {
+    const values = [...map[1].matchAll(/:\s*'([^']+)'/g)].map((hit) => hit[1]);
+    const unknown = values.filter((key) => !Object.prototype.hasOwnProperty.call(MESSAGES.id, key));
+    assert.deepEqual(unknown, [],
+      `${file.join('/')} has a *Keys map holding something that is not a message key: ${unknown.join(', ')}`);
+  }
+}
+
 // A translator parameter must never carry a DEFAULT. Three helpers now take `t` because they run outside
 // a component — getScarcityLabel, describeWear, formatDate — and each time, a default that quietly
 // returns Indonesian would print it into the English shop with nothing to flag it. A sabotage did exactly
@@ -413,5 +435,51 @@ for (const file of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBes
 const scarcity = read('utils', 'stockScarcity.js');
 assert.match(scarcity, /export const getScarcityLabel = \(stock, translate\) =>/, 'the translator is required');
 assert.match(scarcity, /if \(typeof translate !== 'function'\) return '';/, 'and silence without it');
+
+// A label paired with a runtime value is copy, and it hides from every check above: `['Aroma', item?.notes]`
+// has no JSX tags around it, sits in no label= prop, and is short enough to duck the 20-character prose
+// floor. The account page builds its bespoke rows exactly that way, and a sabotage put 'Aroma' back.
+//
+// The shape is specific on purpose: a capitalised literal followed by an EXPRESSION. `['Woody', 'Citrus']`
+// and `['GoPay', 'OVO']` are lists of values, not label/value pairs, and stay legal.
+for (const file of PAGES_FULLY_TRANSLATED) {
+  const pairs = read(...file).match(/\[\s*'[A-ZÀ-ÿ][^']{2,40}'\s*,\s*[A-Za-z_$][\w$]*[.?[]/g) || [];
+  assert.deepEqual(pairs, [],
+    `${file.join('/')} labels a value with a bare string literal: ${pairs.join(' | ')}`);
+}
+
+// Dates are text too. `Intl.DateTimeFormat('id-ID')` prints "15 Agu 2026" — Agu, Okt, Des and Mei are
+// Indonesian words, on an English page, with no string literal anywhere to find them by. The locale
+// belongs in the message file like every other word, so the page reads it through the translator.
+// (NumberFormat('id-ID') stays: the price is in rupiah in both shops, and 1.400.000 is the right shape.)
+for (const file of PAGES_FULLY_TRANSLATED) {
+  const pinned = read(...file).match(/Intl\.DateTimeFormat\('id-ID'/g) || [];
+  assert.deepEqual(pinned, [],
+    `${file.join('/')} pins the date format to Indonesian — read t('fmt.dateLocale') instead`);
+}
+assert.equal(MESSAGES.id['fmt.dateLocale'], 'id-ID', 'the Indonesian shop formats dates in Indonesian');
+assert.equal(MESSAGES.en['fmt.dateLocale'], 'en-GB', 'the English shop does not');
+
+// A template literal is the fourth way copy hides. `${code} disalin` has no tags around it, no quotes the
+// literal scan matches, and each Indonesian word is too short for the prose floor — and six of them were
+// sitting on the payment page, live, after that page was declared fully translated.
+//
+// Strip the ${...} holes, then look at what the author actually typed. Tailwind class lists, paths,
+// selectors and template-built ids all carry - / [ ] # ? = _ { } < >, and a bare identifier like
+// `product` carries no space. A sentence carries letters AND a space and none of that punctuation.
+const TEMPLATE_COPY_ALLOWED = new Set([
+  'ETA ',              // the courier's own abbreviation, printed the same way in both shops
+  'Bespoke perfume: ', // the order ITEM NAME written into the database, not text on a screen
+  ' bottle',           // same — part of the stored bespoke item name
+]);
+for (const file of PAGES_FULLY_TRANSLATED) {
+  const sentences = (read(...file).match(/`[^`]*`/g) || [])
+    .map((hit) => hit.slice(1, -1).replace(/\$\{[^{}]*\}/g, ''))
+    .filter((hit) => !/[/\[\]#?={}<>_-]|\n/.test(hit))
+    .filter((hit) => /[A-Za-zÀ-ÿ]{3,}/.test(hit) && /\s/.test(hit))
+    .filter((hit) => !TEMPLATE_COPY_ALLOWED.has(hit));
+  assert.deepEqual(sentences, [],
+    `${file.join('/')} builds copy in a template literal: ${sentences.map((hit) => JSON.stringify(hit)).join(' | ')}`);
+}
 
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');

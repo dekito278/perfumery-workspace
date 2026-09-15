@@ -41,21 +41,58 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
+import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
-const formatDate = (value) => (value
-  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const formatDate = (value, t) => (value
+  ? new Intl.DateTimeFormat(t('fmt.dateLocale'), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
   : '-');
 
+// The service label maps are shared with Studio, which stays Indonesian. The storefront reads its own
+// key maps instead, and falls back to the service label for a status nobody has translated yet.
 const statusLabels = getOrderStatusLabels();
 const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
-const paymentProofStatusLabels = {
-  missing: 'Belum upload bukti',
-  submitted: 'Bukti terkirim',
-  approved: 'Bukti disetujui',
-  rejected: 'Bukti ditolak',
+const orderStatusKeys = {
+  draft: 'cust.st.draft',
+  pending_payment: 'cust.st.pending_payment',
+  paid: 'cust.st.paid',
+  processing: 'cust.st.processing',
+  shipped: 'cust.st.shipped',
+  completed: 'cust.st.completed',
+  cancelled: 'cust.st.cancelled',
 };
+const shipmentStatusKeys = {
+  not_ready: 'cust.sh.not_ready',
+  packing: 'cust.sh.packing',
+  shipped: 'cust.sh.shipped',
+  delivered: 'cust.sh.delivered',
+};
+const bespokeProductionKeys = {
+  review_brief: 'cust.bp.review_brief',
+  formula: 'cust.bp.formula',
+  sample: 'cust.bp.sample',
+  approval: 'cust.bp.approval',
+  production: 'cust.bp.production',
+  ready: 'cust.bp.ready',
+};
+const paymentStatusKeys = {
+  unpaid: 'cust.ps.unpaid',
+  pending: 'cust.ps.pending',
+  paid: 'cust.ps.paid',
+  failed: 'cust.ps.failed',
+  expired: 'cust.ps.expired',
+  refunded: 'cust.ps.refunded',
+};
+const paymentProofStatusKeys = {
+  missing: 'cust.proofNotUploaded',
+  submitted: 'cust.proofSent',
+  approved: 'cust.proofApproved',
+  rejected: 'cust.proofRejected',
+};
+const labelFrom = (keys, fallbacks, status, t) => (
+  keys[status] ? t(keys[status]) : (fallbacks[status] || status || '')
+);
 const paymentProofToneByStatus = {
   missing: 'warning',
   submitted: 'info',
@@ -64,12 +101,12 @@ const paymentProofToneByStatus = {
 };
 
 const progressSteps = [
-  { key: 'created', label: 'Order dibuat' },
-  { key: 'pending_payment', label: 'Menunggu bayar' },
-  { key: 'paid', label: 'Sudah dibayar' },
-  { key: 'processing', label: 'Diproses' },
-  { key: 'shipped', label: 'Dikirim' },
-  { key: 'completed', label: 'Selesai' },
+  { key: 'created', labelKey: 'cust.orderCreated' },
+  { key: 'pending_payment', labelKey: 'cust.awaitingPayment' },
+  { key: 'paid', labelKey: 'cust.paid' },
+  { key: 'processing', labelKey: 'cust.processing' },
+  { key: 'shipped', labelKey: 'cust.shipped' },
+  { key: 'completed', labelKey: 'cust.done' },
 ];
 const bespokeProductionSteps = ['review_brief', 'formula', 'sample', 'approval', 'production', 'ready'];
 const buildPaymentPath = ({ isMobileRoute, order }) => `${isMobileRoute ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=${isManualTransferPayment(order.paymentProvider) ? 'manual' : 'doku'}`;
@@ -134,57 +171,69 @@ const getBespokeProductionStep = (status) => {
   return index >= 0 ? index : 0;
 };
 
-const bespokeDetailRows = (item) => [
-  ['Aroma', item?.preferredNotes || item?.notes],
-  ['Momen', item?.occasion],
-  ['Ukuran', item?.size],
-  ['Botol', item?.bottleType],
-  ['Cap', item?.capDesign],
-  ['Label', item?.labelDesign],
-  ['Material', item?.exoticMaterial],
+const bespokeDetailRows = (item, t) => [
+  [t('cust.scent'), item?.preferredNotes || item?.notes],
+  [t('cust.occasion'), item?.occasion],
+  [t('cust.size'), item?.size],
+  [t('cust.bottle'), item?.bottleType],
+  [t('cust.cap'), item?.capDesign],
+  [t('cust.label'), item?.labelDesign],
+  [t('cust.material'), item?.exoticMaterial],
 ].filter(([, value]) => value);
 
-const StatusBadge = ({ status }) => (
-  <StatusChip tone={getOrderStatusTone(status)}>
-    {statusLabels[status] || status}
-  </StatusChip>
-);
+const StatusBadge = ({ status }) => {
+  const { t } = useTranslate();
+  return (
+    <StatusChip tone={getOrderStatusTone(status)}>
+      {labelFrom(orderStatusKeys, statusLabels, status, t)}
+    </StatusChip>
+  );
+};
 
-const PaymentBadge = ({ status }) => (
-  <StatusChip icon={CreditCard} tone={getPaymentStatusTone(status)}>
-    {paymentStatusLabels[status] || status}
-  </StatusChip>
-);
+const PaymentBadge = ({ status }) => {
+  const { t } = useTranslate();
+  return (
+    <StatusChip icon={CreditCard} tone={getPaymentStatusTone(status)}>
+      {labelFrom(paymentStatusKeys, paymentStatusLabels, status, t)}
+    </StatusChip>
+  );
+};
 
-const ShipmentBadge = ({ status }) => (
-  <StatusChip icon={Truck} tone={getShipmentStatusTone(status)}>
-    {shipmentStatusLabels[status] || status || 'Belum dikirim'}
-  </StatusChip>
-);
+const ShipmentBadge = ({ status }) => {
+  const { t } = useTranslate();
+  return (
+    <StatusChip icon={Truck} tone={getShipmentStatusTone(status)}>
+      {labelFrom(shipmentStatusKeys, shipmentStatusLabels, status, t) || t('cust.notShipped')}
+    </StatusChip>
+  );
+};
 
-const PaymentProofBadge = ({ status }) => (
-  <StatusChip icon={status === 'missing' ? Upload : FileCheck2} tone={paymentProofToneByStatus[status] || 'warning'}>
-    {paymentProofStatusLabels[status] || status || paymentProofStatusLabels.missing}
-  </StatusChip>
-);
+const PaymentProofBadge = ({ status }) => {
+  const { t } = useTranslate();
+  return (
+    <StatusChip icon={status === 'missing' ? Upload : FileCheck2} tone={paymentProofToneByStatus[status] || 'warning'}>
+      {t(paymentProofStatusKeys[status] || paymentProofStatusKeys.missing)}
+    </StatusChip>
+  );
+};
 
-const getPaymentExperienceState = (order) => {
+const getPaymentExperienceState = (order, t) => {
   if (!order) return null;
   if (order.status === 'cancelled') {
     return {
-      label: 'Dibatalkan otomatis',
-      title: 'Order dibatalkan',
-      description: 'Order ini sudah tidak aktif. Pakai "Pesan lagi" untuk memasukkan itemnya ke keranjang dan checkout ulang.',
+      label: t('cust.autoCancelled'),
+      title: t('cust.orderCancelled'),
+      description: t('cust.cancelledBody'),
       className: 'border-slate-200 bg-slate-50 text-slate-800',
       iconClassName: 'bg-white text-slate-600',
-      action: 'Pesan lagi',
+      action: t('cust.orderAgain'),
     };
   }
   if (order.paymentStatus === 'paid') {
     return {
-      label: 'Sudah dibayar',
-      title: 'Pembayaran diterima',
-      description: 'Order sudah masuk proses berikutnya. Pantau produksi atau pengiriman dari timeline.',
+      label: t('cust.paid'),
+      title: t('cust.paymentReceived'),
+      description: t('cust.paymentReceivedBody'),
       className: 'border-emerald-200 bg-emerald-50 text-emerald-900',
       iconClassName: 'bg-white text-emerald-700',
       action: '',
@@ -194,45 +243,46 @@ const getPaymentExperienceState = (order) => {
     const proofStatus = order.paymentProofStatus || 'missing';
     if (['submitted', 'approved'].includes(proofStatus)) {
       return {
-        label: 'Menunggu verifikasi',
-        title: 'Bukti transfer terkirim',
-        description: 'Admin sedang mengecek bukti pembayaran. Status akan berubah setelah valid.',
+        label: t('cust.awaitingCheck'),
+        title: t('cust.proofSentTitle'),
+        description: t('cust.proofSentBody'),
         className: 'border-sky-200 bg-sky-50 text-sky-900',
         iconClassName: 'bg-white text-sky-700',
-        action: 'Lihat bukti',
+        action: t('cust.viewProof'),
       };
     }
     return {
-      label: 'Belum bayar manual',
-      title: 'Upload bukti transfer',
-      description: 'Transfer ke rekening yang tersedia, lalu upload bukti agar order bisa diverifikasi.',
+      label: t('cust.manualUnpaid'),
+      title: t('cust.uploadProof'),
+      description: t('cust.manualUnpaidBody'),
       className: 'border-amber-200 bg-amber-50 text-amber-950',
       iconClassName: 'bg-white text-amber-700',
-      action: 'Upload bukti',
+      action: t('cust.uploadProofShort'),
     };
   }
   if (isDokuPaymentExpired(order) || order.paymentStatus === 'expired') {
     return {
-      label: 'DOKU expired',
-      title: 'Link pembayaran kedaluwarsa',
-      description: 'Link DOKU hanya aktif sekitar 1 jam. Buat link baru untuk melanjutkan pembayaran.',
+      label: t('cust.dokuExpired'),
+      title: t('cust.linkExpired'),
+      description: t('cust.dokuHour'),
       className: 'border-rose-200 bg-rose-50 text-rose-900',
       iconClassName: 'bg-white text-rose-700',
-      action: 'Buat link DOKU baru',
+      action: t('cust.newDokuLink'),
     };
   }
   return {
-    label: 'Belum bayar',
-    title: 'Menunggu pembayaran',
-    description: 'Order sudah dibuat. Selesaikan pembayaran agar pesanan bisa diproses.',
+    label: t('cust.unpaid'),
+    title: t('cust.awaitingPaymentTitle'),
+    description: t('cust.awaitingPaymentBody'),
     className: 'border-amber-200 bg-amber-50 text-amber-950',
     iconClassName: 'bg-white text-amber-700',
-    action: 'Bayar sekarang',
+    action: t('cust.payNow'),
   };
 };
 
 const PaymentExperiencePanel = ({ compact = false, order }) => {
-  const state = getPaymentExperienceState(order);
+  const { t } = useTranslate();
+  const state = getPaymentExperienceState(order, t);
   if (!state) return null;
 
   return (
@@ -283,16 +333,17 @@ const MobileCustomerPortalSkeleton = () => (
 );
 
 const PaymentProofPanel = ({ order, compact = false }) => {
+  const { t } = useTranslate();
   if (!isManualTransferPayment(order.paymentProvider)) return null;
 
   const status = order.paymentProofStatus || 'missing';
   const submitted = Boolean(order.paymentProofUrl) && ['submitted', 'approved'].includes(status);
   const rejected = status === 'rejected';
   const message = rejected
-    ? 'Bukti transfer ditolak. Upload ulang bukti transfer dari halaman pembayaran.'
+    ? t('cust.proofRejectedBody')
     : submitted
-      ? 'Bukti transfer sudah terkirim dan sedang/selesai dicek admin.'
-      : 'Bukti transfer belum diupload. Order manual baru diproses setelah bukti terkirim.';
+      ? t('cust.proofUnderReview')
+      : t('cust.proofMissing');
 
   return (
     <div className={`mt-3 rounded-2xl border ${rejected || !submitted ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-100 bg-emerald-50 text-emerald-900'} ${compact ? 'p-3' : 'p-4'}`}>
@@ -302,7 +353,7 @@ const PaymentProofPanel = ({ order, compact = false }) => {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-xs font-bold uppercase">Bukti transfer</div>
+            <div className="text-xs font-bold uppercase">{t('cust.proof')}</div>
             <PaymentProofBadge status={status} />
           </div>
           <p className="mt-1 text-xs font-semibold leading-relaxed">{message}</p>
@@ -313,12 +364,12 @@ const PaymentProofPanel = ({ order, compact = false }) => {
           ) : null}
           {order.paymentProofUploadedAt ? (
             <div className="mt-1 text-[11px] font-semibold opacity-80">
-              Dikirim {formatDate(order.paymentProofUploadedAt)}
+              {t('cust.sentOn', { date: formatDate(order.paymentProofUploadedAt, t) })}
             </div>
           ) : null}
           {order.paymentProofNotes ? (
             <div className="mt-2 rounded-xl bg-white/75 px-3 py-2 text-xs font-semibold">
-              Catatan admin: {order.paymentProofNotes}
+              {t('cust.adminNote', { note: order.paymentProofNotes })}
             </div>
           ) : null}
         </div>
@@ -334,6 +385,7 @@ const PaymentTaskPanel = ({
   order,
   renewing = false,
 }) => {
+  const { t } = useTranslate();
   if (!order || !isPayableOrder(order)) return null;
 
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
@@ -348,15 +400,15 @@ const PaymentTaskPanel = ({
   };
 
   const title = manualPayment
-    ? 'Transfer manual belum selesai'
+    ? t('cust.manualIncomplete')
     : dokuExpired
-      ? 'Link DOKU sudah lewat 1 jam'
-      : 'Pembayaran DOKU menunggu';
+      ? t('cust.dokuPastHour')
+      : t('cust.dokuWaiting');
   const description = manualPayment
-    ? 'Transfer ke rekening ini, lalu upload bukti dari tombol di bawah.'
+    ? t('cust.transferThenUpload')
     : dokuExpired
-      ? 'Buat link DOKU baru supaya pembayaran bisa langsung dilanjutkan.'
-      : 'Buka link pembayaran untuk menyelesaikan order.';
+      ? t('cust.makeNewDoku')
+      : t('cust.openPayLink');
 
   return (
     <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl border border-amber-200 bg-amber-50 text-amber-950`}>
@@ -365,29 +417,29 @@ const PaymentTaskPanel = ({
           <CreditCard className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">Aksi pembayaran</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">{t('cust.payActions')}</div>
           <h4 className={`${compact ? 'text-sm' : 'text-base'} mt-1 font-bold text-editorial-charcoal`}>{title}</h4>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">{description}</p>
 
           <div className={`${compact ? 'grid gap-2' : 'grid gap-3 sm:grid-cols-3'} mt-3`}>
             <div className="rounded-2xl bg-white/85 px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Order</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.order')}</div>
               <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{order.orderNumber}</div>
             </div>
             <div className="rounded-2xl bg-white/85 px-3 py-2">
-              <div className="text-[10px] font-bold uppercase text-amber-700">Total bayar</div>
+              <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.totalDue')}</div>
               <div className="mt-1 text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</div>
             </div>
             {dokuPayment ? (
               <div className="rounded-2xl bg-white/85 px-3 py-2">
-                <div className="text-[10px] font-bold uppercase text-amber-700">Batas link</div>
-                <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{expiresAt ? formatDate(expiresAt) : 'Sekitar 1 jam'}</div>
+                <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.linkDeadline')}</div>
+                <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{expiresAt ? formatDate(expiresAt, t) : t('cust.aboutAnHour')}</div>
               </div>
             ) : (
               <div className="rounded-2xl bg-white/85 px-3 py-2">
-                <div className="text-[10px] font-bold uppercase text-amber-700">Rekening</div>
+                <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.account')}</div>
                 <div className="mt-1 truncate text-xs font-bold text-editorial-charcoal">{transfer.bankName} {transfer.accountNumber}</div>
-                <div className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">A/N {transfer.accountName}</div>
+                <div className="mt-0.5 truncate text-[11px] font-semibold text-[#6b7280]">{t('cust.accountHolder', { name: transfer.accountName })}</div>
               </div>
             )}
           </div>
@@ -396,23 +448,23 @@ const PaymentTaskPanel = ({
             {manualPayment ? (
               <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
                 <Upload className="h-4 w-4" />
-                Upload bukti transfer
+                {t('cust.uploadProof')}
               </Link>
             ) : dokuExpired ? (
               <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Buat link DOKU baru
+                {t('cust.newDokuLink')}
               </button>
             ) : (
               <Link to={paymentPath} className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
                 <CreditCard className="h-4 w-4" />
-                Bayar sekarang
+                {t('cust.payNow')}
               </Link>
             )}
             {dokuPayment && order.paymentUrl && !dokuExpired ? (
               <button type="button" onClick={() => onRenewDokuPayment(order)} disabled={renewing} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal disabled:opacity-60">
                 {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Perbarui link
+                {t('cust.renewLink')}
               </button>
             ) : null}
           </div>
@@ -423,17 +475,18 @@ const PaymentTaskPanel = ({
 };
 
 const OrderTimeline = ({ order, compact = false }) => {
+  const { t } = useTranslate();
   const activeStep = getActiveStep(order.status);
   const timeline = progressSteps.map((step, index) => {
     const done = activeStep >= index;
     const current = activeStep === index;
-    let detail = done ? 'Sudah tercatat' : 'Menunggu tahap sebelumnya';
-    if (step.key === 'created') detail = formatDate(order.createdAt);
-    if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? 'Pembayaran sudah diterima' : 'Menunggu pembayaran selesai';
-    if (step.key === 'paid') detail = paymentStatusLabels[order.paymentStatus] || order.paymentStatus || '-';
-    if (step.key === 'processing') detail = shipmentStatusLabels[order.shipmentStatus] || statusLabels[order.status] || '-';
-    if (step.key === 'shipped') detail = order.trackingNumber ? `${order.courierName || 'Kurir'} / ${order.trackingNumber}` : 'Resi akan muncul setelah paket dikirim';
-    if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt) : 'Menunggu paket diterima';
+    let detail = done ? t('cust.recorded') : t('cust.waitingPrevious');
+    if (step.key === 'created') detail = formatDate(order.createdAt, t);
+    if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? t('cust.paymentDone') : t('cust.waitingPayment');
+    if (step.key === 'paid') detail = labelFrom(paymentStatusKeys, paymentStatusLabels, order.paymentStatus, t) || '-';
+    if (step.key === 'processing') detail = labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || labelFrom(orderStatusKeys, statusLabels, order.status, t) || '-';
+    if (step.key === 'shipped') detail = order.trackingNumber ? `${order.courierName || t('cust.courier')} / ${order.trackingNumber}` : t('cust.waybillLater');
+    if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt, t) : t('cust.waitingDelivery');
 
     return { ...step, done, current, detail };
   });
@@ -447,7 +500,7 @@ const OrderTimeline = ({ order, compact = false }) => {
               {index + 1}
             </span>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-editorial-charcoal">{step.label}</div>
+              <div className="text-xs font-bold text-editorial-charcoal">{t(step.labelKey)}</div>
               <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{step.detail}</p>
             </div>
           </div>
@@ -458,6 +511,7 @@ const OrderTimeline = ({ order, compact = false }) => {
 };
 
 const VoucherSummary = ({ order, compact = false }) => {
+  const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   if (!voucherSnapshot) return null;
 
@@ -465,20 +519,20 @@ const VoucherSummary = ({ order, compact = false }) => {
   return (
     <div className={`mt-3 rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-editorial-charcoal`}>
       <div className="flex justify-between gap-3">
-        <span>Subtotal produk</span>
+        <span>{t('cust.subtotalProducts')}</span>
         <span>{formatTotal(getOrderProductsSubtotal(order))}</span>
       </div>
       <div className="mt-2 flex justify-between gap-3">
-        <span>Voucher {voucherSnapshot.code}</span>
+        <span>{t('cust.voucherCode', { code: voucherSnapshot.code })}</span>
         <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
       </div>
       <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-        <span>Subtotal setelah voucher</span>
+        <span>{t('cust.subtotalAfterVoucher')}</span>
         <span>{formatTotal(getOrderSubtotalAfterVoucher(order))}</span>
       </div>
       {shippingFee ? (
         <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-          <span>Ongkir</span>
+          <span>{t('cust.shipping')}</span>
           <span>{formatTotal(shippingFee)}</span>
         </div>
       ) : null}
@@ -487,6 +541,7 @@ const VoucherSummary = ({ order, compact = false }) => {
 };
 
 const OrderItems = ({ order, compact = false }) => {
+  const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const discountedLines = getDiscountedVoucherCartLines(
     getOrderProductItems(order),
@@ -514,7 +569,7 @@ const OrderItems = ({ order, compact = false }) => {
             </div>
             {hasDiscount ? (
               <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-editorial-charcoal">
-                <span>Setelah voucher: {formatTotal(line.discountedUnitPrice)} / item</span>
+                <span>{t('cust.afterVoucherUnit', { price: formatTotal(line.discountedUnitPrice) })}</span>
                 <span>-{formatTotal(line.discount)}</span>
               </div>
             ) : null}
@@ -527,14 +582,15 @@ const OrderItems = ({ order, compact = false }) => {
 };
 
 const BespokeDetailPanel = ({ item, compact = false }) => {
-  const rows = bespokeDetailRows(item);
+  const { t } = useTranslate();
+  const rows = bespokeDetailRows(item, t);
   if (!rows.length) return null;
 
   return (
     <div className={`${compact ? 'mt-3 p-3' : 'mt-4 p-4'} rounded-2xl bg-editorial-ivory`}>
       <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
         <Sparkles className="h-3.5 w-3.5" />
-        Bespoke detail
+        {t('cust.bespokeDetail')}
       </div>
       <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
         {rows.map(([label, value]) => (
@@ -549,6 +605,7 @@ const BespokeDetailPanel = ({ item, compact = false }) => {
 };
 
 const BespokeProductionPanel = ({ order, compact = false }) => {
+  const { t } = useTranslate();
   if (!isBespokeOrder(order)) return null;
   const currentStatus = order.bespokeProductionStatus || 'review_brief';
   const activeStep = getBespokeProductionStep(currentStatus);
@@ -558,10 +615,10 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
           <Sparkles className="h-3.5 w-3.5" />
-          Bespoke production
+          {t('cust.bespokeProduction')}
         </div>
         <span className="rounded-full bg-editorial-ivory px-2.5 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
-          {bespokeProductionStatusLabels[currentStatus] || currentStatus}
+          {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, currentStatus, t)}
         </span>
       </div>
       <div className={`mt-3 grid grid-cols-6 ${compact ? 'gap-1' : 'gap-2'}`}>
@@ -571,7 +628,7 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
             <div key={step} className="min-w-0">
               <div className={`${compact ? 'h-1.5' : 'h-2'} rounded-full ${done ? 'bg-editorial-charcoal' : 'bg-stone-200'}`} />
               <div className={`mt-1 truncate font-bold uppercase ${compact ? 'text-[7px]' : 'text-[9px]'} ${done ? 'text-editorial-charcoal' : 'text-muted-foreground'}`}>
-                {bespokeProductionStatusLabels[step]}
+                {labelFrom(bespokeProductionKeys, bespokeProductionStatusLabels, step, t)}
               </div>
             </div>
           );
@@ -582,6 +639,7 @@ const BespokeProductionPanel = ({ order, compact = false }) => {
 };
 
 const ShipmentPanel = ({ order, compact = false }) => {
+  const { t } = useTranslate();
   if (!order || order.shipmentStatus === 'not_ready') return null;
   const courierSearchUrl = buildCourierTrackingSearchUrl({
     courierName: order.courierName,
@@ -593,51 +651,51 @@ const ShipmentPanel = ({ order, compact = false }) => {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-editorial-charcoal sm:text-xs">
           <Truck className="h-3.5 w-3.5" />
-          Pengiriman
+          {t('cust.delivery')}
         </div>
         <ShipmentBadge status={order.shipmentStatus} />
       </div>
       <div className={`mt-3 grid gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
         {order.courierName ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">Kurir</div>
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.courier')}</div>
             <div className="mt-1 text-editorial-charcoal">{order.courierName}</div>
           </div>
         ) : null}
         {order.trackingNumber ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">Resi</div>
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.waybill')}</div>
             <div className="mt-1 text-editorial-charcoal">{order.trackingNumber}</div>
           </div>
         ) : null}
         {order.shippedAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">Tanggal kirim</div>
-            <div className="mt-1 text-editorial-charcoal">{formatDate(order.shippedAt)}</div>
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.shipDate')}</div>
+            <div className="mt-1 text-editorial-charcoal">{formatDate(order.shippedAt, t)}</div>
           </div>
         ) : null}
         {order.deliveredAt ? (
           <div className="rounded-xl bg-[#f8f7f4] px-3 py-2 text-sm font-semibold">
-            <div className="text-[10px] font-bold uppercase text-muted-foreground">Diterima</div>
-            <div className="mt-1 text-editorial-charcoal">{formatDate(order.deliveredAt)}</div>
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">{t('cust.delivered')}</div>
+            <div className="mt-1 text-editorial-charcoal">{formatDate(order.deliveredAt, t)}</div>
           </div>
         ) : null}
       </div>
       {order.trackingUrl ? (
         <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-3 text-xs font-bold text-editorial-ivory">
           <ExternalLink className="h-4 w-4" />
-          Track resi
+          {t('cust.trackWaybill')}
         </a>
       ) : null}
       {!order.trackingUrl && courierSearchUrl ? (
         <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-3 text-xs font-bold text-editorial-ivory">
           <ExternalLink className="h-4 w-4" />
-          Cari resi kurir
+          {t('cust.searchWaybill')}
         </a>
       ) : null}
       <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-3 text-xs font-bold text-editorial-charcoal">
         <ExternalLink className="h-4 w-4" />
-        Tracking publik
+        {t('cust.publicTracking')}
       </a>
     </div>
   );
@@ -652,6 +710,7 @@ const SelfServiceActions = ({
   order,
   refreshing = false,
 }) => {
+  const { t } = useTranslate();
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
   const canReorder = getOrderProductItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
@@ -670,43 +729,43 @@ const SelfServiceActions = ({
       {canUploadPaymentProof(order) ? (
         <Link to={paymentPath} className={primaryClass}>
           <Upload className="h-4 w-4" />
-          Upload bukti
+          {t('cust.uploadProofShort')}
         </Link>
       ) : null}
       {showOpenPayment ? (
         <Link to={paymentPath} className={primaryClass}>
           <CreditCard className="h-4 w-4" />
-          Lanjut bayar
+          {t('cust.continuePay')}
         </Link>
       ) : null}
       <Link to={invoicePath(order.orderNumber)} className={outlineClass}>
         <FileText className="h-4 w-4" />
-        Unduh invoice
+        {t('cust.downloadInvoice')}
       </Link>
       {canTrackShipment(order) ? (
         <a href={order.trackingUrl} target="_blank" rel="noreferrer" className={primaryClass}>
           <ExternalLink className="h-4 w-4" />
-          Lacak resi
+          {t('cust.trackParcel')}
         </a>
       ) : null}
       {!canTrackShipment(order) && courierSearchUrl ? (
         <a href={courierSearchUrl} target="_blank" rel="noreferrer" className={primaryClass}>
           <ExternalLink className="h-4 w-4" />
-          Cari resi kurir
+          {t('cust.searchWaybill')}
         </a>
       ) : null}
       <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className={outlineClass}>
         <ExternalLink className="h-4 w-4" />
-        Tracking publik
+        {t('cust.publicTracking')}
       </a>
       <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
         <ShoppingBag className="h-4 w-4" />
-        Pesan lagi
+        {t('cust.orderAgain')}
       </button>
       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
         <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
           {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Cek pembayaran
+          {t('cust.checkPayment')}
         </button>
       ) : null}
     </div>
@@ -714,6 +773,7 @@ const SelfServiceActions = ({
 };
 
 const CustomerPortalPage = () => {
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
@@ -747,7 +807,7 @@ const CustomerPortalPage = () => {
 
   const loadPortalForCode = useCallback(async (code, { silent = false } = {}) => {
     if (!code.trim()) {
-      if (!silent) toast.error('Kode customer wajib diisi');
+      if (!silent) toast.error(t('cust.codeRequired'));
       return;
     }
 
@@ -758,7 +818,7 @@ const CustomerPortalPage = () => {
 
     if (!result) {
       setPortal(null);
-      if (!silent) toast.error('Kode customer tidak ditemukan');
+      if (!silent) toast.error(t('cust.codeNotFound'));
       return;
     }
 
@@ -773,8 +833,8 @@ const CustomerPortalPage = () => {
     setLastCustomerCode(result.customer.customerCode);
     writeLastCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
-    if (!silent) toast.success(`${result.customer.customerCode} dimuat`);
-  }, [setSearchParams]);
+    if (!silent) toast.success(t('cust.codeLoaded', { code: result.customer.customerCode }));
+  }, [setSearchParams, t]);
 
   useEffect(() => {
     if (initialCode && lastLoadedCodeRef.current !== initialCode) {
@@ -824,7 +884,7 @@ const CustomerPortalPage = () => {
     try {
       await loginWithGoogle(`${window.location.origin}${isMobileRoute ? '/mobile/customer' : '/customer'}`);
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal masuk dengan Google'));
+      toast.error(publicErrorMessage(error, t('cust.googleFail')));
     }
   };
 
@@ -847,7 +907,7 @@ const CustomerPortalPage = () => {
   const submitProfile = async (event) => {
     event.preventDefault();
     if (!profileName.trim() || !profileContact.trim()) {
-      toast.error('Nama dan kontak wajib diisi');
+      toast.error(t('cust.nameContactRequired'));
       return;
     }
     setProfileLoading(true);
@@ -861,9 +921,9 @@ const CustomerPortalPage = () => {
       setPortal(result);
       setSearched(true);
       setCustomerCode(result.customer.customerCode);
-      toast.success('Profil & alamat tersimpan');
+      toast.success(t('cust.profileSaved'));
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal menyimpan profil'));
+      toast.error(publicErrorMessage(error, t('cust.profileSaveFailed')));
     } finally {
       setProfileLoading(false);
     }
@@ -872,7 +932,7 @@ const CustomerPortalPage = () => {
   const submitClaim = async (event) => {
     event.preventDefault();
     if (!claimCodeValue.trim()) {
-      toast.error('Kode wajib diisi');
+      toast.error(t('cust.codeFieldRequired'));
       return;
     }
     setClaimLoading(true);
@@ -884,9 +944,9 @@ const CustomerPortalPage = () => {
       setCustomerCode(result.customer.customerCode);
       setClaimCodeValue('');
       setClaimAnswer('');
-      toast.success(`${result.customer.customerCode} ditautkan ke akunmu`);
+      toast.success(t('cust.codeLinked', { code: result.customer.customerCode }));
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal menautkan kode'));
+      toast.error(publicErrorMessage(error, t('cust.linkFailed')));
     } finally {
       setClaimLoading(false);
     }
@@ -908,35 +968,35 @@ const CustomerPortalPage = () => {
             </span>
             <span className="min-w-0">
               <span className="block text-xs font-bold uppercase text-editorial-charcoal">
-                Akun &amp; alamat
-                {memberActive ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800">Harga member aktif</span> : null}
+                {t('cust.accountAddress')}
+                {memberActive ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800">{t('cust.memberActive')}</span> : null}
               </span>
               <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{currentUser.email}</span>
             </span>
           </span>
           <span className="shrink-0 rounded-full bg-editorial-paper px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
-            {accountPanelOpen ? 'Tutup' : 'Ubah'}
+            {accountPanelOpen ? t('cust.close') : t('cust.edit')}
           </span>
         </button>
         {!accountPanelOpen ? null : (
         <div className="mt-3 border-t border-[#e5e7eb] pt-3">
         <form onSubmit={submitProfile} className="grid gap-2">
-          <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Nama penerima" className={inputClass} />
-          <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder="No. WhatsApp / telepon" className={inputClass} />
-          <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder="Alamat pengiriman lengkap" className={`${inputClass} h-auto py-2`} />
+          <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={t('cust.recipientName')} className={inputClass} />
+          <input value={profileContact} onChange={(e) => setProfileContact(e.target.value)} placeholder={t('cust.phone')} className={inputClass} />
+          <textarea value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} rows="2" placeholder={t('cust.fullAddress')} className={`${inputClass} h-auto py-2`} />
           <Button type="submit" disabled={profileLoading} className="h-11 rounded-2xl gap-2">
             {profileLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
-            Simpan alamat
+            {t('cust.saveAddress')}
           </Button>
         </form>
 
         <form onSubmit={submitClaim} className="mt-4 grid gap-2 border-t border-[#e5e7eb] pt-3">
-          <div className="text-[11px] font-bold uppercase text-[#6b7280]">Punya kode order lama?</div>
+          <div className="text-[11px] font-bold uppercase text-[#6b7280]">{t('cust.haveOldCode')}</div>
           <input value={claimCodeValue} onChange={(e) => setClaimCodeValue(e.target.value.toUpperCase())} placeholder="SOLI09232" className={`${inputClass} uppercase tracking-[0.08em]`} />
-          <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder="Jawaban keamanan (jika ada)" className={inputClass} />
+          <input value={claimAnswer} onChange={(e) => setClaimAnswer(e.target.value)} placeholder={t('cust.answerIfAny')} className={inputClass} />
           <Button type="submit" variant="outline" disabled={claimLoading} className="h-11 rounded-2xl gap-2 bg-white">
             {claimLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-            Tautkan kode ke akun
+            {t('cust.linkCode')}
           </Button>
         </form>
         </div>
@@ -952,27 +1012,27 @@ const CustomerPortalPage = () => {
 
   const pasteCustomerCode = async () => {
     if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
-      toast.error('Browser belum mengizinkan tempel otomatis');
+      toast.error(t('cust.pasteBlocked'));
       return;
     }
 
     try {
       const pastedCode = (await navigator.clipboard.readText()).trim().toUpperCase();
       if (!pastedCode) {
-        toast.warning('Clipboard kosong');
+        toast.warning(t('cust.clipboardEmpty'));
         return;
       }
       setCustomerCode(pastedCode);
-      toast.success('Kode ditempel');
+      toast.success(t('cust.codePasted'));
     } catch {
-      toast.error('Kode belum bisa ditempel otomatis');
+      toast.error(t('cust.pasteFailed'));
     }
   };
 
   const checkLastCustomerCode = async () => {
     const code = lastCustomerCode || readLastCustomerCode();
     if (!code) {
-      toast.warning('Belum ada kode terakhir di perangkat ini');
+      toast.warning(t('cust.noLastCode'));
       return;
     }
     setCustomerCode(code);
@@ -982,13 +1042,13 @@ const CustomerPortalPage = () => {
   const copyCode = async () => {
     if (!portal?.customer?.customerCode) return;
     const copied = await copyTextToClipboard(portal.customer.customerCode);
-    copied ? toast.success(`${portal.customer.customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
+    copied ? toast.success(t('cust.codeCopied', { code: portal.customer.customerCode })) : toast.error(t('cust.copyFailed'));
   };
 
   const unlockPortal = async (event) => {
     event.preventDefault();
     if (!securityAnswer.trim()) {
-      toast.error('Jawaban keamanan wajib diisi');
+      toast.error(t('cust.securityAnswerRequired'));
       return;
     }
 
@@ -997,14 +1057,14 @@ const CustomerPortalPage = () => {
     setSecurityLoading(false);
 
     if (!result) {
-      toast.error('Jawaban keamanan salah');
+      toast.error(t('cust.securityAnswerWrong'));
       return;
     }
 
     setPortal(result);
     setSecurityQuestion(result.customer.securityQuestion || '');
     setSecurityAnswer('');
-    toast.success('Dashboard customer terbuka');
+    toast.success(t('cust.dashOpened'));
   };
 
   const saveSecurity = async (event) => {
@@ -1030,9 +1090,9 @@ const CustomerPortalPage = () => {
       setNewSecurityAnswer('');
       setCurrentSecurityAnswer('');
       setSecurityFormOpen(false);
-      toast.success('Pertanyaan keamanan tersimpan');
+      toast.success(t('cust.securitySaved'));
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal menyimpan pertanyaan keamanan'));
+      toast.error(publicErrorMessage(error, t('cust.securitySaveFailed')));
     } finally {
       setSavingSecurity(false);
     }
@@ -1045,14 +1105,14 @@ const CustomerPortalPage = () => {
     try {
       const result = await refreshDokuPaymentStatus(order.orderNumber);
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
-      const statusLabel = paymentStatusLabels[result.paymentStatus] || result.paymentStatus || 'dicek';
+      const statusLabel = labelFrom(paymentStatusKeys, paymentStatusLabels, result.paymentStatus, t) || t('cust.paymentChecking');
       if (result.syncApplied) {
-        toast.success(`Pembayaran ${statusLabel}`);
+        toast.success(t('cust.paymentIs', { status: statusLabel }));
       } else {
-        toast.warning('Pembayaran dicek, status belum berubah');
+        toast.warning(t('cust.paymentChecked'));
       }
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal refresh pembayaran'));
+      toast.error(publicErrorMessage(error, t('cust.refreshFailed')));
     } finally {
       setRefreshingPaymentOrder('');
     }
@@ -1075,10 +1135,10 @@ const CustomerPortalPage = () => {
         callbackPath: isMobileRoute ? '/mobile/payment' : '/payment',
       });
       await loadPortalForCode(portal?.customer?.customerCode || customerCode, { silent: true });
-      toast.success('Link DOKU baru siap dipakai');
+      toast.success(t('cust.dokuReady'));
       navigate(buildPaymentPath({ isMobileRoute, order: { ...order, paymentProvider: 'doku' } }));
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal membuat link DOKU baru'));
+      toast.error(publicErrorMessage(error, t('cust.dokuFailed')));
     } finally {
       setRefreshingPaymentOrder('');
     }
@@ -1094,7 +1154,7 @@ const CustomerPortalPage = () => {
   const handleReorder = (order) => {
     const productItems = getOrderProductItems(order);
     if (!productItems.length) {
-      toast.error('Order ini belum punya item produk untuk dipesan lagi');
+      toast.error(t('cust.noItemsToReorder'));
       return;
     }
 
@@ -1134,7 +1194,7 @@ const CustomerPortalPage = () => {
       setAppliedVoucherCode(previousVoucher.code);
     }
 
-    toast.success(`Item dari ${order.orderNumber} masuk ke keranjang`);
+    toast.success(t('cust.itemsToCart', { order: order.orderNumber }));
     navigate(isMobileRoute ? '/mobile/checkout' : '/checkout');
   };
 
@@ -1143,8 +1203,8 @@ const CustomerPortalPage = () => {
     return (
       <MobileCommerceLayout>
         <Helmet>
-          <title>Akun Member - Solivagant</title>
-          <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
+          <title>{t('cust.tab')}</title>
+          <meta name="description" content={t('cust.meta')} />
         </Helmet>
         <main className="mobile-page space-y-4">
           <section className="mobile-soft-card overflow-hidden">
@@ -1154,11 +1214,11 @@ const CustomerPortalPage = () => {
               <div className="relative">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase text-[#cbd6c5]">
                   <ShoppingBag className="h-3.5 w-3.5" />
-                  Lacak pesanan
+                  {t('cust.trackOrders')}
                 </div>
-                <h1 className="mt-3 text-2xl font-bold leading-tight">Cek progress pesanan.</h1>
+                <h1 className="mt-3 text-2xl font-bold leading-tight">{t('cust.checkProgress')}</h1>
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
-                  Status pembayaran, proses produksi, dan pengiriman dalam satu tempat.
+                  {t('cust.oneplace')}
                 </p>
               </div>
             </div>
@@ -1166,26 +1226,26 @@ const CustomerPortalPage = () => {
               {/* Logged-in: greet + let orders take focus. Code lookup collapses into a small option. */}
               {currentUser ? (
                 <div className="flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-3 py-2 text-xs font-semibold text-editorial-charcoal">
-                  <span className="min-w-0 truncate">Masuk sebagai {currentUser.email}</span>
-                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
+                  <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
+                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
                 <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white gap-2 text-sm font-bold" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
-                  Masuk dengan Google — harga member
+                  {t('cust.signInMember')}
                 </Button>
               )}
 
               {currentUser ? (
                 <button type="button" onClick={() => setCodeSearchOpen((open) => !open)} className="flex items-center justify-between rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2 text-[11px] font-bold uppercase text-[#6b7280]">
-                  <span className="inline-flex items-center gap-2"><Search className="h-3.5 w-3.5" /> Cari pakai kode order</span>
-                  <span>{codeSearchOpen ? 'Tutup' : 'Buka'}</span>
+                  <span className="inline-flex items-center gap-2"><Search className="h-3.5 w-3.5" /> {t('cust.findByCode')}</span>
+                  <span>{codeSearchOpen ? t('cust.close') : t('cust.open')}</span>
                 </button>
               ) : null}
 
               {(!currentUser || codeSearchOpen) ? (
                 <>
-                  <label className="text-[10px] font-bold uppercase text-[#6b7280]">Kode customer</label>
+                  <label className="text-[10px] font-bold uppercase text-[#6b7280]">{t('cust.customerCode')}</label>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
                     <input
                       value={customerCode}
@@ -1193,27 +1253,27 @@ const CustomerPortalPage = () => {
                       placeholder="SOLI09232"
                       className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-bold uppercase tracking-[0.08em] outline-none focus:border-editorial-charcoal"
                     />
-                    <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label="Cek kode customer">
+                    <Button type="submit" className="h-12 rounded-2xl px-4" disabled={loading} aria-label={t('cust.checkCode')}>
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={pasteCustomerCode}>
                       <ClipboardPaste className="h-4 w-4" />
-                      Tempel kode
+                      {t('cust.pasteCode')}
                     </Button>
                     <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white gap-2 text-xs font-bold" onClick={checkLastCustomerCode} disabled={loading || !lastCustomerCode}>
                       <History className="h-4 w-4" />
-                      Cek terakhir
+                      {t('cust.lastCheck')}
                     </Button>
                   </div>
                   {lastCustomerCode ? (
                     <button type="button" onClick={checkLastCustomerCode} className="text-left text-[11px] font-bold text-editorial-charcoal underline underline-offset-4">
-                      Terakhir dipakai: {lastCustomerCode}
+                      {t('cust.lastUsed', { code: lastCustomerCode })}
                     </button>
                   ) : null}
                   <p className="text-xs font-semibold leading-relaxed text-[#6b7280]">
-                    Kode ini diberikan setelah checkout pertama.
+                    {t('cust.codeGiven')}
                   </p>
                 </>
               ) : null}
@@ -1229,14 +1289,14 @@ const CustomerPortalPage = () => {
                   <KeyRound className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Cek keamanan</div>
-                  <h2 className="mt-1 text-lg font-bold text-editorial-charcoal">Dashboard terlindungi</h2>
-                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">Jawab pertanyaan keamanan untuk membuka dashboard.</p>
+                  <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.securityCheck')}</div>
+                  <h2 className="mt-1 text-lg font-bold text-editorial-charcoal">{t('cust.protectedDash')}</h2>
+                  <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">{t('cust.answerSecurity')}</p>
                 </div>
               </div>
               <form onSubmit={unlockPortal} className="mt-4 grid gap-3">
                 <div className="rounded-2xl bg-editorial-paper p-3">
-                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pertanyaan</div>
+                  <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('cust.question')}</div>
                   <div className="mt-1 text-sm font-bold text-editorial-charcoal">{portal.customer.securityQuestion}</div>
                 </div>
                 <input
@@ -1244,12 +1304,12 @@ const CustomerPortalPage = () => {
                   autoComplete="off"
                   value={securityAnswer}
                   onChange={(event) => setSecurityAnswer(event.target.value)}
-                  placeholder="Jawaban"
+                  placeholder={t('cust.answer')}
                   className="h-12 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal"
                 />
                 <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
                   {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  Buka
+                  {t('cust.open')}
                 </Button>
               </form>
             </section>
@@ -1258,9 +1318,9 @@ const CustomerPortalPage = () => {
               <section className="mobile-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Selamat datang kembali</div>
+                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.welcomeBack')}</div>
                     <h2 className="mt-1 truncate text-lg font-bold text-editorial-charcoal">{portal.customer.customerName}</h2>
-                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.masked ? 'Detail disembunyikan demi keamanan' : portal.customer.contact}</p>
+                    <p className="mt-1 text-xs font-semibold text-[#6b7280]">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
                   </div>
                   <button type="button" onClick={copyCode} className="shrink-0 rounded-2xl bg-editorial-charcoal px-3 py-2 text-xs font-bold tracking-[0.12em] text-editorial-ivory">
                     {portal.customer.customerCode}
@@ -1268,21 +1328,21 @@ const CustomerPortalPage = () => {
                 </div>
                 {portal.customer.masked ? (
                   <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-semibold leading-relaxed text-amber-800">
-                    Kamu melihat progres order via kode. Untuk lihat &amp; kelola detail lengkap (nama, kontak, alamat), <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">masuk dengan Google</button> pakai akun saat order.
+                    {t('cust.maskedNoteMobile')} <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">{t('cust.withGoogle')}</button> {t('cust.withGoogleAccount')}
                   </div>
                 ) : null}
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-3 text-center">
                     <div className="text-sm font-bold text-editorial-charcoal">{portal.orders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pesanan</div>
+                    <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('cust.orders')}</div>
                   </div>
                   <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-3 text-center">
                     <div className="text-sm font-bold text-editorial-charcoal">{activeOrders.length}</div>
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Aktif</div>
+                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.active')}</div>
                   </div>
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-center">
-                    <div className="truncate text-xs font-bold text-amber-800">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
-                    <div className="text-[10px] font-bold uppercase text-amber-700">Terbaru</div>
+                    <div className="truncate text-xs font-bold text-amber-800">{latestOrder ? labelFrom(orderStatusKeys, statusLabels, latestOrder.status, t) : '-'}</div>
+                    <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.latest')}</div>
                   </div>
                 </div>
               </section>
@@ -1294,31 +1354,31 @@ const CustomerPortalPage = () => {
                       <ShieldCheck className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-bold text-editorial-charcoal">{portal.customer.securityEnabledAt ? 'Dashboard terlindungi' : 'Proteksi dashboard'}</span>
-                      <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">Pertanyaan keamanan opsional.</span>
+                      <span className="block text-sm font-bold text-editorial-charcoal">{portal.customer.securityEnabledAt ? t('cust.protectedDash') : t('cust.dashProtection')}</span>
+                      <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#6b7280]">{t('cust.securityOptional')}</span>
                     </span>
                   </span>
                   <span className="shrink-0 rounded-full bg-editorial-paper px-3 py-1 text-[10px] font-bold uppercase text-editorial-charcoal">
-                    {securityFormOpen ? 'Tutup' : 'Buka'}
+                    {securityFormOpen ? t('cust.close') : t('cust.open')}
                   </span>
                 </button>
                 {securityFormOpen ? (
                   <form onSubmit={saveSecurity} className="mt-3 grid gap-2 border-t border-[#e5e7eb] pt-3">
                     {portal.customer.securityEnabledAt ? (
-                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder="Jawaban saat ini" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
+                      <input value={currentSecurityAnswer} onChange={(event) => setCurrentSecurityAnswer(event.target.value)} placeholder={t('cust.currentAnswer')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
                     ) : null}
-                    <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder="Pertanyaan keamanan" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
-                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder="Jawaban" className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
+                    <input value={securityQuestion} onChange={(event) => setSecurityQuestion(event.target.value)} placeholder={t('cust.securityQuestion')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
+                    <input value={newSecurityAnswer} onChange={(event) => setNewSecurityAnswer(event.target.value)} placeholder={t('cust.answer')} className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold outline-none focus:border-editorial-charcoal" />
                     <Button type="submit" className="h-11 rounded-2xl gap-2" disabled={savingSecurity}>
                       {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                      Simpan proteksi
+                      {t('cust.saveProtection')}
                     </Button>
                   </form>
                 ) : null}
               </section>
 
               <section className="space-y-3">
-                <h2 className="text-base font-bold text-editorial-charcoal">Progres order</h2>
+                <h2 className="text-base font-bold text-editorial-charcoal">{t('cust.orderProgress')}</h2>
                 {portal.orders.map((order) => {
                   const bespoke = isBespokeOrder(order);
                   const bespokeItem = getBespokeItem(order);
@@ -1328,7 +1388,7 @@ const CustomerPortalPage = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <h3 className="text-base font-bold text-editorial-charcoal">{order.orderNumber}</h3>
-                            <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt)}</p>
+                            <p className="mt-1 text-xs font-semibold text-[#6b7280]">{formatDate(order.createdAt, t)}</p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <StatusBadge status={order.status} />
@@ -1340,7 +1400,7 @@ const CustomerPortalPage = () => {
                       </div>
                       <div className="p-4">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="text-[10px] font-bold uppercase text-[#6b7280]">{bespoke ? 'Parfum custom' : 'Item order'}</div>
+                        <div className="text-[10px] font-bold uppercase text-[#6b7280]">{bespoke ? t('cust.customPerfume') : t('cust.orderItems')}</div>
                         <div className="text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</div>
                       </div>
                       <div className="mt-3">
@@ -1359,7 +1419,7 @@ const CustomerPortalPage = () => {
                       <PaymentProofPanel order={order} compact />
                       <ShipmentPanel order={order} compact />
                       <div className="mt-3 rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-3">
-                        <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Self-service</div>
+                        <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('cust.selfService')}</div>
                         <SelfServiceActions
                           compact
                           isMobileRoute={isMobileRoute}
@@ -1381,8 +1441,8 @@ const CustomerPortalPage = () => {
                   <StateBlock
                     className="mobile-card"
                     icon={PackageCheck}
-                    title="Belum ada order"
-                    description="Order baru akan muncul setelah checkout."
+                    title={t('cust.noOrders')}
+                    description={t('cust.noOrdersBody')}
                   />
                 ) : null}
               </section>
@@ -1390,9 +1450,9 @@ const CustomerPortalPage = () => {
           ) : (
             <section className="mobile-card p-5 text-center">
               {searched ? <Search className="mx-auto h-8 w-8 text-amber-700" /> : <ShoppingBag className="mx-auto h-8 w-8 text-amber-700" />}
-              <h2 className="mt-3 text-lg font-bold text-editorial-charcoal">{searched ? 'Kode customer tidak ditemukan' : 'Harga member menunggu'}</h2>
+              <h2 className="mt-3 text-lg font-bold text-editorial-charcoal">{searched ? t('cust.codeNotFound') : t('cust.memberWaiting')}</h2>
               <p className="mt-1 text-xs font-semibold leading-relaxed text-[#6b7280]">
-                {searched ? 'Cek lagi kode SOLI yang dimasukkan.' : 'Masuk dengan Google dan semua harga di katalog turun ke harga member. Riwayat order dan pesan-lagi ikut tersimpan.'}
+                {searched ? t('cust.checkSoliCode') : t('cust.memberWaitingBody')}
               </p>
             </section>
           )}
@@ -1406,27 +1466,27 @@ const CustomerPortalPage = () => {
   return (
     <>
       <Helmet>
-        <title>Akun Member - Solivagant</title>
-        <meta name="description" content="Cek progres order Solivagant dengan kode customer." />
+        <title>{t('cust.tab')}</title>
+        <meta name="description" content={t('cust.meta')} />
       </Helmet>
       <main className="min-h-screen bg-editorial-paper text-editorial-charcoal">
-        <StorefrontHeader backTo="/home" backLabel="Beranda" actions={[{ to: '/catalog', label: 'Katalog' }]} />
+        <StorefrontHeader backTo="/home" backLabel={t('cust.home')} actions={[{ to: '/catalog', label: t('cust.catalog') }]} />
 
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
           <div className="space-y-5">
             <div className="rounded-[28px] border border-editorial-charcoal/10 bg-white/70 p-6 shadow-sm">
               <div className="inline-flex items-center gap-2 rounded-full border border-editorial-charcoal/15 bg-white px-3 py-1 text-xs font-bold uppercase text-editorial-charcoal">
                 <UserRound className="h-4 w-4" />
-                Akun member
+                {t('cust.eyebrow')}
               </div>
-              <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">Masuk, dan setiap harga turun ke harga member.</h1>
+              <h1 className="storefront-display-heading mt-5 text-4xl font-bold sm:text-5xl">{t('cust.heroTitle')}</h1>
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
-                Satu akun Google: harga member di seluruh katalog, status pesanan, dan pesan-lagi dalam sekali ketuk. Kode order lama tetap bisa dicek di bawah.
+                {t('cust.heroBody')}
               </p>
             </div>
 
             <form onSubmit={loadPortal} className="rounded-2xl border bg-white p-4 shadow-sm">
-              <label className="text-xs font-bold uppercase text-muted-foreground">Kode customer</label>
+              <label className="text-xs font-bold uppercase text-muted-foreground">{t('cust.customerCode')}</label>
               <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={customerCode}
@@ -1436,21 +1496,21 @@ const CustomerPortalPage = () => {
                 />
                 <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  Cek
+                  {t('cust.check')}
                 </Button>
               </div>
               <p className="mt-3 text-xs font-semibold leading-relaxed text-muted-foreground">
-                Kode ini diberikan setelah checkout pertama. Simpan untuk order berikutnya.
+                {t('cust.codeGivenKeep')}
               </p>
               {currentUser ? (
                 <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-editorial-ivory px-4 py-2 text-xs font-semibold text-editorial-charcoal">
-                  <span className="min-w-0 truncate">Masuk sebagai {currentUser.email}</span>
-                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
+                  <span className="min-w-0 truncate">{t('cust.signedInAs', { email: currentUser.email })}</span>
+                  <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('cust.signOut')}</button>
                 </div>
               ) : (
                 <Button type="button" variant="outline" className="mt-3 h-12 w-full rounded-2xl gap-2 text-sm font-bold" onClick={signInGoogle}>
                   <UserRound className="h-4 w-4" />
-                  Masuk dengan Google — harga member
+                  {t('cust.signInMember')}
                 </Button>
               )}
             </form>
@@ -1465,16 +1525,16 @@ const CustomerPortalPage = () => {
                     <KeyRound className="h-5 w-5" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold uppercase text-editorial-charcoal">Cek keamanan</div>
-                    <h2 className="mt-1 text-2xl font-bold">Dashboard terlindungi</h2>
+                    <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('cust.securityCheck')}</div>
+                    <h2 className="mt-1 text-2xl font-bold">{t('cust.protectedDash')}</h2>
                     <p className="mt-2 text-sm font-semibold leading-relaxed text-muted-foreground">
-                      Customer ini sudah mengaktifkan pertanyaan keamanan. Jawab dulu untuk membuka dashboard.
+                      {t('cust.securityOnBody')}
                     </p>
                   </div>
                 </div>
                 <form onSubmit={unlockPortal} className="mt-5 grid gap-3">
                   <div className="rounded-2xl bg-editorial-paper p-4">
-                    <div className="text-xs font-bold uppercase text-muted-foreground">Pertanyaan</div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.question')}</div>
                     <div className="mt-1 text-base font-bold">{portal.customer.securityQuestion}</div>
                   </div>
                   <input
@@ -1482,12 +1542,12 @@ const CustomerPortalPage = () => {
                     autoComplete="off"
                     value={securityAnswer}
                     onChange={(event) => setSecurityAnswer(event.target.value)}
-                    placeholder="Jawaban"
+                    placeholder={t('cust.answer')}
                     className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
                   />
                   <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
                     {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                    Buka dashboard
+                    {t('cust.openDashboard')}
                   </Button>
                 </form>
               </section>
@@ -1496,12 +1556,12 @@ const CustomerPortalPage = () => {
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase text-editorial-charcoal">Selamat datang kembali</div>
+                      <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('cust.welcomeBack')}</div>
                       <h2 className="mt-1 text-2xl font-bold">{portal.customer.customerName}</h2>
-                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.masked ? 'Detail disembunyikan demi keamanan' : portal.customer.contact}</p>
+                      <p className="mt-1 text-sm font-semibold text-muted-foreground">{portal.customer.masked ? t('cust.hiddenForSecurity') : portal.customer.contact}</p>
                       {portal.customer.masked ? (
                         <p className="mt-2 text-xs font-semibold leading-relaxed text-amber-800">
-                          Untuk detail lengkap (nama, kontak, alamat), <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">masuk dengan Google</button> pakai akun saat order.
+                          {t('cust.forFullDetails')} <button type="button" onClick={signInGoogle} className="font-bold underline underline-offset-2">{t('cust.withGoogle')}</button> {t('cust.withGoogleAccount')}
                         </p>
                       ) : null}
                     </div>
@@ -1511,16 +1571,16 @@ const CustomerPortalPage = () => {
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Order</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.order')}</div>
                       <div className="mt-1 text-2xl font-bold">{portal.orders.length}</div>
                     </div>
                     <div className="rounded-2xl border border-editorial-charcoal/10 bg-editorial-ivory p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Aktif</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.active')}</div>
                       <div className="mt-1 text-2xl font-bold">{activeOrders.length}</div>
                     </div>
                     <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                      <div className="text-xs font-bold uppercase text-muted-foreground">Terbaru</div>
-                      <div className="mt-1 text-sm font-bold">{latestOrder ? statusLabels[latestOrder.status] || latestOrder.status : '-'}</div>
+                      <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.latest')}</div>
+                      <div className="mt-1 text-sm font-bold">{latestOrder ? labelFrom(orderStatusKeys, statusLabels, latestOrder.status, t) : '-'}</div>
                     </div>
                   </div>
                 </section>
@@ -1532,12 +1592,12 @@ const CustomerPortalPage = () => {
                         <ShieldCheck className="h-5 w-5" />
                       </span>
                       <span>
-                        <span className="block text-lg font-bold">{portal.customer.securityEnabledAt ? 'Dashboard terlindungi' : 'Proteksi dashboard'}</span>
-                        <span className="mt-0.5 block text-sm font-semibold text-muted-foreground">Tambahkan pertanyaan keamanan hanya jika diperlukan.</span>
+                        <span className="block text-lg font-bold">{portal.customer.securityEnabledAt ? t('cust.protectedDash') : t('cust.dashProtection')}</span>
+                        <span className="mt-0.5 block text-sm font-semibold text-muted-foreground">{t('cust.addSecurityIf')}</span>
                       </span>
                     </span>
                     <span className="shrink-0 rounded-full bg-editorial-paper px-4 py-2 text-xs font-bold uppercase text-editorial-charcoal">
-                      {securityFormOpen ? 'Tutup' : 'Buka'}
+                      {securityFormOpen ? t('cust.close') : t('cust.open')}
                     </span>
                   </button>
                   {securityFormOpen ? (
@@ -1546,32 +1606,32 @@ const CustomerPortalPage = () => {
                         <input
                           value={currentSecurityAnswer}
                           onChange={(event) => setCurrentSecurityAnswer(event.target.value)}
-                          placeholder="Jawaban saat ini"
+                          placeholder={t('cust.currentAnswer')}
                           className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
                         />
                       ) : null}
                       <input
                         value={securityQuestion}
                         onChange={(event) => setSecurityQuestion(event.target.value)}
-                        placeholder="Contoh: siapa nama hewan peliharaan saya?"
+                        placeholder={t('cust.securityPlaceholder')}
                         className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
                       />
                       <input
                         value={newSecurityAnswer}
                         onChange={(event) => setNewSecurityAnswer(event.target.value)}
-                        placeholder="Jawaban"
+                        placeholder={t('cust.answer')}
                         className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
                       />
                       <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={savingSecurity}>
                         {savingSecurity ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                        Simpan proteksi
+                        {t('cust.saveProtection')}
                       </Button>
                     </form>
                   ) : null}
                 </section>
 
                 <section className="rounded-2xl border bg-white p-5 shadow-sm">
-                  <h2 className="text-xl font-bold">Progres order</h2>
+                  <h2 className="text-xl font-bold">{t('cust.orderProgress')}</h2>
                   <div className="mt-4 grid gap-4">
                     {portal.orders.map((order) => {
                       const bespoke = isBespokeOrder(order);
@@ -1588,10 +1648,10 @@ const CustomerPortalPage = () => {
                                 {isManualTransferPayment(order.paymentProvider) ? <PaymentProofBadge status={order.paymentProofStatus || 'missing'} /> : null}
                                 {order.shipmentStatus && order.shipmentStatus !== 'not_ready' ? <ShipmentBadge status={order.shipmentStatus} /> : null}
                               </div>
-                              <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt)}</p>
+                              <p className="mt-1 text-sm font-semibold text-muted-foreground">{formatDate(order.createdAt, t)}</p>
                             </div>
                             <div className="text-right">
-                              <div className="text-xs font-bold uppercase text-muted-foreground">{order.quantity} item</div>
+                              <div className="text-xs font-bold uppercase text-muted-foreground">{t('cust.itemCount', { count: order.quantity })}</div>
                               <div className="text-lg font-bold">{formatTotal(order.subtotal)}</div>
                             </div>
                             </div>
@@ -1613,8 +1673,8 @@ const CustomerPortalPage = () => {
                             <div className="mt-4 rounded-2xl border border-editorial-charcoal/10 bg-editorial-paper p-4">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <div className="text-xs font-bold uppercase text-editorial-charcoal">Self-service</div>
-                                  <p className="mt-1 text-sm font-semibold text-muted-foreground">Kelola bukti bayar, invoice, tracking, dan reorder dari sini.</p>
+                                  <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('cust.selfService')}</div>
+                                  <p className="mt-1 text-sm font-semibold text-muted-foreground">{t('cust.manageHere')}</p>
                                 </div>
                               </div>
                               <SelfServiceActions
@@ -1637,8 +1697,8 @@ const CustomerPortalPage = () => {
                       <StateBlock
                         className="bg-[#fbfaf7]"
                         icon={PackageCheck}
-                        title="Belum ada order"
-                        description="Order baru akan muncul setelah checkout."
+                        title={t('cust.noOrders')}
+                        description={t('cust.noOrdersBody')}
                       />
                     ) : null}
                   </div>
@@ -1651,21 +1711,21 @@ const CustomerPortalPage = () => {
                     <StateBlock
                       className="border-0 bg-transparent p-0 shadow-none"
                       icon={searched ? Search : ShoppingBag}
-                      title={searched ? 'Kode customer tidak ditemukan' : 'Harga member menunggu'}
-                      description={searched ? 'Cek lagi kode SOLI yang kamu masukkan.' : 'Masuk dengan Google dan semua harga di katalog turun ke harga member. Riwayat order dan pesan-lagi ikut tersimpan.'}
+                      title={searched ? t('cust.codeNotFound') : t('cust.memberWaiting')}
+                      description={searched ? t('cust.checkSoliCodeYours') : t('cust.memberWaitingBody')}
                     />
                   </div>
                   <div className="grid content-center gap-3 bg-editorial-ivory p-5">
                     {[
-                      ['1', 'Masuk dengan Google', 'Harga member langsung aktif di seluruh katalog. Kode SOLI lama bisa ditautkan nanti.'],
-                      ['2', 'Cek pembayaran dan produksi', 'Status bayar, bukti transfer, custom progress, dan resi tampil di satu tempat.'],
-                      ['3', 'Pesan lagi lebih cepat', 'Item order lama langsung masuk keranjang, tinggal checkout.'],
-                    ].map(([step, title, description]) => (
+                      ['1', 'cust.signInGoogle', 'cust.memberNow'],
+                      ['2', 'cust.checkPayProd', 'cust.checkPayProdBody'],
+                      ['3', 'cust.reorderFast', 'cust.reorderFastBody'],
+                    ].map(([step, titleKey, descriptionKey]) => (
                       <div key={step} className="flex gap-3 rounded-2xl bg-white/82 p-3 shadow-sm shadow-editorial-charcoal/5">
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-editorial-charcoal text-xs font-bold text-editorial-ivory">{step}</span>
                         <span>
-                          <span className="block text-sm font-bold text-editorial-charcoal">{title}</span>
-                          <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#667264]">{description}</span>
+                          <span className="block text-sm font-bold text-editorial-charcoal">{t(titleKey)}</span>
+                          <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#667264]">{t(descriptionKey)}</span>
                         </span>
                       </div>
                     ))}

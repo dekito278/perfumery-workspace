@@ -567,7 +567,7 @@ const BespokePage = () => {
           createdAt: new Date().toISOString(),
         }));
         (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
-        toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
+        toast.success(t('bsp.saved', { order: order.orderNumber }));
         navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
         return;
       }
@@ -602,7 +602,7 @@ const BespokePage = () => {
         createdAt: new Date().toISOString(),
       }));
       (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
-      toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
+      toast.success(t('bsp.saved', { order: order.orderNumber }));
       navigate(`/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);
     } catch (error) {
       if (createdOrder) {
@@ -839,7 +839,7 @@ const BespokePage = () => {
                 <div className="editorial-voucher-panel">
                   <div>
                     <p className="editorial-eyebrow">VOUCHER</p>
-                    <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : t('bsp.voucherEnter')}</strong>
+                    <strong>{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : t('bsp.voucherEnter')}</strong>
                   </div>
                   <div className="editorial-inline-field">
                     <input
