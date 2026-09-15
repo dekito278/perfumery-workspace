@@ -482,6 +482,23 @@ export default defineConfig({
 			],
 			output: {
 				manualChunks: getManualChunk,
+				// Rollup splits a module shared by two lazy routes into its own chunk, however small it is. The
+				// phone's first screen was pulling EIGHT of them — MobileLoadingSkeleton 214 B, MobileEmptyState
+				// 361 B, badge 818 B and five more, 7 kB between them — in a second wave that only started once
+				// the route chunk had parsed, so it cost a whole extra round trip to the server for a rounding
+				// error of bytes. Across the build there were 80 chunks under 3 kB.
+				//
+				// 5000 is where measuring put the knee. It is not free — merging pulls modules into the entry
+				// that a given page did not need — so the number is the cheapest one that does the job:
+				//
+				//   off   349 kB entry (brotli), 199 chunks, 80 under 3 kB
+				//   3000  352 kB, 145 chunks, 23 under 3 kB
+				//   5000  353 kB, 130 chunks,  7 under 3 kB   <- here
+				//   8000  357 kB, 117 chunks,  7 under 3 kB
+				//   12000 357 kB, 102 chunks,  7 under 3 kB
+				//
+				// Above 5000 the entry pays twice as much and no further tiny chunk disappears.
+				experimentalMinChunkSize: 5000,
 			}
 		}
 	}
