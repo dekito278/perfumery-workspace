@@ -159,11 +159,17 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   };
 
   const related = relatedFor(product, catalog);
-  // The immersive story is a long editorial narrative written in Indonesian — a letter, not UI copy —
-  // and there is no English version of it. Showing it to a reader who chose the English shop would be a
-  // whole page in a language they did not pick, so the English shop gets the ordinary product page,
-  // whose description and notes DO have English text. The Indonesian shop is untouched.
-  const productStory = isInternational ? null : (supabaseStory || getProductStory(slug));
+  // The immersive story is a long editorial narrative — a letter, not UI copy. The English shop gets it
+  // only when an ENGLISH one exists; it never falls back to the Indonesian, because a full-screen
+  // Javanese letter is a whole page in a language the reader did not pick, and worse than the ordinary
+  // product page, whose description and notes do have English text.
+  //
+  // The story written in Studio is Indonesian by construction — the editor has one set of fields — so it
+  // is only ever offered to the Indonesian shop. The English side reads the file pair, where a story that
+  // has no English twin simply answers null.
+  const productStory = isInternational
+    ? getProductStory(slug, region)
+    : (supabaseStory || getProductStory(slug, region));
 
   if (storyLoading) {
     return (

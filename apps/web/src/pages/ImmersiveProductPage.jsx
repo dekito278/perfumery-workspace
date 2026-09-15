@@ -15,10 +15,17 @@ import {
   getSiteOrigin,
   toAbsoluteUrl,
 } from '@/utils/seo.js';
+import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
+import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { useTranslate } from '@/hooks/useTranslate.js';
+import { formatRupiah } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
 
 const ImmersiveProductPage = ({ product, story }) => {
   const { addItem } = useCart();
+  const { t, isInternational } = useTranslate();
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
   const [lastAddedSlug, setLastAddedSlug] = useState('');
@@ -92,9 +99,13 @@ const ImmersiveProductPage = ({ product, story }) => {
   const selectedAvailable = selectedVariant ? selectedVariant.availability === 'Available' : product.publicStatus === 'Available';
   const soldOut = !selectedAvailable;
 
+  // Region-gated, exactly as the ordinary product page resolves it: null unless this visitor is
+  // being quoted internationally.
+  const exportPrice = useOverseasPrice(product, selectedVariant);
+
   const handleAddToCart = () => {
     if (soldOut) {
-      toast.error(`${product.name} sedang habis`);
+      toast.error(t('catalog.outOfStockToast', { name: product.name }));
       return;
     }
     addItem({
@@ -106,9 +117,9 @@ const ImmersiveProductPage = ({ product, story }) => {
       priceNumber: selectedPrice,
     }, 1);
     setLastAddedSlug(product.slug);
-    toast.success(`${product.name} masuk ke keranjang`, {
-      description: 'Keranjang sudah diperbarui.',
-      action: { label: 'Lihat cart', onClick: () => navigate('/cart') },
+    toast.success(t('pdp.addedToast', { name: product.name }), {
+      description: t('pdp.cartUpdated'),
+      action: { label: t('pdp.viewCart'), onClick: () => navigate('/cart') },
     });
     setTimeout(() => {
       setLastAddedSlug((c) => (c === product.slug ? '' : c));
@@ -121,26 +132,26 @@ const ImmersiveProductPage = ({ product, story }) => {
   const metaDescription = String(hero.subtitle || product.subtitle || product.story || '').trim().slice(0, 155);
   const productJsonLd = buildProductJsonLd(product, { origin: siteOrigin, canonicalUrl });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-    { name: 'Beranda', path: '/home' },
-    { name: 'Koleksi', path: '/catalog' },
+    { name: t('nav.home'), path: '/home' },
+    { name: t('pdp.collection'), path: '/catalog' },
     { name: product.name, path: `/catalog/${product.slug}` },
   ], siteOrigin);
 
   return (
     <>
       <Helmet>
-        <title>{product.name} — SOLIVAGANT</title>
+        <title>{product.name} - SOLIVAGANT</title>
         <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="SOLIVAGANT" />
         <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:title" content={`${product.name} — SOLIVAGANT`} />
+        <meta property="og:title" content={`${product.name} - SOLIVAGANT`} />
         <meta property="og:description" content={metaDescription} />
         {shareImage ? <meta property="og:image" content={shareImage} /> : null}
         {shareImage ? <meta property="og:image:alt" content={product.name} /> : null}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} — SOLIVAGANT`} />
+        <meta name="twitter:title" content={`${product.name} - SOLIVAGANT`} />
         <meta name="twitter:description" content={metaDescription} />
         {shareImage ? <meta name="twitter:image" content={shareImage} /> : null}
         {product.priceNumber > 0 ? <meta property="product:price:amount" content={String(product.priceNumber)} /> : null}
@@ -274,12 +285,17 @@ const ImmersiveProductPage = ({ product, story }) => {
           <div className="imm-product__meta">
             <span>{product.concentration}</span>
             <span>{selectedSize}</span>
-            <span>{selectedPriceLabel}</span>
+            {/* Silent when the international panel below is carrying the price, so the same number is
+                not printed twice — the trap the ordinary product page is already guarded against. And
+                never the DOMESTIC price to a reader being quoted internationally: this page was offering
+                Rp 289.000, the price for a delivery inside Indonesia, to someone whose delivery costs
+                about three and a half times that. */}
+            {exportPrice ? null : <span>{selectedPriceLabel}</span>}
           </div>
 
           {variants.length > 1 ? (
             <label className="imm-product__variant">
-              <span className="imm-product__variant-label">Ukuran</span>
+              <span className="imm-product__variant-label">{t('pdp.size')}</span>
               <select
                 value={selectedVariantKey}
                 onChange={(e) => setSelectedVariantId(e.target.value)}
@@ -287,28 +303,39 @@ const ImmersiveProductPage = ({ product, story }) => {
               >
                 {variants.map((v) => {
                   const key = v.id || v.size;
-                  return <option key={key} value={key}>{v.size} — {v.price}{v.availability !== 'Available' ? ' (Habis)' : ''}</option>;
+                  return <option key={key} value={key}>{v.size} — {v.price}{v.availability !== 'Available' ? t('pdp.soldOutOption') : ''}</option>;
                 })}
               </select>
             </label>
           ) : null}
 
-          <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
-            {soldOut ? (
-              <>Stok Habis</>
-            ) : lastAddedSlug === product.slug ? (
-              <><CheckCircle2 className="h-4 w-4" /> Sudah di Keranjang</>
-            ) : (
-              <><ShoppingBag className="h-4 w-4" /> Tambah ke Keranjang &mdash; {selectedPriceLabel}</>
-            )}
-          </button>
+          {/* The cart is a domestic-delivery flow: RajaOngkir prices it and a foreign address returns an
+              empty area list. The ordinary product page already replaces it with the enquiry in the
+              English shop; this page has to do the same, or the story ends at a form nobody can finish.
+              SwitchToIndonesiaHint keeps the way back one tap away for whoever IS shipping inside
+              Indonesia and simply prefers reading English. */}
+          {exportPrice ? <InternationalPrice price={exportPrice} /> : null}
+
+          {isInternational ? null : (
+            <button type="button" className="imm-product__cta magnetic-hover" onClick={handleAddToCart} onMouseMove={magnetic} disabled={soldOut}>
+              {soldOut ? (
+                <>{t('pdp.soldOut')}</>
+              ) : lastAddedSlug === product.slug ? (
+                <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+              ) : (
+                <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
+              )}
+            </button>
+          )}
+          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
+          <SwitchToIndonesiaHint className="mt-3" />
         </section>
 
         {/* ── Back to catalog ── */}
         <nav className="imm-back" data-imm-reveal>
           <Link to="/catalog">
             <ChevronRight className="h-3 w-3" style={{ transform: 'rotate(180deg)' }} />
-            Kembali ke Koleksi
+            {t('pdp.backToCollection')}
           </Link>
         </nav>
 

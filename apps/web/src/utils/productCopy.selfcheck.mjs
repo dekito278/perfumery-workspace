@@ -148,10 +148,46 @@ assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid produc
 // the product page returns a completely different component for it, above every line that resolves the
 // English copy. An English reader got the whole page in Indonesian with all five columns filled and
 // every other guard green.
+// Held as the RULE now — the English shop is never shown an Indonesian story — rather than as the one
+// expression that used to enforce it. Ayang-ayang has an English letter of its own; pinning the old
+// `isInternational ? null` shape made writing one look like a regression.
 {
   const page = read('pages', 'PublicProductDetailPage.jsx');
-  assert.match(page, /const productStory = isInternational \? null : \(supabaseStory \|\| getProductStory\(slug\)\);/,
-    'the immersive story is gated on the region — the English shop falls through to the ordinary page, which has English copy');
+  const { getProductStory } = await import('../data/stories/index.js');
+  const { REGION_EN, REGION_ID } = await import('./storefrontRegion.js');
+
+  // A product with no story has none in either shop.
+  assert.equal(getProductStory('pantura', REGION_ID), null);
+  assert.equal(getProductStory('pantura', REGION_EN), null);
+
+  const idStory = getProductStory('ayang-ayang', REGION_ID);
+  const enStory = getProductStory('ayang-ayang', REGION_EN);
+  assert.ok(idStory && enStory, 'Ayang-ayang has a letter in both shops');
+  assert.notEqual(enStory.hero.eyebrow, idStory.hero.eyebrow, 'and they are not the same words');
+  assert.notEqual(enStory.hero.subtitle, idStory.hero.subtitle);
+  assert.equal(enStory.sections.length, idStory.sections.length, 'the same page, told twice');
+  // Everything that is not words is shared, so an image added to one cannot be missing from the other.
+  assert.deepEqual(enStory.colors, idStory.colors);
+  assert.equal(enStory.hero.headlineScript, idStory.hero.headlineScript, 'the Javanese script is not translated');
+  for (const [i, section] of enStory.sections.entries()) {
+    assert.equal(section.type, idStory.sections[i].type, `section ${i} keeps its type`);
+    if ('layout' in idStory.sections[i]) assert.equal(section.layout, idStory.sections[i].layout);
+  }
+  // No Indonesian left in the English letter. These are the words this story actually uses.
+  const enWords = JSON.stringify([enStory.hero, enStory.music, enStory.sections]);
+  for (const leftover of ['yang', 'tidak', 'dengan', 'untuk', 'Tentang', 'kenangan', 'parfum']) {
+    assert.ok(!new RegExp(`\\b${leftover}\\b`).test(enWords),
+      `the English letter still says "${leftover}"`);
+  }
+
+  // The page must never hand the Studio story — which has one set of fields, and those are Indonesian —
+  // to the English shop.
+  const gate = page.slice(page.indexOf('const productStory = isInternational'), page.indexOf('if (storyLoading)'));
+  assert.ok(gate.length > 40 && gate.length < 400, 'the story gate is still one small expression');
+  const [international] = gate.split(':');
+  assert.ok(!international.includes('supabaseStory'),
+    'the English shop must not be offered the Studio story, which is Indonesian by construction');
+  assert.match(gate, /getProductStory\(slug, region\)/, 'and it asks for the story in the shop\'s own language');
   // And the gate has to sit BEFORE the branch that returns the immersive page, or it gates nothing.
   assert.ok(page.indexOf('const productStory = isInternational') < page.indexOf('return <ImmersiveProductPage'),
     'the region gate must be resolved before the immersive page is returned');
