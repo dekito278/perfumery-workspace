@@ -159,7 +159,11 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   };
 
   const related = relatedFor(product, catalog);
-  const productStory = supabaseStory || getProductStory(slug);
+  // The immersive story is a long editorial narrative written in Indonesian — a letter, not UI copy —
+  // and there is no English version of it. Showing it to a reader who chose the English shop would be a
+  // whole page in a language they did not pick, so the English shop gets the ordinary product page,
+  // whose description and notes DO have English text. The Indonesian shop is untouched.
+  const productStory = isInternational ? null : (supabaseStory || getProductStory(slug));
 
   if (storyLoading) {
     return (
