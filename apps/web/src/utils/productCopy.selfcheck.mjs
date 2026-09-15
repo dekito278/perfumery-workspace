@@ -86,17 +86,40 @@ assert.equal(englishCopyProgress({
   descriptionEn: 'a', notesEn: 'b', topNotesEn: ['c'], heartNotesEn: ['d'], baseNotesEn: ['e'],
 }).complete, true);
 
-// --- 5. The English copy survives BOTH hand-written field lists ----------------------------------------------
-// fromDatabaseRow and toPublicFragrance each rebuild a product field by field. A field not named in them
-// simply does not exist downstream — which is exactly how the member price nudge shipped invisible (#147),
-// and it was found in production rather than here.
+// --- 5. The English copy survives ALL THREE hand-written field lists ------------------------------------------
+// fromDatabaseRow, normalizeProduct and toPublicFragrance each rebuild a product field by field. A field
+// not named in them simply does not exist downstream — which is exactly how the member price nudge
+// shipped invisible (#147), and it was found in production rather than here.
+//
+// This checks each FUNCTION, not each file. The first version of this guard asked whether the file
+// contained the word, and productCatalogService.js did: fromDatabaseRow named all five and handed them
+// straight to normalizeProduct, which is a second field list in the same file and named none of them.
+// The five columns were filled in the database, readable anonymously, and the page still showed
+// Indonesian — with every guard here green.
 const service = read('services', 'productCatalogService.js');
 const mapper = read('data', 'publicStorefront.js');
-for (const [name, source] of [['fromDatabaseRow', service], ['toPublicFragrance', mapper]]) {
+const bodyOf = (source, declaration, file) => {
+  const start = source.indexOf(declaration);
+  assert.notEqual(start, -1, `${file} no longer declares ${declaration} — this guard is reading nothing`);
+  const next = source.indexOf('\nconst ', start + declaration.length);
+  const end = source.indexOf('\nexport const ', start + declaration.length);
+  const stop = [next, end].filter((at) => at > 0).sort((a, b) => a - b)[0] ?? source.length;
+  return source.slice(start, stop);
+};
+for (const [name, body] of [
+  ['fromDatabaseRow', bodyOf(service, 'const fromDatabaseRow = (row) =>', 'productCatalogService.js')],
+  ['normalizeProduct', bodyOf(service, 'export const normalizeProduct = ', 'productCatalogService.js')],
+  ['toPublicFragrance', bodyOf(mapper, 'descriptionEn: product.descriptionEn', 'publicStorefront.js')],
+]) {
   for (const field of ['descriptionEn', 'notesEn', 'topNotesEn', 'heartNotesEn', 'baseNotesEn']) {
-    assert.ok(source.includes(field), `${name} must carry ${field} — an unnamed field vanishes`);
+    assert.ok(body.includes(field),
+      `${name} must carry ${field} — an unnamed field vanishes at that line, however many mappers above it named the field`);
   }
 }
+// normalizeProduct must not invent an Indonesian fallback either: '' means "not translated yet", and a
+// fallback here would make the two states indistinguishable before productCopyFor ever runs.
+assert.match(service, /descriptionEn: typeof input\.descriptionEn === 'string' \? input\.descriptionEn : '',/,
+  'normalizeProduct carries the English description raw, with no Indonesian fallback');
 // And the public mapper must NOT fall back to Indonesian there: that would make "translated" and
 // "not translated" indistinguishable by the time productCopyFor sees it.
 assert.match(mapper, /descriptionEn: product\.descriptionEn \|\| '',/,
@@ -120,6 +143,20 @@ assert.match(read('pages', 'mobile', 'MobileProductDetailPage.jsx'), /\{copy\.to
 assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid product=\{\{ \.\.\.product, \.\.\.copy \}\} \/>/,
   'the desktop pyramid is handed the resolved notes');
 
+// --- 6b. The immersive story never reaches the English shop -------------------------------------------------
+// One product has a hand-written editorial story — a letter in Indonesian, with no English version — and
+// the product page returns a completely different component for it, above every line that resolves the
+// English copy. An English reader got the whole page in Indonesian with all five columns filled and
+// every other guard green.
+{
+  const page = read('pages', 'PublicProductDetailPage.jsx');
+  assert.match(page, /const productStory = isInternational \? null : \(supabaseStory \|\| getProductStory\(slug\)\);/,
+    'the immersive story is gated on the region — the English shop falls through to the ordinary page, which has English copy');
+  // And the gate has to sit BEFORE the branch that returns the immersive page, or it gates nothing.
+  assert.ok(page.indexOf('const productStory = isInternational') < page.indexOf('return <ImmersiveProductPage'),
+    'the region gate must be resolved before the immersive page is returned');
+}
+
 // --- 7. The migration exists, is not destructive, and keeps the view in step ------------------------------------
 // The public view copies every table column through jsonb_populate_record, but a new column only appears
 // once the view is recreated. Adding the columns without that ships a feature that reads nothing.
@@ -132,4 +169,4 @@ assert.doesNotMatch(migration.split('ROLLBACK')[0], /drop column|delete from|tru
 assert.doesNotMatch(migration, /^\s*(begin|commit)\s*;/mi,
   "no transaction block: Dekito's SQL editor silently refuses scripts that manage their own");
 
-console.log('productCopy selfcheck OK (a product speaks the shop\'s language per field, never blank, and the English copy survives both hand-written mappers)');
+console.log('productCopy selfcheck OK (a product speaks the shop\'s language per field, never blank, and the English copy survives all three hand-written mappers)');

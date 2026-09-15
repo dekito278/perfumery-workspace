@@ -540,6 +540,15 @@ export const normalizeProduct = (input, existingProducts = []) => {
     baseNotes: splitList(input.baseNotes).length ? splitList(input.baseNotes) : ['Base note'],
     mood: input.mood || 'Profil parfum bespoke',
     description: input.description || 'A custom product entry managed from Studio.',
+    // The English copy, carried through WITHOUT an Indonesian fallback: empty means "not translated
+    // yet", and productCopyFor decides what to show. This list is hand-written, so a field that is not
+    // named here stops existing at this line — fromDatabaseRow passed all five in and every one of them
+    // was dropped right here, which is why filling description_en changed nothing on the page.
+    descriptionEn: typeof input.descriptionEn === 'string' ? input.descriptionEn : '',
+    notesEn: typeof input.notesEn === 'string' ? input.notesEn : '',
+    topNotesEn: splitList(input.topNotesEn),
+    heartNotesEn: splitList(input.heartNotesEn),
+    baseNotesEn: splitList(input.baseNotesEn),
     concentration: input.concentration || 'Eau de Parfum',
     stock,
     variants,
