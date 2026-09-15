@@ -1,6 +1,6 @@
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MessageCircle } from 'lucide-react';
@@ -15,6 +15,7 @@ import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { CURATED_LIMIT_DESKTOP, pickCuratedProducts } from '@/utils/curatedProducts.js';
+import useCarouselPosition from '@/hooks/useCarouselPosition.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { LineDivider } from '@/components/line/LineArt.jsx';
@@ -55,7 +56,6 @@ const HomePage = () => {
   const [activeMood, setActiveMood] = useState(0);
   const revealRef = useScrollReveal();
   const { magnetic: handleMagnetic, tilt, resetTilt } = useMicroInteractions();
-  const carouselRef = useRef(null);
 
   const visibleProducts = useMemo(
     () => catalogProducts.filter(isProductVisibleInStorefront),
@@ -74,12 +74,9 @@ const HomePage = () => {
     return () => { active = false; };
   }, []);
 
-  // Carousel scroll
-  const scrollCarousel = (direction) => {
-    if (!carouselRef.current) return;
-    const scrollAmount = carouselRef.current.offsetWidth * 0.6;
-    carouselRef.current.scrollBy({ left: direction === 'right' ? scrollAmount : -scrollAmount, behavior: 'smooth' });
-  };
+  // Declared AFTER collectionProducts: the hook counts them, and reading it above that const throws
+  // "Cannot access before initialization" and kills the page while the build stays green.
+  const carousel = useCarouselPosition(collectionProducts.length);
 
   const siteOrigin = getSiteOrigin();
   const homeCanonical = toAbsoluteUrl('/home', siteOrigin);
@@ -174,8 +171,13 @@ const HomePage = () => {
           </div>
           {collectionProducts.length ? (
             <div className="home-carousel__wrapper">
-              <button className="home-carousel__arrow home-carousel__arrow--left" onClick={() => scrollCarousel('left')} aria-label={t('home.scrollLeft')}>&larr;</button>
-              <div className="home-carousel__track" ref={carouselRef}>
+              <button
+                className="home-carousel__arrow home-carousel__arrow--left"
+                onClick={() => carousel.scrollBy('left')}
+                disabled={carousel.atStart}
+                aria-label={t('home.scrollLeft')}
+              >&larr;</button>
+              <div className="home-carousel__track" ref={carousel.ref}>
                 {collectionProducts.map((product, index) => (
                   <Link
                     key={product.slug || product.id}
@@ -202,7 +204,16 @@ const HomePage = () => {
                   </Link>
                 ))}
               </div>
-              <button className="home-carousel__arrow home-carousel__arrow--right" onClick={() => scrollCarousel('right')} aria-label={t('home.scrollRight')}>&rarr;</button>
+              <button
+                className="home-carousel__arrow home-carousel__arrow--right"
+                onClick={() => carousel.scrollBy('right')}
+                disabled={carousel.atEnd}
+                aria-label={t('home.scrollRight')}
+              >&rarr;</button>
+              {/* aria-live so a screen reader hears the position change it cannot see. */}
+              <p className="home-carousel__counter" aria-live="polite">
+                {t('home.carouselPosition', { current: carousel.index + 1, total: collectionProducts.length })}
+              </p>
             </div>
           ) : (
             <div className="editorial-empty-state editorial-empty-state--inline">

@@ -4951,6 +4951,31 @@ main :is(a, figure, picture, div, span):has(> img) {
   transition: background 0.25s ease, box-shadow 0.25s ease;
 }
 
+.home-carousel__arrow:disabled {
+  /* An arrow that still looks live at the end of the track is a promise the carousel cannot keep.
+     pointer-events stays ON so the cursor still reads "not-allowed" instead of nothing at all. */
+  opacity: 0.28;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.home-carousel__arrow:disabled:hover {
+  background: var(--editorial-paper);
+  color: var(--editorial-charcoal);
+  box-shadow: none;
+}
+
+.home-carousel__counter {
+  margin-top: 14px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+  color: var(--editorial-muted);
+}
+
 .home-carousel__arrow:hover {
   background: var(--editorial-forest);
   color: var(--editorial-paper);
@@ -7935,6 +7960,32 @@ main :is(a, figure, picture, div, span):has(> img) {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
+}
+
+/* The curated selection on the phone home is a shelf, not a grid. A grid of four ends in a half-empty
+   row and says "that is all there is"; a shelf whose next card is visibly cut off says "keep going".
+   The CATALOGUE keeps its grid — that is where someone is comparing, not being shown around.
+   The negative margin lets the first and last card reach the screen edge while the padding keeps them
+   off it while scrolled, which is what makes the cut-off edge read as deliberate. */
+.m-editorial-product-shelf {
+  display: flex;
+  gap: 14px;
+  margin-inline: -16px;
+  padding: 0 16px 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-editorial-product-shelf::-webkit-scrollbar {
+  display: none;
+}
+
+.m-editorial-product-shelf > .m-editorial-product-card {
+  flex: 0 0 62vw;
+  max-width: 260px;
+  scroll-snap-align: start;
 }
 
 .m-editorial-product-card {
