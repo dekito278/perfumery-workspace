@@ -65,6 +65,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // Checkout: the same word is already used on Indonesian receipts and in Indonesian banking.
   'checkout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
   'checkout.subtotal', 'checkout.total', 'mcheckout.auto', 'mcheckout.stepArea',
+  'pay.tab', // the payment tab title is already English on the Indonesian site
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -151,6 +152,10 @@ const LEFTOVERS = [
   'Fragrance pilihan', 'Lihat Koleksi', 'Lihat semua', 'Geser kiri', 'Geser kanan',
   'Koleksi baru sedang disiapkan', 'JELAJAHI', 'Temukan arah', 'Baca Selengkapnya', 'Baca jurnal',
   'Lihat koleksi', 'Lihat Koleksi',
+  // payment + tracking
+  'Lacak pesanan', 'Buka katalog', 'Total bayar', 'Bukti transfer', 'Rekening tujuan',
+  'Menunggu pembayaran', 'Belum ada sesi', 'Mulai dari cart', 'Nomor resi', 'Progres pesanan',
+  'Masukkan nomor order', 'Gunakan nomor order', 'Halaman tidak ditemukan', 'Kembali ke Beranda',
   // cart
   'Tinjau fragrance', 'Keranjang masih kosong', 'RINGKASAN', 'Ringkasan pesanan', 'Punya kode voucher',
   'Setelah voucher', 'Ongkir dihitung', 'Lanjut ke Checkout', 'Tambah Produk Dulu', 'Lanjut Belanja',
@@ -172,6 +177,9 @@ const LEFTOVERS = [
   'Perfumer bekerja', 'Atelier Solivagant',
 ];
 for (const file of [
+  ['pages', 'PaymentPage.jsx'],
+  ['pages', 'PublicTrackingPage.jsx'],
+  ['pages', 'NotFoundPage.jsx'],
   ['pages', 'CheckoutPage.jsx'],
   ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'],
@@ -232,6 +240,34 @@ for (const file of [
     `${file.join('/')} renders a message KEY instead of translating it: ${rendered.join(', ')}`);
 }
 
+// The strongest rule of the three, and the one that needs no list at all: on a fully translated page,
+// any run of TEXT between tags that is not an expression is untranslated copy — in whichever language it
+// happens to be. 20 characters is the floor; below that it is usually punctuation or a unit.
+//
+// A sabotage put the whole 404 body back as plain text and walked past the phrase list, because no list
+// of Indonesian sentences can contain every sentence Dekito might write.
+const PROSE_ALLOWED = new Set([
+  'RAW MATERIAL HIGHLIGHTS', // a perfumery heading, printed in English on the Indonesian page already
+]);
+for (const file of [
+  ['pages', 'PaymentPage.jsx'], ['pages', 'PublicTrackingPage.jsx'], ['pages', 'NotFoundPage.jsx'],
+  ['pages', 'CheckoutPage.jsx'], ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
+  ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
+  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
+  ['pages', 'WelcomePage.jsx'],
+]) {
+  const source = read(...file);
+  const prose = (source.match(/>([^<>{}\n]{20,})</g) || [])
+    .map((hit) => hit.slice(1, -1).trim())
+    // Fragments of a ternary that happen to span a `>` are code, not text: they carry ?, : or an
+    // identifier path. Text a browser prints never does.
+    .filter((hit) => hit && !/^[\s&;a-z:?.]*$/.test(hit) && !/[?:]|\w\?\.|\w\.\w/.test(hit) && !PROSE_ALLOWED.has(hit));
+  assert.deepEqual(prose, [],
+    `${file.join('/')} renders untranslated prose: ${prose.join(' | ')}`);
+}
+
 // A list of Indonesian phrases can never be complete — a sabotage put `label: 'Nama'` back into the
 // checkout steps and walked past it, because no list contains every word Dekito might have written.
 //
@@ -243,6 +279,9 @@ for (const file of [
   ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'],
   ['pages', 'mobile', 'MobileCartPage.jsx'],
+  ['pages', 'PaymentPage.jsx'],
+  ['pages', 'PublicTrackingPage.jsx'],
+  ['pages', 'NotFoundPage.jsx'],
 ]) {
   const source = read(...file);
   const literals = source.match(/(?:label|title|description|action|placeholder|aria-label)\s*[:=]\s*["'][A-ZÀ-ÿ][^"']{1,60}["']/g) || [];

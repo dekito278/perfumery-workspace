@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslate } from '@/hooks/useTranslate.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ExternalLink, Search } from 'lucide-react';
@@ -9,32 +10,35 @@ import { buildCourierTrackingSearchUrl, getPublicTrackingOrder } from '@/service
 import { formatDate } from '@/utils/formatting.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
+// Keys, not sentences. These are module-level constants — evaluated once, before any component exists —
+// so they cannot call t(). Holding keys here and translating at render time is what lets the same order
+// status read in whichever shop the buyer chose.
 const steps = [
-  { key: 'pending_payment', label: 'Order diterima' },
-  { key: 'paid', label: 'Pembayaran dikonfirmasi' },
-  { key: 'processing', label: 'Sedang disiapkan' },
-  { key: 'packing', label: 'Dikemas' },
-  { key: 'shipped', label: 'Dikirim' },
-  { key: 'delivered', label: 'Diterima' },
+  { key: 'pending_payment', labelKey: 'track.stepReceived' },
+  { key: 'paid', labelKey: 'track.stepPaid' },
+  { key: 'processing', labelKey: 'track.stepPreparing' },
+  { key: 'packing', labelKey: 'track.stepPacked' },
+  { key: 'shipped', labelKey: 'track.stepShipped' },
+  { key: 'delivered', labelKey: 'track.stepDelivered' },
 ];
 
-const statusLabels = {
-  pending: 'Menunggu proses',
-  pending_payment: 'Menunggu pembayaran',
-  paid: 'Pembayaran diterima',
-  processing: 'Sedang disiapkan',
-  packing: 'Dikemas',
-  shipped: 'Dikirim',
-  delivered: 'Diterima',
-  cancelled: 'Dibatalkan',
-  unpaid: 'Belum dibayar',
-  awaiting_payment: 'Menunggu pembayaran',
-  confirmed: 'Terkonfirmasi',
+const statusKeys = {
+  pending: 'track.stepQueued',
+  pending_payment: 'track.awaitingPayment',
+  paid: 'track.paid',
+  processing: 'track.stepPreparing',
+  packing: 'track.stepPacked',
+  shipped: 'track.stepShipped',
+  delivered: 'track.stepDelivered',
+  cancelled: 'track.cancelled',
+  unpaid: 'track.unpaid',
+  awaiting_payment: 'track.awaitingPayment',
+  confirmed: 'track.confirmed',
 };
 
-const formatStatus = (value, fallback = '-') => {
+const formatStatus = (value, t, fallback = '-') => {
   if (!value) return fallback;
-  return statusLabels[value] || String(value).replace(/_/g, ' ');
+  return statusKeys[value] ? t(statusKeys[value]) : String(value).replace(/_/g, ' ');
 };
 
 const completedStepCount = (order) => {
@@ -47,16 +51,17 @@ const completedStepCount = (order) => {
   return 1;
 };
 
-const describeOrder = (order) => {
-  if (!order) return 'Masukkan nomor order atau resi untuk melihat progres pesanan.';
-  if (order.deliveredAt || order.shipmentStatus === 'delivered') return 'Paket sudah diterima. Terima kasih sudah memesan SOLIVAGANT.';
-  if (order.shippedAt || order.shipmentStatus === 'shipped') return 'Paket sudah dikirim. Resi tersedia di bawah.';
-  if (order.status === 'processing' || order.shipmentStatus === 'packing') return 'Pesanan sedang disiapkan atelier.';
-  if (order.paymentStatus === 'paid' || order.status === 'paid') return 'Pembayaran sudah dikonfirmasi dan pesanan masuk antrean proses.';
-  return 'Pesanan tercatat. Kami menunggu konfirmasi pembayaran.';
+const describeOrderKey = (order) => {
+  if (!order) return 'track.lead';
+  if (order.deliveredAt || order.shipmentStatus === 'delivered') return 'track.delivered';
+  if (order.shippedAt || order.shipmentStatus === 'shipped') return 'track.shipped';
+  if (order.status === 'processing' || order.shipmentStatus === 'packing') return 'track.preparing';
+  if (order.paymentStatus === 'paid' || order.status === 'paid') return 'track.queued';
+  return 'track.recorded';
 };
 
 const PublicTrackingPage = () => {
+  const { t } = useTranslate();
   const revealRef = useScrollReveal();
   const { code = '' } = useParams();
   const navigate = useNavigate();
@@ -71,7 +76,10 @@ const PublicTrackingPage = () => {
   const completeCount = useMemo(() => (isCancelled ? 0 : completedStepCount(order)), [order, isCancelled]);
   const courierUrl = order?.trackingUrl || buildCourierTrackingSearchUrl(order || {});
 
-  const loadOrder = async (value) => {
+  // useCallback with [t]: loadOrder writes a translated error message, so it changes when the shop's
+  // language does. Left as a plain function it became a missing effect dependency — the same
+  // exhaustive-deps warning that hid a dead code path in #159.
+  const loadOrder = useCallback(async (value) => {
     const normalized = String(value || '').trim();
     if (!normalized) return;
     setLoading(true);
@@ -81,22 +89,22 @@ const PublicTrackingPage = () => {
       const result = await getPublicTrackingOrder(normalized);
       setOrder(result);
       if (!result) {
-        setError('Order belum ditemukan. Pastikan nomor order atau resi sudah benar.');
+        setError(t("track.notFoundBody"));
       }
     } catch (err) {
       setOrder(null);
-      setError(publicErrorMessage(err, 'Gagal memuat tracking order.'));
+      setError(publicErrorMessage(err, t("track.loadFailed")));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (code) {
       setLookup(code);
       loadOrder(code);
     }
-  }, [code]);
+  }, [code, loadOrder]);
 
   const submitLookup = (event) => {
     event.preventDefault();
@@ -113,8 +121,8 @@ const PublicTrackingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Lacak Pesanan - SOLIVAGANT</title>
-        <meta name="description" content="Lacak status pesanan SOLIVAGANT." />
+        <title>{t("track.tab")}</title>
+        <meta name="description" content={t("track.meta")} />
         <meta name="robots" content="noindex,follow" />
       </Helmet>
 
@@ -122,9 +130,9 @@ const PublicTrackingPage = () => {
         <PublicHeader />
 
         <section className="cart-hero">
-          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">LACAK PESANAN</p>
-          <h1 className="hero-animate-text hero-animate-text--d2">Lacak Pesanan</h1>
-          <p className="hero-animate-text hero-animate-text--d3">{describeOrder(order)}</p>
+          <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t("track.eyebrow")}</p>
+          <h1 className="hero-animate-text hero-animate-text--d2">{t("track.title")}</h1>
+          <p className="hero-animate-text hero-animate-text--d3">{t(describeOrderKey(order))}</p>
         </section>
 
         <section className="tracking-content" data-reveal>
@@ -134,12 +142,12 @@ const PublicTrackingPage = () => {
               type="text"
               value={lookup}
               onChange={(event) => setLookup(event.target.value)}
-              placeholder="Nomor order (DKT-XXXXX) atau nomor resi"
-              aria-label="Nomor order atau nomor resi"
+              placeholder={t("track.placeholderLong")}
+              aria-label={t("track.placeholderShort")}
             />
             <button type="submit" disabled={loading || !lookup.trim()}>
               <Search className="h-4 w-4" />
-              {loading ? 'Mencari...' : 'Lacak'}
+              {loading ? t("track.searching") : t('track.submit')}
             </button>
           </form>
 
@@ -148,7 +156,7 @@ const PublicTrackingPage = () => {
             {order ? (
               <>
                 <div className="tracking-card__header">
-                  <p className="editorial-eyebrow">STATUS PESANAN</p>
+                  <p className="editorial-eyebrow">{t("track.statusEyebrow")}</p>
                   <h2>{order.orderNumber}</h2>
                   <span className="tracking-card__customer">{order.customerName}</span>
                 </div>
@@ -162,7 +170,7 @@ const PublicTrackingPage = () => {
                   </div>
                 ) : null}
 
-                <ol className="tracking-timeline" aria-label="Progres pesanan" aria-hidden={isCancelled ? 'true' : undefined}>
+                <ol className="tracking-timeline" aria-label={t("track.progress")} aria-hidden={isCancelled ? 'true' : undefined}>
                   {steps.map((item, index) => (
                     <li
                       key={item.key}
@@ -170,20 +178,20 @@ const PublicTrackingPage = () => {
                       aria-current={index === completeCount - 1 ? 'step' : undefined}
                     >
                       <span className="tracking-step__dot" aria-hidden="true" />
-                      <span className="tracking-step__label">{item.label}{index === completeCount - 1 ? ' (saat ini)' : ''}</span>
+                      <span className="tracking-step__label">{t(item.labelKey)}{index === completeCount - 1 ? t('track.current') : ''}</span>
                     </li>
                   ))}
                 </ol>
 
                 <div className="tracking-details">
                   <div className="tracking-detail-row">
-                    <span>Status order</span><strong>{formatStatus(order.status)}</strong>
+                    <span>{t("track.statusTitle")}</span><strong>{formatStatus(order.status, t)}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Pembayaran</span><strong>{formatStatus(order.paymentStatus)}</strong>
+                    <span>{t('track.payment')}</span><strong>{formatStatus(order.paymentStatus, t)}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Pengiriman</span><strong>{formatStatus(order.shipmentStatus, 'Belum dikirim')}</strong>
+                    <span>{t('track.shipment')}</span><strong>{formatStatus(order.shipmentStatus, t, t('track.notShipped'))}</strong>
                   </div>
                   <div className="tracking-detail-row">
                     <span>Item</span><strong>{order.itemCount || '-'}</strong>
@@ -192,13 +200,13 @@ const PublicTrackingPage = () => {
                     <span>Dibuat</span><strong>{order.createdAt ? formatDate(order.createdAt) : '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Update terakhir</span><strong>{order.updatedAt ? formatDate(order.updatedAt) : '-'}</strong>
+                    <span>{t("track.lastUpdate")}</span><strong>{order.updatedAt ? formatDate(order.updatedAt) : '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Kurir</span><strong>{order.courierName || 'Belum tersedia'}</strong>
+                    <span>Kurir</span><strong>{order.courierName || t("track.notAvailable")}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Nomor resi</span><strong>{order.trackingNumber || 'Belum tersedia'}</strong>
+                    <span>{t("track.waybill")}</span><strong>{order.trackingNumber || t("track.notAvailable")}</strong>
                   </div>
                 </div>
 
@@ -210,9 +218,9 @@ const PublicTrackingPage = () => {
               </>
             ) : (
               <div className="tracking-card__empty">
-                <p className="editorial-eyebrow">{searched ? 'TIDAK DITEMUKAN' : 'CARI PESANAN'}</p>
-                <h2>{searched ? 'Order belum ditemukan' : 'Masukkan nomor order'}</h2>
-                <p>{searched ? 'Pastikan nomor order atau resi sudah benar.' : 'Gunakan nomor order dari halaman pembayaran atau nomor resi.'}</p>
+                <p className="editorial-eyebrow">{searched ? t("track.notFoundEyebrow") : t("track.searchEyebrow")}</p>
+                <h2>{searched ? t("track.notFoundTitle") : t("track.enterNumber")}</h2>
+                <p>{searched ? t("track.checkNumber") : t("track.whereNumber")}</p>
               </div>
             )}
             {error ? <p className="checkout-notice is-error" style={{ marginTop: '16px' }}>{error}</p> : null}

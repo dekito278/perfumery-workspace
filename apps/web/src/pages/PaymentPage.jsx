@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -37,45 +38,48 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
-const paymentStatusLabels = {
-  unpaid: 'Belum dibayar',
-  pending: 'Menunggu pembayaran',
-  paid: 'Pembayaran diterima',
-  failed: 'Pembayaran gagal',
-  expired: 'Link kedaluwarsa',
-  refunded: 'Refund',
+// Keys, not sentences. These are module-level constants, evaluated before any component exists, so they
+// cannot call t(). They hold keys and the components translate them — which is also what lets one order's
+// status read in whichever shop the buyer chose.
+const paymentStatusKeys = {
+  unpaid: 'pay.unpaid',
+  pending: 'pay.awaiting',
+  paid: 'pay.received',
+  failed: 'pay.failed',
+  expired: 'pay.linkExpired',
+  refunded: 'pay.refunded',
 };
 
 const paymentStatusTone = {
   unpaid: {
     className: 'border-amber-200 bg-amber-50 text-amber-900',
-    title: 'Menunggu pembayaran',
-    description: 'Order sudah dibuat. Selesaikan pembayaran sebelum sesi kedaluwarsa.',
+    titleKey: 'pay.awaiting',
+    bodyKey: 'pay.createdBody',
   },
   pending: {
     className: 'border-amber-200 bg-amber-50 text-amber-900',
-    title: 'Menunggu pembayaran',
-    description: 'Order sudah dibuat. Selesaikan pembayaran sebelum sesi kedaluwarsa.',
+    titleKey: 'pay.awaiting',
+    bodyKey: 'pay.createdBody',
   },
   paid: {
     className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    title: 'Pembayaran diterima',
-    description: 'Terima kasih. Order siap masuk proses packing setelah admin mengecek fulfillment.',
+    titleKey: 'pay.received',
+    bodyKey: 'pay.paidBody',
   },
   expired: {
     className: 'border-rose-200 bg-rose-50 text-rose-800',
-    title: 'Link pembayaran kedaluwarsa',
-    description: 'Cek order untuk melihat status terbaru atau buat pembayaran baru jika perlu.',
+    titleKey: 'pay.expiredTitle',
+    bodyKey: 'pay.expiredBody',
   },
   failed: {
     className: 'border-rose-200 bg-rose-50 text-rose-800',
-    title: 'Pembayaran belum berhasil',
-    description: 'Kamu bisa buka ulang pembayaran atau kembali ke cart untuk mencoba lagi.',
+    titleKey: 'pay.failedTitle',
+    bodyKey: 'pay.failedBody',
   },
   refunded: {
     className: 'border-slate-200 bg-slate-50 text-slate-700',
-    title: 'Pembayaran refund',
-    description: 'Status refund sudah tercatat di order.',
+    titleKey: 'pay.refundTitle',
+    bodyKey: 'pay.refundBody',
   },
 };
 
@@ -141,6 +145,7 @@ const buildDokuSessionFromCheckout = (order, checkout) => ({
 });
 
 const PaymentTotalBreakdown = ({ session, compact = false }) => {
+  const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(session);
   const shippingFee = Number(session.shippingFee || 0);
   const shippingSummary = getOrderShippingSummary(session);
@@ -156,7 +161,7 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
   return (
     <div className={`mt-4 rounded-2xl border border-editorial-stone/10 bg-white/80 ${compact ? 'p-3 text-xs' : 'p-4 text-sm'} font-bold text-editorial-charcoal`}>
       <div className="flex justify-between gap-3">
-        <span>Subtotal produk</span>
+        <span>{t("pay.subtotalProducts")}</span>
         <span>{formatTotal(productsSubtotal)}</span>
       </div>
       {voucherSnapshot ? (
@@ -166,20 +171,20 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
             <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
           </div>
           <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-            <span>Subtotal setelah voucher</span>
+            <span>{t("pay.subtotalAfterVoucher")}</span>
             <span>{formatTotal(displayedSubtotalAfterVoucher)}</span>
           </div>
         </>
       ) : null}
       {shouldShowShipping ? (
         <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-          <span>{shippingPromotionLabel ? 'Ongkir setelah promo' : 'Ongkir'}</span>
+          <span>{shippingPromotionLabel ? t("pay.shippingAfterPromo") : 'Ongkir'}</span>
           <span>{formatTotal(shippingFee)}</span>
         </div>
       ) : null}
       {shippingPromotionLabel ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
       <div className="mt-3 flex justify-between gap-3 border-t border-editorial-stone/10 pt-3 text-editorial-charcoal">
-        <span>Total bayar</span>
+        <span>{t("pay.totalDue")}</span>
         <span>{formatTotal(session.amount)}</span>
       </div>
     </div>
@@ -189,20 +194,22 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
 // Shared success state. A paid order must never be shown a live payment panel again — the DOKU return
 // URL lands back here with the order already paid, and the iframe invited a second payment for the same
 // invoice (audit round 7).
-const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, method }) => (
+const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, method }) => {
+  const { t } = useTranslate();
+  return (
   <section className={compact ? 'mobile-card overflow-hidden p-0' : 'overflow-hidden rounded-[28px] border border-editorial-stone/15 bg-white shadow-sm'}>
     <div className="p-6 text-center sm:p-10">
       <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700">
         <CheckCircle2 className="h-7 w-7" />
       </span>
-      <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>Pembayaran diterima</h1>
+      <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>{t("pay.received")}</h1>
       <p className="mt-2 text-sm font-semibold leading-relaxed text-[#54604d]">
         Terima kasih. Pembayaran{method ? ` ${method}` : ''} untuk order {orderNumber} sudah masuk. Pesanan akan diproses.
       </p>
       <div className="mt-5 flex justify-center gap-2">
         {customerCode ? (
           <Link to={compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
-            Lacak pesanan
+            {t('track.title')}
           </Link>
         ) : null}
         <Link to={compact ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
@@ -212,8 +219,10 @@ const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, metho
     </div>
   </section>
 );
+};
 
 const PaymentFrame = ({ session, compact = false }) => {
+  const { t } = useTranslate();
   const [frameStatus, setFrameStatus] = useState('loading');
 
   useEffect(() => {
@@ -239,20 +248,20 @@ const PaymentFrame = ({ session, compact = false }) => {
   const statusCopy = {
     loading: {
       icon: <Loader2 className="h-4 w-4 animate-spin" />,
-      title: 'Memuat panel pembayaran',
-      description: 'Sebentar ya, Solivagant sedang membuka sesi pembayaran aman.',
+      title: t("pay.loadingPanel"),
+      description: t("pay.loadingPanelBody"),
       className: 'border-editorial-stone/10 bg-editorial-ivory text-editorial-charcoal',
     },
     ready: {
       icon: <CheckCircle2 className="h-4 w-4" />,
-      title: 'Panel pembayaran siap',
-      description: 'Lanjutkan pembayaran di panel di bawah ini.',
+      title: t("pay.panelReady"),
+      description: t("pay.panelReadyBody"),
       className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     },
     failed: {
       icon: <AlertCircle className="h-4 w-4" />,
-      title: 'Panel pembayaran belum termuat',
-      description: 'Browser bisa memblokir iframe pembayaran. Gunakan tombol cadangan untuk membukanya di tab baru.',
+      title: t("pay.panelBlocked"),
+      description: t("pay.panelBlockedBody"),
       className: 'border-amber-200 bg-amber-50 text-amber-800',
     },
   }[frameStatus];
@@ -263,7 +272,7 @@ const PaymentFrame = ({ session, compact = false }) => {
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     const copied = await copyTextToClipboard(customerCode);
-    copied ? toast.success(`${customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
+    copied ? toast.success(`${customerCode} disalin`) : toast.error(t("pay.copyFailed"));
   };
 
   return (
@@ -271,8 +280,8 @@ const PaymentFrame = ({ session, compact = false }) => {
       <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">Checkout aman</div>
-            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.secureCheckout")}</div>
+            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
               Order tersimpan. Selesaikan pembayaran di panel ini tanpa meninggalkan nuansa Solivagant.
             </p>
@@ -297,7 +306,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           {session.paymentStatus ? (
             <div className="rounded-2xl bg-white/80 px-4 py-3">
               <div className="text-[10px] uppercase text-editorial-muted">Status</div>
-              <div className="mt-1 truncate">{paymentStatusLabels[session.paymentStatus] || session.paymentStatus}</div>
+              <div className="mt-1 truncate">{paymentStatusKeys[session.paymentStatus] ? t(paymentStatusKeys[session.paymentStatus]) : session.paymentStatus}</div>
             </div>
           ) : null}
         </div>
@@ -305,13 +314,13 @@ const PaymentFrame = ({ session, compact = false }) => {
         <div className={`mt-4 rounded-2xl border px-4 py-3 ${currentPaymentTone.className}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="text-xs font-bold">{currentPaymentTone.title}</div>
-              <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{currentPaymentTone.description}</p>
+              <div className="text-xs font-bold">{t(currentPaymentTone.titleKey)}</div>
+              <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{t(currentPaymentTone.bodyKey)}</p>
               {expiresAtLabel ? <p className="mt-2 text-[11px] font-bold uppercase opacity-80">Batas bayar: {expiresAtLabel}</p> : null}
             </div>
             {customerCode ? (
               <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-editorial-charcoal">
-                Lacak pesanan
+                {t('track.title')}
               </Link>
             ) : null}
           </div>
@@ -321,15 +330,15 @@ const PaymentFrame = ({ session, compact = false }) => {
         <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${statusCopy.className}`}>
           <span className="mt-0.5 shrink-0">{statusCopy.icon}</span>
           <div>
-            <div className="text-xs font-bold">{statusCopy.title}</div>
-            <p className="mt-1 text-xs font-semibold leading-relaxed opacity-80">{statusCopy.description}</p>
+            <div className="text-xs font-bold">{t(statusCopy.titleKey)}</div>
+            <p className="mt-1 text-xs font-semibold leading-relaxed opacity-80">{t(statusCopy.bodyKey)}</p>
           </div>
         </div>
       </div>
       <div className={compact ? 'h-[68dvh] bg-white' : 'h-[74dvh] bg-white'}>
         <iframe
           src={session.paymentUrl}
-          title="Panel pembayaran"
+          title={t("pay.panel")}
           className="h-full w-full border-0"
           allow="payment *; clipboard-write"
           sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
@@ -340,9 +349,9 @@ const PaymentFrame = ({ session, compact = false }) => {
       {customerCode ? (
         <div className="flex items-center justify-between gap-3 border-t border-editorial-stone/10 bg-white px-4 py-3">
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Kode customer</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.customerCode")}</span>
             <div className="select-text text-lg font-bold tracking-[0.12em] text-editorial-charcoal">{customerCode}</div>
-            <p className="text-[11px] font-semibold text-[#54604d]">Simpan untuk cek order &amp; belanja berikutnya.</p>
+            <p className="text-[11px] font-semibold text-[#54604d]">{t("pay.saveCode")}</p>
           </div>
           <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
             <Copy className="h-4 w-4" />
@@ -357,7 +366,7 @@ const PaymentFrame = ({ session, compact = false }) => {
         <div className="flex flex-wrap gap-2">
           {customerCode ? (
             <Link to={orderTrackingPath} className="inline-flex h-10 items-center rounded-2xl border bg-white px-4 text-sm font-bold text-editorial-charcoal">
-              Lacak pesanan
+              {t('track.title')}
             </Link>
           ) : null}
           <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.open(session.paymentUrl, '_blank', 'noopener,noreferrer')}>
@@ -375,6 +384,7 @@ const EWALLET_HINTS = ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja', 'm-bankin
 // Native QRIS — renders the DOKU QR string in our own UI (no DOKU hosted page). Payment is confirmed
 // by the DOKU notification webhook flipping the order to paid; we poll the public order for that.
 const QrisPanel = ({ session, compact = false, onPaid }) => {
+  const { t } = useTranslate();
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [remainingMs, setRemainingMs] = useState(() => {
     const exp = session.paymentExpiresAt ? new Date(session.paymentExpiresAt).getTime() : 0;
@@ -426,7 +436,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     const copied = await copyTextToClipboard(customerCode);
-    copied ? toast.success(`${customerCode} disalin`) : toast.error('Kode belum bisa disalin. Tekan lama kode lalu salin manual.');
+    copied ? toast.success(`${customerCode} disalin`) : toast.error(t("pay.copyFailed"));
   };
 
   if (paid) {
@@ -438,8 +448,8 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
       <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">Pembayaran QRIS</div>
-            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.qris")}</div>
+            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
               Scan QR di bawah pakai aplikasi e-wallet atau m-banking. Pembayaran otomatis terkonfirmasi tanpa meninggalkan aplikasi.
             </p>
@@ -469,7 +479,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
         {session.paymentExpiresAt ? (
           <div className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${expired ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
             <Clock3 className="h-4 w-4" />
-            {expired ? 'QR kedaluwarsa — muat ulang untuk buat baru' : `Selesaikan dalam ${pad(mins)}:${pad(secs)}`}
+            {expired ? t("pay.qrExpired") : `Selesaikan dalam ${pad(mins)}:${pad(secs)}`}
           </div>
         ) : null}
 
@@ -480,15 +490,15 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
           </div>
           <div className="mt-3 grid aspect-square w-full place-items-center rounded-2xl bg-white">
             {qrDataUrl ? (
-              <img src={qrDataUrl} alt="Kode QRIS pembayaran" className="h-full w-full rounded-xl object-contain" />
+              <img src={qrDataUrl} alt={t("pay.qrisCode")} className="h-full w-full rounded-xl object-contain" />
             ) : (
               <div className="flex flex-col items-center gap-2 text-editorial-muted">
                 <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-xs font-semibold">Menyiapkan QR…</span>
+                <span className="text-xs font-semibold">{t("pay.preparingQr")}</span>
               </div>
             )}
           </div>
-          <div className="mt-3 text-[10px] font-bold uppercase text-editorial-muted">Total bayar</div>
+          <div className="mt-3 text-[10px] font-bold uppercase text-editorial-muted">{t("pay.totalDue")}</div>
           <div className="text-2xl font-bold text-[#c0392b]">{formatTotal(session.amount)}</div>
         </div>
 
@@ -505,13 +515,13 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
 
         <div className="mx-auto flex max-w-[360px] items-center justify-center gap-2 text-xs font-bold text-editorial-muted">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Menunggu pembayaran…
+          {t('pay.awaitingEllipsis')}
         </div>
 
         {customerCode ? (
           <div className="mx-auto flex w-full max-w-[360px] items-center justify-between gap-3 rounded-2xl border border-editorial-stone/10 bg-white px-4 py-3">
             <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Kode customer</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.customerCode")}</span>
               <div className="select-text text-lg font-bold tracking-[0.12em] text-editorial-charcoal">{customerCode}</div>
             </div>
             <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-editorial-ivory gap-2" onClick={copyCustomerCode}>
@@ -526,6 +536,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
 };
 
 const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => {
+  const { t } = useTranslate();
   const [proofFile, setProofFile] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const customerCode = session.customerCode || '';
@@ -553,7 +564,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
 
   const submitProof = async () => {
     if (!proofFile) {
-      toast.error('Pilih file bukti transfer dulu');
+      toast.error(t("pay.pickFileFirst"));
       return;
     }
 
@@ -588,9 +599,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         body: JSON.stringify({ orderNumber }),
       }).catch(() => {});
       setProofFile(null);
-      toast.success('Bukti transfer terkirim. Admin akan cek pembayaran.');
+      toast.success(t("pay.proofSent"));
     } catch (error) {
-      toast.error(error.message || 'Gagal upload bukti transfer');
+      toast.error(error.message || t("pay.proofFailed"));
     } finally {
       setUploadingProof(false);
     }
@@ -601,8 +612,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
       <div className={compact ? 'border-b border-editorial-stone/10 bg-editorial-ivory p-4' : 'border-b border-editorial-stone/10 bg-editorial-ivory p-5'}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">Transfer manual</div>
-            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>Pembayaran Solivagant</h1>
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.manualTransfer")}</div>
+            <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
               Transfer sesuai total bayar ke rekening di bawah, lalu wajib upload bukti transfer di halaman ini. Order baru masuk pengecekan admin setelah bukti transfer terkirim.
             </p>
@@ -623,7 +634,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Total transfer</div>
+                <div className="text-[10px] uppercase text-editorial-muted">{t("pay.transferTotal")}</div>
                 <div className="mt-1">{formatTotal(session.amount)}</div>
               </div>
             </div>
@@ -637,7 +648,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <div className={compact ? 'rounded-2xl border border-editorial-stone/15 bg-editorial-ivory p-4' : 'rounded-2xl border border-editorial-stone/15 bg-editorial-ivory p-5 lg:col-span-2'}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Kode customer</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.customerCode")}</div>
                 <div className={compact ? 'mt-1 select-text text-2xl font-bold tracking-[0.12em] text-editorial-charcoal' : 'mt-1 select-text text-3xl font-bold tracking-[0.16em] text-editorial-charcoal'}>
                   {customerCode}
                 </div>
@@ -645,7 +656,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                   Salin dan simpan kode ini. Kode dipakai untuk cek order dan belanja berikutnya tanpa isi ulang data.
                 </p>
               </div>
-              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-white gap-2" onClick={() => copyValue('Kode customer', customerCode)}>
+              <Button type="button" variant="outline" className="shrink-0 rounded-2xl bg-white gap-2" onClick={() => copyValue(t("pay.customerCode"), customerCode)}>
                 <Copy className="h-4 w-4" />
                 Salin kode
               </Button>
@@ -654,25 +665,25 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         ) : null}
 
         <div className="rounded-2xl border border-editorial-stone/10 bg-[#fbfaf7] p-4">
-          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Rekening tujuan</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.bankAccount")}</div>
           <div className="mt-3 grid gap-3">
             <div className="rounded-2xl bg-white p-4">
               <div className="text-xs font-bold uppercase text-muted-foreground">Bank</div>
               <div className="mt-1 text-xl font-bold text-editorial-charcoal">{transfer.bankName}</div>
             </div>
-            <button type="button" onClick={() => copyValue('Nomor rekening', transfer.accountNumber)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+            <button type="button" onClick={() => copyValue(t("pay.accountNumber"), transfer.accountNumber)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Nomor rekening</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.accountNumber")}</div>
                   <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-editorial-charcoal">{transfer.accountNumber}</div>
                 </div>
                 <Copy className="h-4 w-4 text-editorial-charcoal" />
               </div>
             </button>
-            <button type="button" onClick={() => copyValue('Nama rekening', transfer.accountName)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+            <button type="button" onClick={() => copyValue(t("pay.accountNameLabel"), transfer.accountName)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase text-muted-foreground">Atas nama</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.accountName")}</div>
                   <div className="mt-1 text-lg font-bold text-editorial-charcoal">{transfer.accountName}</div>
                 </div>
                 <Copy className="h-4 w-4 text-editorial-charcoal" />
@@ -684,31 +695,31 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
           <div className="text-xs font-bold uppercase">Instruksi</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
-            <li>1. Transfer tepat sebesar {formatTotal(session.amount)}.</li>
-            <li>2. Salin dan simpan kode customer untuk cek status order.</li>
-            <li>3. Upload bukti transfer lewat form di bawah. Ini wajib untuk transfer manual.</li>
-            <li>4. Admin akan cek bukti transfer dan memperbarui status pembayaran setelah valid.</li>
+            <li>{t('pay.step1', { amount: formatTotal(session.amount) })}</li>
+            <li>{t('pay.step2')}</li>
+            <li>{t('pay.step3')}</li>
+            <li>{t('pay.step4')}</li>
           </ol>
-          <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue('Total transfer', Number(session.amount || 0))}>
+          <Button type="button" className="mt-4 w-full rounded-2xl gap-2" onClick={() => copyValue(t("pay.transferTotal"), Number(session.amount || 0))}>
             <Copy className="h-4 w-4" />
             Salin total transfer
           </Button>
           {customerCode && hasSubmittedProof ? (
             <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-editorial-stone/15 bg-white px-4 text-sm font-bold text-editorial-charcoal">
-              Lacak pesanan
+              {t('track.title')}
             </Link>
           ) : null}
           {customerCode && needsProofUpload ? (
             <div className="mt-2 flex items-start gap-2 rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              Bukti transfer wajib dikirim dulu. Setelah upload berhasil, kamu bisa lanjut ke tracking order.
+              {t('pay.proofBeforeTracking')}
             </div>
           ) : null}
         </div>
 
         {compact ? (
           <div className="rounded-2xl border border-editorial-stone/10 bg-white p-4">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">Ringkasan order</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.orderSummary")}</div>
             <div className="mt-3 grid gap-2 text-xs font-bold text-editorial-charcoal">
               <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
                 <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
@@ -730,19 +741,19 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-xs font-bold uppercase text-editorial-muted">Bukti transfer</div>
+                <div className="text-xs font-bold uppercase text-editorial-muted">{t("pay.proof")}</div>
                 {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">Wajib</span> : null}
               </div>
               <p className="mt-1 text-sm font-semibold leading-relaxed text-editorial-charcoal">
                 {proofStatus === 'rejected'
-                  ? 'Bukti sebelumnya ditolak. Upload ulang bukti transfer yang jelas.'
+                  ? t("pay.proofRejected")
                   : hasSubmittedProof
-                  ? 'Bukti transfer sudah terkirim. Tunggu admin mengecek pembayaran.'
-                  : 'Bukti transfer wajib diupload agar pembayaran manual bisa dicek dan order diproses.'}
+                  ? t("pay.proofWaiting")
+                  : t("pay.proofRequired")}
               </p>
               {proofStatus === 'rejected' && session.paymentProofNotes ? (
                 <div className="mt-3 rounded-2xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold leading-relaxed text-rose-800">
-                  <span className="block text-[10px] font-bold uppercase text-rose-700">Alasan admin</span>
+                  <span className="block text-[10px] font-bold uppercase text-rose-700">{t("pay.adminReason")}</span>
                   {session.paymentProofNotes}
                 </div>
               ) : null}
@@ -761,7 +772,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
 
           <div className="mt-4 grid gap-3">
             <label className="block">
-              <span className="sr-only">Upload bukti transfer</span>
+              <span className="sr-only">{t("pay.uploadProof")}</span>
               <input
                 id="mobile-payment-proof-input"
                 type="file"
@@ -780,7 +791,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             ) : null}
             <Button type="button" className="h-11 rounded-2xl gap-2" onClick={submitProof} disabled={uploadingProof || !proofFile}>
               {uploadingProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {hasSubmittedProof ? 'Upload ulang bukti' : 'Upload bukti transfer'}
+              {hasSubmittedProof ? t("pay.reuploadProof") : t("pay.uploadProof")}
             </Button>
             <p className="text-[11px] font-semibold leading-relaxed text-[#6b7280]">
               Format JPG, PNG, WebP, atau PDF. Maksimal 5 MB.
@@ -792,29 +803,31 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   );
 };
 
-const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading = false, onRefresh }) => (
+const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading = false, onRefresh }) => {
+  const { t } = useTranslate();
+  return (
   <section className={isMobile ? 'mobile-card p-5 text-center' : 'mx-auto max-w-xl rounded-[28px] border bg-white p-8 text-center shadow-sm'}>
     <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-editorial-ivory text-editorial-charcoal">
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : orderNumber ? <CheckCircle2 className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
     </span>
     <h1 className={isMobile ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>
       {orderNumber
-        ? (orderFound === false ? 'Order tidak ditemukan' : 'Pembayaran sedang diproses')
-        : 'Belum ada sesi pembayaran'}
+        ? (orderFound === false ? t("pay.orderNotFound") : t("pay.processing"))
+        : t("pay.noSession")}
     </h1>
     <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
       {orderNumber
         ? (orderFound === false
           ? `Order ${orderNumber} tidak ada di sistem kami. Cek lagi nomornya, atau lacak pesanan dengan nomor order atau resi.`
           : `Order ${orderNumber} sudah kembali ke Solivagant. Status final akan mengikuti notifikasi pembayaran.`)
-        : 'Mulai dari cart agar Solivagant bisa membuat order dan membuka panel pembayaran.'}
+        : t("pay.noSessionBody")}
     </p>
     <div className="mt-5 flex justify-center gap-2">
       <Link to={isMobile ? '/mobile/catalog' : '/catalog'} className="inline-flex h-11 items-center rounded-2xl bg-editorial-charcoal px-5 text-sm font-bold text-editorial-paper">
-        Buka katalog
+        {t('mcheckout.openCatalog')}
       </Link>
       <Link to={isMobile ? '/mobile/customer' : '/customer'} className="inline-flex h-11 items-center rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
-        Lacak pesanan
+        {t('track.title')}
       </Link>
       {orderNumber && onRefresh ? (
         <button type="button" onClick={onRefresh} className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-5 text-sm font-bold text-editorial-charcoal">
@@ -825,6 +838,7 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
     </div>
   </section>
 );
+};
 
 const MobilePaymentSkeleton = () => (
   <section className="mobile-card overflow-hidden p-0" aria-busy="true">
@@ -845,6 +859,7 @@ const MobilePaymentSkeleton = () => (
 );
 
 const PaymentPageContent = ({ isMobile }) => {
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState(null);
@@ -986,11 +1001,11 @@ const PaymentPageContent = ({ isMobile }) => {
       // Fall back to any session we already had and tell the buyer, instead of
       // silently showing an empty "no payment session" state.
       setSession(isSessionForOrder(storedSession) ? storedSession : null);
-      toast.error('Gagal memuat sesi pembayaran. Coba muat ulang halaman.');
+      toast.error(t("pay.sessionLoadFailed"));
     } finally {
       setLoadingOrder(false);
     }
-  }, [isSessionForOrder, orderNumber, paymentReturn, recoverDokuPaymentSession]);
+  }, [isSessionForOrder, orderNumber, paymentReturn, recoverDokuPaymentSession, t]);
 
   useEffect(() => {
     loadPaymentSession({ syncStatus: paymentReturn === 'doku' });
@@ -1015,11 +1030,11 @@ const PaymentPageContent = ({ isMobile }) => {
     return (
       <MobileCommerceLayout>
         <Helmet>
-          <title>Payment - Solivagant</title>
+          <title>{t("pay.tab")}</title>
         </Helmet>
         <main className="mobile-page mobile-payment-page space-y-4">
           <MobileTopBar
-            title="Pembayaran"
+            title={t('mcheckout.title')}
             subtitle={session?.orderNumber || orderNumber || 'Solivagant checkout'}
             eyebrow="Secure"
             onBack={() => navigate('/mobile/cart')}
@@ -1032,19 +1047,19 @@ const PaymentPageContent = ({ isMobile }) => {
             <StickyBottomActionBar
               fixed
               reserveSpace
-              aria-label="Aksi pembayaran"
+              aria-label={t("pay.actions")}
               className="mobile-payment-action-bar"
               contentClassName="rounded-2xl border-editorial-stone/10 bg-white/95"
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? 'Transfer manual' : 'Pembayaran DOKU'}</p>
+                  <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? t("pay.manualTransfer") : t("pay.dokuPayment")}</p>
                   <p className="truncate text-lg font-bold leading-tight text-editorial-charcoal">{formatTotal(session.amount)}</p>
-                  <p className="truncate text-[10px] font-bold text-amber-700">{paymentStatusLabels[session.paymentStatus || 'pending'] || 'Menunggu pembayaran'}</p>
+                  <p className="truncate text-[10px] font-bold text-amber-700">{t(paymentStatusKeys[session.paymentStatus || 'pending'] || 'pay.awaiting')}</p>
                 </div>
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={openPrimaryPaymentAction}>
                   {sessionIsManual ? <Upload className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />}
-                  {sessionIsManual ? 'Upload bukti' : 'Bayar DOKU'}
+                  {sessionIsManual ? t("pay.uploadShort") : t("pay.payDoku")}
                 </Button>
               </div>
             </StickyBottomActionBar>
@@ -1057,7 +1072,7 @@ const PaymentPageContent = ({ isMobile }) => {
   return (
     <>
       <Helmet>
-        <title>Payment - Solivagant</title>
+        <title>{t("pay.tab")}</title>
       </Helmet>
       <main className="solivagant-editorial-home">
         <PublicHeader />
