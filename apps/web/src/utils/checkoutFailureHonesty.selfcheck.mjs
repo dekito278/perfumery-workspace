@@ -49,4 +49,25 @@ assert.equal((hook.match(/sessionStorage\.setItem\(/g) || []).length, 1,
 assert.equal((hook.match(/rememberPaymentSession\(\{/g) || []).length, 3,
   'all three payment paths (manual transfer, QRIS, card) hand over the session the same way');
 
+// The same honesty, one screen later. The payment panel flips to "blocked" on a timer, and a timer that
+// is shorter than a real load tells the buyer the shop is broken while it is working. Measured on a real
+// checkout: DOKU's page took about 20 seconds to appear, against a 12-second timer — so the shop called
+// it blocked eight seconds before it opened.
+//
+// A genuinely blocked iframe never fires onLoad at all, so this timer only has to outlast a slow load.
+// There is no reason for it to be tight, and every second it is too short is a buyer being told a lie.
+{
+  const page = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'PaymentPage.jsx'),
+    'utf8',
+  );
+  const frame = page.slice(page.indexOf('const PaymentFrame'), page.indexOf('const statusCopy'));
+  const timer = frame.match(/setFrameStatus\(\(current\) => \(current === 'loading' \? 'failed'[\s\S]{0,80}?\}, (\d+)\)/);
+  assert.ok(timer, 'PaymentFrame still gives up on the payment panel after a timeout');
+  assert.ok(Number(timer[1]) >= 25000,
+    `PaymentFrame calls the payment panel blocked after ${Number(timer[1]) / 1000}s. DOKU was measured at `
+    + 'about 20s on a real checkout, so anything under 25s tells a buyer the shop is broken while it is '
+    + 'still loading. A blocked iframe never fires onLoad, so waiting longer costs nothing.');
+}
+
 console.log('checkoutFailureHonesty selfcheck OK (a placed order is never reported as unsaved)');
