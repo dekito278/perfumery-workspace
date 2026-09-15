@@ -373,6 +373,21 @@ const manualChunkGroups = [
 	['motion-vendor', ['/node_modules/framer-motion/']],
 	['pdf-parse-vendor', ['/node_modules/pdfjs-dist/']],
 	['pdf-export-vendor', ['/node_modules/jspdf/', '/node_modules/html2canvas/']],
+	// jspdf, html2canvas, pdfjs and the xlsx writer were split out years ago — and their DEPENDENCIES were
+	// not. Anything in node_modules with no group of its own falls through to the catch-all `vendor`
+	// chunk, which is loaded eagerly on every page, so half the weight of the export machinery kept
+	// riding along on the buyer's first paint while the halves with names sat correctly deferred.
+	// Measured on the built entry graph: canvg 165 kB, core-js 165 kB, dompurify 118 kB, pako 104 kB,
+	// fast-png + iobuffer + fflate 67 kB — 619 kB raw, 52 kB brotli, none of it reachable from the
+	// storefront.
+	//
+	// One group per family rather than folded into their parents: these have DIFFERENT parents, and
+	// merging them would make opening the PDF exporter download the spreadsheet writer's compressor too.
+	['pdf-canvas-vendor', ['/node_modules/canvg/', '/node_modules/stackblur-canvas/', '/node_modules/rgbcolor/', '/node_modules/svg-pathdata/']],
+	['sanitize-vendor', ['/node_modules/dompurify/']],
+	['zip-vendor', ['/node_modules/pako/', '/node_modules/fflate/']],
+	['png-vendor', ['/node_modules/fast-png/', '/node_modules/iobuffer/']],
+	['polyfill-vendor', ['/node_modules/core-js']],
 	['chart-vendor', ['/node_modules/recharts/', '/node_modules/d3-', '/node_modules/victory-vendor/']],
 	['form-vendor', ['/node_modules/react-hook-form/', '/node_modules/@hookform/', '/node_modules/zod/']],
 	['qr-vendor', ['/node_modules/qrcode/']],
@@ -399,6 +414,14 @@ const getManualChunk = (id) => {
 const deferredPreloadChunks = [
 	'pdf-export-vendor',
 	'pdf-parse-vendor',
+	// The dependencies of the above, and of the spreadsheet writer. Listed here so the build FAILS if one
+	// of them ever becomes reachable from the entry by a static import — which is exactly how they were
+	// reaching every buyer in the first place, invisibly, from inside `vendor`.
+	'pdf-canvas-vendor',
+	'sanitize-vendor',
+	'zip-vendor',
+	'png-vendor',
+	'polyfill-vendor',
 ];
 
 const shouldPreloadDependency = (dependency) =>
