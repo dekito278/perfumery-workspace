@@ -3,8 +3,10 @@ import { detectOverseasVisitor } from '@/utils/overseasVisitor.js';
 import {
   REGION_EN,
   REGION_ID,
+  readRegionFromUrl,
   readStoredRegion,
   resolveRegion,
+  writeRegionToUrl,
   writeStoredRegion,
 } from '@/utils/storefrontRegion.js';
 
@@ -50,7 +52,12 @@ export const useStorefrontRegion = () => {
     listeners.add(setRegion);
     if (!resolved) {
       resolved = true;
-      publish(resolveRegion(readStoredRegion(), detectOverseasVisitor()));
+      const fromUrl = readRegionFromUrl();
+      const next = resolveRegion(readStoredRegion(), detectOverseasVisitor(), fromUrl);
+      // A shared link is a choice, made by whoever sent it. Storing it means the rest of the visit stays
+      // in that shop after the first click carries them off the address that had ?lang on it.
+      if (fromUrl) writeStoredRegion(fromUrl);
+      publish(next);
     } else {
       setRegion(current);
     }
@@ -66,6 +73,8 @@ export const useStorefrontRegion = () => {
       // this page view, and writeStoredRegion refuses silently rather than throwing when storage is
       // blocked.
       writeStoredRegion(next);
+      // And the address follows, so it never contradicts the page and stays worth copying.
+      writeRegionToUrl(next);
       publish(next);
     },
   };

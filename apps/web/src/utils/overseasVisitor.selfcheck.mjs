@@ -109,8 +109,19 @@ assert.match(exportHook, /export const useOverseasPrice = \(product, variant = n
 // Detection now reaches the page through the region hook, which resolves it in an effect. Asserted here
 // too, not only in storefrontRegion.selfcheck: this is the file that explains WHY it must never run
 // during render, and a rule whose reason lives somewhere else is one the next reader deletes.
-assert.match(hook, /useEffect\(\(\) => \{[\s\S]{0,400}?publish\(resolveRegion\(readStoredRegion\(\), detectOverseasVisitor\(\)\)\);/,
-  'detection belongs in an effect');
+// Held as the INVARIANT, not as one call's shape: the previous version pinned the exact expression
+// `publish(resolveRegion(readStoredRegion(), detectOverseasVisitor()))`, so adding a third source to the
+// resolution broke the guard without breaking the rule. What must stay true is that the only place
+// detection runs is inside the effect.
+{
+  const effectAt = hook.indexOf('useEffect(() => {');
+  assert.notEqual(effectAt, -1, 'the region hook still resolves in an effect');
+  const effectBody = hook.slice(effectAt, hook.indexOf('}, []);', effectAt));
+  assert.match(effectBody, /detectOverseasVisitor\(\)/, 'detection belongs in an effect');
+  const outsideEffect = hook.slice(0, effectAt) + hook.slice(hook.indexOf('}, []);', effectAt));
+  assert.doesNotMatch(outsideEffect, /detectOverseasVisitor\(\)/,
+    'and nowhere else — detection during render bakes one visitor\'s answer into the prerendered HTML');
+}
 // Starts on the Indonesian shop, so the first render — the one matching the prerendered HTML — quotes nobody.
 assert.match(hook, /let current = REGION_ID;/,
   'nothing is quoted internationally until the effect has run');

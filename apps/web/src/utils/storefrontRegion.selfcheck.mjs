@@ -20,6 +20,7 @@ import {
   REGION_STORAGE_KEY,
   isValidRegion,
   resolveRegion,
+  readRegionFromUrl,
 } from './storefrontRegion.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,12 +56,41 @@ assert.match(util, /export const writeStoredRegion[\s\S]{0,400}?\} catch \{[\s\S
 // international, and the two would disagree for a whole page view.
 const hook = read('hooks', 'useStorefrontRegion.js');
 assert.match(hook, /const listeners = new Set\(\);/, 'one value, published to every subscriber');
-assert.match(hook, /useEffect\(\(\) => \{[\s\S]{0,400}?publish\(resolveRegion\(readStoredRegion\(\), detectOverseasVisitor\(\)\)\);/,
-  'resolved in an effect, never during render — the product pages are prerendered');
+// Held as the invariant rather than as one call's shape — pinning the exact expression made adding
+// ?lang to the resolution look like a regression when the rule was never broken.
+{
+  const effectAt = hook.indexOf('useEffect(() => {');
+  assert.notEqual(effectAt, -1, 'the region is still resolved in an effect');
+  const effectBody = hook.slice(effectAt, hook.indexOf('}, []);', effectAt));
+  assert.match(effectBody, /publish\(\s*(resolveRegion\(|next)/,
+    'resolved in an effect, never during render — the product pages are prerendered');
+  assert.match(effectBody, /resolveRegion\(/, 'and by resolveRegion, which owns the precedence');
+}
 assert.match(hook, /let current = REGION_ID;/,
   'and until that effect runs the answer is Indonesia, which is what the prerendered HTML already says');
-assert.match(hook, /writeStoredRegion\(next\);\s*publish\(next\);/,
+assert.match(hook, /writeStoredRegion\(next\);[\s\S]{0,200}?publish\(next\);/,
   'a choice is stored and published — blocked storage still changes this page view');
+
+// --- 4b. ?lang makes the shop shareable -------------------------------------------------------------------
+// Without it the English shop had no address of its own: a link sent to an overseas buyer opened in
+// Indonesian and left them to find the switch. The precedence is the part that matters — a browser that
+// once chose Indonesian must not quietly override the link it was just sent.
+assert.match(util, /export const resolveRegion = \(stored, detectedOverseas, fromUrl\) => \{\s*if \(isValidRegion\(fromUrl\)\) return fromUrl;/,
+  '?lang wins over a stored choice, or a shared link does nothing for anyone who has used the site before');
+assert.equal(resolveRegion('id', false, 'en'), 'en', 'a link to the English shop opens the English shop');
+assert.equal(resolveRegion('en', true, 'id'), 'id', 'and a link to the Indonesian shop opens that one');
+assert.equal(resolveRegion('id', true, 'xx'), 'id', 'an unknown ?lang is ignored, not obeyed');
+assert.equal(resolveRegion('id', true, null), 'id', 'and with no ?lang the stored choice still wins the guess');
+assert.equal(readRegionFromUrl('?lang=en'), 'en', 'the parameter is read');
+assert.equal(readRegionFromUrl('?lang=zz'), null, 'a value we do not have is no answer at all');
+assert.equal(readRegionFromUrl('?utm_source=ig'), null, 'and an address without it is no answer either');
+// Arriving by link stores the choice, or the first click off that address drops back to the old shop.
+assert.match(hook, /if \(fromUrl\) writeStoredRegion\(fromUrl\);/,
+  'a link is a choice: stored, so it survives the first navigation away from the address that carried it');
+// And the switch keeps the address honest, or a copied URL says one shop while the page shows another.
+assert.match(hook, /writeRegionToUrl\(next\);/, 'using the switch updates ?lang too');
+assert.match(util, /window\.history\.replaceState/,
+  'replaceState, not push — switching language is not a step to press Back through');
 
 // --- 5. The price panel follows the CHOICE, not the raw guess --------------------------------------------------
 const priceHook = read('hooks', 'useOverseasPrice.js');
