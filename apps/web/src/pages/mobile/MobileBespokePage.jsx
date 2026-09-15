@@ -310,7 +310,7 @@ const MobileBespokePage = () => {
       deliveryAddress: customer.deliveryAddress || current.deliveryAddress,
     }));
     updateDestinationSearch(customer.deliveryArea || '');
-    toast.success(`${customer.customerCode} loaded`);
+    toast.success(t('bsp.codeLoaded', { code: customer.customerCode }));
   }, [form.customerCode, updateDestinationSearch, t]);
 
   const chooseShippingCourier = useCallback((courierCode) => {
@@ -666,7 +666,7 @@ const MobileBespokePage = () => {
           <div className="mobile-commerce-summary p-4 text-xs font-bold text-editorial-charcoal">
             <div className="flex justify-between gap-3"><span>{t('bsp.perfumeName')}</span><span>{form.perfumeName || '-'}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('bsp.bespokePerfume')}</span><span>{t('bsp.studioConfirmed')}</span></div>
-            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Voucher</span><span>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'}</span></div>
+            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('bsp.voucher')}</span><span>{voucher.appliedVoucher ? t('bsp.voucherApplied', { code: voucher.appliedVoucher.code }) : '-'}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('bsp.shipping')}</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
             <div className="mt-3 flex items-end justify-between gap-3 border-t border-editorial-stone/10 pt-3 text-sm text-editorial-charcoal">
               <span>{t('bsp.transferTotal')}</span>
@@ -766,7 +766,7 @@ const MobileBespokePage = () => {
   const submitRequest = async () => {
     const incompleteStep = flowSteps.find((item) => !item.isComplete());
     if (incompleteStep) {
-      toast.error(`Lengkapi dulu: ${incompleteStep.title}`);
+      toast.error(t('bsp.completeFirst', { step: incompleteStep.title }));
       setStep(flowSteps.indexOf(incompleteStep));
       return;
     }
@@ -870,7 +870,7 @@ const MobileBespokePage = () => {
           reference: referenceProduct?.name || '',
           createdAt: new Date().toISOString(),
         });
-        toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
+        toast.success(t('bsp.saved', { order: order.orderNumber }));
         clearBespokeDraft();
         (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
         navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`);
@@ -919,7 +919,7 @@ const MobileBespokePage = () => {
         reference: referenceProduct?.name || '',
         createdAt: new Date().toISOString(),
       });
-      toast.success(`Request bespoke tersimpan: ${order.orderNumber}`);
+      toast.success(t('bsp.saved', { order: order.orderNumber }));
       clearBespokeDraft();
       (voucherSnapshot?.code ? voucher.removeVoucher : clearAppliedVoucherCode)();
       navigate(`/mobile/payment?order=${encodeURIComponent(order.orderNumber)}&payment=doku`);

@@ -26,7 +26,7 @@ import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 const formatDate = (value, t) => {
   if (!value) return t('journal.noDate');
 
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat(t('fmt.dateLocale'), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -198,7 +198,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#8b949e]">
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="h-3.5 w-3.5" />
-                        {formatDate(featuredPost.published_at || featuredPost.updated || featuredPost.created)}
+                        {formatDate(featuredPost.published_at || featuredPost.updated || featuredPost.created, t)}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Timer className="h-3.5 w-3.5" />
@@ -234,7 +234,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                       {getPreviewText(post)}
                     </p>
                     <div className="mt-2 text-[11px] font-bold text-[#8b949e]">
-                      {formatDate(post.published_at || post.updated || post.created)} · {t('journal.minutes', { n: getReadingMinutes(post) })}
+                      {formatDate(post.published_at || post.updated || post.created, t)} · {t('journal.minutes', { n: getReadingMinutes(post) })}
                     </div>
                   </div>
                 </button>

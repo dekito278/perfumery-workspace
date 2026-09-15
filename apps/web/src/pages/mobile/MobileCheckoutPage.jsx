@@ -160,7 +160,7 @@ const MobileCheckoutPage = () => {
   };
   const choosePaymentMethod = (method) => {
     if (method.id !== selectedPaymentMethod) {
-      toast.success(`${method.label} dipilih`);
+      toast.success(t('mcheckout.methodChosen', { method: method.label }));
     }
     setSelectedPaymentMethod(method.id);
   };

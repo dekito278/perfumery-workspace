@@ -28,11 +28,11 @@ import {
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
-const formatDateTime = (value) => {
+const formatDateTime = (value, t) => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat(t('fmt.dateLocale'), {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
@@ -268,11 +268,11 @@ const PaymentFrame = ({ session, compact = false }) => {
   const customerCode = session.customerCode || '';
   const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
   const currentPaymentTone = paymentStatusTone[session.paymentStatus || 'pending'] || paymentStatusTone.pending;
-  const expiresAtLabel = formatDateTime(session.paymentExpiresAt);
+  const expiresAtLabel = formatDateTime(session.paymentExpiresAt, t);
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     const copied = await copyTextToClipboard(customerCode);
-    copied ? toast.success(`${customerCode} disalin`) : toast.error(t("pay.copyFailed"));
+    copied ? toast.success(t("pay.copied", { label: customerCode })) : toast.error(t("pay.copyFailed"));
   };
 
   return (
@@ -436,7 +436,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     const copied = await copyTextToClipboard(customerCode);
-    copied ? toast.success(`${customerCode} disalin`) : toast.error(t("pay.copyFailed"));
+    copied ? toast.success(t("pay.copied", { label: customerCode })) : toast.error(t("pay.copyFailed"));
   };
 
   if (paid) {
@@ -479,7 +479,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
         {session.paymentExpiresAt ? (
           <div className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-bold ${expired ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
             <Clock3 className="h-4 w-4" />
-            {expired ? t("pay.qrExpired") : `Selesaikan dalam ${pad(mins)}:${pad(secs)}`}
+            {expired ? t("pay.qrExpired") : t("pay.finishIn", { time: `${pad(mins)}:${pad(secs)}` })}
           </div>
         ) : null}
 
@@ -554,7 +554,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   const copyValue = async (label, value) => {
     if (!value) return;
     const copied = await copyTextToClipboard(String(value));
-    copied ? toast.success(`${label} disalin`) : toast.error(`${label} belum bisa disalin. Tekan lama teks lalu salin manual.`);
+    copied ? toast.success(t("pay.copied", { label })) : toast.error(t("pay.copyFailedLong", { label }));
   };
 
   const chooseProofFile = (event) => {
@@ -764,7 +764,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               ) : null}
               {session.paymentProofUploadedAt ? (
                 <div className="mt-1 text-[11px] font-semibold text-editorial-muted">
-                  Dikirim {formatDateTime(session.paymentProofUploadedAt)}
+                  {t("pay.sentOn", { date: formatDateTime(session.paymentProofUploadedAt, t) })}
                 </div>
               ) : null}
             </div>
@@ -818,8 +818,8 @@ const EmptyPaymentState = ({ isMobile, orderNumber, orderFound = null, loading =
     <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6b7280]">
       {orderNumber
         ? (orderFound === false
-          ? `Order ${orderNumber} tidak ada di sistem kami. Cek lagi nomornya, atau lacak pesanan dengan nomor order atau resi.`
-          : `Order ${orderNumber} sudah kembali ke Solivagant. Status final akan mengikuti notifikasi pembayaran.`)
+          ? t("pay.orderMissing", { order: orderNumber })
+          : t("pay.orderReturned", { order: orderNumber }))
         : t("pay.noSessionBody")}
     </p>
     <div className="mt-5 flex justify-center gap-2">
