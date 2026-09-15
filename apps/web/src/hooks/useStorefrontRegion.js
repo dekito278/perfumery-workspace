@@ -15,8 +15,24 @@ let current = REGION_ID;
 let resolved = false;
 const listeners = new Set();
 
+// The page says what language it is in, and it has to stay true when the shop changes language.
+//
+// index.html ships lang="id", which is right for the prerendered HTML and right until a visitor picks
+// the English shop — after which every word on screen is English and the document still claims to be
+// Indonesian. A screen reader then pronounces English with Indonesian phonetics, which is the whole
+// page for a blind buyer, and Chrome offers to translate a page that is already in the reader's
+// language.
+//
+// Here rather than in the hook body: publish() is the one place a region change passes through, so the
+// attribute cannot drift from the value the components are rendering.
+const writeDocumentLanguage = (region) => {
+  if (typeof document === 'undefined') return;
+  document.documentElement.lang = region === REGION_EN ? 'en' : 'id';
+};
+
 const publish = (next) => {
   current = next;
+  writeDocumentLanguage(next);
   for (const listener of listeners) listener(next);
 };
 
