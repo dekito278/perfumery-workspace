@@ -671,6 +671,33 @@ const assertLanguagePairsAreCoherent = (siteUrl, expectedRoutes = []) => {
     }
   }
 
+  // Neither shop may describe itself far more thinly than the other.
+  //
+  // The Indonesian page used to lead with the note list while the English one led with the story, so the
+  // MAIN shop's search result was "HUG N°1 — Metallic, milky, musky" — three words, in English — against
+  // a full sentence on the smaller shop. Nothing was broken, nothing was missing, and no check could see
+  // it: both descriptions existed and both were in a language.
+  //
+  // Held as a ratio rather than a source field, because the failure is the IMBALANCE and it can arrive
+  // from either side. Measured across all 18 products after the fix: the tightest pair is 0.95. The
+  // floor is 0.6, which no honest pair comes near and which the old note-list snippet (0.21) fails.
+  for (const route of routes) {
+    if (!route.startsWith('/catalog/')) continue;
+    const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '');
+    const describe = (html) => (html.match(/<meta name="description" content="([^"]*)"/) || [, ''])[1];
+    const id = describe(read(path.join(distRoot, route.slice(1), 'index.html')));
+    const en = describe(read(path.join(enRoot, route.slice(1), 'index.html')));
+    if (!id || !en) continue;
+    const ratio = Math.min(id.length, en.length) / Math.max(id.length, en.length);
+    if (ratio < 0.6) {
+      problems.push(
+        `${route}: one shop's search snippet is ${Math.round(ratio * 100)}% the length of the other's `
+        + `(id ${id.length}, en ${en.length}) — one of them is describing the perfume and the other is `
+        + 'listing notes',
+      );
+    }
+  }
+
   // And nothing in the English shop that the build did not mean to put there — a leftover from a route
   // that was renamed keeps answering 200 with stale copy long after its Indonesian twin has moved.
   for (const route of written) {

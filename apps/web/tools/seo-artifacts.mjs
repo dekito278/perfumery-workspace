@@ -140,12 +140,16 @@ export const fetchPublicProducts = async (env) => {
       // Carried so the Offer can state real availability instead of assuming every product is in stock.
       stock: row.stock,
       variants: Array.isArray(row.variants) ? row.variants : [],
-      description: String(row.notes || row.description || `Objek parfum ${BRAND} oleh Dekito.`).trim(),
-      // The English page describes itself with the STORY, not the note list. `notes` is perfume
-      // vocabulary and is already English in 16 of the 18 rows, so keying the English page off it would
-      // have produced two pages with byte-identical descriptions — a pair hreflang exists to tell apart.
-      // Falls back through the note list to the Indonesian rather than to nothing: a snippet in the
-      // wrong language still says which perfume it is, and an empty one says nothing at all.
+      // BOTH shops describe themselves with the STORY, and fall back to the note list.
+      //
+      // The Indonesian page used to lead with `notes`, which is perfume vocabulary and is already
+      // English in 16 of the 18 rows — so the main shop's search result read "HUG N°1 — Metallic, milky,
+      // musky", three English words, while the English shop had a whole sentence. Somebody searching in
+      // Indonesian was shown the worse half in the wrong language.
+      //
+      // The fallback still reaches the other language rather than nothing: a snippet a reader has to
+      // translate still says which perfume it is, and an empty one says nothing at all.
+      description: String(row.description || row.notes || `Objek parfum ${BRAND} oleh Dekito.`).trim(),
       descriptionEn: String(row.description_en || row.notes_en || row.description || row.notes || '').trim(),
       image: firstImage(row),
       topNotes: toList(row.top_notes),
