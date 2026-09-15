@@ -739,6 +739,35 @@ const assertLanguagePairsAreCoherent = (siteUrl, expectedRoutes = []) => {
   console.log(`[i18n] ${routes.length} page(s) exist in both shops, each naming itself and its twin.`);
 };
 
+// A chunk small enough to be a rounding error still costs a whole request, and the phone pays for it in
+// latency rather than bytes.
+//
+// Rollup splits a module shared by two lazy routes into its own chunk however small it is, and the
+// phone's first screen was pulling EIGHT of them — MobileLoadingSkeleton 214 B, MobileEmptyState 361 B,
+// badge 818 B and five more, 7 kB between them — in a second wave that only began once the route chunk
+// had parsed. Nothing looked wrong: every file was correct, cached well, and served 200.
+//
+// Counted on the OUTPUT, not read off the config, so it cannot be satisfied by a setting that has
+// stopped working. 80 before, 7 after; the ceiling leaves room without allowing the swarm back.
+const assertNoChunkSwarm = () => {
+  const assetsDir = path.join(webRoot, 'dist', 'assets');
+  if (!fs.existsSync(assetsDir)) return;
+  const tiny = fs.readdirSync(assetsDir)
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => [file, fs.statSync(path.join(assetsDir, file)).size])
+    .filter(([, size]) => size < 3000);
+  if (tiny.length > 12) {
+    console.error(
+      `[bundle] ${tiny.length} javascript chunks are under 3 kB. Each one is a round trip a phone waits `
+      + 'for, and together they are a rounding error of bytes. Raise experimentalMinChunkSize in '
+      + `vite.config.js — and measure the entry graph after, because merging is not free.\n  `
+      + tiny.slice(0, 10).map(([file, size]) => `${file} (${size} B)`).join('\n  '),
+    );
+    process.exit(1);
+  }
+  console.log(`[bundle] ${tiny.length} chunk(s) under 3 kB — no swarm of round trips on the first screen.`);
+};
+
 // Everything the build advertises must be a route the app actually serves. /materials was in the sitemap,
 // had a prerendered page with its own title and description, and was listed in llms.txt for AI crawlers —
 // while App.jsx had no route for it, so every arrival got the 404 page. The page component exists and is
@@ -811,6 +840,7 @@ await warnIfBespokeDefaultsDrifted();
 
 if (viteResult.status === 0) {
   assertDeferredChunksStayLazy();
+  assertNoChunkSwarm();
   await generateSeoArtifacts();
 }
 
