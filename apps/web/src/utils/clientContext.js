@@ -1,3 +1,4 @@
+import { barePathname } from './storefrontRegion.js';
 // What kind of screen placed this order.
 //
 // The app serves two separate UIs — /mobile/* and the desktop routes — so the path the buyer checked
@@ -10,7 +11,7 @@ export const getClientContext = () => {
   if (typeof window === 'undefined') return {};
   try {
     return {
-      surface: window.location.pathname.startsWith('/mobile') ? 'mobile' : 'desktop',
+      surface: barePathname().startsWith('/mobile') ? 'mobile' : 'desktop',
       viewportWidth: Math.round(window.innerWidth) || null,
     };
   } catch {

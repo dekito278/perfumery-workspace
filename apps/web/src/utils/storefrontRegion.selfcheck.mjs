@@ -21,6 +21,10 @@ import {
   isValidRegion,
   resolveRegion,
   readRegionFromUrl,
+  readRegionFromPath,
+  regionHref,
+  routerBasename,
+  barePathname,
 } from './storefrontRegion.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -65,6 +69,10 @@ assert.match(hook, /const listeners = new Set\(\);/, 'one value, published to ev
   assert.match(effectBody, /publish\(\s*(resolveRegion\(|next)/,
     'resolved in an effect, never during render — the product pages are prerendered');
   assert.match(effectBody, /resolveRegion\(/, 'and by resolveRegion, which owns the precedence');
+  // Both halves of "what the address says" reach it. Dropping either one silently demotes a shared link
+  // back below whatever this browser happened to choose months ago.
+  assert.match(effectBody, /readRegionFromPath\(\)/, 'the path is read — /en/catalog IS the English shop');
+  assert.match(effectBody, /readRegionFromUrl\(\)/, 'and ?lang still is too, for the links already sent');
 }
 assert.match(hook, /let current = REGION_ID;/,
   'and until that effect runs the answer is Indonesia, which is what the prerendered HTML already says');
@@ -87,10 +95,86 @@ assert.equal(readRegionFromUrl('?utm_source=ig'), null, 'and an address without 
 // Arriving by link stores the choice, or the first click off that address drops back to the old shop.
 assert.match(hook, /if \(fromUrl\) writeStoredRegion\(fromUrl\);/,
   'a link is a choice: stored, so it survives the first navigation away from the address that carried it');
-// And the switch keeps the address honest, or a copied URL says one shop while the page shows another.
-assert.match(hook, /writeRegionToUrl\(next\);/, 'using the switch updates ?lang too');
-assert.match(util, /window\.history\.replaceState/,
-  'replaceState, not push — switching language is not a step to press Back through');
+
+// --- 4c. The English shop has its OWN ADDRESS, not just its own parameter ---------------------------------
+// ?lang=en made the shop shareable. It could not make it *previewable*: one prerendered HTML file carries
+// one title, one description and one og:image, so /catalog/hug-n-1?lang=en handed WhatsApp and Instagram
+// the Indonesian card — a link sent abroad previewing in a language its reader does not read. /en/... is
+// a second file, so it can say its own English words, and Google can index it as its own page.
+assert.equal(readRegionFromPath('/en'), REGION_EN, 'the English shop is at /en');
+assert.equal(readRegionFromPath('/en/catalog/hug-n-1'), REGION_EN, 'and everything under it');
+assert.equal(readRegionFromPath('/catalog'), null, 'the Indonesian shop keeps the bare paths');
+for (const notEn of ['/english', '/end', '/enterprise', '/', '', '/id/en']) {
+  assert.equal(readRegionFromPath(notEn), null, `${JSON.stringify(notEn)} is not the English shop`);
+}
+// The prefix reaches the 68 <Link to="/..."> through the router, not through 68 edits. If this stops
+// being the basename, every link inside the English shop silently drops back to the Indonesian one.
+assert.equal(routerBasename('/en/catalog'), '/en');
+assert.equal(routerBasename('/catalog'), '');
+{
+  const at = (pathname, search = '') => ({ pathname, search, hash: '' });
+  assert.equal(regionHref(REGION_EN, at('/catalog/hug-n-1')), '/en/catalog/hug-n-1', 'the switch crosses to the twin page');
+  assert.equal(regionHref(REGION_ID, at('/en/catalog/hug-n-1')), '/catalog/hug-n-1', 'and back to it');
+  assert.equal(regionHref(REGION_EN, at('/')), '/en', 'the home page has a twin too');
+  assert.equal(regionHref(REGION_ID, at('/en')), '/', 'and it comes back');
+  assert.equal(regionHref(REGION_EN, at('/en/catalog')), null, 'already there is not a navigation');
+  // ?lang is dropped on the way across: the path says which shop this is, and an address carrying both
+  // would argue with itself the moment someone copied it.
+  assert.equal(regionHref(REGION_EN, at('/catalog', '?lang=id&sort=new')), '/en/catalog?sort=new',
+    'the parameter goes, the rest of the query stays');
+  assert.equal(regionHref('zz', at('/catalog')), null, 'a region we do not have is not an address');
+  // Only at the FRONT. A plain .replace('/en','') would eat the middle of /catalog/english-oak and send
+  // the visitor to a product that does not exist — from a switch that looked like it worked.
+  assert.equal(regionHref(REGION_EN, at('/catalog/english-oak')), '/en/catalog/english-oak',
+    'a slug that happens to contain /en is not a prefix');
+  assert.equal(regionHref(REGION_ID, at('/en/catalog/english-oak')), '/catalog/english-oak',
+    'and only the leading one comes off on the way back');
+}
+assert.equal(barePathname('/en/mobile/home'), '/mobile/home', 'the router sees the route, not the address');
+assert.equal(barePathname('/mobile/home'), '/mobile/home');
+assert.equal(barePathname('/en'), '/');
+assert.equal(barePathname('/english'), '/english', 'not every path starting with those letters is the prefix');
+assert.equal(barePathname('/catalog/english-oak'), '/catalog/english-oak', 'and never the middle of one');
+// Switching shops is a NAVIGATION, not a re-render: the router's basename is fixed at mount, so a
+// client-side switch would leave every link in the page pointing at the other shop.
+{
+  const setterAt = hook.indexOf('setRegion: (next)');
+  assert.notEqual(setterAt, -1, 'the switch still hands back a setter');
+  const setterBody = hook.slice(setterAt);
+  assert.match(setterBody, /regionHref\(next\)[\s\S]{0,260}?window\.location\.assign\(/,
+    'the switch takes the visitor to the other shop\'s address');
+}
+
+// And the router is actually mounted under it. Without this the /en addresses still LOAD — the SPA
+// fallback serves them — but the router matches /en/catalog against no route and the visitor gets the
+// 404 page at an address that works, which is the kind of break that looks like a content problem.
+{
+  const app = read('App.jsx');
+  assert.match(app, /const ROUTER_BASENAME = routerBasename\(\);/,
+    'the basename is read once at module scope, not per render');
+  assert.match(app, /<Router basename=\{ROUTER_BASENAME\}>/,
+    'and handed to the router, or every /en address renders the 404 page');
+}
+
+// --- 4d. Every robots.txt rule needs its /en twin --------------------------------------------------------
+// robots.txt matches from the START of the path, so "Disallow: /checkout" says nothing about
+// /en/checkout. The /mobile tree already fell into this trap once. Enforced as the mirror rather than as
+// a list, so a rule added later cannot ship with its English half missing.
+{
+  const robots = readFileSync(join(root, '..', 'public', 'robots.txt'), 'utf8');
+  const rules = robots
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^(Allow|Disallow): \//.test(line) && line !== 'Allow: /');
+  assert.ok(rules.length > 8, 'robots.txt still lists the private paths');
+  const present = new Set(rules);
+  for (const rule of rules) {
+    const [verb, path] = rule.split(': ');
+    if (path.startsWith('/en/') || path === '/en') continue;
+    assert.ok(present.has(`${verb}: /en${path}`),
+      `robots.txt covers ${path} but not /en${path} — the English shop would expose it`);
+  }
+}
 
 // --- 5. The price panel follows the CHOICE, not the raw guess --------------------------------------------------
 const priceHook = read('hooks', 'useOverseasPrice.js');

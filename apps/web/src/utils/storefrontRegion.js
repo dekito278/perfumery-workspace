@@ -17,6 +17,14 @@ export const REGION_QUERY_KEY = 'lang';
 
 const VALID = [REGION_ID, REGION_EN];
 
+// The English shop has its own address. ?lang=en (below) made it shareable; a path makes it *previewable*,
+// which is the half that was missing. One prerendered HTML file can only carry one title, one description
+// and one og:image, so /catalog/hug-n-1?lang=en handed WhatsApp and Instagram the Indonesian card — the
+// link Dekito sends abroad previewed in a language its reader does not read. /en/catalog/hug-n-1 is a
+// second file, so it can say its own English words.
+export const EN_PATH_PREFIX = '/en';
+
+
 export const isValidRegion = (value) => VALID.includes(value);
 
 /**
@@ -55,22 +63,58 @@ export const readRegionFromUrl = (search) => {
   }
 };
 
+/** The English shop's own address: /en, or anything under /en/. Null for the Indonesian shop. */
+export const readRegionFromPath = (pathname) => {
+  const path = typeof pathname === 'string'
+    ? pathname
+    : (typeof window === 'undefined' ? '' : window.location.pathname);
+  return path === EN_PATH_PREFIX || path.startsWith(`${EN_PATH_PREFIX}/`) ? REGION_EN : null;
+};
+
 /**
- * Keep ?lang on the address in step with the shop being shown, so the address stays shareable and stops
- * contradicting the page. replaceState, not push: switching language is not a step someone should have
- * to press Back through.
+ * window.location.pathname as the ROUTER sees it — with the English shop's prefix taken off.
+ *
+ * Anything asking "is this a /mobile page?" has to ask about the route, not the address: inside the
+ * English shop the address is /en/mobile/home, and a bare startsWith('/mobile') answers no. That is how
+ * the service worker resume check and the order's surface field would quietly go wrong for exactly the
+ * overseas buyer on a phone this shop was built for.
  */
-export const writeRegionToUrl = (region) => {
-  if (!isValidRegion(region)) return false;
+export const barePathname = (pathname) => {
+  const path = typeof pathname === 'string'
+    ? pathname
+    : (typeof window === 'undefined' ? '/' : window.location.pathname);
+  return path.replace(/^\/en(?=\/|$)/, '') || '/';
+};
+
+/**
+ * What React Router must be told it is mounted under, so every `to="/catalog"` in the app keeps the
+ * prefix without one of the 68 links having to know the shop exists in two languages.
+ */
+export const routerBasename = (pathname) => (readRegionFromPath(pathname) ? EN_PATH_PREFIX : '');
+
+/**
+ * This same page in the other shop, or null when it is already the address being shown.
+ *
+ * ?lang is dropped on the way: the path says which shop this is now, and leaving both would let a
+ * copied address argue with itself.
+ */
+export const regionHref = (region, location) => {
+  if (!isValidRegion(region)) return null;
+  const from = location || (typeof window === 'undefined' ? null : window.location);
+  if (!from) return null;
+  const bare = String(from.pathname || '/').replace(/^\/en(?=\/|$)/, '') || '/';
+  const path = region === REGION_EN ? `${EN_PATH_PREFIX}${bare === '/' ? '' : bare}` || EN_PATH_PREFIX : bare;
+  let search = '';
   try {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get(REGION_QUERY_KEY) === region) return false;
-    url.searchParams.set(REGION_QUERY_KEY, region);
-    window.history.replaceState(window.history.state, '', url);
-    return true;
+    const params = new URLSearchParams(from.search || '');
+    params.delete(REGION_QUERY_KEY);
+    const rest = params.toString();
+    search = rest ? `?${rest}` : '';
   } catch {
-    return false;
+    search = '';
   }
+  const next = `${path}${search}${from.hash || ''}`;
+  return next === `${from.pathname}${from.search || ''}${from.hash || ''}` ? null : next;
 };
 
 export const readStoredRegion = () => {
