@@ -114,7 +114,20 @@ assert.ok(note.indexOf('TIER_LABELS[product?.priceTier]') < note.indexOf('member
 assert.match(MESSAGES.id['price.memberTier'], /Harga member/, 'and that label is still the words Dekito chose');
 
 // --- 8. Every surface that shows a price shows the member one --------------------------------------------
-for (const surface of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx', 'pages/mobile/MobileStorefrontPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
+// The card surfaces route their price through CardPrice now — one component for four places, so the
+// member line cannot be present on three cards and missing on the fourth. The assertion follows it.
+const cardPrice = read('components', 'storefront', 'CardPrice.jsx');
+assert.match(cardPrice, /product\?\.memberPriceNumber \? \(/, 'CardPrice shows the member price beside the price');
+assert.match(cardPrice, /price\.memberIs', \{ price: formatRupiah\(product\.memberPriceNumber\)/,
+  "and formats it with the app's own formatter");
+// Every surface that renders a product CARD, related-product strips included: those sat outside the four
+// obvious ones and kept showing Indonesian prices under an English product page.
+for (const surface of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx', 'pages/mobile/MobileStorefrontPage.jsx',
+  'pages/HomePage.jsx', 'pages/PublicProductDetailPage.jsx', 'pages/mobile/MobileProductDetailPage.jsx']) {
+  assert.match(read(...surface.split('/')), /<CardPrice product=\{(?:product|item)\}/,
+    `${surface} shows a price, so it must go through CardPrice`);
+}
+for (const surface of ['pages/mobile/MobileProductDetailPage.jsx']) {
   const source = read(...surface.split('/'));
   assert.match(source, /memberPriceNumber/, `${surface} shows a price, so it must show the member price beside it`);
   // Either the raw literal (catalogue cards, still to be translated) or the translated key — what is

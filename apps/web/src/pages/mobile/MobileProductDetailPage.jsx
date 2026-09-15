@@ -1,7 +1,8 @@
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, ShoppingBag } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, Globe, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
@@ -15,11 +16,13 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
-import OverseasPriceNote from '@/components/storefront/OverseasPriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { productCopyFor } from '@/utils/productCopy.js';
+import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
+import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getScarcityLabel } from '@/utils/stockScarcity.js';
@@ -58,9 +61,13 @@ const MobileProductDetailPage = () => {
   // Above the early returns: this page bails out for "loading" and "not found", and a hook that runs on
   // some renders and not others is a crash, not a bug report.
   const overseasPrice = useOverseasPrice(product, selectedVariant);
-  const { t, region } = useTranslate();
+  const { t, region, isInternational } = useTranslate();
   // Same rule as desktop: the product's own words follow the shop being read, per field.
   const copy = productCopyFor(product, region);
+  // exportPrice here is the price for THIS shop: useOverseasPrice returns null unless the visitor is
+  // reading the international one. useExportPrice would hand it to everyone — it did, and the Indonesian
+  // product page briefly led with Rp 2.630.000.
+  const exportPrice = useOverseasPrice(product, selectedVariant);
 
   if (!product && allProducts.loading) {
     return (
@@ -143,9 +150,15 @@ const MobileProductDetailPage = () => {
         <div className="m-editorial-pdp__info">
           <p className="m-editorial-eyebrow">{product.category}</p>
           <h1>{product.name}</h1>
-          <p className="m-editorial-pdp__price">{product.price}</p>
-          <PriceNote product={product} variant={selectedVariant} />
-          <OverseasPriceNote product={product} variant={selectedVariant} />
+          {/* Same rule as desktop: one price, for the shop being read. */}
+          {exportPrice ? (
+            <InternationalPrice price={exportPrice} />
+          ) : (
+            <>
+              <p className="m-editorial-pdp__price">{product.price}</p>
+              <PriceNote product={product} variant={selectedVariant} />
+            </>
+          )}
           {scarcity ? <p className="pdp-scarcity">{scarcity}</p> : null}
 
           {previewMode ? (
@@ -193,7 +206,8 @@ const MobileProductDetailPage = () => {
             </div>
           ) : null}
 
-          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={formatRupiah(selectedPrice)} compact className="mt-4" />
+          <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={formatRupiah(exportPrice || selectedPrice)} compact className="mt-4" />
+          <SwitchToIndonesiaHint className="mt-3" />
 
           {/* Meta */}
           <div className="m-editorial-pdp__meta">
@@ -217,7 +231,7 @@ const MobileProductDetailPage = () => {
                   <div className="m-editorial-product-card__info">
                     <span className="m-editorial-product-card__category">{item.category}</span>
                     <h3>{item.name}</h3>
-                    <span className="m-editorial-product-card__price">{item.price}</span>
+                    <CardPrice product={item} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
               ))}
@@ -236,7 +250,7 @@ const MobileProductDetailPage = () => {
           <div className="m-editorial-pdp__sticky-inner">
             <div className="m-editorial-pdp__sticky-info">
               <span className="m-editorial-pdp__sticky-name">{product.name}</span>
-              <span className="m-editorial-pdp__sticky-price">{formatRupiah(selectedPrice)}</span>
+              <span className="m-editorial-pdp__sticky-price">{formatRupiah(exportPrice || selectedPrice)}</span>
               {/* Silent for a visitor being quoted internationally: their price is the export price in
                   the panel above, so offering the member price here promises a number they will never be
                   charged. This bar is a SECOND member nudge, outside PriceNote — which is exactly why it
@@ -245,10 +259,23 @@ const MobileProductDetailPage = () => {
                 <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(selectedVariant?.memberPriceNumber || product.memberPriceNumber) })}</span>
               ) : null}
             </div>
-            <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
-              <ShoppingBag className="h-4 w-4" />
-              {previewMode ? 'Preview' : soldOut ? t('pdp.soldOut') : t('pdp.addToCart')}
-            </button>
+            {/* In the English shop the action is the enquiry, not the cart. A DISABLED cart button would
+                be worse than no cart button: it shows the buyer a door and then holds it shut. */}
+            {isInternational ? (
+              <a
+                href={buildWhatsAppCheckoutUrl(t('intl.noticeMessage'), getStorefrontWhatsAppNumber())}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="m-editorial-pdp__sticky-btn"
+              >
+                <Globe className="h-4 w-4" /> {t('export.ask')}
+              </a>
+            ) : (
+              <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>
+                <ShoppingBag className="h-4 w-4" />
+                {previewMode ? 'Preview' : soldOut ? t('pdp.soldOut') : t('pdp.addToCart')}
+              </button>
+            )}
           </div>
         </StickyBottomActionBar>
       </main>

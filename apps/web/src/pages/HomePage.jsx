@@ -1,3 +1,4 @@
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -192,9 +193,9 @@ const HomePage = () => {
                     <div className="home-carousel__card-info">
                       <h3>{product.name}</h3>
                       <div className="home-carousel__card-meta">
-                        <span className="home-carousel__card-perfumer">oleh Dekito</span>
+                        <span className="home-carousel__card-perfumer">{t('home.byDekito')}</span>
                         {(product.price || product.priceNumber) ? (
-                          <span className="home-carousel__card-price">{product.price || `Rp ${(product.priceNumber || 0).toLocaleString('id-ID')}`}</span>
+                          <CardPrice product={product} className="home-carousel__card-price" />
                         ) : null}
                       </div>
                     </div>

@@ -1,3 +1,4 @@
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -15,7 +16,7 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
-import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { buildBreadcrumbJsonLd, getSiteOrigin, toAbsoluteUrl } from '@/utils/seo.js';
 import { matchesWear } from '@/utils/productWear.js';
 import WearFilter from '@/components/storefront/WearFilter.jsx';
@@ -213,10 +214,7 @@ const CatalogPage = () => {
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{product.category || 'Atelier'}</span>
                     <h3>{product.name}</h3>
-                    <span className="catalog-card__price">{product.price || `Rp ${(product.priceNumber || 0).toLocaleString('id-ID')}`}</span>
-                    {product.memberPriceNumber ? (
-                      <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(product.memberPriceNumber) })}</span>
-                    ) : null}
+                    <CardPrice product={product} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
               ))}

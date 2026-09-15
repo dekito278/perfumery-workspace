@@ -1,3 +1,4 @@
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -10,7 +11,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { CURATED_LIMIT_MOBILE, pickCuratedProducts } from '@/utils/curatedProducts.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
-import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { LineDivider, LineMark } from '@/components/line/LineArt.jsx';
 import { getPublishedJournalPosts, getJournalCategoryLabel, getJournalPublicPath } from '@/services/journalPostsSupabaseService.js';
@@ -109,10 +110,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
                   <div className="m-editorial-product-card__info">
                     <span className="m-editorial-product-card__category">{product.category}</span>
                     <h3>{product.name}</h3>
-                    <span className="m-editorial-product-card__price">{product.price}</span>
-                    {product.memberPriceNumber ? (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">Member {formatRupiah(product.memberPriceNumber)}</span>
-                    ) : null}
+                    <CardPrice product={product} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
               ))}

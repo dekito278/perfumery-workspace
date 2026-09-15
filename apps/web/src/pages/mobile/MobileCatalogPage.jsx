@@ -1,3 +1,4 @@
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -7,7 +8,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { isProductVisibleInStorefront, formatRupiah } from '@/services/productCatalogService.js';
+import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
@@ -118,10 +119,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                 <div className="m-editorial-product-card__info">
                   <span className="m-editorial-product-card__category">{product.category || 'Atelier'}</span>
                   <h3>{product.name}</h3>
-                  <span className="m-editorial-product-card__price">{product.price}</span>
-                  {product.memberPriceNumber ? (
-                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700">{t('price.memberIs', { price: formatRupiah(product.memberPriceNumber) })}</span>
-                  ) : null}
+                  <CardPrice product={product} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                 </div>
               </Link>
             ))}
