@@ -31,11 +31,11 @@
   }
 
   input,
-  textarea,
-  select,
-  [contenteditable="true"],
-  [role="combobox"],
-  [cmdk-input] {
+textarea,
+select,
+[contenteditable="true"],
+[role="combobox"],
+[cmdk-input] {
     appearance: none;
     -webkit-appearance: none;
     font-size: 16px !important;
@@ -45,28 +45,28 @@
   }
 
   input::placeholder,
-  textarea::placeholder,
-  [cmdk-input]::placeholder {
+textarea::placeholder,
+[cmdk-input]::placeholder {
     font-size: 16px;
   }
 
   @supports selector(body:has(input:focus)) {
     body:has(input:focus) .mobile-bottom-nav,
-    body:has(textarea:focus) .mobile-bottom-nav,
-    body:has(select:focus) .mobile-bottom-nav,
-    body:has([contenteditable="true"]:focus) .mobile-bottom-nav,
-    body:has(input:focus) .mobile-fab,
-    body:has(textarea:focus) .mobile-fab,
-    body:has(select:focus) .mobile-fab,
-    body:has([contenteditable="true"]:focus) .mobile-fab,
-    body:has(input:focus) .mobile-studio-floating-link,
-    body:has(textarea:focus) .mobile-studio-floating-link,
-    body:has(select:focus) .mobile-studio-floating-link,
-    body:has([contenteditable="true"]:focus) .mobile-studio-floating-link,
-    body:has(input:focus) .mobile-fixed-action,
-    body:has(textarea:focus) .mobile-fixed-action,
-    body:has(select:focus) .mobile-fixed-action,
-    body:has([contenteditable="true"]:focus) .mobile-fixed-action {
+body:has(textarea:focus) .mobile-bottom-nav,
+body:has(select:focus) .mobile-bottom-nav,
+body:has([contenteditable="true"]:focus) .mobile-bottom-nav,
+body:has(input:focus) .mobile-fab,
+body:has(textarea:focus) .mobile-fab,
+body:has(select:focus) .mobile-fab,
+body:has([contenteditable="true"]:focus) .mobile-fab,
+body:has(input:focus) .mobile-studio-floating-link,
+body:has(textarea:focus) .mobile-studio-floating-link,
+body:has(select:focus) .mobile-studio-floating-link,
+body:has([contenteditable="true"]:focus) .mobile-studio-floating-link,
+body:has(input:focus) .mobile-fixed-action,
+body:has(textarea:focus) .mobile-fixed-action,
+body:has(select:focus) .mobile-fixed-action,
+body:has([contenteditable="true"]:focus) .mobile-fixed-action {
       opacity: 0;
       pointer-events: none;
       transform: translateY(12px);
@@ -106,14 +106,6 @@
 .mobile-app.mobile-keyboard-active .mobile-inline-action {
   position: relative;
   z-index: 1;
-}
-
-.mobile-app.mobile-keyboard-active .mobile-action-bar--keyboard-stay {
-  opacity: 1;
-  pointer-events: auto;
-  /* bottom nav is hidden while the keyboard is up, so drop its height from the offset */
-  bottom: var(--mobile-action-gap, 10px);
-  transform: translateY(calc(-1 * var(--mobile-keyboard-offset, 0px)));
 }
 
 
@@ -190,12 +182,6 @@
   line-height: 1.35;
 }
 
-.mobile-action-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
 .mobile-app button,
 .mobile-app a,
 .mobile-app [role="button"] {
@@ -248,9 +234,6 @@
   overflow-wrap: anywhere;
 }
 
-/* A page that renders its own action-bar spacer already reserves the space the shell's 88px was for —
-   keeping both left ~240px of dead scroll under every form. Commerce already cancelled this; studio did
-   not (audit round 7). */
 .mobile-app-shell:has(.mobile-action-bar-spacer) {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -392,11 +375,6 @@
 
 .mobile-top-bar {
   min-height: 48px;
-}
-
-.mobile-page-wide {
-  max-width: 540px;
-  margin: 0 auto;
 }
 
 .mobile-card {
@@ -567,7 +545,8 @@
 }
 
 @keyframes mobile-loading-breathe {
-  0%, 100% { transform: scale(1); opacity: 1; }
+  0%,
+100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.035); opacity: 0.88; }
 }
 
@@ -625,22 +604,9 @@
   padding: 28px 22px;
 }
 
-.mobile-loading-state-spinner {
-  display: grid;
-  width: 72px;
-  height: 72px;
-  place-items: center;
-  margin: 0 auto;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at center, #f7f1e5 0 42%, transparent 43%),
-    conic-gradient(from 0deg, rgba(176, 139, 79, 0.15), rgba(176, 139, 79, 0.82), rgba(27, 26, 22, 0.22), rgba(176, 139, 79, 0.15));
-  animation: mobile-loader-pulse 1.8s ease-in-out infinite;
-}
-
 @keyframes mobile-loader-pulse {
   0%,
-  100% {
+100% {
     transform: scale(0.98);
     box-shadow: 0 16px 38px -28px rgba(24, 47, 27, 0.45);
   }
@@ -653,8 +619,8 @@
 
 @media (max-width: 767px) {
   .mobile-app button,
-  .mobile-app a,
-  .mobile-app [role="button"] {
+.mobile-app a,
+.mobile-app [role="button"] {
     transition:
       transform var(--mobile-motion-fast) var(--mobile-ease-emphasized),
       background-color var(--mobile-motion-base) var(--mobile-ease-standard),
@@ -665,7 +631,7 @@
   }
 
   .mobile-app .scroll-reveal,
-  .mobile-app .scroll-reveal.is-visible {
+.mobile-app .scroll-reveal.is-visible {
     opacity: 1 !important;
     transform: none !important;
   }
@@ -674,13 +640,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mobile-app *,
-  .mobile-app *::before,
-  .mobile-app *::after {
+.mobile-app *::before,
+.mobile-app *::after {
     scroll-behavior: auto !important;
   }
 
   .mobile-app .scroll-reveal,
-  .mobile-app .scroll-reveal.is-visible {
+.mobile-app .scroll-reveal.is-visible {
     opacity: 1 !important;
     transform: none !important;
   }
@@ -778,9 +744,6 @@
   z-index: 55;
 }
 
-/* PWA standalone paints the page right under the status bar, so scrolled content ran into the clock and
-   the battery icon; the floating session button had the same problem against card text (audit round 7).
-   The strip covers the status bar, the halo keeps the button legible over whatever scrolls beneath it. */
 .mobile-app::before {
   content: "";
   position: fixed;
@@ -842,8 +805,7 @@
   align-items: center;
 }
 
-.mobile-inline-action,
-.mobile-sticky-action {
+.mobile-inline-action {
   position: relative;
   z-index: 10;
   margin-top: 12px;
@@ -868,8 +830,6 @@
   flex: 0 0 auto;
 }
 
-/* Keyboard up: the bottom nav is hidden and the bar sits just above the keypad, so only the bar's own
-   height needs reserving. It used to collapse to 18px while a ~110px bar still covered the last field. */
 .mobile-app.mobile-keyboard-active .mobile-action-bar-spacer {
   height: calc(var(--mobile-action-bar-height, 118px) + var(--mobile-action-gap, 10px));
 }
@@ -1031,23 +991,6 @@
   font-size: 0.72rem;
 }
 
-.mobile-fullscreen-modal {
-  bottom: var(--mobile-fullscreen-modal-bottom, 0px);
-  height: var(--mobile-fullscreen-modal-height, 100dvh);
-  min-height: var(--mobile-fullscreen-modal-height, 100dvh);
-  max-height: var(--mobile-fullscreen-modal-height, 100dvh);
-  overflow: hidden;
-  padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px calc(env(safe-area-inset-bottom, 0px) + 16px);
-  background: #fffaf0;
-  transform: translateZ(0);
-  will-change: bottom, height;
-  transition:
-    bottom var(--mobile-motion-slow) var(--mobile-ease-emphasized),
-    height var(--mobile-motion-slow) var(--mobile-ease-emphasized),
-    min-height var(--mobile-motion-slow) var(--mobile-ease-emphasized),
-    max-height var(--mobile-motion-slow) var(--mobile-ease-emphasized);
-}
-
 .mobile-segment-scroll button,
 .mobile-filter-chip-wrap button,
 .mobile-bottom-nav button,
@@ -1081,39 +1024,11 @@
   overflow: hidden;
 }
 
-.mobile-fullscreen-modal-keyboard-active {
-  padding-bottom: 8px;
-}
-
-.mobile-fullscreen-modal-keyboard-active .mobile-page-wide > .min-h-0.flex-1 {
-  scroll-padding-top: 12px;
-  scroll-padding-bottom: calc(var(--mobile-fullscreen-modal-bottom, 0px) + 28px);
-}
-
-.mobile-fullscreen-modal-footer {
-  flex: 0 0 auto;
-  overflow: hidden;
-}
-
 .mobile-line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.mobile-scroll-list {
-  min-height: 0;
-  overflow: visible;
-  padding-right: 0;
-}
-
-.mobile-scroll-list[data-scroll-region="contained"] {
-  max-height: 540px;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 2px;
 }
 
 .mobile-pwa-install {
@@ -1238,8 +1153,8 @@
   }
 
   .mobile-selected,
-  .mobile-success-pulse,
-  .mobile-loading-breathe {
+.mobile-success-pulse,
+.mobile-loading-breathe {
     animation: none;
   }
 }
@@ -1262,7 +1177,7 @@
   }
 
   .mobile-card,
-  .mobile-soft-card {
+.mobile-soft-card {
     border-radius: 14px;
   }
 
@@ -1308,7 +1223,6 @@
   }
 }
 
-/* Mobile Site Images */
 .mobile-site-images {
   padding: 16px;
 }
@@ -1389,9 +1303,6 @@
   margin-top: 4px;
 }
 
-/* A 44x44 hit area without changing what is drawn. The cart and checkout quantity controls are 32px
-   squares by design; this keeps the look and gives a thumb something to land on (UX backlog U-9).
-   Centred, so two controls 72px apart still cannot overlap. */
 .tap-44 {
   position: relative;
 }
