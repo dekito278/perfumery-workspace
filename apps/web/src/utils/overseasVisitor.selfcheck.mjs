@@ -68,8 +68,21 @@ assert.equal(approximateUsd(0), null);
 assert.equal(approximateUsd(-5), null);
 assert.equal(approximateUsd('abc'), null);
 
+// Every place a dollar figure appears carries the word "approx". It comes from ONE constant rate that
+// goes stale, and since Dekito's 2026-09-16 decision it is the biggest number on the product page — a
+// stale headline read as exact is a worse promise than a stale footnote.
+for (const file of [
+  ['components', 'storefront', 'OverseasPriceNote.jsx'],
+  ['components', 'storefront', 'InternationalPrice.jsx'],
+  ['components', 'storefront', 'CardPrice.jsx'],
+]) {
+  const source = read(...file);
+  if (!/US\$/.test(source)) continue;
+  const bare = (source.match(/(?<!approx\. )US\$/g) || []);
+  assert.deepEqual(bare, [],
+    `${file.join('/')} prints a dollar figure without "approx." — the rate is one constant and it goes stale`);
+}
 const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
-assert.match(note, /approx\. US\$\{usd\}/, 'the dollar figure must carry the word approx, always');
 assert.doesNotMatch(note, /Shipping is included|final price|total price/i,
   'shipping is quoted by hand — the panel must not imply this number is the final total');
 
@@ -143,9 +156,19 @@ assert.match(priceHook, /tierPricesForLine\(index, product\.slug, variant\?\.id 
   'the export price comes from the tier index, not from a field on the product');
 
 // --- 9. On both storefronts, and in English -------------------------------------------------------------
+// The panel was the export price's first home. It is gone from the product pages: since Dekito's
+// decision of 2026-09-16 the international price IS the headline there, and the panel repeated the same
+// number under a sentence — "priced separately from the Indonesian price above" — that had stopped being
+// true, because there is no Indonesian price above it any more.
+//
+// What replaced it has to be on BOTH surfaces, which is what this guard is really for.
 for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
-  assert.match(read(...page), /<OverseasPriceNote product=\{product\} variant=\{selectedVariant\} \/>/,
-    `${page.join('/')} shows the export panel — desktop and mobile drifting apart is this repo's commonest defect`);
+  const source = read(...page);
+  assert.match(source, /<InternationalPrice price=\{exportPrice\}/,
+    `${page.join('/')} leads with the international price — desktop and mobile drifting apart is this repo's commonest defect`);
+  assert.match(source, /<SwitchToIndonesiaHint/,
+    `${page.join('/')} keeps the way back for a domestic buyer reading English`);
+  assert.doesNotMatch(source, /<OverseasPriceNote/, 'and does not repeat the same number in a second panel');
 }
 const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // The Indonesian label moved into the message file when the storefront learned English; the English one
@@ -162,6 +185,61 @@ assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows 
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
 assert.match(button, /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
+
+// --- 9b. The HEADLINE price is region-gated; the enquiry line is not -------------------------------------
+// useExportPrice returns the export price to EVERYONE — that is its job, and it is what lets the
+// Indonesian shop show "Harga untuk pengiriman ke luar negeri" on its enquiry button. useOverseasPrice
+// returns it only to a visitor reading the international shop.
+//
+// Using the wrong one to decide the headline put Rp 2.630.000 at the top of the INDONESIAN product page
+// and US$ prices on its catalogue cards. That shipped nowhere only because it was opened on a phone
+// first; this is the guard that would have caught it.
+for (const file of [
+  ['pages', 'PublicProductDetailPage.jsx'],
+  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['components', 'storefront', 'CardPrice.jsx'],
+]) {
+  const source = read(...file);
+  assert.doesNotMatch(source, /useExportPrice/,
+    `${file.join('/')} decides a headline price, so it must use useOverseasPrice — useExportPrice hands the export price to the Indonesian shop too`);
+  assert.match(source, /useOverseasPrice\(product, (?:selectedVariant|variant)\)/,
+    `${file.join('/')} reads the region-gated price`);
+}
+// And the enquiry button keeps useExportPrice, because that line IS meant for both shops.
+assert.match(button, /useExportPrice\(product, variant\)/,
+  'the enquiry button still shows the export price in the Indonesian shop — that was the point of it');
+
+// A card must never print a raw price alongside CardPrice: a sabotage kept the component in a dead
+// branch and put the rupiah span back next to it, and every "does CardPrice appear?" check passed.
+for (const file of [
+  ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
+  ['pages', 'mobile', 'MobileStorefrontPage.jsx'], ['pages', 'HomePage.jsx'],
+  ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+]) {
+  const source = read(...file);
+  const raw = source.match(/<span[^>]*card__price[^>]*>\{(?:product|item)[.?]/g) || [];
+  assert.deepEqual(raw, [],
+    `${file.join('/')} prints a card price outside CardPrice: ${raw.join(' | ')}`);
+}
+
+// EVERY add-to-cart on a product page is gated, not just the obvious one. The desktop page has two — the
+// main button and the sticky bar — and gating only the first left a bar at the bottom of the English
+// page still saying "Add to cart" under a price it cannot charge. Two nudges had to be gated twice for
+// the same reason; this is the third time that shape has appeared.
+for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
+  const source = read(...page);
+  const carts = (source.match(/t\('pdp\.addToCart(?:WithPrice)?'/g) || []).length;
+  const gates = (source.match(/isInternational \?/g) || []).length;
+  assert.ok(carts > 0, `${page.join('/')} still has an add-to-cart to gate`);
+  assert.ok(gates >= carts,
+    `${page.join('/')} has ${carts} add-to-cart labels but only ${gates} region gates — one of them still offers the cart in the English shop`);
+}
+
+// CardPrice looks the price up through the PRIMARY VARIANT. Every export price is keyed by variant, so a
+// product-level lookup finds nothing and the card falls back to the Indonesian price in silence.
+const cardPrice = read('components', 'storefront', 'CardPrice.jsx');
+assert.match(cardPrice, /getPrimaryVariant\(Array\.isArray\(product\?\.variants\) \? product\.variants : \[\]\)/,
+  'CardPrice resolves the primary variant before looking up the export price');
 
 // --- 10. The export price is reachable without the guess ----------------------------------------------------
 // Detection decides who gets the English panel. It must not decide who is allowed to know the price at

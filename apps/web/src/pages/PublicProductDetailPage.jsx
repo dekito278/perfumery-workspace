@@ -1,14 +1,16 @@
+import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
+import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
+import { Globe, CheckCircle2, ShoppingBag, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScentPyramid from '@/components/storefront/ScentPyramid.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
-import OverseasPriceNote from '@/components/storefront/OverseasPriceNote.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
@@ -23,6 +25,8 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { productCopyFor } from '@/utils/productCopy.js';
+import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
+import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { formatRupiah, getPrimaryVariant, isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import {
 
@@ -54,7 +58,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const { slug: slugParam = '' } = useParams();
   const slug = slugProp || slugParam;
   const studioProducts = useStorefrontProducts();
-  const { t, region } = useTranslate();
+  const { t, region, isInternational } = useTranslate();
   const visibleProducts = studioProducts.filter(isProductVisibleInStorefront);
   const catalog = getPublicFragranceCatalog(visibleProducts);
   const product = findPublicFragrance(slug, visibleProducts);
@@ -73,6 +77,17 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const addBtnRef = useRef(null);
   const revealRef = useScrollReveal();
   const { magnetic, tilt, resetTilt } = useMicroInteractions();
+
+  // Below every useState it reads and above every early return: useOverseasPrice is a HOOK, so it cannot
+  // sit after a conditional return, and selectedVariantId is a const, so it cannot be read before its own
+  // declaration. Putting this block above the state threw "Cannot access 'selectedVariantId' before
+  // initialization" and killed the page — with the build still green, for the second time.
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  // Default to the bottle the headline price belongs to, not whichever variant happens to be first —
+  // otherwise the page can open quoting Rp 129.000 above a button that charges Rp 310.000.
+  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
+  // useOverseasPrice, not useExportPrice: the second hands the export price to the Indonesian shop too.
+  const exportPrice = useOverseasPrice(product, selectedVariant);
 
   // Reveal a compact sticky buy-bar once the main add-to-cart button scrolls out of view.
   useEffect(() => {
@@ -110,10 +125,6 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
 
   // Pick the selected size variant (default the first), so desktop buyers can choose size and are
   // charged that variant's price — matching mobile, instead of always the product default.
-  const variants = Array.isArray(product.variants) ? product.variants : [];
-  // Default to the bottle the headline price belongs to, not whichever variant happens to be first —
-  // otherwise the page can open quoting Rp 129.000 above a button that charges Rp 310.000.
-  const selectedVariant = variants.find((v) => (v.id || v.size) === selectedVariantId) || getPrimaryVariant(variants) || null;
   const selectedPrice = Number(selectedVariant?.priceNumber || product.priceNumber || 0);
   const selectedSize = selectedVariant?.size || product.size;
   const selectedVariantKey = selectedVariant?.id || selectedVariant?.size || '';
@@ -220,9 +231,17 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
           <div className="pdp-info">
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
-            <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
-            <PriceNote product={product} variant={selectedVariant} />
-            <OverseasPriceNote product={product} variant={selectedVariant} />
+            {/* One price, for the shop being read. In the English shop the Indonesian price and the
+                member/tier line are not shown at all: three prices on one screen left the reader to guess
+                which was theirs, which is what Dekito saw on his own phone. */}
+            {exportPrice ? (
+              <InternationalPrice price={exportPrice} className="hero-animate-text hero-animate-text--d3" />
+            ) : (
+              <>
+                <p className="pdp-price hero-animate-text hero-animate-text--d3">{product.price}</p>
+                <PriceNote product={product} variant={selectedVariant} />
+              </>
+            )}
             {scarcity ? <p className="pdp-scarcity hero-animate-text hero-animate-text--d3">{scarcity}</p> : null}
             {/* The written description carries blank lines the author typed; a bare {story} collapsed
                 them into one run-on block, the same way bespoke briefs used to render. */}
@@ -285,16 +304,23 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             ) : null}
 
             <div className="pdp-actions" data-reveal>
-              <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
-                {soldOut ? (
-                  <>{t('pdp.soldOut')}</>
-                ) : lastAddedSlug === product.slug ? (
-                  <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-                ) : (
-                  <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
-                )}
-              </button>
-              <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={selectedPriceLabel} className="mt-3" />
+              {/* The cart is a domestic-delivery flow: RajaOngkir prices it and a foreign address returns
+                  an empty area list. Offering it in the English shop invites a form nobody can finish, so
+                  the enquiry takes its place — and SwitchToIndonesiaHint keeps the way back one tap away
+                  for whoever is actually shipping inside Indonesia. */}
+              {isInternational ? null : (
+                <button ref={addBtnRef} type="button" className="pdp-add-btn magnetic-hover" onClick={() => handleAddToCart()} onMouseMove={magnetic} disabled={soldOut}>
+                  {soldOut ? (
+                    <>{t('pdp.soldOut')}</>
+                  ) : lastAddedSlug === product.slug ? (
+                    <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+                  ) : (
+                    <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCartWithPrice', { price: selectedPriceLabel })}</>
+                  )}
+                </button>
+              )}
+              <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
+              <SwitchToIndonesiaHint className="mt-3" />
             </div>
           </div>
         </section>
@@ -313,7 +339,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                   <div className="catalog-card__info">
                     <span className="catalog-card__category">{item.category}</span>
                     <h3>{item.name}</h3>
-                    <span className="catalog-card__price">{item.price}</span>
+                    <CardPrice product={item} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>
                 </Link>
               ))}
@@ -333,25 +359,40 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             </div>
             <div className="pdp-sticky-bar__text">
               <span className="pdp-sticky-bar__name">{product.name}</span>
-              <span className="pdp-sticky-bar__price">{selectedPriceLabel}</span>
+              <span className="pdp-sticky-bar__price">{exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel}</span>
             </div>
           </div>
-          <button
-            type="button"
-            className="pdp-add-btn magnetic-hover"
-            onClick={() => handleAddToCart()}
-            onMouseMove={magnetic}
-            tabIndex={showStickyBar ? 0 : -1}
-            disabled={soldOut}
-          >
-            {soldOut ? (
-              <>{t('pdp.soldOut')}</>
-            ) : lastAddedSlug === product.slug ? (
-              <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
-            ) : (
-              <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCart')}</>
-            )}
-          </button>
+          {/* The sticky bar is a second add-to-cart. In the English shop the cart is not offered, so it
+              carries the enquiry instead — a bar that still says "Add to cart" undoes the whole page
+              above it. Missing this the first time is exactly why both nudges had to be gated twice. */}
+          {isInternational ? (
+            <a
+              href={buildWhatsAppCheckoutUrl(t('intl.noticeMessage'), getStorefrontWhatsAppNumber())}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pdp-add-btn magnetic-hover"
+              tabIndex={showStickyBar ? 0 : -1}
+            >
+              <Globe className="h-4 w-4" /> {t('export.ask')}
+            </a>
+          ) : (
+            <button
+              type="button"
+              className="pdp-add-btn magnetic-hover"
+              onClick={() => handleAddToCart()}
+              onMouseMove={magnetic}
+              tabIndex={showStickyBar ? 0 : -1}
+              disabled={soldOut}
+            >
+              {soldOut ? (
+                <>{t('pdp.soldOut')}</>
+              ) : lastAddedSlug === product.slug ? (
+                <><CheckCircle2 className="h-4 w-4" /> {t('pdp.inCart')}</>
+              ) : (
+                <><ShoppingBag className="h-4 w-4" /> {t('pdp.addToCart')}</>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </>
