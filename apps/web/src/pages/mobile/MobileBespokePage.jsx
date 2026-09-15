@@ -1,3 +1,5 @@
+import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -71,15 +73,17 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
   [courier.courierCode]: courier.label,
 }), {});
 
-const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
+// Returns a message KEY, never a sentence. This is a module-level helper, so it cannot call t() — and a
+// default that returned Indonesian would put it into the English shop with nothing to flag it.
+const getFriendlyShippingErrorKey = (error, fallbackKey = 'bsp.areaSearchFailed') => {
   const message = String(error?.message || error || '').trim();
   if (/destination|domestic|data not found|not found/i.test(message)) {
-    return 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.';
+    return 'bsp.areaNotFound';
   }
   if (/network|fetch|failed|unavailable/i.test(message)) {
-    return 'Layanan ongkir belum bisa dihubungi. Coba lagi beberapa saat.';
+    return 'bsp.shippingUnreachable';
   }
-  return fallback;
+  return fallbackKey;
 };
 
 const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
@@ -101,6 +105,9 @@ const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
 );
 
 const CapMockup = ({ cap, bottle, label }) => {
+  const { t } = useTranslate();
+  // Compared against the STORED value, so it stays the literal string the database holds. This is
+  // data, not copy — translating it would silently stop the stone cap ever matching.
   const isStone = cap?.value === 'Cap batu';
   const isAcrylic = cap?.value === 'Cap custom akrilik';
   const isSquare = /square|kotak/i.test(`${bottle?.label || ''} ${bottle?.value || ''}`);
@@ -109,7 +116,7 @@ const CapMockup = ({ cap, bottle, label }) => {
   if (visualImage) {
     return (
       <div className="mobile-commerce-panel relative aspect-square w-full overflow-hidden bg-[#f8f7f4] p-0">
-        <img src={img(visualImage, 360)} alt={cap?.label || bottle?.label || label?.label || 'Opsi custom'} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
+        <img src={img(visualImage, 360)} alt={cap?.label || bottle?.label || label?.label || t('bsp.customOption')} className="h-full w-full object-cover" loading="lazy" decoding="async" width="360" height="360" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-3">
           <div className="flex flex-wrap gap-1">
             {[bottle?.label, cap?.label, label?.label].filter(Boolean).map((item) => (
@@ -128,14 +135,15 @@ const CapMockup = ({ cap, bottle, label }) => {
       <div className="absolute left-1/2 top-[14%] h-[16%] w-[36%] -translate-x-1/2 rounded-xl border border-editorial-stone/20 bg-[#1f2937] shadow-sm" />
       {isStone ? <div className="absolute left-1/2 top-[10%] h-[18%] w-[42%] -translate-x-1/2 rounded-[18px] bg-[radial-gradient(circle_at_30%_25%,#f9fafb,#8b8a7c_45%,#2f352f)] shadow-md" /> : null}
       {isAcrylic ? <div className="absolute left-1/2 top-[10%] h-[18%] w-[42%] -translate-x-1/2 rounded-xl bg-[linear-gradient(135deg,rgba(245,158,11,.85),rgba(236,72,153,.75),rgba(59,130,246,.8))] shadow-md" /> : null}
-      <div className="absolute left-1/2 top-[47%] min-w-10 -translate-x-1/2 rounded-lg border border-editorial-stone/10 bg-editorial-ivory px-2 py-1 text-center text-[9px] font-bold text-editorial-charcoal">{label?.label || 'Label'}</div>
-      <div className="mobile-commerce-chip absolute bottom-3 left-3 bg-white/80 px-2.5 py-1 text-[10px]">{bottle?.label || 'Botol'}</div>
+      <div className="absolute left-1/2 top-[47%] min-w-10 -translate-x-1/2 rounded-lg border border-editorial-stone/10 bg-editorial-ivory px-2 py-1 text-center text-[9px] font-bold text-editorial-charcoal">{label?.label || t('bsp.label')}</div>
+      <div className="mobile-commerce-chip absolute bottom-3 left-3 bg-white/80 px-2.5 py-1 text-[10px]">{bottle?.label || t('bsp.bottle')}</div>
       <div className="mobile-commerce-chip absolute bottom-3 right-3 bg-white/80 px-2.5 py-1 text-[10px]">{cap?.label}</div>
     </div>
   );
 };
 
 const MobileBespokePage = () => {
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
@@ -162,7 +170,7 @@ const MobileBespokePage = () => {
     customerCode: '',
     perfumeName: '',
     scentDescription: referenceProduct?.notes || '',
-    occasion: bespokeOccasionOptions[0],
+    occasion: bespokeOccasionOptions[0].value,
     size: bottleSizeOptions[0]?.value || '',
     bottleType: bottleTypeOptions[0]?.value || '',
     capDesign: capDesignOptions[0]?.value || '',
@@ -254,15 +262,15 @@ const MobileBespokePage = () => {
       const clipboardText = await navigator.clipboard?.readText?.();
       const nextCode = String(clipboardText || '').trim().toUpperCase();
       if (!nextCode) {
-        toast.error('Clipboard kosong. Tekan lama kolom kode untuk tempel manual.');
+        toast.error(t('bsp.clipboardEmpty'));
         return;
       }
       updateField('customerCode', nextCode);
-      toast.success('Kode customer ditempel');
+      toast.success(t('bsp.codePasted'));
     } catch (error) {
-      toast.error('Tempel otomatis belum diizinkan browser. Tekan lama kolom kode lalu pilih Tempel.');
+      toast.error(t('bsp.pasteBlocked'));
     }
-  }, [updateField]);
+  }, [updateField, t]);
 
   const resetShipping = useCallback(({ keepSearch = true, keepCourier = true } = {}) => {
     setSelectedDestination(null);
@@ -282,13 +290,13 @@ const MobileBespokePage = () => {
 
   const lookupCustomer = useCallback(async () => {
     if (!form.customerCode.trim()) {
-      toast.error('Kode customer wajib diisi');
+      toast.error(t('bsp.codeRequired'));
       return;
     }
 
     const customer = await lookupCustomerByCode(form.customerCode);
     if (!customer) {
-      toast.error('Kode customer tidak ditemukan');
+      toast.error(t('bsp.codeNotFound'));
       return;
     }
 
@@ -303,7 +311,7 @@ const MobileBespokePage = () => {
     }));
     updateDestinationSearch(customer.deliveryArea || '');
     toast.success(`${customer.customerCode} loaded`);
-  }, [form.customerCode, updateDestinationSearch]);
+  }, [form.customerCode, updateDestinationSearch, t]);
 
   const chooseShippingCourier = useCallback((courierCode) => {
     setSelectedCourier(courierCode);
@@ -315,7 +323,7 @@ const MobileBespokePage = () => {
   const searchDestinations = useCallback(async () => {
     const search = destinationSearch.trim();
     if (search.length < 3) {
-      toast.error('Isi minimal 3 huruf area, kecamatan, atau kota');
+      toast.error(t('bsp.minThreeShort'));
       return;
     }
 
@@ -328,14 +336,14 @@ const MobileBespokePage = () => {
       const destinations = await searchShippingDestinations(search);
       setDestinationOptions(destinations);
       if (!destinations.length) {
-        setShippingError('Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+        setShippingError(t('bsp.areaNotFound'));
       }
     } catch (error) {
-      setShippingError(getFriendlyShippingError(error));
+      setShippingError(t(getFriendlyShippingErrorKey(error)));
     } finally {
       setShippingLoading(false);
     }
-  }, [destinationSearch]);
+  }, [destinationSearch, t]);
 
   const loadShippingRates = useCallback(async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
     setSelectedDestination(destination);
@@ -344,7 +352,7 @@ const MobileBespokePage = () => {
     setSelectedShipping(null);
     setShippingOptions([]);
     if (!courierCode) {
-      setShippingError('Pilih ekspedisi dulu untuk melihat layanan ongkir.');
+      setShippingError(t('bsp.pickCourierFirst'));
       return;
     }
 
@@ -365,14 +373,14 @@ const MobileBespokePage = () => {
         setSelectedShipping(sortedRates[0]);
       }
       if (!sortedRates.length) {
-        setShippingError('Belum ada ongkir untuk area ini');
+        setShippingError(t('bsp.noRatesShort'));
       }
     } catch (error) {
-      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pilih area atau kurir lain.'));
+      setShippingError(t(getFriendlyShippingErrorKey(error, 'bsp.rateFailed')));
     } finally {
       setShippingLoading(false);
     }
-  }, [estimatedTotal, selectedCourier, shippingWeight]);
+  }, [estimatedTotal, selectedCourier, shippingWeight, t]);
 
   const autoCalculateShipping = useCallback(async ({
     courierCode = selectedCourier,
@@ -381,11 +389,11 @@ const MobileBespokePage = () => {
   } = {}) => {
     const search = String(searchText || destinationSearch || form.deliveryAddress || '').trim();
     if (search.length < 3) {
-      toast.error('Isi area ongkir dulu, contoh: Jakarta Selatan');
+      toast.error(t('bsp.areaFirstShort'));
       return;
     }
     if (!courierCode) {
-      toast.error('Pilih ekspedisi dulu');
+      toast.error(t('bsp.courierFirstShort'));
       return;
     }
 
@@ -411,7 +419,7 @@ const MobileBespokePage = () => {
           setSelectedShipping(sortedRates[0]);
         }
         if (!sortedRates.length) {
-          setShippingError('Area ditemukan, tapi ongkir belum tersedia untuk kurir ini. Pilih area lain atau kurir lain.');
+          setShippingError(t('bsp.areaNoRate'));
         }
         return;
       }
@@ -426,14 +434,14 @@ const MobileBespokePage = () => {
       }
       setDestinationOptions(destinations);
       setShippingError(destinations.length
-        ? 'Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.'
-        : 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+        ? t('bsp.pickAreaThenService')
+        : t('bsp.areaNotFound'));
     } catch (error) {
-      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.'));
+      setShippingError(t(getFriendlyShippingErrorKey(error, 'bsp.rateFailedArea')));
     } finally {
       setShippingLoading(false);
     }
-  }, [destinationSearch, estimatedTotal, form.deliveryAddress, loadShippingRates, selectedCourier, selectedDestination, shippingWeight]);
+  }, [destinationSearch, estimatedTotal, form.deliveryAddress, loadShippingRates, selectedCourier, selectedDestination, shippingWeight, t]);
 
   const handleCourierChange = useCallback((courierCode) => {
     chooseShippingCourier(courierCode);
@@ -447,26 +455,26 @@ const MobileBespokePage = () => {
   const flowSteps = useMemo(() => [
     {
       key: 'aroma',
-      title: 'Brief aroma',
-      shortLabel: 'Aroma',
-      description: 'Beri nama parfum, lalu ceritakan arah aroma dan momen pemakaian.',
+      title: t('bsp.stepScent'),
+      shortLabel: t('bsp.scent'),
+      description: t('bsp.stepScentBody'),
       render: () => (
         <div className="grid gap-3">
           <input
             value={form.perfumeName}
             onChange={(event) => updateField('perfumeName', event.target.value)}
-            placeholder="Nama parfum, contoh: After Rain" aria-label="Nama parfum"
+            placeholder={t('bsp.namePlaceholderMobile')} aria-label={t('bsp.perfumeName')}
             className="mobile-commerce-control h-12 px-3 text-sm font-semibold text-editorial-charcoal"
           />
           <textarea
             value={form.scentDescription}
             onChange={(event) => updateField('scentDescription', event.target.value)}
-            placeholder="Contoh: bersih, dewasa, woody, sedikit vanila, tidak terlalu manis." aria-label="Arah aroma"
+            placeholder={t('bsp.scentPlaceholderMobile')} aria-label={t('bsp.scentDirection')}
             rows={3}
             className="mobile-commerce-control min-h-[96px] w-full resize-none px-3 py-3 text-sm font-semibold leading-relaxed text-editorial-charcoal"
           />
           <div className="grid grid-cols-4 gap-1.5">
-            {['Bersih', 'Woody', 'Vanila', 'Segar'].map((item) => (
+            {[t('bsp.clean'), 'Woody', t('bsp.vanilla'), t('bsp.freshId')].map((item) => (
               <button
                 key={item}
                 type="button"
@@ -480,15 +488,15 @@ const MobileBespokePage = () => {
           <div className="flex gap-1.5 overflow-x-auto pb-1 mobile-segment-scroll">
             {bespokeOccasionOptions.map((option) => (
               <button
-                key={option}
+                key={option.value}
                 type="button"
-                onClick={() => updateField('occasion', option)}
+                onClick={() => updateField('occasion', option.value)}
                 className={cn(
                   'h-9 shrink-0 rounded-full border px-3 text-[11px] font-bold transition',
-                  form.occasion === option ? 'border-editorial-stone/30 bg-editorial-ivory text-editorial-charcoal' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
+                  form.occasion === option.value ? 'border-editorial-stone/30 bg-editorial-ivory text-editorial-charcoal' : 'border-[#e5e7eb] bg-white text-[#6b7280]'
                 )}
               >
-                {option}
+                {t(option.labelKey)}
               </button>
             ))}
           </div>
@@ -498,9 +506,9 @@ const MobileBespokePage = () => {
     },
     {
       key: 'package',
-      title: 'Ukuran & material',
-      shortLabel: 'Preferensi',
-      description: 'Pilih ukuran botol dan material tambahan bila perlu.',
+      title: t('bsp.stepSize'),
+      shortLabel: t('bsp.preferences'),
+      description: t('bsp.stepSizeBody'),
       render: () => (
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-2">
@@ -510,9 +518,9 @@ const MobileBespokePage = () => {
           </div>
           {exoticMaterialOptions.length ? (
             <div className="grid gap-2">
-              <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Material eksotis</div>
+              <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.exoticMaterial')}</div>
               <div className="grid grid-cols-2 gap-2">
-                <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>Tanpa tambahan</OptionButton>
+                <OptionButton active={!form.exoticMaterial} onClick={() => updateField('exoticMaterial', '')}>{t('bsp.noExtra')}</OptionButton>
                 {exoticMaterialOptions.map((option) => (
                   <OptionButton key={option.value} active={form.exoticMaterial === option.value} imageUrl={option.imageUrl} onClick={() => updateField('exoticMaterial', option.value)}>
                     {option.label}
@@ -527,21 +535,21 @@ const MobileBespokePage = () => {
     },
     {
       key: 'bottle',
-      title: 'Tampilan botol',
-      shortLabel: 'Botol',
-      description: 'Pilih bentuk botol, cap, dan label dalam satu layar.',
+      title: t('bsp.stepLook'),
+      shortLabel: t('bsp.bottle'),
+      description: t('bsp.stepLookBody'),
       render: () => (
         <div className="grid gap-3">
           <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3">
             <CapMockup bottle={selectedBottleType} cap={selectedCap} label={selectedLabel} />
             <div className="grid content-start gap-2 text-xs font-bold text-editorial-charcoal">
-              <div className="rounded-2xl bg-editorial-ivory px-3 py-2">{selectedBottleType?.label || 'Botol'}</div>
-              <div className="rounded-2xl bg-white px-3 py-2">{selectedCap?.label || 'Cap'}</div>
-              <div className="rounded-2xl bg-white px-3 py-2">{selectedLabel?.label || 'Label'}</div>
+              <div className="rounded-2xl bg-editorial-ivory px-3 py-2">{selectedBottleType?.label || t('bsp.bottle')}</div>
+              <div className="rounded-2xl bg-white px-3 py-2">{selectedCap?.label || t('bsp.cap')}</div>
+              <div className="rounded-2xl bg-white px-3 py-2">{selectedLabel?.label || t('bsp.label')}</div>
             </div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Botol</div>
+            <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.bottle')}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {bottleTypeOptions.map((option) => (
                 <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} onClick={() => updateField('bottleType', option.value)}>{option.label}</OptionButton>
@@ -549,7 +557,7 @@ const MobileBespokePage = () => {
             </div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Cap</div>
+            <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.cap')}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {capDesignOptions.map((option) => (
                 <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('capDesign', option.value)}>{option.label}</OptionButton>
@@ -557,7 +565,7 @@ const MobileBespokePage = () => {
             </div>
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Label</div>
+            <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.label')}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {labelDesignOptions.map((option) => (
                 <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('labelDesign', option.value)}>{option.label}</OptionButton>
@@ -570,45 +578,47 @@ const MobileBespokePage = () => {
     },
     {
       key: 'delivery',
-      title: 'Kontak & ongkir',
-      shortLabel: 'Ongkir',
-      description: 'Isi penerima seperti checkout produk, lalu pilih kurir dan layanan ongkir.',
+      title: t('bsp.stepContact'),
+      shortLabel: t('bsp.shipping'),
+      description: t('bsp.stepContactBody'),
       render: () => (
         <div className="grid gap-3">
+          {/* Same domestic-only courier API as the product checkout, so the same warning belongs here. */}
+          <InternationalCheckoutNotice />
           <div className="grid gap-2">
             <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-              <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} placeholder="Kode customer" aria-label="Kode customer" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={pasteCustomerCode}>Tempel</Button>
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>Cek</Button>
+              <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} placeholder={t('bsp.customerCodeField')} aria-label={t('bsp.customerCodeField')} className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={pasteCustomerCode}>{t('bsp.paste')}</Button>
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer}>{t('bsp.check')}</Button>
             </div>
-            <input value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama pembeli" aria-label="Nama pembeli" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-            <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="Nomor WhatsApp / telepon" aria-label="Nomor WhatsApp" inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-            <textarea autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" aria-label="Alamat pengiriman" rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <input value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.buyerName')} aria-label={t('bsp.buyerName')} className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            <input value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder={t('bsp.phone')} aria-label={t('bsp.phoneAria')} inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            <textarea autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} aria-label={t('bsp.address')} rows={2} className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </div>
           <div className="grid gap-2">
             <div className="grid grid-cols-[1fr_auto] gap-2">
-              <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Kecamatan / kota tujuan" aria-label="Cari kecamatan atau kota tujuan" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>Cari</Button>
+              <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')} className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-3 text-xs font-bold" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>{t('bsp.search')}</Button>
             </div>
             <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
               <span className="min-w-0">
                 <span className="block text-[10px] font-bold uppercase">
-                  {selectedCourier ? 'Kurir dipilih' : 'Dropdown kurir'}
+                  {selectedCourier ? t('bsp.courierChosen') : t('bsp.courierDropdown')}
                 </span>
                 <span className="mt-0.5 block truncate text-sm font-bold">
-                  {selectedCourier ? (courierLabels[selectedCourier] || selectedCourier.toUpperCase()) : 'Pilih kurir pengiriman'}
+                  {selectedCourier ? (courierLabels[selectedCourier] || selectedCourier.toUpperCase()) : t('bsp.pickShippingCourier')}
                 </span>
               </span>
               <ChevronDown className="h-4 w-4 shrink-0" />
-              <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
-                <option value="">Pilih kurir</option>
+              <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')}>
+                <option value="">{t('bsp.pickCourier')}</option>
                 {checkoutCourierOptions.map((courier) => (
                   <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
                 ))}
               </select>
             </label>
             <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={autoCalculateShipping} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
-              {shippingLoading ? 'Menghitung...' : selectedDestination ? 'Tampilkan ongkir' : 'Cari ongkir'}
+              {shippingLoading ? t('bsp.calculating') : selectedDestination ? t('bsp.showRates') : t('bsp.findRates')}
             </Button>
           </div>
           {selectedDestination ? <p className="rounded-2xl bg-editorial-ivory px-3 py-2 text-[11px] font-bold text-editorial-charcoal">Area: {selectedDestination.label}</p> : null}
@@ -635,7 +645,7 @@ const MobileBespokePage = () => {
                       </span>
                     </div>
                     {rate.promotionApplied ? <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase text-emerald-700">{rate.promotionLabel}</div> : null}
-                    <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || t('bsp.estimateFollows')}</p>
                   </button>
                 );
               })}
@@ -648,18 +658,18 @@ const MobileBespokePage = () => {
     },
     {
       key: 'payment',
-      title: 'Ringkasan & pembayaran',
-      shortLabel: 'Bayar',
-      description: 'Cek ringkasan lalu pilih metode pembayaran.',
+      title: t('bsp.stepReview'),
+      shortLabel: t('bsp.pay'),
+      description: t('bsp.stepReviewBody'),
       render: () => (
         <div className="grid gap-3">
           <div className="mobile-commerce-summary p-4 text-xs font-bold text-editorial-charcoal">
-            <div className="flex justify-between gap-3"><span>Nama parfum</span><span>{form.perfumeName || '-'}</span></div>
-            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Parfum bespoke</span><span>Dikonfirmasi Studio</span></div>
+            <div className="flex justify-between gap-3"><span>{t('bsp.perfumeName')}</span><span>{form.perfumeName || '-'}</span></div>
+            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('bsp.bespokePerfume')}</span><span>{t('bsp.studioConfirmed')}</span></div>
             <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Voucher</span><span>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : '-'}</span></div>
-            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
+            <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('bsp.shipping')}</span><span>{shippingFee ? formatRupiah(shippingFee) : '-'}</span></div>
             <div className="mt-3 flex items-end justify-between gap-3 border-t border-editorial-stone/10 pt-3 text-sm text-editorial-charcoal">
-              <span>Total transfer</span>
+              <span>{t('bsp.transferTotal')}</span>
               <span className="text-base text-editorial-charcoal">{formatRupiah(totalDue)}</span>
             </div>
             {discountAmount ? (
@@ -679,20 +689,20 @@ const MobileBespokePage = () => {
               <input
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                placeholder="Kode voucher" aria-label="Kode voucher"
+                placeholder={t('bsp.voucherPlaceholder')} aria-label={t('bsp.voucherPlaceholder')}
                 className="mobile-commerce-control h-11 min-w-0 px-3 text-xs font-bold uppercase text-editorial-charcoal"
               />
               <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white px-3 text-[11px] font-bold" onClick={voucher.applyVoucher} disabled={voucher.loading}>
-                {voucher.loading ? 'Cek...' : 'Pakai'}
+                {voucher.loading ? t('bsp.checking') : t('bsp.apply')}
               </Button>
             </div>
             {voucher.appliedVoucher ? (
               <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-editorial-stone/15 bg-editorial-ivory px-3 py-2">
                 <div className="min-w-0">
                   <div className="truncate text-xs font-bold text-editorial-charcoal">{voucher.appliedVoucher.code} diterapkan</div>
-                  <div className="mt-0.5 text-[10px] font-semibold text-editorial-muted">Total transfer sudah disesuaikan voucher.</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-editorial-muted">{t('bsp.voucherAdjusted')}</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -706,7 +716,7 @@ const MobileBespokePage = () => {
               <button key={method.id} type="button" onClick={() => updateField('paymentMethod', method.id)} className={cn('mobile-commerce-choice px-4 py-4', active ? 'is-active' : 'text-[#6b7280]')}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-bold text-editorial-charcoal">{method.label}</span>
-                  {active ? <span className="rounded-full bg-editorial-charcoal px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                  {active ? <span className="rounded-full bg-editorial-charcoal px-2 py-1 text-[9px] font-bold uppercase text-white">{t('bsp.chosen')}</span> : null}
                 </div>
                 <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
                 {method.accountNumber ? <div className="mobile-commerce-panel mt-3 border-0 bg-white/80 px-3 py-2 text-[11px] font-bold text-editorial-charcoal">{method.bankName} {method.accountNumber} / A/N {method.accountName}</div> : null}
@@ -730,9 +740,9 @@ const MobileBespokePage = () => {
               {form.preorderAcknowledged ? <Check className="h-4 w-4" /> : null}
             </span>
             <span>
-              <span className="block text-sm font-bold text-editorial-charcoal">Konfirmasi pre-order</span>
+              <span className="block text-sm font-bold text-editorial-charcoal">{t('bsp.preorderTitle')}</span>
               <span className="mt-1 block text-[11px] font-semibold leading-relaxed">
-                Saya memahami bahwa bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
+                {t('bsp.preorderConfirmMobile')}
               </span>
             </span>
           </label>
@@ -740,14 +750,14 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
-  ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher]);
+  ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher, t]);
 
   const activeStep = flowSteps[step];
   const completion = Math.round(((step + Number(activeStep.isComplete())) / flowSteps.length) * 100);
 
   const nextStep = () => {
     if (!activeStep.isComplete()) {
-      toast.error('Lengkapi langkah ini dulu');
+      toast.error(t('bsp.completeStep'));
       return;
     }
     setStep((current) => Math.min(current + 1, flowSteps.length - 1));
@@ -761,7 +771,7 @@ const MobileBespokePage = () => {
       return;
     }
     if (estimatedTotal <= 0) {
-      toast.error('Harga bespoke belum terhitung. Pilih ulang opsi botol.');
+      toast.error(t('bsp.errPrice'));
       return;
     }
 
@@ -772,7 +782,7 @@ const MobileBespokePage = () => {
         ? await applyVoucherToSubtotalAsync({ code: voucher.appliedCode, subtotal: estimatedTotal, items: bespokeVoucherItems })
         : null;
       if (voucher.appliedCode && !voucherValidation?.valid) {
-        throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan');
+        throw new Error(voucherValidation?.message || t('bsp.errVoucherShort'));
       }
       const checkoutVoucherDiscount = voucherValidation?.discountAmount || 0;
       const checkoutDiscountedEstimatedTotal = Math.max(estimatedTotal - checkoutVoucherDiscount, 0);
@@ -930,26 +940,26 @@ const MobileBespokePage = () => {
   return (
     <MobileCommerceLayout>
       <Helmet>
-        <title>Parfum Bespoke - Solivagant</title>
+        <title>{t('bsp.tabMobile')}</title>
         <link rel="canonical" href={toAbsoluteUrl(desktopCanonicalPath('/mobile/bespoke'))} />
-        <meta name="description" content="Ajukan request parfum bespoke SOLIVAGANT: arah aroma, ukuran botol, desain cap, material eksotis, dan pembayaran." />
+        <meta name="description" content={t('bsp.metaMobile')} />
       </Helmet>
       <main className="mobile-page mobile-bespoke-page">
         <section className="mobile-soft-card p-2.5">
           <div className="mobile-commerce-chip gap-2 bg-white px-3 py-1 text-[10px] uppercase">
             <Sparkles className="h-3.5 w-3.5" />
-            Brief bespoke
+            {t('bsp.brief')}
           </div>
-          <h1 className="mt-1.5 text-lg font-bold leading-tight text-editorial-charcoal">Request parfum bespoke.</h1>
+          <h1 className="mt-1.5 text-lg font-bold leading-tight text-editorial-charcoal">{t('bsp.requestPerfume')}</h1>
           <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#6b7280]">
-            Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat.
+            {t('bsp.flowLead')}
           </p>
           <div className="mt-2 inline-flex rounded-full bg-editorial-charcoal px-2.5 py-1 text-[10px] font-bold uppercase text-white">
-            Pre-order / 7-14 hari
+            {t('bsp.preorderDays')}
           </div>
           {referenceProduct ? (
             <div className="mobile-commerce-panel mt-3 border-0 p-3 text-xs font-bold text-editorial-charcoal">
-              Referensi aroma: <span className="text-editorial-charcoal">{referenceProduct.name}</span>
+              {t('bsp.scentReference')} <span className="text-editorial-charcoal">{referenceProduct.name}</span>
             </div>
           ) : null}
         </section>
@@ -958,7 +968,7 @@ const MobileBespokePage = () => {
           <header className="border-b border-editorial-stone/10 bg-white px-3 py-2.5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-charcoal">Langkah {step + 1} dari {flowSteps.length}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-charcoal">{t('bsp.stepOf', { current: step + 1, total: flowSteps.length })}</p>
                 <h2 className="mt-1 text-base font-bold text-editorial-charcoal">{activeStep.title}</h2>
                 <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-[#6b7280]">{activeStep.description}</p>
               </div>
@@ -994,18 +1004,18 @@ const MobileBespokePage = () => {
           <section className="mobile-card p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-editorial-charcoal">Brief ringkas</h2>
-                <p className="mt-1 text-xs font-bold leading-relaxed text-editorial-charcoal">{form.perfumeName || 'Nama parfum belum diisi.'}</p>
-                <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{form.scentDescription || 'Aroma belum diisi.'}</p>
+                <h2 className="text-sm font-bold text-editorial-charcoal">{t('bsp.briefShort')}</h2>
+                <p className="mt-1 text-xs font-bold leading-relaxed text-editorial-charcoal">{form.perfumeName || t('bsp.errPerfumeName')}</p>
+                <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{form.scentDescription || t('bsp.errScentEmpty')}</p>
               </div>
               <div className="shrink-0 text-right">
-                <div className="text-[10px] font-bold uppercase text-[#8b949e]">Pre-order</div>
-                <div className="text-sm font-bold text-editorial-charcoal">7-14 hari</div>
+                <div className="text-[10px] font-bold uppercase text-[#8b949e]">{t('bsp.preorder')}</div>
+                <div className="text-sm font-bold text-editorial-charcoal">{t('bsp.days')}</div>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-[#6b7280]">
               <div className="mobile-commerce-panel border-0 bg-[#f8f7f4] px-3 py-2">{form.size || '-'} / {selectedCap?.label || '-'}</div>
-              <div className="mobile-commerce-panel border-0 bg-[#f8f7f4] px-3 py-2">{shippingSummary || 'Ongkir belum dipilih'}</div>
+              <div className="mobile-commerce-panel border-0 bg-[#f8f7f4] px-3 py-2">{shippingSummary || t('bsp.errShipping')}</div>
             </div>
           </section>
         ) : null}
@@ -1017,34 +1027,34 @@ const MobileBespokePage = () => {
                 <CheckCircle2 className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-base font-bold text-editorial-charcoal">Ringkasan request</h2>
+                <h2 className="text-base font-bold text-editorial-charcoal">{t('bsp.requestSummary')}</h2>
                 <div className="mt-3 space-y-2 text-xs font-semibold text-[#6b7280]">
-                  <p><strong className="text-editorial-charcoal">Pembeli:</strong> {submittedRequest.customerName}</p>
-                  <p><strong className="text-editorial-charcoal">Kode customer:</strong> {submittedRequest.customerCode || '-'}</p>
-                  <p><strong className="text-editorial-charcoal">Studio order:</strong> {submittedRequest.orderNumber}</p>
-                  <p><strong className="text-editorial-charcoal">Kontak:</strong> {submittedRequest.contact}</p>
-                  <p><strong className="text-editorial-charcoal">Nama parfum:</strong> {submittedRequest.perfumeName || '-'}</p>
-                  <p><strong className="text-editorial-charcoal">Aroma:</strong> {submittedRequest.scentDescription}</p>
-                  <p><strong className="text-editorial-charcoal">Botol:</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
-                  {submittedRequest.exoticMaterial ? <p><strong className="text-editorial-charcoal">Material:</strong> {submittedRequest.exoticMaterial}</p> : null}
-                  <p><strong className="text-editorial-charcoal">Budget:</strong> {submittedRequest.budget}</p>
-                  <p><strong className="text-editorial-charcoal">Ongkir:</strong> {submittedRequest.shipping || '-'}</p>
-                  <p><strong className="text-editorial-charcoal">Pre-order:</strong> 7-14 hari setelah brief dikonfirmasi</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.buyer')}</strong> {submittedRequest.customerName}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.customerCode')}</strong> {submittedRequest.customerCode || '-'}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.studioOrder')}</strong> {submittedRequest.orderNumber}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.contactLabel')}</strong> {submittedRequest.contact}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.perfumeNameLabel')}</strong> {submittedRequest.perfumeName || '-'}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.scentLabel')}</strong> {submittedRequest.scentDescription}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.bottleLabel')}</strong> {submittedRequest.size}, {submittedRequest.bottleType}, {submittedRequest.capDesign}, {submittedRequest.labelDesign}</p>
+                  {submittedRequest.exoticMaterial ? <p><strong className="text-editorial-charcoal">{t('bsp.materialLabel')}</strong> {submittedRequest.exoticMaterial}</p> : null}
+                  <p><strong className="text-editorial-charcoal">{t('bsp.budgetLabel')}</strong> {submittedRequest.budget}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.shippingLabel')}</strong> {submittedRequest.shipping || '-'}</p>
+                  <p><strong className="text-editorial-charcoal">{t('bsp.preorderLabel')}</strong> {t('bsp.daysAfterBrief')}</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => navigate('/mobile/catalog')}>
                     <ClipboardList className="h-4 w-4" />
-                    Katalog
+                    {t('bsp.catalog')}
                   </Button>
                   <Button
                     type="button"
                     className="rounded-2xl gap-2"
                     onClick={async () => {
                       await navigator.clipboard.writeText(`${submittedRequest.customerName} / ${submittedRequest.contact}\n${submittedRequest.scentDescription}`);
-                      toast.success('Request contact copied');
+                      toast.success(t('bsp.contactCopied'));
                     }}
                   >
-                    Salin kontak
+                    {t('bsp.copyContact')}
                     <MessageCircle className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1056,7 +1066,7 @@ const MobileBespokePage = () => {
         <StickyBottomActionBar
           fixed
           reserveSpace
-          aria-label="Aksi request bespoke"
+          aria-label={t('bsp.actions')}
           className="mobile-bespoke-action-bar"
           contentClassName="rounded-2xl border-editorial-stone/10 bg-white/95"
         >
@@ -1065,18 +1075,18 @@ const MobileBespokePage = () => {
               <div className="rounded-2xl border border-editorial-stone/10 bg-editorial-ivory px-3 py-2">
                 <div className="flex items-end justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase text-[#6b7280]">Total transfer</p>
+                    <p className="text-[10px] font-bold uppercase text-[#6b7280]">{t('bsp.transferTotal')}</p>
                     <p className="text-lg font-bold leading-tight text-editorial-charcoal">{formatRupiah(totalDue)}</p>
                   </div>
-                  <p className="shrink-0 text-[10px] font-bold uppercase text-editorial-charcoal">Siap dibayar</p>
+                  <p className="shrink-0 text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.readyToPay')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={saving} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
-                  Kembali
+                  {t('bsp.back')}
                 </Button>
                 <Button type="button" className="rounded-2xl gap-2" onClick={submitRequest} disabled={saving}>
-                  {saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan & upload bukti' : 'Bayar sekarang')}
+                  {saving ? t('bsp.processing') : (isManualPayment ? t('bsp.orderUploadMobile') : t('bsp.payNow'))}
                   {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </Button>
               </div>
@@ -1084,9 +1094,9 @@ const MobileBespokePage = () => {
           ) : (
             <div className="grid grid-cols-2 gap-2">
               <Button type="button" variant="outline" className="rounded-2xl bg-white" disabled={step === 0} onClick={() => setStep((current) => Math.max(current - 1, 0))}>
-                Kembali
+                {t('bsp.back')}
               </Button>
-              <Button type="button" className="rounded-2xl" onClick={nextStep}>Lanjut</Button>
+              <Button type="button" className="rounded-2xl" onClick={nextStep}>{t('bsp.next')}</Button>
             </div>
           )}
         </StickyBottomActionBar>

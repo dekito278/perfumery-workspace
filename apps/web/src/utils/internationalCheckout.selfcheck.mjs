@@ -80,6 +80,9 @@ for (const page of [
   ['pages', 'mobile', 'MobileCartPage.jsx'],
   ['pages', 'CheckoutPage.jsx'],
   ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
+  // Bespoke runs the same domestic-only courier search, so the same dead end waits there.
+  ['pages', 'BespokePage.jsx'],
+  ['pages', 'mobile', 'MobileBespokePage.jsx'],
 ]) {
   assert.match(read(...page), /<InternationalCheckoutNotice /, `${page.join('/')} shows the notice`);
 }

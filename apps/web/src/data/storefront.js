@@ -251,13 +251,15 @@ export const bespokeMoodOptions = [
   'Harian profesional',
 ];
 
+// `value` is what gets written into the bespoke request and read in Studio, so it must never change.
+// `labelKey` is what the buyer reads. Same split as WEAR_FACETS, for the same reason.
 export const bespokeOccasionOptions = [
-  'Harian',
-  'Kantor',
-  'Malam spesial',
-  'Pernikahan / acara',
-  'Hadiah',
-  'Aroma khas',
+  { value: 'Harian', labelKey: 'bsp.occ.harian' },
+  { value: 'Kantor', labelKey: 'bsp.occ.kantor' },
+  { value: 'Malam spesial', labelKey: 'bsp.occ.malam' },
+  { value: 'Pernikahan / acara', labelKey: 'bsp.occ.acara' },
+  { value: 'Hadiah', labelKey: 'bsp.occ.hadiah' },
+  { value: 'Aroma khas', labelKey: 'bsp.occ.khas' },
 ];
 
 export const bespokeBottleSizeOptions = [

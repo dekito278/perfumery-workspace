@@ -69,6 +69,10 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // The journal is titled in English on the Indonesian site already — it is the section's name.
   'journal.tab', 'journal.meta', 'journal.eyebrow',
   'pay.refresh', // the same word in both
+  // Bespoke: perfumery and commerce terms that are the same word on an Indonesian bottle.
+  'bsp.contact', 'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
+  'bsp.preorder', 'bsp.studioOrder', 'bsp.materialLabel', 'bsp.budgetLabel', 'bsp.preorderLabel',
+  'bsp.contactCopied',
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -269,6 +273,8 @@ const PAGES_FULLY_TRANSLATED = [
   ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
   ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['pages', 'WelcomePage.jsx'],
+  ['pages', 'BespokePage.jsx'],
+  ['pages', 'mobile', 'MobileBespokePage.jsx'],
 ];
 
 for (const file of PAGES_FULLY_TRANSLATED) {
@@ -352,6 +358,30 @@ for (const file of PAGES_FULLY_TRANSLATED) {
     `${file.join('/')} renders a bare string literal as copy: ${literals.join(' | ')}`);
 }
 
+// Every *Key value must be a key that EXISTS. `labelKey: 'Harian'` looks right, passes the raw-key check
+// (it is not rendered bare), and renders the Indonesian word itself — because translate() falls back to
+// the key when it finds nothing. A sabotage did exactly that to the bespoke occasion list.
+{
+  const keyed = [
+    ...PAGES_FULLY_TRANSLATED,
+    ['data', 'storefront.js'],
+    ['data', 'whyDirect.js'],
+    ['utils', 'productWear.js'],
+    ['components', 'storefront', 'PublicHeader.jsx'],
+    ['components', 'storefront', 'StorefrontFooter.jsx'],
+    ['components', 'storefront', 'ScentPyramid.jsx'],
+    ['layouts', 'MobileCommerceLayout.jsx'],
+  ];
+  for (const file of keyed) {
+    const source = read(...file);
+    const used = [...source.matchAll(/\b\w*(?:label|title|body|cta|name|notes|caption|step)Key\s*:\s*'([^']+)'/gi)]
+      .map((match) => match[1]);
+    const unknown = used.filter((key) => !Object.prototype.hasOwnProperty.call(MESSAGES.id, key));
+    assert.deepEqual(unknown, [],
+      `${file.join('/')} points a *Key at something that is not a message key: ${unknown.join(', ')} — translate() falls back to the key itself, so it would render as that text`);
+  }
+}
+
 // A translator parameter must never carry a DEFAULT. Three helpers now take `t` because they run outside
 // a component — getScarcityLabel, describeWear, formatDate — and each time, a default that quietly
 // returns Indonesian would print it into the English shop with nothing to flag it. A sabotage did exactly
@@ -368,6 +398,14 @@ for (const file of [
   const defaults = source.match(/[,(]\s*t\s*=\s*[^,)]+/g) || [];
   assert.deepEqual(defaults, [],
     `${file.join('/')} gives the translator a default: ${defaults.join(' | ')} — silence is the only safe fallback`);
+}
+
+// getFriendlyShippingErrorKey returns a KEY and takes no translator. Adding a `t` parameter in front of
+// its fallback silently shifts every caller's argument by one, so the specific fallback key becomes the
+// translator and the generic default is used instead — a wrong message, in the right language.
+for (const file of [['pages', 'BespokePage.jsx'], ['pages', 'mobile', 'MobileBespokePage.jsx']]) {
+  assert.match(read(...file), /const getFriendlyShippingErrorKey = \(error, fallbackKey = 'bsp\.areaSearchFailed'\) =>/,
+    `${file.join('/')}: the shipping-error helper returns a key and takes no translator`);
 }
 
 // The scarcity line takes the translator and has NO default. A default would print Indonesian into the

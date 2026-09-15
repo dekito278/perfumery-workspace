@@ -1,3 +1,5 @@
+import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -33,7 +35,8 @@ import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
-const steps = ['Aroma', 'Preferensi', 'Botol', 'Alamat', 'Bayar'];
+// Keys: module-level, so no hook can run here. The component translates them.
+const stepKeys = ['bsp.scent', 'bsp.preferences', 'bsp.bottle', 'bsp.addressShort', 'bsp.pay'];
 
 const firstEnabled = (options = []) => options.find((option) => option.enabled) || options[0] || {};
 
@@ -52,15 +55,17 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
   [courier.courierCode]: courier.label,
 }), {});
 
-const getFriendlyShippingError = (error, fallback = 'Gagal mencari area tujuan. Coba pakai nama kecamatan atau kota.') => {
+// Returns a message KEY, never a sentence. This is a module-level helper, so it cannot call t() — and a
+// default that returned Indonesian would put it into the English shop with nothing to flag it.
+const getFriendlyShippingErrorKey = (error, fallbackKey = 'bsp.areaSearchFailed') => {
   const message = String(error?.message || error || '').trim();
   if (/destination|domestic|data not found|not found/i.test(message)) {
-    return 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.';
+    return 'bsp.areaNotFound';
   }
   if (/network|fetch|failed|unavailable/i.test(message)) {
-    return 'Layanan ongkir belum bisa dihubungi. Coba lagi beberapa saat.';
+    return 'bsp.shippingUnreachable';
   }
-  return fallback;
+  return fallbackKey;
 };
 
 const getOptionKey = (option = {}) => String(option.id || option.value || option.label || '').trim();
@@ -101,6 +106,7 @@ const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', 
 );
 
 const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, material }) => {
+  const { t } = useTranslate();
   const isStone = /batu|stone/i.test(`${cap?.label || ''} ${cap?.value || ''}`);
   const isAcrylic = /akrilik|acrylic/i.test(`${cap?.label || ''} ${cap?.value || ''}`);
   const isSquare = /square|kotak/i.test(`${bottle?.label || ''} ${bottle?.value || ''}`);
@@ -115,7 +121,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
     size,
   }[activeGroup];
   const visualImage = activeOption?.imageUrl || bottle?.imageUrl || cap?.imageUrl || label?.imageUrl || size?.imageUrl;
-  const activeLabel = getOptionDisplayValue(activeOption, 'Pilihan aktif');
+  const activeLabel = getOptionDisplayValue(activeOption, t('bsp.activeChoice'));
 
   return (
     <div className="editorial-bespoke-preview">
@@ -126,18 +132,18 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
         <div className="editorial-bespoke-preview__mockup" aria-hidden="true">
           <span className={`editorial-bespoke-preview__bottle${isSquare ? ' is-square' : ''}${isLarge ? ' is-large' : ''}${isSmall ? ' is-small' : ''}`} />
           <span className={`editorial-bespoke-preview__cap${isStone ? ' is-stone' : ''}${isAcrylic ? ' is-acrylic' : ''}`} />
-          <span className="editorial-bespoke-preview__label">{label?.label || 'Label'}</span>
+          <span className="editorial-bespoke-preview__label">{label?.label || t('bsp.label')}</span>
         </div>
         <div className="editorial-bespoke-preview__focus">
-          <span>Preview fokus</span>
+          <span>{t('bsp.previewFocus')}</span>
           <strong>{activeLabel}</strong>
         </div>
       </div>
       <div className="editorial-bespoke-preview__meta">
-        <span className={activeGroup === 'size' ? 'is-active' : ''}>{size?.label || 'Ukuran'}</span>
-        <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle?.label || 'Botol'}</span>
-        <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap?.label || 'Cap'}</span>
-        <span className={activeGroup === 'label' ? 'is-active' : ''}>{label?.label || 'Label'}</span>
+        <span className={activeGroup === 'size' ? 'is-active' : ''}>{size?.label || t('bsp.size')}</span>
+        <span className={activeGroup === 'bottle' ? 'is-active' : ''}>{bottle?.label || t('bsp.bottle')}</span>
+        <span className={activeGroup === 'cap' ? 'is-active' : ''}>{cap?.label || t('bsp.cap')}</span>
+        <span className={activeGroup === 'label' ? 'is-active' : ''}>{label?.label || t('bsp.label')}</span>
         {material ? <span className={activeGroup === 'material' ? 'is-active' : ''}>{material.label}</span> : null}
       </div>
     </div>
@@ -145,6 +151,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 };
 
 const BespokePage = () => {
+  const { t } = useTranslate();
   const revealRef = useScrollReveal();
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
@@ -182,7 +189,7 @@ const BespokePage = () => {
     customerCode: '',
     perfumeName: '',
     scentDescription: referenceProduct?.notes || '',
-    occasion: bespokeOccasionOptions[0] || '',
+    occasion: bespokeOccasionOptions[0]?.value || '',
     size: defaultSize.value || '',
     bottleType: defaultBottle.value || '',
     capDesign: defaultCap.value || '',
@@ -235,69 +242,57 @@ const BespokePage = () => {
   const updateField = useCallback((key, value) => setForm((current) => ({ ...current, [key]: value })), []);
   const noneMaterialOption = useMemo(() => ({
     id: 'none',
-    label: 'Tanpa add-on',
+    label: t('bsp.noAddon'),
     value: '',
-    description: 'Tanpa tambahan material eksotis.',
-  }), []);
+    description: t('bsp.noAddonBody'),
+  }), [t]);
   const bespokeChoiceGroups = useMemo(() => [
     {
       key: 'size',
-      tabLabel: 'Ukuran',
+      tabLabel: t('bsp.size'),
       eyebrow: 'UKURAN',
-      title: 'Pilih ukuran',
+      title: t('bsp.pickSize'),
       field: 'size',
       selected: selectedSize,
       options: bottleSizeOptions,
     },
     {
       key: 'bottle',
-      tabLabel: 'Botol',
+      tabLabel: t('bsp.bottle'),
       eyebrow: 'BOTOL',
-      title: 'Jenis botol',
+      title: t('bsp.bottleType'),
       field: 'bottleType',
       selected: selectedBottle,
       options: bottleTypeOptions,
     },
     {
       key: 'cap',
-      tabLabel: 'Cap',
+      tabLabel: t('bsp.cap'),
       eyebrow: 'CAP',
-      title: 'Desain tutup',
+      title: t('bsp.capDesign'),
       field: 'capDesign',
       selected: selectedCap,
       options: capDesignOptions,
     },
     {
       key: 'label',
-      tabLabel: 'Label',
+      tabLabel: t('bsp.label'),
       eyebrow: 'LABEL',
-      title: 'Desain label',
+      title: t('bsp.labelDesign'),
       field: 'labelDesign',
       selected: selectedLabel,
       options: labelDesignOptions,
     },
     {
       key: 'material',
-      tabLabel: 'Material',
+      tabLabel: t('bsp.material'),
       eyebrow: 'MATERIAL',
-      title: 'Add-on material',
+      title: t('bsp.addonMaterial'),
       field: 'exoticMaterial',
       selected: selectedMaterial || noneMaterialOption,
       options: [noneMaterialOption, ...exoticMaterialOptions],
     },
-  ], [
-    bottleSizeOptions,
-    bottleTypeOptions,
-    capDesignOptions,
-    exoticMaterialOptions,
-    labelDesignOptions,
-    noneMaterialOption,
-    selectedBottle,
-    selectedCap,
-    selectedLabel,
-    selectedMaterial,
-    selectedSize,
-  ]);
+  ], [bottleSizeOptions, bottleTypeOptions, capDesignOptions, exoticMaterialOptions, labelDesignOptions, noneMaterialOption, selectedBottle, selectedCap, selectedLabel, selectedMaterial, selectedSize, t]);
   const activeChoice = bespokeChoiceGroups.find((group) => group.key === activeChoiceGroup) || bespokeChoiceGroups[0];
   const isNoneMaterialOption = useCallback((option) => getOptionKey(option) === getOptionKey(noneMaterialOption), [noneMaterialOption]);
   const isActiveChoiceOption = useCallback((group, option) => {
@@ -330,7 +325,7 @@ const BespokePage = () => {
   const searchDestinations = useCallback(async () => {
     const search = destinationSearch.trim();
     if (search.length < 3) {
-      toast.error('Isi minimal 3 huruf area, kecamatan, atau kota.');
+      toast.error(t('bsp.minThree'));
       return;
     }
 
@@ -343,14 +338,14 @@ const BespokePage = () => {
       const destinations = await searchShippingDestinations(search);
       setDestinationOptions(destinations);
       if (!destinations.length) {
-        setShippingError('Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+        setShippingError(t('bsp.areaNotFound'));
       }
     } catch (error) {
-      setShippingError(getFriendlyShippingError(error));
+      setShippingError(t(getFriendlyShippingErrorKey(error)));
     } finally {
       setShippingLoading(false);
     }
-  }, [destinationSearch]);
+  }, [destinationSearch, t]);
 
   const loadShippingRates = useCallback(async (destination, { courierCode = selectedCourier, autoSelectCheapest = false } = {}) => {
     setSelectedDestination(destination);
@@ -360,7 +355,7 @@ const BespokePage = () => {
     setSelectedShipping(null);
     setShippingOptions([]);
     if (!courierCode) {
-      setShippingError('Pilih ekspedisi dulu untuk melihat layanan ongkir.');
+      setShippingError(t('bsp.pickCourierFirst'));
       return;
     }
 
@@ -381,14 +376,14 @@ const BespokePage = () => {
         setSelectedShipping(sortedRates[0]);
       }
       if (!sortedRates.length) {
-        setShippingError('Belum ada ongkir untuk area ini.');
+        setShippingError(t('bsp.noRates'));
       }
     } catch (error) {
-      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pilih area atau kurir lain.'));
+      setShippingError(t(getFriendlyShippingErrorKey(error, 'bsp.rateFailed')));
     } finally {
       setShippingLoading(false);
     }
-  }, [estimatedTotal, selectedCourier, shippingWeight, updateField]);
+  }, [estimatedTotal, selectedCourier, shippingWeight, updateField, t]);
 
   const autoCalculateShipping = useCallback(async ({
     courierCode = selectedCourier,
@@ -397,11 +392,11 @@ const BespokePage = () => {
   } = {}) => {
     const search = String(searchText || destinationSearch || form.deliveryAddress || '').trim();
     if (search.length < 3) {
-      toast.error('Isi area ongkir dulu, contoh: Jakarta Selatan.');
+      toast.error(t('bsp.areaFirst'));
       return;
     }
     if (!courierCode) {
-      toast.error('Pilih ekspedisi dulu.');
+      toast.error(t('bsp.courierFirst'));
       return;
     }
 
@@ -427,14 +422,14 @@ const BespokePage = () => {
       }
       setDestinationOptions(destinations);
       setShippingError(destinations.length
-        ? 'Pilih area tujuan yang paling sesuai, lalu pilih layanan ongkir.'
-        : 'Area belum ditemukan. Coba ketik kecamatan atau kota, contoh: Jakarta Selatan.');
+        ? t('bsp.pickAreaThenService')
+        : t('bsp.areaNotFound'));
     } catch (error) {
-      setShippingError(getFriendlyShippingError(error, 'Gagal menghitung ongkir. Coba pakai nama kecamatan atau kota.'));
+      setShippingError(t(getFriendlyShippingErrorKey(error, 'bsp.rateFailedArea')));
     } finally {
       setShippingLoading(false);
     }
-  }, [destinationSearch, form.deliveryAddress, loadShippingRates, selectedCourier, selectedDestination]);
+  }, [destinationSearch, form.deliveryAddress, loadShippingRates, selectedCourier, selectedDestination, t]);
 
   const handleCourierChange = useCallback((courierCode) => {
     setSelectedCourier(courierCode);
@@ -462,16 +457,16 @@ const BespokePage = () => {
   }, [bottleSizeOptions, bottleTypeOptions, capDesignOptions, labelDesignOptions, exoticMaterialOptions, defaultSize.value, defaultBottle.value, defaultCap.value, defaultLabel.value]);
 
   const validateForm = () => {
-    if (!form.customerName.trim()) return 'Nama wajib diisi.';
-    if (!form.contact.trim()) return 'Email atau WhatsApp wajib diisi.';
-    if (!form.scentDescription.trim()) return 'Ceritakan arah aroma dulu.';
-    if (!form.size) return 'Pilih ukuran botol.';
-    if (estimatedTotal <= 0) return 'Harga bespoke belum terhitung. Pilih ulang opsi botol.';
-    if (!form.deliveryAddress.trim()) return 'Alamat pengiriman wajib diisi.';
-    if (!selectedDestination) return 'Pilih area ongkir dari hasil pencarian.';
-    if (!selectedCourier) return 'Pilih kurir pengiriman.';
-    if (!selectedShipping) return 'Pilih layanan ongkir.';
-    if (!form.preorderAcknowledged) return 'Konfirmasi estimasi pre-order dulu.';
+    if (!form.customerName.trim()) return t('bsp.errName');
+    if (!form.contact.trim()) return t('bsp.errContact');
+    if (!form.scentDescription.trim()) return t('bsp.errScent');
+    if (!form.size) return t('bsp.errSize');
+    if (estimatedTotal <= 0) return t('bsp.errPrice');
+    if (!form.deliveryAddress.trim()) return t('bsp.errAddress');
+    if (!selectedDestination) return t('bsp.errArea');
+    if (!selectedCourier) return t('bsp.errCourier');
+    if (!selectedShipping) return t('bsp.errService');
+    if (!form.preorderAcknowledged) return t('bsp.errPreorder');
     return '';
   };
 
@@ -490,7 +485,7 @@ const BespokePage = () => {
         ? await applyVoucherToSubtotalAsync({ code: voucher.appliedCode, subtotal: estimatedTotal, items: bespokeVoucherItems })
         : null;
       if (voucher.appliedCode && !voucherValidation?.valid) {
-        throw new Error(voucherValidation?.message || 'Voucher tidak bisa digunakan.');
+        throw new Error(voucherValidation?.message || t('bsp.errVoucher'));
       }
       const checkoutVoucherDiscount = voucherValidation?.discountAmount || 0;
       const checkoutDiscountedEstimatedTotal = Math.max(estimatedTotal - checkoutVoucherDiscount, 0);
@@ -618,7 +613,7 @@ const BespokePage = () => {
           console.warn('Failed to cancel bespoke order after payment session error:', cancelError.message || cancelError);
         }
       }
-      toast.error(publicErrorMessage(error, 'Gagal menyimpan request bespoke.'));
+      toast.error(publicErrorMessage(error, t('bsp.saveFailed')));
     } finally {
       setSaving(false);
     }
@@ -627,8 +622,8 @@ const BespokePage = () => {
   return (
     <>
       <Helmet>
-        <title>Parfum Bespoke - SOLIVAGANT</title>
-        <meta name="description" content="Ajukan konsultasi parfum bespoke SOLIVAGANT lewat pilihan aroma, botol, data pengiriman, dan pembayaran." />
+        <title>{t('bsp.tab')}</title>
+        <meta name="description" content={t('bsp.meta')} />
       </Helmet>
 
       <main className="solivagant-editorial-home" ref={revealRef}>
@@ -637,13 +632,13 @@ const BespokePage = () => {
 
         <section className="bespoke-hero">
           <div className="bespoke-hero__copy">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">KONSULTASI BESPOKE</p>
-            <TextReveal as="h1" text="Racik Parfum Versimu" />
-            <p className="hero-animate-text hero-animate-text--d3">Ceritakan arah aromamu, pilih detail botol, lalu kirim permintaan. Parfum bespoke dikerjakan dalam 7–14 hari.</p>
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('bsp.eyebrow')}</p>
+            <TextReveal as="h1" text={t('bsp.title')} />
+            <p className="hero-animate-text hero-animate-text--d3">{t('bsp.lead')}</p>
           </div>
           <ol className="bespoke-hero__steps hero-animate-fade">
-            {steps.map((step, index) => (
-              <li key={step}><span>{index + 1}</span>{step}</li>
+            {stepKeys.map((stepKey, index) => (
+              <li key={stepKey}><span>{index + 1}</span>{t(stepKey)}</li>
             ))}
           </ol>
         </section>
@@ -652,20 +647,20 @@ const BespokePage = () => {
           <form className="editorial-form editorial-form--bespoke" onSubmit={submitRequest}>
             <div className="editorial-bespoke-stage" data-reveal>
               <div className="editorial-bespoke-stage__head">
-                <p className="editorial-eyebrow">DESAIN DULU</p>
-                <h2>Mulai dari aroma dan bentuk botol.</h2>
-                <p>Pilih arah scent, ukuran, botol, cap, label, dan material dulu. Data checkout diisi setelah desainnya terasa pas.</p>
+                <p className="editorial-eyebrow">{t('bsp.designFirst')}</p>
+                <h2>{t('bsp.designFirstTitle')}</h2>
+                <p>{t('bsp.designFirstBody')}</p>
               </div>
               <div className="editorial-bespoke-brief-grid">
                 <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--name">
-                  <span>Nama parfum</span>
-                  <input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder="Contoh: Rain Letter, Nocturne 03" />
-                  <small>Nama bisa sementara, nanti masih bisa disempurnakan saat proses studio.</small>
+                  <span>{t('bsp.perfumeName')}</span>
+                  <input type="text" value={form.perfumeName} onChange={(event) => updateField('perfumeName', event.target.value)} placeholder={t('bsp.namePlaceholder')} />
+                  <small>{t('bsp.perfumeNameHint')}</small>
                 </label>
                 <label className="editorial-bespoke-brief-card editorial-bespoke-brief-card--scent">
-                  <span>Arah aroma</span>
-                  <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder="Ceritakan mood aroma, notes favorit, atau memori yang ingin dibawa." />
-                  <div className="editorial-bespoke-prompt-chips" aria-label="Pintasan arah aroma">
+                  <span>{t('bsp.scentDirection')}</span>
+                  <textarea rows="4" value={form.scentDescription} onChange={(event) => updateField('scentDescription', event.target.value)} placeholder={t('bsp.scentPlaceholder')} />
+                  <div className="editorial-bespoke-prompt-chips" aria-label={t('bsp.scentShortcuts')}>
                     {scentDirectionPrompts.map((prompt) => (
                       <button
                         key={prompt}
@@ -678,16 +673,16 @@ const BespokePage = () => {
                   </div>
                 </label>
                 <fieldset className="editorial-bespoke-brief-card editorial-bespoke-occasion">
-                  <legend>Momen</legend>
+                  <legend>{t('bsp.moment')}</legend>
                   <div className="editorial-bespoke-occasion-grid">
                     {bespokeOccasionOptions.map((option) => (
                       <button
-                        key={option}
+                        key={option.value}
                         type="button"
-                        className={form.occasion === option ? 'is-active' : ''}
-                        onClick={() => updateField('occasion', option)}
+                        className={form.occasion === option.value ? 'is-active' : ''}
+                        onClick={() => updateField('occasion', option.value)}
                       >
-                        {option}
+                        {t(option.labelKey)}
                       </button>
                     ))}
                   </div>
@@ -696,8 +691,8 @@ const BespokePage = () => {
             </div>
             <div className="editorial-bespoke-choice-panel editorial-bespoke-choice-panel--compact" data-reveal>
               <div className="editorial-bespoke-choice-panel__head">
-                <p className="editorial-eyebrow">KUSTOMISASI VISUAL</p>
-                <h3>Pilih kategori, lalu tentukan visualnya.</h3>
+                <p className="editorial-eyebrow">{t('bsp.visualEyebrow')}</p>
+                <h3>{t('bsp.visualBody')}</h3>
               </div>
               <div className="editorial-bespoke-customizer">
                 <BespokeBottlePreview
@@ -709,7 +704,7 @@ const BespokePage = () => {
                   size={selectedSize}
                 />
                 <div className="editorial-bespoke-customizer__controls">
-                  <div className="editorial-bespoke-tabs" role="tablist" aria-label="Bespoke option groups">
+                  <div className="editorial-bespoke-tabs" role="tablist" aria-label={t('bsp.optionGroups')}>
                     {bespokeChoiceGroups.map((group) => (
                       <button
                         key={group.key}
@@ -747,18 +742,18 @@ const BespokePage = () => {
 
             <div className="editorial-bespoke-next" data-reveal>
               <div className="editorial-bespoke-summary">
-                <p className="editorial-eyebrow">RINGKASAN PERMINTAAN</p>
+                <p className="editorial-eyebrow">{t('bsp.summaryEyebrow')}</p>
                 <dl>
-                  <div><dt>Nama parfum</dt><dd>{form.perfumeName || 'Belum diisi'}</dd></div>
-                  <div><dt>Aroma</dt><dd>{form.scentDescription || 'Belum diisi'}</dd></div>
-                  <div><dt>Botol</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
-                  <div><dt>Subtotal bespoke</dt><dd>{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
+                  <div><dt>{t('bsp.perfumeName')}</dt><dd>{form.perfumeName || t('bsp.notFilled')}</dd></div>
+                  <div><dt>{t('bsp.scent')}</dt><dd>{form.scentDescription || t('bsp.notFilled')}</dd></div>
+                  <div><dt>{t('bsp.bottle')}</dt><dd>{[selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / ') || '-'}</dd></div>
+                  <div><dt>{t('bsp.subtotal')}</dt><dd>{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
                 </dl>
               </div>
               <div className="editorial-bespoke-next__action">
-                <p>Sudah cocok dengan desainnya?</p>
+                <p>{t('bsp.designOk')}</p>
                 <button type="button" className="editorial-button editorial-button--primary magnetic-hover" onClick={() => setCheckoutOpen(true)} onMouseMove={magnetic}>
-                  Lanjut ke checkout
+                  {t('bsp.toCheckout')}
                   <CreditCard className="h-4 w-4" />
                 </button>
               </div>
@@ -768,43 +763,46 @@ const BespokePage = () => {
               <div className="editorial-bespoke-checkout" data-reveal>
                 <div className="editorial-bespoke-stage__head">
                   <p className="editorial-eyebrow">CHECKOUT</p>
-                  <h2>Data kontak, pengiriman, dan pembayaran.</h2>
-                  <p>Bagian ini baru muncul setelah desain dipilih, supaya proses awal tetap fokus ke perfume ritualnya.</p>
+                  <h2>{t('bsp.contactSection')}</h2>
+                  <p>{t('bsp.contactSectionBody')}</p>
                 </div>
+                {/* Bespoke ships through the same domestic courier API as the product checkout, so the
+                    same dead end waits here: a foreign city returns an empty area list with no error. */}
+                <InternationalCheckoutNotice className="mb-4" />
                 <div className="editorial-bespoke-checkout__fields">
-                  <label>Nama<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder="Nama kamu" /></label>
-                  <label>Email / WhatsApp<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>
-                  <label>Alamat pengiriman<textarea rows="4" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder="Alamat lengkap pengiriman" /></label>
+                  <label>{t('bsp.name')}<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
+                  <label>{t('bsp.contact')}<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>
+                  <label>{t('bsp.address')}<textarea rows="4" autoComplete="street-address" value={form.deliveryAddress} onChange={(event) => updateField('deliveryAddress', event.target.value)} placeholder={t('bsp.addressPlaceholder')} /></label>
                 </div>
                 <div className="editorial-voucher-panel">
                   <div>
                     <p className="editorial-eyebrow">ONGKIR</p>
-                    <strong>Pilih area dan layanan pengiriman</strong>
+                    <strong>{t('bsp.pickArea')}</strong>
                   </div>
                   <div className="editorial-inline-field">
                     <input
                       type="text"
                       value={destinationSearch}
                       onChange={(event) => updateDestinationSearch(event.target.value)}
-                      placeholder="Kecamatan / kota tujuan" aria-label="Cari kecamatan atau kota tujuan"
+                      placeholder={t('bsp.areaPlaceholder')} aria-label={t('bsp.areaAria')}
                     />
                     <button type="button" className="editorial-button" onClick={searchDestinations} disabled={shippingLoading || destinationSearch.trim().length < 3}>
-                      {shippingLoading ? 'Mencari...' : 'Cari'}
+                      {shippingLoading ? t('bsp.searching') : t('bsp.search')}
                       <Search className="h-4 w-4" />
                     </button>
                   </div>
                   <label className="editorial-select-shell">
-                    <span>{selectedCourier ? courierLabels[selectedCourier] : 'Pilih kurir pengiriman'}</span>
+                    <span>{selectedCourier ? courierLabels[selectedCourier] : t('bsp.pickShippingCourier')}</span>
                     <ChevronDown className="h-4 w-4" />
-                    <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
-                      <option value="">Pilih kurir</option>
+                    <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('bsp.pickShippingCourier')}>
+                      <option value="">{t('bsp.pickCourier')}</option>
                       {checkoutCourierOptions.map((courier) => (
                         <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
                       ))}
                     </select>
                   </label>
                   <button type="button" className="editorial-button" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
-                    {shippingLoading ? 'Menghitung...' : 'Tampilkan ongkir'}
+                    {shippingLoading ? t('bsp.calculating') : t('bsp.showRates')}
                   </button>
                   {selectedDestination ? <p className="editorial-helper-text">Area: {selectedDestination.label}</p> : null}
                   {destinationOptions.length && !selectedDestination ? (
@@ -841,25 +839,25 @@ const BespokePage = () => {
                 <div className="editorial-voucher-panel">
                   <div>
                     <p className="editorial-eyebrow">VOUCHER</p>
-                    <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}</strong>
+                    <strong>{voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : t('bsp.voucherEnter')}</strong>
                   </div>
                   <div className="editorial-inline-field">
                     <input
                       type="text"
                       value={voucher.inputCode}
                       onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                      placeholder="Kode voucher"
+                      placeholder={t('bsp.voucherPlaceholder')}
                     />
                     <button type="button" className="editorial-button" onClick={voucher.applyVoucher} disabled={voucher.loading}>
-                      {voucher.loading ? 'Cek...' : 'Pakai'}
+                      {voucher.loading ? t('bsp.checking') : t('bsp.apply')}
                       <BadgePercent className="h-4 w-4" />
                     </button>
                   </div>
                   {voucher.appliedVoucher ? (
                     <div className="editorial-voucher-applied">
-                      <span>Diskon voucher</span>
+                      <span>{t('bsp.voucherDiscount')}</span>
                       <strong>-{formatRupiah(discountAmount)}</strong>
-                      <button type="button" className="editorial-icon-button" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                      <button type="button" className="editorial-icon-button" onClick={voucher.removeVoucher} aria-label={t('bsp.voucherRemove')}>
                         <X className="h-4 w-4" />
                       </button>
                     </div>
@@ -868,18 +866,18 @@ const BespokePage = () => {
                   ) : null}
                 </div>
                 <div className="editorial-cart-summary">
-                  <div className="editorial-cart-summary__row"><span>Subtotal bespoke</span><strong>{priceReady ? formatRupiah(estimatedTotal) : '—'}</strong></div>
+                  <div className="editorial-cart-summary__row"><span>{t('bsp.subtotal')}</span><strong>{priceReady ? formatRupiah(estimatedTotal) : '—'}</strong></div>
                   {discountAmount ? <div className="editorial-cart-summary__row"><span>Voucher</span><strong>-{formatRupiah(discountAmount)}</strong></div> : null}
-                  <div className="editorial-cart-summary__row"><span>Ongkir</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
-                  <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>Total transfer</span><strong>{priceReady ? formatRupiah(totalDue) : '—'}</strong></div>
+                  <div className="editorial-cart-summary__row"><span>{t('bsp.shipping')}</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
+                  <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>{t('bsp.transferTotal')}</span><strong>{priceReady ? formatRupiah(totalDue) : '—'}</strong></div>
                 </div>
-                <label>Pembayaran<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
+                <label>{t('bsp.payment')}<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
                 <label className="editorial-checkbox-row">
                   <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
-                  Saya memahami bespoke perfume adalah pre-order dengan estimasi pengerjaan 7-14 hari setelah brief dikonfirmasi.
+                  {t('bsp.preorderConfirm')}
                 </label>
                 <button type="submit" className="editorial-button editorial-button--primary magnetic-hover" disabled={saving} onMouseMove={magnetic}>
-                  {saving ? 'Menyimpan...' : (isManualPayment ? 'Buat order & upload bukti' : 'Buat order & bayar')}
+                  {saving ? t('bsp.saving') : (isManualPayment ? t('bsp.orderUpload') : t('bsp.orderPay'))}
                   {isManualPayment ? <CheckCircle2 className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
                 </button>
               </div>
