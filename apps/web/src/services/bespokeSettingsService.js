@@ -10,11 +10,17 @@ export const optionCollections = ['bottleSizes', 'bottleTypes', 'capDesigns', 'l
 // drifted a long way from the shop — 30 ml read Rp 350.000 here against Rp 200.000 there — so an
 // outage would have quoted prices nobody charges. warnIfBespokeDefaultsDrifted() in tools/build.mjs
 // prints every difference on each build; keep this in step with what it reports.
+// Mirrors storefront_bespoke_options as it stood when this was last synced. Read ONLY while that table
+// is unreachable — the order endpoint always reprices from the table itself, so nothing here can be
+// bought at these numbers. What it can do is promise a price or a bottle size the shop will not honour:
+// before this sync it still offered 100 ml, which the shop had stopped selling, so a visitor who caught
+// the outage filled in an entire brief and had the order rejected at the last step.
+//
+// `npm run build` prints every difference. When it does, re-read the table and paste the result here.
 export const defaultBespokeSettings = {
   bottleSizes: [
-    { id: "30-ml", label: "30 ml", value: "30 ml", price: 200000, description: "Ukuran default bespoke.", enabled: true, sortOrder: 10 },
-    { id: "100-ml-1779544165314", label: "100 ml", value: "100 ml", price: 600000, description: "100 ml", enabled: true, sortOrder: 30 },
-    { id: "50-ml-1778532231031", label: "50 ml", value: "50 ml", price: 330000, description: "", enabled: true, sortOrder: 30 },
+    { id: "30-ml", label: "30 ml", value: "30 ml", price: 240000, description: "Ukuran default bespoke.", enabled: true, sortOrder: 10 },
+    { id: "50-ml-1778532231031", label: "50 ml", value: "50 ml", price: 395000, description: "", enabled: true, sortOrder: 30 },
   ],
   bottleTypes: [
     { id: "classic-clear", label: "Classic", value: "Classic", price: 10000, description: "Bentuk botol basic, cap by request", enabled: true, sortOrder: 10 },
