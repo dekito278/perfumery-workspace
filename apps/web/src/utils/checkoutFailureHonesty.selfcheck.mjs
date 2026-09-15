@@ -49,6 +49,59 @@ assert.equal((hook.match(/sessionStorage\.setItem\(/g) || []).length, 1,
 assert.equal((hook.match(/rememberPaymentSession\(\{/g) || []).length, 3,
   'all three payment paths (manual transfer, QRIS, card) hand over the session the same way');
 
+// --- The form is not "incomplete" just because it is being submitted ------------------------------------
+// canSubmitCheckout used to include `&& !saving`, so pressing the button turned the form incomplete. The
+// red line "Lengkapi: data checkout." appeared the instant the order started being created, named
+// nothing — nothing WAS missing, so the field list came out empty and fell through to a generic phrase —
+// and stayed for the whole ~20 seconds DOKU took, directly above a button reading "Memproses...". On the
+// phone the summary bar flipped from the total to "Lengkapi dulu" in amber for the same twenty seconds.
+//
+// Whether the button is pressable is a different question. Both surfaces answer it where the button is.
+{
+  const start = hook.indexOf('const canSubmitCheckout = Boolean(');
+  assert.notEqual(start, -1, 'the checkout still decides whether the form is complete');
+  const body = hook.slice(start, hook.indexOf(');', start));
+  assert.doesNotMatch(body, /\bsaving\b/,
+    'canSubmitCheckout must not depend on `saving` — submitting the form is not the same as the form '
+    + 'being incomplete, and the buyer is told to fill in what they just filled in');
+  // Each button still refuses a second press on its own.
+  for (const [file, pattern] of [
+    ['CheckoutPage.jsx', /disabled=\{[^}]*\bsaving\b/],
+    [join('mobile', 'MobileCheckoutPage.jsx'), /disabled=\{[^}]*\bsaving\b/],
+  ]) {
+    const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', file), 'utf8');
+    assert.match(page, pattern, `${file}: the submit button must still be disabled while saving`);
+  }
+
+  // And whatever makes the form incomplete has to be NAMEABLE. The notice reads "Lengkapi: {fields}"
+  // from a list built separately, and a condition missing from that list produces a red line that names
+  // nothing to act on. This is the "keep in sync" comment above the list, enforced.
+  const conditions = new Set(
+    (body.match(/\b[a-zA-Z_$][\w$]*\b/g) || [])
+      .filter((name) => !['Boolean', 'const', 'canSubmitCheckout', 'length', 'trim', 'items'].includes(name)),
+  );
+  assert.ok(conditions.size >= 6, 'the scan must actually find the conditions');
+
+  const desktop = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'CheckoutPage.jsx'), 'utf8');
+  const desktopList = desktop.slice(desktop.indexOf('const missingFields = ['), desktop.indexOf('].filter(Boolean)'));
+  for (const name of conditions) {
+    assert.ok(desktopList.includes(name),
+      `CheckoutPage's missingFields never mentions ${name}, so blocking on it shows a red line that names nothing`);
+  }
+
+  // The phone's list is allowed to leave out the payment method for one reason only: it cannot be empty,
+  // because useCheckoutFlow defaults it. If that default ever goes, the exemption goes with it.
+  const mobile = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'mobile', 'MobileCheckoutPage.jsx'), 'utf8');
+  const mobileList = mobile.slice(mobile.indexOf('const checkoutRequirements = ['), mobile.indexOf('];', mobile.indexOf('const checkoutRequirements = [')));
+  assert.match(hook, /useState\(savedDraft\.selectedPaymentMethod \|\| MANUAL_TRANSFER_PAYMENT\.id\)/,
+    'the payment method is defaulted; the phone list leaves it out on exactly that basis');
+  for (const name of conditions) {
+    if (name === 'selectedPaymentMethod') continue;
+    assert.ok(mobileList.includes(name),
+      `MobileCheckoutPage's checkoutRequirements never mentions ${name}, so the phone blocks on something it never names`);
+  }
+}
+
 // The same honesty, one screen later. The payment panel flips to "blocked" on a timer, and a timer that
 // is shorter than a real load tells the buyer the shop is broken while it is working. Measured on a real
 // checkout: DOKU's page took about 20 seconds to appear, against a 12-second timer — so the shop called
