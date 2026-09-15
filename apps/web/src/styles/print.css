@@ -17,14 +17,6 @@
     display: none !important;
   }
 
-  .print-break-before {
-    page-break-before: always;
-  }
-
-  .print-break-after {
-    page-break-after: always;
-  }
-
   .print-avoid-break {
     page-break-inside: avoid;
   }
@@ -49,14 +41,6 @@
   .print-full-width {
     width: 100% !important;
     max-width: 100% !important;
-  }
-
-  .print-text-sm {
-    font-size: 0.875rem !important;
-  }
-
-  .print-border {
-    border: 1px solid #000 !important;
   }
 
   main,
