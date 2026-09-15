@@ -273,7 +273,7 @@ const HomePage = () => {
 
         {/* ── 6. Journal Section ── */}
         {publishedArticles.length ? (
-          <section className="home-section" data-reveal>
+          <section className="home-section home-section--flush home-section--dark" data-reveal>
             <div className="home-section__head">
               <p className="editorial-eyebrow">{t('home.journal')}</p>
               <TextReveal text={t('home.journalHeading')} />
