@@ -30,22 +30,26 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
 
   if (!phoneNumber || !product?.name) return null;
 
-  // Written in the language the buyer was reading when they pressed it. A visitor who has just read an
-  // English panel and receives an Indonesian draft message has to translate their own enquiry before
-  // they can send it, which is where most of them stop.
-  const message = english
-    ? [
-      `Hello SOLIVAGANT, I would like to ask about international shipping for ${product.name}${size ? ` (${size})` : ''}.`,
-      price ? `The international price shown on your site: ${price}.` : null,
-      'Could you let me know the shipping cost and final total to my country?',
-      'I understand this enquiry does not reserve a bottle.',
-    ].filter(Boolean).join('\n')
-    : [
-      `Halo SOLIVAGANT, saya mau tanya pengiriman ke luar negeri untuk ${product.name}${size ? ` (${size})` : ''}.`,
-      price ? `Harga yang saya lihat di website: ${price}.` : null,
-      'Boleh dibantu perkiraan ongkir dan harga akhirnya ke negara saya?',
-      'Saya mengerti pertanyaan ini belum memesan stok.',
-    ].filter(Boolean).join('\n');
+  // Written in the language of the SHOP, not in whatever language the caller happened to pass down.
+  //
+  // It used to follow the `english` prop, which only OverseasPriceNote passes — so on the product page
+  // itself, in the English shop, an overseas buyer got an Indonesian draft. They then have to translate
+  // their own enquiry before they can send it, which is where most of them stop. The prop still decides
+  // whether to repeat the price line (the panel already shows it); it has no business deciding language.
+  //
+  // This is the one piece of copy that LEAVES the page, so it is also the one the shop's own guard for
+  // leftover Indonesian could never see.
+  //
+  // And it quotes the price this page is actually offering for an overseas shipment. The callers pass a
+  // price that is region-gated — null for an Indonesian reader — so it fell back to the DOMESTIC label,
+  // and the draft said "the price I saw on your site: Rp 750.000" directly under a line reading "Harga
+  // untuk pengiriman ke luar negeri: Rp 2.630.000". Dekito then received an enquiry quoting a number he
+  // had not offered for that shipment. The export price is right here, ungated, for exactly this.
+  const quoted = exportPrice ? formatRupiah(exportPrice) : price;
+  const message = t('export.waDraft', {
+    item: `${product.name}${size ? ` (${size})` : ''}`,
+    line: quoted ? t('export.waDraftPrice', { price: quoted }) : '',
+  });
 
   const link = (
     <a

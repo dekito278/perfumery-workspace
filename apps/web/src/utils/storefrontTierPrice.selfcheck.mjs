@@ -128,8 +128,16 @@ for (const file of [['components', 'product', 'ProductForm.jsx'], ['components',
 const enquiry = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 assert.match(enquiry, /if \(!phoneNumber \|\| !product\?\.name\) return null;/,
   'no configured number means no button — an enquiry that opens WhatsApp with no recipient is worse than none');
-assert.match(enquiry, /belum memesan stok/,
-  'the message must say the enquiry does not reserve stock, or someone believes a bottle is being held');
+// Checked in the message file, in BOTH languages, rather than as a phrase in the component: the draft
+// moved there so it would follow the shop's language, and a promise that only the Indonesian buyer is
+// told about is the half that matters least — the overseas buyer is the one whose bottle is not held.
+{
+  const { MESSAGES } = await import('../i18n/messages.js');
+  assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/,
+    'the message must say the enquiry does not reserve stock, or someone believes a bottle is being held');
+  assert.match(MESSAGES.en['export.waDraft'], /does not reserve/,
+    'and the English draft must say it too — that buyer waits longest between asking and ordering');
+}
 assert.doesNotMatch(enquiry, /addItem|addCartItem|useCart/, 'asking about overseas shipping must not place anything in a cart');
 
 // --- the mapper that lists its fields by hand -------------------------------------------------------

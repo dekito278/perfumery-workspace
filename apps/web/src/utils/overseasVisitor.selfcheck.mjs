@@ -190,12 +190,24 @@ assert.match(button, /\{t\('export\.ask'\)\}/, 'the enquiry button speaks the la
 assert.doesNotMatch(button, /english \? 'Ask about/, 'and there is only one label, not one per surface');
 assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
 assert.match(MESSAGES.en['export.ask'], /shipping/i);
-assert.match(button, /Hello SOLIVAGANT/, 'and so does the message it drafts');
+// And so does the message it drafts — checked in the message file now, because that is where it lives.
+// It used to be an inline pair chosen by a prop that only one of the three callers passed, so the
+// product page handed an English reader an Indonesian draft to send.
+assert.match(MESSAGES.en['export.waDraft'], /Hello SOLIVAGANT/);
+assert.match(MESSAGES.id['export.waDraft'], /Halo SOLIVAGANT/);
+assert.doesNotMatch(button, /SOLIVAGANT,/, 'no draft is written in the component, in either language');
+// The draft quotes the price the PAGE is offering for an overseas shipment. Both callers pass a
+// region-gated price — null for an Indonesian reader — so the draft fell back to the domestic label and
+// contradicted the export-price line printed directly above the button.
+assert.match(button, /const quoted = exportPrice \? formatRupiah\(exportPrice\) : price;/,
+  'the export price is ungated right here; the draft must prefer it over whatever the caller passed');
+assert.match(button, /line: quoted \?/, 'and it must be the number that reaches the message');
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
 assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
-assert.match(button, /does not reserve a bottle/,
+assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
+assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/);
 
 // --- 9b. The HEADLINE price is region-gated; the enquiry line is not -------------------------------------
 // useExportPrice returns the export price to EVERYONE — that is its job, and it is what lets the

@@ -559,4 +559,58 @@ for (const file of PAGES_FULLY_TRANSLATED) {
   assert.ok((app.match(/<Route\s+path="/g) || []).length > 30, 'the App.jsx route scan must actually find the routes');
 }
 
+// --- Copy that LEAVES the page ------------------------------------------------------------------------
+// The WhatsApp draft is the one piece of copy a buyer is expected to SEND, and the one piece every check
+// above is blind to: it never renders, so no scan for leftover Indonesian on screen can see it. The
+// product page shipped an Indonesian draft to the English shop for exactly that reason — the language
+// came from a prop only one of the three callers passed, and nothing failed.
+//
+// The rule is that no draft is written in a component at all. Both languages live in the message file,
+// like every other string, and the shop's own region picks between them.
+{
+  const walk = (dir, out = []) => {
+    for (const entry of readdirSync(join(root, ...dir), { withFileTypes: true })) {
+      if (entry.isDirectory()) walk([...dir, entry.name], out);
+      else if (/\.(jsx?|mjs)$/.test(entry.name) && !entry.name.includes('selfcheck')) out.push([...dir, entry.name]);
+    }
+    return out;
+  };
+
+  // Studio's own notification templates are excluded: those are Dekito writing TO a buyer from the admin
+  // app, not the shop speaking to a visitor, and they are composed from order data rather than UI copy.
+  const SENDER_SIDE = 'services/notificationTemplateService.js';
+  const offenders = [];
+  let seen = 0;
+  for (const file of walk(['components']).concat(walk(['pages']), walk(['layouts']), walk(['services']))) {
+    const rel = file.join('/');
+    if (rel === SENDER_SIDE) continue;
+    const source = read(...file);
+    // Only the message ARGUMENT: encodeURIComponent is also how order codes and ids reach a URL, and
+    // those are data, not copy. `t(` first in the alternation, or the identifier branch swallows the t.
+    // Whatever is actually passed, not only the shapes we expect: a check that captures `t(` or an
+    // identifier and nothing else simply does not see a backtick draft written inline at the call, which
+    // is the laziest way to reintroduce exactly this bug.
+    const calls = [
+      ...source.matchAll(/buildWhatsAppCheckoutUrl\(\s*([^,)]{0,60})/g),
+      ...source.matchAll(/\?text=\$\{encodeURIComponent\(\s*([^)]{0,60})/g),
+    ];
+    seen += calls.length;
+    for (const call of calls) {
+      const argument = call[1].trim();
+      if (argument.startsWith('t(')) continue;
+      // A named variable is fine only if this file builds it from the message file.
+      if (/^[A-Za-z_$][\w$]*$/.test(argument)) {
+        const assigned = source.match(new RegExp(`const ${argument} = ([\\s\\S]{0,40})`));
+        if (assigned && /^t\(/.test(assigned[1].trim())) continue;
+      }
+      offenders.push(`${rel}: sends \`${argument}\`, which is not built from the message file`);
+    }
+  }
+  assert.deepEqual(offenders, [],
+    'a WhatsApp draft must come from the message file so it follows the shop\'s language:\n  '
+    + offenders.join('\n  '));
+  // And the scan has to actually find the calls, or a renamed helper makes it pass forever on nothing.
+  assert.ok(seen >= 5, `the WhatsApp draft scan found only ${seen} call(s) — it is no longer looking at the right thing`);
+}
+
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');
