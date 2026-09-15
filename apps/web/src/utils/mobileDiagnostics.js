@@ -1,10 +1,11 @@
+import { barePathname } from './storefrontRegion.js';
 const MAX_STORED_ERRORS = 8;
 const STORAGE_KEY = 'solivagant-mobile-runtime-errors';
 
 export const isMobileLikeRuntime = () => {
   const userAgent = window.navigator.userAgent || '';
   const touchCapable = window.navigator.maxTouchPoints > 1;
-  return /android|iphone|ipad|ipod/i.test(userAgent) || touchCapable || window.location.pathname.startsWith('/mobile');
+  return /android|iphone|ipad|ipod/i.test(userAgent) || touchCapable || barePathname().startsWith('/mobile');
 };
 
 export const getDeviceSummary = () => ({

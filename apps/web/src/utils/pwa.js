@@ -1,3 +1,4 @@
+import { barePathname } from './storefrontRegion.js';
 export const isStandaloneDisplayMode = () => (
   window.matchMedia?.('(display-mode: standalone)').matches
   || window.navigator.standalone === true
@@ -15,7 +16,7 @@ export const isAndroidDevice = () => /android/i.test(window.navigator.userAgent 
 const isLocalDevelopmentHost = () => ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 const shouldCheckServiceWorkerOnResume = () => (
   isStandaloneDisplayMode()
-  || window.location.pathname.startsWith('/mobile')
+  || barePathname().startsWith('/mobile')
   || isIosDevice()
   || isAndroidDevice()
 );

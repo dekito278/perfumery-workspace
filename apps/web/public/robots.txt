@@ -24,6 +24,25 @@ Allow: /mobile/products/
 Allow: /mobile/articles
 Allow: /mobile/bespoke
 
+# The English shop is a second address for the same app, so every rule above needs a twin. Without them
+# "Disallow: /checkout" never covers /en/checkout, and a checkout page — one URL per half-finished order —
+# becomes crawlable the moment the English shop ships. Same trap the /mobile tree fell into above, for
+# the same reason: robots.txt matches from the START of the path.
+Disallow: /en/studio
+Disallow: /en/dashboard
+Disallow: /en/login
+Disallow: /en/checkout
+Disallow: /en/payment
+Disallow: /en/customer
+Disallow: /en/cart
+Disallow: /en/mobile/
+Allow: /en/mobile/dashboard
+Allow: /en/mobile/home
+Allow: /en/mobile/catalog
+Allow: /en/mobile/products/
+Allow: /en/mobile/articles
+Allow: /en/mobile/bespoke
+
 # The absolute Sitemap URL is injected into dist/robots.txt at build time
 # (tools/build.mjs) once the canonical site URL is known.
 Sitemap: /sitemap.xml

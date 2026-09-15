@@ -1,6 +1,7 @@
 
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
+import { routerBasename } from '@/utils/storefrontRegion.js';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ConfirmHost from '@/components/ConfirmHost.jsx';
@@ -443,9 +444,15 @@ const MobileRouteTransition = ({ children }) => {
   );
 };
 
+// The English shop is mounted at /en, so every `to="/catalog"` below keeps the prefix without any of
+// the 68 links in this app having to know the shop exists twice. Read once, at module scope: a basename
+// that changed under a mounted router would leave the links pointing at the other shop. Switching
+// language is therefore a navigation, which useStorefrontRegion does.
+const ROUTER_BASENAME = routerBasename();
+
 function AppRoutes() {
   return (
-    <Router>
+    <Router basename={ROUTER_BASENAME}>
       <ScrollToTop />
       <ScrollRevealEffects />
       <MobileBrowserRedirect />
