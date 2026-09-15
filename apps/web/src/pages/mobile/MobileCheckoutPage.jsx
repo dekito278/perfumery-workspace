@@ -197,7 +197,7 @@ const MobileCheckoutPage = () => {
               total that moved since they filled the cart needs a reason next to it. */}
           {items.some((item) => item.priceChanged) ? (
             <p role="status" className="mt-2 text-[11px] font-bold leading-snug text-[#6b7280]">
-              Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+              {t('checkout.pricesUpdated')}
             </p>
           ) : null}
           {discountAmount ? (
@@ -286,7 +286,7 @@ const MobileCheckoutPage = () => {
               <div className="mobile-commerce-panel bg-white p-3">
                 <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
                 <p className="mobile-commerce-notice mt-2">
-                  Pakai ini hanya kalau alamat lengkap belum menemukan area ongkir yang tepat.
+                  {t('mcheckout.manualAreaHint')}
                 </p>
                 <Button
                   type="button"
@@ -369,7 +369,7 @@ const MobileCheckoutPage = () => {
               </div>
             ) : visibleShippingOptions.length ? (
               <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">
-                Pilih salah satu layanan ongkir. Setelah itu kamu akan lanjut ke pembayaran.
+                {t('mcheckout.pickRate')}
               </p>
             ) : null}
             {shippingError ? <p className="rounded-2xl bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800">{shippingError}</p> : null}

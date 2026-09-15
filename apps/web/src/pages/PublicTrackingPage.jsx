@@ -166,7 +166,7 @@ const PublicTrackingPage = () => {
                     role="status"
                     style={{ margin: '4px 0 16px', padding: '12px 16px', borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', fontSize: 14, fontWeight: 500 }}
                   >
-                    Pesanan ini <strong>dibatalkan</strong>. Bila ini keliru atau kamu sudah membayar, hubungi kami lewat WhatsApp.
+                    {t('track.cancelledNotice')}
                   </div>
                 ) : null}
 
@@ -212,7 +212,7 @@ const PublicTrackingPage = () => {
 
                 {courierUrl ? (
                   <a href={courierUrl} target="_blank" rel="noreferrer" className="tracking-courier-link">
-                    Buka tracking kurir <ExternalLink className="h-4 w-4" />
+                    {t('track.openCourier')} <ExternalLink className="h-4 w-4" />
                   </a>
                 ) : null}
               </>

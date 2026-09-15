@@ -130,7 +130,7 @@ const MobileCartPage = () => {
             visits. The desktop cart has always said so; this one did not, and most buyers are here. */}
         {items.some((item) => item.priceChanged) ? (
           <p role="status" style={{ margin: '0 16px 8px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#f9fafb', padding: '8px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#6b7280' }}>
-            Harga beberapa item sudah diperbarui mengikuti katalog terbaru.
+            {t('checkout.pricesUpdated')}
           </p>
         ) : null}
         {unavailableItems.length ? (
@@ -184,7 +184,7 @@ const MobileCartPage = () => {
                 <ShoppingBag style={{ width: 32, height: 32, color: 'var(--editorial-stone)', marginBottom: 12 }} />
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--editorial-charcoal)', fontFamily: 'Georgia, "Times New Roman", serif' }}>{t('cart.emptyMobile')}</h2>
                 <p style={{ marginTop: 6, fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--editorial-muted)', maxWidth: 260 }}>
-                  Pilih parfum ready stock, mulai bespoke, atau lihat rekomendasi di bawah.
+                  {t('cart.emptyOptions')}
                 </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>

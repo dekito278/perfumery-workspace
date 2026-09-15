@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -20,8 +21,10 @@ import {
 } from '@/services/journalPostsSupabaseService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 
-const formatDate = (value) => {
-  if (!value) return 'Belum ada tanggal';
+// Takes the translator: this is a module-level helper, so it cannot call a hook, and returning an
+// Indonesian fallback would put "Belum ada tanggal" under an English article.
+const formatDate = (value, t) => {
+  if (!value) return t('journal.noDate');
 
   return new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
@@ -37,7 +40,7 @@ const stripMarkdown = (value) => String(value || '')
   .replace(/\s+/g, ' ')
   .trim();
 
-const getPreviewText = (post) => stripMarkdown(post.excerpt || post.content || 'Artikel Solivagant.');
+const getPreviewText = (post) => stripMarkdown(post.excerpt || post.content || '');
 
 const getReadingMinutes = (post) => {
   const wordCount = stripMarkdown(post.content).split(/\s+/).filter(Boolean).length;
@@ -50,6 +53,7 @@ const sortByPublished = (posts) => [...posts].sort((left, right) => (
 ));
 
 export const MobileArticlesContent = ({ active = true }) => {
+  const { t } = useTranslate();
   const location = useLocation();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
@@ -65,11 +69,11 @@ export const MobileArticlesContent = ({ active = true }) => {
       const rows = await getPublishedJournalPosts();
       setPosts(rows);
     } catch (err) {
-      setError(err.message || 'Artikel belum bisa dimuat.');
+      setError(err.message || t("journal.loadFailedMobile"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -89,9 +93,9 @@ export const MobileArticlesContent = ({ active = true }) => {
   }, [active, loadArticles]);
 
   const categoryOptions = useMemo(() => [
-    { value: 'all', label: 'Semua' },
+    { value: 'all', label: t("journal.all") },
     ...JOURNAL_CATEGORIES,
-  ], []);
+  ], [t]);
 
   const filteredPosts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -125,8 +129,8 @@ export const MobileArticlesContent = ({ active = true }) => {
     <>
       {active ? (
         <Helmet>
-          <title>Artikel Solivagant</title>
-          <meta name="description" content="Baca artikel Solivagant tentang parfum, bahan, proses, dan cerita di balik aroma." />
+          <title>{t("journal.tabMobile")}</title>
+          <meta name="description" content={t("journal.metaMobile")} />
         </Helmet>
       ) : null}
 
@@ -138,10 +142,10 @@ export const MobileArticlesContent = ({ active = true }) => {
               Journal
             </div>
             <h1 className="mt-3 text-[24px] font-black leading-tight text-editorial-charcoal">
-              Artikel parfum Solivagant.
+              {t('journal.leadMobile')}
             </h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#526351]">
-              Cerita aroma, material, proses studio, dan panduan kecil sebelum memilih parfum.
+              {t('journal.leadLong')}
             </p>
           </div>
         </section>
@@ -151,7 +155,7 @@ export const MobileArticlesContent = ({ active = true }) => {
             <MobileSearchBar
               value={query}
               onChange={setQuery}
-              placeholder="Cari artikel..."
+              placeholder={t("journal.searchPlaceholder")}
               disabled={loading}
             />
             <div className="mt-2">
@@ -161,13 +165,13 @@ export const MobileArticlesContent = ({ active = true }) => {
         </section>
 
         {loading ? (
-          <MobileLoadingSkeleton title="Memuat artikel" subtitle="Sebentar, artikel sedang disiapkan." />
+          <MobileLoadingSkeleton title={t("journal.loadingTitle")} subtitle={t("journal.loadingBody")} />
         ) : error ? (
           <MobileStatePanel
             tone="error"
-            title="Artikel belum bisa dimuat"
+            title={t("journal.loadFailedTitle")}
             description={error}
-            action="Coba lagi"
+            action={t("journal.retry")}
             onAction={loadArticles}
           />
         ) : filteredPosts.length ? (
@@ -186,7 +190,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                       {getJournalCategoryLabel(featuredPost.category)}
                     </Badge>
                     <h2 className="mt-3 text-xl font-black leading-tight text-editorial-charcoal">
-                      {featuredPost.title || 'Artikel Solivagant'}
+                      {featuredPost.title || t("journal.tabMobile")}
                     </h2>
                     <p className="mt-2 line-clamp-3 text-sm font-semibold leading-relaxed text-[#6b7280]">
                       {getPreviewText(featuredPost)}
@@ -198,7 +202,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Timer className="h-3.5 w-3.5" />
-                        {getReadingMinutes(featuredPost)} menit
+                        {t('journal.minutes', { n: getReadingMinutes(featuredPost) })}
                       </span>
                     </div>
                     <span className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-white">
@@ -224,13 +228,13 @@ export const MobileArticlesContent = ({ active = true }) => {
                       {getJournalCategoryLabel(post.category)}
                     </Badge>
                     <h3 className="mt-2 line-clamp-2 text-base font-black leading-tight text-editorial-charcoal">
-                      {post.title || 'Artikel Solivagant'}
+                      {post.title || t("journal.tabMobile")}
                     </h3>
                     <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-[#6b7280]">
                       {getPreviewText(post)}
                     </p>
                     <div className="mt-2 text-[11px] font-bold text-[#8b949e]">
-                      {formatDate(post.published_at || post.updated || post.created)} · {getReadingMinutes(post)} menit
+                      {formatDate(post.published_at || post.updated || post.created)} · {t('journal.minutes', { n: getReadingMinutes(post) })}
                     </div>
                   </div>
                 </button>
@@ -240,9 +244,9 @@ export const MobileArticlesContent = ({ active = true }) => {
         ) : (
           <MobileEmptyState
             icon={query || category !== 'all' ? Search : FileText}
-            title={posts.length ? 'Artikel tidak ditemukan' : 'Artikel belum tersedia'}
-            description={posts.length ? 'Coba kata kunci atau kategori lain.' : 'Artikel yang statusnya Published di Studio Journal akan muncul di sini. Draft tetap tersimpan di Studio dan belum tampil untuk pembeli.'}
-            action={posts.length ? 'Reset pencarian' : 'Belanja parfum'}
+            title={posts.length ? t("journal.notFound") : t("journal.noneYet")}
+            description={t(posts.length ? 'journal.tryOther' : 'journal.noneYetBody')}
+            action={posts.length ? t("journal.resetSearch") : t("journal.shopPerfume")}
             onAction={() => {
               if (posts.length) {
                 setQuery('');
