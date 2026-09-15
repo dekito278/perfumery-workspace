@@ -7,19 +7,23 @@ export const MANUAL_TRANSFER_PAYMENT = {
   id: 'manual_transfer_bca',
   provider: 'manual_transfer_bca',
   label: 'Transfer manual BCA',
+  labelKey: 'paymethod.manual',
   shortLabel: 'BCA Transfer',
   bankName: 'BCA',
   accountNumber: '7401775441',
   accountName: 'Ade Rizki Wiranto',
   description: 'Transfer sesuai total bayar, lalu wajib upload bukti transfer.',
+  descriptionKey: 'paymethod.manualBody',
 };
 
 export const QRIS_PAYMENT = {
   id: 'doku-qris',
   provider: 'doku-qris',
   label: 'QRIS',
+  labelKey: 'paymethod.qris',
   shortLabel: 'QRIS',
   description: 'Scan satu QR pakai e-wallet atau m-banking. Konfirmasi otomatis, tanpa pindah halaman.',
+  descriptionKey: 'paymethod.qrisBody',
 };
 
 // QRIS stays hidden until DOKU provisions the merchantId/terminalId for qr-mpm-generate
@@ -40,8 +44,10 @@ export const checkoutPaymentMethods = [
     id: 'doku',
     provider: 'doku',
     label: 'DOKU Checkout',
+    labelKey: 'paymethod.doku',
     shortLabel: 'DOKU',
     description: 'Bayar lewat panel DOKU dengan metode pembayaran digital.',
+    descriptionKey: 'paymethod.dokuBody',
   },
 ];
 

@@ -160,7 +160,7 @@ const MobileCheckoutPage = () => {
   };
   const choosePaymentMethod = (method) => {
     if (method.id !== selectedPaymentMethod) {
-      toast.success(t('mcheckout.methodChosen', { method: method.label }));
+      toast.success(t('mcheckout.methodChosen', { method: t(method.labelKey) }));
     }
     setSelectedPaymentMethod(method.id);
   };
@@ -204,7 +204,7 @@ const MobileCheckoutPage = () => {
             <div className="mt-3 rounded-2xl border border-editorial-stone/12 bg-white/82 px-3 py-2">
               <div className="flex items-center justify-between gap-3 text-xs font-bold text-editorial-charcoal">
                 <span className="min-w-0 truncate">Voucher {voucher.appliedVoucher?.code}</span>
-                <span className="shrink-0">Hemat {formatTotal(discountAmount)}</span>
+                <span className="shrink-0">{t('cart.saved', { amount: formatTotal(discountAmount) })}</span>
               </div>
             </div>
           ) : null}
@@ -219,7 +219,7 @@ const MobileCheckoutPage = () => {
         >
             {currentUser ? (
               <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f3f1ec] px-3 py-2 text-xs font-semibold text-editorial-charcoal">
-                <span className="min-w-0 truncate">Masuk sebagai {currentUser.email} — data terisi otomatis</span>
+                <span className="min-w-0 truncate">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
                 <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('checkout.signOut')}</button>
               </div>
             ) : (
@@ -279,7 +279,7 @@ const MobileCheckoutPage = () => {
             ) : null}
             {!showShippingAreaFallback && !selectedShipping ? (
               <button type="button" onClick={() => setShowManualShippingArea(true)} className="w-fit text-left text-xs font-bold text-editorial-charcoal underline underline-offset-4">
-                Edit ongkir manual
+                {t('mcheckout.editManualShipping')}
               </button>
             ) : null}
             {showShippingAreaFallback ? (
@@ -295,7 +295,7 @@ const MobileCheckoutPage = () => {
                   onClick={recalculateShipping}
                   disabled={shippingLoading || !selectedCourier || (!deliveryAddress.trim() && destinationSearch.trim().length < 3)}
                 >
-                  Hitung ulang
+                  {t('mcheckout.recalculate')}
                 </Button>
               </div>
             ) : null}
@@ -354,7 +354,7 @@ const MobileCheckoutPage = () => {
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => setShowManualShippingArea(true)}>
-                    Edit manual
+                    {t('mcheckout.editManual')}
                   </Button>
                   <Button
                     type="button"
@@ -363,7 +363,7 @@ const MobileCheckoutPage = () => {
                     onClick={recalculateShipping}
                     disabled={shippingLoading || !selectedCourier || (!deliveryAddress.trim() && destinationSearch.trim().length < 3)}
                   >
-                    Hitung ulang
+                    {t('mcheckout.recalculate')}
                   </Button>
                 </div>
               </div>
@@ -391,14 +391,14 @@ const MobileCheckoutPage = () => {
               />
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold gap-1.5" onClick={voucher.applyVoucher}>
                 <BadgePercent className="h-4 w-4" />
-                Pakai
+                {t('mcheckout.apply')}
               </Button>
             </div>
             {voucher.appliedVoucher ? (
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-editorial-stone/14 bg-editorial-ivory px-3 py-2">
                 <div className="min-w-0">
                   <div className="truncate text-xs font-bold text-editorial-charcoal">{t('cart.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
-                  <div className="mt-0.5 text-[11px] font-semibold text-editorial-muted">Hemat {formatTotal(voucher.discountAmount)}</div>
+                  <div className="mt-0.5 text-[11px] font-semibold text-editorial-muted">{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</div>
                 </div>
                 <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label={t('cart.voucherRemove')}>
                   <X className="h-4 w-4" />
@@ -431,8 +431,8 @@ const MobileCheckoutPage = () => {
                   >
                     <span className={`mobile-choice-radio${active ? ' is-on' : ''}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-bold">{method.label}</span>
-                      <span className="mt-1 block text-[11px] font-semibold text-[#6b7280]">{method.description}</span>
+                      <span className="block text-sm font-bold">{t(method.labelKey)}</span>
+                      <span className="mt-1 block text-[11px] font-semibold text-[#6b7280]">{t(method.descriptionKey)}</span>
                     </span>
                   </button>
                 );
@@ -488,7 +488,7 @@ const MobileCheckoutPage = () => {
               {discountAmount ? (
                 <div className="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                   <div className="flex justify-between gap-3 text-emerald-800">
-                    <span className="min-w-0 truncate">Diskon voucher {voucher.appliedVoucher?.code}</span>
+                    <span className="min-w-0 truncate">{t('mcheckout.voucherDiscount', { code: voucher.appliedVoucher?.code })}</span>
                     <span className="shrink-0">-{formatTotal(discountAmount)}</span>
                   </div>
                   <div className="mt-1 text-[10px] font-bold uppercase text-emerald-700">{t('mcheckout.beforeShipping')}</div>

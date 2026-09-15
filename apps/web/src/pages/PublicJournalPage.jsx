@@ -126,7 +126,7 @@ const PublicJournalPage = () => {
             </div>
           ) : error ? (
             <div className="editorial-empty-state">
-              <p className="editorial-eyebrow">GAGAL</p>
+              <p className="editorial-eyebrow">{t('journal.failedEyebrow')}</p>
               <h2>{error}</h2>
             </div>
           ) : !filtered.length ? (
@@ -168,9 +168,9 @@ const PublicJournalPage = () => {
               {visibleCount < filtered.length ? (
                 <div className="journal-load-more">
                   <button type="button" onClick={() => setVisibleCount((c) => c + 9)}>
-                    Tampilkan lagi
+                    {t('journal.showMore')}
                   </button>
-                  <span>{Math.min(visibleCount, filtered.length)} dari {filtered.length}</span>
+                  <span>{t('journal.shownOf', { shown: Math.min(visibleCount, filtered.length), total: filtered.length })}</span>
                 </div>
               ) : null}
             </>

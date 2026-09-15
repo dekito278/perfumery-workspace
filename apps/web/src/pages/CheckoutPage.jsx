@@ -164,7 +164,7 @@ const CheckoutPage = () => {
               <legend className="editorial-eyebrow">{t('checkout.buyerInfo')}</legend>
               {currentUser ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', borderRadius: '14px', background: '#f3f1ec', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px' }}>
-                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Masuk sebagai {currentUser.email} — data terisi otomatis</span>
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('checkout.signedInAuto', { email: currentUser.email })}</span>
                   <button type="button" onClick={logout} style={{ flexShrink: 0, fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>{t('checkout.signOut')}</button>
                 </div>
               ) : (
@@ -220,7 +220,7 @@ const CheckoutPage = () => {
 
             {/* Shipping */}
             <fieldset className="checkout-fieldset">
-              <legend className="editorial-eyebrow">PENGIRIMAN</legend>
+              <legend className="editorial-eyebrow">{t('checkout.deliveryLegend')}</legend>
               <label className="checkout-field">
                 <span>{t('checkout.courier')}</span>
                 <div className="checkout-select-wrap">
@@ -243,7 +243,7 @@ const CheckoutPage = () => {
                       disabled={shippingLoading || !selectedCourier}
                       onClick={() => autoCalculateShipping({ searchText: destinationSearch || deliveryAddress, autoSelectBest: true })}
                     >
-                      <Search className="h-4 w-4" /> Cari
+                      <Search className="h-4 w-4" /> {t('checkout.search')}
                     </button>
                   </div>
                 </label>
@@ -309,13 +309,13 @@ const CheckoutPage = () => {
 
             {/* Payment */}
             <fieldset className="checkout-fieldset">
-              <legend className="editorial-eyebrow">PEMBAYARAN</legend>
+              <legend className="editorial-eyebrow">{t('checkout.paymentLegend')}</legend>
               <label className="checkout-field">
                 <span>{t('checkout.paymentMethod')}</span>
                 <div className="checkout-select-wrap">
                   <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
                     {checkoutPaymentMethods.map((method) => (
-                      <option key={method.id} value={method.id}>{method.label}</option>
+                      <option key={method.id} value={method.id}>{t(method.labelKey)}</option>
                     ))}
                   </select>
                   <ChevronDown className="h-4 w-4" />
@@ -352,7 +352,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="checkout-summary-line__info">
                   <strong>{item.name}</strong>
-                  <span>{item.size} · Qty {item.quantity}</span>
+                  <span>{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>
                 </div>
                 <strong className="checkout-summary-line__price">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
               </div>

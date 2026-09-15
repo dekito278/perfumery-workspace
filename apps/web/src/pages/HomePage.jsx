@@ -114,7 +114,7 @@ const HomePage = () => {
           {/* No photograph until the upload list settles: the bundled fallback is a different
               picture, so seeding with it flashed the old hero on every first paint. */}
           {siteImagesLoading ? null : (
-            <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero'])} sizes="100vw" alt="Atelier parfum artisan Solivagant" className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
+            <img src={img(siteImages['home-hero'], 1600) || '/brand/home/raw-material-library.jpg'} srcSet={srcSet(siteImages['home-hero'])} sizes="100vw" alt={t('home.heroAlt')} className="home-hero__slide-image home-hero__slide--active" style={{ objectFit: 'cover' }} />
           )}
           <div className="home-hero__overlay home-hero__overlay--editorial">
             <p className="home-hero__eyebrow">{t('home.eyebrow')}</p>
@@ -276,7 +276,7 @@ const HomePage = () => {
           <section className="home-section" data-reveal>
             <div className="home-section__head">
               <p className="editorial-eyebrow">{t('home.journal')}</p>
-              <TextReveal text="Catatan dari atelier" />
+              <TextReveal text={t('home.journalHeading')} />
             </div>
             <div className="home-journal-grid" data-reveal data-stagger-children>
               {publishedArticles.map((article) => (

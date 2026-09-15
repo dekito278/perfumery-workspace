@@ -206,7 +206,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                       </span>
                     </div>
                     <span className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-white">
-                      Baca artikel
+                      {t('journal.readArticle')}
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </div>

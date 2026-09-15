@@ -70,6 +70,10 @@ const IDENTICAL_ON_PURPOSE = new Set([
   // The journal is titled in English on the Indonesian site already — it is the section's name.
   'journal.tab', 'journal.meta', 'journal.eyebrow',
   'pay.refresh', // the same word in both
+  'pay.status',  // Status is Status
+  // Payment providers are named, not translated: DOKU is DOKU and QRIS is QRIS on both sides.
+  'paymethod.doku', 'paymethod.qris',
+  'checkout.sizeQty', // "30ml · Qty 2" — two numbers and an abbreviation used in both
   // Bespoke: perfumery and commerce terms that are the same word on an Indonesian bottle.
   'bsp.contact', 'bsp.label', 'bsp.material', 'bsp.addonMaterial', 'bsp.optionGroups', 'bsp.cap',
   'bsp.preorder', 'bsp.studioOrder', 'bsp.materialLabel', 'bsp.budgetLabel', 'bsp.preorderLabel',
@@ -78,6 +82,10 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'cust.voucherCode', 'cust.bp.formula', 'cust.bp.sample', 'cust.bp.approval', 'cust.cap',
   'cust.selfService', 'cust.label', 'cust.material', 'cust.order',
   'cust.bespokeDetail', 'cust.bespokeProduction',
+  // The invoice: an Indonesian invoice already prints these words in English, and the tab carries the
+  // order number rather than a sentence.
+  'inv.tab', 'inv.invoice', 'inv.customer', 'inv.item', 'inv.qty', 'inv.total', 'inv.voucherCode',
+  'inv.dashboard', 'inv.print',
   'bsp.contactCopied',
 ]);
 for (const key of idKeys) {
@@ -244,6 +252,10 @@ const PAGES_FULLY_TRANSLATED = [
   ['pages', 'BespokePage.jsx'],
   ['pages', 'mobile', 'MobileBespokePage.jsx'],
   ['pages', 'CustomerPortalPage.jsx'],
+  ['pages', 'CustomerInvoicePage.jsx'],
+  // No copy of its own — three already-translated tabs in one keep-alive shell. Listed so the App.jsx
+  // guard below can see it, and so it stays covered if copy ever lands in it.
+  ['pages', 'mobile', 'MobileCommerceTabsPage.jsx'],
 ];
 
 // A third way to leak, invisible to both checks above: rendering the KEY instead of translating it.
@@ -279,6 +291,12 @@ for (const file of [
 // of Indonesian sentences can contain every sentence Dekito might write.
 const PROSE_ALLOWED = new Set([
   'RAW MATERIAL HIGHLIGHTS', // a perfumery heading, printed in English on the Indonesian page already
+  // Words that are the same in both shops. The floor below is 4 characters, not 20, because "Cari",
+  // "Buka", "Terbit" and "Tampilkan lagi" were all sitting on live pages under the old floor — so short
+  // English words now have to be named here instead of being waved through by their length.
+  'Total', 'Bank', 'Item', 'Journal', 'Voucher', 'VOUCHER', 'Checkout', 'CHECKOUT', 'SOLIVAGANT',
+  'Top', 'Heart', 'Base', // the perfumery pyramid, English on the Indonesian page already
+  '- SOLIVAGANT',         // the brand suffix on a <title>, the same in both shops
 ]);
 // The buyer-facing pages that are fully translated. Every structural check below runs across all of
 // them, so a page added to this list is a page that can no longer leak quietly — and a page left OFF
@@ -289,11 +307,18 @@ for (const file of PAGES_FULLY_TRANSLATED) {
   // Newlines are allowed INSIDE the run: JSX puts long sentences on their own line between the tags, and
   // a regex that stopped at \n missed every one of them — including a whole mobile journal lead that the
   // browser then showed in Indonesian. Only < > { } end a run of text.
-  const prose = (source.match(/>[^<>{}]{20,}?</g) || [])
+  // `{` and `}` bound a run of text as well as `<` and `>`: "Masuk sebagai {email} — data terisi
+  // otomatis" never touches a tag on either side of its words, and a regex that only looked between tags
+  // saw none of it. That is how the payment page's whole thank-you sentence stayed Indonesian.
+  const prose = (source.match(/[>}][^<>{}]{4,}?[<{]/g) || [])
     .map((hit) => hit.slice(1, -1).replace(/\s+/g, ' ').trim())
-    // The 20-character floor applies to the TEXT, not to the indentation around it: a lone "(" padded by
-    // a newline and twenty spaces is JSX code, not a sentence a browser prints.
-    .filter((hit) => hit.length >= 20 && /[A-Za-zÀ-ÿ]{3}/.test(hit))
+    // The floor applies to the TEXT, not to the indentation around it: a lone "(" padded by a newline
+    // and twenty spaces is JSX code, not a sentence a browser prints. Four characters, because a 20-char
+    // floor let "Cari", "Buka", "Terbit", "Wajib", "Belanja" and "Tampilkan lagi" ship to production.
+    .filter((hit) => hit.length >= 4 && /[A-Za-zÀ-ÿ]{3}/.test(hit))
+    // A `>` or `}` inside JS — `x > 0; return (`, `} catch (error) {` — is not markup. Text a browser
+    // prints carries none of ; = ( ) ` $.
+    .filter((hit) => !/[;=()`$]/.test(hit))
     // Fragments of a ternary that happen to span a `>` are code, not text: they carry ?, : or an
     // identifier path. Text a browser prints never does.
     .filter((hit) => hit && !/^[\s&;a-z:?.]*$/.test(hit) && !/[?:]|\w\?\.|\w\.\w/.test(hit) && !PROSE_ALLOWED.has(hit));
@@ -345,6 +370,27 @@ for (const file of [
 }
 assert.match(read('components', 'product', 'WearPicker.jsx'), /\.label\b(?!Key)/,
   'Studio still reads the Indonesian label, which is the point of keeping both');
+
+// The payment methods are the same trap one module over: cartService exports label/description in
+// Indonesian, Studio and the order records need them that way, and four storefront pages were rendering
+// them raw — "Transfer sesuai total bayar" was live on the English phone checkout. The storefront reads
+// labelKey/descriptionKey; the Indonesian strings stay for everything that is not a buyer's screen.
+for (const file of [
+  ['pages', 'CheckoutPage.jsx'],
+  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
+  ['pages', 'BespokePage.jsx'],
+  ['pages', 'mobile', 'MobileBespokePage.jsx'],
+]) {
+  const source = read(...file);
+  const raw = source.match(/\bmethod\.(?:label|description)\b(?!Key)/g) || [];
+  assert.deepEqual(raw, [],
+    `${file.join('/')} renders a payment method's Indonesian text: ${raw.join(' | ')} — read labelKey/descriptionKey`);
+}
+const cart = read('services', 'cartService.js');
+for (const key of ['paymethod.manual', 'paymethod.manualBody', 'paymethod.doku', 'paymethod.dokuBody', 'paymethod.qris', 'paymethod.qrisBody']) {
+  assert.ok(cart.includes(`'${key}'`), `cartService must point a payment method at ${key}`);
+  assert.ok(MESSAGES.id[key] && MESSAGES.en[key], `${key} exists in both languages`);
+}
 
 // The wear chips take the translator too, and Studio keeps a separate function with the Indonesian
 // labels — collapsing the two is how "Malam spesial" ends up in the English shop.
@@ -480,6 +526,37 @@ for (const file of PAGES_FULLY_TRANSLATED) {
     .filter((hit) => !TEMPLATE_COPY_ALLOWED.has(hit));
   assert.deepEqual(sentences, [],
     `${file.join('/')} builds copy in a template literal: ${sentences.map((hit) => JSON.stringify(hit)).join(' | ')}`);
+}
+
+// The list above is only as good as the day somebody last edited it. A new buyer route added to App.jsx
+// gets none of the checks in this file and nothing says so — the account page sat unlisted for weeks and
+// its timeline printed a raw key past a sabotage because of it.
+//
+// So the router is the source of truth: every route that a BUYER can open — not under /studio, not behind
+// ProtectedRoute, not a bare redirect — must name a component that appears in PAGES_FULLY_TRANSLATED.
+{
+  const app = read('App.jsx');
+  // Studio's own sign-in and password-reset screens. They are the door into the admin app, which stays
+  // Indonesian on purpose — no buyer is ever sent to them.
+  const STUDIO_AUTH = new Set(['LoginPage', 'MobileLoginPage', 'ResetPasswordPage']);
+  // A component that renders nothing but a <Navigate>. It has no copy to translate.
+  const REDIRECT_ONLY = new Set(['RootRedirect']);
+
+  const translated = new Set(PAGES_FULLY_TRANSLATED.map((file) => file[file.length - 1].replace('.jsx', '')));
+  const unguarded = [];
+  for (const route of app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{([\s\S]*?)\}\s*\/>/g)) {
+    const [, path, element] = route;
+    if (/ProtectedRoute|RequireAuth/.test(element)) continue;
+    if (path.startsWith('/studio') || path.startsWith('/mobile/studio')) continue;
+    const component = (element.match(/<(\w+)/) || [])[1];
+    if (!component || component === 'Navigate') continue;
+    if (STUDIO_AUTH.has(component) || REDIRECT_ONLY.has(component)) continue;
+    if (!translated.has(component)) unguarded.push(`${path} -> ${component}`);
+  }
+  assert.deepEqual(unguarded, [],
+    `these buyer routes render a page that is not in PAGES_FULLY_TRANSLATED, so none of the checks in this file ever look at it: ${unguarded.join(' | ')}`);
+  // And the parse has to actually find routes: a regex that silently matched nothing would pass forever.
+  assert.ok((app.match(/<Route\s+path="/g) || []).length > 30, 'the App.jsx route scan must actually find the routes');
 }
 
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');

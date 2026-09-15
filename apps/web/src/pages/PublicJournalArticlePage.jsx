@@ -89,7 +89,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
             </span>
           </Link>
           <Link to="/mobile/catalog" className="shrink-0 rounded-2xl border border-[#d8d5ca] bg-editorial-ivory px-3 py-2 text-xs font-bold text-editorial-charcoal">
-            Belanja
+            {t('journal.shop')}
           </Link>
         </div>
       </header>
@@ -123,7 +123,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
                 {getJournalCategoryLabel(post.category)}
               </Badge>
               <Badge variant="outline" className={`rounded-full text-xs ${getJournalStatusBadgeClassName('published')}`}>
-                Terbit
+                {t('journal.published')}
               </Badge>
             </div>
             <h1 className="mt-4 text-[2rem] font-black leading-[1.05] text-[#111827]">{post.title}</h1>
@@ -286,12 +286,12 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
         {loading ? (
           <section className="notfound-content">
             <div className="reveal-divider" style={{ width: 40, margin: '0 auto 20px' }} />
-            <p className="editorial-eyebrow">MEMUAT</p>
+            <p className="editorial-eyebrow">{t('journal.loadingEyebrow')}</p>
             <h1 style={{ fontSize: 'var(--text-section)' }}>{t("journal.loading")}</h1>
           </section>
         ) : failed ? (
           <section className="notfound-content">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">JURNAL</p>
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('journal.eyebrowWord')}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{t("journal.unavailable")}</h1>
             <p className="hero-animate-text hero-animate-text--d3">{t("journal.unavailableBody")}</p>
             <div className="notfound-actions hero-animate-text hero-animate-text--d4">
@@ -309,7 +309,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                   {getJournalCategoryLabel(post.category)}
                 </span>
                 <span className="journal-article-badge journal-article-badge--status">
-                  Terbit
+                  {t('journal.published')}
                 </span>
               </div>
 
@@ -367,7 +367,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                   </div>
                   <div className="journal-article-share__body">
                     <span className="journal-article-share__label">
-                      <Share2 /> Pratinjau bagikan
+                      <Share2 /> {t('journal.sharePreview')}
                     </span>
                     <h2>{title}</h2>
                     <p className="journal-article-share__desc">{description}</p>
@@ -379,7 +379,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                       </button>
                       <a href={canonicalUrl} target="_blank" rel="noreferrer">
                         <ExternalLink />
-                        Buka
+                        {t('journal.openLink')}
                       </a>
                     </div>
                   </div>

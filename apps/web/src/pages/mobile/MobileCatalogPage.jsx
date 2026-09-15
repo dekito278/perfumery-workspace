@@ -138,22 +138,22 @@ export const MobileCatalogContent = ({ active = true }) => {
           </div>
         ) : catalogProducts.length ? (
           <div className="m-editorial-empty">
-            <p className="m-editorial-eyebrow">TIDAK ADA HASIL</p>
+            <p className="m-editorial-eyebrow">{t('catalog.noResults')}</p>
             <h2>{t('catalog.noMatchMobile')}</h2>
             <button type="button" className="m-editorial-cta" onClick={() => { setActiveCategory('All'); setSearchTerm(''); }}>
-              Reset filter
+              {t('catalog.resetFilter')}
             </button>
           </div>
         ) : (
           <div className="m-editorial-empty">
-            <p className="m-editorial-eyebrow">KATALOG</p>
+            <p className="m-editorial-eyebrow">{t('catalog.eyebrowWord')}</p>
             <h2>{t('catalog.notLoadedMobile')}</h2>
             <button
               type="button"
               className="m-editorial-cta"
               onClick={() => window.dispatchEvent(new CustomEvent('dekito:products-updated'))}
             >
-              Coba lagi
+              {t('catalog.retry')}
             </button>
           </div>
         )}
@@ -161,9 +161,9 @@ export const MobileCatalogContent = ({ active = true }) => {
         {visible.length < filtered.length ? (
           <div className="m-editorial-load-more">
             <button type="button" className="m-editorial-cta" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
-              Tampilkan lagi <ArrowRight className="h-3.5 w-3.5" />
+{t('catalog.showMore')} <ArrowRight className="h-3.5 w-3.5" />
             </button>
-            <span>{visible.length} of {filtered.length}</span>
+            <span>{t('catalog.shownOf', { shown: visible.length, total: filtered.length })}</span>
           </div>
         ) : null}
       </main>

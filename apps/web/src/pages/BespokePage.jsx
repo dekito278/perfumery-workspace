@@ -776,7 +776,7 @@ const BespokePage = () => {
                 </div>
                 <div className="editorial-voucher-panel">
                   <div>
-                    <p className="editorial-eyebrow">ONGKIR</p>
+                    <p className="editorial-eyebrow">{t('bsp.shippingLegend')}</p>
                     <strong>{t('bsp.pickArea')}</strong>
                   </div>
                   <div className="editorial-inline-field">
@@ -871,7 +871,7 @@ const BespokePage = () => {
                   <div className="editorial-cart-summary__row"><span>{t('bsp.shipping')}</span><strong>{shippingFee ? formatRupiah(shippingFee) : '-'}</strong></div>
                   <div className="editorial-cart-summary__row editorial-cart-summary__row--total"><span>{t('bsp.transferTotal')}</span><strong>{priceReady ? formatRupiah(totalDue) : '—'}</strong></div>
                 </div>
-                <label>{t('bsp.payment')}<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{method.label}</option>)}</select></label>
+                <label>{t('bsp.payment')}<select value={form.paymentMethod} onChange={(event) => updateField('paymentMethod', event.target.value)}>{checkoutPaymentMethods.map((method) => <option key={method.id} value={method.id}>{t(method.labelKey)}</option>)}</select></label>
                 <label className="editorial-checkbox-row">
                   <input type="checkbox" checked={form.preorderAcknowledged} onChange={(event) => updateField('preorderAcknowledged', event.target.checked)} />
                   {t('bsp.preorderConfirm')}

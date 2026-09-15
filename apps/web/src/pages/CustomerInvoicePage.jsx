@@ -24,27 +24,54 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
-const formatDate = (value) => (value
-  ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const formatDate = (value, t) => (value
+  ? new Intl.DateTimeFormat(t('fmt.dateLocale'), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
   : '-');
 
+// The service label maps stay Indonesian because Studio reads them. The invoice reads its own key maps
+// and falls back to the service label for a status nobody has translated yet.
 const shipmentStatusLabels = getShipmentStatusLabels();
-
-const PaymentBadge = ({ status }) => (
-  <StatusChip icon={CreditCard} tone={getPaymentStatusTone(status)}>
-    {paymentStatusLabels[status] || status}
-  </StatusChip>
+const paymentStatusKeys = {
+  unpaid: 'inv.ps.unpaid',
+  pending: 'inv.ps.pending',
+  paid: 'inv.ps.paid',
+  failed: 'inv.ps.failed',
+  expired: 'inv.ps.expired',
+  refunded: 'inv.ps.refunded',
+};
+const shipmentStatusKeys = {
+  not_ready: 'inv.sh.not_ready',
+  packing: 'inv.sh.packing',
+  shipped: 'inv.sh.shipped',
+  delivered: 'inv.sh.delivered',
+};
+const labelFrom = (keys, fallbacks, status, t) => (
+  keys[status] ? t(keys[status]) : (fallbacks[status] || status || '')
 );
 
-const ShipmentBadge = ({ status }) => (
-  <StatusChip icon={Truck} tone={getShipmentStatusTone(status)}>
-    {shipmentStatusLabels[status] || status || 'Belum dikirim'}
-  </StatusChip>
-);
+const PaymentBadge = ({ status }) => {
+  const { t } = useTranslate();
+  return (
+    <StatusChip icon={CreditCard} tone={getPaymentStatusTone(status)}>
+      {labelFrom(paymentStatusKeys, paymentStatusLabels, status, t)}
+    </StatusChip>
+  );
+};
+
+const ShipmentBadge = ({ status }) => {
+  const { t } = useTranslate();
+  return (
+    <StatusChip icon={Truck} tone={getShipmentStatusTone(status)}>
+      {labelFrom(shipmentStatusKeys, shipmentStatusLabels, status, t) || t('inv.notShipped')}
+    </StatusChip>
+  );
+};
 
 const InvoiceCard = ({ customer, order, isMobile }) => {
+  const { t } = useTranslate();
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const productItems = getOrderProductItems(order);
   const discountedLines = voucherSnapshot
@@ -68,10 +95,10 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase">
             <FileText className="h-3.5 w-3.5" />
-            Invoice
+            {t('inv.invoice')}
           </div>
           <h1 className="mt-4 text-2xl font-bold sm:text-4xl">{order.orderNumber}</h1>
-          <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt)}</p>
+          <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt, t)}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <PaymentBadge status={order.paymentStatus} />
@@ -83,36 +110,36 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
     <div className="p-5 sm:p-7">
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Customer</div>
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.customer')}</div>
           <div className="mt-1 text-base font-bold text-editorial-charcoal">{customer.customerName}</div>
           <div className="mt-1 text-sm font-semibold text-[#6b7280]">{customer.contact}</div>
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pembayaran</div>
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.payment')}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <CreditCard className="h-4 w-4 text-editorial-charcoal" />
-            <span className="text-base font-bold text-editorial-charcoal">{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</span>
+            <span className="text-base font-bold text-editorial-charcoal">{labelFrom(paymentStatusKeys, paymentStatusLabels, order.paymentStatus, t)}</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">{order.paymentProvider || 'manual'}{order.paymentReference ? ` / ${order.paymentReference}` : ''}</div>
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
-          <div className="text-[10px] font-bold uppercase text-[#6b7280]">Pengiriman</div>
+          <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.delivery')}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <Truck className="h-4 w-4 text-editorial-charcoal" />
-            <span className="text-base font-bold text-editorial-charcoal">{shipmentStatusLabels[order.shipmentStatus] || order.shipmentStatus || 'Belum dikirim'}</span>
+            <span className="text-base font-bold text-editorial-charcoal">{labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || t('inv.notShipped')}</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">
-            {order.trackingNumber ? `${order.courierName || 'Kurir'} / ${order.trackingNumber}` : order.courierName || 'Resi akan muncul setelah dikirim'}
+            {order.trackingNumber ? `${order.courierName || t('inv.courier')} / ${order.trackingNumber}` : order.courierName || t('inv.waybillLater')}
           </div>
         </div>
       </div>
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-[#e5e7eb]">
         <div className="grid grid-cols-[1fr_54px_86px] gap-2 bg-[#f8f7f4] px-3 py-2 text-[10px] font-bold uppercase text-[#6b7280] sm:grid-cols-[1fr_80px_120px_120px]">
-          <span>Item</span>
-          <span className="text-right">Qty</span>
-          <span className="hidden text-right sm:block">Harga</span>
-          <span className="text-right">Total</span>
+          <span>{t('inv.item')}</span>
+          <span className="text-right">{t('inv.qty')}</span>
+          <span className="hidden text-right sm:block">{t('inv.price')}</span>
+          <span className="text-right">{t('inv.total')}</span>
         </div>
         {discountedLines.map((line) => {
           const item = line.item;
@@ -123,7 +150,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
               <span className="min-w-0">
                 <span className="block truncate font-bold text-editorial-charcoal">{item.name}</span>
                 {item.size ? <span className="mt-0.5 block text-xs text-[#6b7280]">{item.size}</span> : null}
-                {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-editorial-charcoal">Diskon voucher -{formatTotal(line.discount)}</span> : null}
+                {hasDiscount ? <span className="mt-1 block text-[11px] font-bold text-editorial-charcoal">{t('inv.voucherDiscount', { amount: formatTotal(line.discount) })}</span> : null}
               </span>
               <span className="text-right text-[#1f2937]">{item.quantity || 1}</span>
               <span className="hidden text-right text-[#1f2937] sm:block">
@@ -148,11 +175,11 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
         {voucherSnapshot ? (
           <div className="grid grid-cols-[1fr_54px_86px] gap-2 border-t border-[#e5e7eb] bg-editorial-ivory px-3 py-3 text-sm font-semibold sm:grid-cols-[1fr_80px_120px_120px]">
             <span className="min-w-0">
-              <span className="block truncate font-bold text-editorial-charcoal">Voucher {voucherSnapshot.code}</span>
+              <span className="block truncate font-bold text-editorial-charcoal">{t('inv.voucherCode', { code: voucherSnapshot.code })}</span>
               <span className="mt-0.5 block text-xs text-editorial-muted">{voucherSnapshot.discountType || 'discount'} {voucherSnapshot.discountValue || ''}</span>
             </span>
             <span className="text-right text-editorial-charcoal">1</span>
-            <span className="hidden text-right text-editorial-charcoal sm:block">Diskon</span>
+            <span className="hidden text-right text-editorial-charcoal sm:block">{t('inv.discount')}</span>
             <span className="text-right font-bold text-editorial-charcoal">-{formatTotal(voucherSnapshot.discountAmount)}</span>
           </div>
         ) : null}
@@ -160,54 +187,54 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
         <div className="rounded-2xl bg-editorial-ivory p-4 text-xs font-semibold leading-relaxed text-editorial-charcoal">
-          Simpan invoice ini sebagai bukti order. Status payment dan pengiriman akan mengikuti update DOKU, admin, dan kurir.
+          {t('inv.keepThis')}
           <div className="mt-3 flex flex-wrap gap-2">
             {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
               <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
                 <CreditCard className="h-4 w-4" />
-                Lanjut bayar
+                {t('inv.continuePay')}
               </Link>
             ) : null}
             {order.trackingUrl && order.trackingNumber ? (
               <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
                 <ExternalLink className="h-4 w-4" />
-                Lacak resi
+                {t('inv.trackParcel')}
               </a>
             ) : null}
             {!order.trackingUrl && courierSearchUrl ? (
               <a href={courierSearchUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
                 <ExternalLink className="h-4 w-4" />
-                Cari resi kurir
+                {t('inv.searchWaybill')}
               </a>
             ) : null}
             <a href={buildPublicTrackingUrl(order.orderNumber)} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-charcoal/15 bg-white px-4 text-xs font-bold text-editorial-charcoal">
               <ExternalLink className="h-4 w-4" />
-              Tracking publik
+              {t('inv.publicTracking')}
             </a>
           </div>
         </div>
         <div className="rounded-2xl border border-editorial-charcoal/10 bg-white p-4">
           <div className="flex items-center justify-between text-sm font-semibold text-[#6b7280]">
-            <span>Total item</span>
+            <span>{t('inv.totalItems')}</span>
             <span>{order.quantity}</span>
           </div>
           {voucherSnapshot ? (
             <>
               <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3 text-sm font-semibold text-[#6b7280]">
-                <span>Subtotal produk</span>
+                <span>{t('inv.subtotalProducts')}</span>
                 <span>{formatTotal(productsSubtotal)}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm font-semibold text-editorial-charcoal">
-                <span>Voucher {voucherSnapshot.code}</span>
+                <span>{t('inv.voucherCode', { code: voucherSnapshot.code })}</span>
                 <span>-{formatTotal(voucherSnapshot.discountAmount)}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
-                <span>Subtotal setelah voucher</span>
+                <span>{t('inv.subtotalAfterVoucher')}</span>
                 <span>{formatTotal(subtotalAfterVoucher)}</span>
               </div>
               {shouldShowShipping ? (
                 <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
-                  <span>{shippingPromotionLabel ? 'Ongkir setelah promo' : 'Ongkir'}</span>
+                  <span>{shippingPromotionLabel ? t('inv.shippingAfterPromo') : t('inv.shipping')}</span>
                   <span>{formatTotal(shippingFee)}</span>
                 </div>
               ) : null}
@@ -217,18 +244,18 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
           {!voucherSnapshot && shouldShowShipping ? (
             <>
               <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3 text-sm font-semibold text-[#6b7280]">
-                <span>Subtotal produk</span>
+                <span>{t('inv.subtotalProducts')}</span>
                 <span>{formatTotal(Math.max(Number(order.subtotal || 0) - shippingFee, 0))}</span>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm font-semibold text-[#6b7280]">
-                <span>{shippingPromotionLabel ? 'Ongkir setelah promo' : 'Ongkir'}</span>
+                <span>{shippingPromotionLabel ? t('inv.shippingAfterPromo') : t('inv.shipping')}</span>
                 <span>{formatTotal(shippingFee)}</span>
               </div>
               {shippingPromotionLabel ? <p className="mt-1 text-xs font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
             </>
           ) : null}
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
-            <span className="text-sm font-bold uppercase text-editorial-charcoal">Total bayar</span>
+            <span className="text-sm font-bold uppercase text-editorial-charcoal">{t('inv.totalDue')}</span>
             <span className="text-xl font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</span>
           </div>
         </div>
@@ -239,6 +266,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
 };
 
 const CustomerInvoicePage = () => {
+  const { t } = useTranslate();
   const { orderNumber } = useParams();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -261,7 +289,7 @@ const CustomerInvoicePage = () => {
 
   const loadInvoice = useCallback(async (code) => {
     if (!code.trim()) {
-      toast.error('Kode customer wajib diisi');
+      toast.error(t('inv.codeRequired'));
       return;
     }
 
@@ -272,7 +300,7 @@ const CustomerInvoicePage = () => {
 
     if (!result) {
       setPortal(null);
-      toast.error('Kode customer tidak ditemukan');
+      toast.error(t('inv.codeNotFound'));
       return;
     }
 
@@ -281,7 +309,7 @@ const CustomerInvoicePage = () => {
     setPortal(result);
     setCustomerCode(result.customer.customerCode);
     setSearchParams({ code: result.customer.customerCode });
-  }, [setSearchParams]);
+  }, [setSearchParams, t]);
 
   useEffect(() => {
     if (initialCode && lastLoadedCodeRef.current !== initialCode) {
@@ -302,13 +330,13 @@ const CustomerInvoicePage = () => {
     setSecurityLoading(false);
 
     if (!result) {
-      toast.error('Security answer salah');
+      toast.error(t('inv.answerWrong'));
       return;
     }
 
     setPortal(result);
     setSecurityAnswer('');
-    toast.success('Invoice terbuka');
+    toast.success(t('inv.opened'));
   };
 
   const content = (
@@ -316,12 +344,12 @@ const CustomerInvoicePage = () => {
       <div className={isMobileRoute ? 'flex items-center justify-between gap-3' : 'mb-5 flex items-center justify-between gap-4'}>
         <Link to={dashboardPath} className="inline-flex items-center gap-2 text-sm font-bold text-editorial-charcoal">
           <ArrowLeft className="h-4 w-4" />
-          Dashboard
+          {t('inv.dashboard')}
         </Link>
         {order ? (
           <Button type="button" variant="outline" className="rounded-2xl bg-white gap-2" onClick={() => window.print()}>
             <Printer className="h-4 w-4" />
-            Print
+            {t('inv.print')}
           </Button>
         ) : null}
       </div>
@@ -333,8 +361,8 @@ const CustomerInvoicePage = () => {
               <FileText className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-editorial-charcoal">Invoice</h1>
-              <p className="mt-1 text-xs font-semibold text-[#6b7280]">Masukkan kode customer untuk membuka invoice {orderNumber}.</p>
+              <h1 className="text-xl font-bold text-editorial-charcoal">{t('inv.invoice')}</h1>
+              <p className="mt-1 text-xs font-semibold text-[#6b7280]">{t('inv.enterCode', { order: orderNumber })}</p>
             </div>
           </div>
           <form onSubmit={submitLookup} className="mt-5 grid grid-cols-[1fr_auto] gap-2">
@@ -346,10 +374,10 @@ const CustomerInvoicePage = () => {
             />
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              Buka
+              {t('inv.open')}
             </Button>
           </form>
-          {searched && !loading ? <p className="mt-3 text-xs font-semibold text-[#6b7280]">Invoice belum ditemukan untuk data tersebut.</p> : null}
+          {searched && !loading ? <p className="mt-3 text-xs font-semibold text-[#6b7280]">{t('inv.notFoundForData')}</p> : null}
         </section>
       ) : portal.requiresSecurity ? (
         <section className={isMobileRoute ? 'mobile-card p-5' : 'rounded-[28px] border bg-white p-6 shadow-sm'}>
@@ -358,8 +386,8 @@ const CustomerInvoicePage = () => {
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-xs font-bold uppercase text-editorial-charcoal">Cek keamanan</div>
-              <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">Buka invoice</h1>
+              <div className="text-xs font-bold uppercase text-editorial-charcoal">{t('inv.securityCheck')}</div>
+              <h1 className="mt-1 text-xl font-bold text-editorial-charcoal">{t('inv.openInvoice')}</h1>
               <p className="mt-2 text-sm font-semibold text-[#6b7280]">{portal.customer.securityQuestion}</p>
             </div>
           </div>
@@ -369,12 +397,12 @@ const CustomerInvoicePage = () => {
               autoComplete="off"
               value={securityAnswer}
               onChange={(event) => setSecurityAnswer(event.target.value)}
-              placeholder="Jawaban"
+              placeholder={t('inv.answer')}
               className="h-12 rounded-2xl border px-4 text-sm font-semibold outline-none focus:border-editorial-charcoal"
             />
             <Button type="submit" className="h-12 rounded-2xl gap-2" disabled={securityLoading}>
               {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-              Buka
+              {t('inv.open')}
             </Button>
           </form>
         </section>
@@ -384,8 +412,8 @@ const CustomerInvoicePage = () => {
         <StateBlock
           className={isMobileRoute ? 'mobile-card' : 'rounded-[28px]'}
           icon={FileText}
-          title="Invoice tidak ditemukan"
-          description={`Order ${orderNumber} tidak ditemukan untuk kode customer ini.`}
+          title={t('inv.notFound')}
+          description={t('inv.notFoundBody', { order: orderNumber })}
         />
       )}
     </main>
@@ -394,7 +422,7 @@ const CustomerInvoicePage = () => {
   if (isMobileRoute) {
     return (
       <MobileCommerceLayout>
-        <Helmet><title>Invoice {orderNumber} - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
+        <Helmet><title>{t('inv.tab', { order: orderNumber })}</title><meta name="robots" content="noindex,follow" /></Helmet>
         {content}
       </MobileCommerceLayout>
     );
@@ -402,7 +430,7 @@ const CustomerInvoicePage = () => {
 
   return (
     <>
-      <Helmet><title>Invoice {orderNumber} - Solivagant</title><meta name="robots" content="noindex,follow" /></Helmet>
+      <Helmet><title>{t('inv.tab', { order: orderNumber })}</title><meta name="robots" content="noindex,follow" /></Helmet>
       <div className="min-h-screen bg-editorial-paper text-editorial-charcoal">
         {content}
       </div>

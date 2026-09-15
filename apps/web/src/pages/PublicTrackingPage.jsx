@@ -197,13 +197,13 @@ const PublicTrackingPage = () => {
                     <span>Item</span><strong>{order.itemCount || '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Dibuat</span><strong>{order.createdAt ? formatDate(order.createdAt) : '-'}</strong>
+                    <span>{t('track.created')}</span><strong>{order.createdAt ? formatDate(order.createdAt) : '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
                     <span>{t("track.lastUpdate")}</span><strong>{order.updatedAt ? formatDate(order.updatedAt) : '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>Kurir</span><strong>{order.courierName || t("track.notAvailable")}</strong>
+                    <span>{t('track.courier')}</span><strong>{order.courierName || t("track.notAvailable")}</strong>
                   </div>
                   <div className="tracking-detail-row">
                     <span>{t("track.waybill")}</span><strong>{order.trackingNumber || t("track.notAvailable")}</strong>
