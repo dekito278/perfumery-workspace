@@ -80,10 +80,23 @@ export const getPublicTrackingOrder = async (lookup) => {
     });
 
     if (error) throw error;
+    // The server ANSWERED and has no such order. Falling through to the local copy is still right — a
+    // buyer who ordered on this device can see their own order while the row is still propagating — and
+    // null here is an honest "we looked, it is not there".
     if (!data?.order_number) return getLocalTrackingOrder(normalizedLookup);
     return normalizePublicTrackingOrder(data);
   } catch (error) {
-    console.warn('Using local public tracking fallback:', error.message || error);
-    return getLocalTrackingOrder(normalizedLookup);
+    // The lookup FAILED — offline, Supabase down, RPC renamed. The local copy may still have it, and if
+    // it does that is a real answer worth giving.
+    const local = getLocalTrackingOrder(normalizedLookup);
+    if (local) {
+      console.warn('Using local public tracking fallback:', error.message || error);
+      return local;
+    }
+    // But with nothing local, returning null said "your order does not exist" about a lookup that never
+    // happened. A buyer on a flaky connection was told their real order was not found — and the tracking
+    // page's own catch could never fire, because this swallowed everything. Rethrow: not knowing is not
+    // the same as knowing there is nothing.
+    throw error;
   }
 };

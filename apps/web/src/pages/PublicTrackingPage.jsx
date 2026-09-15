@@ -70,6 +70,10 @@ const PublicTrackingPage = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(Boolean(code));
+  // Three states, not two, the same shape PaymentPage uses for orderFound: we have not looked, we
+  // looked and there is nothing, or we could not look at all. Without the third, a lookup that FAILED
+  // still printed "Order belum ditemukan" — a confident negative about a question that was never asked.
+  const [failed, setFailed] = useState(false);
   const [error, setError] = useState('');
   const isCancelled = order?.status === 'cancelled';
   // A cancelled order must not render as a normal in-progress timeline with a "(saat ini)" step.
@@ -84,20 +88,28 @@ const PublicTrackingPage = () => {
     if (!normalized) return;
     setLoading(true);
     setError('');
+    setFailed(false);
     setSearched(true);
     try {
       const result = await getPublicTrackingOrder(normalized);
       setOrder(result);
-      if (!result) {
-        setError(t("track.notFoundBody"));
-      }
+      // No setError here. "We looked and there is no such order" is not a failure — the empty card
+      // below already says it, in the right place and in the right words: the eyebrow, the heading
+      // "Order belum ditemukan", and the line "Pastikan nomor order atau resi sudah benar." Setting the
+      // error on top printed those same two sentences AGAIN in red underneath, so a buyer who mistyped
+      // one digit was told twice, and the red made the second telling read like a different, worse
+      // problem. setError belongs to the catch below, where something actually broke.
     } catch (err) {
       setOrder(null);
+      setFailed(true);
       setError(publicErrorMessage(err, t("track.loadFailed")));
     } finally {
       setLoading(false);
     }
   }, [t]);
+
+  // We looked and there is nothing. Not "we could not look".
+  const foundNothing = searched && !failed;
 
   useEffect(() => {
     if (code) {
@@ -218,9 +230,11 @@ const PublicTrackingPage = () => {
               </>
             ) : (
               <div className="tracking-card__empty">
-                <p className="editorial-eyebrow">{searched ? t("track.notFoundEyebrow") : t("track.searchEyebrow")}</p>
-                <h2>{searched ? t("track.notFoundTitle") : t("track.enterNumber")}</h2>
-                <p>{searched ? t("track.checkNumber") : t("track.whereNumber")}</p>
+                {/* foundNothing, not searched: a failed lookup falls back to the neutral prompt and
+                    lets the red line below carry what actually happened. */}
+                <p className="editorial-eyebrow">{foundNothing ? t("track.notFoundEyebrow") : t("track.searchEyebrow")}</p>
+                <h2>{foundNothing ? t("track.notFoundTitle") : t("track.enterNumber")}</h2>
+                <p>{foundNothing ? t("track.checkNumber") : t("track.whereNumber")}</p>
               </div>
             )}
             {error ? <p className="checkout-notice is-error" style={{ marginTop: '16px' }}>{error}</p> : null}
