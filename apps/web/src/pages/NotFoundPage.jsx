@@ -2,12 +2,15 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
-const NotFoundPage = () => (
+const NotFoundPage = () => {
+  const { t } = useTranslate();
+  return (
   <>
     <Helmet>
-      <title>Halaman Tidak Ditemukan - SOLIVAGANT</title>
+      <title>{t("notfound.tab")}</title>
       <meta name="robots" content="noindex,follow" />
     </Helmet>
 
@@ -16,12 +19,12 @@ const NotFoundPage = () => (
 
       <section className="notfound-content">
         <p className="editorial-eyebrow">404</p>
-        <h1>Halaman tidak ditemukan</h1>
-        <p>Halaman yang kamu cari tidak tersedia atau sudah dipindahkan.</p>
+        <h1>{t("notfound.title")}</h1>
+        <p>{t("notfound.body")}</p>
         <div className="notfound-actions">
-          <Link to="/home" className="cart-empty__cta">Kembali ke Beranda</Link>
+          <Link to="/home" className="cart-empty__cta">{t("notfound.home")}</Link>
           <Link to="/catalog" className="notfound-secondary">
-            Lihat Koleksi <ArrowRight className="h-4 w-4" />
+            {t('home.seeCollection')} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
@@ -29,6 +32,7 @@ const NotFoundPage = () => (
       <StorefrontFooter />
     </main>
   </>
-);
+  );
+};
 
 export default NotFoundPage;
