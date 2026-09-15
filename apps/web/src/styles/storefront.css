@@ -472,8 +472,12 @@ main :is(a, figure, picture, div, span):has(> img) {
 }
 
 .editorial-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  /* Flex, not grid, because a fixed column count has to be kept in sync with the number of children by
+     hand — and it was not. The region switch arrived as a fourth child with `auto 1fr auto` still in
+     place, so it took the nav's column and pushed the account and cart buttons onto a second row. It
+     had been wrapping on every screen since it shipped. Flex does not care how many children there are. */
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 28px;
   width: 100%;
@@ -496,6 +500,19 @@ main :is(a, figure, picture, div, span):has(> img) {
   display: flex;
   justify-content: center;
   gap: 28px;
+}
+
+/* What the old 1fr column did: absorb the space between the switch and the buttons. min-width: 0 so a
+   long menu shrinks instead of shoving the buttons off the end of the row. */
+.editorial-header > .editorial-nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* And the buttons stay pinned right even when the nav is hidden, which it is below 900px. */
+.editorial-header > .editorial-header__actions {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .editorial-nav a {
@@ -5418,7 +5435,7 @@ main :is(a, figure, picture, div, span):has(> img) {
   .editorial-header {
     position: relative;
     z-index: 51;
-    grid-template-columns: 1fr auto;
+    gap: 12px;
     padding: 14px 16px;
   }
 
