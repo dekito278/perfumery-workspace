@@ -14,6 +14,7 @@ import { useCart } from '@/hooks/useCart.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -36,7 +37,7 @@ const CatalogPage = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [wearSelection, setWearSelection] = useState({ occasions: '', times: '', weather: '' });
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const revealRef = useScrollReveal();
   const { magnetic, tilt, resetTilt } = useMicroInteractions();
   const { addItem } = useCart();
@@ -94,7 +95,7 @@ const CatalogPage = () => {
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
 
-  useEffect(() => { setVisibleCount(12); }, [activeCategory, searchTerm, wearSelection]);
+  useEffect(() => { setVisibleCount(CATALOG_PAGE_SIZE); }, [activeCategory, searchTerm, wearSelection]);
 
   // Sync family param from homepage mood cards
   useEffect(() => {
@@ -244,7 +245,7 @@ const CatalogPage = () => {
 
           {visibleProducts.length < filteredProducts.length ? (
             <div className="catalog-load-more">
-              <button type="button" className="editorial-button magnetic-hover" onClick={() => setVisibleCount((c) => c + 12)} onMouseMove={magnetic}>
+              <button type="button" className="editorial-button magnetic-hover" onClick={() => setVisibleCount((c) => c + CATALOG_PAGE_SIZE)} onMouseMove={magnetic}>
 {t('catalog.showMore')} <ArrowRight className="h-4 w-4" />
               </button>
               <span>{t('catalog.shownOf', { shown: visibleProducts.length, total: filteredProducts.length })}</span>

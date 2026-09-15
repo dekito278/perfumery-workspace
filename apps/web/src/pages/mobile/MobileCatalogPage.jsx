@@ -8,11 +8,11 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
 
-const PAGE_SIZE = 12;
 
 export const MobileCatalogContent = ({ active = true }) => {
   const [searchParams] = useSearchParams();
@@ -26,7 +26,7 @@ export const MobileCatalogContent = ({ active = true }) => {
     initialFamily ? initialFamily.charAt(0).toUpperCase() + initialFamily.slice(1) : 'All'
   );
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
 
   const products = useMemo(() => {
     const visible = catalogProducts.filter(isProductVisibleInStorefront);
@@ -51,7 +51,7 @@ export const MobileCatalogContent = ({ active = true }) => {
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [activeCategory, searchTerm]);
+  useEffect(() => { setVisibleCount(CATALOG_PAGE_SIZE); }, [activeCategory, searchTerm]);
 
   // Sync family param
   useEffect(() => {
@@ -160,7 +160,7 @@ export const MobileCatalogContent = ({ active = true }) => {
 
         {visible.length < filtered.length ? (
           <div className="m-editorial-load-more">
-            <button type="button" className="m-editorial-cta" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+            <button type="button" className="m-editorial-cta" onClick={() => setVisibleCount((c) => c + CATALOG_PAGE_SIZE)}>
 {t('catalog.showMore')} <ArrowRight className="h-3.5 w-3.5" />
             </button>
             <span>{t('catalog.shownOf', { shown: visible.length, total: filtered.length })}</span>
