@@ -46,4 +46,61 @@ assert.match(read('components/raw-materials/RawMaterialsDeleteDependencySummary.
 assert.match(read('pages/RawMaterialsPage.jsx'), /checkFailed=\{page\.deleteDependencyFailed\}/,
   'the list page must pass the flag into that dialog');
 
+// And the other direction: "not there" must not be dressed up as a failure either.
+//
+// The tracking page set the red error line to "Order belum ditemukan. Pastikan nomor order atau resi
+// sudah benar." on an empty result — the exact two sentences the empty card directly above it was
+// already showing as its heading and its body. A buyer who mistyped one digit was told twice, and the
+// red made the second telling read like a different, worse problem than the first.
+//
+// A lookup that SUCCEEDED and found nothing is not an error. setError belongs to the catch.
+{
+  const page = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '..', 'pages', 'PublicTrackingPage.jsx'),
+    'utf8',
+  );
+  const start = page.indexOf('const loadOrder = useCallback');
+  assert.notEqual(start, -1, 'the tracking page still loads the order through loadOrder');
+  const body = page.slice(start, page.indexOf('}, [t]);', start));
+  const tryStart = body.indexOf('try {');
+  const catchStart = body.indexOf('} catch (');
+  assert.ok(tryStart !== -1 && catchStart > tryStart, 'loadOrder still has a try/catch');
+
+  const tryBlock = body.slice(tryStart, catchStart);
+  assert.doesNotMatch(tryBlock, /setError\(/,
+    'loadOrder must not set the error line on a lookup that SUCCEEDED and found nothing — the empty '
+    + 'card already says so, and the red line repeats it word for word');
+  // The catch still speaks, or a real failure goes silent.
+  assert.match(body.slice(catchStart), /setError\(publicErrorMessage\(/,
+    'a lookup that actually failed must still say so, through publicErrorMessage');
+  // And the empty card carries the not-found wording — but only when the lookup actually answered.
+  // Three states, like PaymentPage's orderFound: not looked, looked and empty, could not look.
+  assert.match(page, /const foundNothing = searched && !failed;/,
+    '"we looked and there is nothing" must be told apart from "we could not look"');
+  for (const key of ['track.notFoundEyebrow', 'track.notFoundTitle', 'track.checkNumber']) {
+    assert.match(page, new RegExp(`foundNothing \\? t\\("${key.replace('.', '\\.')}"\\)`),
+      `the card's "${key}" line must be gated on foundNothing, or a failed lookup claims the order does not exist`);
+  }
+  assert.match(page, /setFailed\(true\);/, 'and a failed lookup has to say so');
+
+  // The service underneath must let a failure BE a failure.
+  //
+  // It caught everything and fell through to the browser's local copy, so a buyer whose network was
+  // down — or whose Supabase call failed for any reason — got null, and the page told them their real
+  // order does not exist. The page's own catch could never fire. The local copy is still tried first,
+  // because a buyer who ordered on this device deserves an answer; but with nothing local, not knowing
+  // is not the same as knowing there is nothing.
+  const service = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '..', 'services', 'publicTrackingService.js'),
+    'utf8',
+  );
+  const lookup = service.slice(service.indexOf('export const getPublicTrackingOrder'));
+  const rescue = lookup.slice(lookup.indexOf('} catch ('));
+  assert.match(rescue, /const local = getLocalTrackingOrder\(/, 'a failed lookup still tries the local copy');
+  assert.match(rescue, /if \(local\)[\s\S]{0,160}?return local;/, 'and returns it when there is one');
+  assert.match(rescue, /throw error;/,
+    'but with nothing local it must RETHROW — returning null there tells a buyer on a flaky connection '
+    + 'that their real order does not exist, and leaves the page with no failure to report');
+}
+
 console.log(`failureNotAbsence selfcheck OK (${MUST_SEPARATE.length} screens tell "failed" apart from "not there")`);
