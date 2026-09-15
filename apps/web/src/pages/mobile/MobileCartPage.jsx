@@ -194,7 +194,7 @@ const MobileCartPage = () => {
                 </Button>
                 <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
                   <ShoppingBag className="h-4 w-4" />
-                  Buka katalog
+                  {t('mcheckout.openCatalog')}
                 </Button>
               </div>
               {recommendedProducts.length ? (

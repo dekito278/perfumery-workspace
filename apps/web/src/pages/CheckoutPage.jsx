@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -24,6 +25,7 @@ const courierLabels = checkoutCourierOptions.reduce((labels, courier) => ({
 }), {});
 
 const CheckoutPage = () => {
+  const { t } = useTranslate();
   const { items, summary, clear } = useCart();
   const { currentUser, loginWithGoogle, logout } = useAuth();
   // What this cart would save at member prices. 0 whenever there is nothing to say — no member prices
@@ -56,16 +58,16 @@ const CheckoutPage = () => {
   // Keep in sync with canSubmitCheckout in useCheckoutFlow so the notice names every
   // actually-missing field (previously omitted valid phone, destination, courier, payment).
   const missingFields = [
-    !customerName.trim() ? 'nama' : '',
-    !contact.trim() ? 'kontak' : (!validPhoneContact ? 'nomor WhatsApp yang valid' : ''),
-    !deliveryAddress.trim() ? 'alamat' : '',
-    !selectedDestination ? 'tujuan pengiriman' : '',
-    !selectedCourier ? 'kurir' : '',
-    !selectedShipping ? 'ongkir' : '',
-    !selectedPaymentMethod ? 'metode pembayaran' : '',
+    !customerName.trim() ? t('checkout.fieldName') : '',
+    !contact.trim() ? t('checkout.fieldContact') : (!validPhoneContact ? t('checkout.fieldValidPhone') : ''),
+    !deliveryAddress.trim() ? t('checkout.fieldAddress') : '',
+    !selectedDestination ? t('checkout.fieldDestination') : '',
+    !selectedCourier ? t('checkout.fieldCourier') : '',
+    !selectedShipping ? t('checkout.fieldRate') : '',
+    !selectedPaymentMethod ? t('checkout.fieldPayment') : '',
     // canSubmitCheckout also refuses lines whose product is gone or sold out; name them, otherwise the
-    // notice reads "Lengkapi: data checkout" with nothing to act on (audit round 9).
-    blockedItems.length ? `hapus ${blockedItems.map((item) => item.name).join(', ')} (sudah tidak tersedia)` : '',
+    // notice names nothing to act on (audit round 9).
+    blockedItems.length ? t('checkout.fieldBlocked', { names: blockedItems.map((item) => item.name).join(', ') }) : '',
   ].filter(Boolean).join(', ');
 
   const handleGoogleLogin = async () => {
@@ -75,15 +77,15 @@ const CheckoutPage = () => {
       // parse (session then only appears after a manual refresh). useCheckoutFlow prefills once logged in.
       await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal masuk dengan Google'));
+      toast.error(publicErrorMessage(error, t('checkout.googleFail')));
     }
   };
 
   const [triedSubmit, setTriedSubmit] = useState(false);
   const fieldErrors = {
-    customerName: !customerName.trim() ? 'Nama wajib diisi.' : '',
-    contact: !contact.trim() ? 'Nomor WhatsApp wajib diisi.' : (!validPhoneContact ? 'Nomor WhatsApp belum valid.' : ''),
-    deliveryAddress: !deliveryAddress.trim() ? 'Alamat pengiriman wajib diisi.' : '',
+    customerName: !customerName.trim() ? t('checkout.errName') : '',
+    contact: !contact.trim() ? t('checkout.errPhone') : (!validPhoneContact ? t('checkout.errPhoneInvalid') : ''),
+    deliveryAddress: !deliveryAddress.trim() ? t('checkout.errAddress') : '',
   };
   const handleSubmitAttempt = (event) => {
     setTriedSubmit(true);
@@ -115,21 +117,21 @@ const CheckoutPage = () => {
     return (
       <>
         <Helmet>
-          <title>Checkout - SOLIVAGANT</title>
+          <title>{t('checkout.tab')}</title>
         </Helmet>
         <main className="solivagant-editorial-home">
           <PublicHeader />
           <section className="cart-hero">
             <p className="editorial-eyebrow">CHECKOUT</p>
             <h1>Checkout</h1>
-            <p>Keranjang kamu masih kosong.</p>
+            <p>{t('checkout.emptyTitle')}</p>
           </section>
           <section className="checkout-layout">
             <div className="cart-empty">
               <ShoppingBag className="h-8 w-8" />
-              <h2>Keranjang kosong</h2>
-              <p>Tambahkan produk sebelum checkout.</p>
-              <Link to="/catalog" className="cart-empty__cta">Lihat Koleksi</Link>
+              <h2>{t('checkout.emptyEyebrow')}</h2>
+              <p>{t('checkout.emptyBody')}</p>
+              <Link to="/catalog" className="cart-empty__cta">{t('home.seeCollection')}</Link>
             </div>
           </section>
           <StorefrontFooter />
@@ -141,7 +143,7 @@ const CheckoutPage = () => {
   return (
     <>
       <Helmet>
-        <title>Checkout - SOLIVAGANT</title>
+        <title>{t('checkout.tab')}</title>
       </Helmet>
 
       <main className="solivagant-editorial-home">
@@ -150,7 +152,7 @@ const CheckoutPage = () => {
         <section className="cart-hero">
           <p className="editorial-eyebrow">CHECKOUT</p>
           <h1>Checkout</h1>
-          <p>Lengkapi data pengiriman dan pembayaran untuk menyelesaikan pesanan.</p>
+          <p>{t('checkout.lead')}</p>
         </section>
 
         <section className="checkout-layout">
@@ -159,59 +161,59 @@ const CheckoutPage = () => {
           <form className="checkout-form" onSubmit={handleSubmitAttempt} noValidate>
             {/* Customer info */}
             <fieldset className="checkout-fieldset">
-              <legend className="editorial-eyebrow">INFORMASI PEMBELI</legend>
+              <legend className="editorial-eyebrow">{t('checkout.buyerInfo')}</legend>
               {currentUser ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 14px', borderRadius: '14px', background: '#f3f1ec', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px' }}>
                   <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Masuk sebagai {currentUser.email} — data terisi otomatis</span>
-                  <button type="button" onClick={logout} style={{ flexShrink: 0, fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Keluar</button>
+                  <button type="button" onClick={logout} style={{ flexShrink: 0, fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>{t('checkout.signOut')}</button>
                 </div>
               ) : (
                 <button type="button" onClick={handleGoogleLogin} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px', borderRadius: '14px', border: '1px solid #d8d2c4', background: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', marginBottom: '12px' }}>
                   <UserRound size={16} />
                   {memberSaving > 0
-                    ? `Masuk dengan Google — hemat ${formatTotal(memberSaving)} dengan harga member`
-                    : 'Masuk dengan Google — alamat & data terisi otomatis'}
+                    ? t('checkout.signInSaving', { amount: formatTotal(memberSaving) })
+                    : t('checkout.signInPlain')}
                 </button>
               )}
               <label className="checkout-field">
-                <span>Kode customer</span>
+                <span>{t('checkout.customerCode')}</span>
                 <div className="checkout-field__inline">
-                  <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional untuk pembeli lama" aria-label="Kode customer" autoComplete="off" />
+                  <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('checkout.customerCodePlaceholder')} aria-label={t('checkout.customerCode')} autoComplete="off" />
                   <button type="button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
-                    {lookupLoading ? 'Cek...' : 'Muat'}
+                    {lookupLoading ? t('checkout.checking') : t('checkout.load')}
                   </button>
                 </div>
               </label>
               {securityChallenge ? (
                 <label className="checkout-field">
-                  <span>{securityChallenge.securityQuestion || 'Pertanyaan keamanan'}</span>
+                  <span>{securityChallenge.securityQuestion || t('checkout.securityQuestion')}</span>
                   <div className="checkout-field__inline">
                     <input
                       type="text"
                       value={securityAnswer}
                       onChange={(event) => setSecurityAnswer(event.target.value)}
-                      placeholder="Jawaban keamanan" aria-label="Jawaban keamanan"
+                      placeholder={t('checkout.securityAnswer')} aria-label={t('checkout.securityAnswer')}
                       autoComplete="off"
                     />
                     <button type="button" onClick={verifyCustomerSecurity} disabled={lookupLoading || !securityAnswer.trim()}>
-                      {lookupLoading ? 'Cek...' : 'Verifikasi'}
+                      {lookupLoading ? t('checkout.checking') : t('checkout.verify')}
                     </button>
                   </div>
                 </label>
               ) : null}
               <label className="checkout-field">
-                <span>Nama lengkap</span>
-                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" aria-label="Nama pembeli" autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
+                <span>{t('checkout.fullName')}</span>
+                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} aria-label={t('checkout.namePlaceholder')} autoComplete="name" aria-invalid={triedSubmit && fieldErrors.customerName ? 'true' : undefined} />
                 {triedSubmit && fieldErrors.customerName ? <span className="checkout-field__error" role="alert">{fieldErrors.customerName}</span> : null}
               </label>
               <label className="checkout-field">
-                <span>WhatsApp</span>
-                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label="Nomor WhatsApp" autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
+                <span>{t('checkout.whatsapp')}</span>
+                <input type="tel" value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label={t('checkout.whatsappAria')} autoComplete="tel" aria-invalid={triedSubmit && fieldErrors.contact ? 'true' : undefined} />
                 {triedSubmit && fieldErrors.contact ? <span className="checkout-field__error" role="alert">{fieldErrors.contact}</span> : null}
               </label>
               <label className="checkout-field">
-                <span>Alamat pengiriman</span>
-                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder="Alamat lengkap pengiriman" aria-label="Alamat pengiriman" autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
+                <span>{t('checkout.address')}</span>
+                <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows="3" placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} autoComplete="street-address" aria-invalid={triedSubmit && fieldErrors.deliveryAddress ? 'true' : undefined} />
                 {triedSubmit && fieldErrors.deliveryAddress ? <span className="checkout-field__error" role="alert">{fieldErrors.deliveryAddress}</span> : null}
               </label>
             </fieldset>
@@ -220,10 +222,10 @@ const CheckoutPage = () => {
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">PENGIRIMAN</legend>
               <label className="checkout-field">
-                <span>Kurir</span>
+                <span>{t('checkout.courier')}</span>
                 <div className="checkout-select-wrap">
-                  <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir">
-                    <option value="">Pilih kurir</option>
+                  <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('checkout.pickCourier')}>
+                    <option value="">{t('checkout.pickCourier')}</option>
                     {checkoutCourierOptions.map((courier) => (
                       <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>
                     ))}
@@ -233,9 +235,9 @@ const CheckoutPage = () => {
               </label>
               {showAreaSearch ? (
                 <label className="checkout-field">
-                  <span>Area tujuan</span>
+                  <span>{t('checkout.destination')}</span>
                   <div className="checkout-field__inline">
-                    <input type="text" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" aria-label="Cari kecamatan atau kota tujuan" autoComplete="off" />
+                    <input type="text" value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" />
                     <button
                       type="button"
                       disabled={shippingLoading || !selectedCourier}
@@ -246,7 +248,7 @@ const CheckoutPage = () => {
                   </div>
                 </label>
               ) : null}
-              {shippingLoading ? <p className="checkout-notice">Mencari ongkir...</p> : null}
+              {shippingLoading ? <p className="checkout-notice">{t('checkout.searchingRates')}</p> : null}
               {shippingNotice ? <p className="checkout-notice is-success">{shippingNotice}</p> : null}
               {shippingError ? <p className="checkout-notice is-error">{shippingError}</p> : null}
               {destinationOptions.length ? (
@@ -280,26 +282,26 @@ const CheckoutPage = () => {
               <legend className="editorial-eyebrow">VOUCHER</legend>
               <div className="cart-voucher" style={{ marginTop: 0, paddingTop: 0, border: 'none' }}>
                 <label className="cart-voucher__label">
-                  {voucher.appliedVoucher ? `${voucher.appliedVoucher.code} diterapkan` : 'Masukkan kode voucher'}
+                  {voucher.appliedVoucher ? t('cart.voucherApplied', { code: voucher.appliedVoucher.code }) : t('checkout.voucherEnter')}
                 </label>
                 <div className="cart-voucher__input">
                   <input
                     type="text"
                     value={voucher.inputCode}
                     onChange={(event) => voucher.setInputCode(event.target.value)}
-                    placeholder="Kode voucher" aria-label="Kode voucher"
+                    placeholder={t('checkout.voucherPlaceholder')} aria-label={t('checkout.voucherPlaceholder')}
                     autoComplete="off"
                     disabled={!items.length || voucher.loading}
                   />
                   <button type="button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
                     <BadgePercent className="h-4 w-4" />
-                    {voucher.loading ? 'Cek...' : 'Pakai'}
+                    {voucher.loading ? t('checkout.checking') : t('checkout.voucherApply')}
                   </button>
                 </div>
                 {voucher.message ? <p className={`cart-voucher__msg${voucher.appliedVoucher ? ' is-success' : ''}`}>{voucher.message}</p> : null}
                 {voucher.appliedVoucher ? (
                   <button type="button" className="cart-voucher__remove" onClick={voucher.removeVoucher}>
-                    <X className="h-3.5 w-3.5" /> Hapus voucher
+                    <X className="h-3.5 w-3.5" /> {t('cart.voucherRemove')}
                   </button>
                 ) : null}
               </div>
@@ -309,7 +311,7 @@ const CheckoutPage = () => {
             <fieldset className="checkout-fieldset">
               <legend className="editorial-eyebrow">PEMBAYARAN</legend>
               <label className="checkout-field">
-                <span>Metode pembayaran</span>
+                <span>{t('checkout.paymentMethod')}</span>
                 <div className="checkout-select-wrap">
                   <select value={selectedPaymentMethod} onChange={(event) => setSelectedPaymentMethod(event.target.value)}>
                     {checkoutPaymentMethods.map((method) => (
@@ -320,8 +322,8 @@ const CheckoutPage = () => {
                 </div>
               </label>
               <label className="checkout-field">
-                <span>Catatan pengiriman</span>
-                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder="Opsional" aria-label="Catatan pengiriman" autoComplete="off" />
+                <span>{t('checkout.deliveryNote')}</span>
+                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows="2" placeholder={t('checkout.optional')} aria-label={t('checkout.deliveryNote')} autoComplete="off" />
               </label>
             </fieldset>
 
@@ -329,19 +331,19 @@ const CheckoutPage = () => {
             {/* Said on the cart page, and again here: this is the screen where the number becomes a
                 transfer instruction, and a total that moved without explanation is a total nobody trusts. */}
             {items.some((item) => item.priceChanged) ? (
-              <p className="checkout-notice" role="status">Harga beberapa item sudah diperbarui mengikuti katalog terbaru.</p>
+              <p className="checkout-notice" role="status">{t('checkout.pricesUpdated')}</p>
             ) : null}
-            {!canSubmitCheckout && items.length ? <p className="checkout-notice is-error">Lengkapi: {missingFields || 'data checkout'}.</p> : null}
+            {!canSubmitCheckout && items.length ? <p className="checkout-notice is-error">{t('checkout.missingFields', { fields: missingFields || t('checkout.missingFieldsFallback') })}</p> : null}
             <button type="submit" className="checkout-submit" disabled={!items.length || saving}>
               <CreditCard className="h-4 w-4" />
-              {saving ? 'Memproses...' : 'Buat Pesanan'}
+              {saving ? t('checkout.processing') : t('checkout.placeOrder')}
             </button>
           </form>
 
           {/* Order summary sidebar */}
           <aside className="cart-summary">
-            <p className="editorial-eyebrow">RINGKASAN PESANAN</p>
-            <h2>{items.length ? 'Produk yang dipilih' : 'Belum ada produk'}</h2>
+            <p className="editorial-eyebrow">{t('checkout.summary')}</p>
+            <h2>{items.length ? t('checkout.chosenProducts') : t('checkout.noProducts')}</h2>
 
             {items.map((item) => (
               <div key={item.slug} className="checkout-summary-line">
@@ -358,12 +360,12 @@ const CheckoutPage = () => {
 
             <div className="cart-totals" style={{ marginTop: items.length ? '20px' : '0' }}>
               <div className="cart-totals__row">
-                <span>Subtotal</span>
+                <span>{t('checkout.subtotal')}</span>
                 <strong>{formatTotal(summary.subtotal)}</strong>
               </div>
               {shippingFee ? (
                 <div className="cart-totals__row">
-                  <span>Ongkir</span>
+                  <span>{t('checkout.shipping')}</span>
                   <strong>{formatTotal(shippingFee)}</strong>
                 </div>
               ) : null}
@@ -374,12 +376,12 @@ const CheckoutPage = () => {
                 </div>
               ) : null}
               <div className="cart-totals__row" style={{ paddingTop: '12px', borderTop: `1px solid var(--editorial-border)`, marginTop: '8px' }}>
-                <span style={{ fontWeight: 700, color: 'var(--editorial-charcoal)' }}>Total</span>
+                <span style={{ fontWeight: 700, color: 'var(--editorial-charcoal)' }}>{t('checkout.total')}</span>
                 <strong style={{ fontSize: '1.05rem' }}>{formatTotal(totalDue)}</strong>
               </div>
             </div>
 
-            <Link to="/cart" className="cart-actions__secondary" style={{ marginTop: '20px' }}>Kembali ke Cart</Link>
+            <Link to="/cart" className="cart-actions__secondary" style={{ marginTop: '20px' }}>{t('checkout.backToCart')}</Link>
           </aside>
         </section>
 

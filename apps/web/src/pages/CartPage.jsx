@@ -123,7 +123,7 @@ const CartPage = () => {
                   type="text"
                   value={voucher.inputCode}
                   onChange={(event) => voucher.setInputCode(event.target.value)}
-                  placeholder="Masukkan kode"
+                  placeholder={t('cart.voucherPlaceholder')}
                   disabled={!items.length || voucher.loading}
                 />
                 <button type="button" onClick={voucher.applyVoucher} disabled={!items.length || voucher.loading}>
