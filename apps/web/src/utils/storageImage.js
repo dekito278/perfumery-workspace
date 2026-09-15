@@ -19,6 +19,11 @@ export const getOptimizedStorageImageUrl = (imageUrl, width = 1280) => {
 
     url.pathname = url.pathname.replace(PUBLIC_PATH, RENDER_PATH);
     url.searchParams.set('width', String(width));
+    // Without this the render endpoint keeps the SOURCE format, and `quality` below is then ignored for
+    // anything lossless. The home hero was still being served as a 3,250 kB PNG long after it started
+    // going through this helper — 370 kB as WebP, the same pixels, from the same endpoint. The comment
+    // at the top of this file described that as fixed; the path was, the format was not.
+    url.searchParams.set('format', 'webp');
     url.searchParams.set('quality', '76');
     url.searchParams.set('resize', 'contain');
     return url.toString();

@@ -72,4 +72,25 @@ for (const slot of ['home-hero', 'home-statement', 'home-newsletter']) {
   assert.ok(tag.includes('sizes="100vw"'), `${slot} is full-bleed; without sizes the browser assumes 100vw anyway but says so`);
 }
 
-console.log('storageImage selfcheck OK');
+// --- The transform must ask for a FORMAT, not just a size -------------------------------------------
+// Supabase keeps the source format unless told otherwise, and `quality` is meaningless on a lossless
+// one. So a PNG stayed a PNG at every width: 3,250 kB at 1600w, 612 kB even at the 480w a phone picks —
+// while the very same endpoint returns 370 kB and 67 kB as WebP. The render path had been in place for
+// a while; it was the format that was never asked for, which is why the file's own header comment
+// described this as solved when the hero was still multiple megabytes.
+const hero = getOptimizedStorageImageUrl('https://x.supabase.co/storage/v1/object/public/site-images/site/home-hero.png', 1600);
+assert.ok(hero.includes('format=webp'),
+  'the transform must name a format, or a lossless source is served untouched and `quality` does nothing');
+
+// Every candidate in a srcset, not just the widest — the 480w a phone takes is where it matters most.
+for (const entry of getStorageImageSrcSet('https://x.supabase.co/storage/v1/object/public/site-images/site/home-hero.png').split(', ')) {
+  assert.ok(entry.split(' ')[0].includes('format=webp'), `every srcset candidate converts: ${entry}`);
+}
+
+// And the parameters stay together. Setting a format without a quality gives WebP at the endpoint's
+// default; setting quality without a format is the bug above wearing a different hat.
+for (const param of ['width=1600', 'format=webp', 'quality=76', 'resize=contain']) {
+  assert.ok(hero.includes(param), `${param} must survive in the transformed URL`);
+}
+
+console.log('storageImage selfcheck OK (and the transform asks for WebP, not just a width)');
