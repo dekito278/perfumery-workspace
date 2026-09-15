@@ -76,6 +76,13 @@ export const MESSAGES = {
     'export.priceLine': 'Harga untuk pengiriman ke luar negeri:',
     'export.notIncluded': '— belum termasuk ongkir.',
     'export.ask': 'Kirim ke luar negeri? Tanya ongkir',
+    // The WhatsApp draft. It leaves the page, so it is the one piece of copy a buyer keeps after they
+    // close the tab — and the only one they are expected to SEND. A draft in a language the sender
+    // cannot read is a draft they have to translate before they can press send, which is where most of
+    // them stop. {line} is the price line, or empty when there is no price to quote.
+    'export.waDraft': 'Halo SOLIVAGANT, saya mau tanya pengiriman ke luar negeri untuk {item}.{line}\nBoleh dibantu perkiraan ongkir dan harga akhirnya ke negara saya?\nSaya mengerti pertanyaan ini belum memesan stok.',
+    'export.waDraftPrice': '\nHarga yang saya lihat di website: {price}.',
+    'nav.subscribeDraft': 'Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: {email}',
 
     'catalog.tab': 'Koleksi - SOLIVAGANT',
     'catalog.eyebrow': 'KOLEKSI FRAGRANCE',
@@ -1147,6 +1154,9 @@ export const MESSAGES = {
     'export.priceLine': 'International price:',
     'export.notIncluded': '— shipping not included.',
     'export.ask': 'Ask about shipping to my country',
+    'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about international shipping for {item}.{line}\nCould you let me know the shipping cost and final total to my country?\nI understand this enquiry does not reserve a bottle.',
+    'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
+    'nav.subscribeDraft': 'Hello SOLIVAGANT, I would like to subscribe to atelier updates. My email: {email}',
 
     'catalog.tab': 'Collection - SOLIVAGANT',
     'catalog.eyebrow': 'THE FRAGRANCE COLLECTION',

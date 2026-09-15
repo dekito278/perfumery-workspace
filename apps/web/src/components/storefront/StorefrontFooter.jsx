@@ -51,7 +51,7 @@ const StorefrontFooter = () => {
     }
     // No mailing-list backend yet — route the request to the atelier's WhatsApp so it
     // actually reaches a human instead of silently pretending to subscribe.
-    const message = `Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: ${trimmed}`;
+    const message = t('nav.subscribeDraft', { email: trimmed });
     const url = buildWhatsAppCheckoutUrl(message);
     if (typeof window !== 'undefined') {
       window.open(url, '_blank', 'noopener,noreferrer');
