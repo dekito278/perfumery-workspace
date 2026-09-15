@@ -228,6 +228,7 @@ for (const file of [
   ['components', 'storefront', 'ScentPyramid.jsx'],
   ['components', 'storefront', 'PriceNote.jsx'],
   ['components', 'storefront', 'OverseasInquiryButton.jsx'],
+  ['pages', 'ImmersiveProductPage.jsx'],
   ['utils', 'stockScarcity.js'],
 ]) {
   const source = read(...file);
@@ -247,6 +248,10 @@ const PAGES_FULLY_TRANSLATED = [
   ['pages', 'CartPage.jsx'], ['pages', 'mobile', 'MobileCartPage.jsx'],
   ['pages', 'CatalogPage.jsx'], ['pages', 'mobile', 'MobileCatalogPage.jsx'],
   ['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  // Replaces the product page entirely for a product with a story, so none of the checks aimed at
+  // PublicProductDetailPage ever looked at it. It reached the English shop the day Ayang-ayang got an
+  // English letter, still saying "Tambah ke Keranjang".
+  ['pages', 'ImmersiveProductPage.jsx'],
   ['pages', 'HomePage.jsx'], ['pages', 'mobile', 'MobileStorefrontPage.jsx'],
   ['pages', 'WelcomePage.jsx'],
   ['pages', 'BespokePage.jsx'],

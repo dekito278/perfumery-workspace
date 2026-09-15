@@ -173,7 +173,16 @@ assert.match(priceHook, /tierPricesForLine\(index, product\.slug, variant\?\.id 
 // true, because there is no Indonesian price above it any more.
 //
 // What replaced it has to be on BOTH surfaces, which is what this guard is really for.
-for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile', 'MobileProductDetailPage.jsx']]) {
+// ImmersiveProductPage is in this list because it REPLACES the product page for a product with a
+// story — a third surface, reached by a branch above every line that resolves the copy. It was not
+// reachable from the English shop until Ayang-ayang got an English letter, and the moment it was, it
+// offered an overseas buyer "Tambah ke Keranjang — Rp 289.000": an Indonesian button, the domestic
+// price, and a cart that cannot ship to them.
+for (const page of [
+  ['pages', 'PublicProductDetailPage.jsx'],
+  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['pages', 'ImmersiveProductPage.jsx'],
+]) {
   const source = read(...page);
   assert.match(source, /<InternationalPrice price=\{exportPrice\}/,
     `${page.join('/')} leads with the international price — desktop and mobile drifting apart is this repo's commonest defect`);
@@ -181,6 +190,48 @@ for (const page of [['pages', 'PublicProductDetailPage.jsx'], ['pages', 'mobile'
     `${page.join('/')} keeps the way back for a domestic buyer reading English`);
   assert.doesNotMatch(source, /<OverseasPriceNote/, 'and does not repeat the same number in a second panel');
 }
+// And none of the three offers the cart to a reader being quoted internationally. RajaOngkir prices the
+// cart and a foreign address returns an empty area list, so the button leads to a form nobody can finish.
+for (const page of [
+  ['pages', 'PublicProductDetailPage.jsx'],
+  ['pages', 'mobile', 'MobileProductDetailPage.jsx'],
+  ['pages', 'ImmersiveProductPage.jsx'],
+]) {
+  const source = read(...page);
+  const name = page.join('/');
+  // Read by bracket depth rather than by regex. The first version looked for ") : (" between the gate
+  // and the button and found the soldOut ternary's own ") : (" instead, so moving the cart onto the
+  // international side of the gate walked straight through it.
+  const trueBranchOf = (from) => {
+    let depth = 0;
+    for (let i = from; i < source.length; i += 1) {
+      const c = source[i];
+      if ('([{'.includes(c)) depth += 1;
+      else if (')]}'.includes(c)) { if (depth === 0) return source.slice(from, i); depth -= 1; }
+      else if (c === ':' && depth === 0 && source[i - 1] !== '?') return source.slice(from, i);
+    }
+    return source.slice(from);
+  };
+
+  const gates = [...source.matchAll(/isInternational \?/g)];
+  assert.ok(gates.length, `${name}: nothing is gated on the region at all`);
+  for (const gate of gates) {
+    assert.ok(!trueBranchOf(gate.index + gate[0].length).includes('addToCartWithPrice'),
+      `${name}: an add-to-cart sits on the INTERNATIONAL side of an isInternational gate — offered to `
+      + 'exactly the buyer whose address the cart cannot ship to');
+  }
+  // And every add-to-cart has a gate above it, or it is offered to everyone.
+  for (const match of source.matchAll(/addToCartWithPrice/g)) {
+    const gateAt = source.slice(0, match.index).lastIndexOf('isInternational ?');
+    assert.ok(gateAt !== -1 && match.index - gateAt < 900,
+      `${name}: an add-to-cart is offered with no isInternational gate above it — the cart cannot ship abroad`);
+  }
+  // The export price must be the REGION-GATED one here, or the domestic price is what gets replaced for
+  // an Indonesian reader too.
+  assert.match(source, /const exportPrice = useOverseasPrice\(product, selectedVariant\);/,
+    `${name} resolves the export price with the region-gated hook`);
+}
+
 const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // The Indonesian label moved into the message file when the storefront learned English; the English one
 // stays inline because it belongs to the English panel and exists in one language by definition.
