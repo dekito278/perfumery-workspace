@@ -165,7 +165,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
 
         {/* Journal preview */}
         {articles.length ? (
-          <section className="m-editorial-section">
+          <section className="m-editorial-section m-editorial-section--dark">
             <div className="m-editorial-section__head">
               <p className="m-editorial-eyebrow">{t('home.journal')}</p>
               <h2>{t('home.journalHeading')}</h2>

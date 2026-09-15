@@ -160,11 +160,25 @@
   from {
     opacity: 0;
     transform: translateY(40px);
+    /* The blur is what makes this read as a lens finding focus rather than a box sliding up. It is
+       deliberately ONLY on the hero: `filter` creates a containing block for fixed and sticky
+       descendants, so putting it on the scroll-reveal — which wraps whole sections — would make a
+       sticky child jump for the length of every transition. */
+    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
+}
+
+/* The hero photograph breathes: fourteen seconds from 1.08 to 1.12 is slow enough that nobody catches
+   it moving, and the page stops feeling like a screenshot. Starting ABOVE 1 on both ends means the
+   frame is always filled — animating from scale(1) would show the page background at the edges. */
+@keyframes hero-slow-zoom {
+  from { transform: scale(1.08); }
+  to { transform: scale(1.12); }
 }
 
 @keyframes hero-image-reveal {
@@ -206,8 +220,24 @@
   animation: hero-image-reveal 1.4s var(--ease-out-expo) 0.2s both;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  /* Desktop and phone both. They are separate components with separate class names, and a change made
+     to one of them only is how this repo's desktop and phone drift apart. */
+  .home-hero__slide-image,
+  .m-editorial-hero__image {
+    animation: hero-slow-zoom 14s var(--ease-smooth, cubic-bezier(0.25, 0.1, 0.25, 1)) 0.6s both;
+  }
+}
+
 .hero-animate-fade {
   animation: hero-fade-in 0.8s var(--ease-out-expo) 0.5s both;
+}
+
+/* Any wrapper whose direct child is an image clips it. The hover zooms below scale the image past
+   its box, and every one of them used to need `overflow: hidden` added by hand on the wrapper — a
+   step that was forgotten often enough to be worth one rule instead. */
+main :is(a, figure, picture, div, span):has(> img) {
+  overflow: hidden;
 }
 
 /* --- Image hover zoom (product cards, journal cards, etc.) --- */
@@ -462,6 +492,7 @@
     transition: none !important;
   }
 
+  .home-hero__slide-image,
   .hero-animate-text,
   .hero-animate-image,
   .hero-animate-fade,
@@ -929,6 +960,13 @@
   font-weight: 800;
   text-decoration: none;
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.editorial-cart-button:active,
+.editorial-button:active {
+  /* The press needs an answer. Without it a tap on a slow connection reads as a missed tap, and people
+     tap again — which is how a buyer ends up trying to place the same order twice. */
+  transform: scale(0.98);
 }
 
 /* Cart is a compact square icon button with a corner count badge — cleaner than the
@@ -4665,6 +4703,39 @@
   padding-bottom: var(--space-section);
 }
 
+/* A dark, full-width band that breaks the page into chapters. Built on --flush, which already
+   centres its content with padding instead of a 100vw breakout: 100vw counts the scrollbar, so on
+   any platform with a classic scrollbar it hands the page a horizontal scroll. */
+.home-section--dark {
+  background: var(--editorial-charcoal);
+  color: var(--editorial-ivory);
+}
+
+.home-section--dark .editorial-eyebrow,
+.home-section--dark .home-journal-card__category {
+  color: rgba(245, 237, 228, 0.55);
+}
+
+.home-section--dark .text-reveal-word > span,
+.home-section--dark h2,
+.home-section--dark h3 {
+  color: var(--editorial-ivory);
+}
+
+.home-section--dark .home-journal-card {
+  background: rgba(245, 237, 228, 0.04);
+  border-color: rgba(245, 237, 228, 0.14);
+}
+
+.home-section--dark .home-journal-card p {
+  color: rgba(245, 237, 228, 0.62);
+}
+
+.home-section--dark .home-journal-card__read-more,
+.home-section--dark .home-section__action a {
+  color: var(--editorial-ivory);
+}
+
 .home-section__head {
   margin-bottom: var(--space-block);
 }
@@ -5395,6 +5466,10 @@
   }
 
   .home-section--flush {
+    /* The .home-section rule above is later in the file than the base --flush rule and has the same
+       specificity, so without this it wins and a "flush" section stops being flush below 900px. It
+       had been that way for every narrow screen since --flush was written. */
+    width: 100%;
     padding-left: 16px;
     padding-right: 16px;
   }
@@ -7742,6 +7817,34 @@
 /* Section layout */
 .m-editorial-section {
   padding: 32px 16px;
+}
+
+/* The phone's chapter break. Its sections are already full-bleed — padding, not a container — so this
+   only has to change colour. */
+.m-editorial-section--dark {
+  background: var(--editorial-charcoal, #1b1a16);
+  color: var(--editorial-ivory, #f7f1e5);
+}
+
+.m-editorial-section--dark .m-editorial-eyebrow {
+  color: rgba(245, 237, 228, 0.55);
+}
+
+.m-editorial-section--dark h2,
+.m-editorial-section--dark .m-editorial-journal-card h3 {
+  color: var(--editorial-ivory, #f7f1e5);
+}
+
+.m-editorial-section--dark .m-editorial-journal-card {
+  border-bottom-color: rgba(245, 237, 228, 0.16);
+}
+
+.m-editorial-section--dark .m-editorial-journal-card p {
+  color: rgba(245, 237, 228, 0.62);
+}
+
+.m-editorial-section--dark .m-editorial-section__action a {
+  color: var(--editorial-ivory, #f7f1e5);
 }
 
 .m-editorial-section__head {
