@@ -12,10 +12,30 @@ import path from 'node:path';
 // each one against App.jsx before a deploy can ship a link to a 404.
 export const STATIC_PUBLIC_ROUTES = ['/home', '/catalog', '/journal', '/bespoke'];
 
+// The English shop is a second address for the same app (see utils/storefrontRegion.js). A prerendered
+// file carries ONE title, description and og:image, so the Indonesian file could never speak for the
+// English shop: /catalog/hug-n-1?lang=en previewed in Indonesian wherever it was pasted. These are the
+// twins that can.
+export const EN_PREFIX = '/en';
+
+// The journal is deliberately NOT twinned. journal_posts has no English columns, so an /en/articles/...
+// page would be English chrome around an Indonesian article — the same text at a second address, which
+// is a duplicate, not a translation. robots.txt keeps crawlers off the English journal instead.
+
 const DRAFT_TAG = 'studio draft';
 const BRAND = 'SOLIVAGANT';
 // Canonical production origin (overridable via VITE_PUBLIC_SITE_URL / SITE_URL env).
 const DEFAULT_SITE_URL = 'https://www.solivagantscent.com';
+
+// 155 characters is what a search result shows. Cut at a word, not mid-word, and never leave the reader
+// staring at half of one.
+const snippet = (value, limit = 155) => {
+  const flat = String(value || '').replace(/\s+/g, ' ').trim();
+  if (flat.length <= limit) return flat;
+  const cut = flat.slice(0, limit - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, '')}…`;
+};
 
 const escapeHtml = (value = '') =>
   String(value)
@@ -106,7 +126,7 @@ export const fetchPublicProducts = async (env) => {
     // dropped out of the sitemap and lost its prerendered title, description and JSON-LD, while the
     // journal still resolved and made the sitemap look populated. The view exists for exactly this and
     // already drops drafts and strips internal tags.
-    'storefront_products_public?select=slug,name,category,price_number,stock,variants,notes,description,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
+    'storefront_products_public?select=slug,name,category,price_number,stock,variants,notes,description,notes_en,description_en,top_notes,heart_notes,base_notes,image_url,image_urls,tags,concentration,updated_at&order=created_at.desc',
   );
   if (!Array.isArray(rows)) return [];
   return rows
@@ -121,6 +141,12 @@ export const fetchPublicProducts = async (env) => {
       stock: row.stock,
       variants: Array.isArray(row.variants) ? row.variants : [],
       description: String(row.notes || row.description || `Objek parfum ${BRAND} oleh Dekito.`).trim(),
+      // The English page describes itself with the STORY, not the note list. `notes` is perfume
+      // vocabulary and is already English in 16 of the 18 rows, so keying the English page off it would
+      // have produced two pages with byte-identical descriptions — a pair hreflang exists to tell apart.
+      // Falls back through the note list to the Indonesian rather than to nothing: a snippet in the
+      // wrong language still says which perfume it is, and an empty one says nothing at all.
+      descriptionEn: String(row.description_en || row.notes_en || row.description || row.notes || '').trim(),
       image: firstImage(row),
       topNotes: toList(row.top_notes),
       heartNotes: toList(row.heart_notes),
@@ -169,6 +195,32 @@ const upsertMeta = (html, attr, key, content) => {
   return html.replace('</head>', `\t\t${tag}\n\t</head>`);
 };
 
+/**
+ * The two addresses this page lives at, each pointing at the other and at itself.
+ *
+ * Self-referential on purpose: a page that names only the other one is telling Google it is not the real
+ * home of anything, and Google drops it. That is precisely what the ?lang=en version could never avoid —
+ * one file, one canonical, and it had to be the Indonesian address.
+ *
+ * x-default goes to the Indonesian page: this is an Indonesian atelier, and a visitor whose language we
+ * do not have should land where the whole shop is, not on the smaller half of it.
+ */
+export const alternateLinks = (siteUrl, route) => [
+  `<link rel="alternate" hreflang="id" href="${escapeHtml(abs(siteUrl, route))}" />`,
+  `<link rel="alternate" hreflang="en" href="${escapeHtml(abs(siteUrl, `${EN_PREFIX}${route}`))}" />`,
+  `<link rel="alternate" hreflang="x-default" href="${escapeHtml(abs(siteUrl, route))}" />`,
+].join('\n\t\t');
+
+export const upsertAlternates = (html, tags) => {
+  const stripped = html.replace(/[\t ]*<link rel="alternate"[^>]*>\n?/gi, '');
+  return stripped.replace('</head>', `\t\t${tags}\n\t</head>`);
+};
+
+// index.html ships lang="id". A twin that keeps it hands a screen reader English words to pronounce with
+// Indonesian phonetics, and tells Chrome to offer a translation of a page already in the reader's
+// language — before any JavaScript runs, which is the only state a crawler sees.
+export const setDocumentLanguage = (html, lang) => html.replace(/<html lang="[^"]*"/i, `<html lang="${lang}"`);
+
 const upsertCanonical = (html, href) => {
   const tag = `<link rel="canonical" href="${escapeHtml(href)}" />`;
   if (/<link rel="canonical"[^>]*>/i.test(html)) {
@@ -186,19 +238,19 @@ const injectJsonLd = (html, objects) => {
   return html.replace('</head>', `\t\t${scripts}\n\t</head>`);
 };
 
-const productJsonLd = (product, siteUrl, canonical) => {
+const productJsonLd = (product, siteUrl, canonical, { withOffer = true, description } = {}) => {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    description: product.description,
+    description: description || product.description,
     category: product.category,
     brand: { '@type': 'Brand', name: BRAND },
     url: canonical,
   };
   const image = abs(siteUrl, product.image);
   if (image) jsonLd.image = [image];
-  if (product.priceNumber > 0) {
+  if (withOffer && product.priceNumber > 0) {
     jsonLd.offers = {
       '@type': 'Offer',
       priceCurrency: 'IDR',
@@ -225,45 +277,65 @@ const breadcrumbJsonLd = (crumbs, siteUrl) => ({
 export const writeProductPages = (distRoot, baseHtml, products, siteUrl) => {
   let written = 0;
   for (const product of products) {
-    const canonical = abs(siteUrl, `/catalog/${product.slug}`);
-    const title = `${product.name} - ${BRAND}`;
-    const description = `${product.name} — ${product.description}`.slice(0, 155);
+    const route = `/catalog/${product.slug}`;
+    const alternates = alternateLinks(siteUrl, route);
     // The page renders its images through the transform; the share tag pointed at the raw object, so a
     // preview fetch pulled 600 kB-1.2 MB. 1200px is the size social scrapers actually want.
     const image = getOptimizedStorageImageUrl(abs(siteUrl, product.image), 1200);
 
-    let html = baseHtml.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
-    html = upsertMeta(html, 'name', 'description', description);
-    html = upsertCanonical(html, canonical);
-    html = upsertMeta(html, 'property', 'og:type', 'product');
-    html = upsertMeta(html, 'property', 'og:site_name', BRAND);
-    html = upsertMeta(html, 'property', 'og:url', canonical);
-    html = upsertMeta(html, 'property', 'og:title', title);
-    html = upsertMeta(html, 'property', 'og:description', description);
-    if (image) {
-      html = upsertMeta(html, 'property', 'og:image', image);
-      html = upsertMeta(html, 'name', 'twitter:image', image);
-    }
-    html = upsertMeta(html, 'name', 'twitter:card', 'summary_large_image');
-    html = upsertMeta(html, 'name', 'twitter:title', title);
-    html = upsertMeta(html, 'name', 'twitter:description', description);
-    if (product.priceNumber > 0) {
-      html = upsertMeta(html, 'property', 'product:price:amount', String(product.priceNumber));
-      html = upsertMeta(html, 'property', 'product:price:currency', 'IDR');
-    }
-    html = injectJsonLd(html, [
-      productJsonLd(product, siteUrl, canonical),
-      breadcrumbJsonLd([
-        { name: 'Beranda', path: '/home' },
-        { name: 'Koleksi', path: '/catalog' },
-        { name: product.name, path: `/catalog/${product.slug}` },
-      ], siteUrl),
-    ]);
+    for (const lang of ['id', 'en']) {
+      const english = lang === 'en';
+      const canonical = abs(siteUrl, english ? `${EN_PREFIX}${route}` : route);
+      const title = `${product.name} - ${BRAND}`;
+      const description = snippet(`${product.name} — ${english ? product.descriptionEn : product.description}`);
 
-    const dir = path.join(distRoot, 'catalog', product.slug);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'index.html'), html);
-    written += 1;
+      let html = setDocumentLanguage(baseHtml, lang);
+      html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+      html = upsertMeta(html, 'name', 'description', description);
+      html = upsertCanonical(html, canonical);
+      html = upsertAlternates(html, alternates);
+      html = upsertMeta(html, 'property', 'og:type', 'product');
+      html = upsertMeta(html, 'property', 'og:site_name', BRAND);
+      html = upsertMeta(html, 'property', 'og:url', canonical);
+      html = upsertMeta(html, 'property', 'og:locale', english ? 'en_US' : 'id_ID');
+      html = upsertMeta(html, 'property', 'og:title', title);
+      html = upsertMeta(html, 'property', 'og:description', description);
+      if (image) {
+        html = upsertMeta(html, 'property', 'og:image', image);
+        html = upsertMeta(html, 'name', 'twitter:image', image);
+      }
+      html = upsertMeta(html, 'name', 'twitter:card', 'summary_large_image');
+      html = upsertMeta(html, 'name', 'twitter:title', title);
+      html = upsertMeta(html, 'name', 'twitter:description', description);
+      // Price tags on the Indonesian page only. price_number is the DOMESTIC price; the English page
+      // quotes the export price, which lives in storefront_product_prices and is resolved per variant at
+      // runtime — reachable from the app, not from this build. A product:price of Rp 750.000 on a page
+      // showing Rp 2.630.000 would put the wrong number in a search result and in a shopping card, and
+      // "no price stated" is the honest version of "I cannot reach it".
+      if (!english && product.priceNumber > 0) {
+        html = upsertMeta(html, 'property', 'product:price:amount', String(product.priceNumber));
+        html = upsertMeta(html, 'property', 'product:price:currency', 'IDR');
+      }
+      html = injectJsonLd(html, [
+        productJsonLd(product, siteUrl, canonical, { withOffer: !english, description }),
+        breadcrumbJsonLd(english
+          ? [
+            { name: 'Home', path: `${EN_PREFIX}/home` },
+            { name: 'Collection', path: `${EN_PREFIX}/catalog` },
+            { name: product.name, path: `${EN_PREFIX}${route}` },
+          ]
+          : [
+            { name: 'Beranda', path: '/home' },
+            { name: 'Koleksi', path: '/catalog' },
+            { name: product.name, path: route },
+          ], siteUrl),
+      ]);
+
+      const dir = path.join(distRoot, ...(english ? [EN_PREFIX.slice(1)] : []), 'catalog', product.slug);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'index.html'), html);
+      written += 1;
+    }
   }
   return written;
 };
@@ -332,20 +404,42 @@ export const writeJournalPages = (distRoot, baseHtml, journal, siteUrl) => {
 
 // --- sitemap + robots --------------------------------------------------
 
-const urlEntry = (loc, lastmod) => {
+const urlEntry = (loc, lastmod, alternates = '') => {
   const mod = lastmod ? `\n    <lastmod>${escapeHtml(String(lastmod).slice(0, 10))}</lastmod>` : '';
-  return `  <url>\n    <loc>${escapeHtml(loc)}</loc>${mod}\n  </url>`;
+  return `  <url>\n    <loc>${escapeHtml(loc)}</loc>${mod}${alternates}\n  </url>`;
 };
 
+// Sitemap hreflang, which Google reads as readily as the tags in the head and which is the only place a
+// page can be annotated without touching its HTML. Both entries of a pair carry the SAME set, including
+// a link back to themselves — a set that leaves one of them out is discarded whole.
+const sitemapAlternates = (siteUrl, route) => ['id', 'en', 'x-default']
+  .map((hreflang) => {
+    const href = abs(siteUrl, hreflang === 'en' ? `${EN_PREFIX}${route}` : route);
+    return `\n    <xhtml:link rel="alternate" hreflang="${hreflang}" href="${escapeHtml(href)}" />`;
+  })
+  .join('');
+
+// The journal is listed once, in Indonesian, with no alternates: there is no English version of an
+// article, only English chrome around the same Indonesian words.
 export const writeSitemap = (distRoot, siteUrl, { products = [], journal = [] } = {}) => {
   if (!siteUrl) return 0;
-  const staticRoutes = STATIC_PUBLIC_ROUTES;
+  const twinned = STATIC_PUBLIC_ROUTES.filter((route) => route !== '/journal');
+  const pairs = [
+    ...twinned.map((route) => ({ route, lastmod: '' })),
+    ...products.map((p) => ({ route: `/catalog/${p.slug}`, lastmod: p.updatedAt })),
+  ];
   const entries = [
-    ...staticRoutes.map((r) => urlEntry(abs(siteUrl, r))),
-    ...products.map((p) => urlEntry(abs(siteUrl, `/catalog/${p.slug}`), p.updatedAt)),
+    ...pairs.flatMap(({ route, lastmod }) => {
+      const alternates = sitemapAlternates(siteUrl, route);
+      return [
+        urlEntry(abs(siteUrl, route), lastmod, alternates),
+        urlEntry(abs(siteUrl, `${EN_PREFIX}${route}`), lastmod, alternates),
+      ];
+    }),
+    urlEntry(abs(siteUrl, '/journal')),
     ...journal.map((j) => urlEntry(abs(siteUrl, `/articles/${j.slug}`), j.updatedAt)),
   ];
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>\n`;
   fs.writeFileSync(path.join(distRoot, 'sitemap.xml'), xml);
   return entries.length;
 };

@@ -89,12 +89,20 @@
       "destination": "/bespoke/index.html"
     },
     {
-      "source": "/materials",
-      "destination": "/materials/index.html"
-    },
-    {
       "source": "/journal",
       "destination": "/journal/index.html"
+    },
+    {
+      "source": "/en/home",
+      "destination": "/en/home/index.html"
+    },
+    {
+      "source": "/en/catalog",
+      "destination": "/en/catalog/index.html"
+    },
+    {
+      "source": "/en/bespoke",
+      "destination": "/en/bespoke/index.html"
     },
     {
       "source": "/(.*)",

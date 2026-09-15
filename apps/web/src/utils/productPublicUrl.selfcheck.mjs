@@ -21,14 +21,25 @@ const read = (...parts) => strip(readFileSync(join(webRoot, ...parts), 'utf8'));
 
 const PUBLIC_PREFIX = '/catalog/';
 
-// 1. The prerenderer decides where the file lands.
+// 1. The prerenderer decides where the file lands. Held as "everyone names the same route", not as the
+// exact expressions that did so: pinning the shape made adding the English twin — which moved the
+// canonical behind a `route` constant and the sitemap behind a pair list — look like a regression while
+// the rule it protects was never broken. The rule is that four places agree on /catalog/<slug>.
 const seo = read('tools', 'seo-artifacts.mjs');
-assert.match(seo, /path\.join\(distRoot, 'catalog', product\.slug\)/,
-  'the prerenderer writes dist/catalog/<slug>/index.html; every other name below follows from that');
+assert.match(seo, /const route = `\/catalog\/\$\{product\.slug\}`;/,
+  'the product route is named ONCE in the prerenderer, so the file, the canonical and the alternates '
+  + 'cannot drift apart from each other');
+assert.match(seo, /path\.join\(distRoot,[\s\S]{0,80}?'catalog', product\.slug\)/,
+  'the prerenderer writes dist/[en/]catalog/<slug>/index.html; every other name below follows from that');
 // 2. ...the sitemap must point at the same place, or Google indexes a URL with no file behind it.
-assert.match(seo, /urlEntry\(abs\(siteUrl, `\/catalog\/\$\{p\.slug\}`\)/, 'the sitemap must list the prerendered path');
-// 3. ...and so must the canonical baked into that file.
-assert.match(seo, /abs\(siteUrl, `\/catalog\/\$\{product\.slug\}`\)/, 'the prerendered canonical must agree');
+assert.match(seo, /`\/catalog\/\$\{p\.slug\}`/, 'the sitemap must list the prerendered path');
+// 3. ...and so must the canonical baked into that file, which is built from that one route constant.
+{
+  const writer = seo.slice(seo.indexOf('export const writeProductPages'), seo.indexOf('export const writeJournalPages'));
+  assert.match(writer, /const canonical = abs\(siteUrl,[^;]*\broute\b[^;]*\);/,
+    'the prerendered canonical is derived from that same route, not spelled out a second time');
+  assert.match(writer, /upsertCanonical\(html, canonical\)/, 'and it is what the page claims as its canonical');
+}
 
 // 4. The helper the app builds links with. This is the one that drifted.
 const service = read('src', 'services', 'productCatalogService.js');

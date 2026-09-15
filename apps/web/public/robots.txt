@@ -43,6 +43,12 @@ Allow: /en/mobile/products/
 Allow: /en/mobile/articles
 Allow: /en/mobile/bespoke
 
+# No English journal for a crawler to find: journal_posts has no English columns, so /en/journal and
+# /en/articles/... would be a second address for the same Indonesian articles. Buyers can still read them
+# — this only keeps the duplicate out of search results, where the Indonesian pages already are.
+Disallow: /en/journal
+Disallow: /en/articles/
+
 # The absolute Sitemap URL is injected into dist/robots.txt at build time
 # (tools/build.mjs) once the canonical site URL is known.
 Sitemap: /sitemap.xml
