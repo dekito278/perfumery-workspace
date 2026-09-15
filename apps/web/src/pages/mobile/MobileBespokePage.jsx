@@ -715,10 +715,10 @@ const MobileBespokePage = () => {
             return (
               <button key={method.id} type="button" onClick={() => updateField('paymentMethod', method.id)} className={cn('mobile-commerce-choice px-4 py-4', active ? 'is-active' : 'text-[#6b7280]')}>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold text-editorial-charcoal">{method.label}</span>
+                  <span className="text-sm font-bold text-editorial-charcoal">{t(method.labelKey)}</span>
                   {active ? <span className="rounded-full bg-editorial-charcoal px-2 py-1 text-[9px] font-bold uppercase text-white">{t('bsp.chosen')}</span> : null}
                 </div>
-                <p className="mt-1 text-[11px] font-semibold leading-relaxed">{method.description}</p>
+                <p className="mt-1 text-[11px] font-semibold leading-relaxed">{t(method.descriptionKey)}</p>
                 {method.accountNumber ? <div className="mobile-commerce-panel mt-3 border-0 bg-white/80 px-3 py-2 text-[11px] font-bold text-editorial-charcoal">{method.bankName} {method.accountNumber} / A/N {method.accountName}</div> : null}
               </button>
             );

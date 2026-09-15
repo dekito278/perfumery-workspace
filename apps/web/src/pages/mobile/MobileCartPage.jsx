@@ -58,7 +58,7 @@ const MobileCartPage = () => {
                 {items.length ? formatTotal(voucher.subtotalAfterDiscount) : t('cart.startShopping')}
               </div>
               {items.length && voucher.discountAmount ? (
-                <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
+                <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</div>
               ) : null}
               <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: 'var(--editorial-muted)' }}>
                 {items.length ? t('cart.reviewMobile') : t('cart.emptyMobileBody')}
@@ -82,7 +82,7 @@ const MobileCartPage = () => {
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
                 <ShoppingBag className="h-4 w-4" />
-                Belanja
+                {t('mcart.shop')}
               </Button>
               <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', background: 'var(--editorial-paper)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
                 {t('cart.bespoke')}
@@ -115,7 +115,7 @@ const MobileCartPage = () => {
               <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 10, border: '1px solid var(--editorial-stone)', background: 'var(--editorial-ivory)', padding: '8px 12px' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('cart.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
-                  <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: 'var(--editorial-charcoal)' }}>Hemat {formatTotal(voucher.discountAmount)}</div>
+                  <div style={{ marginTop: 2, fontSize: '0.72rem', fontWeight: 500, color: 'var(--editorial-charcoal)' }}>{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</div>
                 </div>
                 <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-lg tap-44" style={{ color: 'var(--editorial-muted)' }} onClick={voucher.removeVoucher} aria-label={t('cart.voucherRemove')}>
                   <X className="h-4 w-4" />
@@ -190,7 +190,7 @@ const MobileCartPage = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
                 <Button type="button" variant="outline" className="h-11 rounded-xl gap-2" style={{ borderColor: 'var(--editorial-stone)', color: 'var(--editorial-charcoal)' }} onClick={() => navigate('/mobile/bespoke')}>
                   <Sparkles className="h-4 w-4" />
-                  Mulai bespoke
+                  {t('mcart.startBespoke')}
                 </Button>
                 <Button type="button" className="h-11 rounded-xl gap-2" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/catalog')}>
                   <ShoppingBag className="h-4 w-4" />
@@ -251,7 +251,7 @@ const MobileCartPage = () => {
               <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--editorial-muted)' }}>{summary.quantity} item</p>
                 <p style={{ fontSize: '1.1rem', fontWeight: 700, lineHeight: 1.2, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatTotal(voucher.subtotalAfterDiscount)}</p>
-                {voucher.discountAmount ? <p style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hemat {formatTotal(voucher.discountAmount)}</p> : null}
+                {voucher.discountAmount ? <p style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--editorial-charcoal)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</p> : null}
               </div>
               <Button type="button" className="h-12 rounded-xl gap-2 px-4" style={{ background: 'var(--editorial-charcoal)', color: 'var(--editorial-paper)' }} onClick={() => navigate('/mobile/checkout')}>
                 <PackageCheck className="h-4 w-4" />

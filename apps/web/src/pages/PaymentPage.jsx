@@ -204,7 +204,7 @@ const PaymentSuccessPanel = ({ compact = false, orderNumber, customerCode, metho
       </span>
       <h1 className={compact ? 'mt-4 text-xl font-bold text-[#172016]' : 'mt-4 text-3xl font-bold text-[#172016]'}>{t("pay.received")}</h1>
       <p className="mt-2 text-sm font-semibold leading-relaxed text-[#54604d]">
-        Terima kasih. Pembayaran{method ? ` ${method}` : ''} untuk order {orderNumber} sudah masuk. Pesanan akan diproses.
+        {t('pay.thanks', { method: method ? ` ${method}` : '', order: orderNumber })}
       </p>
       <div className="mt-5 flex justify-center gap-2">
         {customerCode ? (
@@ -292,11 +292,11 @@ const PaymentFrame = ({ session, compact = false }) => {
         </div>
         <div className={compact ? 'mt-4 grid gap-2 text-xs font-bold text-editorial-charcoal' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
+            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
             <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
+            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
@@ -305,7 +305,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           </div>
           {session.paymentStatus ? (
             <div className="rounded-2xl bg-white/80 px-4 py-3">
-              <div className="text-[10px] uppercase text-editorial-muted">Status</div>
+              <div className="text-[10px] uppercase text-editorial-muted">{t('pay.status')}</div>
               <div className="mt-1 truncate">{paymentStatusKeys[session.paymentStatus] ? t(paymentStatusKeys[session.paymentStatus]) : session.paymentStatus}</div>
             </div>
           ) : null}
@@ -460,11 +460,11 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
         </div>
         <div className={compact ? 'mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-editorial-charcoal' : 'mt-5 grid gap-3 sm:grid-cols-3'}>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
+            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
             <div className="mt-1 truncate">{orderNumber}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
-            <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
+            <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
             <div className="mt-1 truncate">{customerCode || session.customerName || '-'}</div>
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
@@ -626,11 +626,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           <>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
+                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
                 <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
+                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
@@ -693,7 +693,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          <div className="text-xs font-bold uppercase">Instruksi</div>
+          <div className="text-xs font-bold uppercase">{t('pay.instructions')}</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
             <li>{t('pay.step1', { amount: formatTotal(session.amount) })}</li>
             <li>{t('pay.step2')}</li>
@@ -722,11 +722,11 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.orderSummary")}</div>
             <div className="mt-3 grid gap-2 text-xs font-bold text-editorial-charcoal">
               <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Pesanan</div>
+                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.order')}</div>
                 <div className="mt-1 truncate">{session.orderNumber || session.invoiceNumber}</div>
               </div>
               <div className="rounded-2xl bg-editorial-ivory px-4 py-3">
-                <div className="text-[10px] uppercase text-editorial-muted">Pelanggan</div>
+                <div className="text-[10px] uppercase text-editorial-muted">{t('pay.customer')}</div>
                 <div className="mt-1 truncate">{session.customerCode || session.customerName || '-'}</div>
               </div>
             </div>
@@ -742,7 +742,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <div className="text-xs font-bold uppercase text-editorial-muted">{t("pay.proof")}</div>
-                {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">Wajib</span> : null}
+                {needsProofUpload ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">{t('pay.requiredTag')}</span> : null}
               </div>
               <p className="mt-1 text-sm font-semibold leading-relaxed text-editorial-charcoal">
                 {proofStatus === 'rejected'

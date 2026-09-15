@@ -232,11 +232,11 @@ const CatalogPage = () => {
               </h2>
               {products.length ? (
                 <button type="button" className="editorial-button" onClick={() => { setActiveCategory('All'); setSearchTerm(''); setWearSelection({ occasions: '', times: '', weather: '' }); }}>
-                  Reset Katalog
+                  {t('catalog.resetCatalog')}
                 </button>
               ) : (
                 <button type="button" className="editorial-button" onClick={() => window.location.reload()}>
-                  Muat ulang
+                  {t('catalog.reload')}
                 </button>
               )}
             </div>
@@ -245,9 +245,9 @@ const CatalogPage = () => {
           {visibleProducts.length < filteredProducts.length ? (
             <div className="catalog-load-more">
               <button type="button" className="editorial-button magnetic-hover" onClick={() => setVisibleCount((c) => c + 12)} onMouseMove={magnetic}>
-                Tampilkan lagi <ArrowRight className="h-4 w-4" />
+{t('catalog.showMore')} <ArrowRight className="h-4 w-4" />
               </button>
-              <span>{visibleProducts.length} dari {filteredProducts.length}</span>
+              <span>{t('catalog.shownOf', { shown: visibleProducts.length, total: filteredProducts.length })}</span>
             </div>
           ) : null}
         </section>
