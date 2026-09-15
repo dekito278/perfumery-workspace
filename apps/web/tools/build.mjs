@@ -2,6 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { DEFAULT_SHARE_IMAGE as SHARE_IMAGE_PATH } from '../src/utils/seo.js';
+import { EN_PREFIX, alternateLinks, setDocumentLanguage, upsertAlternates } from './seo-artifacts.mjs';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -199,11 +200,34 @@ const writeStaticPublicPages = (siteUrl, products = []) => {
     html = replaceMetaContent(html, 'name="twitter:description"', page.description);
     if (canonical) {
       html = replaceMetaContent(html, 'property="og:url"', canonical);
+      html = replaceMetaContent(html, 'property="og:locale"', 'id_ID');
       html = upsertCanonical(html, canonical);
+      if (page.route !== '/journal') {
+        html = upsertAlternates(html, alternateLinks(siteUrl, page.route));
+      }
     }
 
     fs.mkdirSync(routeDir, { recursive: true });
     fs.writeFileSync(routePath, html);
+
+    // And the English twin of the same page. The copy above is already written in English — these four
+    // descriptions were written for search results, not for the Indonesian shop — so the twin differs
+    // only in what it says about ITSELF: its own canonical, its own lang, and the pair of hreflang links
+    // that stop Google from having to guess which of the two addresses is the real one.
+    //
+    // The journal is left out on purpose: journal_posts has no English columns, so /en/journal would be
+    // a second address for the same Indonesian articles. robots.txt keeps crawlers off it.
+    if (canonical && page.route !== '/journal') {
+      const enCanonical = `${siteUrl}${EN_PREFIX}${page.route}`;
+      let enHtml = setDocumentLanguage(html, 'en');
+      enHtml = replaceMetaContent(enHtml, 'property="og:url"', enCanonical);
+      enHtml = replaceMetaContent(enHtml, 'property="og:locale"', 'en_US');
+      enHtml = upsertCanonical(enHtml, enCanonical);
+      enHtml = upsertAlternates(enHtml, alternateLinks(siteUrl, page.route));
+      const enDir = path.join(distRoot, EN_PREFIX.slice(1), routeName);
+      fs.mkdirSync(enDir, { recursive: true });
+      fs.writeFileSync(path.join(enDir, 'index.html'), enHtml);
+    }
   });
 
   // The shell itself — dist/index.html — is what Vercel's catch-all returns, and that includes the bare
@@ -331,6 +355,10 @@ const generateSeoArtifacts = async () => {
   assertEveryPageHasShareImage(distRoot);
 
   const urls = writeSitemap(distRoot, env.siteUrl, { products, journal });
+  assertLanguagePairsAreCoherent(env.siteUrl, [
+    ...STATIC_PUBLIC_ROUTES.filter((route) => route !== '/journal'),
+    ...products.map((product) => `/catalog/${product.slug}`),
+  ]);
   if (urls) {
     finalizeRobots(distRoot, env.siteUrl);
     console.log(`[seo] Wrote sitemap.xml with ${urls} URL(s).`);
@@ -579,6 +607,109 @@ const assertPrerenderedPagesAreIntact = () => {
     process.exit(1);
   }
   console.log(`[prerender] ${pages.length} page(s) intact.`);
+};
+
+// The two shops must agree about each other, or hreflang is worse than not shipping it at all.
+//
+// Google reads an hreflang set only when every page in it names every other AND names itself, and it
+// drops the whole set the moment one page disagrees. The trap is that nothing looks broken when it does:
+// the pages still load, the tags are still there, and the English shop just quietly stops being indexed
+// — the exact outcome this was built to fix. Checked against what is actually ON DISK, so it catches a
+// twin that was never written as readily as one whose tags went wrong.
+const assertLanguagePairsAreCoherent = (siteUrl, expectedRoutes = []) => {
+  const distRoot = path.join(webRoot, 'dist');
+  if (!siteUrl || !expectedRoutes.length) return;
+
+  const enRoot = path.join(distRoot, EN_PREFIX.slice(1));
+  // The list of pages to check comes from what the build MEANT to write, never from what is sitting in
+  // dist/en. Reading it off the English shop is how the first version of this check passed while all 18
+  // English product pages were missing: nothing was there to be found wrong.
+  const routes = expectedRoutes;
+  const written = [];
+  if (fs.existsSync(enRoot)) {
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) walk(path.join(dir, entry.name));
+        else if (entry.name === 'index.html') written.push(`/${path.relative(enRoot, dir)}`);
+      }
+    };
+    walk(enRoot);
+  }
+
+  const problems = [];
+  const tagsIn = (html, re) => html.match(re) || [];
+
+  for (const route of routes) {
+    const pair = [
+      { lang: 'id', file: path.join(distRoot, route.slice(1), 'index.html'), url: `${siteUrl}${route}` },
+      { lang: 'en', file: path.join(enRoot, route.slice(1), 'index.html'), url: `${siteUrl}${EN_PREFIX}${route}` },
+    ];
+    for (const { lang, file, url } of pair) {
+      if (!fs.existsSync(file)) {
+        problems.push(`${route}: the ${lang} half was never written (${path.relative(distRoot, file)})`);
+        continue;
+      }
+      const html = fs.readFileSync(file, 'utf8');
+      if (!new RegExp(`<html lang="${lang}"`).test(html)) {
+        problems.push(`${route} [${lang}]: the document does not say lang="${lang}"`);
+      }
+      const canonical = tagsIn(html, /<link rel="canonical" href="([^"]+)"/)[1];
+      if (canonical !== url) {
+        problems.push(`${route} [${lang}]: canonical is ${canonical || 'missing'}, not its own address ${url}`);
+      }
+      const alternates = tagsIn(html, /<link rel="alternate"[^>]*>/g);
+      if (alternates.length !== 3) {
+        problems.push(`${route} [${lang}]: ${alternates.length} hreflang link(s), expected id + en + x-default`);
+      } else if (!alternates.some((tag) => tag.includes(`href="${url}"`))) {
+        problems.push(`${route} [${lang}]: the hreflang set never names this page — Google drops a set that is not self-referential`);
+      }
+      // price_number is the DOMESTIC price; the English page quotes the export price, which this build
+      // cannot reach. Stating it here would put the wrong number in a search result.
+      if (lang === 'en' && /product:price:amount/.test(html)) {
+        problems.push(`${route} [en]: carries a product:price, which on the English page is the wrong price`);
+      }
+    }
+  }
+
+  // And nothing in the English shop that the build did not mean to put there — a leftover from a route
+  // that was renamed keeps answering 200 with stale copy long after its Indonesian twin has moved.
+  for (const route of written) {
+    if (!routes.includes(route)) problems.push(`${EN_PREFIX}${route}: an English page with no Indonesian twin`);
+  }
+
+  // And every rewrite that names a file must name one that exists. Measured on production: Vercel does
+  // NOT 404 a rewrite whose destination is missing, it falls through to the catch-all — which is exactly
+  // why this is worth checking. /materials had been rewritten to /materials/index.html for months after
+  // that page stopped being prerendered, and nothing showed it: the URL still answered 200, just with
+  // the generic shell instead of the page the config promised. A rewrite that quietly does nothing is
+  // config nobody can reason about.
+  const vercelPath = path.join(webRoot, 'vercel.json');
+  if (fs.existsSync(vercelPath)) {
+    const { rewrites = [] } = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
+    for (const { source, destination } of rewrites) {
+      if (!destination?.endsWith('/index.html') || destination === '/index.html') continue;
+      if (!fs.existsSync(path.join(distRoot, destination.slice(1)))) {
+        problems.push(`vercel.json rewrites ${source} to ${destination}, which the build does not produce`);
+      }
+    }
+  }
+
+  // And the sitemap may not point at a page it does not also list: an alternate naming a URL that is in
+  // no <loc> is a claim about a page Google was never told exists.
+  const sitemapPath = path.join(distRoot, 'sitemap.xml');
+  if (fs.existsSync(sitemapPath)) {
+    const xml = fs.readFileSync(sitemapPath, 'utf8');
+    const locs = new Set((xml.match(/<loc>([^<]+)<\/loc>/g) || []).map((t) => t.slice(5, -6)));
+    for (const href of new Set((xml.match(/<xhtml:link[^>]*href="([^"]+)"/g) || []).map((t) => t.match(/href="([^"]+)"/)[1]))) {
+      if (!locs.has(href)) problems.push(`sitemap: ${href} is named as an alternate but is not listed as a URL`);
+    }
+  }
+
+  if (problems.length) {
+    console.error(`[i18n] ${problems.length} problem(s) between the two shops:\n  ${problems.join('\n  ')}`);
+    process.exit(1);
+  }
+  console.log(`[i18n] ${routes.length} page(s) exist in both shops, each naming itself and its twin.`);
 };
 
 // Everything the build advertises must be a route the app actually serves. /materials was in the sitemap,
