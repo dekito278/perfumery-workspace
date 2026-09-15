@@ -227,9 +227,13 @@ const PaymentFrame = ({ session, compact = false }) => {
 
   useEffect(() => {
     setFrameStatus('loading');
+    // 12 seconds was declaring the panel blocked while it was still loading. Measured on a real
+    // checkout: DOKU's page took about 20 to appear, so the shop told the buyer it was broken eight
+    // seconds before it worked. A genuinely blocked iframe never fires onLoad at all, so this only has
+    // to outlast a slow load — it does not have to be tight.
     const timeoutId = window.setTimeout(() => {
       setFrameStatus((current) => (current === 'loading' ? 'failed' : current));
-    }, 12000);
+    }, 30000);
 
     return () => window.clearTimeout(timeoutId);
   }, [session.paymentUrl]);
@@ -245,23 +249,30 @@ const PaymentFrame = ({ session, compact = false }) => {
     );
   }
 
+  // titleKey/bodyKey, the same shape paymentStatusTone above uses and the same shape the JSX below
+  // reads. It used to hold already-translated strings under `title`/`description` while the JSX asked
+  // for `titleKey`/`bodyKey`, so every read was t(undefined) — which returns undefined, which React
+  // renders as nothing. The banner above the payment panel was a coloured box with an icon and NO
+  // WORDS, in both languages, for as long as the panel took to load. The line that matters most is the
+  // blocked one: a buyer whose browser refuses the iframe was shown an amber box that never told them
+  // the fallback button below it exists.
   const statusCopy = {
     loading: {
       icon: <Loader2 className="h-4 w-4 animate-spin" />,
-      title: t("pay.loadingPanel"),
-      description: t("pay.loadingPanelBody"),
+      titleKey: 'pay.loadingPanel',
+      bodyKey: 'pay.loadingPanelBody',
       className: 'border-editorial-stone/10 bg-editorial-ivory text-editorial-charcoal',
     },
     ready: {
       icon: <CheckCircle2 className="h-4 w-4" />,
-      title: t("pay.panelReady"),
-      description: t("pay.panelReadyBody"),
+      titleKey: 'pay.panelReady',
+      bodyKey: 'pay.panelReadyBody',
       className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     },
     failed: {
       icon: <AlertCircle className="h-4 w-4" />,
-      title: t("pay.panelBlocked"),
-      description: t("pay.panelBlockedBody"),
+      titleKey: 'pay.panelBlocked',
+      bodyKey: 'pay.panelBlockedBody',
       className: 'border-amber-200 bg-amber-50 text-amber-800',
     },
   }[frameStatus];

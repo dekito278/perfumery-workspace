@@ -564,6 +564,87 @@ for (const file of PAGES_FULLY_TRANSLATED) {
   assert.ok((app.match(/<Route\s+path="/g) || []).length > 30, 'the App.jsx route scan must actually find the routes');
 }
 
+// Every source file under a directory, minus the checks themselves. Used by the two structural scans
+// below, which both have to look at files no hand-kept list would have remembered to include.
+const walk = (dir, out = []) => {
+  for (const entry of readdirSync(join(root, ...dir), { withFileTypes: true })) {
+    if (entry.isDirectory()) walk([...dir, entry.name], out);
+    else if (/\.(jsx?|mjs)$/.test(entry.name) && !entry.name.includes('selfcheck')) out.push([...dir, entry.name]);
+  }
+  return out;
+};
+
+// --- A FOURTH way to leak: handing t() something that is not a key ------------------------------------
+// The three checks above look for Indonesian on screen, for a raw key on screen, and for copy that
+// leaves the page. None of them can see the opposite mistake: t() called on a property the object does
+// not have. translate() answers `undefined` for a missing key, React renders `undefined` as nothing, and
+// the result is a box with the right border, the right icon, and NO WORDS AT ALL — in both languages, so
+// neither a language check nor a key check notices.
+//
+// That shipped. The banner above the DOKU payment panel held already-translated strings under
+// `title`/`description` while the JSX asked for `titleKey`/`bodyKey`. The line it silently swallowed is
+// the one that matters most: the buyer whose browser blocks the payment iframe was shown an amber box
+// that never told them the fallback button below it exists.
+{
+  // The object literal a name is bound to, read by brace depth. A regex cannot find the closing brace
+  // of a literal whose values contain JSX.
+  const literalAt = (source, from) => {
+    let depth = 0;
+    for (let i = from; i < source.length; i += 1) {
+      if (source[i] === '{') depth += 1;
+      else if (source[i] === '}') {
+        depth -= 1;
+        if (depth === 0) return source.slice(from, i + 1);
+      }
+    }
+    return '';
+  };
+
+  const problems = [];
+  for (const file of walk(['pages']).concat(walk(['components']), walk(['layouts']))) {
+    const source = read(...file);
+
+    // name -> the properties its literal actually defines.
+    const props = new Map();
+    const ownProps = (literal) => new Set(
+      [...literal.matchAll(/(?:^|[{,\s])([A-Za-z_$][\w$]*)\s*:/g)].map((m) => m[1]),
+    );
+    // For a map of variants — { loading: {...}, ready: {...}, failed: {...} }[state] — the properties
+    // are the ones EVERY branch has, not the ones any branch has. The reader picks one branch at
+    // runtime, so a property present in two of three still renders nothing in the third. Unioning them
+    // let a sabotage that reverted a single branch walk straight through this check.
+    const remember = (name, literal) => {
+      if (!literal) return;
+      const branches = [];
+      for (const entry of literal.matchAll(/([A-Za-z_$][\w$]*)\s*:\s*\{/g)) {
+        const inner = literalAt(literal, entry.index + entry[0].length - 1);
+        if (inner) branches.push(ownProps(inner));
+      }
+      if (!branches.length) { props.set(name, ownProps(literal)); return; }
+      props.set(name, new Set([...branches[0]].filter((key) => branches.every((b) => b.has(key)))));
+    };
+    for (const decl of source.matchAll(/const ([A-Za-z_$][\w$]*) = \{/g)) {
+      remember(decl[1], literalAt(source, decl.index + decl[0].length - 1));
+    }
+    // const X = SOME_MAP[expr] ... — X carries SOME_MAP's shape.
+    for (const decl of source.matchAll(/const ([A-Za-z_$][\w$]*) = ([A-Za-z_$][\w$]*)\[/g)) {
+      if (props.has(decl[2])) props.set(decl[1], props.get(decl[2]));
+    }
+
+    for (const call of source.matchAll(/\bt\(([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\)/g)) {
+      const [, name, prop] = call;
+      const known = props.get(name);
+      // Only judge names this file actually binds to a literal. A loop variable comes from somewhere
+      // else, and guessing about it would make this check noisy instead of true.
+      if (!known) continue;
+      if (!known.has(prop)) {
+        problems.push(`${file.join('/')}: t(${name}.${prop}) — ${name} has no ${prop}, so this renders nothing`);
+      }
+    }
+  }
+  assert.deepEqual(problems, [], `t() was handed a property that does not exist:\n  ${problems.join('\n  ')}`);
+}
+
 // --- Copy that LEAVES the page ------------------------------------------------------------------------
 // The WhatsApp draft is the one piece of copy a buyer is expected to SEND, and the one piece every check
 // above is blind to: it never renders, so no scan for leftover Indonesian on screen can see it. The
@@ -573,14 +654,6 @@ for (const file of PAGES_FULLY_TRANSLATED) {
 // The rule is that no draft is written in a component at all. Both languages live in the message file,
 // like every other string, and the shop's own region picks between them.
 {
-  const walk = (dir, out = []) => {
-    for (const entry of readdirSync(join(root, ...dir), { withFileTypes: true })) {
-      if (entry.isDirectory()) walk([...dir, entry.name], out);
-      else if (/\.(jsx?|mjs)$/.test(entry.name) && !entry.name.includes('selfcheck')) out.push([...dir, entry.name]);
-    }
-    return out;
-  };
-
   // Studio's own notification templates are excluded: those are Dekito writing TO a buyer from the admin
   // app, not the shop speaking to a visitor, and they are composed from order data rather than UI copy.
   const SENDER_SIDE = 'services/notificationTemplateService.js';

@@ -133,6 +133,16 @@ export const useCheckoutFlow = ({
   // through meant the buyer filled in the whole form and only hit the wall at submit, with the
   // endpoint's raw "Unknown product" / "Stok tidak cukup" (audit round 9).
   const blockedItems = items.filter((item) => item.unavailable || item.outOfStock);
+  // "Is the form complete?" — and ONLY that. It used to include `&& !saving`, which made pressing the
+  // button turn the form incomplete: the red line "Lengkapi: data checkout." appeared the instant the
+  // order started being created, named nothing (nothing WAS missing, so the field list came out empty
+  // and fell through to a generic phrase), and stayed for the whole ~20 seconds DOKU took — directly
+  // above a button reading "Memproses...". The page told the buyer to fill something in while it was
+  // submitting what they had already filled in. On the phone it was louder still: the summary bar
+  // flipped from the total to "Lengkapi dulu" in amber for the same twenty seconds.
+  //
+  // Whether the button is pressable is a different question, and each surface already answers it by
+  // checking `saving` where the button is.
   const canSubmitCheckout = Boolean(
     items.length
     && !blockedItems.length
@@ -143,7 +153,6 @@ export const useCheckoutFlow = ({
     && selectedDestination
     && selectedShipping
     && selectedPaymentMethod
-    && !saving
   );
 
   // Prefill from the logged-in customer's saved account, without overriding a draft.
