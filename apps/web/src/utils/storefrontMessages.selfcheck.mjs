@@ -62,6 +62,9 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'cart.voucher',     // the loanword, used on Indonesian receipts already
   'cart.brief',       // "Brief" is the word used for a bespoke brief in both
   'cart.subtotal',    // Subtotal is Subtotal
+  // Checkout: the same word is already used on Indonesian receipts and in Indonesian banking.
+  'checkout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
+  'checkout.subtotal', 'checkout.total', 'mcheckout.auto', 'mcheckout.stepArea',
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -154,6 +157,14 @@ const LEFTOVERS = [
   'LENGKAPI RITUALMU', 'Mungkin kamu suka', 'Mulai belanja', 'Kode voucher', 'Hapus voucher',
   'Kurangi jumlah', 'Tambah jumlah', 'Keranjang kosong', 'Rekomendasi', 'Ready stock', 'Tambah aroma',
   'Aroma bespoke', 'Aksi keranjang', 'Pengiriman ke luar negeri tidak',
+  // checkout
+  'INFORMASI PEMBELI', 'Kode customer', 'Nama lengkap', 'Alamat pengiriman', 'Pilih kurir',
+  'Area tujuan', 'Mencari ongkir', 'Metode pembayaran', 'Catatan pengiriman', 'RINGKASAN PESANAN',
+  'Kembali ke Cart', 'Buat Pesanan', 'Produk yang dipilih', 'Belum ada produk', 'Jawaban keamanan',
+  'Nama pembeli', 'wajib diisi', 'belum valid', 'Masuk dengan Google', 'Memproses', 'Lengkapi',
+  'Total bayar', 'Edit keranjang', 'Pakai alamat terakhir', 'Kirim ke alamat baru', 'Pilih area lain',
+  'Ongkir dipakai', 'Dipakai sebelum', 'Subtotal setelah', 'Hapus item tidak', 'Bayar sekarang',
+  'Cek kode', 'Estimasi mengikuti', 'Buka katalog', 'Masih perlu', 'Langkah ',
   'Tenang & Minimal', 'Hangat & Nostalgia', 'Gelap & Moody', 'Lembut & Romantis',
   'Aroma sebagai', 'Konsultasi bespoke', 'Catatan lapangan', 'Parfum artisan yang',
   'Rasa di Atas Formula', 'Kami tidak mengejar', 'Konsultasi Bespoke', 'KOLABORASI',
@@ -161,6 +172,8 @@ const LEFTOVERS = [
   'Perfumer bekerja', 'Atelier Solivagant',
 ];
 for (const file of [
+  ['pages', 'CheckoutPage.jsx'],
+  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
   ['pages', 'CartPage.jsx'],
   ['pages', 'mobile', 'MobileCartPage.jsx'],
   ['components', 'storefront', 'InternationalCheckoutNotice.jsx'],
@@ -217,6 +230,24 @@ for (const file of [
   const rendered = source.match(/\{\s*\w+\.(?:label|title|body|cta|name|notes|caption)Key\s*\}/g) || [];
   assert.deepEqual(rendered, [],
     `${file.join('/')} renders a message KEY instead of translating it: ${rendered.join(', ')}`);
+}
+
+// A list of Indonesian phrases can never be complete — a sabotage put `label: 'Nama'` back into the
+// checkout steps and walked past it, because no list contains every word Dekito might have written.
+//
+// So this is structural instead: on a buyer-facing page, a prop that carries COPY — label, title,
+// description, action, placeholder, aria-label — must never be a bare capitalised string literal. Those
+// are always untranslated text, whatever language they happen to be in.
+for (const file of [
+  ['pages', 'CheckoutPage.jsx'],
+  ['pages', 'mobile', 'MobileCheckoutPage.jsx'],
+  ['pages', 'CartPage.jsx'],
+  ['pages', 'mobile', 'MobileCartPage.jsx'],
+]) {
+  const source = read(...file);
+  const literals = source.match(/(?:label|title|description|action|placeholder|aria-label)\s*[:=]\s*["'][A-ZÀ-ÿ][^"']{1,60}["']/g) || [];
+  assert.deepEqual(literals, [],
+    `${file.join('/')} passes copy as a bare string literal: ${literals.join(' | ')}`);
 }
 
 // Scanning for Indonesian LITERALS cannot see this one: `{option.label}` contains no Indonesian text at

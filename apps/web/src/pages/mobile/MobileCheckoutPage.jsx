@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -25,6 +26,7 @@ const courierLabels = { jnt: 'JnT', ide: 'IDEXPRES', pos: 'POS', anteraja: 'ANTE
 // different numbers: "Langkah 3/6", "2/6 beres", "Lengkapi: Area, Kurir" and "2 kurang" all at once.
 // What a buyer needs is where they are and what is still missing (UX backlog U-7).
 const CheckoutProgress = ({ steps, missing = [], ready = false }) => {
+  const { t } = useTranslate();
   const firstIncompleteIndex = steps.findIndex((step) => !step.complete);
   const currentIndex = firstIncompleteIndex === -1 ? steps.length - 1 : Math.max(firstIncompleteIndex, 0);
   const currentStep = steps[currentIndex] || steps[steps.length - 1];
@@ -34,15 +36,15 @@ const CheckoutProgress = ({ steps, missing = [], ready = false }) => {
     <section className="mobile-card p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[10px] font-bold uppercase text-amber-700">Langkah {Math.min(currentIndex + 1, steps.length)}/{steps.length}</div>
+          <div className="text-[10px] font-bold uppercase text-amber-700">{t('mcheckout.step', { current: Math.min(currentIndex + 1, steps.length), total: steps.length })}</div>
           <div className="mt-0.5 text-sm font-bold leading-snug text-[#1f2937]">{currentStep.label}</div>
         </div>
-        {ready ? <span className="mobile-commerce-chip shrink-0 px-3 py-1 text-[10px] uppercase">Siap</span> : null}
+        {ready ? <span className="mobile-commerce-chip shrink-0 px-3 py-1 text-[10px] uppercase">{t('mcheckout.ready')}</span> : null}
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-editorial-ivory"><div className="h-full rounded-full bg-[#b08b4f]" style={{ width: `${progressPercent}%` }} /></div>
       {ready ? null : (
         <p className="mt-2 text-[11px] font-bold leading-snug text-[#6b7280]">
-          Masih perlu: {missing.map((item) => item.label).join(', ')}
+          {t('mcheckout.stillNeeded', { fields: missing.map((item) => item.label).join(', ') })}
         </p>
       )}
     </section>
@@ -70,6 +72,7 @@ const CheckoutSection = ({ action, children, complete = false, description = '',
 );
 
 const MobileCheckoutPage = () => {
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const [showManualShippingArea, setShowManualShippingArea] = useState(false);
   const { currentUser, loginWithGoogle, logout } = useAuth();
@@ -82,7 +85,7 @@ const MobileCheckoutPage = () => {
       // hash on window.location.href produces ##access_token, which only resolves after a manual refresh.
       await loginWithGoogle(`${window.location.origin}${window.location.pathname}`);
     } catch (error) {
-      toast.error(publicErrorMessage(error, 'Gagal masuk dengan Google'));
+      toast.error(publicErrorMessage(error, t('checkout.googleFail')));
     }
   };
   const voucher = useAppliedVoucher(summary.subtotal, items);
@@ -108,31 +111,31 @@ const MobileCheckoutPage = () => {
   const decreaseQuantity = (item) => item.quantity <= 1 ? removeItem(item.slug) : updateQuantity(item.slug, item.quantity - 1);
   const visibleShippingOptions = selectedCourier ? shippingOptions.filter((rate) => rate.courierCode === selectedCourier) : [];
   const checkoutRequirements = [
-    { label: 'Nama', complete: Boolean(customerName.trim()) },
-    { label: 'Nomor WA', complete: validPhoneContact },
-    { label: 'Alamat', complete: Boolean(deliveryAddress.trim()) },
-    { label: 'Area', complete: Boolean(selectedDestination) },
+    { label: t('mcheckout.stepName'), complete: Boolean(customerName.trim()) },
+    { label: t('mcheckout.stepPhone'), complete: validPhoneContact },
+    { label: t('mcheckout.stepAddress'), complete: Boolean(deliveryAddress.trim()) },
+    { label: t('mcheckout.stepArea'), complete: Boolean(selectedDestination) },
     // Two requirements, not one. Folding them together told a buyer who had already chosen JNE that they
     // still needed to choose a courier, which reads as the app ignoring them.
-    { label: 'Kurir', complete: Boolean(selectedCourier) },
-    { label: 'Ongkir', complete: Boolean(selectedShipping) },
+    { label: t('mcheckout.stepCourier'), complete: Boolean(selectedCourier) },
+    { label: t('checkout.shipping'), complete: Boolean(selectedShipping) },
     // Mirrors canSubmitCheckout: lines whose product is gone or sold out block the order (audit round 9).
-    { label: 'Hapus item tidak tersedia', complete: !blockedItems.length },
+    { label: t('mcheckout.removeUnavailable'), complete: !blockedItems.length },
   ];
   const contactComplete = Boolean(customerName.trim() && validPhoneContact);
   const addressComplete = Boolean(contactComplete && deliveryAddress.trim());
   const shippingComplete = Boolean(addressComplete && selectedDestination && selectedCourier && selectedShipping);
   const paymentComplete = Boolean(shippingComplete && selectedPaymentMethod);
   const checkoutSteps = [
-    { label: 'Kontak', complete: contactComplete },
-    { label: 'Alamat', complete: addressComplete },
-    { label: 'Ongkir', complete: shippingComplete },
-    { label: 'Voucher', complete: shippingComplete },
-    { label: 'Pembayaran', complete: paymentComplete },
-    { label: 'Ringkasan', complete: Boolean(paymentComplete && items.length) },
+    { label: t('mcheckout.contact'), complete: contactComplete },
+    { label: t('mcheckout.stepAddress'), complete: addressComplete },
+    { label: t('checkout.shipping'), complete: shippingComplete },
+    { label: t('cart.voucher'), complete: shippingComplete },
+    { label: t('mcheckout.title'), complete: paymentComplete },
+    { label: t('mcheckout.summary'), complete: Boolean(paymentComplete && items.length) },
   ];
   const missingRequirements = checkoutRequirements.filter((item) => !item.complete);
-  const primaryActionLabel = saving ? 'Memproses...' : (isManualPayment ? 'Buat pesanan' : 'Bayar sekarang');
+  const primaryActionLabel = saving ? t('checkout.processing') : t(isManualPayment ? 'mcheckout.placeOrder' : 'mcheckout.payNow');
   const handleCourierChange = (courierCode) => {
     chooseShippingCourier(courierCode);
     if (!courierCode) return;
@@ -167,28 +170,28 @@ const MobileCheckoutPage = () => {
         <main className="mobile-page">
         <section className="mobile-soft-card p-4">
           <div className="text-[10px] font-bold uppercase text-amber-700">Checkout</div>
-          <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">Belum ada item untuk dibayar.</h1>
-          <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">Tambahkan parfum ready stock ke keranjang, atau mulai dari request bespoke.</p>
+          <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">{t('mcheckout.emptyLead')}</h1>
+          <p className="mt-2 text-xs font-semibold leading-relaxed text-[#6b7280]">{t('mcheckout.emptyBody')}</p>
           <Button type="button" className="mt-4 h-11 w-full rounded-2xl gap-2" onClick={() => navigate('/mobile/catalog')}>
             <ShoppingBag className="h-4 w-4" />
-            Buka katalog
+            {t('mcheckout.openCatalog')}
           </Button>
         </section>
-        <StateBlock className="mobile-card" icon={ShoppingBag} title="Keranjang kosong" description="Pilih parfum dari katalog untuk mulai belanja." action="Buka katalog" onAction={() => navigate('/mobile/catalog')} />
+        <StateBlock className="mobile-card" icon={ShoppingBag} title={t('mcheckout.emptyTitle')} description={t('mcheckout.emptyPick')} action={t('mcheckout.openCatalog')} onAction={() => navigate('/mobile/catalog')} />
       </main>
     </MobileCommerceLayout>
   );
 
   return (
     <MobileCommerceLayout>
-      <Helmet><title>Pembayaran - Solivagant</title></Helmet>
+      <Helmet><title>{t('mcheckout.tab')}</title></Helmet>
       <main className="mobile-page mobile-checkout-page">
         <section className="mobile-soft-card p-3">
-          <div className="text-[10px] font-bold uppercase text-amber-700">Pembayaran</div>
-          <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">Lengkapi pengiriman dan pembayaran.</h1>
+          <div className="text-[10px] font-bold uppercase text-amber-700">{t('mcheckout.title')}</div>
+          <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">{t('mcheckout.lead')}</h1>
           <div className="mt-3 flex items-end justify-between gap-3">
-            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">Total bayar</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{formatTotal(totalDue)}</div></div>
-            <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>Edit keranjang</Button>
+            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">{t('mcheckout.totalDue')}</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{formatTotal(totalDue)}</div></div>
+            <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>{t('mcheckout.editCart')}</Button>
           </div>
           {/* Sits under TOTAL BAYAR on purpose: this is the number the buyer is about to transfer, and a
               total that moved since they filled the cart needs a reason next to it. */}
@@ -210,68 +213,68 @@ const MobileCheckoutPage = () => {
         <InternationalCheckoutNotice className="mb-3" />
         <CheckoutSection
           step="1"
-          title="Kontak"
-          description="Kode customer opsional untuk pembeli lama. Pembeli baru langsung isi nama dan nomor."
+          title={t('mcheckout.contact')}
+          description={t('mcheckout.stepCodeBody')}
           complete={contactComplete}
         >
             {currentUser ? (
               <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f3f1ec] px-3 py-2 text-xs font-semibold text-editorial-charcoal">
                 <span className="min-w-0 truncate">Masuk sebagai {currentUser.email} — data terisi otomatis</span>
-                <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">Keluar</button>
+                <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('checkout.signOut')}</button>
               </div>
             ) : (
               <Button type="button" variant="outline" className="h-12 w-full rounded-2xl bg-white gap-2 text-xs font-bold" onClick={handleGoogleLogin}>
                 <UserRound className="h-4 w-4" />
                 {memberSaving > 0
-                  ? `Masuk dengan Google — hemat ${formatTotal(memberSaving)} dengan harga member`
-                  : 'Masuk dengan Google — data terisi otomatis'}
+                  ? t('checkout.signInSaving', { amount: formatTotal(memberSaving) })
+                  : t('mcheckout.signInPlain')}
               </Button>
             )}
             <div className="grid grid-cols-[1fr_auto] gap-2">
-              <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder="Opsional: kode customer" aria-label="Kode customer" autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
-              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : 'Cek kode'}</Button>
+              <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('mcheckout.codeOptional')} aria-label={t('checkout.customerCode')} autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : t('mcheckout.checkCode')}</Button>
             </div>
-            {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder="Jawaban keamanan" aria-label="Jawaban keamanan" autoComplete="off" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>Verifikasi</Button></div> : null}
-            <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nama pembeli" aria-label="Nama pembeli" autoComplete="name" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
-            <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contoh: 081234567890" aria-label="Nomor WhatsApp" inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder={t('checkout.securityAnswer')} aria-label={t('checkout.securityAnswer')} autoComplete="off" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>{t('checkout.verify')}</Button></div> : null}
+            <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} aria-label={t('checkout.namePlaceholder')} autoComplete="name" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+            <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label={t('checkout.whatsappAria')} inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
         </CheckoutSection>
         <CheckoutSection
           step="2"
-          title="Alamat"
-          description="Alamat pengiriman lengkap untuk kurir dan invoice."
+          title={t('mcheckout.stepAddress')}
+          description={t('mcheckout.stepAddressBody')}
           complete={addressComplete}
         >
             {repeatCustomer?.customerCode && (repeatCustomer.deliveryAddress || repeatCustomer.deliveryArea) ? (
               <div className="grid gap-2">
-                <button type="button" onClick={useCustomerLastAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'last' ? 'is-active' : ''}`}>Pakai alamat terakhir</button>
-                <button type="button" onClick={useCustomerNewAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'new' ? 'is-active' : ''}`}>Kirim ke alamat baru</button>
+                <button type="button" onClick={useCustomerLastAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'last' ? 'is-active' : ''}`}>{t('mcheckout.useLastAddress')}</button>
+                <button type="button" onClick={useCustomerNewAddress} className={`mobile-commerce-choice px-3 py-2 text-xs font-bold ${repeatAddressMode === 'new' ? 'is-active' : ''}`}>{t('mcheckout.useNewAddress')}</button>
               </div>
             ) : null}
-            <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Alamat lengkap pengiriman" aria-label="Alamat pengiriman" rows={3} autoComplete="street-address" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder={t('checkout.addressPlaceholder')} aria-label={t('checkout.address')} rows={3} autoComplete="street-address" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
         </CheckoutSection>
         <CheckoutSection
           step="3"
-          title="Pilih kurir"
-          description="Ongkir dihitung otomatis setelah kurir dipilih."
+          title={t('checkout.pickCourier')}
+          description={t('mcheckout.stepShippingBody')}
           complete={shippingComplete}
         >
             <label className={`mobile-commerce-courier-select ${selectedCourier ? 'is-selected' : ''}`}>
               <span className="min-w-0">
                 <span className="block text-[10px] font-bold uppercase">
-                  {selectedCourier ? 'Kurir dipilih' : 'Dropdown kurir'}
+                  {t(selectedCourier ? 'mcheckout.courierChosen' : 'mcheckout.courierDropdown')}
                 </span>
                 <span className="mt-0.5 block truncate text-sm font-bold">
-                  {selectedCourier ? (courierLabels[selectedCourier] || selectedCourier.toUpperCase()) : 'Pilih kurir pengiriman'}
+                  {selectedCourier ? (courierLabels[selectedCourier] || selectedCourier.toUpperCase()) : t('mcheckout.pickShippingCourier')}
                 </span>
               </span>
               <ChevronDown className="h-4 w-4 shrink-0" />
-              <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label="Pilih kurir pengiriman">
-                <option value="">Pilih kurir</option>{checkoutCourierOptions.map((courier) => <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>)}
+              <select value={selectedCourier} onChange={(event) => handleCourierChange(event.target.value)} aria-label={t('mcheckout.pickShippingCourier')}>
+                <option value="">{t('checkout.pickCourier')}</option>{checkoutCourierOptions.map((courier) => <option key={courier.courierCode} value={courier.courierCode}>{courier.label}</option>)}
               </select>
             </label>
             {shippingLoading ? (
               <p className="mobile-commerce-notice bg-editorial-ivory font-bold text-editorial-charcoal">
-                Mencari ongkir dari alamat pengiriman...
+                {t('mcheckout.searchingRates')}
               </p>
             ) : null}
             {!showShippingAreaFallback && !selectedShipping ? (
@@ -281,7 +284,7 @@ const MobileCheckoutPage = () => {
             ) : null}
             {showShippingAreaFallback ? (
               <div className="mobile-commerce-panel bg-white p-3">
-                <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder="Contoh: Kebayoran Baru" aria-label="Cari kecamatan atau kota tujuan" autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
+                <input value={destinationSearch} onChange={(event) => updateDestinationSearch(event.target.value)} placeholder={t('checkout.destinationPlaceholder')} aria-label={t('checkout.destinationAria')} autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
                 <p className="mobile-commerce-notice mt-2">
                   Pakai ini hanya kalau alamat lengkap belum menemukan area ongkir yang tepat.
                 </p>
@@ -304,7 +307,7 @@ const MobileCheckoutPage = () => {
             {shippingNotice ? <p className="mobile-commerce-notice bg-editorial-ivory font-bold text-editorial-charcoal">{shippingNotice}</p> : null}
             {showShippingAlternatives && destinationOptions.length ? (
               <div className="grid gap-2">
-                <div className="text-[10px] font-bold uppercase text-editorial-muted">Pilih area lain</div>
+                <div className="text-[10px] font-bold uppercase text-editorial-muted">{t('mcheckout.pickOtherArea')}</div>
                 {destinationOptions.map((destination) => <button key={destination.id} type="button" onClick={() => loadShippingRates(destination)} className="mobile-commerce-choice px-3 py-2 text-xs font-bold">{destination.label}</button>)}
               </div>
             ) : null}
@@ -327,8 +330,8 @@ const MobileCheckoutPage = () => {
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || 'Estimasi mengikuti kurir'}</p>
-                    {active ? <span className="shrink-0 rounded-full bg-editorial-charcoal px-2 py-1 text-[9px] font-bold uppercase text-white">Dipilih</span> : null}
+                    <p className="text-[11px] font-semibold text-[#6b7280]">{rate.etd ? `ETA ${rate.etd}` : rate.description || t('mcheckout.estimateFollowsCourier')}</p>
+                    {active ? <span className="shrink-0 rounded-full bg-editorial-charcoal px-2 py-1 text-[9px] font-bold uppercase text-white">{t('mcheckout.chosen')}</span> : null}
                   </div>
                   {rate.promotionApplied ? <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase text-emerald-700">{rate.promotionLabel}</div> : null}
                 </button>
@@ -338,7 +341,7 @@ const MobileCheckoutPage = () => {
               <div className="mobile-commerce-panel border-editorial-stone/24 bg-editorial-ivory p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">Ongkir dipakai</div>
+                    <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('mcheckout.rateUsed')}</div>
                     <p className="mt-1 text-xs font-bold text-[#1f2937]">
                       {courierLabels[selectedShipping.courierCode] || selectedShipping.courierName} {selectedShipping.serviceLabel || selectedShipping.service} - {formatTotal(selectedShipping.cost)}
                     </p>
@@ -347,7 +350,7 @@ const MobileCheckoutPage = () => {
                       <p className="mt-1 text-[11px] font-semibold leading-snug text-editorial-muted">Area: {selectedDestination.label}</p>
                     ) : null}
                   </div>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase text-editorial-charcoal">Auto</span>
+                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase text-editorial-charcoal">{t('mcheckout.auto')}</span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white text-xs font-bold" onClick={() => setShowManualShippingArea(true)}>
@@ -373,8 +376,8 @@ const MobileCheckoutPage = () => {
         </CheckoutSection>
         <CheckoutSection
           step="4"
-          title="Voucher"
-          description="Kode promo akan memotong subtotal produk sebelum ongkir."
+          title={t('cart.voucher')}
+          description={t('mcheckout.stepVoucherBody')}
           complete={Boolean(voucher.appliedVoucher)}
           action={voucher.discountAmount ? <span className="shrink-0 text-xs font-bold text-editorial-charcoal">-{formatTotal(voucher.discountAmount)}</span> : null}
         >
@@ -382,7 +385,7 @@ const MobileCheckoutPage = () => {
               <input
                 value={voucher.inputCode}
                 onChange={(event) => voucher.setInputCode(event.target.value.toUpperCase())}
-                placeholder="Kode voucher" aria-label="Kode voucher"
+                placeholder={t('checkout.voucherPlaceholder')} aria-label={t('checkout.voucherPlaceholder')}
                 autoComplete="off"
                 className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase"
               />
@@ -394,10 +397,10 @@ const MobileCheckoutPage = () => {
             {voucher.appliedVoucher ? (
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-editorial-stone/14 bg-editorial-ivory px-3 py-2">
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-bold text-editorial-charcoal">{voucher.appliedVoucher.code} diterapkan</div>
+                  <div className="truncate text-xs font-bold text-editorial-charcoal">{t('cart.voucherApplied', { code: voucher.appliedVoucher.code })}</div>
                   <div className="mt-0.5 text-[11px] font-semibold text-editorial-muted">Hemat {formatTotal(voucher.discountAmount)}</div>
                 </div>
-                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label="Hapus voucher">
+                <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-editorial-charcoal tap-44" onClick={voucher.removeVoucher} aria-label={t('cart.voucherRemove')}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -408,13 +411,13 @@ const MobileCheckoutPage = () => {
         <div>
           <CheckoutSection
             step="5"
-            title="Pembayaran"
-            description={shippingComplete ? 'Ongkir sudah masuk total. Pilih metode pembayaran.' : 'Lengkapi ongkir dulu supaya total bayar final.'}
+            title={t('checkout.paymentMethod')}
+            description={t(shippingComplete ? 'mcheckout.shippingInTotal' : 'mcheckout.shippingFirst')}
             complete={paymentComplete}
           >
             {/* A radiogroup, not two info cards: the old buttons carried no radio and only a faint tint
                 when chosen, so nothing said a choice was being asked for (UX backlog U-6). */}
-            <div role="radiogroup" aria-label="Metode pembayaran" className="grid gap-2">
+            <div role="radiogroup" aria-label={t('checkout.paymentMethod')} className="grid gap-2">
               {checkoutPaymentMethods.map((method) => {
                 const active = selectedPaymentMethod === method.id;
                 return (
@@ -435,14 +438,14 @@ const MobileCheckoutPage = () => {
                 );
               })}
             </div>
-            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Catatan pengiriman atau request" aria-label="Catatan pengiriman" rows={2} autoComplete="off" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
+            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={t('mcheckout.notePlaceholder')} aria-label={t('checkout.deliveryNote')} rows={2} autoComplete="off" className="mobile-commerce-control px-3 py-3 text-sm font-semibold" />
           </CheckoutSection>
         </div>
         <div>
           <CheckoutSection
             step="6"
-            title="Ringkasan"
-            description="Cek produk dan total sebelum pesanan dibuat."
+            title={t('mcheckout.summary')}
+            description={t('mcheckout.stepReviewBody')}
             complete={Boolean(paymentComplete && items.length)}
             action={<span className="shrink-0 text-xs font-bold text-amber-700">{summary.quantity} item</span>}
           >
@@ -458,7 +461,7 @@ const MobileCheckoutPage = () => {
                     <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p>
                     {hasLineDiscount ? (
                       <p className="mt-1 text-[11px] font-bold text-editorial-charcoal">
-                        Setelah voucher: {formatTotal(discountedLine.discountedUnitPrice)} / item
+                        {t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}
                       </p>
                     ) : null}
                   </div>
@@ -473,45 +476,45 @@ const MobileCheckoutPage = () => {
                   </div>
                 </div>
                 <div className="mt-3 inline-flex items-center rounded-[14px] border border-editorial-stone/10 bg-white p-1">
-                  <Button type="button" size="icon" variant="ghost" aria-label="Kurangi jumlah" className="h-8 w-8 rounded-xl tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.decrease')} className="h-8 w-8 rounded-xl tap-44" onClick={() => decreaseQuantity(item)}><Minus className="h-4 w-4" /></Button>
                   <span className="grid h-8 min-w-10 place-items-center text-sm font-bold">{item.quantity}</span>
-                  <Button type="button" size="icon" variant="ghost" aria-label="Tambah jumlah" className="h-8 w-8 rounded-xl tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t('cart.increase')} className="h-8 w-8 rounded-xl tap-44" onClick={() => updateQuantity(item.slug, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                 </div>
               </div>
               );
             })}
             <div className="mobile-commerce-summary px-3 py-3 text-xs font-bold text-editorial-charcoal">
-              <div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatTotal(summary.subtotal)}</span></div>
+              <div className="flex justify-between gap-3"><span>{t('checkout.subtotal')}</span><span>{formatTotal(summary.subtotal)}</span></div>
               {discountAmount ? (
                 <div className="mt-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                   <div className="flex justify-between gap-3 text-emerald-800">
                     <span className="min-w-0 truncate">Diskon voucher {voucher.appliedVoucher?.code}</span>
                     <span className="shrink-0">-{formatTotal(discountAmount)}</span>
                   </div>
-                  <div className="mt-1 text-[10px] font-bold uppercase text-emerald-700">Dipakai sebelum ongkir</div>
+                  <div className="mt-1 text-[10px] font-bold uppercase text-emerald-700">{t('mcheckout.beforeShipping')}</div>
                 </div>
               ) : null}
               {discountAmount ? (
-                <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Subtotal setelah voucher</span><span>{formatTotal(discountedSubtotal)}</span></div>
+                <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('mcheckout.subtotalAfterVoucher')}</span><span>{formatTotal(discountedSubtotal)}</span></div>
               ) : null}
-              <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>Ongkir</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
-              <div className="mt-3 border-t border-editorial-stone/10 pt-3 flex justify-between gap-3 text-sm text-editorial-charcoal"><span>Total bayar</span><span>{formatTotal(totalDue)}</span></div>
+              <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('checkout.shipping')}</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
+              <div className="mt-3 border-t border-editorial-stone/10 pt-3 flex justify-between gap-3 text-sm text-editorial-charcoal"><span>{t('mcheckout.totalDue')}</span><span>{formatTotal(totalDue)}</span></div>
             </div>
           </CheckoutSection>
         </div>
         <StickyBottomActionBar
           fixed
           reserveSpace
-          aria-label="Aksi pembayaran"
+          aria-label={t('mcheckout.paymentActions')}
           className="mobile-checkout-action-bar"
           contentClassName="rounded-2xl border-editorial-stone/10 bg-white/95"
         >
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase text-[#8b949e]">{canSubmitCheckout ? 'Total bayar' : 'Lengkapi dulu'}</p>
+              <p className="text-[10px] font-bold uppercase text-[#8b949e]">{t(canSubmitCheckout ? 'mcheckout.totalDue' : 'mcheckout.completeFirst')}</p>
               <p className="truncate text-lg font-bold leading-tight text-editorial-charcoal">{formatTotal(totalDue)}</p>
               <p className={`truncate text-[10px] font-bold ${canSubmitCheckout ? 'text-emerald-700' : 'text-amber-700'}`}>
-                {canSubmitCheckout ? (discountAmount ? `Voucher -${formatTotal(discountAmount)}` : 'Siap dibayar') : missingRequirements.map((item) => item.label).join(', ')}
+                {canSubmitCheckout ? (discountAmount ? `${t('cart.voucher')} -${formatTotal(discountAmount)}` : t('mcheckout.readyToPay')) : missingRequirements.map((item) => item.label).join(', ')}
               </p>
             </div>
             <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={() => submitOrder()} disabled={saving || !canSubmitCheckout}>

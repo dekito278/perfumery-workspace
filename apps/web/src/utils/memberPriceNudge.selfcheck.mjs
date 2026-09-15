@@ -148,10 +148,18 @@ for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.j
   const source = read(...page.split('/'));
   assert.match(source, /memberSavingForCart\(items, memberIndex\)/, `${page} must compute the real saving from the cart`);
   assert.match(source, /memberSaving > 0\s*\?/, `${page} must fall back to the ordinary copy when there is nothing to save`);
-  assert.match(source, /hemat \$\{formatTotal\(memberSaving\)\}|hemat \{formatTotal\(memberSaving\)\}/, `${page} must print the actual amount, not a vague promise`);
-  // Bound to the button's ELSE branch. "data terisi otomatis" also appears in the signed-in "Masuk
-  // sebagai …" line, so a bare phrase match passed while the button's fallback was empty.
-  assert.match(source, /:\s*'Masuk dengan Google — [^']*data terisi otomatis'/, `${page} must keep the ordinary copy on the button for the no-saving case`);
+  // The wording moved into the message file when the checkout learned English; the AMOUNT still has to
+  // reach it, in both languages, or the button becomes a vague promise.
+  assert.match(source, /signInSaving', \{ amount: formatTotal\(memberSaving\) \}/, `${page} must print the actual amount, not a vague promise`);
+  for (const language of ['id', 'en']) {
+    assert.match(MESSAGES[language]['checkout.signInSaving'], /\{amount\}/, `${language} saving copy carries the amount`);
+  }
+  // Bound to the button's ELSE branch: a bare phrase match once passed while the button's fallback was
+  // empty, so the branch itself is asserted.
+  assert.match(source, /:\s*t\('m?checkout\.signInPlain'\)/, `${page} must keep the ordinary copy on the button for the no-saving case`);
+  // The member price is genuinely true at checkout — anyone completing this form ships to an Indonesian
+  // address, and a domestic order does get it. Unlike the welcome page, the English may promise it.
+  assert.match(MESSAGES.en['checkout.signInSaving'], /member/i, 'and in English it may say so, because here it is true');
 }
 
 // --- 11. The public mapper must CARRY the field, not just the pages RENDER it -----------------------------
