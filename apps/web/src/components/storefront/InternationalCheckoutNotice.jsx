@@ -14,11 +14,17 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * international price; this cart totals the Indonesian one. Both are true, and which applies depends on
  * where the parcel goes — so the notice says exactly that.
  *
+ * `quotedOnRequest` is for the bespoke request, where that reconciliation does not apply: there is no
+ * product page and no international price, because the bottle does not exist yet. Bespoke prices live in
+ * storefront_bespoke_options, one set of numbers with no overseas variant, so the honest answer is that
+ * the international price is quoted by hand — which is how the shipping and the bottle are settled
+ * anyway.
+ *
  * It does NOT block checkout. The region is a language and pricing choice, not proof of location: an
  * Indonesian who reads English, or anyone shipping to an Indonesian address, must still be able to buy.
  * Blocking on a guess would refuse real orders, which is worse than the confusion it would prevent.
  */
-const InternationalCheckoutNotice = ({ className = '' }) => {
+const InternationalCheckoutNotice = ({ className = '', quotedOnRequest = false }) => {
   const { t, isInternational } = useTranslate();
   const whatsapp = getStorefrontWhatsAppNumber();
 
@@ -29,7 +35,14 @@ const InternationalCheckoutNotice = ({ className = '' }) => {
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-editorial-charcoal">
         <Globe className="h-3.5 w-3.5" aria-hidden="true" /> {t('intl.noticeTitle')}
       </p>
-      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.noticeBody')}</p>
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.noticeDomesticOnly')}</p>
+      {/* Where the international number comes FROM, which is not the same answer everywhere.
+          In the cart it is printed on each product's page. On the bespoke request there is no product
+          page and no international price anywhere — the bottle does not exist yet — so pointing at one
+          sent an overseas buyer looking for a number that was never written down. */}
+      <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">
+        {t(quotedOnRequest ? 'intl.quotedOnRequest' : 'intl.noticeCatalogPrice')}
+      </p>
       <p className="mt-2 text-xs font-semibold leading-relaxed text-muted-foreground">{t('intl.domesticOk')}</p>
       {whatsapp ? (
         <a

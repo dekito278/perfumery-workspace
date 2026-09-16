@@ -268,7 +268,8 @@ export const MESSAGES = {
     'cart.brief': 'Brief',
 
     'intl.noticeTitle': 'Pengiriman ke luar negeri tidak lewat checkout ini',
-    'intl.noticeBody': 'Checkout di halaman ini menghitung ongkir untuk alamat di Indonesia saja, dengan harga Indonesia. Untuk kirim ke luar negeri, harganya harga internasional yang tertera di halaman produk, dan ongkirnya kami kutip lewat WhatsApp.',
+    "intl.noticeDomesticOnly": "Checkout di halaman ini menghitung ongkir untuk alamat di Indonesia saja, dengan harga Indonesia.",
+    "intl.noticeCatalogPrice": "Untuk kirim ke luar negeri, harganya harga internasional yang tertera di halaman produk, dan ongkirnya kami kutip lewat WhatsApp.",
     'intl.noticeCta': 'Atur pesanan luar negeri lewat WhatsApp',
     'intl.noticeMessage': 'Halo SOLIVAGANT, saya mau memesan ke luar negeri. Boleh dibantu?',
     'intl.domesticOk': 'Kalau alamat kirimnya di Indonesia, lanjutkan checkout seperti biasa.',
@@ -1347,7 +1348,8 @@ export const MESSAGES = {
     // Indonesian domestic courier API: a search for a foreign city returns an empty list with no error,
     // so without this the buyer types their city, sees nothing, and never learns why.
     'intl.noticeTitle': 'International orders are not placed through this checkout',
-    'intl.noticeBody': 'Checkout on this page calculates shipping for addresses in Indonesia only, at Indonesian prices. For delivery outside Indonesia the price is the international price shown on each product page, and we quote the shipping by hand on WhatsApp.',
+    "intl.noticeDomesticOnly": "Checkout on this page calculates shipping for addresses in Indonesia only, at Indonesian prices.",
+    "intl.noticeCatalogPrice": "For delivery outside Indonesia the price is the international price shown on each product page, and we quote the shipping by hand on WhatsApp.",
     'intl.noticeCta': 'Arrange an international order on WhatsApp',
     'intl.noticeMessage': 'Hello SOLIVAGANT, I would like to order for delivery outside Indonesia. Could you help?',
     'intl.domesticOk': 'If you are shipping to an address in Indonesia, continue through checkout as normal.',

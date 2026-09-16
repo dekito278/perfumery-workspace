@@ -51,17 +51,49 @@ assert.match(MESSAGES.en['intl.domesticOk'], /Indonesia/,
   'and it says out loud that a domestic address can carry on through checkout');
 assert.match(MESSAGES.id['intl.domesticOk'], /Indonesia/);
 // Every line of the notice has to be on screen, for the same reason.
-for (const key of ['intl.noticeTitle', 'intl.noticeBody', 'intl.domesticOk', 'intl.noticeCta']) {
+for (const key of ['intl.noticeTitle', 'intl.noticeDomesticOnly', 'intl.domesticOk', 'intl.noticeCta']) {
   assert.ok(notice.includes(`t('${key}')`), `${key} is rendered, not just defined`);
 }
 
 // --- 3. It reconciles the two prices the same visitor has just seen ---------------------------------------------
 // Without this, the product page said Rp 2.630.000 and the cart says Rp 750.000, and the buyer has to
 // guess which one they will be charged.
-assert.match(MESSAGES.en['intl.noticeBody'], /Indonesian prices/i, 'the cart total is named as the Indonesian price');
-assert.match(MESSAGES.en['intl.noticeBody'], /international price/i, 'and the product-page number as the international one');
-assert.match(MESSAGES.id['intl.noticeBody'], /harga Indonesia/i);
-assert.match(MESSAGES.id['intl.noticeBody'], /harga internasional/i);
+assert.match(MESSAGES.en['intl.noticeDomesticOnly'], /Indonesian prices/i, 'the cart total is named as the Indonesian price');
+assert.match(MESSAGES.en['intl.noticeCatalogPrice'], /international price/i, 'and the product-page number as the international one');
+assert.match(MESSAGES.id['intl.noticeDomesticOnly'], /harga Indonesia/i);
+assert.match(MESSAGES.id['intl.noticeCatalogPrice'], /harga internasional/i);
+
+// --- 3b. Where that international number comes from is not the same answer everywhere -------------------
+// In the cart it is printed on each product's page. On the BESPOKE request there is no product page and
+// no international price anywhere — bespoke prices live in storefront_bespoke_options, one set of
+// numbers with no overseas variant, and the bottle does not exist yet. Pointing an overseas buyer at
+// "the international price shown on each product page" sent them looking for a number nobody had
+// written down. Measured on production before the fix: /en/bespoke said exactly that.
+//
+// The honest sentence was already in the message file, in both languages, wired to nothing.
+assert.match(notice, /t\(quotedOnRequest \? 'intl\.quotedOnRequest' : 'intl\.noticeCatalogPrice'\)/,
+  'the notice must choose where the international price comes from, not assume a product page');
+assert.match(MESSAGES.en['intl.quotedOnRequest'], /quoted on WhatsApp/i);
+assert.match(MESSAGES.id['intl.quotedOnRequest'], /dikutip lewat WhatsApp/i);
+assert.doesNotMatch(MESSAGES.en['intl.quotedOnRequest'], /product page/i,
+  'and it must not send a bespoke buyer to a page that does not exist');
+
+// Both bespoke surfaces pass it, and none of the catalogue ones do — a cart that claimed its prices were
+// quoted by hand would be just as wrong in the other direction.
+for (const [file, expected] of [
+  ['pages/BespokePage.jsx', true],
+  ['pages/mobile/MobileBespokePage.jsx', true],
+  ['pages/CartPage.jsx', false],
+  ['pages/mobile/MobileCartPage.jsx', false],
+  ['pages/CheckoutPage.jsx', false],
+  ['pages/mobile/MobileCheckoutPage.jsx', false],
+]) {
+  const source = read(...file.split('/'));
+  const tag = (source.match(/<InternationalCheckoutNotice[^/]*\/>/) || [''])[0];
+  assert.ok(tag, `${file} still renders the notice`);
+  assert.equal(/quotedOnRequest/.test(tag), expected,
+    `${file}: ${expected ? 'bespoke must say the price is quoted by hand' : 'a catalogue page must keep pointing at the product page'}`);
+}
 
 // --- 4. And it offers the way out, in the language they were reading ----------------------------------------------
 assert.match(notice, /buildWhatsAppCheckoutUrl\(t\('intl\.noticeMessage'\), whatsapp\)/,
