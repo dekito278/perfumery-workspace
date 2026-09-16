@@ -767,7 +767,7 @@ const BespokePage = () => {
                 </div>
                 {/* Bespoke ships through the same domestic courier API as the product checkout, so the
                     same dead end waits here: a foreign city returns an empty area list with no error. */}
-                <InternationalCheckoutNotice className="mb-4" />
+                <InternationalCheckoutNotice quotedOnRequest className="mb-4" />
                 <div className="editorial-bespoke-checkout__fields">
                   <label>{t('bsp.name')}<input type="text" value={form.customerName} onChange={(event) => updateField('customerName', event.target.value)} placeholder={t('bsp.yourName')} /></label>
                   <label>{t('bsp.contact')}<input type="text" value={form.contact} onChange={(event) => updateField('contact', event.target.value)} placeholder="nama@email.com / +62..." /></label>

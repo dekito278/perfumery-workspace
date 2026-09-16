@@ -584,7 +584,7 @@ const MobileBespokePage = () => {
       render: () => (
         <div className="grid gap-3">
           {/* Same domestic-only courier API as the product checkout, so the same warning belongs here. */}
-          <InternationalCheckoutNotice />
+          <InternationalCheckoutNotice quotedOnRequest />
           <div className="grid gap-2">
             <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <input value={form.customerCode} onChange={(event) => updateField('customerCode', event.target.value.toUpperCase())} placeholder={t('bsp.customerCodeField')} aria-label={t('bsp.customerCodeField')} className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
