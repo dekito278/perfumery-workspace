@@ -119,3 +119,25 @@ export const buildBespokeNotes = (request = {}) => {
     blank.length ? formatLine('Tidak diisi', blank.join(', ')) : null,
   ].filter(Boolean).join('\n');
 };
+
+/**
+ * What a bespoke option group starts on before the buyer has chosen anything: the CHEAPEST enabled
+ * option, not the first one.
+ *
+ * It used to be whichever came first in sort_order, and sort_order is DISPLAY order — which option
+ * Dekito wants seen first, a different question from what someone should be charged for a decision they
+ * never made. Three of the four groups agreed by luck. The cap group did not: "Cap custom Abstrak"
+ * (Rp 50.000) is shown first and "Cap Basic" (Rp 5.000) second, so a buyer who never opened the Cap tab
+ * paid Rp 45.000 extra — and no option on that screen shows its price, so there was nothing to notice.
+ * Measured on production: the subtotal started at Rp 300.000 instead of Rp 255.000.
+ *
+ * Display order is untouched. The hero option stays first on screen; it just stops being pre-bought.
+ * Ties keep sort_order, so a group where everything is free starts exactly where it always did.
+ */
+export const cheapestEnabled = (options = []) => {
+  const enabled = options.filter((option) => option.enabled);
+  if (!enabled.length) return options[0] || {};
+  return enabled.reduce((best, option) => (
+    Number(option.price || 0) < Number(best.price || 0) ? option : best
+  ), enabled[0]);
+};
