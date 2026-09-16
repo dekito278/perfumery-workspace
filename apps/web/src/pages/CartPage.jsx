@@ -12,7 +12,8 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -22,6 +23,8 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Numbe
 
 const CartPage = () => {
   const { items, summary, updateQuantity, removeItem } = useCart();
+  const { index: memberIndex } = useMemberPrices();
+  const memberSaving = memberSavingForCart(items, memberIndex);
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const subtotal = summary.subtotal;
@@ -156,6 +159,21 @@ const CartPage = () => {
                     <strong>{formatTotal(totalAfterVoucher)}</strong>
                   </div>
                 </>
+              ) : null}
+              {/* The saving the buyer is weighing the total against, at the moment they weigh it.
+                  Every other storefront page names the member price — home, catalog, product, the
+                  account page — and the checkout one step later names this exact amount. The cart, the
+                  one screen that shows the total and asks for a decision, said nothing. Built from the
+                  message keys those pages already use, so there is no second wording to keep in step. */}
+              {memberSaving > 0 ? (
+                <div className="cart-totals__row cart-totals__row--discount">
+                  <span>{t('price.memberTier')}</span>
+                  <strong>
+                    {t('price.saveShort', { amount: formatTotal(memberSaving) })}
+                    {' · '}
+                    <Link to="/customer" style={{ textDecoration: 'underline' }}>{t('why.member.cta')}</Link>
+                  </strong>
+                </div>
               ) : null}
               <div className="cart-totals__note">
                 <span>{t('cart.shippingAtCheckout')}</span>
