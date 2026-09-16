@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import JournalCoverFrame from '@/components/journal/JournalCoverFrame.jsx';
 import JournalMarkdownContent from '@/components/journal/JournalMarkdownContent.jsx';
+import JournalRelatedProduct from '@/components/journal/JournalRelatedProduct.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -153,6 +154,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
                 </p>
               )}
             </section>
+            <JournalRelatedProduct post={post} mobile />
           </div>
         </article>
       )}
@@ -358,6 +360,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
                     <h2>{t("journal.noContent")}</h2>
                   </div>
                 )}
+                <JournalRelatedProduct post={post} />
               </section>
 
               <aside className="journal-article-sidebar" data-reveal="right">

@@ -133,6 +133,12 @@ const normalizeJournalPostPayload = (postData) => ({
   related_formula_id: postData.related_formula_id && postData.related_formula_id !== 'none'
     ? postData.related_formula_id
     : null,
+  // The product this article is ABOUT, as a slug — which is what /catalog/<slug> already is, so the
+  // link needs no second lookup. related_formula_id above points at a formula in Studio and cannot
+  // reach the shop: storefront_products carries no formula column.
+  related_product_slug: postData.related_product_slug && postData.related_product_slug !== 'none'
+    ? String(postData.related_product_slug).trim()
+    : null,
   excerpt: postData.excerpt ? String(postData.excerpt).trim() : null,
   content: postData.content ? String(postData.content).trim() : null,
   seo_title: postData.seo_title ? String(postData.seo_title).trim() : null,
@@ -171,6 +177,13 @@ export const getJournalPostById = async (id) => {
   return toAppRecord(data);
 };
 
+// select('*') rather than a hand-written field list, here and in the two functions above.
+//
+// The list was already one column behind — it never named related_formula_id — and this repo's most
+// expensive recurring bug is exactly that: a field written in Studio, stored correctly, and dropped on
+// the way out by a mapper nobody remembered to update. toAppRecord spreads the row, so a column added
+// later arrives on its own. The table is already fully readable by anon for published rows, so naming
+// every column bought no privacy either.
 export const getPublishedJournalPostBySlug = async (slug) => {
   const normalizedSlug = String(slug || '').trim();
 
@@ -180,7 +193,7 @@ export const getPublishedJournalPostBySlug = async (slug) => {
 
   const { data, error } = await supabase
     .from('journal_posts')
-    .select('id, title, category, status, slug, excerpt, content, seo_title, cover_image_url, tags, published_at, created_at, updated_at')
+    .select('*')
     .eq('slug', normalizedSlug)
     .eq('status', 'published')
     .maybeSingle();
@@ -200,7 +213,7 @@ export const getPublishedJournalPostBySlug = async (slug) => {
 
   const { data: idData, error: idError } = await supabase
     .from('journal_posts')
-    .select('id, title, category, status, slug, excerpt, content, seo_title, cover_image_url, tags, published_at, created_at, updated_at')
+    .select('*')
     .eq('id', normalizedSlug)
     .eq('status', 'published')
     .maybeSingle();
@@ -216,7 +229,7 @@ export const getPublishedJournalPostBySlug = async (slug) => {
 export const getPublishedJournalPosts = async () => {
   const { data, error } = await supabase
     .from('journal_posts')
-    .select('id, title, category, status, slug, excerpt, content, seo_title, cover_image_url, tags, published_at, created_at, updated_at')
+    .select('*')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .order('updated_at', { ascending: false });

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import { useJournalPosts } from '@/hooks/useJournalPosts.js';
 import { useFormulas } from '@/hooks/useFormulas.js';
+import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { confirmAction } from '@/utils/confirmAction.js';
 import {
   JOURNAL_CATEGORIES,
@@ -24,6 +25,7 @@ const createEmptyPost = (formulaId = 'none', formulaName = '') => {
     category: hasFormula ? 'formula_accord' : 'experience',
     status: 'draft',
     related_formula_id: formulaId || 'none',
+    related_product_slug: 'none',
     excerpt: '',
     content: '',
     seo_title: '',
@@ -37,6 +39,7 @@ const toEditorState = (post) => ({
   category: post.category || 'experience',
   status: post.status || 'draft',
   related_formula_id: post.related_formula_id || 'none',
+  related_product_slug: post.related_product_slug || 'none',
   excerpt: post.excerpt || '',
   content: post.content || '',
   seo_title: post.seo_title || '',
@@ -53,6 +56,7 @@ const JournalEditorPage = () => {
   const isEditMode = Boolean(id);
   const { getJournalPostById, createJournalPost, updateJournalPost } = useJournalPosts();
   const { getFormulas } = useFormulas();
+  const storefrontProducts = useStorefrontProducts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formulas, setFormulas] = useState([]);
@@ -147,6 +151,7 @@ const JournalEditorPage = () => {
       const payload = {
         ...formState,
         related_formula_id: formState.related_formula_id === 'none' ? null : formState.related_formula_id,
+        related_product_slug: formState.related_product_slug === 'none' ? null : formState.related_product_slug,
       };
 
       const savedPost = isEditMode
@@ -288,6 +293,29 @@ const JournalEditorPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  {/* Formula terkait di atas menghubungkan artikel ke kerja studio. Ini yang
+                      menghubungkannya ke TOKO: pembaca yang selesai membaca cerita sebuah parfum
+                      sebelumnya tidak punya satu pun jalan untuk membelinya. */}
+                  <div className="text-sm font-medium">Produk terkait</div>
+                  <Select value={formState.related_product_slug} onValueChange={(value) => handleChange('related_product_slug', value)}>
+                    <SelectTrigger className="h-11 rounded-2xl bg-white">
+                      <SelectValue placeholder="Optional product link" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Tanpa produk terkait</SelectItem>
+                      {storefrontProducts.map((product) => (
+                        <SelectItem key={product.slug} value={product.slug}>
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Kalau diisi, kartu produknya muncul di bawah artikel dengan tombol ke halaman produk.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
