@@ -30,6 +30,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
+import { cheapestEnabled } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -37,8 +38,6 @@ const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 // Keys: module-level, so no hook can run here. The component translates them.
 const stepKeys = ['bsp.scent', 'bsp.preferences', 'bsp.bottle', 'bsp.addressShort', 'bsp.pay'];
-
-const firstEnabled = (options = []) => options.find((option) => option.enabled) || options[0] || {};
 
 const checkoutCourierOptions = [
   { courierCode: 'jnt', label: 'JnT' },
@@ -168,10 +167,10 @@ const BespokePage = () => {
   const capDesignOptions = useMemo(() => settings.capDesigns.filter((option) => option.enabled), [settings.capDesigns]);
   const labelDesignOptions = useMemo(() => settings.labelDesigns.filter((option) => option.enabled), [settings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => settings.exoticMaterials.filter((option) => option.enabled), [settings.exoticMaterials]);
-  const defaultSize = firstEnabled(bottleSizeOptions);
-  const defaultBottle = firstEnabled(bottleTypeOptions);
-  const defaultCap = firstEnabled(capDesignOptions);
-  const defaultLabel = firstEnabled(labelDesignOptions);
+  const defaultSize = cheapestEnabled(bottleSizeOptions);
+  const defaultBottle = cheapestEnabled(bottleTypeOptions);
+  const defaultCap = cheapestEnabled(capDesignOptions);
+  const defaultLabel = cheapestEnabled(labelDesignOptions);
   const [saving, setSaving] = useState(false);
   const [destinationSearch, setDestinationSearch] = useState('');
   const [destinationOptions, setDestinationOptions] = useState([]);
