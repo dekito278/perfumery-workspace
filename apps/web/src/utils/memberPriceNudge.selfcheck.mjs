@@ -175,6 +175,26 @@ for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.j
   assert.match(MESSAGES.en['checkout.signInSaving'], /member/i, 'and in English it may say so, because here it is true');
 }
 
+// --- 10b. And the CART, which is where the total is actually weighed ------------------------------------
+// Every other storefront surface names the member price — home, catalog, product, the account page — and
+// the checkout one step later names the exact amount. The cart, the one screen that shows the total and
+// asks for a decision, said nothing at all. Measured on production: Rp 103.000 invisible on a two-line
+// cart, then stated in full on the very next screen.
+//
+// Built from the keys the other pages already use, so there is no second wording to keep in step.
+for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
+  const source = read(...page.split('/'));
+  assert.match(source, /memberSavingForCart\(items, memberIndex\)/,
+    `${page} must compute the real saving from the cart, the same way both checkouts do`);
+  assert.match(source, /memberSaving > 0 \?/,
+    `${page} must stay silent when there is nothing to save — a signed-in member is not nudged`);
+  assert.match(source, /price\.saveShort', \{ amount: formatTotal\(memberSaving\) \}/,
+    `${page} must print the actual amount, not a vague promise`);
+  assert.match(source, /t\('price\.memberTier'\)/, `${page} must name what the saving is`);
+  // And a way to act on it, or the number is a tease.
+  assert.match(source, /customer['"]/, `${page} must offer the door to the account, not just the number`);
+}
+
 // --- 11. The public mapper must CARRY the field, not just the pages RENDER it -----------------------------
 // This is the hole the first version of this guard had. toPublicFragrance rebuilds every product and
 // variant from a hand-written field list; it named retailPriceNumber, priceTier and compareAtPriceNumber

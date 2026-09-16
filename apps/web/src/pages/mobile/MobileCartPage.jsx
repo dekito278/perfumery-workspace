@@ -10,7 +10,8 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import { Button } from '@/components/ui/button.jsx';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCart } from '@/hooks/useCart.js';
-import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { useMemberPrices, useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
+import { memberSavingForCart } from '@/utils/memberPriceNudge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getDiscountedVoucherCartLineMap } from '@/utils/cartVoucherPricing.js';
 
@@ -19,6 +20,8 @@ const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(value
 const MobileCartPage = () => {
   const navigate = useNavigate();
   const { items, summary, updateQuantity, removeItem } = useCart();
+  const { index: memberIndex } = useMemberPrices();
+  const memberSaving = memberSavingForCart(items, memberIndex);
   const { t } = useTranslate();
   const voucher = useAppliedVoucher(summary.subtotal, items);
   const discountedLineMap = getDiscountedVoucherCartLineMap(items, voucher.appliedVoucher || {}, voucher.discountAmount);
@@ -59,6 +62,16 @@ const MobileCartPage = () => {
               </div>
               {items.length && voucher.discountAmount ? (
                 <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>{t('cart.saved', { amount: formatTotal(voucher.discountAmount) })}</div>
+              ) : null}
+              {/* The same saving the checkout names one step later, at the moment the total is being
+                  weighed. Built from the keys the other storefront pages already use — no second
+                  wording to keep in step, and desktop and phone say the same thing. */}
+              {items.length && memberSaving > 0 ? (
+                <div style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>
+                  {t('price.memberTier')}: {t('price.saveShort', { amount: formatTotal(memberSaving) })}
+                  {' · '}
+                  <button type="button" onClick={() => navigate('/mobile/customer')} style={{ fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit' }}>{t('why.member.cta')}</button>
+                </div>
               ) : null}
               <p style={{ marginTop: 8, fontSize: '0.78rem', lineHeight: 1.6, color: 'var(--editorial-muted)' }}>
                 {items.length ? t('cart.reviewMobile') : t('cart.emptyMobileBody')}
