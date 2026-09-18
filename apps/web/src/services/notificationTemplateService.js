@@ -1,6 +1,7 @@
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { normalizeWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
 
+// Studio's own event picker. Stays Indonesian: Dekito reads it, not the buyer.
 const notificationEventLabels = {
   order_created: 'Order dibuat',
   paid: 'Pembayaran diterima',
@@ -10,6 +11,32 @@ const notificationEventLabels = {
   completed: 'Order selesai',
 };
 
+// The buyer's half of the same list — it goes out as the email subject line, so it follows the order.
+const notificationEventLabelsEn = {
+  order_created: 'Order received',
+  paid: 'Payment confirmed',
+  payment_proof_rejected: 'Transfer proof could not be verified',
+  processing: 'Order in production',
+  shipped: 'Order shipped',
+  completed: 'Order complete',
+};
+
+/**
+ * Which shop this order was placed in — and therefore which language its buyer reads.
+ *
+ * Taken off the order itself rather than from an argument: buildNotificationMessage has fifteen call
+ * sites across Studio desktop and mobile, and a language passed in by each of them is a language
+ * fourteen of them will forget. The order already carries the answer, recorded at checkout.
+ *
+ * Anything else — an order placed before the field existed, a local draft, a row the server refused the
+ * hint on — is Indonesian, which is what every one of those orders actually was.
+ */
+const shopOf = (order) => (order?.clientContext?.shop === 'en' ? 'en' : 'id');
+
+// The English shop lives at /en, so a link handed to an English buyer has to keep the prefix. Without
+// it the invoice we just told them to open reloads in Indonesian.
+const shopPrefix = (order) => (shopOf(order) === 'en' ? '/en' : '');
+
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
 
 const formatItemLines = (order = {}) => {
@@ -17,7 +44,7 @@ const formatItemLines = (order = {}) => {
   const voucherSnapshot = getOrderVoucherSnapshot(order);
   const itemLines = items.length
     ? items.map((item) => `- ${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity || 1}`)
-    : ['- Item order'];
+    : [shopOf(order) === 'en' ? '- Order item' : '- Item order'];
   return [
     ...itemLines,
     voucherSnapshot ? `Voucher ${voucherSnapshot.code}: -${formatTotal(voucherSnapshot.discountAmount)}` : '',
@@ -28,22 +55,30 @@ const isEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).
 
 const getCustomerDashboardUrl = (order) => {
   if (typeof window === 'undefined' || !order?.customerCode) return '';
-  return `${window.location.origin}/mobile/customer?code=${encodeURIComponent(order.customerCode)}`;
+  return `${window.location.origin}${shopPrefix(order)}/mobile/customer?code=${encodeURIComponent(order.customerCode)}`;
 };
 
 const getInvoiceUrl = (order) => {
   if (typeof window === 'undefined' || !order?.customerCode || !order?.orderNumber) return '';
-  return `${window.location.origin}/mobile/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode)}`;
+  return `${window.location.origin}${shopPrefix(order)}/mobile/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode)}`;
 };
 
 const getManualPaymentUploadUrl = (order) => {
   if (typeof window === 'undefined' || !order?.orderNumber) return '';
-  return `${window.location.origin}/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`;
+  return `${window.location.origin}${shopPrefix(order)}/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`;
 };
 
-const buildGreeting = (order) => `Halo ${order?.customerName || 'Kak'},`;
+const buildGreeting = (order) => (shopOf(order) === 'en'
+  ? `Hi ${order?.customerName || 'there'},`
+  : `Halo ${order?.customerName || 'Kak'},`);
 
-const templates = {
+// Two shops, two sets of words. NOT a translation of each other line by line — the Indonesian says
+// "Kak" to a stranger and "Tim Solivagant" of a one-person atelier, and neither reads right in English.
+// What both must say is the same FACTS: which order, what it cost, what happens next, and where to look.
+//
+// Everything here is operational. Nothing promises a price, a shipping rate or a delivery date, because
+// an English message goes to a buyer this checkout cannot quote international shipping for.
+const templatesById = {
   order_created: (order) => [
     buildGreeting(order),
     '',
@@ -112,10 +147,81 @@ const templates = {
   ],
 };
 
+const templatesByEn = {
+  order_created: (order) => [
+    buildGreeting(order),
+    '',
+    `We have your SOLIVAGANT order: ${order.orderNumber}.`,
+    '',
+    'Order details:',
+    formatItemLines(order),
+    `Total: ${formatTotal(order.subtotal)}`,
+    `Payment status: ${order.paymentStatus || '-'}`,
+    order.customerCode ? `Customer code: ${order.customerCode}` : null,
+    getInvoiceUrl(order) ? `Invoice: ${getInvoiceUrl(order)}` : null,
+    '',
+    'We will write again once the payment is confirmed. Thank you.',
+  ],
+  paid: (order) => [
+    buildGreeting(order),
+    '',
+    `Payment for order ${order.orderNumber} is confirmed.`,
+    '',
+    'Your order is going into production. You can follow it here:',
+    getCustomerDashboardUrl(order),
+    '',
+    'Thank you — it is in the queue now.',
+  ],
+  payment_proof_rejected: (order) => [
+    buildGreeting(order),
+    '',
+    `We could not verify the transfer proof for order ${order.orderNumber}.`,
+    order.paymentProofNotes ? `Note: ${order.paymentProofNotes}` : null,
+    '',
+    'Please upload a clearer transfer proof here:',
+    getManualPaymentUploadUrl(order),
+    '',
+    `Order total: ${formatTotal(order.subtotal)}`,
+    order.customerCode ? `Customer code: ${order.customerCode}` : null,
+    '',
+    'The order stays pending until we have checked the new proof. Thank you.',
+  ],
+  processing: (order) => [
+    buildGreeting(order),
+    '',
+    `Order ${order.orderNumber} is being made.`,
+    '',
+    'Your bottles are being prepared. You can follow the order here:',
+    getCustomerDashboardUrl(order),
+    '',
+    'We will write again when the parcel goes out.',
+  ],
+  shipped: (order) => [
+    buildGreeting(order),
+    '',
+    `Order ${order.orderNumber} has been shipped.`,
+    order.courierName ? `Courier: ${order.courierName}` : null,
+    order.trackingNumber ? `Tracking number: ${order.trackingNumber}` : null,
+    order.trackingUrl ? `Tracking: ${order.trackingUrl}` : getCustomerDashboardUrl(order) ? `Follow it here: ${getCustomerDashboardUrl(order)}` : null,
+    '',
+    'Please check the parcel when it arrives. We hope it reaches you safely.',
+  ],
+  completed: (order) => [
+    buildGreeting(order),
+    '',
+    `Order ${order.orderNumber} is complete. Thank you for choosing SOLIVAGANT.`,
+    '',
+    'If you have anything to say about the scent, the packaging or the experience, just reply to this message.',
+    getInvoiceUrl(order) ? `Invoice/receipt: ${getInvoiceUrl(order)}` : null,
+  ],
+};
+
+const templates = { id: templatesById, en: templatesByEn };
+
 export const getNotificationEventLabels = () => notificationEventLabels;
 
 export const buildNotificationMessage = (order, eventKey) => (
-  templates[eventKey]?.(order || {})
+  templates[shopOf(order)][eventKey]?.(order || {})
     // Drop only the optional lines that were not applicable — they are null. An empty string here is a
     // deliberate paragraph break, and filtering those out too glued every message into one block: the
     // greeting ran straight into the order number and the closing sentence into the customer code.
@@ -126,7 +232,9 @@ export const buildNotificationMessage = (order, eventKey) => (
 );
 
 export const buildNotificationSubject = (order, eventKey) => {
-  const label = notificationEventLabels[eventKey] || 'Update order';
+  const english = shopOf(order) === 'en';
+  const labels = english ? notificationEventLabelsEn : notificationEventLabels;
+  const label = labels[eventKey] || (english ? 'Order update' : 'Update order');
   return `Solivagant ${label} - ${order?.orderNumber || 'Order'}`;
 };
 

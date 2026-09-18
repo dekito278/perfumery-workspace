@@ -12,6 +12,12 @@ export const getClientContext = () => {
   try {
     return {
       surface: barePathname().startsWith('/mobile') ? 'mobile' : 'desktop',
+      // Which shop the buyer checked out from, so the messages we send them afterwards can be in the
+      // language they were reading. Read off <html lang>, which useStorefrontRegion publishes on every
+      // region change and documentLanguage.selfcheck keeps honest — asking the path instead would call
+      // an order placed at /cart Indonesian even when the visitor is in the English shop (a ?lang=en
+      // link, or the browser's own language, both of which leave the path bare).
+      shop: document.documentElement.lang === 'en' ? 'en' : 'id',
       viewportWidth: Math.round(window.innerWidth) || null,
     };
   } catch {
@@ -26,11 +32,13 @@ export default getClientContext;
 // no browser globals run at module load, only inside getClientContext().
 export const sanitizeClientContext = (hint = {}) => {
   const surface = ['mobile', 'desktop'].includes(hint?.surface) ? hint.surface : null;
+  const shop = ['id', 'en'].includes(hint?.shop) ? hint.shop : null;
   const width = Math.round(Number(hint?.viewportWidth));
   const viewportWidth = Number.isFinite(width) && width > 0 && width <= 10000 ? width : null;
 
   const out = {};
   if (surface) out.surface = surface;
+  if (shop) out.shop = shop;
   if (viewportWidth) out.viewport_width = viewportWidth;
   return out;
 };
@@ -41,5 +49,8 @@ export const formatClientContext = (context) => {
   if (!context || typeof context !== 'object') return '';
   const surface = context.surface === 'mobile' ? 'Mobile' : context.surface === 'desktop' ? 'Desktop' : '';
   const width = Number(context.viewport_width) > 0 ? `${Math.round(Number(context.viewport_width))}px` : '';
-  return [surface, width].filter(Boolean).join(' · ');
+  // Only the English shop is worth a word here. Every other order is Indonesian, and printing "ID" on
+  // all of them would bury the one line that changes how Dekito writes to that buyer.
+  const shop = context.shop === 'en' ? 'Toko EN' : '';
+  return [surface, width, shop].filter(Boolean).join(' · ');
 };
