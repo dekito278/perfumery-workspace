@@ -12,12 +12,18 @@ import { useMobileFormEnhancements } from '@/hooks/useMobileFormEnhancements.js'
 import { useMobileTouchFeedback } from '@/hooks/useMobileTouchFeedback.js';
 import { cn } from '@/lib/utils.js';
 
-const commerceNavItems = [
+// The English shop takes its orders on WhatsApp, so it has no cart tab — /mobile/cart redirects there
+// anyway, and a tab that bounces you back is worse than no tab.
+// Tailwind scans source text, so the class names have to appear literally somewhere — a computed
+// `grid-cols-${n}` compiles to nothing.
+const navGridColumns = { 5: 'grid-cols-5', 6: 'grid-cols-6' };
+
+const commerceNavItemsFor = (isInternational) => [
   { path: '/mobile/dashboard', labelKey: 'nav.home', icon: Home },
   { path: '/mobile/catalog', labelKey: 'nav.shop', icon: Search, aliases: ['/mobile/products'] },
   { path: '/mobile/articles', labelKey: 'nav.articles', icon: BookOpenText },
   { path: '/mobile/bespoke', labelKey: 'nav.bespokeShort', icon: MessageCircle },
-  { path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag },
+  ...(isInternational ? [] : [{ path: '/mobile/cart', labelKey: 'nav.cart', icon: ShoppingBag }]),
   // Was "Cek Order": tracking is what an account DOES, not why anyone opens one. The reason is the price.
   { path: '/mobile/customer', labelKey: 'nav.accountShort', icon: UserRound },
 ];
@@ -32,9 +38,10 @@ const preserveScrollOnCommerceTabTap = (path) => (
 const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const { isAuthenticated } = useAuth();
   const { summary } = useCart();
+  const commerceNavItems = commerceNavItemsFor(isInternational);
   const keyboardActive = useMobileKeyboardState();
   useMobileKeyboardAvoidance();
   useMobileFormEnhancements();
@@ -83,7 +90,13 @@ const MobileCommerceLayout = ({ children }) => {
           Studio
         </Link>
       ) : null}
-      <nav className="mobile-bottom-nav mobile-commerce-bottom-nav grid grid-cols-6 gap-1 p-1.5" aria-label={t('nav.mobileShopAria')}>
+      {/* Columns counted from the list, not typed as a literal: dropping the cart tab from a grid still
+          set to six left a sixth of the bar empty on the phone, and the next person to add a tab would
+          have had to remember two places. */}
+      <nav
+        className={cn('mobile-bottom-nav mobile-commerce-bottom-nav grid gap-1 p-1.5', navGridColumns[commerceNavItems.length] || 'grid-cols-6')}
+        aria-label={t('nav.mobileShopAria')}
+      >
         {commerceNavItems.map((item) => {
           const Icon = item.icon;
           const activePaths = [item.path, ...(item.aliases || [])];

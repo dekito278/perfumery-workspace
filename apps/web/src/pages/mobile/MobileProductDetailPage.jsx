@@ -17,6 +17,7 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
+import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { productCopyFor } from '@/utils/productCopy.js';
@@ -263,12 +264,18 @@ const MobileProductDetailPage = () => {
                 be worse than no cart button: it shows the buyer a door and then holds it shut. */}
             {isInternational ? (
               <a
-                href={buildWhatsAppCheckoutUrl(t('intl.noticeMessage'), getStorefrontWhatsAppNumber())}
+                href={buildWhatsAppCheckoutUrl(buildOverseasDraft({
+                  t,
+                  isInternational,
+                  name: product.name,
+                  size: selectedSize,
+                  price: overseasPrice ? formatRupiah(overseasPrice) : formatRupiah(selectedPrice),
+                }), getStorefrontWhatsAppNumber())}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="m-editorial-pdp__sticky-btn"
               >
-                <Globe className="h-4 w-4" /> {t('export.ask')}
+                <Globe className="h-4 w-4" /> {t(overseasDraftKeys(isInternational).labelKey)}
               </a>
             ) : (
               <button type="button" className="m-editorial-pdp__sticky-btn" onClick={addSelectedVariant} disabled={soldOut || previewMode}>

@@ -2,6 +2,7 @@
 import React, { Suspense, cloneElement, lazy, useEffect, useRef, useState } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigationType, useParams } from 'react-router-dom';
 import { routerBasename } from '@/utils/storefrontRegion.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import ConfirmHost from '@/components/ConfirmHost.jsx';
@@ -450,6 +451,24 @@ const MobileRouteTransition = ({ children }) => {
 // language is therefore a navigation, which useStorefrontRegion does.
 const ROUTER_BASENAME = routerBasename();
 
+/**
+ * A route that exists only in the Indonesian shop.
+ *
+ * The English shop does not take orders through this checkout — it hands them to WhatsApp, where the
+ * international price is quoted and the shipping is settled by hand. The product pages already act that
+ * way, but the cart and checkout were still reachable at /en/cart and /en/checkout, and a buyer who got
+ * there was shown the DOMESTIC price for a bottle whose page had just quoted them the international one
+ * (La Tulipe: Rp 1.020.000 on the page, Rp 260.000 in the cart) and then offered a domestic courier.
+ *
+ * Sent to the catalogue rather than shown an explanation: the buyer did not choose this door, a leftover
+ * cart or a stale link did, and the language switch in the header is the way back for anyone who is
+ * actually shipping inside Indonesia.
+ */
+const DomesticOnly = ({ children }) => {
+  const { isInternational } = useStorefrontRegion();
+  return isInternational ? <Navigate to="/catalog" replace /> : children;
+};
+
 function AppRoutes() {
   return (
     <Router basename={ROUTER_BASENAME}>
@@ -474,8 +493,8 @@ function AppRoutes() {
         <Route path="/articles/:slug" element={<PublicJournalArticlePage />} />
         <Route path="/bespoke" element={<BespokePage />} />
         <Route path="/journal" element={<PublicJournalPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/cart" element={<DomesticOnly><CartPage /></DomesticOnly>} />
+        <Route path="/checkout" element={<DomesticOnly><CheckoutPage /></DomesticOnly>} />
         <Route path="/payment" element={<PaymentPage />} />
         {/* The greeting card in every parcel points here. */}
         <Route path="/welcome" element={<WelcomePage />} />
@@ -510,8 +529,8 @@ function AppRoutes() {
 
         <Route path="/mobile/bespoke" element={<MobileBespokePage />} />
 
-        <Route path="/mobile/cart" element={<MobileCartPage />} />
-        <Route path="/mobile/checkout" element={<MobileCheckoutPage />} />
+        <Route path="/mobile/cart" element={<DomesticOnly><MobileCartPage /></DomesticOnly>} />
+        <Route path="/mobile/checkout" element={<DomesticOnly><MobileCheckoutPage /></DomesticOnly>} />
 
         <Route path="/mobile/payment" element={<PaymentPage />} />
 

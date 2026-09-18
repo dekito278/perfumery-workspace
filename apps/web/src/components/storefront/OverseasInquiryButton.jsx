@@ -4,6 +4,7 @@ import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/service
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useExportPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
 
 /**
  * Asking about an overseas order. Deliberately NOT a checkout: international shipping is quoted by
@@ -45,10 +46,11 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
   // and the draft said "the price I saw on your site: Rp 750.000" directly under a line reading "Harga
   // untuk pengiriman ke luar negeri: Rp 2.630.000". Dekito then received an enquiry quoting a number he
   // had not offered for that shipment. The export price is right here, ungated, for exactly this.
+  // In the English shop there is no cart at all, so this button is not a question asked beside a
+  // purchase — it IS the purchase. Same builder as both sticky bars, so the three cannot drift.
   const quoted = exportPrice ? formatRupiah(exportPrice) : price;
-  const message = t('export.waDraft', {
-    item: `${product.name}${size ? ` (${size})` : ''}`,
-    line: quoted ? t('export.waDraftPrice', { price: quoted }) : '',
+  const message = buildOverseasDraft({
+    t, isInternational: overseasVisitor, name: product.name, size, price: quoted,
   });
 
   const link = (
@@ -63,7 +65,7 @@ const OverseasInquiryButton = ({ product, variant = null, size = '', price = '',
       <Globe className="h-4 w-4" />
       {/* One label for one action. The panel and the always-visible button used to carry different
           wording, which an English visitor saw twice on the same page as two different offers. */}
-      {t('export.ask')}
+      {t(overseasDraftKeys(overseasVisitor).labelKey)}
     </a>
   );
 
