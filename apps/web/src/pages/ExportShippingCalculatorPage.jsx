@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { AlertTriangle, ClipboardCopy, Globe2, Info, Plus, ReceiptText, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, Globe2, Info, Plus, ReceiptText, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteExportShipping } from '@/utils/exportShipping.js';
+import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
 import { buildCheckoutDraft, buildOrderNotes } from '@/services/cartService.js';
@@ -29,6 +30,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const destinations = useMemo(() => listExportDestinations(), []);
   const catalog = useCatalogProducts();
   const [countryCode, setCountryCode] = useState('MY');
+  const [countrySearch, setCountrySearch] = useState('');
   const [outsideDeliveryArea, setOutsideDeliveryArea] = useState(false);
   const [rows, setRows] = useState([{ key: 'line-1', slug: '', variantId: '', quantity: 6 }]);
   const [tierPrices, setTierPrices] = useState({ index: {}, schemaReady: true });
@@ -73,6 +75,8 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
     };
   }), [rows, products, tierPrices.index]);
 
+  const visibleDestinations = filterDestinations(destinations, countrySearch, countryCode);
+  const destinationMatches = countMatches(destinations, countrySearch);
   const destination = destinations.find((item) => item.code === countryCode);
   const bottles = lines.reduce((sum, line) => sum + Math.max(0, Math.round(Number(line.quantity) || 0)), 0);
   const safeBottles = Math.max(1, bottles);
@@ -186,15 +190,42 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
         <section className="mt-5 grid gap-3 rounded-2xl border border-[#e5e7eb] bg-white p-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
             Negara tujuan
+            {/* The list is 200-odd names and a native <select> has no search, so reaching Malaysia meant
+                scrolling past a hundred countries. Typing here narrows the list below; the country
+                already chosen stays in it whether it matches or not, because a <select> whose value is
+                missing from its options blanks itself in some browsers and silently jumps to the first
+                option in others. */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
+              <input
+                type="search"
+                value={countrySearch}
+                onChange={(event) => setCountrySearch(event.target.value)}
+                className="h-10 w-full rounded-xl border border-[#e5e7eb] bg-white pl-9 pr-3 text-sm font-semibold normal-case text-[#111827] outline-none focus:border-amber-300"
+                placeholder="Cari negara…"
+                aria-label="Cari negara tujuan"
+              />
+            </div>
             <select
               value={countryCode}
               onChange={(event) => setCountryCode(event.target.value)}
-              className="h-11 rounded-xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold text-[#111827] outline-none focus:border-amber-300"
+              // While searching it opens into a short list, so the matches are visible without a second
+              // click. An arbitrary Tailwind data- variant would have depended on how React stringifies
+              // a false attribute, which is not a thing to bet a layout on.
+              size={countrySearch.trim() ? Math.min(8, Math.max(2, visibleDestinations.length)) : undefined}
+              className={`rounded-xl border border-[#e5e7eb] bg-white px-3 py-1 text-sm font-semibold text-[#111827] outline-none focus:border-amber-300${countrySearch.trim() ? '' : ' h-11'}`}
             >
-              {destinations.map((item) => (
+              {visibleDestinations.map((item) => (
                 <option key={item.code} value={item.code}>{item.name} — zona {item.zone}</option>
               ))}
             </select>
+            {countrySearch.trim() ? (
+              <span className="text-[11px] font-medium normal-case text-[#8b949e]">
+                {destinationMatches
+                  ? `${destinationMatches} negara cocok`
+                  : `Tidak ada negara bernama “${countrySearch.trim()}” di daftar kurir`}
+              </span>
+            ) : null}
           </label>
 
           <div className="grid content-start gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
