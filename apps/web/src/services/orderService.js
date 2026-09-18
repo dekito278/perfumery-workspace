@@ -3,7 +3,7 @@ import { saveCustomer } from '@/services/customerService.js';
 import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock } from '@/services/productCatalogService.js';
 import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '@/utils/bespokeOrder.js';
-import { getClientContext } from '@/utils/clientContext.js';
+import { getClientContext, sanitizeClientContext } from '@/utils/clientContext.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -559,6 +559,7 @@ const buildOrderPayload = ({
   paymentProvider = 'manual',
   source = 'storefront',
   voucherSnapshot,
+  clientContext = {},
 }) => ({
   order_number: createOrderNumber(),
   status: 'pending_payment',
@@ -577,6 +578,11 @@ const buildOrderPayload = ({
   // manual order was inserted 'unpaid' and relied on a follow-up patch.
   payment_status: ['manual_transfer_bca', 'manual'].includes(paymentProvider) ? 'pending' : 'unpaid',
   source,
+  // Which shop the order came from. The endpoint path has recorded this since the buyer's browser
+  // started sending it; this path — the direct insert — wrote nothing, so an order created here had no
+  // shop at all and every message about it went out in Indonesian by default. Through the same
+  // whitelist the server uses, so the two cannot drift.
+  client_context: sanitizeClientContext(clientContext),
   ...(source === BESPOKE_SOURCE ? { bespoke_production_status: 'review_brief' } : {}),
 });
 

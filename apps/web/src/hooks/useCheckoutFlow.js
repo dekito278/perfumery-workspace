@@ -10,6 +10,7 @@ import {
   MANUAL_TRANSFER_PAYMENT,
 } from '@/services/cartService.js';
 import { createDokuCheckout, createDokuQris } from '@/services/dokuCheckoutService.js';
+import { getClientContext } from '@/utils/clientContext.js';
 import { getCustomerAccount, lookupCheckoutCustomerByCode } from '@/services/customerService.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { authoritativeOrdersEnabled, createCatalogOrderViaEndpoint, createOrder } from '@/services/orderService.js';
@@ -550,6 +551,9 @@ export const useCheckoutFlow = ({
         checkoutDraft: finalCheckoutDraft,
         paymentProvider: paymentMethodDetails.provider,
         voucherSnapshot,
+        // Only the direct-insert path reads this; the endpoint collects its own copy server-side. Without
+        // it an order created on the fallback path forgot which shop the buyer was reading.
+        clientContext: getClientContext(),
       };
       // No fallback on failure: falling back re-opened the price-tampering path the endpoint exists to
       // close (audit round 7, finding #1). A failing endpoint must surface as a failed checkout.

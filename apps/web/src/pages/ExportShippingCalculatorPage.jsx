@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { AlertTriangle, ClipboardCopy, Globe2, Info, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, Globe2, Info, Plus, ReceiptText, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -9,6 +9,9 @@ import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteExportShipping } from '@/utils/exportShipping.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
+import { buildExportOrderData } from '@/utils/exportOrder.js';
+import { buildCheckoutDraft, buildOrderNotes } from '@/services/cartService.js';
+import { createOrder } from '@/services/orderService.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
 import { getTierPricesFor } from '@/services/tierPricingService.js';
@@ -29,6 +32,15 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const [outsideDeliveryArea, setOutsideDeliveryArea] = useState(false);
   const [rows, setRows] = useState([{ key: 'line-1', slug: '', variantId: '', quantity: 6 }]);
   const [tierPrices, setTierPrices] = useState({ index: {}, schemaReady: true });
+  // Writing the agreed order down. The English shop has no checkout, so this is where an international
+  // sale becomes a row — with the overseas price, the shipping quoted above, and the shop it came from.
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerContact, setBuyerContact] = useState('');
+  const [buyerAddress, setBuyerAddress] = useState('');
+  const [buyerNotes, setBuyerNotes] = useState('');
+  const [manualShipping, setManualShipping] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState(null);
 
   // Overseas prices come from the same RPC the storefront uses; overseas is public by design, so this
   // needs no special admin read. A missing schema is loud HERE — quoting an overseas buyer the domestic
@@ -94,6 +106,63 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
     }
     const copied = await copyTextToClipboard(summary.message);
     copied ? toast.success('Ringkasan disalin') : toast.error('Belum bisa disalin. Blok teksnya lalu salin manual.');
+  };
+
+  // The tariff table when the country is served; a hand-typed number when it is not, which is the only
+  // way an unlisted country could be ordered from at all.
+  const shippingCharged = quote ? summary.shippingTotal : Math.max(0, Math.round(Number(manualShipping) || 0));
+  const draftOrder = buildExportOrderData({
+    lines,
+    shippingTotal: shippingCharged,
+    destinationName: destination?.name || '',
+    customerName: buyerName,
+    contact: buyerContact,
+    deliveryAddress: buyerAddress,
+    notes: buyerNotes,
+    formatMoney: formatPrice,
+  });
+
+  const createExportOrder = async () => {
+    if (!draftOrder.ok) {
+      toast.error(draftOrder.reason);
+      return;
+    }
+    setCreating(true);
+    try {
+      // Spread whole rather than picked apart: buildOrderPayload is an explicit whitelist, so the three
+      // fields it does not know about (notesLines, shippingFee, productsSubtotal) reach nothing.
+      const orderData = draftOrder.orderData;
+      const { notesLines, shippingFee } = orderData;
+      const order = await createOrder({
+        ...orderData,
+        notes: buildOrderNotes({
+          deliveryAddress: orderData.deliveryAddress,
+          deliveryArea: orderData.deliveryArea,
+          paymentMethod: 'Transfer manual (WhatsApp)',
+          shippingSummary: `Ekspor ${orderData.deliveryArea} — ${formatPrice(shippingFee)}`,
+          notes: notesLines.join(' · '),
+        }),
+        checkoutDraft: buildCheckoutDraft({
+          customerName: orderData.customerName,
+          contact: orderData.contact,
+          deliveryAddress: orderData.deliveryAddress,
+          deliveryArea: orderData.deliveryArea,
+          paymentMethod: 'Transfer manual (WhatsApp)',
+          shippingSummary: `Ekspor ${orderData.deliveryArea}`,
+          shippingFee,
+          notes: notesLines.join('\n'),
+          items: orderData.items,
+        }),
+      });
+      setCreatedOrder(order);
+      toast.success(`Order ${order.orderNumber} dibuat`, {
+        description: 'Ditandai sebagai toko EN, jadi semua kabar ke pembeli otomatis berbahasa Inggris.',
+      });
+    } catch (error) {
+      toast.error(error?.message || 'Order belum bisa dibuat.');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const Layout = mobile ? MobileAuthenticatedLayout : AuthenticatedLayout;
@@ -246,6 +315,116 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           <Button type="button" className="mt-3 h-11 w-full gap-2 rounded-2xl" onClick={copySummary} disabled={!summary.message}>
             <ClipboardCopy className="h-4 w-4" />Salin ringkasan
           </Button>
+        </section>
+
+        {/* Where an international sale becomes a row. The English shop has no checkout — the order was
+            agreed on WhatsApp, so it is written down here, with the overseas price and the shipping
+            quoted above. Marked as the English shop, which is what makes every later message to this
+            buyer come out in English instead of Indonesian. */}
+        <section className="mt-4 rounded-2xl border border-[#e5e7eb] bg-white p-4">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-[#111827]">
+            <ReceiptText className="h-4 w-4" />Buat ordernya
+          </h2>
+          <p className="mt-0.5 text-xs font-medium text-[#6b7280]">
+            Isi setelah pembeli setuju. Stok langsung dipotong seperti order biasa.
+          </p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
+              Nama pembeli
+              <input
+                type="text"
+                value={buyerName}
+                onChange={(event) => setBuyerName(event.target.value)}
+                className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold normal-case text-[#111827]"
+                placeholder="Nama di WhatsApp"
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
+              Kontak
+              <input
+                type="text"
+                value={buyerContact}
+                onChange={(event) => setBuyerContact(event.target.value)}
+                className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold normal-case text-[#111827]"
+                placeholder="+60… atau email"
+              />
+            </label>
+          </div>
+
+          <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
+            Alamat kirim
+            <textarea
+              rows={3}
+              value={buyerAddress}
+              onChange={(event) => setBuyerAddress(event.target.value)}
+              className="rounded-2xl border border-[#e5e7eb] p-3 text-sm font-semibold normal-case text-[#111827]"
+              placeholder="Alamat lengkap, termasuk negara dan kode pos"
+            />
+          </label>
+
+          <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
+            Catatan (opsional)
+            <input
+              type="text"
+              value={buyerNotes}
+              onChange={(event) => setBuyerNotes(event.target.value)}
+              className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold normal-case text-[#111827]"
+              placeholder="Permintaan khusus, tanggal, apa pun"
+            />
+          </label>
+
+          {/* Only when the tariff table has no answer. Without it an unlisted country — which is most of
+              the world for this courier — could be quoted by hand but never written down. */}
+          {quote ? null : (
+            <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
+              Ongkir (isi manual, negara ini belum ada tarifnya)
+              <input
+                type="number"
+                min="0"
+                value={manualShipping}
+                onChange={(event) => setManualShipping(event.target.value)}
+                className="h-11 rounded-2xl border border-[#e5e7eb] px-3 text-sm font-semibold normal-case text-[#111827]"
+                placeholder="0"
+              />
+            </label>
+          )}
+
+          <dl className="mt-3 grid gap-1.5 rounded-2xl bg-[#fbfaf7] p-3 text-sm font-semibold text-[#111827]">
+            <div className="flex justify-between gap-3"><dt className="text-[#6b7280]">Produk</dt><dd>{formatPrice(draftOrder.orderData?.productsSubtotal || 0)}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-[#6b7280]">Ongkir</dt><dd>{formatPrice(shippingCharged)}</dd></div>
+            <div className="flex justify-between gap-3 border-t border-[#efece3] pt-1.5 text-base font-bold"><dt>Ditagih</dt><dd>{formatPrice(draftOrder.orderData?.subtotal || 0)}</dd></div>
+          </dl>
+
+          {draftOrder.warnings.length ? (
+            <p className="mt-3 flex gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-900">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Ditagih harga domestik: {draftOrder.warnings.join(', ')}. Ordernya tetap bisa dibuat — ini
+                dicatat di catatan ordernya — tapi kalau bukan itu yang kamu mau, isi harga luar negerinya dulu.
+              </span>
+            </p>
+          ) : null}
+
+          <Button
+            type="button"
+            className="mt-3 h-11 w-full gap-2 rounded-2xl"
+            onClick={createExportOrder}
+            disabled={creating || !draftOrder.ok}
+          >
+            <ReceiptText className="h-4 w-4" />
+            {creating ? 'Membuat order…' : 'Buat order (toko EN)'}
+          </Button>
+          {draftOrder.ok ? null : (
+            <p className="mt-2 text-xs font-semibold text-[#6b7280]">{draftOrder.reason}</p>
+          )}
+
+          {createdOrder ? (
+            <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold leading-relaxed text-emerald-900">
+              Order <strong>{createdOrder.orderNumber}</strong> dibuat dan ditandai toko EN. Buka di daftar
+              order untuk mengirim konfirmasinya — pesannya sudah berbahasa Inggris.
+            </p>
+          ) : null}
         </section>
 
         {quote ? (
