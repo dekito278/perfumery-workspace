@@ -1,5 +1,6 @@
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -377,13 +378,19 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
               above it. Missing this the first time is exactly why both nudges had to be gated twice. */}
           {isInternational ? (
             <a
-              href={buildWhatsAppCheckoutUrl(t('intl.noticeMessage'), getStorefrontWhatsAppNumber())}
+              href={buildWhatsAppCheckoutUrl(buildOverseasDraft({
+                t,
+                isInternational,
+                name: product.name,
+                size: selectedSize,
+                price: exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel,
+              }), getStorefrontWhatsAppNumber())}
               target="_blank"
               rel="noopener noreferrer"
               className="pdp-add-btn magnetic-hover"
               tabIndex={showStickyBar ? 0 : -1}
             >
-              <Globe className="h-4 w-4" /> {t('export.ask')}
+              <Globe className="h-4 w-4" /> {t(overseasDraftKeys(isInternational).labelKey)}
             </a>
           ) : (
             <button

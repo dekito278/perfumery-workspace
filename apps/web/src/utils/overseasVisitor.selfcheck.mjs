@@ -237,10 +237,20 @@ const button = read('components', 'storefront', 'OverseasInquiryButton.jsx');
 // stays inline because it belongs to the English panel and exists in one language by definition.
 // One label for one action, from the message file. The panel and the always-visible button once carried
 // different wording, which an English visitor saw twice on one page as two different offers.
-assert.match(button, /\{t\('export\.ask'\)\}/, 'the enquiry button speaks the language the buyer was just reading');
+//
+// The label is now chosen by overseasDraftKeys, because the two shops ask for different things: in the
+// Indonesian shop this button sits BESIDE a working Add to cart and asks about shipping abroad, while
+// the English shop has no cart at all and this button is the purchase. Still one label per shop, still
+// out of the message file, still never assembled inline.
+assert.match(button, /\{t\(overseasDraftKeys\([a-zA-Z]+\)\.labelKey\)\}/,
+  'the enquiry button speaks the language the buyer was just reading, from the message file');
 assert.doesNotMatch(button, /english \? 'Ask about/, 'and there is only one label, not one per surface');
 assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
 assert.match(MESSAGES.en['export.ask'], /shipping/i);
+assert.match(MESSAGES.en['export.order'], /order/i);
+assert.match(MESSAGES.id['export.order'], /[Pp]esan/);
+assert.notEqual(MESSAGES.en['export.ask'], MESSAGES.en['export.order'],
+  'the two shops would say the same thing, so one of them misdescribes what its button does');
 // And so does the message it drafts — checked in the message file now, because that is where it lives.
 // It used to be an inline pair chosen by a prop that only one of the three callers passed, so the
 // product page handed an English reader an Indonesian draft to send.
@@ -252,13 +262,25 @@ assert.doesNotMatch(button, /SOLIVAGANT,/, 'no draft is written in the component
 // contradicted the export-price line printed directly above the button.
 assert.match(button, /const quoted = exportPrice \? formatRupiah\(exportPrice\) : price;/,
   'the export price is ungated right here; the draft must prefer it over whatever the caller passed');
-assert.match(button, /line: quoted \?/, 'and it must be the number that reaches the message');
+// The draft itself moved into overseasEnquiry.js so the two sticky bars could stop sending a generic
+// message that named no perfume. The rule did not move: the number resolved above is the number that
+// reaches WhatsApp, and an unknown price prints no line at all rather than an empty one.
+assert.match(button, /buildOverseasDraft\(\{[\s\S]{0,200}?price: quoted/,
+  'and it must be the number that reaches the message');
+const draftBuilder = read('utils', 'overseasEnquiry.js');
+assert.match(draftBuilder, /line: price \? t\('export\.waDraftPrice', \{ price \}\) : ''/,
+  'the price the caller resolved must become the price line, and nothing when there is none');
 // A fixed height clipped the two-line English label half out of its own box on a 375px phone.
 assert.match(button, /min-h-\[2\.75rem\]' : 'min-h-\[3rem\]/, 'the button grows to fit a label that wraps');
 assert.doesNotMatch(button, /compact \? 'h-11' : 'h-12'/, 'and is never pinned to a fixed height again');
 assert.match(MESSAGES.en['export.waDraft'], /does not reserve a bottle/,
   'an enquiry reserves nothing, in either language — someone who asks on Monday and orders on Friday must not believe a bottle was held');
 assert.match(MESSAGES.id['export.waDraft'], /belum memesan stok/);
+// The English shop's version is an ORDER, not an enquiry — and it must be just as careful. Nothing is
+// held until the shipping is quoted by hand, which is the whole reason this is a conversation.
+assert.match(MESSAGES.en['export.waOrderDraft'], /nothing is reserved/i,
+  'the order draft lets a buyer believe a bottle is being held for them');
+assert.match(MESSAGES.id['export.waOrderDraft'], /belum ada botol yang ditahan/);
 
 // --- 9b. The HEADLINE price is region-gated; the enquiry line is not -------------------------------------
 // useExportPrice returns the export price to EVERYONE — that is its job, and it is what lets the

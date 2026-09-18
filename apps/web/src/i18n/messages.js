@@ -82,6 +82,8 @@ export const MESSAGES = {
     // them stop. {line} is the price line, or empty when there is no price to quote.
     'export.waDraft': 'Halo SOLIVAGANT, saya mau tanya pengiriman ke luar negeri untuk {item}.{line}\nBoleh dibantu perkiraan ongkir dan harga akhirnya ke negara saya?\nSaya mengerti pertanyaan ini belum memesan stok.',
     'export.waDraftPrice': '\nHarga yang saya lihat di website: {price}.',
+    'export.order': 'Pesan lewat WhatsApp',
+    'export.waOrderDraft': 'Halo SOLIVAGANT, saya mau pesan {item}.{line}\nBoleh dibantu konfirmasi ongkir ke negara saya dan total akhirnya?\nSaya mengerti belum ada botol yang ditahan sampai kita sepakat.',
     'nav.subscribeDraft': 'Halo SOLIVAGANT, saya mau berlangganan update atelier. Email saya: {email}',
 
     'catalog.tab': 'Koleksi - SOLIVAGANT',
@@ -1158,6 +1160,8 @@ export const MESSAGES = {
     'export.ask': 'Ask about shipping to my country',
     'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about international shipping for {item}.{line}\nCould you let me know the shipping cost and final total to my country?\nI understand this enquiry does not reserve a bottle.',
     'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
+    'export.order': 'Order this on WhatsApp',
+    'export.waOrderDraft': 'Hello SOLIVAGANT, I would like to order {item}.{line}\nCould you confirm the shipping cost to my country and the final total?\nI understand nothing is reserved until we confirm.',
     'nav.subscribeDraft': 'Hello SOLIVAGANT, I would like to subscribe to atelier updates. My email: {email}',
 
     'catalog.tab': 'Collection - SOLIVAGANT',
