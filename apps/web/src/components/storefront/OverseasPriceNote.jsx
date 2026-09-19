@@ -1,7 +1,7 @@
 import React from 'react';
 import { Globe } from 'lucide-react';
 import { formatRupiah } from '@/services/productCatalogService.js';
-import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
+import { useExportPrice, useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { approximateUsd } from '@/utils/overseasVisitor.js';
 import OverseasInquiryButton from './OverseasInquiryButton.jsx';
 
@@ -15,6 +15,10 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
   // Null covers both "not abroad" and "no export price set for this bottle". Inventing one from the
   // domestic price is the guess this whole component exists to stop.
   const price = useOverseasPrice(product, variant);
+  // Which of the two international prices this is. The neighbours pay 2.2x and the rest of the world
+  // 3.5x, and the sentence below has to name the one being shown — a panel that says "outside
+  // Indonesia" over the Southeast Asia price is quoting the right number under the wrong promise.
+  const { shippingRegion } = useExportPrice(product, variant);
   if (!price) return null;
 
   const usd = approximateUsd(price);
@@ -28,9 +32,14 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
         <span className="text-lg font-bold text-editorial-charcoal">{formatRupiah(price)}</span>
         {usd ? <span className="text-sm font-semibold text-muted-foreground">approx. US${usd}</span> : null}
       </p>
+      {/* Written in English on purpose, in both shops: this panel exists for a reader who is abroad.
+          The sentence changed on 19 Sep 2026 — the shipping used to be quoted by hand because the only
+          carrier in the code was LTU at Rp 1.188.000 a kilo to Malaysia. RaySpeed charges Rp 90.000, so
+          it is inside the price now, and a buyer told to expect a second bill does not come back. */}
       <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground">
-        International orders are priced separately from the Indonesian price above. Shipping is not
-        included — we quote it by hand for your country, because it is the only honest way to do it.
+        {shippingRegion === 'asia'
+          ? 'Priced for Southeast Asia and separate from the Indonesian price above. Shipping is included.'
+          : 'International orders are priced separately from the Indonesian price above. Shipping is included to Southeast Asia, East Asia, Australia and the Americas — anywhere else we work it out with you on WhatsApp.'}
       </p>
       <OverseasInquiryButton
         product={product}

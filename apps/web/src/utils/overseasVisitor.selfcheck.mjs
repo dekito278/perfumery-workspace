@@ -83,8 +83,14 @@ for (const file of [
     `${file.join('/')} prints a dollar figure without "approx." — the rate is one constant and it goes stale`);
 }
 const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
-assert.doesNotMatch(note, /Shipping is included|final price|total price/i,
-  'shipping is quoted by hand — the panel must not imply this number is the final total');
+// This rule INVERTED on 19 Sep 2026. It used to forbid "Shipping is included", because the only carrier
+// in the code was LTU at Rp 1.188.000 a kilo to Malaysia and no sane price could swallow that. RaySpeed
+// charges Rp 90.000, the shipping is inside the price across their network, and the panel now has to
+// say so — a buyer who is braced for a second bill does not press the button.
+assert.match(note, /[Ss]hipping is included/,
+  'the panel no longer tells an overseas reader the shipping is already in the price');
+assert.doesNotMatch(note, /Shipping is not\s+included|quote it by hand/i,
+  'and it must not go back to promising a separate shipping bill');
 
 // --- 6. The guess must never move money ----------------------------------------------------------------
 // This is the whole safety argument. The panel ADDS a number beside the price; it must not rewrite the
@@ -347,10 +353,17 @@ assert.match(button, /const showExportPrice = Boolean\(exportPrice\) && !english
   'shown exactly when the English panel is not already showing it');
 assert.match(button, /t\('export\.priceLine'\)/, 'the price line is translated');
 assert.match(MESSAGES.id['export.priceLine'], /Harga untuk pengiriman ke luar negeri/, 'in Indonesian, on the Indonesian button');
-// Shipping being excluded is a money statement, so it has to survive translation in both languages.
-assert.match(MESSAGES.id['export.notIncluded'], /belum termasuk ongkir/);
-assert.match(MESSAGES.en['export.notIncluded'], /shipping not included/i,
-  'and the English must say it too — an international price read as final is the surprise this prevents');
+// Whether the shipping is in the price is a money statement, so it has to survive translation — and it
+// FLIPPED on 19 Sep 2026. RaySpeed charges Rp 90.000 to Malaysia against LTU's Rp 1.188.000, so the
+// shipping is now inside the price across their network and the old line ("belum termasuk ongkir") would
+// send a buyer looking for a second bill that never comes.
+assert.match(MESSAGES.id['export.notIncluded'], /ongkir sudah termasuk/);
+assert.match(MESSAGES.en['export.notIncluded'], /shipping included/i,
+  'and the English must say it too — a buyer who thinks a second bill is coming does not press the button');
+for (const [lang, table] of [['id', MESSAGES.id], ['en', MESSAGES.en]]) {
+  assert.doesNotMatch(table['export.notIncluded'], /not included|belum termasuk/i,
+    `the ${lang} line still says the shipping is extra, which it no longer is`);
+}
 
 // Every caller passes the variant. All 18 tier prices are keyed by variant, so a product-level lookup
 // finds nothing and the line silently never appears — the exact shape of the bug that shipped in #147.

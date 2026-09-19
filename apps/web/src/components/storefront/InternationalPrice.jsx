@@ -3,6 +3,7 @@ import { Globe } from 'lucide-react';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { approximateUsd } from '@/utils/overseasVisitor.js';
+import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 
 /**
  * The price an international buyer actually pays, as the headline.
@@ -19,6 +20,10 @@ import { approximateUsd } from '@/utils/overseasVisitor.js';
  */
 const InternationalPrice = ({ price, className = '' }) => {
   const { t } = useTranslate();
+  // Which of the two international prices this headline is. A reader in Kuala Lumpur is looking at the
+  // Southeast Asia price with the shipping already inside it; telling them "anywhere else we work the
+  // shipping out on WhatsApp" invites a question they do not need to ask.
+  const shippingRegion = useShippingRegion();
   const usd = approximateUsd(price);
 
   return (
@@ -29,7 +34,7 @@ const InternationalPrice = ({ price, className = '' }) => {
       </p>
       <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-muted-foreground">
         <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <span>{t('intl.priceNote')}</span>
+        <span>{t(shippingRegion === 'asia' ? 'intl.priceNoteAsia' : 'intl.priceNote')}</span>
       </p>
     </div>
   );
