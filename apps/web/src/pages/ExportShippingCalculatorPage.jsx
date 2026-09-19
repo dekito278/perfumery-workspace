@@ -7,7 +7,7 @@ import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
-import { quoteExportShipping } from '@/utils/exportShipping.js';
+import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
@@ -91,7 +91,11 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const unweighedSizes = [...new Set(lines
     .filter((line) => line.product && Number(line.quantity) > 0 && !line.weighedSize)
     .map((line) => line.size))];
-  const quote = quoteExportShipping({ countryCode, weightGram, outsideDeliveryArea });
+  // The carrier Dekito actually ships with, not the one whose sheet happened to be in the repo. A
+  // country RaySpeed serves but whose rate nobody has measured comes back with no total at all — that is
+  // deliberate, and the manual field below is the answer to it.
+  const carrierQuote = quoteInternationalShipping({ countryCode, weightGram, outsideDeliveryArea });
+  const quote = carrierQuote?.total ? carrierQuote : null;
   const summary = buildExportQuote({
     destinationName: destination?.name || '',
     lines,
@@ -409,7 +413,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
               the world for this courier — could be quoted by hand but never written down. */}
           {quote ? null : (
             <label className="mt-3 grid gap-1.5 text-xs font-bold uppercase text-[#6b7280]">
-              Ongkir (isi manual, negara ini belum ada tarifnya)
+              Ongkir (isi manual — tarif negara ini belum diukur)
               <input
                 type="number"
                 min="0"
@@ -461,12 +465,18 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
         {quote ? (
           <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">
-              {destination?.name} · zona {quote.zone} · ditagih {quote.chargeableKg} kg
+              {destination?.name} · {quote.carrier === 'rayspeed' ? 'RaySpeed' : `LTU zona ${quote.zone}`} · ditagih {quote.chargeableKg} kg
             </p>
             <p className="mt-1 text-3xl font-bold text-emerald-950">{formatPrice(quote.total)}</p>
             {quote.odaFee ? (
               <p className="mt-1 text-xs font-semibold text-emerald-900">
                 {formatPrice(quote.baseCost)} + ODA {formatPrice(quote.odaFee)}
+              </p>
+            ) : null}
+            {quote.estimated ? (
+              <p className="mt-1 text-xs font-semibold text-emerald-900">
+                Perkiraan: yang diukur baru tarif 1 kg, di atas itu dikalikan per kilo. Konfirmasi ke
+                RaySpeed sebelum mengutip ke pembeli.
               </p>
             ) : null}
             {quote.overThirtyKg ? (
@@ -477,7 +487,9 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
           </section>
         ) : (
           <section className="mt-4 rounded-2xl border border-dashed border-[#d8d5ca] bg-white p-4 text-sm font-semibold text-[#6b7280]">
-            Negara ini tidak ada di daftar tujuan ekspor kurir.
+            {carrierQuote?.carrier === 'rayspeed'
+              ? `RaySpeed melayani ${destination?.name || 'negara ini'}, tapi tarifnya belum pernah diukur. Cek di simulator RaySpeed lalu isi ongkirnya di bawah — jangan pakai angka LTU, itu berkali-kali lipat.`
+              : 'Negara ini tidak ada di daftar tujuan ekspor kurir.'}
           </section>
         )}
 
@@ -499,12 +511,12 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
                 {COMPARE_QUANTITIES.map((count) => {
                   // Scaled from the mix actually chosen, so the comparison uses the same bottles rather
                   // than an imaginary average one.
-                  const row = quoteExportShipping({
+                  const row = quoteInternationalShipping({
                     countryCode,
                     weightGram: Math.round((weightGram / safeBottles) * count),
                     outsideDeliveryArea,
                   });
-                  if (!row) return null;
+                  if (!row?.total) return null;
                   return (
                     <tr key={count} className="border-t border-[#f3f4f6]">
                       <td className="py-1.5">{count} botol</td>
