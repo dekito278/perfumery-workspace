@@ -710,9 +710,12 @@ const SelfServiceActions = ({
   order,
   refreshing = false,
 }) => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
-  const canReorder = getOrderProductItems(order).length > 0;
+  // Reorder fills the cart and sends the buyer to it. The English shop has no cart and /en/cart
+  // redirects, so the button would quietly stock a basket nobody can open and drop the customer on the
+  // catalogue — a dead end that looks like a bug rather than a policy.
+  const canReorder = !isInternational && getOrderProductItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
@@ -758,10 +761,14 @@ const SelfServiceActions = ({
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
-      <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
-        <ShoppingBag className="h-4 w-4" />
-        {t('cust.orderAgain')}
-      </button>
+      {/* Hidden rather than disabled in the English shop: a greyed button is still an offer, and this
+          one cannot be honoured there at all. */}
+      {isInternational ? null : (
+        <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
+          <ShoppingBag className="h-4 w-4" />
+          {t('cust.orderAgain')}
+        </button>
+      )}
       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
         <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
           {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}

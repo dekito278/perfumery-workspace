@@ -3,7 +3,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Search, X } from 'lucide-react';
+import { BadgePercent, CheckCircle2, ChevronDown, CreditCard, Globe, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
@@ -15,7 +15,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
-import { checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment } from '@/services/cartService.js';
+import { buildWhatsAppCheckoutUrl, checkoutPaymentMethods, getCheckoutPaymentMethod, getStorefrontWhatsAppNumber, isManualTransferPayment } from '@/services/cartService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
 import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
@@ -30,7 +30,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
-import { cheapestEnabled } from '@/utils/bespokeOrder.js';
+import { bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft, cheapestEnabled } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -38,6 +38,7 @@ const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 // Keys: module-level, so no hook can run here. The component translates them.
 const stepKeys = ['bsp.scent', 'bsp.preferences', 'bsp.bottle', 'bsp.addressShort', 'bsp.pay'];
+
 
 const checkoutCourierOptions = [
   { courierCode: 'jnt', label: 'JnT' },
@@ -150,7 +151,7 @@ const BespokeBottlePreview = ({ activeGroup = 'size', bottle, cap, label, size, 
 };
 
 const BespokePage = () => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const revealRef = useScrollReveal();
   const { magnetic } = useMicroInteractions();
   const navigate = useNavigate();
@@ -636,7 +637,7 @@ const BespokePage = () => {
             <p className="hero-animate-text hero-animate-text--d3">{t('bsp.lead')}</p>
           </div>
           <ol className="bespoke-hero__steps hero-animate-fade">
-            {stepKeys.map((stepKey, index) => (
+            {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (
               <li key={stepKey}><span>{index + 1}</span>{t(stepKey)}</li>
             ))}
           </ol>
@@ -749,16 +750,44 @@ const BespokePage = () => {
                   <div><dt>{t('bsp.subtotal')}</dt><dd>{priceReady ? formatRupiah(estimatedTotal) : '—'}</dd></div>
                 </dl>
               </div>
+              {/* Where the two shops part. The Indonesian one opens its checkout; the English one hands
+                  the brief to WhatsApp, because a bespoke bottle has no international price and its
+                  shipping is quoted by hand. The old page showed this buyer a full checkout — Indonesian
+                  couriers, a domestic voucher box, a rupiah total — directly under a notice saying
+                  international orders are not placed through it. */}
               <div className="editorial-bespoke-next__action">
-                <p>{t('bsp.designOk')}</p>
-                <button type="button" className="editorial-button editorial-button--primary magnetic-hover" onClick={() => setCheckoutOpen(true)} onMouseMove={magnetic}>
-                  {t('bsp.toCheckout')}
-                  <CreditCard className="h-4 w-4" />
-                </button>
+                {bespokeTakesPayment(isInternational) ? (
+                  <>
+                    <p>{t('bsp.designOk')}</p>
+                    <button type="button" className="editorial-button editorial-button--primary magnetic-hover" onClick={() => setCheckoutOpen(true)} onMouseMove={magnetic}>
+                      {t('bsp.toCheckout')}
+                      <CreditCard className="h-4 w-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p>{t('bsp.waOrderWhy')}</p>
+                    <a
+                      href={buildWhatsAppCheckoutUrl(buildBespokeEnquiryDraft({
+                        t,
+                        perfumeName: form.perfumeName,
+                        scent: form.scentDescription || form.mood,
+                        occasion: form.occasion,
+                        bottle: [selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / '),
+                      }), getStorefrontWhatsAppNumber())}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="editorial-button editorial-button--primary magnetic-hover"
+                    >
+                      {t('bsp.waOrder')}
+                      <Globe className="h-4 w-4" />
+                    </a>
+                  </>
+                )}
               </div>
             </div>
 
-            {checkoutOpen ? (
+            {checkoutOpen && bespokeTakesPayment(isInternational) ? (
               <div className="editorial-bespoke-checkout" data-reveal>
                 <div className="editorial-bespoke-stage__head">
                   <p className="editorial-eyebrow">CHECKOUT</p>

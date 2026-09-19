@@ -49,11 +49,28 @@ const portal = read('pages', 'CustomerPortalPage.jsx');
 assert.equal((portal.match(/\{t\('cust\.signInMember'\)\}/g) || []).length, 2,
   'both sign-in buttons (desktop and phone) must say what signing in is for');
 assert.match(MESSAGES.id['cust.signInMember'], /harga member/, 'and the Indonesian button still names the price');
-assert.match(MESSAGES.en['cust.signInMember'], /member price/i, 'so does the English one');
+// The English half of this rule ENDED when the English shop stopped having a checkout. A member price
+// cannot be spent there — there is no cart and no catalogue checkout — so naming it on the button is
+// selling something the shop cannot hand over. The Indonesian shop still can, and still does.
+assert.doesNotMatch(MESSAGES.en['cust.signInMember'], /member price/i,
+  'the English button offers a member price the English shop has no way to charge');
 assert.doesNotMatch(portal, /Dashboard tampil di sini/, 'the empty state must not describe a dashboard nobody asked for');
 assert.equal((portal.match(/t\('cust\.memberWaiting'\)/g) || []).length, 2, 'both empty states must lead with the price');
 assert.match(MESSAGES.id['cust.memberWaiting'], /Harga member/, 'and that empty state is about the price in Indonesian');
-assert.match(MESSAGES.en['cust.memberWaiting'], /Member price/i, 'and in English');
+assert.doesNotMatch(MESSAGES.en['cust.memberWaiting'], /Member price/i,
+  'the English empty state still leads with a price that cannot be spent in that shop');
+
+// --- 3b. And nothing in the English portal offers the cart ---------------------------------------------
+// Every promise on this page has to survive a shop with no checkout. "Items from an old order go
+// straight into the cart" was true for months and became false the day the cart left.
+// The one exception is an ERROR raised by pressing the button, which the English shop never shows — it
+// is not an offer, it is what the Indonesian shop says when an old order has nothing to repeat.
+const NOT_AN_OFFER = new Set(['cust.noItemsToReorder']);
+for (const [key, value] of Object.entries(MESSAGES.en)) {
+  if (!key.startsWith('cust.') || NOT_AN_OFFER.has(key)) continue;
+  assert.doesNotMatch(value, /\b(into the cart|reorder|re-order|one-tap)\b/i,
+    `${key} offers the English shop a cart it does not have: "${value}"`);
+}
 assert.doesNotMatch(portal, /'Masukkan kode SOLI', 'Kode muncul setelah checkout pertama/, 'step one is signing in, not typing a code');
 
 // --- 4. "Harga member aktif" is a claim, so it comes from the server-resolved tier -----------------------
@@ -73,7 +90,13 @@ assert.equal((portal.match(/<title>\{t\('cust\.tab'\)\}<\/title>/g) || []).lengt
 assert.match(MESSAGES.id['cust.tab'], /Akun Member/, 'and the tab is named for the account, not for tracking');
 assert.match(portal, /\{t\('cust\.heroTitle'\)\}/, 'the hero leads with what signing in does to the price');
 assert.match(MESSAGES.id['cust.heroTitle'], /harga member/, 'and says so in Indonesian');
-assert.match(MESSAGES.en['cust.heroTitle'], /member price/i, 'and in English');
+// English leads with what the account DOES there instead: following an order. Same rule as the button
+// above — a member price is real, and it is real in the Indonesian shop, which is the only one with a
+// checkout to spend it in.
+assert.doesNotMatch(MESSAGES.en['cust.heroTitle'], /member price/i,
+  'the English hero opens on a member price the English shop cannot charge');
+assert.match(MESSAGES.en['cust.heroBody'], /Indonesian shop/,
+  'and must say where a member price does apply, rather than leaving it unexplained');
 assert.match(MESSAGES.id['cust.heroBody'], /Kode order lama tetap bisa dicek di bawah\./, 'and still points the code-holder somewhere');
 
-console.log('memberAccountEntry selfcheck OK (a door to the account on every page, framed around the price)');
+console.log('memberAccountEntry selfcheck OK (a door to the account on every page — framed around the price in the shop that has a checkout, and around the order in the shop that does not))');

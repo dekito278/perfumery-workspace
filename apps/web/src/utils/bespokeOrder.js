@@ -141,3 +141,50 @@ export const cheapestEnabled = (options = []) => {
     Number(option.price || 0) < Number(best.price || 0) ? option : best
   ), enabled[0]);
 };
+
+/**
+ * The WhatsApp message an overseas buyer sends instead of checking out.
+ *
+ * The English shop takes no payment for a bespoke bottle, and cannot: the prices in
+ * storefront_bespoke_options are one domestic set with no international variant, and the shipping is
+ * worked out by hand. The page used to hand that buyer a full checkout anyway — Indonesian couriers, a
+ * domestic voucher box and a rupiah total — directly underneath a notice saying international orders
+ * are not placed there.
+ *
+ * Every word comes from the message file, so it is written in the language the buyer was just reading.
+ * It quotes NO price on purpose: there is not one to quote yet, and inventing one here would make
+ * exactly the promise this path exists to avoid.
+ */
+export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occasion = '', bottle = '' } = {}) => {
+  if (typeof t !== 'function') return '';
+  const filled = (value) => String(value || '').trim() || '-';
+  return t('bsp.waOrderDraft', {
+    name: filled(perfumeName),
+    scent: filled(scent),
+    occasion: filled(occasion),
+    bottle: filled(bottle),
+  });
+};
+
+/**
+ * Where the bespoke flow stops, per shop.
+ *
+ * One answer for three surfaces — the desktop checkout panel, the phone's wizard, and the step list in
+ * the hero — because the English shop stopping at the design is a RULE, not three separate conditions
+ * that happened to be written the same way. Two of the three were gated one at a time first, and a
+ * guard that only asked "does this file mention isInternational" passed while the till stayed open.
+ *
+ * The English shop takes no bespoke payment: the option prices are one domestic set with no
+ * international variant, and the shipping is worked out by hand.
+ */
+export const bespokeTakesPayment = (isInternational) => !isInternational;
+
+/** The steps a shop actually walks. The English one ends at the bottle. */
+export const bespokeFlowSteps = (steps = [], isInternational = false) => (
+  isInternational ? steps.filter((step) => !['delivery', 'payment'].includes(step?.key)) : steps
+);
+
+/** The same cut, for the numbered list in the hero: design, then nothing that needs an address. */
+export const bespokeStepKeys = (stepKeys = [], isInternational = false) => (
+  isInternational ? stepKeys.slice(0, 3) : stepKeys
+);
