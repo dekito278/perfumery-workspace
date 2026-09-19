@@ -74,7 +74,7 @@ export const MESSAGES = {
 
     'export.heading': 'Kirim ke luar negeri',
     'export.priceLine': 'Harga untuk pengiriman ke luar negeri:',
-    'export.notIncluded': '— belum termasuk ongkir.',
+    'export.notIncluded': '— ongkir sudah termasuk untuk sebagian besar Asia dan Amerika.',
     'export.ask': 'Kirim ke luar negeri? Tanya ongkir',
     // The WhatsApp draft. It leaves the page, so it is the one piece of copy a buyer keeps after they
     // close the tab — and the only one they are expected to SEND. A draft in a language the sender
@@ -711,7 +711,8 @@ export const MESSAGES = {
     "cust.trackParcel": "Lacak resi",
     "cust.orderAgain": "Pesan lagi",
     "home.byDekito": "oleh Dekito",
-    "intl.priceNote": "Harga untuk pengiriman ke luar negeri. Ongkir dikutip terpisah per negara.",
+    "intl.priceNote": "Harga untuk pengiriman ke luar negeri, ongkir sudah termasuk untuk Asia Tenggara, Asia Timur, Australia, dan Amerika. Di luar itu ongkirnya kita hitung bareng lewat WhatsApp.",
+    "intl.priceNoteAsia": "Harga untuk pengiriman di Asia Tenggara, ongkir sudah termasuk.",
     "intl.fromIndonesia": "Belanja dari Indonesia?",
     "intl.switchToId": "Lihat harga Indonesia",
     "intl.quotedOnRequest": "Harga internasional untuk botol ini dikutip lewat WhatsApp.",
@@ -1159,12 +1160,12 @@ export const MESSAGES = {
 
     'export.heading': 'Shipping outside Indonesia',
     'export.priceLine': 'International price:',
-    'export.notIncluded': '— shipping not included.',
+    'export.notIncluded': '— shipping included to most of Asia and the Americas.',
     'export.ask': 'Ask about shipping to my country',
-    'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about international shipping for {item}.{line}\nCould you let me know the shipping cost and final total to my country?\nI understand this enquiry does not reserve a bottle.',
+    'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about sending {item} to my country.{line}\nCould you let me know the final total and how long it takes to arrive?\nI understand this enquiry does not reserve a bottle.',
     'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
     'export.order': 'Order this on WhatsApp',
-    'export.waOrderDraft': 'Hello SOLIVAGANT, I would like to order {item}.{line}\nCould you confirm the shipping cost to my country and the final total?\nI understand nothing is reserved until we confirm.',
+    'export.waOrderDraft': 'Hello SOLIVAGANT, I would like to order {item}.{line}\nCould you confirm the final total and how long it takes to reach me?\nI understand nothing is reserved until we confirm.',
     'nav.subscribeDraft': 'Hello SOLIVAGANT, I would like to subscribe to atelier updates. My email: {email}',
 
     'catalog.tab': 'Collection - SOLIVAGANT',
@@ -1358,7 +1359,7 @@ export const MESSAGES = {
     // so without this the buyer types their city, sees nothing, and never learns why.
     'intl.noticeTitle': 'International orders are not placed through this checkout',
     "intl.noticeDomesticOnly": "Checkout on this page calculates shipping for addresses in Indonesia only, at Indonesian prices.",
-    "intl.noticeCatalogPrice": "For delivery outside Indonesia the price is the international price shown on each product page, and we quote the shipping by hand on WhatsApp.",
+    "intl.noticeCatalogPrice": "For delivery outside Indonesia the price is the international price shown on each product page, which already includes the shipping across most of Asia and the Americas.",
     'intl.noticeCta': 'Arrange an international order on WhatsApp',
     'intl.noticeMessage': 'Hello SOLIVAGANT, I would like to order for delivery outside Indonesia. Could you help?',
     'intl.domesticOk': 'If you are shipping to an address in Indonesia, continue through checkout as normal.',
@@ -1806,7 +1807,8 @@ export const MESSAGES = {
     "cust.trackParcel": "Track the parcel",
     "cust.orderAgain": "Order again",
     "home.byDekito": "by Dekito",
-    "intl.priceNote": "Price for delivery outside Indonesia. Shipping is quoted separately for your country.",
+    "intl.priceNote": "Price for delivery outside Indonesia, shipping included to Southeast Asia, East Asia, Australia and the Americas. Anywhere else we work the shipping out with you on WhatsApp.",
+    "intl.priceNoteAsia": "Price for delivery in Southeast Asia, shipping included.",
     "intl.fromIndonesia": "Shopping from Indonesia?",
     "intl.switchToId": "See Indonesian prices",
     "intl.quotedOnRequest": "The international price for this bottle is quoted on WhatsApp.",
@@ -1840,7 +1842,7 @@ export const MESSAGES = {
     "bsp.designOk": "Happy with the design?",
     "bsp.toCheckout": "Continue to checkout",
     "bsp.waOrder": "Send this brief on WhatsApp",
-    "bsp.waOrderDraft": "Hello SOLIVAGANT, I would like a bespoke perfume.\n\nName: {name}\nScent: {scent}\nOccasion: {occasion}\nBottle: {bottle}\n\nCould you confirm the price and the shipping to my address?\nI understand nothing is reserved until we confirm.",
+    "bsp.waOrderDraft": "Hello SOLIVAGANT, I would like a bespoke perfume.\n\nName: {name}\nScent: {scent}\nOccasion: {occasion}\nBottle: {bottle}\n\nCould you confirm the total and how long it takes to reach my address?\nI understand nothing is reserved until we confirm.",
     "bsp.waOrderWhy": "A bespoke perfume going abroad is arranged on WhatsApp: the price is quoted per bottle and the shipping is worked out by hand for your country.",
     "bsp.contactSection": "Contact, delivery and payment.",
     "bsp.contactSectionBody": "This appears once the design is chosen, so the first part stays about the perfume.",
