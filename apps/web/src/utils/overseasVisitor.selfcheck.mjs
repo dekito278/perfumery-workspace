@@ -252,7 +252,11 @@ assert.match(button, /\{t\(overseasDraftKeys\([a-zA-Z]+\)\.labelKey\)\}/,
   'the enquiry button speaks the language the buyer was just reading, from the message file');
 assert.doesNotMatch(button, /english \? 'Ask about/, 'and there is only one label, not one per surface');
 assert.match(MESSAGES.id['export.ask'], /Kirim ke luar negeri/);
-assert.match(MESSAGES.en['export.ask'], /shipping/i);
+// It used to have to say "shipping", because the shipping was the question. It no longer is — it is
+// inside the price now — so the button names the CHANNEL instead of the unknown. What it must still do
+// is send the reader to WhatsApp rather than imply a form somewhere.
+assert.match(MESSAGES.en['export.ask'], /WhatsApp/i);
+assert.match(MESSAGES.id['export.ask'], /WhatsApp/i);
 assert.match(MESSAGES.en['export.order'], /order/i);
 assert.match(MESSAGES.id['export.order'], /[Pp]esan/);
 assert.notEqual(MESSAGES.en['export.ask'], MESSAGES.en['export.order'],

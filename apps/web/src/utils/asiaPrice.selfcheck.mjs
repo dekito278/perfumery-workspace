@@ -101,8 +101,11 @@ assert.equal(readShippingRegionFromUrl(''), null);
 const messages = read('i18n', 'messages.js');
 for (const line of messages.split('\n')) {
   if (!/'(export|intl)\.[a-zA-Z]+'|"(export|intl)\.[a-zA-Z]+"/.test(line)) continue;
-  assert.doesNotMatch(line, /shipping not included|belum termasuk ongkir|quote the shipping by hand|ongkir dikutip terpisah/i,
-    `this line still promises a separate shipping bill:\n  ${line.trim()}`);
+  // The BUTTON labels are in here too, and they are the half that got missed the first time: the price
+  // line said "ongkir sudah termasuk" while the button directly beneath it said "Tanya ongkir". Two
+  // sentences on one screen, arguing — caught on the phone, by none of the checks above.
+  assert.doesNotMatch(line, /shipping not included|belum termasuk ongkir|quote the shipping by hand|ongkir dikutip terpisah|[Tt]anya ongkir|ask about (international )?shipping|shipping cost/i,
+    `this line still treats the shipping as a separate question:\n  ${line.trim()}`);
 }
 // The headline price and the sentence under it must agree about which region they belong to: a
 // Southeast Asia figure under "anywhere else we work the shipping out on WhatsApp" invites a question
