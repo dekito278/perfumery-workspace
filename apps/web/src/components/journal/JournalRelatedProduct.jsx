@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ProductVisual from '@/components/storefront/ProductVisual.jsx';
+import CardPrice from '@/components/storefront/CardPrice.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { getProductStorefrontPath } from '@/services/productCatalogService.js';
@@ -40,7 +41,11 @@ const JournalRelatedProduct = ({ post, mobile = false, className = '' }) => {
         <ProductVisual product={product} className="journal-related-product__visual" label={false} sizes="96px" />
         <span className="journal-related-product__text">
           <strong className="journal-related-product__name">{product.name}</strong>
-          {product.price ? <span className="journal-related-product__price">{product.price}</span> : null}
+          {/* CardPrice, not product.price. The card quoted the INDONESIAN price in the English shop —
+              Rp 297.000 under an article whose product page charges Rp 1.040.000 — so a reader clicked
+              through and watched the number quadruple. The same component already prices the catalogue
+              cards and both homes; this was the fifth surface and the only one hand-rolled. */}
+          <CardPrice product={product} className="journal-related-product__price" memberClassName="journal-related-product__price" />
           <span className="journal-related-product__cta">
             {t('journal.relatedProductCta')} <ArrowRight className="h-3.5 w-3.5" />
           </span>

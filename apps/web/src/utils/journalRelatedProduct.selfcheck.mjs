@@ -44,6 +44,13 @@ assert.match(page, /<JournalRelatedProduct post=\{post\} \/>/, 'and so does the 
 // A product can be unpublished or re-slugged long after the article was written. A dead link under a
 // story is worse than no link.
 const card = read('components', 'journal', 'JournalRelatedProduct.jsx');
+
+// The price on the card comes from the component that prices every other card in the shop. Written by
+// hand it read `product.price`, which is the Indonesian one — Rp 297.000 on an English article whose
+// product page charges Rp 1.040.000. A reader clicked through and watched the number quadruple.
+assert.match(card, /<CardPrice product=\{product\}/,
+  'the related-product card prices itself instead of asking CardPrice, so the English shop gets the Indonesian number');
+assert.doesNotMatch(card, /\{product\.price\}/, 'and it must not go back to printing the domestic price directly');
 assert.match(card, /if \(!slug\) return null;/, 'no product named, nothing rendered');
 assert.match(card, /if \(!product\) return null;/, 'a slug that matches nothing renders nothing');
 assert.match(card, /if \(!path\) return null;/, 'and a product with no address renders nothing');
