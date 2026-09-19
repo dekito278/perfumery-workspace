@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react';
-import { getBespokeSettings, getBespokeSettingsAsync } from '@/services/bespokeSettingsService.js';
+import { useEffect, useMemo, useState } from 'react';
+import { getBespokeSettings, getBespokeSettingsAsync, translateBespokeSettings } from '@/services/bespokeSettingsService.js';
+import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 
-export const useBespokeSettings = () => {
+/**
+ * @param forShop  true for the two storefront bespoke pages, which must show the options in the shop's
+ *                 own language. Studio's editor leaves it off on purpose: it SAVES these rows, and a
+ *                 translated label handed to it would be written back over the Indonesian one.
+ */
+export const useBespokeSettings = ({ forShop = false } = {}) => {
   const [settings, setSettings] = useState(() => getBespokeSettings());
   const [loading, setLoading] = useState(true);
+  const { isInternational } = useStorefrontRegion();
 
   useEffect(() => {
     let isMounted = true;
@@ -27,10 +34,15 @@ export const useBespokeSettings = () => {
     };
   }, []);
 
-  Object.defineProperty(settings, 'loading', {
+  const shown = useMemo(
+    () => (forShop ? translateBespokeSettings(settings, isInternational) : settings),
+    [settings, forShop, isInternational],
+  );
+
+  Object.defineProperty(shown, 'loading', {
     configurable: true,
     enumerable: false,
     value: loading,
   });
-  return settings;
+  return shown;
 };
