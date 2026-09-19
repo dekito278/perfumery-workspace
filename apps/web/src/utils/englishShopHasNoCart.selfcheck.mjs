@@ -214,6 +214,15 @@ for (const [page, needles] of [
     assert.doesNotMatch(line, /\bpayment\b/i,
       `${key} still promises a payment step the English shop no longer has:\n  ${line.trim()}`);
   }
+
+  // The one rupiah figure the English bespoke page still shows. It is the DOMESTIC cost of the build,
+  // printed a few lines above "the price is quoted on WhatsApp" — true, but read as the final price
+  // unless it says which price it is. Same shape as Rp 1.020.000 on the product page against Rp 260.000
+  // in the cart: two honest numbers that contradict each other when neither is labelled.
+  const subtotalLine = en.split('\n').find((row) => row.includes('"bsp.subtotal"'));
+  assert.ok(subtotalLine, 'bsp.subtotal has gone missing from the English block');
+  assert.match(subtotalLine, /Indonesian/,
+    `the English bespoke summary prints a rupiah figure without saying which price it is:\n  ${subtotalLine.trim()}`);
 }
 
 // --- 6. The bespoke handoff is written in the message file, and quotes no price -----------------------

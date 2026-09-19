@@ -1836,7 +1836,7 @@ export const MESSAGES = {
     "bsp.summaryEyebrow": "YOUR REQUEST",
     "bsp.scent": "Scent",
     "bsp.bottle": "Bottle",
-    "bsp.subtotal": "Bespoke subtotal",
+    "bsp.subtotal": "Bespoke subtotal (Indonesian price)",
     "bsp.designOk": "Happy with the design?",
     "bsp.toCheckout": "Continue to checkout",
     "bsp.waOrder": "Send this brief on WhatsApp",
