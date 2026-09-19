@@ -61,6 +61,10 @@ const normalizeOption = (option = {}) => {
     value: String(option.value || label).trim(),
     price: Math.max(Number(option.price || 0), 0),
     description: String(option.description || '').trim(),
+    // The English shop reads these when they are filled and falls back to the Indonesian when they are
+    // not, so an option Dekito has not translated yet still has a name rather than a blank button.
+    labelEn: String(option.labelEn || option.label_en || '').trim(),
+    descriptionEn: String(option.descriptionEn || option.description_en || '').trim(),
     imageUrl: String(option.imageUrl || option.image_url || '').trim(),
     enabled: option.enabled !== false,
     sortOrder: Number(option.sortOrder ?? option.sort_order ?? collectionFallbackOrder(option.collectionKey || option.collection_key)),
@@ -100,6 +104,10 @@ const toDatabasePayload = (collectionKey, option, index = 0) => ({
   value: option.value,
   price: option.price,
   description: option.description,
+  // Written back as well as read: Studio has no field for them yet, and a save that omitted them would
+  // wipe the translations on the next edit.
+  label_en: option.labelEn || null,
+  description_en: option.descriptionEn || null,
   image_url: option.imageUrl || null,
   enabled: option.enabled,
   sort_order: Number(option.sortOrder || ((index + 1) * 10)),
@@ -111,6 +119,8 @@ const fromDatabaseRow = (row) => normalizeOption({
   value: row.value,
   price: row.price,
   description: row.description,
+  labelEn: row.label_en,
+  descriptionEn: row.description_en,
   imageUrl: row.image_url,
   enabled: row.enabled,
   sortOrder: row.sort_order,
@@ -257,4 +267,45 @@ export const resetBespokeSettings = async () => {
   }
 
   return settings;
+};
+
+/**
+ * What an option is called, in the shop the reader is standing in.
+ *
+ * The labels and descriptions live in storefront_bespoke_options, so no scan for Indonesian literals
+ * could ever see them: the English bespoke page read "Tulis tangan", "Ukuran default bespoke." and a
+ * heading saying "UKURAN" straight out of the database, in the middle of otherwise English copy.
+ *
+ * Falls back per FIELD, not per option: a row whose label is translated but whose description is not
+ * should show the English name with the Indonesian note, rather than throwing both away. An empty
+ * translation is not a translation.
+ */
+export const bespokeOptionText = (option = {}, isInternational = false) => {
+  // Trimmed here as well as in normalizeOption: a row typed with a stray space is not a translation,
+  // and this function is exported for callers that never went through the normaliser.
+  const english = (value) => (isInternational ? String(value || '').trim() : '');
+  return {
+    label: english(option.labelEn) || option.label || '',
+    description: english(option.descriptionEn) || option.description || '',
+  };
+};
+
+/**
+ * Every option in a settings object, named for one shop.
+ *
+ * Applied once, where the options enter the page, rather than at each of the ten places that render a
+ * label — the two bespoke pages read them in about a dozen spots between them, and translating at the
+ * render sites is how one of them would keep speaking Indonesian.
+ *
+ * NEVER applied to Studio's own editor: it writes these rows back, and handing it a translated `label`
+ * would save the English text over the Indonesian one on the next edit.
+ */
+export const translateBespokeSettings = (settings = {}, isInternational = false) => {
+  if (!isInternational) return settings;
+  return Object.entries(settings).reduce((next, [key, value]) => ({
+    ...next,
+    [key]: Array.isArray(value)
+      ? value.map((option) => ({ ...option, ...bespokeOptionText(option, true) }))
+      : value,
+  }), {});
 };

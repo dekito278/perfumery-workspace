@@ -157,7 +157,7 @@ const BespokePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
-  const settings = useBespokeSettings();
+  const settings = useBespokeSettings({ forShop: true });
   // The option prices live in the database. Until they arrive, useBespokeSettings hands back the bundled
   // defaults, and those are simply out of date — 30 ml reads Rp 350.000 there against Rp 200.000 in the
   // shop. Showing a first-time visitor a price 75% too high for a tenth of a second is worse than showing
@@ -250,7 +250,7 @@ const BespokePage = () => {
     {
       key: 'size',
       tabLabel: t('bsp.size'),
-      eyebrow: 'UKURAN',
+      eyebrow: t('bsp.size'),
       title: t('bsp.pickSize'),
       field: 'size',
       selected: selectedSize,
@@ -259,7 +259,7 @@ const BespokePage = () => {
     {
       key: 'bottle',
       tabLabel: t('bsp.bottle'),
-      eyebrow: 'BOTOL',
+      eyebrow: t('bsp.bottle'),
       title: t('bsp.bottleType'),
       field: 'bottleType',
       selected: selectedBottle,
@@ -268,7 +268,7 @@ const BespokePage = () => {
     {
       key: 'cap',
       tabLabel: t('bsp.cap'),
-      eyebrow: 'CAP',
+      eyebrow: t('bsp.cap'),
       title: t('bsp.capDesign'),
       field: 'capDesign',
       selected: selectedCap,
@@ -277,7 +277,7 @@ const BespokePage = () => {
     {
       key: 'label',
       tabLabel: t('bsp.label'),
-      eyebrow: 'LABEL',
+      eyebrow: t('bsp.label'),
       title: t('bsp.labelDesign'),
       field: 'labelDesign',
       selected: selectedLabel,
