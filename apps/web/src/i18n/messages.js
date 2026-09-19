@@ -75,7 +75,7 @@ export const MESSAGES = {
     'export.heading': 'Kirim ke luar negeri',
     'export.priceLine': 'Harga untuk pengiriman ke luar negeri:',
     'export.notIncluded': '— ongkir sudah termasuk untuk sebagian besar Asia dan Amerika.',
-    'export.ask': 'Kirim ke luar negeri? Tanya ongkir',
+    'export.ask': 'Kirim ke luar negeri? Tanya di WhatsApp',
     // The WhatsApp draft. It leaves the page, so it is the one piece of copy a buyer keeps after they
     // close the tab — and the only one they are expected to SEND. A draft in a language the sender
     // cannot read is a draft they have to translate before they can press send, which is where most of
@@ -1161,7 +1161,7 @@ export const MESSAGES = {
     'export.heading': 'Shipping outside Indonesia',
     'export.priceLine': 'International price:',
     'export.notIncluded': '— shipping included to most of Asia and the Americas.',
-    'export.ask': 'Ask about shipping to my country',
+    'export.ask': 'Sending abroad? Ask on WhatsApp',
     'export.waDraft': 'Hello SOLIVAGANT, I would like to ask about sending {item} to my country.{line}\nCould you let me know the final total and how long it takes to arrive?\nI understand this enquiry does not reserve a bottle.',
     'export.waDraftPrice': '\nThe international price shown on your site: {price}.',
     'export.order': 'Order this on WhatsApp',
