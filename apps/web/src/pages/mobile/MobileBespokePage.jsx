@@ -3,7 +3,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, CheckCircle2, ChevronDown, ClipboardList, CreditCard, MessageCircle, Sparkles, Ticket, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ClipboardList, CreditCard, Globe, MessageCircle, Sparkles, Ticket, X } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -15,7 +15,8 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-import { checkoutPaymentMethods, getCheckoutPaymentMethod, isManualTransferPayment } from '@/services/cartService.js';
+import { bespokeFlowSteps, buildBespokeEnquiryDraft } from '@/utils/bespokeOrder.js';
+import { buildWhatsAppCheckoutUrl, checkoutPaymentMethods, getCheckoutPaymentMethod, getStorefrontWhatsAppNumber, isManualTransferPayment } from '@/services/cartService.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
 import { createDokuCheckout } from '@/services/dokuCheckoutService.js';
@@ -143,7 +144,7 @@ const CapMockup = ({ cap, bottle, label }) => {
 };
 
 const MobileBespokePage = () => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referenceProduct = useCatalogProduct(searchParams.get('reference'));
@@ -452,7 +453,7 @@ const MobileBespokePage = () => {
     }
   }, [autoCalculateShipping, chooseShippingCourier, destinationSearch, form.deliveryAddress]);
 
-  const flowSteps = useMemo(() => [
+  const allFlowSteps = useMemo(() => [
     {
       key: 'aroma',
       title: t('bsp.stepScent'),
@@ -752,6 +753,11 @@ const MobileBespokePage = () => {
     },
   ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher, t]);
 
+  // The English shop stops at the design: no address step, because the shipping is worked out by hand,
+  // and no payment step, because a bespoke bottle has no international price to charge. The steps are
+  // dropped from the WALK rather than from the definition, so every handler below — next, submit, the
+  // progress bar, the action bar — follows automatically instead of each needing its own gate.
+  const flowSteps = bespokeFlowSteps(allFlowSteps, isInternational);
   const activeStep = flowSteps[step];
   const completion = Math.round(((step + Number(activeStep.isComplete())) / flowSteps.length) * 100);
 
@@ -1070,7 +1076,33 @@ const MobileBespokePage = () => {
           className="mobile-bespoke-action-bar"
           contentClassName="rounded-2xl border-editorial-stone/10 bg-white/95"
         >
-          {step === flowSteps.length - 1 ? (
+          {/* The English shop's last step is the bottle, and its action is the handoff — not a rupiah
+              total and a Pay button for a price that was never quoted internationally. */}
+          {isInternational && step === flowSteps.length - 1 ? (
+            <div className="grid gap-2">
+              <p className="px-1 text-[10px] font-semibold leading-relaxed text-[#6b7280]">{t('bsp.waOrderWhy')}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => setStep((current) => Math.max(current - 1, 0))}>
+                  {t('bsp.back')}
+                </Button>
+                <a
+                  href={buildWhatsAppCheckoutUrl(buildBespokeEnquiryDraft({
+                    t,
+                    perfumeName: form.perfumeName,
+                    scent: form.scentDescription || form.mood,
+                    occasion: form.occasion,
+                    bottle: [selectedSize?.label, selectedBottleType?.label, selectedCap?.label].filter(Boolean).join(' / '),
+                  }), getStorefrontWhatsAppNumber())}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-sm font-bold text-editorial-paper"
+                >
+                  {t('bsp.waOrder')}
+                  <Globe className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          ) : step === flowSteps.length - 1 ? (
             <div className="grid gap-2">
               <div className="rounded-2xl border border-editorial-stone/10 bg-editorial-ivory px-3 py-2">
                 <div className="flex items-end justify-between gap-3">

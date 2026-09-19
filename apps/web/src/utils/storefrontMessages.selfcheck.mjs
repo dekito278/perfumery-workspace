@@ -686,6 +686,8 @@ const walk = (dir, out = []) => {
       // chosen by the shop — and the line below proves that, so this is not a hole anyone can widen by
       // writing a second builder.
       if (argument.startsWith('buildOverseasDraft(')) continue;
+      // Same deal for the bespoke handoff: a t() call with the key chosen by the shop, checked below.
+      if (argument.startsWith('buildBespokeEnquiryDraft(')) continue;
       // A named variable is fine only if this file builds it from the message file.
       if (/^[A-Za-z_$][\w$]*$/.test(argument)) {
         const assigned = source.match(new RegExp(`const ${argument} = ([\\s\\S]{0,40})`));
@@ -701,6 +703,10 @@ const walk = (dir, out = []) => {
     'buildOverseasDraft no longer draws its words from the message file, so the exemption above is a hole');
   assert.doesNotMatch(builder, /['\u0060"][A-Z][a-z]+ [a-z]+ [a-z]+/,
     'buildOverseasDraft has grown a sentence of its own; drafts belong in the message file');
+
+  const bespokeBuilder = read('utils', 'bespokeOrder.js');
+  assert.match(bespokeBuilder, /return t\('bsp\.waOrderDraft', \{/,
+    'buildBespokeEnquiryDraft no longer draws its words from the message file, so the exemption above is a hole');
 
   assert.deepEqual(offenders, [],
     'a WhatsApp draft must come from the message file so it follows the shop\'s language:\n  '

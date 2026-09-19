@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 
 import { buildOverseasDraft, overseasDraftKeys } from './overseasEnquiry.js';
+import { bespokeFlowSteps, bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft } from './bespokeOrder.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(here, '..');
@@ -102,7 +103,10 @@ const candidates = [
   ...jsxFilesIn('layouts'),
 ].map((rel) => rel.split('\\').join('/'));
 
-const REACHES_CART = /addItem\(|to="\/cart"|'\/cart'|"\/mobile\/cart"|'\/mobile\/cart'/;
+// Any name of the shape add…Item(, not the one spelling we happened to look for first: the customer
+// portal's reorder calls addCartItem(), slipped past a pattern that only knew addItem(), and quietly
+// filled a basket the English shop cannot open.
+const REACHES_CART = /\badd[A-Za-z]*Item\(|to="\/cart"|'\/cart'|"\/mobile\/cart"|'\/mobile\/cart'/;
 let checked = 0;
 for (const rel of candidates) {
   if (EXEMPT.has(rel) || GATED_BY_ROUTE.test(rel) || STUDIO.test(rel)) continue;
@@ -116,7 +120,10 @@ for (const rel of candidates) {
   assert.match(source, /const\s*\{[^}]*\bisInternational\b[^}]*\}\s*=/,
     `${rel} reaches the cart but never reads which shop it is in — in the English shop that is a domestic `
     + 'price under an international one.');
-  assert.match(source, /isInternational\s*\?|!\s*isInternational/,
+  // Branching on it directly, or handing it to a named rule that does — bespoke routes three surfaces
+  // through bespokeTakesPayment() rather than repeating the ternary, which is the better answer and
+  // must not read as "never used".
+  assert.match(source, /isInternational\s*\?|!\s*isInternational|\w+\(\s*isInternational\s*\)|\(\s*\w+,\s*isInternational\s*\)/,
     `${rel} reads which shop it is in and then does nothing with it — the cart is still offered in the `
     + 'English shop.');
 }
@@ -124,4 +131,102 @@ for (const rel of candidates) {
 // while guarding nothing at all, which is the way this class of guard usually dies.
 assert.ok(checked >= 4, `the cart-surface scan only found ${checked} file(s); it has stopped seeing the shop`);
 
-console.log(`englishShopHasNoCart selfcheck OK (no cart in the English shop: ${checked} buy surface(s) gated, 4 routes redirected, and the WhatsApp draft names the bottle and its international price)`);
+// --- 4. And no buyer page takes a PAYMENT in the English shop ----------------------------------------
+//
+// The cart is not the only till. /en/bespoke carried its own complete checkout — name, address, an
+// Indonesian courier list, a domestic voucher box, "Amount to transfer Rp 255.000" and a working Pay
+// button — on the same screen as a notice reading "International orders are not placed through this
+// checkout". Removing the cart and leaving that was half a rule, and the half left standing was the
+// one that takes money.
+const TAKES_PAYMENT = /checkoutPaymentMethods|createDokuCheckout|createBespokeRequest|isManualTransferPayment/;
+let payChecked = 0;
+for (const rel of candidates) {
+  // PaymentPage settles an order that ALREADY exists; it never starts one. Gating it would stop a buyer
+  // paying for something they have already agreed to — which is the opposite of the point.
+  if (EXEMPT.has(rel) || GATED_BY_ROUTE.test(rel) || STUDIO.test(rel)) continue;
+  const source = read(rel);
+  if (!TAKES_PAYMENT.test(source)) continue;
+  payChecked += 1;
+  assert.match(source, /const\s*\{[^}]*\bisInternational\b[^}]*\}\s*=/,
+    `${rel} takes a payment without asking which shop it is in — in the English shop that is a domestic `
+    + 'price and an Indonesian courier for a buyer neither can serve.');
+  // Branching on it directly, or handing it to a named rule that does — bespoke routes three surfaces
+  // through bespokeTakesPayment() rather than repeating the ternary, which is the better answer and
+  // must not read as "never used".
+  assert.match(source, /isInternational\s*\?|!\s*isInternational|\w+\(\s*isInternational\s*\)|\(\s*\w+,\s*isInternational\s*\)/,
+    `${rel} knows which shop it is in and takes the payment anyway.`);
+}
+assert.ok(payChecked >= 2, `the payment-surface scan only found ${payChecked} file(s); it has stopped seeing the tills`);
+
+// --- 4b. Reorder is not offered where there is no cart to reorder into --------------------------------
+//
+// Pinned to the BUTTON, not to the file. The scan above only asks whether the portal consults the shop
+// somewhere, and it does — in a second, belt-and-braces line — so deleting the gate around the button
+// itself left every other assertion green while an English customer got a Reorder button that fills a
+// basket they cannot open and drops them on the catalogue.
+{
+  const portal = read('pages/CustomerPortalPage.jsx');
+  const at = portal.indexOf('onReorder(order)');
+  assert.ok(at > 0, 'the reorder button has moved; this check no longer points at anything');
+  const before = portal.slice(Math.max(0, at - 400), at);
+  assert.match(before, /isInternational \? null :/,
+    'the Reorder button is offered in the English shop, which has no cart to put anything into');
+}
+
+// --- 5. Bespoke stops at the design in the English shop ----------------------------------------------
+//
+// Tested as a RULE rather than as a branch spotted in JSX: three surfaces ask this question — the
+// desktop checkout panel, the phone's wizard and the numbered list in the hero — and gating them one at
+// a time is exactly how /en/bespoke kept a working till after the cart was removed. Two sabotage runs
+// re-opened it while every file still "mentioned" isInternational.
+assert.equal(bespokeTakesPayment(false), true, 'the Indonesian shop must still take bespoke payments');
+assert.equal(bespokeTakesPayment(true), false, 'the English shop has no bespoke price to charge and no courier that reaches the buyer');
+
+const steps = [{ key: 'aroma' }, { key: 'package' }, { key: 'bottle' }, { key: 'delivery' }, { key: 'payment' }];
+assert.deepEqual(bespokeFlowSteps(steps, true).map((step) => step.key), ['aroma', 'package', 'bottle'],
+  'the English wizard still walks to an address form and a Pay button');
+assert.deepEqual(bespokeFlowSteps(steps, false).map((step) => step.key), steps.map((step) => step.key),
+  'the Indonesian wizard lost a step');
+assert.equal(bespokeStepKeys(['a', 'b', 'c', 'd', 'e'], true).length, 3,
+  'the English hero promises five steps and delivers three');
+assert.equal(bespokeStepKeys(['a', 'b', 'c', 'd', 'e'], false).length, 5);
+
+// The three surfaces must ROUTE THROUGH those functions rather than each re-deciding.
+for (const [page, needles] of [
+  ['pages/BespokePage.jsx', [/checkoutOpen && bespokeTakesPayment\(isInternational\)/, /bespokeStepKeys\(stepKeys, isInternational\)/]],
+  ['pages/mobile/MobileBespokePage.jsx', [/bespokeFlowSteps\(allFlowSteps, isInternational\)/]],
+]) {
+  const source = read(page);
+  for (const needle of needles) {
+    assert.match(source, needle, `${page} decides for itself where bespoke stops, instead of asking the one rule`);
+  }
+}
+
+// --- 5b. And the English bespoke copy does not promise the steps that were removed -------------------
+// The page can stop at the bottle while its own lead paragraph still says "delivery and payment in one
+// short flow", which is the kind of leftover nobody reads twice.
+{
+  const messages = read('i18n', 'messages.js');
+  const en = messages.slice(messages.lastIndexOf('"bsp.toCheckout"') - 20000);
+  for (const key of ['bsp.flowLead']) {
+    const line = en.split('\n').find((row) => row.includes(`"${key}"`));
+    assert.ok(line, `${key} has gone missing from the English block`);
+    assert.doesNotMatch(line, /\bpayment\b/i,
+      `${key} still promises a payment step the English shop no longer has:\n  ${line.trim()}`);
+  }
+}
+
+// --- 6. The bespoke handoff is written in the message file, and quotes no price -----------------------
+// There IS no international bespoke price — the options are one domestic set — so a number here would be
+// invented. Run the real builder against a stub translator: a draft hardcoded in the component would not
+// come back as the stub's output.
+const stub = (key, vars = {}) => `${key}|${vars.name}|${vars.scent}|${vars.occasion}|${vars.bottle}`;
+assert.equal(
+  buildBespokeEnquiryDraft({ t: stub, perfumeName: 'Rain Letter', scent: 'Woody', occasion: 'A gift', bottle: '30 ml / Classic' }),
+  'bsp.waOrderDraft|Rain Letter|Woody|A gift|30 ml / Classic',
+  'the bespoke draft is not built from the message file, so it cannot follow the shop language',
+);
+assert.match(buildBespokeEnquiryDraft({ t: stub }), /\|-\|-\|-\|-$/, 'an unanswered field must read as a dash, not as "undefined"');
+assert.equal(buildBespokeEnquiryDraft(), '', 'no translator, no draft');
+
+console.log(`englishShopHasNoCart selfcheck OK (no cart and no till in the English shop: ${checked} buy surface(s) and ${payChecked} payment surface(s) gated, 4 routes redirected, and the WhatsApp draft names the bottle and its international price)`);
