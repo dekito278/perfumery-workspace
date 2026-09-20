@@ -1097,6 +1097,19 @@ export const MESSAGES = {
     'mood.floral.name': 'Lembut & Romantis',
     'mood.floral.body': 'Mawar, melati, dan musk powdery — lembut tanpa terlalu manis.',
     'mood.floral.short': 'Mawar · Melati · Powdery',
+
+    // The shell, not a page: these three mount outside <Routes> in App.jsx, so they appear over whatever
+    // the buyer is reading — including the English shop. The update toast is not here on purpose; it is
+    // behind an isAdmin gate and has one reader, who speaks Indonesian.
+    'pwa.installTitleIos': 'Tambah Solivagant ke Home Screen',
+    'pwa.installTitle': 'Install Solivagant',
+    'pwa.installBodyIos': 'Tap Share, lalu Add to Home Screen agar Solivagant terbuka seperti aplikasi.',
+    'pwa.installBody': 'Install untuk akses fullscreen, buka lebih cepat, dan pengalaman aplikasi yang lebih rapi.',
+    'pwa.iosShare': 'Share -> Add to Home Screen',
+    'pwa.install': 'Install',
+    'pwa.later': 'Nanti',
+    'pwa.closeInstall': 'Tutup prompt install',
+    'pwa.offline': 'Kamu sedang offline. Data terbaru akan dimuat kembali saat koneksi pulih.',
   },
   en: {
     'welcome.title': 'Welcome - Solivagant',
@@ -2193,6 +2206,16 @@ export const MESSAGES = {
     'mood.floral.name': 'Soft & romantic',
     'mood.floral.body': 'Rose, jasmine, and powdery musk — gentle without turning sweet.',
     'mood.floral.short': 'Rose · Jasmine · Powdery',
+
+    'pwa.installTitleIos': 'Add Solivagant to your Home Screen',
+    'pwa.installTitle': 'Install Solivagant',
+    'pwa.installBodyIos': 'Tap Share, then Add to Home Screen, and Solivagant opens like an app.',
+    'pwa.installBody': 'Install it for full-screen access, a faster start, and a tidier app-like feel.',
+    'pwa.iosShare': 'Share -> Add to Home Screen',
+    'pwa.install': 'Install',
+    'pwa.later': 'Not now',
+    'pwa.closeInstall': 'Close the install prompt',
+    'pwa.offline': "You're offline. The latest data will load again once the connection is back.",
   },
 };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Download, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
+import { useTranslate } from '@/hooks/useTranslate.js';
 import { isAndroidDevice, isIosDevice, isStandaloneDisplayMode } from '@/utils/pwa.js';
 import { INSTALL_PROMPT_SCROLL_PX, recordVisit, shouldSurfaceInstallPrompt } from '@/utils/mobileFirstScreen.js';
 
@@ -25,6 +26,10 @@ const shouldShowPrompt = (visits, scrolledPx) => {
 
 const PwaInstallPrompt = () => {
   const location = useLocation();
+  // This card mounts outside <Routes>, so it lands on whatever the visitor is reading — and the storefront
+  // home it is gated to (/mobile/dashboard) exists in both shops. It was written in Indonesian and stayed
+  // that way in /en, where it was the only Indonesian left on the page.
+  const { t } = useTranslate();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [visible, setVisible] = useState(false);
   const platform = useMemo(() => {
@@ -125,34 +130,32 @@ const PwaInstallPrompt = () => {
   const ios = platform === 'ios';
 
   return (
-    <div className="mobile-pwa-install" role="dialog" aria-label="Install Solivagant">
-      <button type="button" className="mobile-pwa-install-close" onClick={dismiss} aria-label="Tutup prompt install">
+    <div className="mobile-pwa-install" role="dialog" aria-label={t('pwa.installTitle')}>
+      <button type="button" className="mobile-pwa-install-close" onClick={dismiss} aria-label={t('pwa.closeInstall')}>
         <X className="h-4 w-4" />
       </button>
       <div className="mobile-pwa-install-mark">S</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold text-[#1f2937]">
-          {ios ? 'Tambah Solivagant ke Home Screen' : 'Install Solivagant'}
+          {t(ios ? 'pwa.installTitleIos' : 'pwa.installTitle')}
         </div>
         <p className="mt-1 text-xs font-medium leading-snug text-[#6b7280]">
-          {ios
-            ? 'Tap Share, lalu Add to Home Screen agar Solivagant terbuka seperti aplikasi.'
-            : 'Install untuk akses fullscreen, buka lebih cepat, dan pengalaman aplikasi yang lebih rapi.'}
+          {t(ios ? 'pwa.installBodyIos' : 'pwa.installBody')}
         </p>
         <div className="mt-3 flex gap-2">
           {ios ? (
             <div className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
               <Share className="h-4 w-4" />
-              Share {'->'} Add to Home Screen
+              {t('pwa.iosShare')}
             </div>
           ) : (
             <Button type="button" onClick={install} className="h-9 rounded-xl px-3 text-xs" disabled={!deferredPrompt}>
               <Download className="mr-1 h-4 w-4" />
-              Install
+              {t('pwa.install')}
             </Button>
           )}
           <Button type="button" variant="outline" onClick={dismiss} className="h-9 rounded-xl bg-white px-3 text-xs">
-            Nanti
+            {t('pwa.later')}
           </Button>
         </div>
       </div>

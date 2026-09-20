@@ -10,7 +10,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MESSAGES, MESSAGE_KEYS, translate } from '../i18n/messages.js';
@@ -87,6 +87,9 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'inv.tab', 'inv.invoice', 'inv.customer', 'inv.item', 'inv.qty', 'inv.total', 'inv.voucherCode',
   'inv.dashboard', 'inv.print',
   'bsp.contactCopied',
+  // The install card: "install" is the loanword Indonesian phones already use, the brand name is the
+  // brand name, and "Share -> Add to Home Screen" is iOS quoting its own two buttons back at the reader.
+  'pwa.installTitle', 'pwa.install', 'pwa.iosShare',
 ]);
 for (const key of idKeys) {
   if (IDENTICAL_ON_PURPOSE.has(key)) {
@@ -307,15 +310,17 @@ const PROSE_ALLOWED = new Set([
 // them, so a page added to this list is a page that can no longer leak quietly — and a page left OFF
 // it is the gap to look for first when something Indonesian turns up in the English shop.
 
-for (const file of PAGES_FULLY_TRANSLATED) {
-  const source = read(...file);
+// The scan itself, named once. The App-shell check at the bottom of this file runs the same rule over
+// components that are not pages, and a second copy of a regex this hard-won is a second copy that will
+// be relaxed on its own.
+const untranslatedProse = (source) => (
   // Newlines are allowed INSIDE the run: JSX puts long sentences on their own line between the tags, and
   // a regex that stopped at \n missed every one of them — including a whole mobile journal lead that the
   // browser then showed in Indonesian. Only < > { } end a run of text.
   // `{` and `}` bound a run of text as well as `<` and `>`: "Masuk sebagai {email} — data terisi
   // otomatis" never touches a tag on either side of its words, and a regex that only looked between tags
   // saw none of it. That is how the payment page's whole thank-you sentence stayed Indonesian.
-  const prose = (source.match(/[>}][^<>{}]{4,}?[<{]/g) || [])
+  (source.match(/[>}][^<>{}]{4,}?[<{]/g) || [])
     .map((hit) => hit.slice(1, -1).replace(/\s+/g, ' ').trim())
     // The floor applies to the TEXT, not to the indentation around it: a lone "(" padded by a newline
     // and twenty spaces is JSX code, not a sentence a browser prints. Four characters, because a 20-char
@@ -326,7 +331,11 @@ for (const file of PAGES_FULLY_TRANSLATED) {
     .filter((hit) => !/[;=()`$]/.test(hit))
     // Fragments of a ternary that happen to span a `>` are code, not text: they carry ?, : or an
     // identifier path. Text a browser prints never does.
-    .filter((hit) => hit && !/^[\s&;a-z:?.]*$/.test(hit) && !/[?:]|\w\?\.|\w\.\w/.test(hit) && !PROSE_ALLOWED.has(hit));
+    .filter((hit) => hit && !/^[\s&;a-z:?.]*$/.test(hit) && !/[?:]|\w\?\.|\w\.\w/.test(hit) && !PROSE_ALLOWED.has(hit))
+);
+
+for (const file of PAGES_FULLY_TRANSLATED) {
+  const prose = untranslatedProse(read(...file));
   assert.deepEqual(prose, [],
     `${file.join('/')} renders untranslated prose: ${prose.join(' | ')}`);
 }
@@ -713,6 +722,85 @@ const walk = (dir, out = []) => {
     + offenders.join('\n  '));
   // And the scan has to actually find the calls, or a renamed helper makes it pass forever on nothing.
   assert.ok(seen >= 5, `the WhatsApp draft scan found only ${seen} call(s) — it is no longer looking at the right thing`);
+}
+
+// --- A FIFTH way to leak: the App SHELL, which is not a page and so was never on any page list ---------
+//
+// Three components mount OUTSIDE <Routes> in App.jsx, so they are not "on" a route at all — they appear
+// over whatever the visitor is reading, in whichever shop they are in. Every check above works from a
+// list of pages, so none of them had ever opened these files.
+//
+// Found on the live English shop: the install card offering "Install untuk akses fullscreen, buka lebih
+// cepat, dan pengalaman aplikasi yang lebih rapi." to a reader being quoted in US dollars, and an
+// offline banner in Indonesian behind it.
+//
+// The list of components is read out of App.jsx rather than kept by hand here, because a hand-kept list
+// is what let these three sit unexamined in the first place. A new one mounted in the shell arrives in
+// this check on the commit that mounts it.
+{
+  const app = read('App.jsx');
+  const shell = app.slice(app.lastIndexOf('</Routes>'), app.indexOf('</Router>'));
+  const mounted = [...new Set((shell.match(/<([A-Z]\w+)\s*\/>/g) || []).map((tag) => tag.slice(1, -2).trim()))];
+  assert.ok(mounted.length >= 3,
+    `expected the App shell to mount components outside <Routes>; found ${mounted.length} — has the shell moved?`);
+
+  // Not translated, and each entry says what makes that true rather than merely asserting it. The check
+  // that follows each reason is the thing that expires: when it stops holding, the exemption stops with it.
+  const NOT_BUYER_FACING = {
+    // One reader, who speaks Indonesian — the same rule that keeps Studio out of MESSAGES. It is the
+    // isAdmin gate that makes this true, so the gate is what is checked.
+    PwaUpdatePrompt: (source) => assert.match(source, /if \(!visible \|\| !isAdmin\)/,
+      'PwaUpdatePrompt lost its isAdmin gate, so its Indonesian copy now reaches buyers in both shops'),
+    // Draws confirmAction() calls, and every one of them is in Studio. Checked against the storefront
+    // pages themselves: the day a buyer-facing page asks a question, this exemption is wrong.
+    ConfirmHost: () => {
+      const asks = PAGES_FULLY_TRANSLATED.filter((file) => /confirmAction|useConfirm/.test(read(...file)));
+      assert.deepEqual(asks, [],
+        `ConfirmHost renders Indonesian defaults ("Hapus permanen?", "Batal") and ${asks.map((f) => f.join('/')).join(', ')} now asks a buyer a question through it`);
+    },
+    // The toast frame from the `sonner` package. It holds no words of its own; the copy belongs to
+    // whoever calls toast(), and those callers are pages the checks above already read.
+    Toaster: (source) => assert.match(source, /from "sonner"/,
+      'Toaster is no longer the library frame, so it may now carry copy of its own'),
+  };
+
+  for (const name of mounted) {
+    const spec = app.match(new RegExp(`import (?:\\{ )?${name}(?: \\})? from '([^']+)'`))?.[1];
+    assert.ok(spec, `${name} is mounted in the App shell but this check cannot find its import`);
+    const rel = spec.replace(/^@\//, '').split('/');
+    const file = existsSync(join(root, ...rel)) ? rel : [...rel.slice(0, -1), `${rel[rel.length - 1]}.jsx`];
+    const source = read(...file);
+
+    if (NOT_BUYER_FACING[name]) {
+      NOT_BUYER_FACING[name](source);
+      assert.doesNotMatch(source, /useTranslate/,
+        `${name} is on the not-buyer-facing list but now translates itself — move it off the list`);
+      continue;
+    }
+    assert.match(source, /const \{ t \} = useTranslate\(\);/,
+      `${name} mounts on every page of both shops and writes its own copy without translating it`);
+    // And the copy itself has to be in MESSAGES, not sitting inline beside a t() that translates
+    // something else. The same scan the pages get.
+    const prose = untranslatedProse(source);
+    assert.deepEqual(prose, [],
+      `${name} still prints untranslated text: ${prose.join(' | ')}`);
+
+    // The scan above reads text BETWEEN tags, and the sentence that shipped was not between tags: it sat
+    // inside a JSX expression, as the two arms of `{ios ? 'Tap Share, lalu…' : 'Install untuk akses…'}`.
+    // Putting that exact line back walked straight past every check in this file.
+    //
+    // So: in a component whose whole job is to speak the shop's language, a string literal with a SPACE
+    // in it is a sentence, whatever language it is in and wherever in the file it sits. Storage keys,
+    // platform names, roles and message keys are single tokens and pass; className is markup, not copy,
+    // so it is removed first. Language-independent on purpose — the English half of this bug ("Maybe
+    // later, thanks") leaves no Indonesian word for any phrase list to find.
+    const sentences = (source
+      .replace(/\bclassName=(?:"[^"]*"|\{[^}]*\})/g, '')
+      .match(/'[^'\n]*'|"[^"\n]*"/g) || [])
+      .filter((literal) => / /.test(literal) && /[A-Za-zÀ-ÿ]{2}/.test(literal));
+    assert.deepEqual(sentences, [],
+      `${name} holds copy as a plain string instead of a MESSAGES key: ${sentences.join(' | ')}`);
+  }
 }
 
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');
