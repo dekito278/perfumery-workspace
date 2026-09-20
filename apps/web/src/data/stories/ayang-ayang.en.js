@@ -1,8 +1,13 @@
 import id from './ayang-ayang.js';
 
-// The English Ayang-ayang. A DRAFT of Dekito's voice, not a literal translation — the Indonesian is
-// spoken, almost conversational ("Sakit gak, jatuh cinta sama orang yang kita gak bisa gapai?"), and a
-// word-for-word English version of that reads like a greeting card. Correct it; it is his letter.
+// The English Ayang-ayang. Not a literal translation — the Indonesian is spoken, almost conversational
+// ("Sakit gak, jatuh cinta sama orang yang kita gak bisa gapai?"), and a word-for-word English version of
+// that reads like a greeting card. Two rules keep it his letter rather than a brochure:
+//
+//   - It says WE, never YOU. The Indonesian is "kita" three times over and "kamu" not once — the writer
+//     is standing inside the feeling, not diagnosing the reader. In English "you" turns the confession
+//     into an accusation, so the absence of the second person is guarded in productCopy.selfcheck.
+//   - Contractions, plain words. "Gak" is not formal Indonesian, so "cannot" is not its translation.
 //
 // Everything that is not words — the colours, the Javanese script, the section order and layouts, the
 // media slots — is taken from the Indonesian story rather than copied out, so an image added there does
@@ -13,7 +18,7 @@ const story = {
   hero: {
     ...id.hero,
     eyebrow: 'A letter that was never sent',
-    subtitle: 'Does it hurt — loving someone you were never going to reach?',
+    subtitle: "Does it hurt — falling for someone we can't reach?",
   },
 
   music: {
@@ -24,27 +29,30 @@ const story = {
   sections: [
     {
       type: 'quote',
-      text: 'Some longing cannot be said out loud.\nIt can only be worn on skin.',
+      text: "Some longing can't be spoken,\nonly worn on skin.",
     },
     {
       ...id.sections[1],
-      eyebrow: 'The opening',
-      heading: 'Jasmine, speaking after dark',
-      body: 'Jasmine and tuberose open a soft conversation — the kind of whisper you only hear once the world has gone to sleep. An amberwood heart brings back a warmth you recognise: an embrace you remember and cannot have again.',
+      eyebrow: 'About the scent',
+      heading: 'Jasmine, speaking at night',
+      body: "Top notes of jasmine and tuberose open a soft conversation — a whisper only heard once the world has gone to sleep. An amberwood heart carries a familiar warmth, like an embrace we remember but can't have again.",
     },
     {
       ...id.sections[2],
-      caption: 'Between the petals and the memory',
+      caption: 'Between petals and memory',
     },
     {
       ...id.sections[3],
-      eyebrow: 'The base',
+      eyebrow: 'Base & character',
       heading: 'The musk left on the pillow',
-      body: 'Radiant musk and amber leave a quiet trace — a scent that stays long after the person has gone. Like perfume still held in the shirt of someone who once held you.',
+      body: 'A base of radiant musk and amber leaves a quiet trace — a scent that lasts long after the person has gone. Like the perfume still in the shirt of someone who once held us.',
     },
     {
       type: 'quote',
-      text: 'Ayang-ayang is not a perfume for being wanted.\nIt is a perfume for remembering.',
+      // "Memikat" is something the wearer does to someone else. The draft read "for being wanted", which
+      // turned the line inside out: it made the perfume about being looked at, in a letter whose whole
+      // point is that nobody is looking.
+      text: "Ayang-ayang isn't a perfume for charming anyone.\nIt's a perfume for remembering.",
     },
   ],
 };
