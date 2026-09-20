@@ -11,12 +11,11 @@ const DESKTOP_TO_MOBILE_PATHS = [
   [/^\/articles$/, '/mobile/articles'],
   [/^\/articles\/([^/]+)$/, '/mobile/articles/$1'],
   [/^\/catalog\/([^/]+)$/, '/mobile/products/$1'],
-  [/^\/track-order\/([^/]+)$/, '/mobile/customer?code=$1'],
-  [/^\/track-order$/, '/mobile/customer'],
-  // publicTrackingService builds the links we hand buyers as /track/:code, so this pair has to exist or
-  // every shared tracking link opens the desktop page on a phone (audit round 9).
-  [/^\/track\/([^/]+)$/, '/mobile/customer?code=$1'],
-  [/^\/track$/, '/mobile/customer'],
+  // No entries for /track or /track-order on purpose. Round 9 pointed them at /mobile/customer?code=,
+  // but that page's ?code= is the CUSTOMER code (SOLI-...), not the order number — so every tracking
+  // link we send (WhatsApp message and the QR printed on the parcel carry /track/<orderNumber>) opened
+  // on a phone answered "that customer code was not found". PublicTrackingPage already reads fine at
+  // phone width, so a phone stays on it. See trackingLink.selfcheck.mjs.
   [/^\/bespoke$/, '/mobile/bespoke'],
   [/^\/cart$/, '/mobile/cart'],
   [/^\/checkout$/, '/mobile/checkout'],
