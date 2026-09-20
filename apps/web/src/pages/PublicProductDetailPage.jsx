@@ -25,6 +25,7 @@ import BriefText from '@/components/BriefText.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
@@ -44,16 +45,7 @@ import { describeWear } from '@/utils/productWear.js';
 
 
 
-const relatedFor = (product, catalog) => {
-  const relatedSlugs = product.relatedFragrances || [];
-  const explicit = relatedSlugs
-    .map((slug) => catalog.find((item) => item.slug === slug))
-    .filter(Boolean);
-  const contextual = catalog
-    .filter((item) => item.slug !== product.slug && !explicit.some((r) => r.slug === item.slug))
-    .slice(0, Math.max(0, 4 - explicit.length));
-  return [...explicit, ...contextual].slice(0, 4);
-};
+
 
 const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
   const { slug: slugParam = '' } = useParams();
