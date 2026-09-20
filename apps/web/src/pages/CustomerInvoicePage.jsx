@@ -23,6 +23,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
+import { orderHasShipped } from '@/utils/trackingLead.js';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import useTranslate from '@/hooks/useTranslate.js';
 
@@ -129,7 +130,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
             <span className="text-base font-bold text-editorial-charcoal">{labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || t('inv.notShipped')}</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">
-            {order.trackingNumber ? `${order.courierName || t('inv.courier')} / ${order.trackingNumber}` : order.courierName || t('inv.waybillLater')}
+            {order.trackingNumber ? `${order.courierName || t('inv.courier')} / ${order.trackingNumber}` : (order.courierName || t(orderHasShipped(order) ? 'inv.waybillMissing' : 'inv.waybillLater'))}
           </div>
         </div>
       </div>
