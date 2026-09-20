@@ -19,6 +19,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { toMobilePath } from './deviceRouting.js';
+import { MESSAGES } from '../i18n/messages.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 // A comment quoting the very expression being searched for has defeated a text check in this repo five
@@ -94,5 +95,17 @@ const portal = read('pages', 'CustomerPortalPage.jsx');
 assert.match(portal, /searchParams\.get\('code'\)/, 'the portal takes its code from the query string');
 assert.match(portal, /getCustomerPortalByCode\(code\)/,
   'and resolves it as a CUSTOMER code — an order number handed to this page is simply not found');
+
+// So the portal must not CALL it an order code either. It did, in both languages: the field was headed
+// "Cari pakai kode order" above a box that only ever resolved SOLI09232, and a buyer holding DKT-... was
+// answered "Kode customer tidak ditemukan" by the same screen that had just asked them for an order code.
+// One page, two names for two different things.
+for (const language of ['id', 'en']) {
+  for (const [key, text] of Object.entries(MESSAGES[language])) {
+    if (!key.startsWith('cust.')) continue;
+    assert.doesNotMatch(text, /kode order|order code/i,
+      `${language}.${key} calls it an order code, but this page resolves customer codes only`);
+  }
+}
 
 console.log('trackingLink selfcheck OK (the link on the box and in WhatsApp opens the tracking page, on a phone too)');

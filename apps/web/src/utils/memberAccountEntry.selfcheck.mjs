@@ -97,6 +97,10 @@ assert.doesNotMatch(MESSAGES.en['cust.heroTitle'], /member price/i,
   'the English hero opens on a member price the English shop cannot charge');
 assert.match(MESSAGES.en['cust.heroBody'], /Indonesian shop/,
   'and must say where a member price does apply, rather than leaving it unexplained');
-assert.match(MESSAGES.id['cust.heroBody'], /Kode order lama tetap bisa dicek di bawah\./, 'and still points the code-holder somewhere');
+// The rule is that someone holding an old code is still told the box is down there — not the wording.
+// Pinned to the sentence, this failed the day the label was corrected: the field resolves the CUSTOMER
+// code (SOLI...), and calling it an order code is what sent buyers holding DKT-... into a dead end.
+assert.match(MESSAGES.id['cust.heroBody'], /[Kk]ode customer lama/, 'and still points the code-holder somewhere');
+assert.match(MESSAGES.id['cust.heroBody'], /di bawah/, 'saying where the box is');
 
 console.log('memberAccountEntry selfcheck OK (a door to the account on every page — framed around the price in the shop that has a checkout, and around the order in the shop that does not))');
