@@ -1316,10 +1316,17 @@ export const updateOrderStatus = async (orderId, status) => {
       }
     }
 
-    if (status === 'cancelled') {
-      // Give the reserved voucher quota back (no-op if the order used no voucher).
-      await releaseVoucherUsageForOrder({ orderId: currentOrder?.id, orderNumber: currentOrder?.orderNumber || orderId });
-    }
+    // Give the reserved voucher quota back (no-op if the order used no voucher). Never allowed to throw:
+    // a voucher release must not be what stops an order from being cancelled.
+    //
+    // But it must not vanish either. For months this returned { released: false } on EVERY order, because
+    // two functions in the database shared the name storefront_release_voucher_usage and PostgREST refused
+    // to pick one (PGRST203). The only trace was a console.warn nobody was reading, while one-time codes
+    // stayed burned on accounts whose orders had been cancelled. So the answer goes into the order's own
+    // audit log, which Studio already shows on the order page.
+    const voucherRelease = status === 'cancelled'
+      ? await releaseVoucherUsageForOrder({ orderId: currentOrder?.id, orderNumber: currentOrder?.orderNumber || orderId })
+      : null;
 
     await createOrderAuditLog({
       action: auditAction,
@@ -1333,6 +1340,9 @@ export const updateOrderStatus = async (orderId, status) => {
       },
       metadata: {
         source: 'studio',
+        ...(voucherRelease && currentOrder?.voucherCode
+          ? { voucherRelease: voucherRelease.released ? 'released' : 'FAILED' }
+          : {}),
       },
     });
 
