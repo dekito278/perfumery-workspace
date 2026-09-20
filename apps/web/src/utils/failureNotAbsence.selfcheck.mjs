@@ -103,4 +103,61 @@ assert.match(read('pages/RawMaterialsPage.jsx'), /checkFailed=\{page\.deleteDepe
     + 'that their real order does not exist, and leaves the page with no failure to report');
 }
 
+// --- A body that is not JSON is a broken service, not an empty result --------------------------------
+//
+// The shipping helper read `await response.json().catch(() => ({}))`. An HTML page became `{}`, and `{}`
+// has no destinations and no rates — so an API that was not answering looked exactly like a search that
+// found nothing. The buyer sat on "Masih perlu: Area, Ongkir" with no error and no way to finish paying.
+//
+// Measured on the preview build, where vite serves no API routes:
+//   GET /api/shipping/destinations?search=Coblong -> 200, content-type text/html, the SPA shell
+// and the checkout showed nothing at all. tools/build.mjs records the same shape on Vercel: a rewrite
+// whose destination is missing falls through to the catch-all and answers 200 with index.html.
+//
+// Tested as behaviour, with fetch stubbed — the point is what comes back, not how the file reads.
+{
+  const shipping = join(srcRoot, 'services', 'shippingService.js');
+  const source = readFileSync(shipping, 'utf8');
+  // Comments stripped FIRST. The comment above requestJson quotes the old expression verbatim, so a
+  // check reading the raw file fails on the very explanation of the fix — the fifth time a comment has
+  // beaten a text guard in this repo.
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert.doesNotMatch(code, /response\.json\(\)\.catch\(\(\) => \(\{\}\)\)/,
+    'a non-JSON body is being swallowed into an empty object again');
+
+  const shim = join(srcRoot, 'services', `.failureNotAbsence.${process.pid}.mjs`);
+  const { writeFileSync, unlinkSync } = await import('node:fs');
+  // Multi-line imports too: this file opens with a braced import spanning four lines, and a per-line
+  // regex leaves the tail behind — which loads as a bare '@/services' specifier Node cannot resolve.
+  writeFileSync(shim, source.replace(/^import\s[\s\S]*?from\s+'[^']+';$/gm, ''));
+  const stub = (body, { ok = true, status = 200 } = {}) => {
+    globalThis.fetch = async () => ({ ok, status, text: async () => body });
+  };
+  const { searchShippingDestinations } = await import(shim);
+
+  // 1. The failure that started this: HTML with 200.
+  stub('<!doctype html><html lang="id"><head>');
+  await assert.rejects(() => searchShippingDestinations('Coblong'), /unavailable/i,
+    'an HTML body answered 200 must be a failure the checkout can show, not an empty list');
+
+  // 2. A real empty answer is still empty — the honest negative must survive.
+  stub(JSON.stringify({ destinations: [] }));
+  assert.deepEqual(await searchShippingDestinations('Coblong'), [],
+    'a genuine "nothing found" must not be turned into an error');
+
+  // 3. A real answer still comes through.
+  stub(JSON.stringify({ destinations: [{ id: '4916', label: 'CIPAGANTI, COBLONG, BANDUNG' }] }));
+  assert.equal((await searchShippingDestinations('Coblong')).length, 1);
+
+  // 4. An empty body is a real answer, not a broken one.
+  stub('');
+  assert.deepEqual(await searchShippingDestinations('Coblong'), []);
+
+  // 5. And a genuine error status still carries its message.
+  stub(JSON.stringify({ message: 'Kurir sedang sibuk' }), { ok: false, status: 503 });
+  await assert.rejects(() => searchShippingDestinations('Coblong'), /Kurir sedang sibuk/);
+
+  unlinkSync(shim);
+}
+
 console.log(`failureNotAbsence selfcheck OK (${MUST_SEPARATE.length} screens tell "failed" apart from "not there")`);
