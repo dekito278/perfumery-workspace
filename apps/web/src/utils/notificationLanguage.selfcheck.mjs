@@ -97,6 +97,31 @@ for (const message of [buildNotificationMessage(idOrder, 'order_created'), build
   }
 }
 
+// --- 4b. An order with no customer code still gets a link ---------------------------------------------
+//
+// Export orders deliberately create no customer record (#217 — the one they used to create was the
+// signed-in admin's own), so they have no customer code, and the invoice and dashboard pages are both
+// keyed by one. Measured on the first real export order: the message went out with NO LINK AT ALL,
+// leaving a buyer abroad holding an order number and nowhere to type it.
+const codeless = { ...base, customerCode: '', clientContext: { shop: 'en' } };
+for (const event of ['order_created', 'paid', 'processing', 'shipped', 'completed']) {
+  const message = buildNotificationMessage(codeless, event);
+  const urls = message.match(/https:\/\/www\.solivagantscent\.com\S*/g) || [];
+  assert.ok(urls.length, `${event} gives a buyer with no customer code nowhere to look their order up`);
+  for (const url of urls) {
+    assert.match(new URL(url).pathname, /^\/en\/track\//,
+      `${event} points a code-less English buyer at a page that asks for a code they do not have: ${url}`);
+  }
+}
+// And the line is named for what it opens. Calling a tracking page "Invoice" costs the buyer a click to
+// find out it is not one.
+assert.doesNotMatch(buildNotificationMessage(codeless, 'order_created'), /Invoice:/,
+  'a tracking link is still labelled as an invoice');
+assert.match(buildNotificationMessage(codeless, 'order_created'), /Track your order: /);
+assert.match(buildNotificationMessage({ ...codeless, clientContext: { shop: 'id' } }, 'order_created'), /Lacak pesanan: /);
+// An order that DOES have a code keeps the invoice, and keeps the word.
+assert.match(buildNotificationMessage(enOrder, 'order_created'), /Invoice: \S*\/mobile\/customer\/invoice\//);
+
 // --- 5. The email subject follows the same order ------------------------------------------------------
 assert.match(buildNotificationSubject(enOrder, 'shipped'), /Order shipped/, 'the English buyer gets an Indonesian subject line');
 assert.match(buildNotificationSubject(idOrder, 'shipped'), /Order dikirim/, 'the Indonesian subject line changed');

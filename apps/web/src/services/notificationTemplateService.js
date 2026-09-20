@@ -53,19 +53,51 @@ const formatItemLines = (order = {}) => {
 
 const isEmail = (value = '') => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 
+/**
+ * Where this buyer can look their order up.
+ *
+ * The customer dashboard is keyed by a customer code, and an export order has none: it is written for
+ * someone who has no account here, and since #217 it deliberately creates no customer record — the one
+ * that used to be created was the signed-in admin's own.
+ *
+ * So the fallback is the PUBLIC tracking page, which needs nothing but the order number. Measured on the
+ * first real export order: the message went out with no link at all, which leaves a buyer abroad holding
+ * an order number and nowhere to type it.
+ */
+const getTrackingUrl = (order) => {
+  if (typeof window === 'undefined' || !order?.orderNumber) return '';
+  return `${window.location.origin}${shopPrefix(order)}/track/${encodeURIComponent(order.orderNumber)}`;
+};
+
 const getCustomerDashboardUrl = (order) => {
-  if (typeof window === 'undefined' || !order?.customerCode) return '';
+  if (typeof window === 'undefined') return '';
+  if (!order?.customerCode) return getTrackingUrl(order);
   return `${window.location.origin}${shopPrefix(order)}/mobile/customer?code=${encodeURIComponent(order.customerCode)}`;
 };
 
 const getInvoiceUrl = (order) => {
-  if (typeof window === 'undefined' || !order?.customerCode || !order?.orderNumber) return '';
+  if (typeof window === 'undefined' || !order?.orderNumber) return '';
+  // The invoice page is behind the customer code too. Without one, the tracking page is what this buyer
+  // can actually open — and a link they can use beats a line they cannot.
+  if (!order?.customerCode) return getTrackingUrl(order);
   return `${window.location.origin}${shopPrefix(order)}/mobile/customer/invoice/${encodeURIComponent(order.orderNumber)}?code=${encodeURIComponent(order.customerCode)}`;
 };
 
 const getManualPaymentUploadUrl = (order) => {
   if (typeof window === 'undefined' || !order?.orderNumber) return '';
   return `${window.location.origin}${shopPrefix(order)}/payment?order=${encodeURIComponent(order.orderNumber)}&payment=manual`;
+};
+
+/**
+ * The line that carries the link, named for what the link actually opens.
+ *
+ * An order with a customer code gets the invoice page; one without gets public tracking. Labelling a
+ * tracking page "Invoice" would be a small lie that costs the buyer a click to discover.
+ */
+const linkLine = (order, invoiceLabel, trackingLabel) => {
+  const url = getInvoiceUrl(order);
+  if (!url) return null;
+  return `${order?.customerCode ? invoiceLabel : trackingLabel}: ${url}`;
 };
 
 const buildGreeting = (order) => (shopOf(order) === 'en'
@@ -89,7 +121,7 @@ const templatesById = {
     `Total: ${formatTotal(order.subtotal)}`,
     `Status pembayaran: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Kode customer: ${order.customerCode}` : null,
-    getInvoiceUrl(order) ? `Invoice: ${getInvoiceUrl(order)}` : null,
+    linkLine(order, 'Invoice', 'Lacak pesanan'),
     '',
     'Kami akan update lagi setelah pembayaran terkonfirmasi. Terima kasih.',
   ],
@@ -143,7 +175,7 @@ const templatesById = {
     `Order ${order.orderNumber} sudah selesai. Terima kasih sudah memilih Solivagant.`,
     '',
     'Kalau ada feedback soal aroma, packaging, atau experience, boleh langsung balas pesan ini ya.',
-    getInvoiceUrl(order) ? `Invoice/receipt: ${getInvoiceUrl(order)}` : null,
+    linkLine(order, 'Invoice/receipt', 'Lacak pesanan'),
   ],
 };
 
@@ -158,7 +190,7 @@ const templatesByEn = {
     `Total: ${formatTotal(order.subtotal)}`,
     `Payment status: ${order.paymentStatus || '-'}`,
     order.customerCode ? `Customer code: ${order.customerCode}` : null,
-    getInvoiceUrl(order) ? `Invoice: ${getInvoiceUrl(order)}` : null,
+    linkLine(order, 'Invoice', 'Track your order'),
     '',
     'We will write again once the payment is confirmed. Thank you.',
   ],
@@ -212,7 +244,7 @@ const templatesByEn = {
     `Order ${order.orderNumber} is complete. Thank you for choosing SOLIVAGANT.`,
     '',
     'If you have anything to say about the scent, the packaging or the experience, just reply to this message.',
-    getInvoiceUrl(order) ? `Invoice/receipt: ${getInvoiceUrl(order)}` : null,
+    linkLine(order, 'Invoice/receipt', 'Track your order'),
   ],
 };
 
