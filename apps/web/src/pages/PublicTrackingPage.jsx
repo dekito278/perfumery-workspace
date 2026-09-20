@@ -1,5 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { describeOrderKey } from '@/utils/trackingLead.js';
+import { invitesWhatsApp } from '@/utils/contactPrompt.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -137,6 +139,12 @@ const PublicTrackingPage = () => {
           <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t("track.eyebrow")}</p>
           <h1 className="hero-animate-text hero-animate-text--d2">{t("track.title")}</h1>
           <p className="hero-animate-text hero-animate-text--d3">{t(describeOrderKey(order))}</p>
+          {/* The button appears because the SENTENCE asked for it, not because of a status picked by
+              hand: whichever lead this page opens with, if it says to message us, the way to do it is
+              right here rather than in the footer. */}
+          {invitesWhatsApp(t(describeOrderKey(order))) ? (
+            <AskAtelierButton orderNumber={order?.orderNumber} className="mt-4" />
+          ) : null}
         </section>
 
         <section className="tracking-content" data-reveal>
@@ -171,6 +179,9 @@ const PublicTrackingPage = () => {
                     style={{ margin: '4px 0 16px', padding: '12px 16px', borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', fontSize: 14, fontWeight: 500 }}
                   >
                     {t('track.cancelledNotice')}
+                    {invitesWhatsApp(t('track.cancelledNotice')) ? (
+                      <AskAtelierButton orderNumber={order.orderNumber} className="mt-3 w-full border-[#fecaca] bg-white text-[#b91c1c]" />
+                    ) : null}
                   </div>
                 ) : null}
 
