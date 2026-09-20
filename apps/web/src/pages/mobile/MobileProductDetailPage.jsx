@@ -15,6 +15,7 @@ import { useMobileBackNavigation } from '@/hooks/useMobileBackNavigation.js';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import useProductStory from '@/hooks/useProductStory.js';
@@ -241,6 +242,7 @@ const MobileProductDetailPage = () => {
           ) : null}
 
           <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={formatRupiah(exportPrice || selectedPrice)} compact className="mt-4" />
+          <ShareProductButton product={product} compact className="mt-3" />
           <SwitchToIndonesiaHint className="mt-3" />
 
           {/* Meta */}

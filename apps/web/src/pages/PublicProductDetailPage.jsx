@@ -12,6 +12,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScentPyramid from '@/components/storefront/ScentPyramid.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
@@ -324,6 +325,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
                 </button>
               )}
               <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
+              <ShareProductButton product={product} className="mt-3" />
               <SwitchToIndonesiaHint className="mt-3" />
             </div>
           </div>

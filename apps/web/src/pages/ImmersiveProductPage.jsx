@@ -17,6 +17,7 @@ import {
   toAbsoluteUrl,
 } from '@/utils/seo.js';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
+import ShareProductButton from '@/components/storefront/ShareProductButton.jsx';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
 import SwitchToIndonesiaHint from '@/components/storefront/SwitchToIndonesiaHint.jsx';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
@@ -342,6 +343,7 @@ const ImmersiveProductPage = ({ product, story, mobile = false }) => {
             </button>
           )}
           <OverseasInquiryButton product={product} variant={selectedVariant} size={selectedSize} price={exportPrice ? formatRupiah(exportPrice) : selectedPriceLabel} className="mt-3" />
+          <ShareProductButton product={product} className="mt-3" />
           <SwitchToIndonesiaHint className="mt-3" />
         </section>
 
