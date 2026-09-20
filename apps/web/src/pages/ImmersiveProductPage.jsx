@@ -6,6 +6,7 @@ import ProductVisual from '@/components/storefront/ProductVisual.jsx';
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import ScrollProgress from '@/components/storefront/ScrollProgress.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
+import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
 import { useCart } from '@/hooks/useCart.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import {
@@ -23,7 +24,18 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { toast } from 'sonner';
 
-const ImmersiveProductPage = ({ product, story }) => {
+/**
+ * @param mobile  render inside the phone's shell instead of the desktop one.
+ *
+ * The story itself needed nothing: the stylesheet has stacked the text-image sections into one column
+ * below 768px since the page was written. What was missing is that /mobile/products/:slug never reached
+ * here at all — so the one perfume with a story showed it only to desktop visitors, which is most of a
+ * phone-first shop's buyers seeing none of it.
+ *
+ * One component, two shells, for the reason this repo keeps relearning: a second copy is a second place
+ * to fix the English shop's missing cart, and only one of them would get fixed.
+ */
+const ImmersiveProductPage = ({ product, story, mobile = false }) => {
   const { addItem } = useCart();
   const { t, isInternational } = useTranslate();
   const { magnetic } = useMicroInteractions();
@@ -160,9 +172,11 @@ const ImmersiveProductPage = ({ product, story }) => {
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
       </Helmet>
 
-      <div className="immersive-page" ref={pageRef}>
-        <ScrollProgress />
-        <PublicHeader />
+      <div className={`immersive-page${mobile ? ' immersive-page--mobile' : ''}`} ref={pageRef}>
+        {/* The phone already carries a top bar and a tab row from MobileCommerceLayout; adding the
+            desktop header and footer here would stack two of each. */}
+        {mobile ? null : <ScrollProgress />}
+        {mobile ? null : <PublicHeader />}
 
         {/* ── Hero ── */}
         <section className="imm-hero">
@@ -333,16 +347,23 @@ const ImmersiveProductPage = ({ product, story }) => {
 
         {/* ── Back to catalog ── */}
         <nav className="imm-back" data-imm-reveal>
-          <Link to="/catalog">
+          <Link to={mobile ? '/mobile/catalog' : '/catalog'}>
             <ChevronRight className="h-3 w-3" style={{ transform: 'rotate(180deg)' }} />
             {t('pdp.backToCollection')}
           </Link>
         </nav>
 
-        <StorefrontFooter />
+        {mobile ? null : <StorefrontFooter />}
       </div>
     </>
   );
 };
 
-export default ImmersiveProductPage;
+/** The phone's shell around the same story. */
+const ImmersiveProductPageShell = (props) => (
+  props.mobile
+    ? <MobileCommerceLayout><ImmersiveProductPage {...props} /></MobileCommerceLayout>
+    : <ImmersiveProductPage {...props} />
+);
+
+export default ImmersiveProductPageShell;
