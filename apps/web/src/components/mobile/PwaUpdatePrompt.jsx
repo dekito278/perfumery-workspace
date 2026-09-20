@@ -9,6 +9,11 @@ import { activateWaitingServiceWorker, subscribeToPwaUpdates } from '@/utils/pwa
 // out of the way while someone is paying — a reload prompt mid-checkout is the wrong moment.
 // Only admins see it: a stale studio can mis-save, but a shopper simply gets the new build next visit —
 // and on a phone the card sat over the sticky add-to-cart / "Lanjut" bars of every storefront page.
+//
+// Which is also why this copy stays Indonesian while its two neighbours in the App shell moved into
+// MESSAGES. The isAdmin gate above is the whole audience: one reader, who speaks Indonesian. Translating
+// it would only put English in front of him on his own shop. The guard in storefrontMessages knows this
+// and will start demanding a translation the moment that gate goes away.
 const DISMISS_KEY = 'solivagant.pwa.update-dismissed';
 
 const PwaUpdatePrompt = () => {
