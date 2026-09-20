@@ -99,7 +99,18 @@ export const getProductPublishChecklist = (product = {}) => {
     { key: 'category', label: 'Kategori', ok: Boolean(String(product.category || '').trim()), required: true, message: 'Pilih kategori sebelum publish.' },
     { key: 'summary', label: 'Ringkasan katalog', ok: Boolean(String(product.notes || '').trim()), required: true, message: 'Ringkasan singkat wajib diisi.' },
     { key: 'price', label: 'Harga', ok: priceNumber > 0, required: true, message: 'Harga produk harus lebih dari 0.' },
-    { key: 'stock', label: 'Stok', ok: stock > 0, required: true, message: 'Stok harus lebih dari 0 agar produk bisa dibeli.' },
+    // Stock is INVENTORY, not product data, so it does not block publishing — and it never blocked a
+    // buyer either: the shop already shows "Stok Habis" and disables the button on its own.
+    //
+    // As a blocker it froze the record instead. The form refuses every save of a product that is visible
+    // in the catalogue while the checklist is unready, so a sold-out perfume could not have its category,
+    // notes or description corrected at all — and un-ticking "Tampilkan di katalog" to edit it would hide
+    // it from the shop, with re-ticking refused for the same reason. Measured: Aquilaria tuberosa and
+    // Sudra, both live in the catalogue at stock 0, could not be re-filed out of the 'Limited' category.
+    //
+    // Kept as a WARNING so the panel still says it out loud. An atelier selling limited runs is sold out
+    // often; that is a normal state here, not an unfinished product.
+    { key: 'stock', label: 'Stok', ok: stock > 0, required: false, message: 'Stok 0 — produk tampil sebagai Stok Habis.' },
     { key: 'image', label: 'Gambar', ok: images.length > 0, required: true, message: 'Tambahkan minimal satu gambar produk.' },
     { key: 'slug', label: 'Slug', ok: Boolean(slug), required: true, message: 'Slug akan dibuat otomatis dari nama produk.' },
     { key: 'description', label: 'Deskripsi', ok: Boolean(String(product.description || '').trim()), required: false, message: 'Deskripsi belum diisi.' },
