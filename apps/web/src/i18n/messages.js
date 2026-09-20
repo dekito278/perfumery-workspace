@@ -872,6 +872,9 @@ export const MESSAGES = {
     // becomes a second source of truth that goes stale the day a price changes in Studio.
     "bsp.floor": "Mulai dari {price}",
     "bsp.floorNote": "Sebelum ongkir. Naik sesuai botol, cap, label, dan material yang dipilih.",
+    // What this option adds over the cheapest in its own group, beside the option itself. A plus sign
+    // and a rupiah figure read the same in both shops, so the two halves are identical on purpose.
+    "bsp.optionExtra": "+{price}",
     "bsp.scentReference": "Referensi aroma:",
     "bsp.briefShort": "Brief ringkas",
     "bsp.preorder": "Pre-order",
@@ -2000,6 +2003,7 @@ export const MESSAGES = {
     // is what stands if that gate is ever edited.
     "bsp.floor": "Priced with you on WhatsApp",
     "bsp.floorNote": "A bespoke bottle is quoted one by one from abroad, shipping included, before anything is agreed.",
+    "bsp.optionExtra": "+{price}",
     "bsp.scentReference": "Scent reference:",
     "bsp.briefShort": "Short brief",
     "bsp.preorder": "Pre-order",

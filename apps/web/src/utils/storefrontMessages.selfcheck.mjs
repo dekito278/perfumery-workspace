@@ -87,6 +87,8 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'inv.tab', 'inv.invoice', 'inv.customer', 'inv.item', 'inv.qty', 'inv.total', 'inv.voucherCode',
   'inv.dashboard', 'inv.print',
   'bsp.contactCopied',
+  // A plus sign and a rupiah figure. There is nothing in it to translate.
+  'bsp.optionExtra',
   // The install card: "install" is the loanword Indonesian phones already use, the brand name is the
   // brand name, and "Share -> Add to Home Screen" is iOS quoting its own two buttons back at the reader.
   'pwa.installTitle', 'pwa.install', 'pwa.iosShare',

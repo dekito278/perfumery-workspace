@@ -30,7 +30,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
-import { bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice } from '@/utils/bespokeOrder.js';
+import { bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -81,7 +81,7 @@ const optionMatchesValue = (option = {}, value = '') => {
   ].map((item) => String(item || '').trim()).includes(currentValue);
 };
 
-const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', label, onClick }) => (
+const BespokeOptionCard = ({ active, children, description = '', extra = '', imageUrl = '', label, onClick }) => (
   <button
     type="button"
     aria-label={label || children}
@@ -100,6 +100,8 @@ const BespokeOptionCard = ({ active, children, description = '', imageUrl = '', 
     </span>
     <span className="editorial-bespoke-option__body">
       <strong>{label || children}</strong>
+      {/* What this choice adds over the cheapest in its group — the floor line already holds the base. */}
+      {extra ? <span className="editorial-bespoke-option__extra">{extra}</span> : null}
       {description ? <small>{description}</small> : null}
     </span>
   </button>
@@ -169,6 +171,12 @@ const BespokePage = () => {
   const labelDesignOptions = useMemo(() => settings.labelDesigns.filter((option) => option.enabled), [settings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => settings.exoticMaterials.filter((option) => option.enabled), [settings.exoticMaterials]);
   const floorPrice = useMemo(() => bespokeFloorPrice(settings), [settings]);
+  // Same gate as the floor: domestic prices only, and the English bespoke path quotes nothing.
+  const optionPriceLabel = useCallback((option, group) => {
+    if (isInternational) return '';
+    const extra = optionExtraPrice(option, group);
+    return extra ? t('bsp.optionExtra', { price: formatRupiah(extra) }) : '';
+  }, [isInternational, t]);
   const defaultSize = cheapestEnabled(bottleSizeOptions);
   const defaultBottle = cheapestEnabled(bottleTypeOptions);
   const defaultCap = cheapestEnabled(capDesignOptions);
@@ -738,6 +746,7 @@ const BespokePage = () => {
                           active={isActiveChoiceOption(activeChoice, option)}
                           description={option.description}
                           imageUrl={option.imageUrl}
+                          extra={optionPriceLabel(option, activeChoice.options)}
                           label={option.label}
                           onClick={() => selectChoiceOption(activeChoice, option)}
                         />

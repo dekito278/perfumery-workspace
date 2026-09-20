@@ -147,6 +147,25 @@ export const buildBespokeNotes = (request = {}) => {
  * Exotic material is deliberately left out. It is the one group with no default — a buyer who picks
  * nothing pays nothing for it — so including it would quote a price nobody is obliged to pay.
  */
+/**
+ * What choosing THIS option adds, over the cheapest one in its own group.
+ *
+ * The floor price is built from the cheapest option of each group, so the arithmetic a buyer needs is
+ * "mulai dari, plus what I picked". An absolute price on every card would double-count that floor.
+ *
+ * This is the missing half of the Rp 45.000 overcharge. The comment on cheapestEnabled records why the
+ * bug was invisible: "no option on that screen shows its price, so there was nothing to notice." The
+ * default is fixed on both pages now — but a buyer choosing Cap custom Abstrak over Cap Basic still
+ * could not see that the choice costs Rp 45.000.
+ */
+export const optionExtraPrice = (option, group) => {
+  // Array.isArray, not a default parameter: `null` is a value, so `group = []` does not catch it — and a
+  // settings object that failed to load answers null, not undefined.
+  const floor = Number(cheapestEnabled(Array.isArray(group) ? group : [])?.price || 0);
+  const price = Number(option?.price || 0);
+  return price > floor ? price - floor : 0;
+};
+
 export const bespokeFloorPrice = (settings = {}) => (
   [settings.bottleSizes, settings.bottleTypes, settings.capDesigns, settings.labelDesigns]
     .reduce((sum, group) => sum + Number(cheapestEnabled(group || []).price || 0), 0)

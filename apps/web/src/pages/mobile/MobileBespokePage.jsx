@@ -15,7 +15,7 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-import { bespokeFlowSteps, buildBespokeEnquiryDraft, bespokeFloorPrice, cheapestEnabled } from '@/utils/bespokeOrder.js';
+import { bespokeFlowSteps, buildBespokeEnquiryDraft, bespokeFloorPrice, cheapestEnabled, optionExtraPrice } from '@/utils/bespokeOrder.js';
 import { buildWhatsAppCheckoutUrl, checkoutPaymentMethods, getCheckoutPaymentMethod, getStorefrontWhatsAppNumber, isManualTransferPayment } from '@/services/cartService.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
@@ -87,7 +87,7 @@ const getFriendlyShippingErrorKey = (error, fallbackKey = 'bsp.areaSearchFailed'
   return fallbackKey;
 };
 
-const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
+const OptionButton = ({ active, children, extra = '', imageUrl = '', onClick }) => (
   <button
     type="button"
     onClick={onClick}
@@ -102,6 +102,9 @@ const OptionButton = ({ active, children, imageUrl = '', onClick }) => (
       </span>
     ) : null}
     <span className="block px-1 py-0.5">{children}</span>
+    {/* What this choice ADDS over the cheapest in its group. The floor line already carries the base, so
+        an absolute price here would count it twice. Silent when it adds nothing. */}
+    {extra ? <span className="block px-1 pb-0.5 text-[10px] font-bold text-editorial-charcoal/70">{extra}</span> : null}
   </button>
 );
 
@@ -155,6 +158,12 @@ const MobileBespokePage = () => {
   const labelDesignOptions = useMemo(() => bespokeSettings.labelDesigns.filter((option) => option.enabled), [bespokeSettings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => bespokeSettings.exoticMaterials.filter((option) => option.enabled), [bespokeSettings.exoticMaterials]);
   const floorPrice = useMemo(() => bespokeFloorPrice(bespokeSettings), [bespokeSettings]);
+  // Gated with the floor: these are domestic prices, and the English bespoke path quotes nothing.
+  const optionPriceLabel = useCallback((option, group) => {
+    if (isInternational) return '';
+    const extra = optionExtraPrice(option, group);
+    return extra ? t('bsp.optionExtra', { price: formatRupiah(extra) }) : '';
+  }, [isInternational, t]);
   const savedDraft = useMemo(() => readBespokeDraft(), []);
   const savedForm = savedDraft.form && typeof savedDraft.form === 'object' && !Array.isArray(savedDraft.form) ? savedDraft.form : {};
   const [step, setStep] = useState(Number.isInteger(savedDraft.step) ? Math.min(Math.max(savedDraft.step, 0), 4) : 0);
@@ -522,7 +531,7 @@ const MobileBespokePage = () => {
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-2">
             {bottleSizeOptions.map((option) => (
-              <OptionButton key={option.value} active={form.size === option.value} imageUrl={option.imageUrl} onClick={() => updateField('size', option.value)}>{option.label}</OptionButton>
+              <OptionButton key={option.value} active={form.size === option.value} imageUrl={option.imageUrl} extra={optionPriceLabel(option, bottleSizeOptions)} onClick={() => updateField('size', option.value)}>{option.label}</OptionButton>
             ))}
           </div>
           {exoticMaterialOptions.length ? (
@@ -561,7 +570,7 @@ const MobileBespokePage = () => {
             <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.bottle')}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {bottleTypeOptions.map((option) => (
-                <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} onClick={() => updateField('bottleType', option.value)}>{option.label}</OptionButton>
+                <OptionButton key={option.value} active={form.bottleType === option.value} imageUrl={option.imageUrl} extra={optionPriceLabel(option, bottleTypeOptions)} onClick={() => updateField('bottleType', option.value)}>{option.label}</OptionButton>
               ))}
             </div>
           </div>
@@ -569,7 +578,7 @@ const MobileBespokePage = () => {
             <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.cap')}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {capDesignOptions.map((option) => (
-                <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('capDesign', option.value)}>{option.label}</OptionButton>
+                <OptionButton key={option.value} active={form.capDesign === option.value} imageUrl={option.imageUrl} extra={optionPriceLabel(option, capDesignOptions)} onClick={() => updateField('capDesign', option.value)}>{option.label}</OptionButton>
               ))}
             </div>
           </div>
@@ -577,7 +586,7 @@ const MobileBespokePage = () => {
             <div className="text-[10px] font-bold uppercase text-editorial-charcoal">{t('bsp.label')}</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {labelDesignOptions.map((option) => (
-                <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} onClick={() => updateField('labelDesign', option.value)}>{option.label}</OptionButton>
+                <OptionButton key={option.value} active={form.labelDesign === option.value} imageUrl={option.imageUrl} extra={optionPriceLabel(option, labelDesignOptions)} onClick={() => updateField('labelDesign', option.value)}>{option.label}</OptionButton>
               ))}
             </div>
           </div>
@@ -759,7 +768,7 @@ const MobileBespokePage = () => {
       ),
       isComplete: () => Boolean(form.paymentMethod && form.preorderAcknowledged),
     },
-  ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher, t]);
+  ], [autoCalculateShipping, bottleSizeOptions, bottleTypeOptions, budgetSummary, capDesignOptions, destinationOptions, destinationSearch, discountAmount, exoticMaterialOptions, form, handleCourierChange, labelDesignOptions, loadShippingRates, lookupCustomer, pasteCustomerCode, searchDestinations, selectedBottleType, selectedCap, selectedCourier, selectedDestination, selectedLabel, selectedShipping, shippingError, shippingFee, shippingLoading, totalDue, updateDestinationSearch, updateField, visibleShippingOptions, voucher, t, optionPriceLabel]);
 
   // The English shop stops at the design: no address step, because the shipping is worked out by hand,
   // and no payment step, because a bespoke bottle has no international price to charge. The steps are
