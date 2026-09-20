@@ -8,6 +8,7 @@ import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { orderHasShipped } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -485,7 +486,14 @@ const OrderTimeline = ({ order, compact = false }) => {
     if (step.key === 'pending_payment') detail = order.paymentStatus === 'paid' ? t('cust.paymentDone') : t('cust.waitingPayment');
     if (step.key === 'paid') detail = labelFrom(paymentStatusKeys, paymentStatusLabels, order.paymentStatus, t) || '-';
     if (step.key === 'processing') detail = labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || labelFrom(orderStatusKeys, statusLabels, order.status, t) || '-';
-    if (step.key === 'shipped') detail = order.trackingNumber ? `${order.courierName || t('cust.courier')} / ${order.trackingNumber}` : t('cust.waybillLater');
+    // "akan muncul" is a promise about the future. Printed under a step already marked Dikirim it is a
+    // sentence about something that has already happened — and that is every shipped order in this shop,
+    // because none of them carries a number.
+    if (step.key === 'shipped') {
+      detail = order.trackingNumber
+        ? `${order.courierName || t('cust.courier')} / ${order.trackingNumber}`
+        : t(orderHasShipped(order) ? 'cust.waybillMissing' : 'cust.waybillLater');
+    }
     if (step.key === 'completed') detail = order.deliveredAt ? formatDate(order.deliveredAt, t) : t('cust.waitingDelivery');
 
     return { ...step, done, current, detail };

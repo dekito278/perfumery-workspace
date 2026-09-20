@@ -911,4 +911,47 @@ const walk = (dir, out = []) => {
   }
 }
 
+// --- The waybill is spoken about on THREE surfaces, and two used the future tense ---------------------
+//
+// #226 fixed the tracking page. The member portal's timeline and the invoice said the same thing in the
+// same wrong tense, under a step already marked Dikirim:
+//
+//   "Resi akan muncul setelah paket dikirim"   — printed on a parcel that had already gone
+//
+// True on every shipped order in this shop, because none of them carries a number. Held as behaviour:
+// has it shipped, and is there a number — not as a regex over either page.
+{
+  const { orderHasShipped } = await import('./trackingLead.js');
+
+  assert.equal(orderHasShipped({ shippedAt: '2026-09-14T00:00:00Z' }), true);
+  assert.equal(orderHasShipped({ shipmentStatus: 'shipped' }), true);
+  assert.equal(orderHasShipped({ shipmentStatus: 'delivered' }), true);
+  assert.equal(orderHasShipped({ deliveredAt: '2026-09-16T00:00:00Z' }), true);
+  assert.equal(orderHasShipped({ status: 'shipped' }), true, 'the three screens each trusted a different field');
+  assert.equal(orderHasShipped({ status: 'completed' }), true);
+  for (const notYet of [{}, { status: 'paid' }, { shipmentStatus: 'packing' }, { status: 'processing' }, null]) {
+    assert.equal(orderHasShipped(notYet), false, `${JSON.stringify(notYet)} has not shipped`);
+  }
+
+  for (const [name, file, key] of [
+    ['portal', ['pages', 'CustomerPortalPage.jsx'], 'cust'],
+    ['invoice', ['pages', 'CustomerInvoicePage.jsx'], 'inv'],
+  ]) {
+    const source = read(...file);
+    assert.match(source, /orderHasShipped\(order\)/,
+      `the ${name} still promises the number "akan muncul" on a parcel that has already gone`);
+    assert.match(source, new RegExp(`${key}\\.waybillMissing`), `${name} must have a sentence for the shipped-but-empty case`);
+    assert.match(source, new RegExp(`${key}\\.waybillLater`), `${name} must keep the honest future tense for a parcel still waiting`);
+  }
+
+  // The two sentences must actually differ in tense, or renaming the key changed nothing.
+  for (const key of ['cust.waybillMissing', 'inv.waybillMissing']) {
+    for (const lang of ['id', 'en']) {
+      assert.ok(MESSAGES[lang][key], `${key} exists in ${lang}`);
+      assert.doesNotMatch(MESSAGES[lang][key], /akan muncul|appears once|will appear/i,
+        `${lang} ${key} still speaks in the future about a parcel that has already left`);
+    }
+  }
+}
+
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');

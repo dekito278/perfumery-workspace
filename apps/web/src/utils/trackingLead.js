@@ -22,4 +22,21 @@ export const describeOrderKey = (order) => {
   return 'track.recorded';
 };
 
+/**
+ * Has this parcel already left?
+ *
+ * Three surfaces tell a buyer about the waybill — the tracking page, the member portal's timeline and the
+ * invoice — and two of them phrased the empty case in the FUTURE tense: "Resi akan muncul setelah paket
+ * dikirim", printed under a step already marked Dikirim. A sentence about something that has already
+ * happened, on all 11 shipped orders, because none of them carries a number.
+ *
+ * Read from four fields because the three screens each trusted a different one.
+ */
+export const orderHasShipped = (order) => Boolean(
+  order?.deliveredAt
+  || order?.shippedAt
+  || ['shipped', 'delivered'].includes(order?.shipmentStatus)
+  || ['shipped', 'completed'].includes(order?.status),
+);
+
 export default describeOrderKey;
