@@ -53,13 +53,34 @@ assert.doesNotMatch(helper.replace(/mobile \? `\/mobile\/products\/\$\{slug\}`/,
 assert.match(read('src', 'pages', 'PublicProductDetailPage.jsx'), /toAbsoluteUrl\(`\/catalog\/\$\{product\.slug\}`/,
   'the live page must declare the same canonical the prerendered file does');
 
-// 5. The old URL must heal rather than linger as an indexable duplicate with no canonical of its own.
+// 5. The old URL must heal rather than linger as an indexable duplicate with no canonical of its own —
+// in BOTH shops. Only the Indonesian half was redirected, so /products/<slug> healed to a prerendered
+// page while /en/products/<slug> fell through Vercel's catch-all to the generic shell: lang="id", the
+// site's own title, no description, no JSON-LD. Measured on the live site before the fix:
+//
+//   /catalog/ayang-ayang      -> "Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀) - SOLIVAGANT"
+//   /en/catalog/ayang-ayang   -> "Ayang-ayang (ꦲꦪꦤ꧀ꦒ꧀​ꦲꦪꦤ꧀ꦒ꧀) - SOLIVAGANT"
+//   /en/products/ayang-ayang  -> "SOLIVAGANT - Artisan Perfumery Atelier"   <- the shell
+//
+// Held as "every shop heals the same way" rather than as two hard-coded entries, because the asymmetry
+// is the bug: one shop having a rule the other does not is exactly how this arrived.
 const vercel = JSON.parse(readFileSync(join(webRoot, 'vercel.json'), 'utf8'));
-const redirect = (vercel.redirects || []).find((r) => r.source === '/products/:slug');
-assert.ok(redirect, 'links already shared to /products/<slug> must be redirected, not left on the shell');
-assert.equal(redirect.destination, '/catalog/:slug');
-assert.equal(redirect.permanent, true, 'a permanent redirect is what consolidates the duplicate for search engines');
-// The mobile route must not be swept up: /mobile/products/<slug> has a different prefix and its own page.
-assert.ok(!'/mobile/products/x'.startsWith('/products/'), 'sanity: the redirect source cannot match the mobile path');
+for (const prefix of ['', '/en']) {
+  const redirect = (vercel.redirects || []).find((r) => r.source === `${prefix}/products/:slug`);
+  assert.ok(redirect,
+    `links already shared to ${prefix}/products/<slug> must be redirected, not left on the generic shell`);
+  assert.equal(redirect.destination, `${prefix}/catalog/:slug`,
+    `${prefix}/products/<slug> must heal to its OWN shop's prerendered page, not the other shop's`);
+  assert.equal(redirect.permanent, true, 'a permanent redirect is what consolidates the duplicate for search engines');
+}
+// Vercel matches redirects in order and the English path also begins with a segment the Indonesian
+// source does not accept, so the two cannot collide — but the mobile route shares the word "products"
+// and must not be swept up by either: it has its own page and its own canonical.
+for (const mobile of ['/mobile/products/x', '/en/mobile/products/x']) {
+  for (const prefix of ['', '/en']) {
+    assert.ok(!mobile.startsWith(`${prefix}/products/`),
+      `sanity: ${prefix}/products/:slug must not match ${mobile}`);
+  }
+}
 
 console.log('productPublicUrl selfcheck OK (prerender, sitemap, canonical and links all say /catalog/<slug>)');
