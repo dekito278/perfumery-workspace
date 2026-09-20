@@ -68,6 +68,35 @@ assert.deepEqual(cardLabels(null), []);
     + 'from ten perfumes the moment this ships and before anything is re-filed');
 }
 
+// --- 5c. And the view the shop actually reads ---------------------------------------------------------
+// The storefront does not read storefront_products; it reads storefront_products_public. A Postgres view
+// freezes its column list at creation, so a column added to the table is invisible through a view built
+// before it. Measured with the anon key after the first migration ran:
+//
+//   GET /storefront_products_public?select=limited -> 400 42703 column does not exist
+//
+// Third time in this repo: the English copy columns needed the same follow-up in #181, which is why
+// productCopy.selfcheck asserts the same pair of statements.
+{
+  const dir = join(here, '..', '..', '..', '..', 'supabase', 'migrations');
+  const { readdirSync } = await import('node:fs');
+  const files = readdirSync(dir).filter((name) => name.endsWith('.sql'));
+  const addsColumn = files.filter((name) => /limited/i.test(readFileSync(join(dir, name), 'utf8'))
+    && /add column if not exists limited/i.test(readFileSync(join(dir, name), 'utf8')));
+  assert.ok(addsColumn.length, 'no migration adds the limited column');
+
+  const recreatesView = files.filter((name) => {
+    const sql = readFileSync(join(dir, name), 'utf8');
+    return /create or replace view public\.storefront_products_public/.test(sql)
+      && /grant select on public\.storefront_products_public to anon, authenticated;/.test(sql);
+  });
+  assert.ok(recreatesView.length, 'the public view is never recreated, so the shop cannot read new columns');
+  // The view must be recreated AFTER the column is added — file names are timestamps, so order is name order.
+  assert.ok(recreatesView.sort().at(-1) > addsColumn.sort().at(-1),
+    `the newest view rebuild (${recreatesView.sort().at(-1)}) predates the column (${addsColumn.sort().at(-1)}), `
+    + 'so the column is still invisible to every buyer');
+}
+
 // --- 6. Both product forms can set it, or the flag is unreachable ------------------------------------
 for (const [name, file] of [
   ['desktop', ['components', 'product', 'ProductForm.jsx']],
