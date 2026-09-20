@@ -12,6 +12,9 @@ const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
 // came out overlapping the order number, cut mid-word.
 const QR_BLOCK_TOP = PAGE_HEIGHT - 28;
 const BRIEF_BOTTOM = QR_BLOCK_TOP - 4;
+// Line heights for the two blocks that wrap: jsPDF's default 1.15 factor at 13.5pt and 9.2pt.
+const NAME_LINE = 5.5;
+const AREA_LINE = 3.75;
 const BRIEF_LINE = 3.8;
 const BRAND = {
   ink: [23, 32, 22],
@@ -142,8 +145,15 @@ const drawShippingLabel = async (doc, order) => {
   y += 6;
   doc.setFontSize(13.5);
   doc.setTextColor(...BRAND.ink);
-  doc.text(doc.splitTextToSize(asText(order.customerName, 'Customer'), CONTENT_WIDTH), MARGIN, y);
-  y += 9;
+  // Advance by the lines actually drawn, not by a fixed step. The address block below already does this;
+  // the name and the area did not, so a wrapped value drew past the step and the NEXT block landed on
+  // top of it. Measured before the fix: a destination whose province is spelled out — "KUTA RAJA SIMPANG
+  // TIGA, BANDA ACEH DARUSSALAM, KABUPATEN ACEH BESAR, NANGGROE ACEH DARUSSALAM (NAD), 23111", straight
+  // out of the checkout's own destination search — wrapped to three lines and the divider was ruled
+  // through the third at 67.5mm, striking out the postcode on the courier's copy.
+  const nameLines = doc.splitTextToSize(asText(order.customerName, 'Customer'), CONTENT_WIDTH);
+  doc.text(nameLines, MARGIN, y);
+  y += Math.max(9, nameLines.length * NAME_LINE);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text(`Telp: ${asText(order.contact)}`, MARGIN, y);
@@ -153,8 +163,9 @@ const drawShippingLabel = async (doc, order) => {
   y += Math.max(10, doc.splitTextToSize(asText(address, 'Alamat belum tersedia'), CONTENT_WIDTH).length * 4.1);
   if (area) {
     doc.setFont('helvetica', 'bold');
-    doc.text(doc.splitTextToSize(area, CONTENT_WIDTH), MARGIN, y);
-    y += 6.5;
+    const areaLines = doc.splitTextToSize(area, CONTENT_WIDTH);
+    doc.text(areaLines, MARGIN, y);
+    y += Math.max(6.5, areaLines.length * AREA_LINE + 2.75);
   }
 
   drawDivider(doc, y);
