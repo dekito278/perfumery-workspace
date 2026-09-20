@@ -17,6 +17,9 @@ import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import OverseasInquiryButton from '@/components/storefront/OverseasInquiryButton.jsx';
 import PriceNote from '@/components/storefront/PriceNote.jsx';
 import { useCart } from '@/hooks/useCart.js';
+import useProductStory from '@/hooks/useProductStory.js';
+import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
+import { getProductStory } from '@/data/stories/index.js';
 import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
@@ -63,6 +66,17 @@ const MobileProductDetailPage = () => {
   // some renders and not others is a crash, not a bug report.
   const overseasPrice = useOverseasPrice(product, selectedVariant);
   const { t, region, isInternational } = useTranslate();
+  // The same handoff the desktop product page makes, and for the same reason: a perfume with a story
+  // gets the story, not the ordinary page. It was missing here, so the one story this shop has was shown
+  // only to desktop visitors — in a shop whose buyers are mostly on a phone.
+  //
+  // The resolution rule is copied deliberately, not invented: the English shop gets a story ONLY when an
+  // English one exists and never falls back to the Indonesian, because a full-screen Javanese letter is
+  // worse than the ordinary page, whose description and notes do have English.
+  const { story: supabaseStory, loading: storyLoading } = useProductStory(slug);
+  const productStory = isInternational
+    ? getProductStory(slug, region)
+    : (supabaseStory || getProductStory(slug, region));
   // Same rule as desktop: the product's own words follow the shop being read, per field.
   const copy = productCopyFor(product, region);
   // exportPrice here is the price for THIS shop: useOverseasPrice returns null unless the visitor is
@@ -78,6 +92,22 @@ const MobileProductDetailPage = () => {
         </main>
       </MobileCommerceLayout>
     );
+  }
+
+  // Waited for, not raced: rendering the ordinary page first and swapping to the story a moment later
+  // would show the buyer two different pages for the same tap.
+  if (storyLoading) {
+    return (
+      <MobileCommerceLayout>
+        <main className="mobile-page m-editorial-page" role="status" aria-live="polite" aria-busy="true">
+          <div className="m-editorial-pdp-skeleton" />
+        </main>
+      </MobileCommerceLayout>
+    );
+  }
+
+  if (product && productStory) {
+    return <ImmersiveProductPage product={product} story={productStory} mobile />;
   }
 
   if (!product) {
