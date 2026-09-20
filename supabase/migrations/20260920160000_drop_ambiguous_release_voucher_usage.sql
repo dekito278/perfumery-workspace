@@ -1,0 +1,65 @@
+-- Cancelling an order was supposed to give the voucher back. It has been failing silently instead.
+--
+-- MANUAL APPLY REQUIRED: run this in the Supabase SQL editor. Deploying the app does not apply it.
+--
+-- Found by running the per-account voucher test end to end on 20 Sep 2026. A real order was placed with a
+-- one-time code, then cancelled; the order detail page said "Stok dilepas" and the status went to
+-- DIBATALKAN, but the voucher report still showed the redemption and the code stayed burned for that
+-- account.
+--
+-- The cause, measured against production with the anon key:
+--
+--   POST /rest/v1/rpc/storefront_release_voucher_usage {"p_order_number":"DKT-MU9L5XW2-JNBGGD"}
+--   -> 300 PGRST203 "Could not choose the best candidate function between:
+--        public.storefront_release_voucher_usage(p_order_id => uuid, p_order_number => text),
+--        public.storefront_release_voucher_usage(p_order_id => uuid, p_order_number => text,
+--                                                p_workspace_id => text)"
+--
+-- Two functions share the name, so PostgREST refuses to call either one. Every release path in the app
+-- goes through that RPC — cancel an order, delete an order, a DOKU payment that fails or expires, and the
+-- nightly expire-reservations cron. All of them have been returning "not released" since the second
+-- function appeared.
+--
+-- It failed quietly because releaseVoucherUsageForOrder catches the error, console.warns it and returns
+-- { released: false }. That was deliberate — a voucher release must never be what stops an order from
+-- being cancelled — but it means nothing surfaced for as long as the ambiguity has existed.
+--
+-- The three-argument version takes p_workspace_id and belongs to the multi-tenant SaaS project. It is in
+-- no migration in this repository, nothing in this app passes that argument, and this shop has one
+-- workspace. It is the one to remove.
+--
+-- What a buyer lost: a one-time code printed on a greeting card, burned by an order that was cancelled or
+-- that simply expired unpaid. They would be told "sudah pernah dipakai di akun ini" for a perfume they
+-- never received, and nothing in Studio would show why.
+
+drop function if exists public.storefront_release_voucher_usage(uuid, text, text);
+
+-- ============================================================================
+-- VERIFY
+-- ============================================================================
+-- -- 1. Exactly one function by that name, taking two arguments:
+-- select p.oid::regprocedure as signature
+--   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--  where n.nspname = 'public' and p.proname = 'storefront_release_voucher_usage';
+--     -> one row: storefront_release_voucher_usage(uuid, text)
+--
+-- -- 2. The guarded wrapper still refuses an anonymous caller (expect 42501, not PGRST203):
+-- --   curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/storefront_release_voucher_usage" \
+-- --     -H "apikey: $ANON" -H "Content-Type: application/json" \
+-- --     -d '{"p_order_number":"DKT-MU9L5XW2-JNBGGD"}'
+--
+-- -- 3. And the same trap is not hiding anywhere else. Any row this returns is another RPC that can only
+-- --    answer PGRST203 — the same silent failure, in whatever feature calls it:
+-- select p.proname, count(*) as overloads,
+--        string_agg(p.oid::regprocedure::text, ' | ' order by p.oid::regprocedure::text) as signatures
+--   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--  where n.nspname = 'public' and p.proname like 'storefront\_%'
+--  group by p.proname having count(*) > 1;
+--
+-- ============================================================================
+-- ROLLBACK
+-- ============================================================================
+-- Nothing in this repository can recreate the dropped function, because nothing in this repository ever
+-- created it. If it turns out to be needed, it must come back from the SaaS project that owns it — and
+-- then it needs a different NAME, not a different argument list, or the ambiguity returns exactly as it
+-- is today.
