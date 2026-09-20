@@ -15,7 +15,7 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-import { bespokeFlowSteps, buildBespokeEnquiryDraft, bespokeFloorPrice } from '@/utils/bespokeOrder.js';
+import { bespokeFlowSteps, buildBespokeEnquiryDraft, bespokeFloorPrice, cheapestEnabled } from '@/utils/bespokeOrder.js';
 import { buildWhatsAppCheckoutUrl, checkoutPaymentMethods, getCheckoutPaymentMethod, getStorefrontWhatsAppNumber, isManualTransferPayment } from '@/services/cartService.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
@@ -173,10 +173,17 @@ const MobileBespokePage = () => {
     perfumeName: '',
     scentDescription: referenceProduct?.notes || '',
     occasion: bespokeOccasionOptions[0].value,
-    size: bottleSizeOptions[0]?.value || '',
-    bottleType: bottleTypeOptions[0]?.value || '',
-    capDesign: capDesignOptions[0]?.value || '',
-    labelDesign: labelDesignOptions[0]?.value || '',
+    // The CHEAPEST enabled option, not the first one. sort_order is DISPLAY order — which option Dekito
+    // wants seen first, a different question from what someone should be charged for a decision they
+    // never made. The desktop page was fixed; this one was not, and this is the page most buyers use.
+    //
+    // Measured here before the fix: the cap group shows "Cap custom Abstrak" (Rp 50.000) first and "Cap
+    // Basic" (Rp 5.000) second, so the flow opened at Rp 300.000 while the floor beside it read
+    // Rp 255.000 — two numbers about the same bottle, on the same screen.
+    size: cheapestEnabled(bottleSizeOptions)?.value || '',
+    bottleType: cheapestEnabled(bottleTypeOptions)?.value || '',
+    capDesign: cheapestEnabled(capDesignOptions)?.value || '',
+    labelDesign: cheapestEnabled(labelDesignOptions)?.value || '',
     exoticMaterial: '',
     paymentMethod: checkoutPaymentMethods[0]?.id || 'manual_transfer_bca',
     customerName: '',
@@ -220,10 +227,10 @@ const MobileBespokePage = () => {
   }, [destinationSearch, form, selectedCourier, selectedDestination, selectedShipping, step]);
 
   const updateField = useCallback((key, value) => setForm((current) => ({ ...current, [key]: value })), []);
-  const selectedSize = bottleSizeOptions.find((option) => option.value === form.size) || bottleSizeOptions[0];
-  const selectedBottleType = bottleTypeOptions.find((option) => option.value === form.bottleType) || bottleTypeOptions[0];
-  const selectedCap = capDesignOptions.find((option) => option.value === form.capDesign) || capDesignOptions[0];
-  const selectedLabel = labelDesignOptions.find((option) => option.value === form.labelDesign) || labelDesignOptions[0];
+  const selectedSize = bottleSizeOptions.find((option) => option.value === form.size) || cheapestEnabled(bottleSizeOptions);
+  const selectedBottleType = bottleTypeOptions.find((option) => option.value === form.bottleType) || cheapestEnabled(bottleTypeOptions);
+  const selectedCap = capDesignOptions.find((option) => option.value === form.capDesign) || cheapestEnabled(capDesignOptions);
+  const selectedLabel = labelDesignOptions.find((option) => option.value === form.labelDesign) || cheapestEnabled(labelDesignOptions);
   const selectedExoticMaterial = exoticMaterialOptions.find((option) => option.value === form.exoticMaterial);
   const selectedPaymentMethod = getCheckoutPaymentMethod(form.paymentMethod);
   const isManualPayment = isManualTransferPayment(selectedPaymentMethod.provider);
