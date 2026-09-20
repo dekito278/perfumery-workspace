@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { describeOrderKey } from '@/utils/trackingLead.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -49,15 +50,6 @@ const completedStepCount = (order) => {
   if (order.status === 'processing') return 3;
   if (order.paymentStatus === 'paid' || order.status === 'paid') return 2;
   return 1;
-};
-
-const describeOrderKey = (order) => {
-  if (!order) return 'track.lead';
-  if (order.deliveredAt || order.shipmentStatus === 'delivered') return 'track.delivered';
-  if (order.shippedAt || order.shipmentStatus === 'shipped') return 'track.shipped';
-  if (order.status === 'processing' || order.shipmentStatus === 'packing') return 'track.preparing';
-  if (order.paymentStatus === 'paid' || order.status === 'paid') return 'track.queued';
-  return 'track.recorded';
 };
 
 const PublicTrackingPage = () => {

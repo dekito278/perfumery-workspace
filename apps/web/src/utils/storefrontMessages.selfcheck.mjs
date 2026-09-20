@@ -854,4 +854,37 @@ const walk = (dir, out = []) => {
   }
 }
 
+// --- The tracking page may not promise a waybill it does not have ------------------------------------
+//
+// "Paket sudah dikirim. Resi tersedia di bawah." sat directly above a row reading "Belum tersedia".
+// Measured against production with the anon key, on the RPC a buyer actually calls: 11 of 11 shipped
+// orders had tracking_number null, so the sentence was false on every parcel this shop has ever sent.
+//
+// Tested as BEHAVIOUR, not as a regex over the file: the point is which key comes back for an order, and
+// a check that only greps for the word can be satisfied by a branch that never runs.
+{
+  const { describeOrderKey } = await import('./trackingLead.js');
+  const shipped = { shipmentStatus: 'shipped', shippedAt: '2026-09-14T00:00:00Z' };
+
+  assert.equal(describeOrderKey({ ...shipped, trackingNumber: 'JNE0099887766' }), 'track.shipped',
+    'with a waybill, the page may say the waybill is below');
+  for (const empty of [null, undefined, '', '   ']) {
+    assert.equal(describeOrderKey({ ...shipped, trackingNumber: empty }), 'track.shippedNoWaybill',
+      `a shipped order whose tracking number is ${JSON.stringify(empty)} must not be promised one`);
+  }
+  // Delivered outranks both: the parcel arrived, the waybill is beside the point.
+  assert.equal(describeOrderKey({ shipmentStatus: 'delivered', trackingNumber: '' }), 'track.delivered');
+
+  // And the two sentences must differ in the thing that matters — one names the waybill, the other says
+  // it is missing and what to do instead.
+  for (const lang of ['id', 'en']) {
+    assert.ok(MESSAGES[lang]['track.shippedNoWaybill'], `track.shippedNoWaybill exists in ${lang}`);
+    assert.doesNotMatch(MESSAGES[lang]['track.shippedNoWaybill'], /di bawah|below/i,
+      `the ${lang} no-waybill line still points at a number that is not there`);
+    assert.match(MESSAGES[lang]['track.shippedNoWaybill'], /whatsapp/i,
+      `the ${lang} no-waybill line must offer the way the buyer can actually get an answer`);
+  }
+  assert.match(MESSAGES.id['track.shipped'], /di bawah/i, 'the with-waybill line still points at it');
+}
+
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');

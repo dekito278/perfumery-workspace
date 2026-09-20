@@ -410,6 +410,10 @@ export default async function handler(req, res) {
       payment_provider: paymentProvider,
       // Real provider ids are 'manual_transfer_bca'/'doku'; ['manual','whatsapp'] never matched.
       payment_status: ['manual_transfer_bca', 'manual'].includes(paymentProvider) ? 'pending' : 'unpaid',
+      // The courier the buyer picked and paid for. It was written into the notes and nowhere else, so
+      // courier_name stayed null on every order ever placed — and the public tracking page, which reads
+      // that column, told all 11 shipped buyers "Kurir: belum tersedia" about a parcel already on a van.
+      courier_name: shippingSummary || null,
       source: isBespoke ? 'bespoke_request' : (input.source || 'storefront'),
       client_context: clientContext,
       ...(isBespoke ? { bespoke_production_status: 'review_brief' } : {}),

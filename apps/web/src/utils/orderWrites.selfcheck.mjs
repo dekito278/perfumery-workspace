@@ -130,4 +130,31 @@ for (const relative of BUYER_FACING) {
   }
 }
 
+// --- 3. The courier the buyer chose has to survive the order ------------------------------------------
+//
+// It was written into the free-text notes and nowhere else, so the courier_name COLUMN stayed null on
+// every order ever placed. The public tracking page reads that column, so all 11 shipped buyers were
+// told "Kurir: belum tersedia" about a parcel already on a van — while the shipping label, which reads
+// the notes, printed "JNE Reguler / Rp 10.000" on the box in their hands.
+//
+// Checked on BOTH paths, because there are two and they have drifted apart before (client_context did
+// exactly this): the authoritative endpoint builds its own payload server-side, and useCheckoutFlow's
+// direct insert builds another.
+{
+  const endpoint = readFileSync(join(here, '..', '..', 'api', 'orders', 'create.js'), 'utf8');
+  assert.match(endpoint, /courier_name: shippingSummary \|\| null,/,
+    'the order endpoint must store the courier it just priced, not only mention it in the notes');
+
+  const flow = readFileSync(join(here, '..', 'hooks', 'useCheckoutFlow.js'), 'utf8');
+  assert.match(flow, /courierName: shippingSummary,/,
+    'the direct-insert path must store the same courier, or the two paths disagree about the same order');
+
+  // And it must be the summary the buyer was actually shown, not a second guess at it.
+  for (const [name, code] of [['api/orders/create.js', endpoint], ['hooks/useCheckoutFlow.js', flow]]) {
+    const uses = (code.match(/courier_?[Nn]ame: ([A-Za-z.?\s|']+?)[,\n]/g) || []);
+    assert.ok(uses.every((line) => /shippingSummary/.test(line)),
+      `${name} sets a courier from something other than the quoted shipping summary: ${uses.join(' | ')}`);
+  }
+}
+
 console.log('orderWrites selfcheck OK');
