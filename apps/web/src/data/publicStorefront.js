@@ -129,6 +129,10 @@ export const toPublicFragrance = (product = {}) => {
     category: product.category || product.collection || tags[0] || 'Atelier fragrance',
     publicCategory,
     badge: inferPublicBadge(product, tags),
+    // The LIMITED badge, carried as its own field so the catalogue card can print it beside the scent
+    // family instead of INSTEAD of it. `category` used to hold the word, which is why ten perfumes
+    // answered "how rare am I" to a filter asking "what do you smell of".
+    limited: Boolean(product.limited) || String(product.category || '').trim().toLowerCase() === 'limited',
     collection: product.collection || product.category || 'SOLIVAGANT Atelier',
     topNotes: topNotes.length ? topNotes : ['Opening impression'],
     heartNotes: heartNotes.length ? heartNotes : ['Atelier heart'],

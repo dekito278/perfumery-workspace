@@ -39,10 +39,22 @@ for (const page of ['pages/CatalogPage.jsx', 'pages/mobile/MobileCatalogPage.jsx
 }
 
 const desktop = strip(readFileSync(join(src, 'pages', 'CatalogPage.jsx'), 'utf8'));
+// Held as the RULE — the card's label comes from the same field the pills filter on — rather than as the
+// expression that used to carry it. "Limited" moved out of the category into its own badge column, so the
+// card now composes familyLabel (which IS product.category when it names a family) with that badge. The
+// vocabularies still match; pinning the old shape made a correct change look like a regression.
 assert.match(
   desktop,
-  /catalog-card__category">\{product\.(public)?[Cc]ategory/,
+  /catalog-card__category">\{(product\.(public)?[Cc]ategory|cardLabels\(product\))/,
   'the card label no longer prints a category field — check it still matches what the pills filter on',
 );
+
+// And cardLabels must still be BUILT from the category, or the two vocabularies part company quietly.
+{
+  const badge = strip(readFileSync(join(src, 'utils', 'productBadge.js'), 'utf8'));
+  assert.match(badge, /const category = String\(product\?\.category \|\| ''\)\.trim\(\);/,
+    'familyLabel stopped reading product.category, so the card and the pills now speak different languages');
+}
+
 
 console.log('catalogCategory selfcheck OK (owner category wins, pills and cards share one vocabulary)');

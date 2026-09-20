@@ -10,6 +10,7 @@ import WhyBuyDirect from '@/components/storefront/WhyBuyDirect.jsx';
 import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { CURATED_LIMIT_MOBILE, pickCuratedProducts } from '@/utils/curatedProducts.js';
+import { cardLabels } from '@/utils/productBadge.js';
 import { useSiteImages } from '@/hooks/useSiteImages.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
@@ -108,7 +109,7 @@ export const MobileStorefrontContent = ({ active = true }) => {
                 <Link key={product.slug} to={`/mobile/products/${product.slug}`} className="m-editorial-product-card">
                   <ProductVisual product={product} className="m-editorial-product-card__visual" imageFit="cover" label={false} sizes="(max-width: 480px) 45vw, 200px" />
                   <div className="m-editorial-product-card__info">
-                    <span className="m-editorial-product-card__category">{product.category}</span>
+                    <span className="m-editorial-product-card__category">{cardLabels(product).join(' · ')}</span>
                     <h3>{product.name}</h3>
                     <CardPrice product={product} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>

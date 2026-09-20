@@ -58,6 +58,7 @@ export const emptyProduct = {
   imageUrl: '',
   images: [],
   featured: true,
+  limited: false,
   catalogVisible: true,
 };
 
@@ -112,6 +113,7 @@ const snapshotProductForm = (product) => JSON.stringify({
   imageUrl: product.imageUrl || '',
   images: product.images || [],
   featured: Boolean(product.featured),
+  limited: Boolean(product.limited),
   catalogVisible: Boolean(product.catalogVisible),
 });
 
@@ -604,6 +606,11 @@ const MobileProductForm = ({ product = null, onSaved }) => {
         <label className="flex items-center gap-3 rounded-2xl bg-amber-50 px-3 py-3 text-xs font-bold text-amber-800">
           <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
           Featured di home
+        </label>
+        {/* A badge, kept apart from the scent family — see ProductForm for why. */}
+        <label className="flex items-center gap-3 rounded-2xl bg-amber-50 px-3 py-3 text-xs font-bold text-amber-800">
+          <input type="checkbox" checked={Boolean(form.limited)} onChange={(event) => updateField('limited', event.target.checked)} />
+          Badge LIMITED
         </label>
         <label className={`flex items-start gap-3 rounded-2xl px-3 py-3 text-xs font-bold ${canPublish ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
           <input
