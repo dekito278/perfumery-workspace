@@ -11,6 +11,11 @@
       "source": "/products/:slug",
       "destination": "/catalog/:slug",
       "permanent": true
+    },
+    {
+      "source": "/en/products/:slug",
+      "destination": "/en/catalog/:slug",
+      "permanent": true
     }
   ],
   "headers": [
