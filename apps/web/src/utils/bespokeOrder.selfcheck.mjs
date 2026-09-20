@@ -188,4 +188,36 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
   assert.equal(bespokeFloorPrice({ bottleSizes: [], bottleTypes: null }), 0);
 }
 
+// --- BOTH bespoke pages must default to the cheapest option, and agree with the floor ----------------
+//
+// The rule was applied to the desktop page and not to the phone — the page most buyers use. Measured
+// there: the flow opened at Rp 300.000 while the floor line beside it read Rp 255.000. Two numbers about
+// the same bottle, on the same screen, Rp 45.000 apart, because the cap group shows the expensive option
+// first and the form took whatever was first.
+//
+// Checked as SOURCE on both files, because these pages import the supabase client and cannot be loaded
+// outside a browser build.
+{
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  for (const [name, file] of [
+    ['desktop', ['pages', 'BespokePage.jsx']],
+    ['phone', ['pages', 'mobile', 'MobileBespokePage.jsx']],
+  ]) {
+    const source = strip(readFileSync(join(here, '..', ...file), 'utf8'));
+    for (const group of ['bottleSizeOptions', 'bottleTypeOptions', 'capDesignOptions', 'labelDesignOptions']) {
+      // No group may be indexed at [0] for a default or a fallback: that is display order, which is a
+      // different question from what somebody should be charged for a choice they never made.
+      const byPosition = source.match(new RegExp(`${group}\\[0\\]`, 'g')) || [];
+      assert.deepEqual(byPosition, [],
+        `${name} still takes ${group}[0] — display order, not the cheapest enabled option`);
+    }
+    assert.match(source, /cheapestEnabled\(/, `${name} must pick its defaults with cheapestEnabled`);
+  }
+}
+
 console.log('bespokeOrder self-check OK');
