@@ -15,14 +15,17 @@ import { useTranslate } from '@/hooks/useTranslate.js';
  * Hidden when no WhatsApp number is configured: a button that opens a chat with nobody is worse than no
  * button (same rule as OverseasInquiryButton).
  */
-const AskAtelierButton = ({ orderNumber = '', className = '' }) => {
+// labelKey/draftKey so the same button can carry the errand of whatever sentence it answers: asking
+// about a parcel on the tracking page, arranging an order from abroad on the account page — where the
+// English shop has no checkout, and WhatsApp is not a help channel but the way to buy at all.
+const AskAtelierButton = ({ orderNumber = '', className = '', labelKey = 'track.askAtelier', draftKey = '' }) => {
   const { t } = useTranslate();
   const phoneNumber = getStorefrontWhatsAppNumber();
   if (!phoneNumber) return null;
 
   // One t() call, not a ternary of two: the shop's guard for inline WhatsApp drafts reads the expression
   // handed to buildWhatsAppCheckoutUrl and wants it to start at the message file. It is right to.
-  const message = t(orderNumber ? 'track.waDraft' : 'track.waDraftNoOrder', { order: orderNumber });
+  const message = t(draftKey || (orderNumber ? 'track.waDraft' : 'track.waDraftNoOrder'), { order: orderNumber });
 
   return (
     <a
@@ -33,7 +36,7 @@ const AskAtelierButton = ({ orderNumber = '', className = '' }) => {
       className={`inline-flex items-center justify-center gap-2 rounded-2xl border border-editorial-charcoal/20 bg-white px-4 py-2 text-center text-sm font-bold leading-snug text-editorial-charcoal transition hover:bg-editorial-paper min-h-[2.75rem] ${className}`}
     >
       <MessageCircle className="h-4 w-4" />
-      {t('track.askAtelier')}
+      {t(labelKey)}
     </a>
   );
 };
