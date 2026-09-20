@@ -180,6 +180,19 @@ assert.match(read('pages', 'PublicProductDetailPage.jsx'), /<ScentPyramid produc
       `the English letter still says "${leftover}"`);
   }
 
+  // And it is still a letter, not a brochure aimed at the reader. The Indonesian says "kita" three times
+  // and "kamu" not once: the writer is inside the feeling, describing what happens to US. The first
+  // English draft rendered every one of those as "you", which reads as a diagnosis of the person holding
+  // the bottle. Held as the rule — first person present, second person absent — because a later rewrite
+  // reaching for "you were never going to reach him" breaks nothing a structural check can see.
+  const idWords = JSON.stringify([idStory.hero, idStory.sections]);
+  assert.ok(/\bkita\b/.test(idWords) && !/\b(kamu|Anda|kau)\b/.test(idWords),
+    'the Indonesian letter stopped speaking as "kita", so the English rule below no longer follows from it');
+  assert.ok(!/\b(you|your|yours|you're)\b/i.test(enWords),
+    'the English letter addresses the reader as "you" — the Indonesian never does, and it turns the confession into an accusation');
+  assert.ok(/\b(we|us|our)\b/i.test(enWords),
+    'the English letter no longer says "we" anywhere — the voice standing inside the feeling is gone');
+
   // The page must never hand the Studio story — which has one set of fields, and those are Indonesian —
   // to the English shop.
   const gate = page.slice(page.indexOf('const productStory = isInternational'), page.indexOf('if (storyLoading)'));
