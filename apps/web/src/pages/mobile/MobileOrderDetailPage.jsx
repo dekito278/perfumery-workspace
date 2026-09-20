@@ -1,5 +1,6 @@
 import BriefText from '@/components/BriefText.jsx';
 import { fromDatetimeLocal, toDatetimeLocal } from '@/utils/datetimeLocalInput.js';
+import { needsWaybillPrompt } from '@/utils/waybillPrompt.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseOrderNoteRows } from '@/utils/orderNotes.js';
 import { Helmet } from 'react-helmet';
@@ -211,6 +212,8 @@ const MobileOrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingShipment, setSavingShipment] = useState(false);
+  const [waybillAsk, setWaybillAsk] = useState(false);
+  const [waybillDraft, setWaybillDraft] = useState('');
   const [savingPaymentProof, setSavingPaymentProof] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [savingBespokeProduction, setSavingBespokeProduction] = useState(false);
@@ -347,8 +350,40 @@ const MobileOrderDetailPage = () => {
       setOrder(nextOrder);
       setPaymentLogs(await getOrderPaymentLogs(orderKey));
       toast.success('Status order diperbarui');
+      // Asked here too, and here most of all: this is the screen Dekito works from, standing at the
+      // counter with the courier's receipt in his other hand.
+      if (needsWaybillPrompt(nextOrder, status)) {
+        setWaybillDraft('');
+        setWaybillAsk(true);
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal memperbarui status order');
+    }
+  };
+
+  // Saves through the same call the shipment form uses, so there is one way a waybill reaches an order.
+  // "Belum ada" is a real answer — the tracking page says so honestly since #226.
+  const answerWaybill = async (number) => {
+    const waybill = String(number || '').trim();
+    setWaybillAsk(false);
+    if (!waybill) return;
+    setSavingShipment(true);
+    try {
+      const nextOrder = await updateOrderShipment(order.id || order.orderNumber, {
+        ...shipmentDraft,
+        shipmentStatus: 'shipped',
+        trackingNumber: waybill,
+        shippedAt: fromDatetimeLocal(shipmentDraft.shippedAt) || new Date().toISOString(),
+        deliveredAt: fromDatetimeLocal(shipmentDraft.deliveredAt),
+      });
+      setOrder(nextOrder || order);
+      setShipmentFromOrder(nextOrder || order);
+      toast.success('Resi tersimpan');
+    } catch (error) {
+      toast.error(error.message || 'Resi gagal disimpan — order tetap berstatus dikirim');
+      setWaybillAsk(true);
+    } finally {
+      setSavingShipment(false);
     }
   };
 
@@ -396,7 +431,13 @@ const MobileOrderDetailPage = () => {
       });
       setOrder(nextOrder || order);
       setShipmentFromOrder(nextOrder || order);
-      toast.success('Pengiriman tersimpan');
+      if (shipmentDraft.shipmentStatus === 'shipped' && !String(shipmentDraft.trackingNumber || '').trim()) {
+        toast.warning('Tersimpan tanpa resi', {
+          description: 'Pembeli akan melihat "Belum tersedia" di halaman lacak, dan pesan WhatsApp-nya tidak membawa nomor apa pun.',
+        });
+      } else {
+        toast.success('Pengiriman tersimpan');
+      }
     } catch (error) {
       toast.error(error.message || 'Gagal menyimpan pengiriman');
     } finally {
@@ -1414,6 +1455,30 @@ const MobileOrderDetailPage = () => {
           <select value={order.status} onChange={(event) => handleStatusChange(event.target.value)} className="mt-2 h-11 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-bold outline-none focus:border-amber-300">
             {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
+          {waybillAsk ? (
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-amber-900">Nomor resi?</p>
+              <p className="mt-1 text-xs font-medium leading-snug text-amber-800">
+                Pembeli melihat ini di halaman lacak, dan ikut terbawa ke pesan WhatsApp.
+              </p>
+              <input
+                value={waybillDraft}
+                onChange={(event) => setWaybillDraft(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') answerWaybill(waybillDraft); }}
+                placeholder="Tempel nomor resi"
+                autoFocus
+                className="mt-2 h-11 w-full rounded-2xl border border-[#e5e7eb] bg-white px-3 text-sm font-semibold outline-none focus:border-amber-300"
+              />
+              <div className="mt-2 flex gap-2">
+                <Button type="button" className="h-10 flex-1 rounded-2xl text-xs" onClick={() => answerWaybill(waybillDraft)} disabled={savingShipment || !waybillDraft.trim()}>
+                  Simpan resi
+                </Button>
+                <Button type="button" variant="outline" className="h-10 rounded-2xl bg-white text-xs" onClick={() => answerWaybill('')} disabled={savingShipment}>
+                  Belum ada
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </section>
         </> : null}
       </main>
