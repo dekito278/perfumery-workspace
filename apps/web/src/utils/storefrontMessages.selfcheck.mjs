@@ -887,4 +887,28 @@ const walk = (dir, out = []) => {
   assert.match(MESSAGES.id['track.shipped'], /di bawah/i, 'the with-waybill line still points at it');
 }
 
+// --- The page where the money moves must offer a way to ask --------------------------------------------
+//
+// /payment asks for an exact amount, a bank transfer and a mandatory upload, and carried no link to a
+// person: no footer, no WhatsApp, nothing but the bottom tab bar. Every other page in this shop offers
+// "WhatsApp atelier". Five orders sit stalled at exactly this step — which does not prove the missing
+// link caused it, and is reason enough to put one there.
+{
+  const page = read('pages', 'PaymentPage.jsx');
+  assert.match(page, /const whatsappNumber = getStorefrontWhatsAppNumber\(\);/,
+    'the payment page must read the number from the one source the footer uses');
+  assert.match(page, /\{whatsappNumber \? \(/,
+    'a wa.me link with no recipient is a dead end — render it only when a number is configured');
+  assert.match(page, /t\('pay\.stuckDraft', \{ order: orderNumber \}\)/,
+    'the draft must name the order, or the reply starts with "which order?"');
+  assert.match(page, /encodeURIComponent\(t\('pay\.stuckDraft'/,
+    'the draft goes into a URL, so it has to be encoded');
+
+  for (const lang of ['id', 'en']) {
+    assert.ok(MESSAGES[lang]['pay.stuck'] && MESSAGES[lang]['pay.stuckDraft'], `both keys exist in ${lang}`);
+    assert.match(MESSAGES[lang]['pay.stuckDraft'], /\{order\}/,
+      `the ${lang} draft lost its {order} placeholder — the message would arrive anonymous`);
+  }
+}
+
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');
