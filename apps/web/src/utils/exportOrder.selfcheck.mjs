@@ -91,6 +91,21 @@ const orderService = readFileSync(join(here, '..', 'services', 'orderService.js'
 assert.match(orderService, /client_context: sanitizeClientContext\(clientContext\)/,
   'buildOrderPayload does not write client_context, so nothing marked here reaches the database');
 
+// --- 4b. It writes NO customer record ------------------------------------------------------------------
+//
+// Measured on the real database, on the first attempt: saveCustomer with no customer code resolves the
+// row from the SIGNED-IN account, and in Studio that is Dekito. Recording an order for a buyer in Kuala
+// Lumpur rewrote HIS OWN row — SOLI89523 came back reading "UJI TOKO EN" with a Malaysian address.
+//
+// An order written for someone else writes no customer row at all. The buyer's details are on the order,
+// which is where every screen reads them from; a customer record belonging to the wrong person is worse
+// than none.
+assert.equal(order.skipCustomerRecord, true,
+  'an export order will overwrite the signed-in admin\'s own customer record');
+const service = readFileSync(join(here, '..', 'services', 'orderService.js'), 'utf8');
+assert.match(service, /orderData\.skipCustomerRecord \? null : await saveCustomer\(/,
+  'createOrder ignores skipCustomerRecord, so the flag on the order data changes nothing');
+
 // --- 5. A domestic-priced line is named, not swallowed — and not refused either ------------------------
 // Dekito is allowed to sell at whatever price he agreed to. He is not allowed to do it by accident.
 const mixed = buildExportOrderData({

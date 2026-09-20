@@ -81,6 +81,10 @@ export const buildExportOrderData = ({
       paymentProvider: 'manual',
       // The point of the whole exercise. Every message about this order is written from this field.
       clientContext: { shop: 'en' },
+      // This order is written FOR someone else. Without this the customer upsert falls back to the
+      // signed-in account — Dekito's own row — and replaces his name, contact and address with the
+      // buyer's. It did exactly that on the first real attempt.
+      skipCustomerRecord: true,
       notesLines: [
         `Order luar negeri, disepakati lewat WhatsApp${destinationName ? ` — ${destinationName}` : ''}.`,
         `Ongkir: ${formatMoney(shipping)}${shipping > 0 ? '' : ' (belum dihitung)'}`,

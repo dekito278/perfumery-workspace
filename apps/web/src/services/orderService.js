@@ -1092,7 +1092,16 @@ export const createOrder = async (orderData) => {
     throw new Error(`${firstIssue.productName}${firstIssue.variantName ? ` ${firstIssue.variantName}` : ''} stok tersisa ${firstIssue.available}, tidak cukup untuk ${firstIssue.requested}.`);
   }
 
-  const customer = await saveCustomer({
+  // saveCustomer with no customer code resolves the row from the SIGNED-IN account, because that is what
+  // the checkout wants: the buyer is the person at the keyboard. In Studio the person at the keyboard is
+  // Dekito, and the buyer is someone in Kuala Lumpur — so recording an export order overwrote HIS OWN
+  // customer row with the buyer's name, contact and address. Measured, on the real one: SOLI89523 came
+  // back reading "UJI TOKO EN" with a Malaysian address.
+  //
+  // An order written FOR someone else therefore writes no customer row at all. The buyer's details live
+  // on the order itself, which is where they are read from anyway; a customer record that belongs to the
+  // wrong person is worse than none.
+  const customer = orderData.skipCustomerRecord ? null : await saveCustomer({
     customerCode: orderData.customerCode,
     customerName: orderData.customerName,
     contact: orderData.contact,
