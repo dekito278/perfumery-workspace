@@ -15,7 +15,7 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-import { bespokeFlowSteps, buildBespokeEnquiryDraft } from '@/utils/bespokeOrder.js';
+import { bespokeFlowSteps, buildBespokeEnquiryDraft, bespokeFloorPrice } from '@/utils/bespokeOrder.js';
 import { buildWhatsAppCheckoutUrl, checkoutPaymentMethods, getCheckoutPaymentMethod, getStorefrontWhatsAppNumber, isManualTransferPayment } from '@/services/cartService.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
@@ -154,6 +154,7 @@ const MobileBespokePage = () => {
   const capDesignOptions = useMemo(() => bespokeSettings.capDesigns.filter((option) => option.enabled), [bespokeSettings.capDesigns]);
   const labelDesignOptions = useMemo(() => bespokeSettings.labelDesigns.filter((option) => option.enabled), [bespokeSettings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => bespokeSettings.exoticMaterials.filter((option) => option.enabled), [bespokeSettings.exoticMaterials]);
+  const floorPrice = useMemo(() => bespokeFloorPrice(bespokeSettings), [bespokeSettings]);
   const savedDraft = useMemo(() => readBespokeDraft(), []);
   const savedForm = savedDraft.form && typeof savedDraft.form === 'object' && !Array.isArray(savedDraft.form) ? savedDraft.form : {};
   const [step, setStep] = useState(Number.isInteger(savedDraft.step) ? Math.min(Math.max(savedDraft.step, 0), 4) : 0);
@@ -962,6 +963,17 @@ const MobileBespokePage = () => {
           </p>
           <div className="mt-2 inline-flex rounded-full bg-editorial-charcoal px-2.5 py-1 text-[10px] font-bold uppercase text-white">
             {t('bsp.preorderDays')}
+          </div>
+          {/* The most expensive thing this atelier sells asked for a name and a scent story before
+              showing any number at all. Derived from the cheapest enabled option in each required group,
+              so it follows Studio rather than a figure typed into the copy.
+              Gated: these prices are one domestic set, and the English shop takes no payment for a
+              bespoke bottle — a rupiah floor there is the promise buildBespokeEnquiryDraft avoids. */}
+          <div className="mt-2 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] px-3 py-2">
+            <div className="text-sm font-bold text-editorial-charcoal">
+              {isInternational ? t('bsp.floor') : t('bsp.floor', { price: formatRupiah(floorPrice) })}
+            </div>
+            <p className="mt-0.5 text-[11px] font-medium leading-snug text-[#6b7280]">{t('bsp.floorNote')}</p>
           </div>
           {referenceProduct ? (
             <div className="mobile-commerce-panel mt-3 border-0 p-3 text-xs font-bold text-editorial-charcoal">

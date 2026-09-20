@@ -30,7 +30,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
-import { bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft, cheapestEnabled } from '@/utils/bespokeOrder.js';
+import { bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -168,6 +168,7 @@ const BespokePage = () => {
   const capDesignOptions = useMemo(() => settings.capDesigns.filter((option) => option.enabled), [settings.capDesigns]);
   const labelDesignOptions = useMemo(() => settings.labelDesigns.filter((option) => option.enabled), [settings.labelDesigns]);
   const exoticMaterialOptions = useMemo(() => settings.exoticMaterials.filter((option) => option.enabled), [settings.exoticMaterials]);
+  const floorPrice = useMemo(() => bespokeFloorPrice(settings), [settings]);
   const defaultSize = cheapestEnabled(bottleSizeOptions);
   const defaultBottle = cheapestEnabled(bottleTypeOptions);
   const defaultCap = cheapestEnabled(capDesignOptions);
@@ -635,6 +636,13 @@ const BespokePage = () => {
             <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{t('bsp.eyebrow')}</p>
             <TextReveal as="h1" text={t('bsp.title')} />
             <p className="hero-animate-text hero-animate-text--d3">{t('bsp.lead')}</p>
+            {/* Same rule as the phone: a floor derived from Studio's own option prices, and never shown
+                to the English shop, whose bespoke path takes no payment and has no international price. */}
+            <p className="hero-animate-text hero-animate-text--d3 bespoke-hero__floor">
+              <strong>{isInternational ? t('bsp.floor') : t('bsp.floor', { price: formatRupiah(floorPrice) })}</strong>
+              {' '}
+              <span>{t('bsp.floorNote')}</span>
+            </p>
           </div>
           <ol className="bespoke-hero__steps hero-animate-fade">
             {bespokeStepKeys(stepKeys, isInternational).map((stepKey, index) => (

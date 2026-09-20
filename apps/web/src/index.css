@@ -171,3 +171,7 @@
     text-wrap: balance;
   }
 }
+
+/* The bespoke floor price, beside the hero lead. One line on a wide screen, wrapping on a narrow one. */
+.bespoke-hero__floor strong { font-weight: 700; }
+.bespoke-hero__floor span { color: var(--muted-foreground, #6b7280); font-size: 0.9em; }
