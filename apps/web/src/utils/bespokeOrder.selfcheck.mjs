@@ -1,7 +1,7 @@
 // Runnable check for the shared bespoke builders. `node src/utils/bespokeOrder.selfcheck.mjs`.
 // Guards the invariants the shipping label + admin brief depend on after the extraction refactor.
 import assert from 'node:assert/strict';
-import { buildBespokeItem, buildBespokeNotes, buildBespokeCheckoutDraft, cheapestEnabled, bespokeFloorPrice } from './bespokeOrder.js';
+import { buildBespokeItem, buildBespokeNotes, buildBespokeCheckoutDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from './bespokeOrder.js';
 import { parseOrderNoteRows } from './orderNotes.js';
 import { readFileSync } from 'node:fs';
 
@@ -217,6 +217,60 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
         `${name} still takes ${group}[0] — display order, not the cheapest enabled option`);
     }
     assert.match(source, /cheapestEnabled\(/, `${name} must pick its defaults with cheapestEnabled`);
+  }
+}
+
+// --- What each option ADDS, so the choice is visible before it is made -------------------------------
+{
+  const caps = [
+    { enabled: true, price: 50000, label: 'Cap custom Abstrak' },
+    { enabled: true, price: 5000, label: 'Cap Basic' },
+    { enabled: false, price: 0, label: 'Cap gratis (mati)' },
+  ];
+  assert.equal(optionExtraPrice(caps[0], caps), 45000, 'the exact gap that was charged silently');
+  assert.equal(optionExtraPrice(caps[1], caps), 0, 'the cheapest option adds nothing — it IS the floor');
+  assert.equal(optionExtraPrice(caps[2], caps), 0, 'a disabled option cannot lower the floor beneath it');
+
+  // Never negative, and never thrown by missing data.
+  assert.equal(optionExtraPrice({ price: 1000 }, caps), 0, 'an option below the floor still adds nothing');
+  assert.equal(optionExtraPrice({}, []), 0);
+  assert.equal(optionExtraPrice(), 0);
+  assert.equal(optionExtraPrice(null, null), 0);
+
+  // A group where everything costs the same shows nothing anywhere — no decoration for a choice that
+  // changes no price.
+  const flat = [{ enabled: true, price: 7000 }, { enabled: true, price: 7000 }];
+  assert.deepEqual(flat.map((o) => optionExtraPrice(o, flat)), [0, 0]);
+}
+
+// --- And BOTH pages must actually show it -------------------------------------------------------------
+{
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
+  for (const [name, file] of [
+    ['desktop', ['pages', 'BespokePage.jsx']],
+    ['phone', ['pages', 'mobile', 'MobileBespokePage.jsx']],
+  ]) {
+    const source = strip(readFileSync(join(here, '..', ...file), 'utf8'));
+    assert.match(source, /optionExtraPrice\(option, group\)/,
+      `${name} must price its options from the shared rule, not a second calculation`);
+    // Gated with the floor: these are domestic prices and the English bespoke path quotes none.
+    assert.match(source, /if \(isInternational\) return '';/,
+      `${name} would show rupiah option prices in the English shop, which takes no payment for bespoke`);
+    // Every group that has prices must pass the label through, or one screen stays silent.
+    const passes = (source.match(/extra=\{optionPriceLabel\(/g) || []).length;
+    assert.ok(passes >= 1, `${name} computes the extra price but never renders it`);
+  }
+
+  // The phone passes it per group; the desktop renders one group at a time through a single card.
+  const phone = strip(readFileSync(join(here, '..', 'pages', 'mobile', 'MobileBespokePage.jsx'), 'utf8'));
+  for (const group of ['bottleSizeOptions', 'bottleTypeOptions', 'capDesignOptions', 'labelDesignOptions']) {
+    assert.match(phone, new RegExp(`extra=\\{optionPriceLabel\\(option, ${group}\\)\\}`),
+      `the phone shows no added price on ${group} — the cap group is exactly where the silent Rp 45.000 lived`);
   }
 }
 
