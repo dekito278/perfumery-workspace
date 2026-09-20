@@ -23,6 +23,7 @@ import { getProductStory } from '@/data/stories/index.js';
 import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
+import { relatedFor } from '@/utils/relatedProducts.js';
 import { productCopyFor } from '@/utils/productCopy.js';
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import InternationalPrice from '@/components/storefront/InternationalPrice.jsx';
@@ -153,7 +154,8 @@ const MobileProductDetailPage = () => {
   };
 
   // Related products
-  const related = catalog.filter((p) => p.slug !== product.slug).slice(0, 4);
+  // One rule for both surfaces. The phone used to take the first four in the catalogue, full stop.
+  const related = relatedFor(product, catalog);
 
   return (
     <MobileCommerceLayout>
