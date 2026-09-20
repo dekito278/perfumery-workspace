@@ -123,6 +123,47 @@ assert.doesNotMatch(MESSAGES.en['welcome.signIn'], /member|discount/i,
   'nor may the English sign-in button');
 assert.match(MESSAGES.id['welcome.lead'], /member/i, 'the Indonesian one still does, because there it is true');
 
+// And the card's code is the same shape of promise. It is redeemed in the CART, and the English shop has
+// none since #206 — so an English reader must never be told to type it at checkout. The note is gated to
+// the Indonesian shop in WelcomePage, and its English words are a different, true sentence for the day
+// somebody edits that gate.
+{
+  const welcomePage = read('pages', 'WelcomePage.jsx');
+  assert.match(welcomePage, /const \{ isInternational \} = useStorefrontRegion\(\);/,
+    'the welcome page must read the chosen shop, not guess at it');
+  assert.match(welcomePage, /\{isInternational \? null : \(/,
+    'the card-code note must be gated: the English shop has no cart to redeem it in');
+  // The gate has to be around the NOTE, not merely present in the file.
+  const gate = welcomePage.slice(welcomePage.indexOf('{isInternational ? null : ('));
+  assert.ok(gate.indexOf("t('welcome.voucherBody')") > 0 && gate.indexOf("t('welcome.voucherBody')") < 700,
+    'the gate does not actually wrap the card-code note');
+
+  for (const key of ['welcome.voucherEyebrow', 'welcome.voucherBody']) {
+    assert.ok(MESSAGES.id[key] && MESSAGES.en[key], `${key} exists in both shops`);
+  }
+  assert.doesNotMatch(MESSAGES.en['welcome.voucherBody'], /checkout|cart|type the code|enter the code/i,
+    'the English note must not send a reader to a cart that shop does not have');
+  // "masuk" alone is not the rule: "Masukkan di keranjang" contains it while saying nothing about an
+  // account, and a sabotage that dropped the account sentence walked past on that word.
+  assert.match(MESSAGES.id['welcome.voucherBody'], /\bakun\b/i,
+    'the Indonesian note must name the ACCOUNT — being tied to one is the whole reason the code gets refused');
+  assert.match(MESSAGES.id['welcome.voucherBody'], /masuk ke akun|setelah kamu masuk/i,
+    'and it must say signing in is what activates it, not merely that an account exists');
+
+  // Neither may repeat the code or the rupiah. Both live in the voucher row, the card is printed on paper
+  // nobody can edit, and a page that restates them is a third version of the truth waiting to go stale.
+  for (const key of ['welcome.voucherEyebrow', 'welcome.voucherBody']) {
+    for (const lang of ['id', 'en']) {
+      assert.doesNotMatch(MESSAGES[lang][key], /\bRp\s?[\d.]{3,}|\b\d{2}\.\d{3}\b/,
+        `${lang} ${key} names the amount — that belongs to the voucher row, not to a page`);
+      // Any run of 6+ capitals that is not a word this copy uses is a voucher code being repeated.
+      const shouty = (MESSAGES[lang][key].match(/\b[A-Z]{6,}\b/g) || []).filter((word) => !['KARTUMU'].includes(word));
+      assert.deepEqual(shouty, [],
+        `${lang} ${key} looks like it repeats a voucher code (${shouty.join(', ')}) — the card is already printed with it`);
+    }
+  }
+}
+
 // --- 6. The language comes from the region, never from a second guess ---------------------------------------------
 const hook = read('hooks', 'useTranslate.js');
 assert.match(hook, /const \{ region, isInternational \} = useStorefrontRegion\(\);/,
@@ -148,8 +189,18 @@ for (const literal of ['DARI KARTU DI PAKETMU', 'Terima kasih sudah memilih Soli
   assert.ok(!welcome.includes(`>${literal}`) && !welcome.includes(`"${literal}"`),
     `"${literal}" must come from the message file, not sit hardcoded in the page`);
 }
-assert.equal((welcome.match(/t\('welcome\./g) || []).length, 8,
-  'every string on the page goes through t() — a missed one is the sentence that stays Indonesian');
+// Held as "every welcome.* key is rendered by the page", not as a count. A number here is a number that
+// goes stale: adding the card-code note took it from 8 to 10 and the check failed on a correct change,
+// which is how a guard teaches people to edit the guard instead of reading it.
+{
+  const used = new Set((welcome.match(/t\('(welcome\.[\w.]+)'/g) || []).map((hit) => hit.slice(3, -1)));
+  const defined = MESSAGE_KEYS.filter((key) => key.startsWith('welcome.'));
+  const unused = defined.filter((key) => !used.has(key));
+  assert.deepEqual(unused, [],
+    `these welcome keys exist but nothing on the page renders them: ${unused.join(', ')}`);
+  assert.deepEqual([...used].filter((key) => !defined.includes(key)), [],
+    'the page asks for a welcome key that is not in MESSAGES — translate() would print the key itself');
+}
 
 // --- 9. The product page leaves no Indonesian behind ------------------------------------------------------
 // A page that is 90% translated is worse than one that is not: the buyer stops trusting the parts that

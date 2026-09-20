@@ -26,6 +26,16 @@ export const MESSAGES = {
     'welcome.signIn': 'Masuk dengan Google — harga member',
     'welcome.browse': 'Lihat koleksi dulu',
 
+    // The card in the parcel carries a one-time code. This block is what tells its reader the one thing
+    // that decides whether the code works: it is tied to an ACCOUNT, so it does nothing until they sign
+    // in. Someone who types it first and is refused reads the shop as broken, not the code as per-account.
+    //
+    // Deliberately names neither the code nor the rupiah. Both live in the voucher row in the database,
+    // and a page repeating them is a second place for them to go stale — the card is already printed on
+    // paper nobody can edit, so the page must not add a third version of the truth.
+    'welcome.voucherEyebrow': 'KODE DI KARTUMU',
+    'welcome.voucherBody': 'Kode di kartu itu baru aktif setelah kamu masuk ke akun, dan berlaku sekali untuk satu akun. Masukkan di keranjang — potongannya kelihatan sebelum kamu bayar.',
+
     'pdp.loading': 'Memuat produk…',
     'pdp.notFoundTitle': 'Fragrance ini tidak ditemukan.',
     'pdp.backToCollection': 'Kembali ke koleksi',
@@ -1124,6 +1134,12 @@ export const MESSAGES = {
     'welcome.alreadyMember': "You're signed in — see the collection",
     'welcome.signIn': 'Sign in with Google',
     'welcome.browse': 'Browse the collection',
+
+    // NOT a translation. The English shop has no cart, so "type the code at checkout" would be an
+    // instruction with nowhere to follow it. Different sentence, true one: what the code is for, and what
+    // an international buyer gets instead.
+    'welcome.voucherEyebrow': 'THE CODE ON YOUR CARD',
+    'welcome.voucherBody': 'The code on the card belongs to orders placed inside Indonesia. From anywhere else we arrange the order with you on WhatsApp, and the price you are quoted already has the shipping in it.',
 
     'pdp.loading': 'Loading product…',
     'pdp.notFoundTitle': 'This fragrance could not be found.',
