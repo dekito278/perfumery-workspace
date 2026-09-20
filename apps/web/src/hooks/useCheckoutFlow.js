@@ -545,6 +545,9 @@ export const useCheckoutFlow = ({
         deliveryAddress,
         deliveryArea,
         notes: buildOrderNotes({ deliveryAddress, deliveryArea, paymentMethod, shippingSummary, notes }),
+        // Same courier, as a field and not only as a line inside the notes. Both order paths must agree:
+        // the endpoint sets courier_name from its own server-side summary.
+        courierName: shippingSummary,
         items,
         subtotal: checkoutTotalDue,
         quantity: summary.quantity,
