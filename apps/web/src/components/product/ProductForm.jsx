@@ -57,6 +57,7 @@ export const emptyProduct = {
   intensity: 'Medium',
   wear: {},
   featured: true,
+  limited: false,
   catalogVisible: true,
 };
 
@@ -111,6 +112,7 @@ const snapshotProductForm = (product) => JSON.stringify({
   wear: product.wear || {},
   intensity: product.intensity || 'Medium',
   featured: Boolean(product.featured),
+  limited: Boolean(product.limited),
   catalogVisible: Boolean(product.catalogVisible),
 });
 
@@ -499,6 +501,13 @@ const ProductForm = ({ product = null, onSaved }) => {
           <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
             <input type="checkbox" checked={Boolean(form.featured)} onChange={(event) => updateField('featured', event.target.checked)} />
             Featured di home
+          </label>
+          {/* A badge, kept apart from the scent family. "Limited" used to live in the category field and
+              occupy the seat the filter pills read, so ten perfumes could not be found by what they smell
+              of — Maskumambang is a white floral that never appeared under FLORAL. */}
+          <label className="flex items-center gap-3 rounded-2xl border bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+            <input type="checkbox" checked={Boolean(form.limited)} onChange={(event) => updateField('limited', event.target.checked)} />
+            Badge LIMITED
           </label>
           <label className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-bold ${canPublish ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
             <input

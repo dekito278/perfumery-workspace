@@ -15,6 +15,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
+import { cardLabels } from '@/utils/productBadge.js';
 import { useMicroInteractions } from '@/hooks/useParallax.js';
 import { useScrollReveal } from '@/hooks/useScrollReveal.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
@@ -220,7 +221,7 @@ const CatalogPage = () => {
                     )}
                   </div>
                   <div className="catalog-card__info">
-                    <span className="catalog-card__category">{product.category || 'Atelier'}</span>
+                    <span className="catalog-card__category">{cardLabels(product).join(' · ') || 'Atelier'}</span>
                     <h3>{product.name}</h3>
                     <CardPrice product={product} className="catalog-card__price" memberClassName="text-[11px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                   </div>

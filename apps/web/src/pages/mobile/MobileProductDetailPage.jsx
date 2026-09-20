@@ -21,6 +21,7 @@ import useProductStory from '@/hooks/useProductStory.js';
 import ImmersiveProductPage from '@/pages/ImmersiveProductPage.jsx';
 import { getProductStory } from '@/data/stories/index.js';
 import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
+import { cardLabels } from '@/utils/productBadge.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { relatedFor } from '@/utils/relatedProducts.js';
@@ -181,7 +182,7 @@ const MobileProductDetailPage = () => {
 
         {/* Product info */}
         <div className="m-editorial-pdp__info">
-          <p className="m-editorial-eyebrow">{product.category}</p>
+          <p className="m-editorial-eyebrow">{cardLabels(product).join(' · ')}</p>
           <h1>{product.name}</h1>
           {/* Same rule as desktop: one price, for the shop being read. */}
           {exportPrice ? (

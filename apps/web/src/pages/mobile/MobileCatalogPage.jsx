@@ -9,6 +9,7 @@ import { useStorefrontProducts } from '@/hooks/useStorefrontProducts.js';
 import StaleCatalogNotice from '@/components/storefront/StaleCatalogNotice.jsx';
 import { useTranslate } from '@/hooks/useTranslate.js';
 import { CATALOG_PAGE_SIZE } from '@/utils/catalogPageSize.js';
+import { cardLabels } from '@/utils/productBadge.js';
 import { isProductVisibleInStorefront } from '@/services/productCatalogService.js';
 import { getPublicFragranceCatalog } from '@/data/publicStorefront.js';
 import { desktopCanonicalPath, toAbsoluteUrl } from '@/utils/seo.js';
@@ -117,7 +118,7 @@ export const MobileCatalogContent = ({ active = true }) => {
                   sizes="(max-width: 480px) 45vw, 200px"
                 />
                 <div className="m-editorial-product-card__info">
-                  <span className="m-editorial-product-card__category">{product.category || 'Atelier'}</span>
+                  <span className="m-editorial-product-card__category">{cardLabels(product).join(' · ') || 'Atelier'}</span>
                   <h3>{product.name}</h3>
                   <CardPrice product={product} className="m-editorial-product-card__price" memberClassName="text-[10px] font-bold uppercase tracking-[0.1em] text-amber-700" />
                 </div>

@@ -1,6 +1,7 @@
 import { buildWhatsAppCheckoutUrl, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { buildOverseasDraft, overseasDraftKeys } from '@/utils/overseasEnquiry.js';
+import { cardLabels } from '@/utils/productBadge.js';
 import CardPrice from '@/components/storefront/CardPrice.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -232,7 +233,7 @@ const PublicProductDetailPage = ({ slug: slugProp = '' } = {}) => {
             <ProductVisual product={product} className="pdp-gallery__image" imageFit="cover" priority label={false} />
           </div>
           <div className="pdp-info">
-            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{product.category}</p>
+            <p className="editorial-eyebrow hero-animate-text hero-animate-text--d1">{cardLabels(product).join(' · ')}</p>
             <h1 className="hero-animate-text hero-animate-text--d2">{product.name}</h1>
             {/* One price, for the shop being read. In the English shop the Indonesian price and the
                 member/tier line are not shown at all: three prices on one screen left the reader to guess
