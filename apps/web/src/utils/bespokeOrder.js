@@ -134,6 +134,24 @@ export const buildBespokeNotes = (request = {}) => {
  * Display order is untouched. The hero option stays first on screen; it just stops being pre-bought.
  * Ties keep sort_order, so a group where everything is free starts exactly where it always did.
  */
+/**
+ * The least a bespoke bottle can cost, derived from the same option rows the flow already reads.
+ *
+ * Step 1 asked a buyer to name their perfume and describe a scent before showing any number at all —
+ * not even "mulai dari" — on the most expensive thing this atelier sells.
+ *
+ * Summed from the CHEAPEST enabled option in each required group, so it is the true floor rather than a
+ * marketing number, and it follows Dekito's own prices the moment he changes them in Studio. Nothing is
+ * hardcoded: a figure typed into the copy would be a second source of truth, free to go stale.
+ *
+ * Exotic material is deliberately left out. It is the one group with no default — a buyer who picks
+ * nothing pays nothing for it — so including it would quote a price nobody is obliged to pay.
+ */
+export const bespokeFloorPrice = (settings = {}) => (
+  [settings.bottleSizes, settings.bottleTypes, settings.capDesigns, settings.labelDesigns]
+    .reduce((sum, group) => sum + Number(cheapestEnabled(group || []).price || 0), 0)
+);
+
 export const cheapestEnabled = (options = []) => {
   const enabled = options.filter((option) => option.enabled);
   if (!enabled.length) return options[0] || {};

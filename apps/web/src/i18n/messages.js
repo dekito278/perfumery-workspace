@@ -866,6 +866,12 @@ export const MESSAGES = {
     "bsp.requestPerfume": "Request parfum bespoke.",
     "bsp.flowLead": "Cerita aroma, pilihan botol, delivery, dan payment dalam flow singkat.",
     "bsp.preorderDays": "Pre-order / 7-14 hari",
+
+    // Step 1 showed no number at all on the most expensive thing this atelier sells. The figure is
+    // derived from the cheapest enabled option in each required group — never typed here, or the copy
+    // becomes a second source of truth that goes stale the day a price changes in Studio.
+    "bsp.floor": "Mulai dari {price}",
+    "bsp.floorNote": "Sebelum ongkir. Naik sesuai botol, cap, label, dan material yang dipilih.",
     "bsp.scentReference": "Referensi aroma:",
     "bsp.briefShort": "Brief ringkas",
     "bsp.preorder": "Pre-order",
@@ -1987,6 +1993,13 @@ export const MESSAGES = {
     "bsp.requestPerfume": "Request a bespoke perfume.",
     "bsp.flowLead": "Scent story and bottle choices in one short flow, then we settle the price and the shipping on WhatsApp.",
     "bsp.preorderDays": "Pre-order / 7–14 days",
+
+    // NOT the same sentence. These prices are one domestic set with no international variant, and the
+    // English shop takes no payment for a bespoke bottle — so a rupiah floor here would be the exact
+    // promise buildBespokeEnquiryDraft exists to avoid. The block is gated to the Indonesian shop; this
+    // is what stands if that gate is ever edited.
+    "bsp.floor": "Priced with you on WhatsApp",
+    "bsp.floorNote": "A bespoke bottle is quoted one by one from abroad, shipping included, before anything is agreed.",
     "bsp.scentReference": "Scent reference:",
     "bsp.briefShort": "Short brief",
     "bsp.preorder": "Pre-order",

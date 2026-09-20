@@ -102,8 +102,22 @@ for (const key of idKeys) {
 
 // --- 4. Placeholders must survive translation ------------------------------------------------------------------
 // {name} dropped from one language is a sentence with a hole in it, in that language only.
+//
+// The exception is a key whose English half is deliberately a DIFFERENT SENTENCE rather than a
+// translation — the rule that keeps this shop from promising abroad what it can only do at home. Such a
+// key has no reason to carry the same holes, and every entry says why.
+const DIFFERENT_SENTENCE_ON_PURPOSE = new Map([
+  ['bsp.floor', 'the bespoke prices are one domestic set with no international variant, and the English '
+    + 'bespoke path takes no payment at all — so the English half quotes no rupiah and needs no {price}'],
+]);
 for (const key of idKeys) {
   const holes = (text) => (String(text).match(/\{(\w+)\}/g) || []).sort();
+  if (DIFFERENT_SENTENCE_ON_PURPOSE.has(key)) {
+    // Still checked, from the other side: the exemption is only honest while the two really do differ.
+    assert.notEqual(MESSAGES.en[key], MESSAGES.id[key],
+      `${key} is exempt from placeholder parity as a different sentence, but the two are now identical`);
+    continue;
+  }
   assert.deepEqual(holes(MESSAGES.en[key]), holes(MESSAGES.id[key]), `${key} carries the same placeholders in both`);
 }
 assert.equal(translate('en', 'welcome.heading'), MESSAGES.en['welcome.heading']);
@@ -952,6 +966,34 @@ const walk = (dir, out = []) => {
         `${lang} ${key} still speaks in the future about a parcel that has already left`);
     }
   }
+}
+
+// --- The bespoke floor price is gated, and never typed into the copy ----------------------------------
+//
+// storefront_bespoke_options holds ONE domestic set of prices with no international variant, and the
+// English bespoke path takes no payment at all (#209). A rupiah floor shown there would be exactly the
+// promise buildBespokeEnquiryDraft was written to avoid.
+{
+  for (const [name, file] of [
+    ['phone', ['pages', 'mobile', 'MobileBespokePage.jsx']],
+    ['desktop', ['pages', 'BespokePage.jsx']],
+  ]) {
+    const source = read(...file);
+    assert.match(source, /bespokeFloorPrice\(/,
+      `${name} must derive the floor from the option rows, not carry its own number`);
+    assert.match(source, /isInternational \? t\('bsp\.floor'\) : t\('bsp\.floor', \{ price:/,
+      `${name} shows a rupiah floor to the English shop, which has no international price and takes no payment`);
+  }
+
+  // The number may not be pasted into the message file either — that is the second source of truth.
+  for (const lang of ['id', 'en']) {
+    assert.ok(MESSAGES[lang]['bsp.floor'] && MESSAGES[lang]['bsp.floorNote'], `both floor keys exist in ${lang}`);
+    assert.doesNotMatch(MESSAGES[lang]['bsp.floor'], /\d{3}/,
+      `${lang} bsp.floor contains a hardcoded figure — it goes stale the day a price changes in Studio`);
+  }
+  assert.match(MESSAGES.id['bsp.floor'], /\{price\}/, 'the Indonesian line must interpolate the derived figure');
+  assert.doesNotMatch(MESSAGES.en['bsp.floor'], /\{price\}|Rp/,
+    'the English line must not quote rupiah at all — it is a different, true sentence');
 }
 
 console.log('storefrontMessages selfcheck OK (two languages out of one object, every key paired, the product page leaving no Indonesian behind, and the English never promising a member price an international order cannot get)');

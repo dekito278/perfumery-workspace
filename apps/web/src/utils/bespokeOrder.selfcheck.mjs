@@ -1,7 +1,7 @@
 // Runnable check for the shared bespoke builders. `node src/utils/bespokeOrder.selfcheck.mjs`.
 // Guards the invariants the shipping label + admin brief depend on after the extraction refactor.
 import assert from 'node:assert/strict';
-import { buildBespokeItem, buildBespokeNotes, buildBespokeCheckoutDraft, cheapestEnabled } from './bespokeOrder.js';
+import { buildBespokeItem, buildBespokeNotes, buildBespokeCheckoutDraft, cheapestEnabled, bespokeFloorPrice } from './bespokeOrder.js';
 import { parseOrderNoteRows } from './orderNotes.js';
 import { readFileSync } from 'node:fs';
 
@@ -144,6 +144,48 @@ assert.doesNotMatch(complete, /Tidak diisi/, 'a complete brief should not mentio
     'a disabled option cannot become the default by being cheap',
   );
   assert.deepEqual(cheapestEnabled([]), {}, 'an empty group is not a crash');
+}
+
+// --- The floor price: derived, never typed -----------------------------------------------------------
+//
+// Step 1 asked for a perfume name and a scent story before showing any number at all, on the most
+// expensive thing this atelier sells. The figure now comes from the cheapest ENABLED option in each
+// required group, so it follows Dekito's own prices instead of a number pasted into the copy.
+{
+  const settings = {
+    bottleSizes: [
+      { enabled: true, price: 250000, label: '30 ml' },
+      { enabled: true, price: 400000, label: '50 ml' },
+      { enabled: false, price: 100000, label: '10 ml (mati)' },
+    ],
+    bottleTypes: [
+      { enabled: true, price: 50000, label: 'Thematic' },
+      { enabled: true, price: 0, label: 'Classic' },
+    ],
+    capDesigns: [
+      { enabled: true, price: 50000, label: 'Cap custom Abstrak' },
+      { enabled: true, price: 5000, label: 'Cap Basic' },
+    ],
+    labelDesigns: [{ enabled: true, price: 0, label: 'Tulis tangan' }],
+    // No default: a buyer who picks nothing pays nothing, so it must not be in the floor.
+    exoticMaterials: [{ enabled: true, price: 300000, label: 'Oud' }],
+  };
+
+  assert.equal(bespokeFloorPrice(settings), 255000,
+    'the floor is the cheapest enabled option of each required group: 250.000 + 0 + 5.000 + 0');
+
+  // A disabled option is not on sale, however cheap it is.
+  assert.equal(bespokeFloorPrice({ ...settings, bottleSizes: [{ enabled: false, price: 1000 }, { enabled: true, price: 250000 }] }), 255000,
+    'a disabled option must never set the floor');
+
+  // The optional group stays out, whatever it costs.
+  assert.equal(bespokeFloorPrice({ ...settings, exoticMaterials: [{ enabled: true, price: 9000000 }] }), 255000,
+    'exotic material has no default, so quoting it would name a price nobody is obliged to pay');
+
+  // Missing or empty groups must not throw or invent a number.
+  assert.equal(bespokeFloorPrice({}), 0);
+  assert.equal(bespokeFloorPrice(), 0);
+  assert.equal(bespokeFloorPrice({ bottleSizes: [], bottleTypes: null }), 0);
 }
 
 console.log('bespokeOrder self-check OK');
