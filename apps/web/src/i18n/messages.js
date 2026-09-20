@@ -163,6 +163,13 @@ export const MESSAGES = {
     'nav.info': 'Info',
     'nav.tagline': 'Atelier Parfum Artisan oleh Dekito',
     'nav.whatsapp': 'WhatsApp atelier',
+
+    // The payment page had no way out of it. Bank number, exact amount, a mandatory upload — and not one
+    // link to a human, on the single screen where money actually moves. Everywhere else in this shop the
+    // footer carries "WhatsApp atelier"; this page has no footer at all.
+    'pay.stuck': 'Ada kendala? Chat atelier',
+    // Carries the order number, so the answer does not start with "pesanan yang mana ya?".
+    'pay.stuckDraft': 'Halo Solivagant, saya mau tanya soal pembayaran order {order}.',
     'nav.stayInTouch': 'Tetap terhubung',
     'nav.emailPlaceholder': 'Email kamu',
     'nav.subscribeAria': 'Langganan',
@@ -1265,6 +1272,9 @@ export const MESSAGES = {
     'nav.info': 'Info',
     'nav.tagline': 'Artisan perfume atelier by Dekito',
     'nav.whatsapp': 'WhatsApp the atelier',
+
+    'pay.stuck': 'Something wrong? Message the atelier',
+    'pay.stuckDraft': 'Hello Solivagant, I have a question about payment for order {order}.',
     'nav.stayInTouch': 'Stay in touch',
     'nav.emailPlaceholder': 'Your email',
     'nav.subscribeAria': 'Subscribe',

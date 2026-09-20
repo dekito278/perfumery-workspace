@@ -2,7 +2,7 @@ import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Clock3, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, QrCode, RefreshCw, ShieldCheck, Smartphone, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock3, Copy, CreditCard, ExternalLink, FileCheck2, Loader2, MessageCircle, QrCode, RefreshCw, ShieldCheck, Smartphone, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -13,7 +13,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
-import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
+import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import {
@@ -553,6 +553,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   const customerCode = session.customerCode || '';
   const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
   const orderNumber = session.orderNumber || session.invoiceNumber;
+  // One source for the number, the same one the footer reads. Rendered only when configured.
+  const whatsappNumber = getStorefrontWhatsAppNumber();
   const proofStatus = session.paymentProofStatus || 'missing';
   const hasSubmittedProof = Boolean(session.paymentProofUrl) && ['submitted', 'approved'].includes(proofStatus);
   const needsProofUpload = !hasSubmittedProof;
@@ -725,6 +727,22 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {t('pay.proofBeforeTracking')}
             </div>
+          ) : null}
+          {/* The way out. This screen asks for an exact amount, a bank transfer and a mandatory upload,
+              and carried no link to a person — no footer, nothing. Every other page in this shop offers
+              "WhatsApp atelier"; the one where the money moves did not.
+              Rendered only when a number is configured: a wa.me link with no recipient is a dead end, the
+              same rule the footer follows. */}
+          {whatsappNumber ? (
+            <a
+              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(t('pay.stuckDraft', { order: orderNumber }))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-white px-4 text-sm font-bold text-amber-900"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {t('pay.stuck')}
+            </a>
           ) : null}
         </div>
 
