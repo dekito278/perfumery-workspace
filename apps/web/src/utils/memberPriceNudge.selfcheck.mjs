@@ -175,6 +175,21 @@ for (const page of ['pages/CheckoutPage.jsx', 'pages/mobile/MobileCheckoutPage.j
   assert.match(MESSAGES.en['checkout.signInSaving'], /member/i, 'and in English it may say so, because here it is true');
 }
 
+// --- 10a. And the sentence has to FIT ---------------------------------------------------------------------
+// Measured on production, 375px, signed out: "Masuk dengan Google — hemat Rp 29.000 dengan harga member"
+// was 367px of text inside a 327px box and was cut off in the middle of the last word. The button that
+// explains why signing in is worth money could not finish its own sentence.
+//
+// The shared Button sets whitespace-nowrap, so a fixed height cannot wrap and clips instead. The phone is
+// the surface with no room to spare, and the English labels are longer than the Indonesian ones.
+const phoneCheckout = read('pages', 'mobile', 'MobileCheckoutPage.jsx');
+const memberButton = phoneCheckout.match(/<Button[^>]*onClick=\{handleGoogleLogin\}/);
+assert.ok(memberButton, 'the phone checkout must still offer the member sign-in');
+assert.match(memberButton[0], /min-h-12/, 'a fixed height cannot grow with the sentence — min-h can');
+assert.match(memberButton[0], /whitespace-normal/, 'and the shared Button forbids wrapping unless this says otherwise');
+// (?<!min-) because \b sits between the hyphen and the h, so a naive \bh-12\b matches inside min-h-12.
+assert.doesNotMatch(memberButton[0], /className="[^"]*(?<!min-)h-12/, 'the fixed height must not come back alongside it');
+
 // --- 10b. And the CART, which is where the total is actually weighed ------------------------------------
 // Every other storefront surface names the member price — home, catalog, product, the account page — and
 // the checkout one step later names the exact amount. The cart, the one screen that shows the total and

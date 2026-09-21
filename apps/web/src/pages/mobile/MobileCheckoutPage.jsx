@@ -219,13 +219,17 @@ const MobileCheckoutPage = () => {
           description={t('mcheckout.stepCodeBody')}
           complete={contactComplete}
         >
+            {/* min-h and whitespace-normal, because the shared Button sets whitespace-nowrap and this is
+                the longest label in the checkout: "Masuk dengan Google — hemat Rp 29.000 dengan harga
+                member" measured 367px of text inside a 327px box on a 375px screen and was cut off in
+                the middle of the word "member" — the one line that explains why signing in is worth it. */}
             {currentUser ? (
               <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#f3f1ec] px-3 py-2 text-xs font-semibold text-editorial-charcoal">
                 <span className="min-w-0 truncate">{t('checkout.signedInAuto', { email: currentUser.email })}</span>
                 <button type="button" onClick={logout} className="shrink-0 font-bold underline underline-offset-4">{t('checkout.signOut')}</button>
               </div>
             ) : (
-              <Button type="button" variant="outline" className="h-12 w-full rounded-2xl bg-white gap-2 text-xs font-bold" onClick={handleGoogleLogin}>
+              <Button type="button" variant="outline" className="min-h-12 w-full whitespace-normal rounded-2xl bg-white gap-2 px-3 py-2 text-xs font-bold leading-snug" onClick={handleGoogleLogin}>
                 <UserRound className="h-4 w-4" />
                 {memberSaving > 0
                   ? t('checkout.signInSaving', { amount: formatTotal(memberSaving) })
