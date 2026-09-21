@@ -1236,6 +1236,17 @@ const CustomerPortalPage = () => {
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
                   {t('cust.oneplace')}
                 </p>
+                {/* Same reason as the desktop hero below, and this is the surface most of them are on:
+                    the English shop has no checkout, so a reader abroad who reaches their account has
+                    nowhere else to arrange an order from. The phone hero does not carry the sentence
+                    that says so, which is exactly why the button had to be put here on purpose. */}
+                {isInternational ? (
+                  <AskAtelierButton
+                    labelKey="intl.noticeCta"
+                    draftKey="intl.noticeMessage"
+                    className="mt-3 w-full"
+                  />
+                ) : null}
               </div>
             </div>
             <form onSubmit={loadPortal} className="grid gap-3 p-4">

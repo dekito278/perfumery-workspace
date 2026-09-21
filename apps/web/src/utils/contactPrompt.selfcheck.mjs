@@ -82,12 +82,20 @@ assert.ok(guarded >= 3, `the scan found only ${guarded} asking sentence(s) — i
 // order the reader to do anything (rule 1 agrees), but a reader abroad still has nowhere else to go, so
 // the way to arrange an order sits under it rather than in the footer.
 const portal = read('pages', 'CustomerPortalPage.jsx');
-const portalSite = portal.indexOf("t('cust.heroBody')");
-assert.ok(portalSite > 0, 'the account hero must still carry its lead');
-const afterHero = portal.slice(portalSite, portalSite + 600);
-assert.match(afterHero, /isInternational \? \(/, 'and the button belongs to the English shop only');
-assert.match(afterHero, /<AskAtelierButton[\s\S]*?labelKey="intl\.noticeCta"[\s\S]*?draftKey="intl\.noticeMessage"/,
-  'labelled and drafted as arranging an order, not as asking about a parcel that does not exist yet');
+// BOTH heroes. The page returns a different tree for /mobile, and the first version of this shipped to
+// the desktop one only — measured on production: /en/customer on a phone redirects to /en/mobile/customer
+// and had no WhatsApp link at all, which is the surface nearly every overseas reader is on. The phone
+// hero does not even carry the sentence about arranging an order, so nothing would have complained.
+const portalButtons = [...portal.matchAll(/<AskAtelierButton[\s\S]{0,240}?\/>/g)].map((m) => m[0]);
+assert.equal(portalButtons.length, 2,
+  `the account page has a phone tree and a desktop tree; found ${portalButtons.length} contact button(s), expected one in each`);
+for (const button of portalButtons) {
+  assert.match(button, /labelKey="intl\.noticeCta"/,
+    'labelled as arranging an order, not as asking about a parcel that does not exist yet');
+  assert.match(button, /draftKey="intl\.noticeMessage"/, 'and drafted the same way');
+}
+assert.equal((portal.match(/\{isInternational \? \(\s*<AskAtelierButton/g) || []).length, 2,
+  'and both belong to the English shop only — the Indonesian account page has a checkout to spend a member price in');
 
 // --- 4. The button keeps its promise ---------------------------------------------------------------------
 const button = read('components', 'storefront', 'AskAtelierButton.jsx');
