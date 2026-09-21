@@ -639,7 +639,7 @@ const MobileBespokePage = () => {
               {shippingLoading ? t('bsp.calculating') : selectedDestination ? t('bsp.showRates') : t('bsp.findRates')}
             </Button>
           </div>
-          {selectedDestination ? <p className="rounded-2xl bg-editorial-ivory px-3 py-2 text-[11px] font-bold text-editorial-charcoal">Area: {selectedDestination.label}</p> : null}
+          {selectedDestination ? <p className="rounded-2xl bg-editorial-ivory px-3 py-2 text-[11px] font-bold text-editorial-charcoal">{t('ship.area', { area: selectedDestination.label })}</p> : null}
           {destinationOptions.length && !selectedDestination ? (
             <div className="grid gap-2">
               {destinationOptions.map((destination) => (

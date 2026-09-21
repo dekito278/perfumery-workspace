@@ -849,7 +849,7 @@ const BespokePage = () => {
                   <button type="button" className="editorial-button" onClick={() => autoCalculateShipping()} disabled={shippingLoading || destinationSearch.trim().length < 3 || !selectedCourier}>
                     {shippingLoading ? t('bsp.calculating') : t('bsp.showRates')}
                   </button>
-                  {selectedDestination ? <p className="editorial-helper-text">Area: {selectedDestination.label}</p> : null}
+                  {selectedDestination ? <p className="editorial-helper-text">{t('ship.area', { area: selectedDestination.label })}</p> : null}
                   {destinationOptions.length && !selectedDestination ? (
                     <div className="editorial-option-grid">
                       {destinationOptions.map((destination) => (
