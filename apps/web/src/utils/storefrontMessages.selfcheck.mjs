@@ -398,7 +398,19 @@ const untranslatedProse = (source) => (
     .filter((hit) => !/[;=()`$]/.test(hit))
     // Fragments of a ternary that happen to span a `>` are code, not text: they carry ?, : or an
     // identifier path. Text a browser prints never does.
-    .filter((hit) => hit && !/^[\s&;a-z:?.]*$/.test(hit) && !/[?:]|\w\?\.|\w\.\w/.test(hit) && !PROSE_ALLOWED.has(hit))
+    .filter((hit) => {
+      if (!hit || PROSE_ALLOWED.has(hit)) return false;
+      // Object keys in JS — `, pending:`, `, publisher:` — are code that happens to span a `>` or `}`.
+      // Only the comma gives them away: excluding every `identifier:` instead would also excuse "Area:",
+      // which is a label a buyer reads, and a sabotage proved it walks straight past.
+      if (/^,/.test(hit)) return false;
+      // A LABEL ending in a colon is text a browser prints: "Batas bayar: {waktu}", "Area: {label}".
+      // Rejecting every hit containing a colon as a ternary fragment hid six of those in five files,
+      // in the shop's own language, on pages the English storefront can open. Test the ternary shape on
+      // what is left once a trailing colon is taken off.
+      const body = hit.replace(/:\s*$/, '');
+      return !/^[\s&;a-z:?.]*$/.test(body) && !/[?:]|\w\?\.|\w\.\w/.test(body);
+    })
 );
 
 for (const file of PAGES_FULLY_TRANSLATED) {

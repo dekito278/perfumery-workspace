@@ -302,7 +302,7 @@ const MobileCheckoutPage = () => {
             ) : null}
             {selectedDestination ? (
               <p className="mobile-commerce-notice bg-editorial-ivory font-bold text-editorial-charcoal">
-                Area ongkir: {selectedDestination.label}
+                {t('ship.areaFee', { area: selectedDestination.label })}
               </p>
             ) : null}
             {shippingNotice ? <p className="mobile-commerce-notice bg-editorial-ivory font-bold text-editorial-charcoal">{shippingNotice}</p> : null}
@@ -348,7 +348,7 @@ const MobileCheckoutPage = () => {
                     </p>
                     {selectedShipping.promotionApplied ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{selectedShipping.promotionLabel}</p> : null}
                     {selectedDestination ? (
-                      <p className="mt-1 text-[11px] font-semibold leading-snug text-editorial-muted">Area: {selectedDestination.label}</p>
+                      <p className="mt-1 text-[11px] font-semibold leading-snug text-editorial-muted">{t('ship.area', { area: selectedDestination.label })}</p>
                     ) : null}
                   </div>
                   <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase text-editorial-charcoal">{t('mcheckout.auto')}</span>

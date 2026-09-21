@@ -11,7 +11,8 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
+import { PAYMENT_RESERVATION_TTL_HOURS, getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
+import { paymentDeadlineAt } from '@/utils/paymentDeadline.js';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
@@ -111,6 +112,9 @@ const buildManualTransferFromOrder = (order) => ({
   voucherSnapshot: getOrderVoucherSnapshot(order),
   shippingSummary: getOrderShippingSummary(order),
   shippingFee: getOrderShippingFee(order),
+  paymentExpiresAt: order.paymentExpiresAt || '',
+  inventoryDeducted: Boolean(order.inventoryDeducted),
+  status: order.status,
   manualTransfer: {
     bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
@@ -132,6 +136,8 @@ const buildDokuSessionFromCheckout = (order, checkout) => ({
   paymentStatus: 'pending',
   paymentExpiresAt: checkout.paymentExpiresAt || '',
   paymentSessionId: checkout.paymentSessionId || '',
+  inventoryDeducted: Boolean(order.inventoryDeducted),
+  status: order.status,
   paymentProofUrl: order.paymentProofUrl,
   paymentProofFileName: order.paymentProofFileName,
   paymentProofContentType: order.paymentProofContentType,
@@ -279,7 +285,9 @@ const PaymentFrame = ({ session, compact = false }) => {
   const customerCode = session.customerCode || '';
   const orderTrackingPath = compact ? `/mobile/customer?code=${customerCode}` : `/customer?code=${customerCode}`;
   const currentPaymentTone = paymentStatusTone[session.paymentStatus || 'pending'] || paymentStatusTone.pending;
-  const expiresAtLabel = formatDateTime(session.paymentExpiresAt, t);
+  // Not session.paymentExpiresAt: manual transfer never has one, and it is the path where somebody is
+  // about to move money into a reservation that expires.
+  const expiresAtLabel = formatDateTime(paymentDeadlineAt(session, PAYMENT_RESERVATION_TTL_HOURS), t);
   const copyCustomerCode = async () => {
     if (!customerCode) return;
     const copied = await copyTextToClipboard(customerCode);
@@ -327,7 +335,12 @@ const PaymentFrame = ({ session, compact = false }) => {
             <div>
               <div className="text-xs font-bold">{t(currentPaymentTone.titleKey)}</div>
               <p className="mt-1 text-xs font-semibold leading-relaxed opacity-85">{t(currentPaymentTone.bodyKey)}</p>
-              {expiresAtLabel ? <p className="mt-2 text-[11px] font-bold uppercase opacity-80">Batas bayar: {expiresAtLabel}</p> : null}
+              {expiresAtLabel ? (
+                <>
+                  <p className="mt-2 text-[11px] font-bold uppercase opacity-80">{t('pay.deadline', { time: expiresAtLabel })}</p>
+                  <p className="mt-1 text-[11px] font-semibold leading-relaxed opacity-80">{t('pay.deadlineNote')}</p>
+                </>
+              ) : null}
             </div>
             {customerCode ? (
               <Link to={orderTrackingPath} className="inline-flex h-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 px-4 text-xs font-bold text-editorial-charcoal">

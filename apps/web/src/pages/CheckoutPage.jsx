@@ -275,7 +275,7 @@ const CheckoutPage = () => {
                   ))}
                 </div>
               ) : null}
-              {selectedDestination ? <p className="checkout-notice is-success">Area: {selectedDestination.label}</p> : null}
+              {selectedDestination ? <p className="checkout-notice is-success">{t('ship.area', { area: selectedDestination.label })}</p> : null}
             </fieldset>
 
             {/* Voucher */}
