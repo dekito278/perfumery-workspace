@@ -39,7 +39,7 @@ const MobileCommerceLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, isInternational } = useTranslate();
-  const { isAuthenticated } = useAuth();
+  const { isAdmin } = useAuth();
   const { summary } = useCart();
   const commerceNavItems = commerceNavItemsFor(isInternational);
   const keyboardActive = useMobileKeyboardState();
@@ -65,7 +65,10 @@ const MobileCommerceLayout = ({ children }) => {
 
     if (nextCount >= 3) {
       ownerTapRef.current = { count: 0, lastTapAt: 0 };
-      navigate(isAuthenticated ? '/mobile/studio' : '/mobile/login');
+      // isAdmin, not isAuthenticated: a signed-in BUYER sent to /mobile/studio is bounced straight back
+      // out by ProtectedRoute, which looks like the shop breaking. The sign-in screen is the honest door
+      // for anyone who is not the owner.
+      navigate(isAdmin ? '/mobile/studio' : '/mobile/login');
     }
   };
 
@@ -80,7 +83,11 @@ const MobileCommerceLayout = ({ children }) => {
         </header>
         {children}
       </div>
-      {isAuthenticated ? (
+      {/* The owner's way back to Studio — for the OWNER. Gated on isAuthenticated, it appeared for every
+          signed-in buyer, and signing in is exactly what the member price asks them to do: a customer
+          checking out saw an admin button floating over the total, and tapping it bounced them to their
+          own account page. isAdmin is the same gate ProtectedRoute uses on the destination. */}
+      {isAdmin ? (
         <Link
           to="/mobile/studio"
           className="mobile-studio-floating-link inline-flex h-10 items-center gap-2 rounded-2xl border border-editorial-stone/16 bg-white/95 px-3 text-xs font-bold text-editorial-charcoal shadow-sm backdrop-blur"
