@@ -283,9 +283,17 @@ export const useFormulaDetailPage = (id) => {
     return () => { cancelled = true; };
   }, [parentFormula?.id, getFormulaItems]);
 
+  // The diff is built from formula ITEM rows, which carry an item_id and grams — never a name. Without
+  // this resolver the panel printed UUIDs, which is what the page already has the catalogue to prevent.
+  const resolveMaterialName = useCallback((materialId) => {
+    const material = rawMaterialsById.get(String(materialId || ''))
+      || rawMaterialsById.get(String(materialId || '').toLowerCase());
+    return material?.name || '';
+  }, [rawMaterialsById]);
+
   const revisionDiff = useMemo(
-    () => (parentItems ? diffFormulaItems(parentItems, items) : null),
-    [parentItems, items],
+    () => (parentItems ? diffFormulaItems(parentItems, items, { resolveName: resolveMaterialName }) : null),
+    [parentItems, items, resolveMaterialName],
   );
 
   const openRawMaterial = (itemId) => {

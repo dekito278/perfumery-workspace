@@ -125,4 +125,46 @@ assert.match(migration, /VERIFY/, 'the migration must say how to check it worked
 assert.match(migration, /ROLLBACK/, 'and how to undo it');
 assert.match(migration, /add column if not exists parent_formula_id/, 'and be re-runnable');
 
+
+// --- A revision must be readable: names, never UUIDs --------------------------------------------------
+// From the live app, 2026-09-22: a 26-material revision rendered as a wall of
+// "546f57b3-d39a-4595-b8ee-0ad4447b5476  0.211 g". Formula item rows carry item_id and grams; the name
+// lives in the raw-material catalogue, and the page holds that catalogue already.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const idOnlyBefore = [{ item_id: '546f57b3-d39a-4595-b8ee-0ad4447b5476', gram_amount: 0.211 }];
+const idOnlyAfter = [{ item_id: 'e1358603-04df-48ef-8edf-ad00cfca4622', gram_amount: 33.33 }];
+
+const named = diffFormulaItems(idOnlyBefore, idOnlyAfter, {
+  resolveName: (key) => ({
+    '546f57b3-d39a-4595-b8ee-0ad4447b5476': 'Iso E Super',
+    'e1358603-04df-48ef-8edf-ad00cfca4622': 'Ambroxan',
+  }[key] || ''),
+});
+assert.equal(named.removed[0].label, 'Iso E Super', 'a removed material is named from the catalogue');
+assert.equal(named.added[0].label, 'Ambroxan', 'and so is an added one');
+
+// No resolver, or a material the catalogue does not know: say so, and keep the rows apart with a SHORT
+// id. A 36-character UUID is not a name — printing it as one is the bug this rule exists for.
+const unresolved = diffFormulaItems(idOnlyBefore, idOnlyAfter);
+for (const entry of [...unresolved.added, ...unresolved.removed]) {
+  assert.doesNotMatch(entry.label, UUID, `"${entry.label}" is a UUID, not a name`);
+  // Against the rule, not the wording: pinning "Bahan tanpa nama" failed the first time the sentence was
+  // reworded, which is a check punishing an improvement.
+  assert.match(entry.label, /[A-Za-z]{3}/, `"${entry.label}" carries no words at all`);
+  assert.ok(!UUID.test(entry.label.replace(/[()]/g, '').trim()), `"${entry.label}" is still just an id`);
+  assert.ok(entry.label.length <= 32, `"${entry.label}" is too long to read in a list`);
+}
+assert.notEqual(unresolved.added[0].label, unresolved.removed[0].label,
+  'two unnamed materials must not collapse into the same label');
+
+// A row that carries its own name keeps it, resolver or not.
+const carriesName = diffFormulaItems([], [{ item_id: 'x', name: 'Hedione', gram_amount: 1 }], { resolveName: () => 'Wrong' });
+assert.equal(carriesName.added[0].label, 'Hedione', 'the row\'s own name wins over the lookup');
+
+// And the page actually hands the catalogue over.
+assert.match(hook, /diffFormulaItems\(parentItems, items, \{ resolveName: resolveMaterialName \}\)/,
+  'the detail page must pass its raw-material index into the diff');
+assert.match(hook, /rawMaterialsById\.get\(String\(materialId \|\| ''\)\)/,
+  'and resolve through the index it already builds');
+
 console.log('formulaRevisionLineage selfcheck OK (revisions know their parent, and still work without the migration)');

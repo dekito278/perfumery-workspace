@@ -98,7 +98,31 @@ const itemKey = (item = {}) => String(item.item_id || item.raw_material_id || it
   .trim()
   .toLowerCase();
 
-const itemLabel = (item = {}) => String(item.name || item.item_name || item.item_id || 'Bahan tanpa nama');
+/**
+ * What a perfumer reads in the revision panel.
+ *
+ * Formula item rows carry item_id and grams; the NAME lives in the raw-material catalogue. The label
+ * fell back to item_id, so a revision of a 26-material formula was a wall of UUIDs —
+ * "546f57b3-d39a-4595-b8ee-0ad4447b5476  0.211 g" — on the one screen whose whole purpose is to say
+ * what changed. Reported from the live app, 2026-09-22.
+ *
+ * resolveName is how the page hands over its raw-material index. When even that cannot name the
+ * material, the row says so and keeps a SHORT id so two unnamed rows stay distinguishable — a 36
+ * character UUID is not a name, and pretending it is was the bug.
+ */
+const shortId = (value = '') => String(value).trim().split('-')[0].slice(0, 8);
+
+const itemLabel = (item = {}, resolveName) => {
+  const direct = String(item.name || item.item_name || '').trim();
+  if (direct) return direct;
+
+  const key = itemKey(item);
+  const resolved = typeof resolveName === 'function' ? String(resolveName(key) || '').trim() : '';
+  if (resolved) return resolved;
+
+  const id = shortId(item.item_id || item.raw_material_id || key);
+  return id ? `Bahan tanpa nama (${id})` : 'Bahan tanpa nama';
+};
 
 // The composer calls this gram_amount and the detail page calls it grams. Reading only one of them would
 // make every diff come back as "nothing changed", which is the most convincing way to be wrong.
@@ -124,7 +148,7 @@ const indexItems = (items = []) => {
 // From zero to something has no meaningful percentage.
 const percentChange = (base, target) => (base ? ((target - base) / base) * 100 : null);
 
-export const diffFormulaItems = (baseItems = [], targetItems = []) => {
+export const diffFormulaItems = (baseItems = [], targetItems = [], { resolveName } = {}) => {
   const base = indexItems(baseItems);
   const target = indexItems(targetItems);
   const added = [];
@@ -137,20 +161,20 @@ export const diffFormulaItems = (baseItems = [], targetItems = []) => {
     const targetGrams = toGrams(targetItem);
 
     if (!baseItem) {
-      added.push({ key, label: itemLabel(targetItem), baseGrams: 0, targetGrams, deltaGrams: targetGrams, deltaPercent: null });
+      added.push({ key, label: itemLabel(targetItem, resolveName), baseGrams: 0, targetGrams, deltaGrams: targetGrams, deltaPercent: null });
       continue;
     }
 
     const baseGrams = toGrams(baseItem);
     const deltaGrams = targetGrams - baseGrams;
-    const entry = { key, label: itemLabel(targetItem), baseGrams, targetGrams, deltaGrams, deltaPercent: percentChange(baseGrams, targetGrams) };
+    const entry = { key, label: itemLabel(targetItem, resolveName), baseGrams, targetGrams, deltaGrams, deltaPercent: percentChange(baseGrams, targetGrams) };
     (deltaGrams === 0 ? unchanged : changed).push(entry);
   }
 
   for (const [key, baseItem] of base) {
     if (target.has(key)) continue;
     const baseGrams = toGrams(baseItem);
-    removed.push({ key, label: itemLabel(baseItem), baseGrams, targetGrams: 0, deltaGrams: -baseGrams, deltaPercent: null });
+    removed.push({ key, label: itemLabel(baseItem, resolveName), baseGrams, targetGrams: 0, deltaGrams: -baseGrams, deltaPercent: null });
   }
 
   // Biggest move first — that is what a perfumer opens the panel to see.
