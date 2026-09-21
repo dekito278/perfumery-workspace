@@ -15,7 +15,7 @@ import { useBespokeSettings } from '@/hooks/useBespokeSettings.js';
 import { useAppliedVoucher } from '@/hooks/useAppliedVoucher.js';
 import { useCatalogProduct } from '@/hooks/useCatalogProducts.js';
 import { cn } from '@/lib/utils.js';
-import { bespokeFlowSteps, buildBespokeEnquiryDraft, bespokeFloorPrice, cheapestEnabled, optionExtraPrice } from '@/utils/bespokeOrder.js';
+import { bespokeFlowSteps, bespokeOccasionLabel, buildBespokeEnquiryDraft, bespokeFloorPrice, cheapestEnabled, optionExtraPrice } from '@/utils/bespokeOrder.js';
 import { buildWhatsAppCheckoutUrl, checkoutPaymentMethods, getCheckoutPaymentMethod, getStorefrontWhatsAppNumber, isManualTransferPayment } from '@/services/cartService.js';
 import { lookupCustomerByCode } from '@/services/customerService.js';
 import { createBespokeRequest, updateOrderStatus } from '@/services/orderService.js';
@@ -1118,7 +1118,7 @@ const MobileBespokePage = () => {
                     t,
                     perfumeName: form.perfumeName,
                     scent: form.scentDescription || form.mood,
-                    occasion: form.occasion,
+                    occasion: bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions),
                     bottle: [selectedSize?.label, selectedBottleType?.label, selectedCap?.label].filter(Boolean).join(' / '),
                   }), getStorefrontWhatsAppNumber())}
                   target="_blank"

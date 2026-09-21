@@ -192,6 +192,22 @@ export const cheapestEnabled = (options = []) => {
  * It quotes NO price on purpose: there is not one to quote yet, and inventing one here would make
  * exactly the promise this path exists to avoid.
  */
+/**
+ * The occasion in the READER's language.
+ *
+ * The option list stores its value in Indonesian — 'Harian', 'Kantor' — because that is what the order
+ * record keeps and what Dekito reads in Studio. The buyer's own WhatsApp brief was built from that raw
+ * value, so an English reader sent "Occasion: Harian" in an otherwise English message, about a perfume
+ * they were describing in English. Measured on the live English shop, 2026-09-21.
+ *
+ * The stored value stays Indonesian on purpose; only the sentence that leaves the site is translated.
+ */
+export const bespokeOccasionLabel = (t, value, options = []) => {
+  const match = options.find((option) => option.value === value);
+  const label = match?.labelKey && typeof t === 'function' ? t(match.labelKey) : '';
+  return label || value || '';
+};
+
 export const buildBespokeEnquiryDraft = ({ t, perfumeName = '', scent = '', occasion = '', bottle = '' } = {}) => {
   if (typeof t !== 'function') return '';
   const filled = (value) => String(value || '').trim() || '-';

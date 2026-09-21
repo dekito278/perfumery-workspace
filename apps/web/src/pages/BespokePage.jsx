@@ -30,7 +30,7 @@ import {
   clearAppliedVoucherCode,
 } from '@/services/voucherService.js';
 import { buildVoucherSnapshot } from '@/utils/voucherSnapshot.js';
-import { bespokeStepKeys, bespokeTakesPayment, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
+import { bespokeStepKeys, bespokeTakesPayment, bespokeOccasionLabel, buildBespokeEnquiryDraft, cheapestEnabled, bespokeFloorPrice, optionExtraPrice } from '@/utils/bespokeOrder.js';
 import { getOptimizedStorageImageUrl as img } from '@/utils/storageImage.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 
@@ -789,7 +789,7 @@ const BespokePage = () => {
                         t,
                         perfumeName: form.perfumeName,
                         scent: form.scentDescription || form.mood,
-                        occasion: form.occasion,
+                        occasion: bespokeOccasionLabel(t, form.occasion, bespokeOccasionOptions),
                         bottle: [selectedSize?.label, selectedBottle?.label, selectedCap?.label].filter(Boolean).join(' / '),
                       }), getStorefrontWhatsAppNumber())}
                       target="_blank"
