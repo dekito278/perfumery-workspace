@@ -42,6 +42,7 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -788,7 +789,7 @@ const SelfServiceActions = ({
 };
 
 const CustomerPortalPage = () => {
-  const { t } = useTranslate();
+  const { t, isInternational } = useTranslate();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
@@ -1498,6 +1499,17 @@ const CustomerPortalPage = () => {
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
                 {t('cust.heroBody')}
               </p>
+              {/* The English shop has no checkout: that sentence tells a reader abroad their order is
+                  arranged on WhatsApp, so the way to arrange one belongs under it rather than in the
+                  footer. The Indonesian sentence says nothing of the kind — there is a checkout — so
+                  there is nothing here to answer. */}
+              {isInternational ? (
+                <AskAtelierButton
+                  labelKey="intl.noticeCta"
+                  draftKey="intl.noticeMessage"
+                  className="mt-4 w-full sm:w-auto"
+                />
+              ) : null}
             </div>
 
             <form onSubmit={loadPortal} className="rounded-2xl border bg-white p-4 shadow-sm">
