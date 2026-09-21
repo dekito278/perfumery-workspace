@@ -181,13 +181,15 @@ const CheckoutPage = () => {
                 <span>{t('checkout.customerCode')}</span>
                 <div className="checkout-field__inline">
                   <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('checkout.customerCodePlaceholder')} aria-label={t('checkout.customerCode')} autoComplete="off" />
-                  {customerCode.trim() && !asCustomerCode(customerCode) ? (
-                    <p className="checkout-helper-text" role="status">{t('checkout.codeUnknown')}</p>
-                  ) : null}
                   <button type="button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
                     {lookupLoading ? t('checkout.checking') : t('checkout.load')}
                   </button>
                 </div>
+                {/* Outside .checkout-field__inline, which is a flex row: inside it, the hint became a
+                    third column and squeezed the field and the button. */}
+                {customerCode.trim() && !asCustomerCode(customerCode) ? (
+                  <p className="checkout-helper-text" role="status">{t('checkout.codeUnknown')}</p>
+                ) : null}
               </label>
               {securityChallenge ? (
                 <label className="checkout-field">
