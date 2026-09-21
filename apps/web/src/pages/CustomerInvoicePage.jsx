@@ -23,7 +23,7 @@ import {
   getOrderVoucherSnapshot,
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
-import { orderHasShipped } from '@/utils/trackingLead.js';
+import { invoiceShipmentState, shipmentNoteKey } from '@/utils/invoiceShipment.js';
 import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import useTranslate from '@/hooks/useTranslate.js';
 
@@ -88,6 +88,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
     courierName: order.courierName,
     trackingNumber: order.trackingNumber,
   });
+  const shipmentState = invoiceShipmentState(order);
 
   return (
   <section className={`${isMobile ? 'mobile-card p-0' : 'rounded-[28px] border bg-white shadow-sm'} overflow-hidden`}>
@@ -125,12 +126,24 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
         </div>
         <div className="rounded-2xl bg-[#f8f7f4] p-4">
           <div className="text-[10px] font-bold uppercase text-[#6b7280]">{t('inv.delivery')}</div>
+          {/* Headline and sentence from ONE reading of the order. The headline used to trust
+              shipment_status alone while the sentence used orderHasShipped(), which reads four fields —
+              so a paid, shipped order said "Belum siap" directly above "Sudah dikirim, resi belum masuk
+              ke sistem", and an expired one promised a tracking number that will never come. */}
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <Truck className="h-4 w-4 text-editorial-charcoal" />
-            <span className="text-base font-bold text-editorial-charcoal">{labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || t('inv.notShipped')}</span>
+            <span className="text-base font-bold text-editorial-charcoal">
+              {shipmentState === 'closed'
+                ? t('inv.shipmentClosed')
+                : (shipmentState === 'shipped'
+                  ? (labelFrom(shipmentStatusKeys, shipmentStatusLabels, 'shipped', t) || t('inv.notShipped'))
+                  : (labelFrom(shipmentStatusKeys, shipmentStatusLabels, order.shipmentStatus, t) || t('inv.notShipped')))}
+            </span>
           </div>
           <div className="mt-1 text-xs font-semibold text-[#6b7280]">
-            {order.trackingNumber ? `${order.courierName || t('inv.courier')} / ${order.trackingNumber}` : (order.courierName || t(orderHasShipped(order) ? 'inv.waybillMissing' : 'inv.waybillLater'))}
+            {order.trackingNumber && shipmentState !== 'closed'
+              ? `${order.courierName || t('inv.courier')} / ${order.trackingNumber}`
+              : t(shipmentNoteKey(order))}
           </div>
         </div>
       </div>
@@ -188,7 +201,8 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
 
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_260px]">
         <div className="rounded-2xl bg-editorial-ivory p-4 text-xs font-semibold leading-relaxed text-editorial-charcoal">
-          {t('inv.keepThis')}
+          {/* A closed order has no updates to follow. The old sentence promised them anyway. */}
+          {t(shipmentState === 'closed' ? 'inv.keepThisClosed' : 'inv.keepThis')}
           <div className="mt-3 flex flex-wrap gap-2">
             {order.paymentUrl && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
               <Link to={`${isMobile ? '/mobile/payment' : '/payment'}?order=${encodeURIComponent(order.orderNumber)}&payment=doku`} className="inline-flex h-10 items-center gap-2 rounded-2xl bg-editorial-charcoal px-4 text-xs font-bold text-editorial-ivory">
