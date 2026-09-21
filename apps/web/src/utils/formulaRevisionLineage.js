@@ -177,22 +177,58 @@ export const diffFormulaItems = (baseItems = [], targetItems = [], { resolveName
     removed.push({ key, label: itemLabel(baseItem, resolveName), baseGrams, targetGrams: 0, deltaGrams: -baseGrams, deltaPercent: null });
   }
 
-  // Biggest move first — that is what a perfumer opens the panel to see.
-  changed.sort((left, right) => Math.abs(right.deltaGrams) - Math.abs(left.deltaGrams));
-  added.sort((left, right) => right.targetGrams - left.targetGrams);
-  removed.sort((left, right) => right.baseGrams - left.baseGrams);
-
   const totalBase = [...base.values()].reduce((sum, item) => sum + toGrams(item), 0);
   const totalTarget = [...target.values()].reduce((sum, item) => sum + toGrams(item), 0);
 
+  // Grams alone cannot tell a REFORMULATION from a bigger batch. Measured on a real revision: 22
+  // materials all reported between +2076% and +3940%, because the formula had been scaled up about
+  // forty times. Nothing in that wall of numbers said which material had actually moved inside the
+  // recipe — and one of them had, from 1/40th to 1/22nd of the whole.
+  //
+  // Share of the formula is what a perfumer reads. It is the same number whatever the batch size.
+  const share = (grams, total) => (total > 0 ? (grams / total) * 100 : 0);
+  const withShares = (entry) => {
+    const baseShare = share(entry.baseGrams, totalBase);
+    const targetShare = share(entry.targetGrams, totalTarget);
+    return { ...entry, baseShare, targetShare, deltaShare: targetShare - baseShare };
+  };
+
+  const addedWithShares = added.map(withShares);
+  const removedWithShares = removed.map(withShares);
+  const changedWithShares = changed.map(withShares);
+  const unchangedWithShares = unchanged.map(withShares);
+
+  // Biggest move first, measured in share — that is what a perfumer opens the panel to see. Grams break
+  // a tie, so the order stays stable when two materials trade the same amount of the recipe.
+  changedWithShares.sort((left, right) => (
+    Math.abs(right.deltaShare) - Math.abs(left.deltaShare)
+    || Math.abs(right.deltaGrams) - Math.abs(left.deltaGrams)
+  ));
+  addedWithShares.sort((left, right) => right.targetShare - left.targetShare || right.targetGrams - left.targetGrams);
+  removedWithShares.sort((left, right) => right.baseShare - left.baseShare || right.baseGrams - left.baseGrams);
+
+  const scaleFactor = totalBase > 0 && totalTarget > 0 ? totalTarget / totalBase : null;
+  // "Only the batch changed": every material kept its place in the recipe, within a tenth of a
+  // percentage point. Nothing was added or removed, or it is not the same recipe at all.
+  const SHARE_EPSILON = 0.1;
+  const isPureScale = Boolean(
+    scaleFactor
+    && Math.abs(scaleFactor - 1) > 0.001
+    && addedWithShares.length === 0
+    && removedWithShares.length === 0
+    && [...changedWithShares, ...unchangedWithShares].every((entry) => Math.abs(entry.deltaShare) <= SHARE_EPSILON),
+  );
+
   return {
-    added,
-    removed,
-    changed,
-    unchanged,
+    added: addedWithShares,
+    removed: removedWithShares,
+    changed: changedWithShares,
+    unchanged: unchangedWithShares,
     totalBase,
     totalTarget,
     totalDelta: totalTarget - totalBase,
+    scaleFactor,
+    isPureScale,
     hasChanges: added.length > 0 || removed.length > 0 || changed.length > 0,
   };
 };

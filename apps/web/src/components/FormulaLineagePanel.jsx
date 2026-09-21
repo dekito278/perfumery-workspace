@@ -9,12 +9,21 @@ import { formatGramAmount, formatQuantity } from '@/utils/formatting.js';
 // nothing changes for formulas that were never revised — which is most of them. It is also silent while
 // the lineage columns are unapplied, because every parent_formula_id is null then.
 
+// The share line is the one a perfumer reads: grams move with the batch size, share does not. A
+// revision scaled forty times reported +3901% on 22 materials and said nothing about the recipe.
 const DeltaRow = ({ entry, tone }) => (
   <li className="flex items-baseline justify-between gap-3 py-1">
     <span className="min-w-0 truncate text-xs font-semibold text-foreground">{entry.label}</span>
-    <span className={`shrink-0 font-mono text-xs font-bold ${tone}`}>
-      {entry.deltaGrams > 0 ? '+' : ''}{formatQuantity(entry.deltaGrams, 3)} g
-      {entry.deltaPercent === null ? '' : ` (${entry.deltaPercent > 0 ? '+' : ''}${formatQuantity(entry.deltaPercent, 1)}%)`}
+    <span className={`shrink-0 text-right font-mono text-xs font-bold ${tone}`}>
+      <span className="block">
+        {entry.deltaShare > 0 ? '+' : ''}{formatQuantity(entry.deltaShare, 2)} pp
+        <span className="font-normal text-muted-foreground">
+          {' '}({formatQuantity(entry.baseShare, 2)}% → {formatQuantity(entry.targetShare, 2)}%)
+        </span>
+      </span>
+      <span className="block font-normal text-[11px] text-muted-foreground">
+        {entry.deltaGrams > 0 ? '+' : ''}{formatQuantity(entry.deltaGrams, 3)} g
+      </span>
     </span>
   </li>
 );
@@ -61,7 +70,16 @@ const FormulaLineagePanel = ({ chain = [], currentId, parentFormula = null, diff
               <p className="mt-1 text-xs font-semibold text-muted-foreground">
                 Total {formatGramAmount(diff.totalBase)} to {formatGramAmount(diff.totalTarget)}
                 {diff.totalDelta === 0 ? '' : ` (${diff.totalDelta > 0 ? '+' : ''}${formatQuantity(diff.totalDelta, 3)} g)`}
+                {diff.scaleFactor && Math.abs(diff.scaleFactor - 1) > 0.001
+                  ? ` — batch ×${formatQuantity(diff.scaleFactor, 2)}`
+                  : ''}
               </p>
+              {/* Said once, at the top, instead of leaving it to be inferred from 22 rows of +3900%. */}
+              {diff.isPureScale ? (
+                <p className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-foreground">
+                  Cuma batch-nya yang berubah — komposisinya sama persis.
+                </p>
+              ) : null}
               <ul className="mt-3 divide-y">
                 {diff.changed.map((entry) => (
                   <DeltaRow key={entry.key} entry={entry} tone={entry.deltaGrams > 0 ? 'text-emerald-700' : 'text-amber-700'} />
