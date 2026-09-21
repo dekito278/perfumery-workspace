@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -353,6 +354,7 @@ const CheckoutPage = () => {
                 <div className="checkout-summary-line__info">
                   <strong>{item.name}</strong>
                   <span>{t('checkout.sizeQty', { size: item.size, qty: item.quantity })}</span>
+                  <CartPriceChange item={item} />
                 </div>
                 <strong className="checkout-summary-line__price">{formatTotal(Number(item.priceNumber || 0) * Number(item.quantity || 0))}</strong>
               </div>

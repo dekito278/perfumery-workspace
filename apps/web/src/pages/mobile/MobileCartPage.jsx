@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
@@ -164,6 +165,7 @@ const MobileCartPage = () => {
                   <h2 style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--editorial-charcoal)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.name}</h2>
                   <p style={{ marginTop: 4, fontSize: '0.78rem', lineHeight: 1.4, color: 'var(--editorial-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.notes}</p>
                   <p style={{ marginTop: 4, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--editorial-brass)' }}>{item.price} / {item.size}</p>
+                  <CartPriceChange item={item} className="mt-1" />
                   {hasLineDiscount ? (
                     <p style={{ marginTop: 4, fontSize: '0.72rem', fontWeight: 600, color: 'var(--editorial-charcoal)' }}>
                       {t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}

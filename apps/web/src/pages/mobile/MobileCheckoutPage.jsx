@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
@@ -459,6 +460,7 @@ const MobileCheckoutPage = () => {
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold">{item.name}</h3>
                     <p className="mt-1 text-[10px] font-bold uppercase text-amber-700">{item.size} / {item.price}</p>
+                    <CartPriceChange item={item} />
                     {hasLineDiscount ? (
                       <p className="mt-1 text-[11px] font-bold text-editorial-charcoal">
                         {t('cart.afterVoucherLine', { price: formatTotal(discountedLine.discountedUnitPrice) })}
