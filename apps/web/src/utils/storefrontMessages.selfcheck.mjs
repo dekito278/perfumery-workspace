@@ -961,11 +961,15 @@ const walk = (dir, out = []) => {
     assert.equal(orderHasShipped(notYet), false, `${JSON.stringify(notYet)} has not shipped`);
   }
 
-  for (const [name, file, key] of [
-    ['portal', ['pages', 'CustomerPortalPage.jsx'], 'cust'],
-    ['invoice', ['pages', 'CustomerInvoicePage.jsx'], 'inv'],
+  // The invoice reads the order through utils/invoiceShipment.js now — one reading for its headline and
+  // its sentence, after the two disagreed on a real order ("Belum siap" over "Sudah dikirim"). So the
+  // rule is checked across the surface AND the helper it delegates to: what matters is that the sentence
+  // is chosen by the four-field truth, not that a particular file names the function.
+  for (const [name, files, key] of [
+    ['portal', [['pages', 'CustomerPortalPage.jsx']], 'cust'],
+    ['invoice', [['pages', 'CustomerInvoicePage.jsx'], ['utils', 'invoiceShipment.js']], 'inv'],
   ]) {
-    const source = read(...file);
+    const source = files.map((file) => read(...file)).join('\n');
     assert.match(source, /orderHasShipped\(order\)/,
       `the ${name} still promises the number "akan muncul" on a parcel that has already gone`);
     assert.match(source, new RegExp(`${key}\\.waybillMissing`), `${name} must have a sentence for the shipped-but-empty case`);
