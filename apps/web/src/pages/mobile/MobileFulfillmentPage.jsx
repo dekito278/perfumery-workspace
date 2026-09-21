@@ -25,6 +25,7 @@ import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
+  isReadyToPack,
   isShippedOrder,
 } from '@/utils/orderWorkflow.js';
 
@@ -45,7 +46,8 @@ const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 const isPaid = (order) => order.paymentStatus === 'paid';
 const isOpenShipment = (order) => !['shipped', 'delivered'].includes(order.shipmentStatus) && !['shipped', 'completed', 'cancelled'].includes(order.status);
 const isBespokeReady = (order) => !isBespokeOrder(order) || order.bespokeProductionStatus === 'ready';
-const isFulfillmentReady = (order) => isPaid(order) && isOpenShipment(order) && isBespokeReady(order);
+// The shared rule, so the dashboard card that sends Dekito here counts exactly what he will see.
+const isFulfillmentReady = (order) => isReadyToPack(order);
 const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumber;
 
 const queueFilterOptions = [
