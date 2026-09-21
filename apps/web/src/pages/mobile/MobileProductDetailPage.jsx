@@ -151,7 +151,9 @@ const MobileProductDetailPage = () => {
       priceNumber: selectedPrice,
     }, 1);
     setLastAddedItem({ name: product.name, size: selectedSize, price: formatRupiah(selectedPrice) });
-    toast.success(t('pdp.addedToast', { name: `${product.name}${selectedSize ? ` (${selectedSize})` : ''}` }));
+    // No toast here. The sheet below says the same thing with the size and the price in it, and a toast
+    // lands at the bottom of the screen — exactly where the sheet keeps "Lanjut belanja" and "Checkout".
+    // Two announcements of one event, and the louder one covered the way forward (reported 2026-09-21).
     setCartPromptOpen(true);
   };
 
