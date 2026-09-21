@@ -1,7 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpenText, CalendarDays, FileText, Search, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import MobileCommerceLayout from '@/layouts/MobileCommerceLayout.jsx';
@@ -119,11 +119,12 @@ export const MobileArticlesContent = ({ active = true }) => {
   const featuredPost = filteredPosts[0];
   const listPosts = featuredPost ? filteredPosts.slice(1) : [];
 
-  const openArticle = (post) => {
-    const path = getJournalPublicPath(post, { mobile: true });
-    if (!path) return;
-    navigate(path, { state: getMobileFromState(location) });
-  };
+  // A card is a LINK, not a button that navigates. The desktop journal has always used <Link>; the phone
+  // used onClick, so its cards had no href at all: nothing to long-press, nothing to copy, nothing for a
+  // crawler to follow on the surface Google reads first. A post whose path cannot be built is not
+  // tappable rather than tappable-and-dead.
+  const articlePath = (post) => getJournalPublicPath(post, { mobile: true }) || '';
+  const fromState = getMobileFromState(location);
 
   return (
     <>
@@ -178,7 +179,7 @@ export const MobileArticlesContent = ({ active = true }) => {
           <section className="space-y-3">
             {featuredPost ? (
               <article className="mobile-card overflow-hidden p-0">
-                <button type="button" onClick={() => openArticle(featuredPost)} className="block w-full text-left">
+                <Link to={articlePath(featuredPost)} state={fromState} className="block w-full text-left">
                   <JournalCoverFrame
                     post={featuredPost}
                     className="rounded-none border-0"
@@ -210,13 +211,13 @@ export const MobileArticlesContent = ({ active = true }) => {
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </div>
-                </button>
+                </Link>
               </article>
             ) : null}
 
             {listPosts.map((post) => (
               <article key={post.id} className="mobile-card mobile-list-card p-3">
-                <button type="button" onClick={() => openArticle(post)} className="grid w-full grid-cols-[86px_1fr] gap-3 text-left">
+                <Link to={articlePath(post)} state={fromState} className="grid w-full grid-cols-[86px_1fr] gap-3 text-left">
                   <JournalCoverFrame
                     post={post}
                     className="h-[86px] rounded-xl border-[#e5e7eb]"
@@ -237,7 +238,7 @@ export const MobileArticlesContent = ({ active = true }) => {
                       {formatDate(post.published_at || post.updated || post.created, t)} · {t('journal.minutes', { n: getReadingMinutes(post) })}
                     </div>
                   </div>
-                </button>
+                </Link>
               </article>
             ))}
           </section>
