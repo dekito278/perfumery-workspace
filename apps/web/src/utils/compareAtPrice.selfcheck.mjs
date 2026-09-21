@@ -12,6 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
+import { MESSAGES } from '../i18n/messages.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -71,4 +72,23 @@ const priceNote = read('components', 'storefront', 'PriceNote.jsx');
 assert.match(priceNote, /!\(compareAt > price\)\) return null;/,
   'PriceNote must still hide a compare-at that is not above the price — the form note describes this rule');
 
-console.log('compareAtPrice selfcheck OK (a strike-through that will not show now says so, on both forms)');
+// --- 7. A struck number must say what it is ------------------------------------------------------------
+// Reported from Dekito's own phone, 2026-09-21: the product page read
+//
+//     Rp 279.000
+//     HARGA MEMBER   Rp 310.000   (struck through)
+//
+// The label belongs to the price ABOVE it; the struck number is the retail one. Side by side, it reads
+// as though the member price were the crossed-out 310.000 — the exact opposite of the offer.
+const tierBranch = priceNote.match(/if \(tierLabelKey && retail && price && retail !== price\) \{[\s\S]*?\n  \}/);
+assert.ok(tierBranch, 'PriceNote must still have the tier branch that shows a buyer their own price');
+assert.match(tierBranch[0], /t\('price\.retailLabel'\)[\s\S]{0,120}line-through/,
+  'the struck number must be introduced by the retail label, and the label must come first');
+for (const language of ['id', 'en']) {
+  const label = MESSAGES[language]['price.retailLabel'];
+  assert.ok(label, `${language}.price.retailLabel is missing`);
+  assert.notEqual(label, MESSAGES[language]['price.memberTier'],
+    `${language}: the retail label must not repeat the tier label — that is the confusion it exists to end`);
+}
+
+console.log('compareAtPrice selfcheck OK (a strike-through that will not show now says so, and the one that shows says what it is)');
