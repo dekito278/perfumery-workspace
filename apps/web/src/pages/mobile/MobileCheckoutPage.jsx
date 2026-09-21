@@ -234,11 +234,13 @@ const MobileCheckoutPage = () => {
             )}
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('mcheckout.codeOptional')} aria-label={t('checkout.customerCode')} autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
-              {customerCode.trim() && !asCustomerCode(customerCode) ? (
-                <p className="mt-1 text-[11px] font-semibold leading-snug text-editorial-muted" role="status">{t('checkout.codeUnknown')}</p>
-              ) : null}
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : t('mcheckout.checkCode')}</Button>
             </div>
+            {/* Outside the two-column grid: inside it, the hint took the second cell, squeezed the field
+                down to one character and pushed "Cek kode" onto its own row. */}
+            {customerCode.trim() && !asCustomerCode(customerCode) ? (
+              <p className="text-[11px] font-semibold leading-snug text-editorial-muted" role="status">{t('checkout.codeUnknown')}</p>
+            ) : null}
             {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder={t('checkout.securityAnswer')} aria-label={t('checkout.securityAnswer')} autoComplete="off" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>{t('checkout.verify')}</Button></div> : null}
             <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t('checkout.namePlaceholder')} aria-label={t('checkout.namePlaceholder')} autoComplete="name" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
             <input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="081234567890" aria-label={t('checkout.whatsappAria')} inputMode="tel" autoComplete="tel" className="mobile-commerce-control h-12 px-3 text-sm font-semibold" />
