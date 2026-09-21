@@ -11,8 +11,9 @@ import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.
 import PublicHeader from '@/components/storefront/PublicHeader.jsx';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { PAYMENT_RESERVATION_TTL_HOURS, getOrderById, getPublicOrderPaymentSession, submitOrderPaymentProof } from '@/services/orderService.js';
+import { PAYMENT_RESERVATION_TTL_HOURS, getOrderById, getPublicOrderPaymentSession, isOrderClosedForPayment, submitOrderPaymentProof } from '@/services/orderService.js';
 import { paymentDeadlineAt } from '@/utils/paymentDeadline.js';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
 import { uploadPaymentProof } from '@/services/paymentProofStorageService.js';
@@ -568,6 +569,10 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   const orderNumber = session.orderNumber || session.invoiceNumber;
   // One source for the number, the same one the footer reads. Rendered only when configured.
   const whatsappNumber = getStorefrontWhatsAppNumber();
+  // Cancelled, expired, failed or refunded: the same helper the rest of the app uses, including the
+  // admin side, which refuses to approve a proof for one of these. Until now this screen ignored it and
+  // went on handing out the bank account.
+  const closedForPayment = isOrderClosedForPayment(session);
   const proofStatus = session.paymentProofStatus || 'missing';
   const hasSubmittedProof = Boolean(session.paymentProofUrl) && ['submitted', 'approved'].includes(proofStatus);
   const needsProofUpload = !hasSubmittedProof;
@@ -641,7 +646,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-editorial-muted">{t("pay.manualTransfer")}</div>
             <h1 className={compact ? 'mt-1 text-xl font-bold text-[#172016]' : 'mt-1 text-3xl font-bold text-[#172016]'}>{t("pay.solivagantPayment")}</h1>
             <p className="mt-2 text-xs font-semibold leading-relaxed text-[#54604d]">
-              {t('pay.manualHint')}
+              {/* The lead sentence told a buyer to transfer to the account below. On a cancelled order
+                  the account below is gone, so the sentence had to go with it. */}
+              {t(closedForPayment ? 'pay.closedHint' : 'pay.manualHint')}
             </p>
           </div>
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-editorial-charcoal">
@@ -690,6 +697,18 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </div>
         ) : null}
 
+        {closedForPayment ? (
+          <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4 text-[#b91c1c]">
+            <div className="text-xs font-bold uppercase">{t('pay.closedTitle')}</div>
+            <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.closedBody')}</p>
+            <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.closedTransferred')}</p>
+            <AskAtelierButton orderNumber={orderNumber} className="mt-3 w-full border-[#fecaca] bg-white text-[#b91c1c]" />
+            <Link to={compact ? '/mobile/catalog' : '/catalog'} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-[#fecaca] bg-white px-4 text-sm font-bold text-[#b91c1c]">
+              {t('pay.closedShopAgain')}
+            </Link>
+          </div>
+        ) : (
+          <>
         <div className="rounded-2xl border border-editorial-stone/10 bg-[#fbfaf7] p-4">
           <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-editorial-muted">{t("pay.bankAccount")}</div>
           <div className="mt-3 grid gap-3">
@@ -758,6 +777,8 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
             </a>
           ) : null}
         </div>
+          </>
+        )}
 
         {compact ? (
           <div className="rounded-2xl border border-editorial-stone/10 bg-white p-4">
