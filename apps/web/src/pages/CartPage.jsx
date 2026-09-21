@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
+import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
 import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -92,6 +93,7 @@ const CartPage = () => {
                     <Link to={`/catalog/${item.productSlug || item.slug}`} className="cart-line__name">{item.name}</Link>
                     <span className="cart-line__meta">{[item.notes, item.size].filter(Boolean).join(' · ')}</span>
                     <span className="cart-line__price">{item.price}</span>
+                    <CartPriceChange item={item} className="mt-1" />
                   </div>
                   <div className="cart-line__qty">
                     <button type="button" onClick={() => updateQuantity(item.slug, Math.max(1, item.quantity - 1))} aria-label={t('cart.decreaseOf', { name: item.name })}>
