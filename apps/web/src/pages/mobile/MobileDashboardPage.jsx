@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isReadyToPack } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
@@ -228,7 +229,10 @@ const MobileDashboardPage = () => {
   const actionNeededLogs = useMemo(() => logs.filter((log) => log.status === 'action_needed'), [logs]);
   const missingGuidanceMaterials = useMemo(() => materials.filter((material) => !hasGuidanceCoverage(material)), [materials]);
   const lowStockProducts = useMemo(() => catalogProducts.filter(getProductLowStock), [catalogProducts]);
-  const paidReadyOrders = useMemo(() => orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status)), [orders]);
+  // The same rule the fulfillment screen uses, because this card is a promise about that screen: it used
+  // to count bespoke orders still in production and orders already marked shipped, so "3 order siap
+  // packing" opened onto a queue of 1.
+  const paidReadyOrders = useMemo(() => orders.filter(isReadyToPack), [orders]);
   const proofReviewOrders = useMemo(() => orders.filter((order) => order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status)), [orders]);
   const paymentFollowUps = useMemo(() => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)), [orders]);
   const shippedFollowUps = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);

@@ -24,6 +24,27 @@ export const isShippedOrder = (order = {}) => (
   || order.status === 'shipped'
 );
 
+/**
+ * The order is paid and can be packed RIGHT NOW.
+ *
+ * Both dashboards used to count this themselves — paid, not shipped, not finished — and sent Dekito to
+ * the fulfillment screen, which counts it differently: it also holds back a bespoke order whose
+ * production is not Ready, and it treats status 'shipped' as gone. Measured on his own Studio, same
+ * moment: the card said "3 order siap packing" and the screen it opened said 1.
+ *
+ * A number that promises what another screen will show has to be the same number.
+ */
+export const isReadyToPack = (order) => {
+  // Guarded here rather than by clause order: the helpers below read order.status directly, and a
+  // default parameter does not catch an explicit null. Reordering the conditions used to turn this into
+  // a crash, which is not a property a shared rule should have.
+  if (!order || typeof order !== 'object') return false;
+  return order.paymentStatus === 'paid'
+    && !isArchivedOrder(order)
+    && !isShippedOrder(order)
+    && (!isBespokeOrder(order) || order.bespokeProductionStatus === 'ready');
+};
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)

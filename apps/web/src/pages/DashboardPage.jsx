@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { isReadyToPack } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, FileCheck2, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
@@ -192,7 +193,7 @@ const DashboardPage = () => {
     [catalogProducts]
   );
   const paidReadyOrders = useMemo(
-    () => orders.filter((order) => order.paymentStatus === 'paid' && !['shipped', 'delivered'].includes(order.shipmentStatus) && !['completed', 'cancelled'].includes(order.status)),
+    () => orders.filter(isReadyToPack),
     [orders]
   );
   const proofReviewOrders = useMemo(
