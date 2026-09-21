@@ -1,6 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
+import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate } from 'react-router-dom';
@@ -233,6 +234,9 @@ const MobileCheckoutPage = () => {
             )}
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <input value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('mcheckout.codeOptional')} aria-label={t('checkout.customerCode')} autoComplete="off" className="mobile-commerce-control h-12 px-3 text-sm font-semibold uppercase" />
+              {customerCode.trim() && !asCustomerCode(customerCode) ? (
+                <p className="mt-1 text-[11px] font-semibold leading-snug text-editorial-muted" role="status">{t('checkout.codeUnknown')}</p>
+              ) : null}
               <Button type="button" variant="outline" className="h-12 rounded-2xl bg-white px-4 text-xs font-bold" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>{lookupLoading ? '...' : t('mcheckout.checkCode')}</Button>
             </div>
             {securityChallenge ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={securityAnswer} onChange={(event) => setSecurityAnswer(event.target.value)} placeholder={t('checkout.securityAnswer')} aria-label={t('checkout.securityAnswer')} autoComplete="off" className="mobile-commerce-control h-11 px-3 text-sm font-semibold" /><Button onClick={verifyCustomerSecurity}>{t('checkout.verify')}</Button></div> : null}

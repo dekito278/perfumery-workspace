@@ -1,8 +1,7 @@
 import supabase from '@/lib/supabaseClient.js';
 
 
-const normalizeCustomerCode = (value = '') => value.trim().toUpperCase();
-const isCustomerCode = (value = '') => /^SOLI[0-9]{5}$/.test(normalizeCustomerCode(value));
+import { asCustomerCode, normalizeCustomerCode } from '@/utils/customerCode.js';
 
 
 const normalizeCustomer = (customer = {}) => ({
@@ -295,7 +294,7 @@ export const saveCustomer = async ({
   // to be told it does not exist, and that can collide with a real one. A checkout that cannot record its
   // customer has to fail, not improvise (audit round 9, CU-1).
   const { data, error } = await supabase.rpc('storefront_upsert_customer', {
-    p_customer_code: isCustomerCode(customerCode) ? normalizeCustomerCode(customerCode) : null,
+    p_customer_code: asCustomerCode(customerCode),
     p_customer_name: customerName.trim(),
     p_contact: contact.trim(),
     p_delivery_address: deliveryAddress?.trim() || null,

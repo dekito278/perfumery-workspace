@@ -1,6 +1,7 @@
 import { useTranslate } from '@/hooks/useTranslate.js';
 import InternationalCheckoutNotice from '@/components/storefront/InternationalCheckoutNotice.jsx';
 import CartPriceChange from '@/components/storefront/CartPriceChange.jsx';
+import { asCustomerCode } from '@/utils/customerCode.js';
 import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
@@ -180,6 +181,9 @@ const CheckoutPage = () => {
                 <span>{t('checkout.customerCode')}</span>
                 <div className="checkout-field__inline">
                   <input type="text" value={customerCode} onChange={(event) => updateCustomerCode(event.target.value)} placeholder={t('checkout.customerCodePlaceholder')} aria-label={t('checkout.customerCode')} autoComplete="off" />
+                  {customerCode.trim() && !asCustomerCode(customerCode) ? (
+                    <p className="checkout-helper-text" role="status">{t('checkout.codeUnknown')}</p>
+                  ) : null}
                   <button type="button" onClick={lookupCustomer} disabled={lookupLoading || !customerCode.trim()}>
                     {lookupLoading ? t('checkout.checking') : t('checkout.load')}
                   </button>

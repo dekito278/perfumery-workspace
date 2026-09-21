@@ -21,6 +21,8 @@ import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
+import { asCustomerCode } from '../../src/utils/customerCode.js';
+import { isInternalErrorMessage } from '../../src/utils/publicErrorMessage.js';
 
 const jsonResponse = (res, status, body) => {
   res.statusCode = status;
@@ -345,7 +347,9 @@ export default async function handler(req, res) {
 
     // 5. Customer (same upsert/dedupe the browser uses)
     const customer = (await sbRpc('storefront_upsert_customer', {
-      p_customer_code: input.customer?.code || null,
+      // Sanitised, not trusted: the database checks ^SOLI[0-9]{5}$, and a buyer who mistypes her own
+      // code must not lose the order over an optional field (2026-09-21, SOLIO932).
+      p_customer_code: asCustomerCode(input.customer?.code),
       p_customer_name: input.customer?.name?.trim() || 'Walk-in customer',
       p_contact: input.customer?.contact?.trim() || '-',
       p_delivery_address: input.delivery?.address || null,
@@ -488,6 +492,13 @@ export default async function handler(req, res) {
 
     return jsonResponse(res, 200, { order, itemsSubtotal, shippingFee, voucherDiscount, subtotal });
   } catch (error) {
-    return jsonResponse(res, 400, { message: error.message || 'Order creation failed' });
+    // Curated sentences are kept — they are the useful ones ("Voucher tidak bisa digunakan"). Anything
+    // that reads like machinery is replaced: this endpoint answers a BUYER, and the failing row of a
+    // constraint error carries her own name, phone and address back onto her screen.
+    console.error('Order creation failed:', error?.message || error);
+    const message = isInternalErrorMessage(error?.message)
+      ? 'Pesanan belum bisa dibuat. Coba lagi sebentar lagi, atau hubungi kami lewat WhatsApp.'
+      : error.message;
+    return jsonResponse(res, 400, { message });
   }
 }

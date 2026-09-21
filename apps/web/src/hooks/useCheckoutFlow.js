@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -688,7 +689,11 @@ export const useCheckoutFlow = ({
     } catch (error) {
       // Nothing was created yet: "the order was not saved" is the truth.
       if (!createdOrder) {
-        toast.error(error.message || 'Gagal menyimpan pesanan');
+        // Through the sanitiser even though the endpoint now sanitises too: this catch also sees failures
+        // that never reached the endpoint (network, a thrown Supabase error), and a buyer was shown a
+        // Postgres constraint dump containing her own name, phone and address (2026-09-21).
+        console.error('Checkout failed before the order existed:', error?.message || error);
+        toast.error(publicErrorMessage(error, 'Gagal menyimpan pesanan'));
         return;
       }
 
