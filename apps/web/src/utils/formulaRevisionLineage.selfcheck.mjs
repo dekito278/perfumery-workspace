@@ -167,4 +167,61 @@ assert.match(hook, /diffFormulaItems\(parentItems, items, \{ resolveName: resolv
 assert.match(hook, /rawMaterialsById\.get\(String\(materialId \|\| ''\)\)/,
   'and resolve through the index it already builds');
 
+
+// --- Grams move with the batch; share does not --------------------------------------------------------
+// The revision that reported this, 2026-09-22: 22 materials between +2076% and +3940%, because the
+// formula had been scaled about forty times. Nothing in that wall said which material had actually moved
+// inside the recipe — and one had, from a fortieth of the whole to a twenty-second.
+const scaledBase = [
+  { item_id: 'a', name: 'A', grams: 0.833 },
+  { item_id: 'b', name: 'B', grams: 0.85 },
+  { item_id: 'c', name: 'C', grams: 0.46 },
+];
+const scaledExactly = diffFormulaItems(scaledBase, [
+  { item_id: 'a', name: 'A', grams: 33.32 },
+  { item_id: 'b', name: 'B', grams: 34 },
+  { item_id: 'c', name: 'C', grams: 18.4 },
+]);
+assert.equal(scaledExactly.isPureScale, true, 'a formula multiplied by forty is not twenty-two reformulations');
+assert.ok(Math.abs(scaledExactly.scaleFactor - 40) < 0.01, `scale read as ${scaledExactly.scaleFactor}`);
+for (const entry of [...scaledExactly.changed, ...scaledExactly.unchanged]) {
+  assert.ok(Math.abs(entry.deltaShare) < 0.01, `${entry.label} moved ${entry.deltaShare} pp in a pure scale`);
+}
+
+// The real one: everything ×40 except C, which only doubled relative to nothing — its SHARE fell.
+const scaledWithOneRealMove = diffFormulaItems(scaledBase, [
+  { item_id: 'a', name: 'A', grams: 33.32 },
+  { item_id: 'b', name: 'B', grams: 34 },
+  { item_id: 'c', name: 'C', grams: 10.01 },
+]);
+assert.equal(scaledWithOneRealMove.isPureScale, false, 'one material out of step is a real change');
+assert.equal(scaledWithOneRealMove.changed[0].label, 'C',
+  'the material that moved inside the recipe must be first, however small its gram delta');
+assert.ok(scaledWithOneRealMove.changed[0].deltaShare < -3,
+  `C lost share and must say so, got ${scaledWithOneRealMove.changed[0].deltaShare}`);
+assert.ok(scaledWithOneRealMove.changed[0].deltaGrams > 0,
+  'and its grams still went UP — which is exactly why grams alone could not show this');
+
+// Shares are a share OF something: they must add up.
+const shareTotal = [...scaledWithOneRealMove.changed, ...scaledWithOneRealMove.unchanged]
+  .reduce((sum, entry) => sum + entry.targetShare, 0);
+assert.ok(Math.abs(shareTotal - 100) < 0.01, `target shares add up to ${shareTotal}, not 100`);
+
+// A batch that did not change size is not "scaled", and an empty formula does not divide by zero.
+assert.equal(diffFormulaItems(before, after).isPureScale, false, 'a real reformulation is never a pure scale');
+assert.equal(diffFormulaItems([], []).scaleFactor, null, 'nothing over nothing is not a number');
+const firstEver = diffFormulaItems([], [{ item_id: 'a', grams: 5 }]).added[0];
+assert.equal(firstEver.targetShare, 100, 'the only material in a formula is all of it');
+assert.equal(firstEver.baseShare, 0,
+  'a material that was not there before held none of a formula that did not exist — 0, never NaN');
+assert.equal(firstEver.deltaShare, 100);
+const lastEver = diffFormulaItems([{ item_id: 'a', grams: 5 }], []).removed[0];
+assert.equal(lastEver.targetShare, 0, 'and a removed material holds none of what is left');
+assert.ok(Number.isFinite(lastEver.deltaShare), `deltaShare must be a number, got ${lastEver.deltaShare}`);
+
+// And the panel shows the share, not only the grams.
+assert.match(panel, /entry\.deltaShare/, 'the row must show the share move');
+assert.match(panel, /entry\.baseShare[\s\S]{0,120}entry\.targetShare/, 'and where it moved from and to');
+assert.match(panel, /diff\.isPureScale/, 'and say plainly when only the batch changed');
+
 console.log('formulaRevisionLineage selfcheck OK (revisions know their parent, and still work without the migration)');
