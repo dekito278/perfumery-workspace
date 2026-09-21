@@ -76,6 +76,7 @@ export const MESSAGES = {
     'pyramid.strengthLabel': 'Ketahanan {tier}: {percent} persen',
 
     'price.memberTier': 'Harga member',
+    'price.retailLabel': 'Harga retail',
     'price.resellerTier': 'Harga reseller',
     'price.memberIs': 'Member {price}',
     'price.saveShort': 'hemat {amount}',
@@ -1218,6 +1219,7 @@ export const MESSAGES = {
     'pyramid.strengthLabel': '{tier} strength: {percent} percent',
 
     'price.memberTier': 'Member price',
+    'price.retailLabel': 'Retail price',
     'price.resellerTier': 'Reseller price',
     'price.memberIs': 'Member {price}',
     'price.saveShort': 'save {amount}',
