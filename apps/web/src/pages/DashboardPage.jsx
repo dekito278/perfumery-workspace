@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
-import { isReadyToPack } from '@/utils/orderWorkflow.js';
+import { isReadyToPack, matchesOrderFilter } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Package, Beaker, AlertTriangle, Sparkles, ArrowRight, ClipboardCheck, NotebookPen, FileCheck2, PackageCheck, PackagePlus, ShoppingBag, Tags, Truck, RefreshCw, ShieldCheck, WifiOff, BadgePercent } from 'lucide-react';
@@ -196,8 +196,9 @@ const DashboardPage = () => {
     () => orders.filter(isReadyToPack),
     [orders]
   );
+  // Same rule as the tab this card opens (?filter=proof_review), so the number and the list agree.
   const proofReviewOrders = useMemo(
-    () => orders.filter((order) => order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status)),
+    () => orders.filter((order) => matchesOrderFilter(order, 'proof_review')),
     [orders]
   );
   const opsHealth = useMemo(() => getOpsHealthSnapshot(orders), [orders]);

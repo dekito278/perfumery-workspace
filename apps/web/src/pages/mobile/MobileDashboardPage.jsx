@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { isReadyToPack } from '@/utils/orderWorkflow.js';
+import { isReadyToPack, matchesOrderFilter } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
@@ -233,8 +233,16 @@ const MobileDashboardPage = () => {
   // to count bespoke orders still in production and orders already marked shipped, so "3 order siap
   // packing" opened onto a queue of 1.
   const paidReadyOrders = useMemo(() => orders.filter(isReadyToPack), [orders]);
-  const proofReviewOrders = useMemo(() => orders.filter((order) => order.paymentProofStatus === 'submitted' && !['completed', 'cancelled'].includes(order.status)), [orders]);
-  const paymentFollowUps = useMemo(() => orders.filter((order) => ['unpaid', 'pending'].includes(order.paymentStatus)), [orders]);
+  // Counted with the filter the card opens. It used to count proofs on orders whose label was already
+  // printed or which had shipped — the Bukti tab hides those, so the number was larger than the list.
+  const proofReviewOrders = useMemo(() => orders.filter((order) => matchesOrderFilter(order, 'proof_review')), [orders]);
+  // The card used to count every unpaid or pending order — cancelled ones included — and then open the
+  // orders list with NO filter, whose default tab deliberately hides orders that are only waiting on the
+  // customer to pay. Tapping "5 payment pending" showed a list with none of them in it.
+  const followUpOrders = useMemo(() => orders.filter((order) => matchesOrderFilter(order, 'follow_up')), [orders]);
+  const paymentFollowUps = useMemo(() => orders.filter((order) => (
+    matchesOrderFilter(order, 'follow_up') && ['unpaid', 'pending'].includes(order.paymentStatus)
+  )), [orders]);
   const shippedFollowUps = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
@@ -336,10 +344,10 @@ const MobileDashboardPage = () => {
               <PriorityCard
                 icon={MessageCircle}
                 label="Follow-up"
-                title={`${paymentFollowUps.length} payment pending`}
-                helper={`${shippedFollowUps.length} dikirim perlu dicek sampai`}
-                tone={paymentFollowUps.length || shippedFollowUps.length ? 'amber' : 'emerald'}
-                onClick={() => navigate('/mobile/studio/orders')}
+                title={`${followUpOrders.length} order perlu follow-up`}
+                helper={`${paymentFollowUps.length} belum dibayar · ${shippedFollowUps.length} dikirim perlu dicek`}
+                tone={followUpOrders.length ? 'amber' : 'emerald'}
+                onClick={() => navigate('/mobile/studio/orders?filter=follow_up')}
               />
               <PriorityCard
                 icon={AlertTriangle}
