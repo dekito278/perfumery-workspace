@@ -355,7 +355,7 @@ const MobileDashboardPage = () => {
                 title={`${lowStockProducts.length} product hampir habis`}
                 helper="Cek varian dan publish status"
                 tone={lowStockProducts.length ? 'rose' : 'emerald'}
-                onClick={() => navigate('/mobile/studio/products')}
+                onClick={() => navigate('/mobile/studio/products?filter=lowstock')}
               />
             </div>
           </section>
