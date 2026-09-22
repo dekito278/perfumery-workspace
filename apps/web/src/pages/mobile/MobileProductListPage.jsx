@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import { PRODUCT_LIST_FILTERS, countProductsByFilter, isProductListFilter, matchesProductFilter } from '@/utils/productListFilter.js';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarClock, Copy, Edit3, ExternalLink, Filter, PackagePlus, Plus, Tags, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
@@ -17,14 +18,6 @@ import {
 } from '@/services/productCatalogService.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { confirmAction } from '@/utils/confirmAction.js';
-
-const productStatusFilters = [
-  { key: 'all', label: 'Semua' },
-  { key: 'live', label: 'Live' },
-  { key: 'draft', label: 'Draft' },
-  { key: 'blocked', label: 'Belum siap' },
-  { key: 'stockout', label: 'Stok habis' },
-];
 
 const getStatusBadgeClass = (tone) => {
   if (tone === 'emerald') return 'bg-emerald-50 text-emerald-700';
@@ -107,18 +100,16 @@ const MobileProductListPage = () => {
   const navigate = useNavigate();
   const products = useCatalogProducts();
   const customProducts = useMemo(() => products.filter((product) => product.source === 'custom'), [products]);
-  const [productStatusFilter, setProductStatusFilter] = useState('all');
-  const productStatusCounts = useMemo(() => customProducts.reduce((counts, product) => {
-    const status = getProductPublishStatus(product).key;
-    counts.all += 1;
-    counts[status] = (counts[status] || 0) + 1;
-    return counts;
-  }, { all: 0, live: 0, draft: 0, blocked: 0, stockout: 0 }), [customProducts]);
-  const filteredCustomProducts = useMemo(() => (
-    productStatusFilter === 'all'
-      ? customProducts
-      : customProducts.filter((product) => getProductPublishStatus(product).key === productStatusFilter)
-  ), [customProducts, productStatusFilter]);
+  const [searchParams] = useSearchParams();
+  const [productStatusFilter, setProductStatusFilter] = useState(() => {
+    const requested = searchParams.get('filter');
+    return isProductListFilter(requested) ? requested : 'all';
+  });
+  const productStatusCounts = useMemo(() => countProductsByFilter(customProducts), [customProducts]);
+  const filteredCustomProducts = useMemo(
+    () => customProducts.filter((product) => matchesProductFilter(product, productStatusFilter)),
+    [customProducts, productStatusFilter],
+  );
 
   const editProduct = (product) => navigate(`/mobile/studio/products/${product.id}/edit`);
   const openSourceBatch = (formulaId) => navigate(`/mobile/batches?formulaId=${encodeURIComponent(formulaId)}`);
@@ -177,7 +168,7 @@ const MobileProductListPage = () => {
             <span className="text-xs font-bold text-amber-700">{filteredCustomProducts.length} / {customProducts.length} produk</span>
           </div>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {productStatusFilters.map((filter) => (
+            {PRODUCT_LIST_FILTERS.map((filter) => (
               <button
                 key={filter.key}
                 type="button"
