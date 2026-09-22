@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { Buffer } from 'node:buffer';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stripComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -71,5 +72,53 @@ assert.match(phone, /title=\{`\$\{followUpOrders\.length\} order perlu follow-up
   'the card must be titled for what it counts');
 assert.match(phone, /helper=\{`\$\{paymentFollowUps\.length\} belum dibayar/,
   'and the breakdown belongs in the helper, where it is not the number being tapped');
+
+
+// --- 4. A breakdown under a number has to add up to it ------------------------------------------------
+// Measured in Dekito's Studio, 2026-09-22: the card said "16 order perlu follow-up" and the line under it
+// said "5 belum dibayar · 10 dikirim perlu dicek". One order was in the queue and in neither half of its
+// own explanation — the shipped half read shipment_status alone, while the queue counts isShippedOrder,
+// which also believes status 'shipped'. That is the same order the invoice was contradicting itself
+// about this morning.
+const workflowSource = readFileSync(join(root, 'utils', 'orderWorkflow.js'), 'utf8')
+  .replace(/^import\s[\s\S]*?from\s+'[^']+';\s*$/gm, '');
+const stubs = `
+const isBespokeOrder = (order = {}) => order?.source === 'bespoke';
+const getBespokeItem = () => null;
+`;
+const { matchesOrderFilter, isShippedOrder } = await import(
+  `data:text/javascript;base64,${Buffer.from(stubs + workflowSource, 'utf8').toString('base64')}`
+);
+
+const fixtures = [
+  { name: 'unpaid', paymentStatus: 'unpaid', status: 'pending_payment' },
+  { name: 'pending', paymentStatus: 'pending', status: 'pending_payment' },
+  { name: 'shipped by shipment_status', paymentStatus: 'paid', status: 'paid', shipmentStatus: 'shipped' },
+  { name: 'shipped by order status only', paymentStatus: 'paid', status: 'shipped', shipmentStatus: 'not_ready' },
+  { name: 'packing', paymentStatus: 'paid', status: 'paid', shipmentStatus: 'packing' },
+  { name: 'delivered', paymentStatus: 'paid', status: 'paid', shipmentStatus: 'delivered' },
+  { name: 'cancelled', paymentStatus: 'expired', status: 'cancelled' },
+];
+
+const queue = fixtures.filter((order) => matchesOrderFilter(order, 'follow_up'));
+const paymentHalf = fixtures.filter((order) => (
+  matchesOrderFilter(order, 'follow_up') && ['unpaid', 'pending'].includes(order.paymentStatus)
+));
+const shippedHalf = fixtures.filter((order) => (
+  matchesOrderFilter(order, 'follow_up')
+  && !['unpaid', 'pending'].includes(order.paymentStatus)
+  && isShippedOrder(order)
+));
+assert.equal(paymentHalf.length + shippedHalf.length, queue.length,
+  `the halves add up to ${paymentHalf.length + shippedHalf.length} but the queue holds ${queue.length}`);
+assert.ok(shippedHalf.some((order) => order.name === 'shipped by order status only'),
+  'the order the shop calls shipped without a shipment_status is the one that used to fall between the halves');
+
+// And the page computes its halves that way, not from shipment_status alone.
+const phoneDash = read('pages', 'mobile', 'MobileDashboardPage.jsx');
+assert.match(phoneDash, /const shippedFollowUps[\s\S]{0,320}?isShippedOrder\(order\)/,
+  'the shipped half must use the same rule the queue uses');
+assert.doesNotMatch(phoneDash, /const shippedFollowUps = useMemo\(\(\) => orders\.filter\(\(order\) => order\.shipmentStatus === 'shipped'/,
+  'the shipment_status-only version must not come back');
 
 console.log('dashboardCardTargets selfcheck OK (a card counts what its screen will show)');
