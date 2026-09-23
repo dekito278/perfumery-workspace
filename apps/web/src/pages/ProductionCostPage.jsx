@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet';
 import { Download, Factory, Home, Package2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.jsx';
+import FormulaCostBlindSpotNotice from '@/components/FormulaCostBlindSpotNotice.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import ProductionBulkTab from '@/components/production-costing/ProductionBulkTab.jsx';
 import ProductionCostOverviewCards from '@/components/production-costing/ProductionCostOverviewCards.jsx';
@@ -22,6 +23,7 @@ const ProductionCostPage = () => {
     bulkComputed,
     bulkInputs,
     bulkScenarios,
+    formulaProfile,
     formulas,
     handleExportPdf,
     handleExportQuotationPdf,
@@ -95,6 +97,8 @@ const ProductionCostPage = () => {
                 Biaya material formula gagal dimuat — angka COGS &amp; harga di bawah TIDAK memperhitungkan biaya juice (dihitung Rp 0). Pilih ulang formula sebelum memakai angka ini.
               </div>
             ) : null}
+
+            <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} />
 
             <ProductionCostOverviewCards
               retailComputed={retailComputed}

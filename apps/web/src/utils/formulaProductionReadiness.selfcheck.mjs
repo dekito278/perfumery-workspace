@@ -12,7 +12,7 @@
 process.env.TZ = 'Asia/Jakarta';
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { buildFormulaProductionReadiness } from './formulaProductionReadiness.js';
@@ -81,21 +81,76 @@ assert.match(hook, /readiness: buildFormulaProductionReadiness\(enrichedItems\)/
   'the readiness must ride on formulaProfile, so all three costing screens get the same answer');
 
 // --- 6. Every screen that shows a cost from that profile must show the notice --------------------------
-// Three screens read the same profile, and this repo's most common defect by far is a fix that lands on
-// one copy only. A screen that shows the wrong number without the warning is the whole bug, unfixed.
-for (const page of [
-  'pages/BatchProductionPage.jsx',
-  'pages/mobile/MobileProductionCostingPage.jsx',
-  'pages/mobile/MobileBatchesPage.jsx',
-]) {
-  const source = read(...page.split('/'));
-  assert.match(source, /<FormulaCostBlindSpotNotice readiness=\{formulaProfile\?\.readiness\}/,
-    `${page} presents a cost built from formulaProfile and must say when that cost is blind`);
+// This check used to name three files. A fourth screen — the DESKTOP production costing page, the one
+// with the brand quotation on it — read the same profile, priced from the same blind COGS, and showed no
+// warning at all, and a list of three files could not see it. So the rule is no longer a list: whatever
+// reads formulaProfile and renders, renders the notice, and a screen added next month is caught the day
+// it is written.
+const screensReadingTheProfile = readdirSync(srcRoot, { recursive: true, withFileTypes: true })
+  .filter((entry) => entry.isFile() && entry.name.endsWith('.jsx'))
+  .map((entry) => join(entry.parentPath || entry.path, entry.name))
+  .filter((file) => /\/(pages|components)\//.test(file.replace(srcRoot, '/')))
+  .filter((file) => /\bformulaProfile\b/.test(stripComments(readFileSync(file, 'utf8'))));
+
+assert.ok(screensReadingTheProfile.length >= 4,
+  `expected the costing screens to be found by scan, got ${screensReadingTheProfile.length} — the scan is broken, not the code`);
+
+for (const file of screensReadingTheProfile) {
+  assert.match(stripComments(readFileSync(file, 'utf8')), /<FormulaCostBlindSpotNotice readiness=\{formulaProfile\?\.readiness\}/,
+    `${file.replace(srcRoot, 'src')} presents a cost built from formulaProfile and must say when that cost is blind`);
 }
 
 // --- 7. The notice must render nothing when there is nothing to say ------------------------------------
 const notice = read('components', 'FormulaCostBlindSpotNotice.jsx');
 assert.match(notice, /readiness\.isReady[\s\S]{0,80}?return null;/,
   'a healthy formula must render no banner at all — a permanent banner is furniture nobody reads');
+
+// --- 8. The exported cost sheet carries the blind spot with it ----------------------------------------
+// The PDF outlives the screen. Printed once and read next week, a COGS with no warning on it is the same
+// silent under-pricing the banner was added to stop — the banner just is not in the room any more.
+const exportShim = join(srcRoot, 'utils', `.readiness.selfcheck.${process.pid}.mjs`);
+writeFileSync(exportShim, `${readFileSync(join(srcRoot, 'utils', 'productionCostingExports.js'), 'utf8')
+  .replace(/^import .*?;$/gm, '')
+  .replace(/^export /gm, '')}
+export { buildProductionCostExportConfig, buildProductionQuotationExportConfig };
+`);
+
+globalThis.formatPrice = (value) => `Rp ${Math.round(Number(value) || 0)}`;
+globalThis.formatCurrency = globalThis.formatPrice;
+globalThis.formatPercentage = (value) => `${Number(value) || 0}%`;
+globalThis.formatQuantity = (value) => String(Math.round(Number(value) || 0));
+globalThis.formatPricePerUnit = (value, unit) => `Rp ${Math.round(Number(value) || 0)} / ${unit || 'ml'}`;
+
+const { buildProductionCostExportConfig } = await import(exportShim);
+unlinkSync(exportShim);
+
+const costSheetFor = (readiness) => buildProductionCostExportConfig({
+  bulkComputed: { allInBulkCogsPerLiter: 100, materialCogsPerMl: 1, rows: [] },
+  formulaProfile: { costPerMl: 1000, readiness },
+  retailComputed: {
+    targetFillVolume: 1000, concentration: 20, costPerBottle: 90000, formulaVolumeNeeded: 200,
+    solventVolumeNeeded: 800, formulaMaterialCost: 1800000, solventMaterialCost: 1196000,
+    packagingLineItems: { unitItems: [], batchItems: [] }, totalProductionCost: 2996000,
+    perBottlePackagingCost: 0, totalBatchOverhead: 0, materialCostPerBottle: 90000, cogsPerMl: 2996,
+    scenarioResults: [],
+  },
+  selectedFormula: { name: 'PANTURA V2', code: 'FORMULA-1' },
+  selectedSolvent: { name: 'Benzyl Alcohol', cost_per_unit: 14500, unit: 'ml' },
+});
+
+const textOf = (config) => JSON.stringify(config);
+
+const blindSheet = costSheetFor(buildFormulaProductionReadiness([priced('Iso E Super', 55, 12000), priced('Ambroxan', 45, 0)]));
+assert.match(textOf(blindSheet), /bahan tanpa harga/, 'a cost sheet built on a blind cost must say so on the sheet');
+assert.match(textOf(blindSheet), /45% dari berat formula/, 'and must carry how much weight it could not see');
+assert.doesNotMatch(textOf(blindSheet), /Based on saved raw material prices/,
+  'the concentrate row may not keep claiming the prices were all saved while one of them is missing');
+
+const healthySheet = costSheetFor(healthy);
+assert.doesNotMatch(textOf(healthySheet), /bahan tanpa harga/, 'a fully priced formula prints no warning');
+assert.match(textOf(healthySheet), /Based on saved raw material prices/, 'and keeps its normal note');
+
+// Missing readiness altogether (an older cached profile) must not invent a warning or crash.
+assert.doesNotMatch(textOf(costSheetFor(undefined)), /bahan tanpa harga/, 'no readiness is not a warning');
 
 console.log('formulaProductionReadiness selfcheck OK (a blind cost is announced; a complete one stays quiet)');
