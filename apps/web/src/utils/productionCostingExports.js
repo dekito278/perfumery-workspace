@@ -32,6 +32,20 @@ const buildBulkScenarioEntries = (bulkComputed) => bulkComputed.rows.flatMap((ro
   { label: `${row.label} margin`, value: formatPercentage(row.margin) },
 ]));
 
+// The PDF outlives the screen. Whoever opens this sheet next week is looking at a COGS that quietly
+// skipped every material with no purchase price, and "Based on saved raw material prices" reads like a
+// guarantee that they were all saved. So the sheet says what it could not see — on the internal sheet
+// only. The quotation that goes to the brand still carries no cost at all (quotationCostLeak.selfcheck).
+const blindSpotNote = (readiness) => {
+  if (!readiness || readiness.isReady || !readiness.unpricedCount) {
+    return '';
+  }
+
+  const share = Math.round((readiness.unpricedShare || 0) * 100);
+  const weight = share > 0 ? ` (${share}% dari berat formula)` : '';
+  return `${readiness.unpricedCount} bahan tanpa harga${weight} dihitung Rp 0 — COGS di bawah lebih rendah dari yang sebenarnya`;
+};
+
 export const buildProductionCostExportConfig = ({
   bulkComputed,
   formulaProfile,
@@ -49,6 +63,9 @@ export const buildProductionCostExportConfig = ({
     { label: 'Concentration', value: formatPercentage(retailComputed.concentration) },
     { label: 'Retail COGS / bottle', value: formatCurrency(retailComputed.costPerBottle) },
     { label: 'Bulk COGS / liter', value: formatCurrency(bulkComputed.allInBulkCogsPerLiter) },
+    ...(blindSpotNote(formulaProfile?.readiness)
+      ? [{ label: 'Biaya belum lengkap', value: blindSpotNote(formulaProfile?.readiness) }]
+      : []),
   ],
   tableTitle: 'Retail Material, Packaging, And Overhead Breakdown',
   columns: [
@@ -64,7 +81,7 @@ export const buildProductionCostExportConfig = ({
       quantity: `${formatQuantity(retailComputed.formulaVolumeNeeded)} ml`,
       unitCost: formatCurrency(formulaProfile.costPerMl),
       totalCost: formatPrice(retailComputed.formulaMaterialCost),
-      notes: 'Based on saved raw material prices',
+      notes: blindSpotNote(formulaProfile?.readiness) || 'Based on saved raw material prices',
     },
     {
       item: selectedSolvent?.name || 'Batch solvent',
