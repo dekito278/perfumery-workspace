@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { isReadyToPack, matchesOrderFilter } from '@/utils/orderWorkflow.js';
+import { isReadyToPack, isShippedOrder, matchesOrderFilter } from '@/utils/orderWorkflow.js';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, BadgePercent, Beaker, Calculator, ClipboardCheck, Factory, FileCheck2, LibraryBig, MessageCircle, NotebookPen, PackageCheck, PackageOpen, PackagePlus, Sparkles, Truck, UsersRound, WandSparkles } from 'lucide-react';
@@ -243,7 +243,15 @@ const MobileDashboardPage = () => {
   const paymentFollowUps = useMemo(() => orders.filter((order) => (
     matchesOrderFilter(order, 'follow_up') && ['unpaid', 'pending'].includes(order.paymentStatus)
   )), [orders]);
-  const shippedFollowUps = useMemo(() => orders.filter((order) => order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status)), [orders]);
+  // The two halves of the follow-up queue, and they must ADD UP to it. Measured in Dekito's own Studio:
+  // the card said 16 and the breakdown under it said "5 belum dibayar · 10 dikirim" — because this line
+  // read shipment_status alone while the queue counts isShippedOrder, which also believes status
+  // 'shipped'. One order sat in the queue and in neither half of its own explanation.
+  const shippedFollowUps = useMemo(() => orders.filter((order) => (
+    matchesOrderFilter(order, 'follow_up')
+    && !['unpaid', 'pending'].includes(order.paymentStatus)
+    && isShippedOrder(order)
+  )), [orders]);
   const guidanceGapPreview = useMemo(() => sortByUpdated(missingGuidanceMaterials).slice(0, 3), [missingGuidanceMaterials]);
   const recentActivity = useMemo(() => sortByUpdated([
     ...formulas.map((formula) => ({ id: `formula-${formula.id}`, title: formula.name, meta: 'Formula diperbarui', date: formula.updated || formula.created, path: `/mobile/formulas/${formula.id}` })),
