@@ -45,6 +45,25 @@ export const isReadyToPack = (order) => {
     && (!isBespokeOrder(order) || order.bespokeProductionStatus === 'ready');
 };
 
+/**
+ * The order is standing still because its BESPOKE production has not finished — the one case where a
+ * shipping row should talk about formula/sample/approval instead of about the parcel.
+ *
+ * The fulfillment screen asked a different question: "is this row not ready to pack?" — and answered
+ * every such row with a bespoke production stage, defaulting to "Review brief". So its Dikirim queue
+ * showed ten shipped orders all labelled "Review brief", and a plain storefront order that was merely
+ * unpaid claimed to be a bespoke brief under review. Read on his own Studio, 2026-09-24.
+ *
+ * Shipped and archived are excluded: once the parcel is gone, the production stage is history, and the
+ * row should say where the parcel is.
+ */
+export const isBlockedByBespokeProduction = (order = {}) => (
+  isBespokeOrder(order)
+  && order.bespokeProductionStatus !== 'ready'
+  && !isShippedOrder(order)
+  && !isArchivedOrder(order)
+);
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)

@@ -25,8 +25,10 @@ import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
 import {
   hasShippingLabelPrinted,
   isArchivedOrder,
+  isBlockedByBespokeProduction,
   isReadyToPack,
   isShippedOrder,
+  paymentStatusLabels,
 } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
@@ -44,8 +46,6 @@ const shipmentStatusLabels = getShipmentStatusLabels();
 const bespokeProductionStatusLabels = getBespokeProductionStatusLabels();
 
 const isPaid = (order) => order.paymentStatus === 'paid';
-const isOpenShipment = (order) => !['shipped', 'delivered'].includes(order.shipmentStatus) && !['shipped', 'completed', 'cancelled'].includes(order.status);
-const isBespokeReady = (order) => !isBespokeOrder(order) || order.bespokeProductionStatus === 'ready';
 // The shared rule, so the dashboard card that sends Dekito here counts exactly what he will see.
 const isFulfillmentReady = (order) => isReadyToPack(order);
 const isNeedsResi = (order) => isFulfillmentReady(order) && !order.trackingNumber;
@@ -129,7 +129,7 @@ const MobileFulfillmentPage = () => {
     ['unpaid', 'pending'].includes(order.paymentStatus)
     || (order.shipmentStatus === 'shipped' && !['completed', 'cancelled'].includes(order.status))
   )), [orders]);
-  const blockedPaidOrders = useMemo(() => paidOrders.filter((order) => isOpenShipment(order) && !isBespokeReady(order)), [paidOrders]);
+  const blockedPaidOrders = useMemo(() => paidOrders.filter(isBlockedByBespokeProduction), [paidOrders]);
   const displayedOrders = useMemo(() => {
     if (queueFilter === 'packing') return readyOrders.filter((order) => order.shipmentStatus === 'packing');
     if (queueFilter === 'shipped') return shippedOrders;
@@ -507,7 +507,11 @@ const MobileFulfillmentPage = () => {
             const orderKey = order.id || order.orderNumber;
             const draft = drafts[orderKey] || {};
             const saving = savingId === orderKey;
+            // Two different questions, and answering the first with the second was the bug: the buttons
+            // below are disabled because the order cannot be packed, while the chip above names WHY —
+            // and only a bespoke order still in production has a production stage to name.
             const blocked = !isFulfillmentReady(order);
+            const waitingOnBespokeProduction = isBlockedByBespokeProduction(order);
 
             return (
               <article key={orderKey} className="mobile-card mobile-list-card p-3">
@@ -520,13 +524,15 @@ const MobileFulfillmentPage = () => {
                     <p className="mt-1 text-[10px] font-bold uppercase text-[#6b7280]">{formatDate(order.createdAt)}</p>
                     </div>
                   </div>
-                  <StatusChip size="xs" tone={blocked ? 'warning' : getShipmentStatusTone(order.shipmentStatus)}>
-                    {blocked ? bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief'] : shipmentStatusLabels[order.shipmentStatus] || 'Ready'}
+                  <StatusChip size="xs" tone={waitingOnBespokeProduction ? 'warning' : getShipmentStatusTone(order.shipmentStatus)}>
+                    {waitingOnBespokeProduction
+                      ? bespokeProductionStatusLabels[order.bespokeProductionStatus || 'review_brief']
+                      : shipmentStatusLabels[order.shipmentStatus] || shipmentStatusLabels.not_ready}
                   </StatusChip>
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  <StatusChip size="xs" tone={getPaymentStatusTone(order.paymentStatus)}>Sudah dibayar</StatusChip>
+                  <StatusChip size="xs" tone={getPaymentStatusTone(order.paymentStatus)}>{paymentStatusLabels[order.paymentStatus] || order.paymentStatus}</StatusChip>
                   <StatusChip size="xs" tone={draft.trackingNumber || order.trackingNumber ? 'success' : 'warning'}>
                     {draft.trackingNumber || order.trackingNumber ? 'Resi siap' : 'Butuh resi'}
                   </StatusChip>
