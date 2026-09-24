@@ -4,6 +4,11 @@ import { deductInventoryForOrder, restoreInventoryForOrder, validateOrderStock }
 import { releaseVoucherUsageForOrder } from '@/services/voucherService.js';
 import { buildBespokeCheckoutDraft, buildBespokeItem, buildBespokeNotes } from '@/utils/bespokeOrder.js';
 import { getClientContext, sanitizeClientContext } from '@/utils/clientContext.js';
+// orderWorkflow imports this module back, for getBespokeItem/isBespokeOrder. The cycle is safe because
+// every use on both sides happens inside a function, never at module scope — but it is the reason this
+// import is worth noticing rather than adding more of.
+import { isAwaitingShippingQuote } from '@/utils/orderWorkflow.js';
+import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
 
 export const ORDERS_STORAGE_KEY = 'dekito.storefront.orders.v1';
 export const ORDER_AUDIT_LOGS_STORAGE_KEY = 'dekito.storefront.orderAuditLogs.v1';
@@ -1358,6 +1363,72 @@ export const updateOrderStatus = async (orderId, status) => {
 
     return getOrders();
   }
+};
+
+/**
+ * Sends the freight figure on an order that has been waiting for it, and lets that order be paid.
+ *
+ * This is the door out of a room I built without one. Two places set payment_response.shippingQuotePending
+ * — the checkout, for a European destination, and the export calculator — and NOTHING anywhere cleared
+ * it. A buyer in Berlin ordered, was correctly shown no account and no total, appeared in Studio's
+ * "Menunggu ongkir dari kamu" queue, and then sat there permanently: the queue linked to a screen with
+ * no action on it. The order could never be paid by any path in the app.
+ *
+ * Three things have to move together, and getting any one of them wrong costs money:
+ *
+ *   1. The total. The freight is added to subtotal, which is what getOrderShippingFee derives the
+ *      shipping line from — no new column, and the invoice and payment page pick it up on their own.
+ *   2. The dollar figure, re-totalled AT THE ORDER'S OWN RATE. usdRate was written when the order was,
+ *      and re-converting at today's rate would move the price of the bottles because the market moved,
+ *      days after the buyer agreed to it. Only the shipping is new.
+ *   3. The clock. isAwaitingShippingQuote stopped the 24-hour reservation sweep; clearing the flag
+ *      starts it again — and it runs from created_at, so an order quoted three days later would be
+ *      expired the instant it became payable, cancelled with the buyer mid-transfer. payment_expires_at
+ *      is the explicit window both the cron and paymentDeadlineAt already prefer, so the clock is set
+ *      running from NOW instead.
+ */
+export const sendInternationalShippingQuote = async (orderId, { shippingFee, carrier = '' } = {}) => {
+  const fee = Number(shippingFee);
+  if (!Number.isFinite(fee) || fee <= 0) throw new Error('Ongkir harus diisi lebih dari 0');
+
+  const order = await getOrderById(orderId, { sweepExpiredReservation: false });
+  if (!order) throw new Error('Order tidak ditemukan');
+  if (!isAwaitingShippingQuote(order)) throw new Error('Order ini tidak sedang menunggu ongkir');
+
+  const previous = order.paymentResponse || {};
+  // Drop the flag by omission rather than setting it false: isAwaitingShippingQuote and the cron both
+  // test truthiness, and a lingering `shippingQuotePending: false` is a fact nobody needs to store.
+  const rest = { ...previous };
+  delete rest.shippingQuotePending;
+  const nextSubtotal = Math.max(Number(order.subtotal || 0), 0) + fee;
+  const rate = Number(previous.usdRate) > 0 ? Number(previous.usdRate) : USD_PRICE_RATE;
+  const quotedAt = new Date();
+  const expiresAt = new Date(quotedAt.getTime() + (PAYMENT_RESERVATION_TTL_HOURS * 60 * 60 * 1000));
+
+  await updateOrderRow(orderId, {
+    subtotal: nextSubtotal,
+    courier_name: String(carrier || '').trim() || order.courierName || null,
+    payment_expires_at: expiresAt.toISOString(),
+    payment_response: {
+      ...rest,
+      amountIdr: nextSubtotal,
+      amountUsd: usdPriceFor(nextSubtotal, rate) || 0,
+      usdRate: rate,
+      shippingIdr: fee,
+      shippingQuotedAt: quotedAt.toISOString(),
+    },
+  });
+
+  await createOrderAuditLog({
+    action: 'international_shipping_quoted',
+    currentOrder: order,
+    orderId,
+    previousValues: { subtotal: order.subtotal, amountUsd: previous.amountUsd || 0 },
+    nextValues: { subtotal: nextSubtotal, amountUsd: usdPriceFor(nextSubtotal, rate) || 0 },
+    metadata: { shippingFee: fee, carrier: String(carrier || '').trim(), usdRate: rate },
+  });
+
+  return getOrderById(orderId, { sweepExpiredReservation: false });
 };
 
 export const updateOrderInternalNotes = async (orderId, internalNotes) => {

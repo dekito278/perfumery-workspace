@@ -36,11 +36,15 @@ export const USD_PRICE_STEP = 5;
  * @returns whole dollars on a $5 step, or null when there is no price to convert. Null means "say
  *   nothing", never "free".
  */
-export const usdPriceFor = (rupiah) => {
+export const usdPriceFor = (rupiah, rate = USD_PRICE_RATE) => {
   const amount = Number(rupiah);
   if (!Number.isFinite(amount) || amount <= 0) return null;
 
-  const exact = amount / USD_PRICE_RATE;
+  // The rate is an argument so an order can be re-totalled at the rate IT was written with. When the
+  // freight is added days later, the goods half of the total must not move because the market did —
+  // the buyer agreed to a dollar figure for the bottles, and only the shipping is new.
+  const applied = Number(rate) > 0 ? Number(rate) : USD_PRICE_RATE;
+  const exact = amount / applied;
   const rounded = Math.ceil(exact / USD_PRICE_STEP) * USD_PRICE_STEP;
   return rounded > 0 ? rounded : null;
 };
