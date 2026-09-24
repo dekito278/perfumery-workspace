@@ -23,8 +23,15 @@ const overseasPriceFromRetail = (retail, factor) => {
   return Math.ceil((r * factor) / 10000) * 10000;
 };
 `;
-const runnable = stubs + read('utils', 'shippingRegion.js')
-  .split('\n').filter((line) => !line.startsWith('import ')).join('\n');
+// isAsiaCountry and shippingIncludedFor moved to internationalDestination.js — both are questions about
+// a DESTINATION and now live together. Inlined here so this guard keeps testing them as behaviour.
+const inline = (...parts) => read(...parts).split('\n').filter((line) => !line.startsWith('import ')).join('\n');
+const runnable = [
+  stubs,
+  inline('data', 'internationalShippingRates.js'),
+  inline('utils', 'internationalDestination.js'),
+  inline('utils', 'shippingRegion.js'),
+].join('\n');
 const {
   ASIA_MULTIPLIER, internationalPriceFor, shippingRegionForTimeZone, shippingIncludedFor, isAsiaCountry,
   readShippingRegionFromUrl,

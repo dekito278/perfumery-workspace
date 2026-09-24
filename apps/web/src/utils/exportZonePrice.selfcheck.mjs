@@ -37,6 +37,7 @@ const shim = [
   strip('data', 'rayspeedRates.js'),
   strip('utils', 'memberPriceFill.js'),
   strip('utils', 'shippingRegion.js'),
+  strip('utils', 'internationalDestination.js'),
   'export { ASIA_TIME_ZONES, isAsiaCountry, shippingRegionForTimeZone, internationalPriceFor, ASIA_MULTIPLIER, EXPORT_ZONE_BY_COUNTRY };',
 ].join('\n');
 const {

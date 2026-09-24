@@ -7,8 +7,6 @@
 //
 // So there are two prices, split where the carrier splits the world.
 
-import { EXPORT_ZONE_BY_COUNTRY } from '@/data/exportZones.js';
-import { rayspeedServes } from '@/data/rayspeedRates.js';
 import { overseasPriceFromRetail } from '@/utils/memberPriceFill.js';
 
 /**
@@ -75,25 +73,13 @@ export const detectShippingRegion = () => {
   }
 };
 
-/**
- * Whether the shipping is included in the price shown.
- *
- * Tied to the CARRIER, not to the two rates that happen to be measured. RaySpeed's dearest measured
- * destination is the United States at Rp 670.500, and Dekito still earns more on every single bottle
- * sent there than on the same bottle sold in Jakarta — so the promise holds across their whole network,
- * and the unmeasured destinations (Singapore, Japan, Australia) are all nearer than the one that proves
- * it.
- *
- * Europe is the exception, and not by choice: RaySpeed does not go there, LTU does, and LTU wants
- * Rp 2.2 million and an MSDS. Shipping there is quoted by hand, as it always was.
- */
-export const shippingIncludedFor = (countryCode) => rayspeedServes(countryCode);
-
-/** The zone a country sits in, for the two callers that need to reason about the split by country. */
-export const isAsiaCountry = (countryCode) => {
-  const zone = EXPORT_ZONE_BY_COUNTRY[String(countryCode || '').trim().toUpperCase()];
-  return zone === 1 || zone === 2;
-};
+// isAsiaCountry and shippingIncludedFor used to live here. Both are questions about a DESTINATION, so
+// they moved to internationalDestination.js to sit beside the third one — which of the two international
+// prices applies — and a screen can no longer answer one of them from a different table.
+//
+// shippingIncludedFor was tied to carrier coverage while every product page promised "Southeast Asia,
+// East Asia, Australia and the Americas". Thailand, the Philippines and Vietnam sat in that gap:
+// promised free shipping on the page, charged for it in Studio. The promise is what the buyer read.
 
 /**
  * The international price for one line, in the region the reader appears to be in.
