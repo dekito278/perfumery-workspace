@@ -13,6 +13,7 @@ import StorefrontFooter from '@/components/storefront/StorefrontFooter.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { PAYMENT_RESERVATION_TTL_HOURS, getOrderById, getPublicOrderPaymentSession, isOrderClosedForPayment, submitOrderPaymentProof } from '@/services/orderService.js';
 import { paymentDeadlineAt } from '@/utils/paymentDeadline.js';
+import { isAwaitingShippingQuote } from '@/utils/orderWorkflow.js';
 import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import { createDokuCheckout, refreshDokuPaymentStatus } from '@/services/dokuCheckoutService.js';
 import { isManualTransferPayment, MANUAL_TRANSFER_PAYMENT, getStorefrontWhatsAppNumber } from '@/services/cartService.js';
@@ -116,6 +117,7 @@ const buildManualTransferFromOrder = (order) => ({
   customerCode: order.customerCode,
   amount: order.subtotal,
   amountUsd: Number(order.paymentResponse?.amountUsd || 0),
+  paymentResponse: order.paymentResponse || null,
   customerName: order.customerName,
   paymentStatus: order.paymentStatus,
   paymentReference: order.paymentReference,
@@ -596,6 +598,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
   // admin side, which refuses to approve a proof for one of these. Until now this screen ignored it and
   // went on handing out the bank account.
   const closedForPayment = isOrderClosedForPayment(session);
+  // The third state. Not closed — the order is alive and nothing is wrong — but there is no total yet,
+  // so there is nothing to transfer and no account to show.
+  const awaitingShippingQuote = isAwaitingShippingQuote(session);
   const proofStatus = session.paymentProofStatus || 'missing';
   const hasSubmittedProof = Boolean(session.paymentProofUrl) && ['submitted', 'approved'].includes(proofStatus);
   const needsProofUpload = !hasSubmittedProof;
@@ -723,7 +728,32 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
           </div>
         ) : null}
 
-        {closedForPayment ? (
+        {awaitingShippingQuote ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <div className="text-xs font-bold uppercase">{t('pay.quoteTitle')}</div>
+            <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.quoteBody')}</p>
+            <p className="mt-2 text-xs font-semibold leading-relaxed">{t('pay.quoteNoTransfer')}</p>
+            {/* Dekito's request: the buyer confirms on WhatsApp so he learns the order exists at all.
+                The automatic alert in orderNotifier only fires when ORDER_ALERT_WEBHOOK_URL is set, and
+                it is not — so without this button a Europe order waits for someone to open Studio. */}
+            {whatsappNumber ? (
+              <a
+                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(t('pay.quoteWaDraft', { order: orderNumber }))}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-editorial-charcoal px-4 text-sm font-bold text-editorial-paper"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {t('pay.quoteConfirm')}
+              </a>
+            ) : null}
+            {customerCode ? (
+              <Link to={orderTrackingPath} className="mt-2 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-amber-300 bg-white px-4 text-sm font-bold text-amber-900">
+                {t('track.title')}
+              </Link>
+            ) : null}
+          </div>
+        ) : closedForPayment ? (
           <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4 text-[#b91c1c]">
             <div className="text-xs font-bold uppercase">{t('pay.closedTitle')}</div>
             <p className="mt-2 text-sm font-semibold leading-relaxed">{t('pay.closedBody')}</p>

@@ -36,9 +36,24 @@ assert.match(service, /export const isOrderClosedForPayment = \(order = \{\}\) =
 // --- 2. Nothing that invites a transfer may render for a closed order ------------------------------------
 // The bank account, the account holder and the "transfer exactly this much" step are the three things
 // that cost a buyer money. Each must sit on the open side of the branch.
-const branch = page.match(/\{closedForPayment \? \(([\s\S]*?)\n        \) : \(\n          <>([\s\S]*?)\n          <\/>\n        \)\}/);
-assert.ok(branch, 'the page must choose between a closed notice and the payment details');
-const [, closedSide, openSide] = branch;
+//
+// Written against the SHAPE of a two-way branch, this broke the day a third state was added (an order
+// waiting on a hand-quoted shipping figure) — the rule was untouched, only the number of branches moved.
+// So it now splits on the open side rather than counting branches: everything before the fragment is a
+// state where payment is NOT offered, however many of those there come to be, and every one of them has
+// to be as empty of bank details as the closed one.
+const openMatch = page.match(/\) : \(\n          <>([\s\S]*?)\n          <\/>\n        \)\}/);
+assert.ok(openMatch, 'the page must still have one branch that offers payment');
+const openSide = openMatch[1];
+// Everything from the first branch of the chain up to the open fragment: the closed notice, the
+// waiting-on-a-quote notice, and any state added after them.
+const chainStart = page.indexOf('{awaitingShippingQuote ? (') >= 0
+  ? page.indexOf('{awaitingShippingQuote ? (')
+  : page.indexOf('{closedForPayment ? (');
+assert.ok(chainStart >= 0 && chainStart < openMatch.index, 'the payment details must sit behind a branch');
+const closedSide = page.slice(chainStart, openMatch.index);
+assert.ok(closedSide.includes('closedForPayment'), 'the closed-order notice must still be one of those branches');
+assert.ok(closedSide.length > 0, 'the closed-order notice must still be one of those branches');
 for (const [what, needle] of [
   ['the bank account block', "t(\"pay.bankAccount\")"],
   ['the account number', 'transfer.accountNumber'],

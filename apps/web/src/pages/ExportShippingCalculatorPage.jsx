@@ -46,6 +46,10 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   const [buyerAddress, setBuyerAddress] = useState('');
   const [buyerNotes, setBuyerNotes] = useState('');
   const [manualShipping, setManualShipping] = useState('');
+  // Europe, and anywhere else the price does not carry the freight: the order is written now and the
+  // shipping figure follows. Dekito's decision, 2026-09-25 — turning the buyer away at that point loses
+  // the sale, and guessing the freight loses money.
+  const [quoteShippingLater, setQuoteShippingLater] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
 
@@ -119,8 +123,17 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
   // is the shop's own (shippingIncludedFor), not a second opinion invented for this page.
   const typedShipping = Math.max(0, Math.round(Number(manualShipping) || 0));
   const shippingInPrice = shippingIncludedFor(countryCode);
-  const shippingCharged = typedShipping || (shippingInPrice ? 0 : (priceCardIdr || Number(quote?.total) || 0));
-  const shippingLabel = typedShipping
+  // Only offered where the price does not already carry the freight — on a destination with shipping
+  // included there is nothing left to quote, and a pending flag there would hold up an order for no
+  // reason. A typed figure also settles it: the quote has been made.
+  const canQuoteLater = !shippingInPrice && !typedShipping;
+  const quoteLater = canQuoteLater && quoteShippingLater;
+  const shippingCharged = quoteLater
+    ? 0
+    : (typedShipping || (shippingInPrice ? 0 : (priceCardIdr || Number(quote?.total) || 0)));
+  const shippingLabel = quoteLater
+    ? 'dikutip menyusul'
+    : typedShipping
     ? 'dikutip manual'
     : (shippingInPrice
       ? 'sudah termasuk harga internasional'
@@ -182,6 +195,7 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
         // the amount but hands out the BCA account is worse than one that knows neither.
         paymentResponse: amountUsd
           ? {
+            ...(quoteLater ? { shippingQuotePending: true } : {}),
             amountUsd,
             currency: 'USD',
             amountIdr: orderData.subtotal,
@@ -460,6 +474,22 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
 
           {/* Only when the tariff table has no answer. Without it an unlisted country — which is most of
               the world for this courier — could be quoted by hand but never written down. */}
+          {!shippingInPrice ? (
+            <label className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-900">
+              <input
+                type="checkbox"
+                checked={quoteShippingLater}
+                onChange={(event) => setQuoteShippingLater(event.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0"
+              />
+              <span>
+                Ongkir dikutip menyusul. Ordernya dibuat tanpa ongkir, halaman bayarnya menahan nomor
+                rekening sampai kamu isi angkanya, dan hitungan 24 jamnya tidak jalan selama menunggu.
+                {typedShipping ? ' (Tidak berlaku — ongkirnya sudah kamu isi di bawah.)' : ''}
+              </span>
+            </label>
+          ) : null}
+
           {/* Available wherever shipping is actually charged. It used to hide as soon as any rate existed,
               which took the override away exactly where it is needed most: Europe, the one region the
               price does not cover and the one where the figure gets negotiated. */}
