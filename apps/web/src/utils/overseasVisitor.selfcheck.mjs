@@ -68,9 +68,14 @@ assert.equal(approximateUsd(0), null);
 assert.equal(approximateUsd(-5), null);
 assert.equal(approximateUsd('abc'), null);
 
-// Every place a dollar figure appears carries the word "approx". It comes from ONE constant rate that
-// goes stale, and since Dekito's 2026-09-16 decision it is the biggest number on the product page — a
-// stale headline read as exact is a worse promise than a stale footnote.
+// This rule INVERTED on 2026-09-24, the second time a rule in this file has turned over rather than been
+// deleted. It used to require the word "approx" beside every dollar figure, because the figure was a
+// conversion of the rupiah price that would actually be charged. International buyers now pay in USD into
+// a USD account, so the dollar figure IS the charge — and "approx." above a payment page demanding an
+// exact transfer would be the misleading half of the old sentence, kept after its reason expired.
+//
+// So the requirement is the opposite, and stricter: no storefront surface may hedge the dollar price, and
+// all three must take it from the one function that decides it.
 for (const file of [
   ['components', 'storefront', 'OverseasPriceNote.jsx'],
   ['components', 'storefront', 'InternationalPrice.jsx'],
@@ -78,9 +83,12 @@ for (const file of [
 ]) {
   const source = read(...file);
   if (!/US\$/.test(source)) continue;
-  const bare = (source.match(/(?<!approx\. )US\$/g) || []);
-  assert.deepEqual(bare, [],
-    `${file.join('/')} prints a dollar figure without "approx." — the rate is one constant and it goes stale`);
+  assert.doesNotMatch(source, /approx/i,
+    `${file.join('/')} still hedges the dollar figure — it is the amount the buyer transfers now`);
+  assert.match(source, /usdPriceFor\(/,
+    `${file.join('/')} must take the dollar price from usdPrice.js, not convert it on its own`);
+  assert.doesNotMatch(source, /approximateUsd/,
+    `${file.join('/')} must not use the display approximation for a price someone pays`);
 }
 const note = read('components', 'storefront', 'OverseasPriceNote.jsx');
 // This rule INVERTED on 19 Sep 2026. It used to forbid "Shipping is included", because the only carrier

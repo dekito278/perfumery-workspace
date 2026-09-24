@@ -2,7 +2,7 @@ import React from 'react';
 import { formatRupiah, getPrimaryVariant } from '@/services/productCatalogService.js';
 import { useOverseasPrice } from '@/hooks/useOverseasPrice.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { approximateUsd } from '@/utils/overseasVisitor.js';
+import { usdPriceFor } from '@/utils/usdPrice.js';
 
 /**
  * The price on a catalogue or home card, for the shop being read.
@@ -23,10 +23,10 @@ const CardPrice = ({ product, className = '', memberClassName = '' }) => {
   const exportPrice = useOverseasPrice(product, variant);
 
   if (exportPrice) {
-    const usd = approximateUsd(exportPrice);
+    const usd = usdPriceFor(exportPrice);
     return (
       <>
-        <span className={className}>{usd ? `approx. US$${usd}` : formatRupiah(exportPrice)}</span>
+        <span className={className}>{usd ? `US$${usd}` : formatRupiah(exportPrice)}</span>
         {usd ? <span className={memberClassName}>{formatRupiah(exportPrice)}</span> : null}
       </>
     );

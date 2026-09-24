@@ -43,7 +43,10 @@ for (const [what, needle] of [
   ['the bank account block', "t(\"pay.bankAccount\")"],
   ['the account number', 'transfer.accountNumber'],
   ['the account holder', 'transfer.accountName'],
-  ['the amount to transfer', "t('pay.step1', { amount: formatTotal(session.amount) })"],
+  // The needle is the step, not the formatter: this pinned `formatTotal(session.amount)` and broke the
+  // day international orders started being quoted in dollars — a rename of how the amount READS is not a
+  // change to whether the amount SHOWS, which is the only thing this rule cares about.
+  ['the amount to transfer', "t('pay.step1'"],
   ['the copy-the-total button', "t('pay.copyTotal')"],
 ]) {
   assert.ok(openSide.includes(needle), `${what} must stay on the open side of the branch`);

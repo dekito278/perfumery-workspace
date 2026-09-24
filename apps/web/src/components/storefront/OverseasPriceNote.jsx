@@ -2,7 +2,7 @@ import React from 'react';
 import { Globe } from 'lucide-react';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useExportPrice, useOverseasPrice } from '@/hooks/useOverseasPrice.js';
-import { approximateUsd } from '@/utils/overseasVisitor.js';
+import { usdPriceFor } from '@/utils/usdPrice.js';
 import OverseasInquiryButton from './OverseasInquiryButton.jsx';
 
 /**
@@ -21,7 +21,7 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
   const { shippingRegion } = useExportPrice(product, variant);
   if (!price) return null;
 
-  const usd = approximateUsd(price);
+  const usd = usdPriceFor(price);
 
   return (
     <div className={`mt-3 rounded-2xl border border-editorial-charcoal/15 bg-[#fbfaf7] p-4 ${className}`}>
@@ -29,8 +29,8 @@ const OverseasPriceNote = ({ product, variant = null, className = '' }) => {
         <Globe className="h-3.5 w-3.5" /> Shipping outside Indonesia
       </p>
       <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="text-lg font-bold text-editorial-charcoal">{formatRupiah(price)}</span>
-        {usd ? <span className="text-sm font-semibold text-muted-foreground">approx. US${usd}</span> : null}
+        <span className="text-lg font-bold text-editorial-charcoal">US${usd}</span>
+        <span className="text-sm font-semibold text-muted-foreground">{formatRupiah(price)}</span>
       </p>
       {/* Written in English on purpose, in both shops: this panel exists for a reader who is abroad.
           The sentence changed on 19 Sep 2026 — the shipping used to be quoted by hand because the only

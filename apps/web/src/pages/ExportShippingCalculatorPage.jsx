@@ -10,6 +10,7 @@ import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { shippingIncludedFor } from '@/utils/shippingRegion.js';
+import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
 import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
@@ -171,8 +172,15 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
       // fields it does not know about (notesLines, shippingFee, productsSubtotal) reach nothing.
       const orderData = draftOrder.orderData;
       const { notesLines, shippingFee } = orderData;
+      // The dollar figure is frozen onto the order, not recomputed when the buyer opens the link. They
+      // pay into a USD account days later — sometimes a Wise transfer takes three — and the number they
+      // were quoted has to be the number the payment page still asks for.
+      const amountUsd = usdPriceFor(orderData.subtotal);
       const order = await createOrder({
         ...orderData,
+        paymentResponse: amountUsd
+          ? { amountUsd, currency: 'USD', amountIdr: orderData.subtotal, usdRate: USD_PRICE_RATE }
+          : undefined,
         notes: buildOrderNotes({
           deliveryAddress: orderData.deliveryAddress,
           deliveryArea: orderData.deliveryArea,

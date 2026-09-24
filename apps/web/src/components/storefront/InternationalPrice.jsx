@@ -2,7 +2,7 @@ import React from 'react';
 import { Globe } from 'lucide-react';
 import { formatRupiah } from '@/services/productCatalogService.js';
 import { useTranslate } from '@/hooks/useTranslate.js';
-import { approximateUsd } from '@/utils/overseasVisitor.js';
+import { usdPriceFor } from '@/utils/usdPrice.js';
 import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 
 /**
@@ -13,10 +13,12 @@ import { useShippingRegion } from '@/hooks/useShippingRegion.js';
  * price at once left the reader to guess which of the three was theirs — he saw all three on one screen
  * and said so.
  *
- * Dollars lead because that is the number a foreign buyer can judge; rupiah sits under it because that is
- * what would actually be charged. The dollar figure is an approximation from one constant rate and is
- * always labelled as one — a stale big number is worse than a stale small one, which is exactly why the
- * rupiah stays visible underneath rather than being replaced.
+ * Dollars lead because that is the number a foreign buyer can judge, and since 2026-09-24 it is also the
+ * number they actually send: payment goes to a USD account, so the dollar figure is the price and not an
+ * estimate of it. It carried the word "approx." until that day and must not any more — a headline marked
+ * approximate above a payment page asking for an exact transfer is the worst of both.
+ *
+ * Rupiah stays underneath as the reference the shop keeps its books in.
  */
 const InternationalPrice = ({ price, className = '' }) => {
   const { t } = useTranslate();
@@ -24,12 +26,12 @@ const InternationalPrice = ({ price, className = '' }) => {
   // Southeast Asia price with the shipping already inside it; telling them "anywhere else we work the
   // shipping out on WhatsApp" invites a question they do not need to ask.
   const shippingRegion = useShippingRegion();
-  const usd = approximateUsd(price);
+  const usd = usdPriceFor(price);
 
   return (
     <div className={className}>
       <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        {usd ? <span className="text-2xl font-bold text-editorial-charcoal">approx. US${usd}</span> : null}
+        {usd ? <span className="text-2xl font-bold text-editorial-charcoal">US${usd}</span> : null}
         <span className="text-sm font-semibold text-muted-foreground">{formatRupiah(price)}</span>
       </p>
       <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold leading-relaxed text-muted-foreground">
