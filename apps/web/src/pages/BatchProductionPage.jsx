@@ -505,7 +505,10 @@ const BatchProductionPage = () => {
             </section>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <MetricCard label="Concentrate COGS" value={formatPrice(concentrateCost)} helper={`${formatNumber(targetValue, 1)} ml full concentrate`} tone="amber" />
+              {/* "100 ml full concentrate" under the cost of 20 ml of it: the helper named the finished
+                  batch while the figure priced the concentrate, and the two only agree at 100%
+                  dilution — which is why nobody caught it. Both quantities are named now. */}
+              <MetricCard label="Concentrate COGS" value={formatPrice(concentrateCost)} helper={`${formatNumber(concentrateBaseGrams, 1)} ml concentrate for a ${formatNumber(targetValue, 1)} ml batch`} tone="amber" />
               <MetricCard label="Dilution COGS" value={formatPrice(dilutionCost)} helper={`${formatNumber(formulaMl, 1)} ml formula / ${formatNumber(solventMl, 1)} ml solvent`} tone="emerald" />
               <MetricCard label="Yield" value={`${bottleCount} bottles`} helper={`${formatNumber(usableMl, 1)} ml usable`} />
               <MetricCard label="COGS / bottle" value={formatPrice(cogsPerBottle)} helper={`${formatNumber(bottleValue, 0)} ml bottle`} tone="amber" />

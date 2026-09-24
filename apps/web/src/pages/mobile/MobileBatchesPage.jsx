@@ -1042,7 +1042,17 @@ const MobileBatchesPage = () => {
                   <div className="text-[10px] font-bold uppercase text-amber-700">Full concentrate</div>
                   <h2 className="mt-0.5 truncate text-base font-bold text-[#1f2937]">{selectedFormula?.name || 'Formula'}</h2>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <MetricTile label="Batch" value={formatGramAmount(targetValue)} helper={`${concentrateRows.length} materials`} />
+                    {/* The weight this card's COGS is actually about. It used to show targetValue — the
+                        FINISHED batch — beside the cost of the concentrate alone, so at 20% dilution the
+                        tile said 100 g over Rp 174.627 while the per-gram beside it said Rp 8.731. Divide
+                        the two and you get Rp 1.746: the same card disagreeing with itself by 1/ratio.
+                        The batch it belongs to is named in the helper, where it cannot be mistaken for
+                        the quantity being priced. */}
+                    <MetricTile
+                      label="Weigh"
+                      value={formatGramAmount(concentrateBaseGrams)}
+                      helper={`${concentrateRows.length} materials · batch ${formatGramAmount(targetValue)}`}
+                    />
                     <MetricTile label="COGS" value={formatPrice(concentrateCost)} helper={`${formatCurrency(concentrateCostPerGram)} / g`} tone="amber" />
                   </div>
                   <FormulaCostBlindSpotNotice readiness={formulaProfile?.readiness} className="mt-3" />
