@@ -64,7 +64,7 @@ const IDENTICAL_ON_PURPOSE = new Set([
   'cart.brief',       // "Brief" is the word used for a bespoke brief in both
   'cart.subtotal',    // Subtotal is Subtotal
   // Checkout: the same word is already used on Indonesian receipts and in Indonesian banking.
-  'checkout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
+  'checkout.tab', 'mcheckout.tab', 'checkout.eyebrow', 'checkout.title', 'checkout.whatsapp',
   'checkout.subtotal', 'checkout.total', 'mcheckout.auto', 'mcheckout.stepArea',
   'pay.tab', // the payment tab title is already English on the Indonesian site
   // The journal is titled in English on the Indonesian site already — it is the section's name.

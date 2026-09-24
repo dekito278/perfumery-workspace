@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
-import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { internationalOrderSummary, isAwaitingShippingQuote, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { orderHasShipped } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader.jsx';
@@ -430,7 +430,14 @@ const PaymentTaskPanel = ({
             </div>
             <div className="rounded-2xl bg-white/85 px-3 py-2">
               <div className="text-[10px] font-bold uppercase text-amber-700">{t('cust.totalDue')}</div>
-              <div className="mt-1 text-sm font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</div>
+              {/* The amount they were actually asked for. An overseas buyer transfers dollars frozen at
+                  the order's rate, and one still waiting on a freight quote has no total yet — the
+                  payment page refuses to name one, so this banner must not name one either. */}
+              <div className="mt-1 text-sm font-bold text-editorial-charcoal">
+                {isAwaitingShippingQuote(order)
+                  ? '—'
+                  : (internationalOrderSummary(order)?.amountLabel || formatTotal(order.subtotal))}
+              </div>
             </div>
             {dokuPayment ? (
               <div className="rounded-2xl bg-white/85 px-3 py-2">

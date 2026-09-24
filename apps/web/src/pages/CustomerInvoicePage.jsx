@@ -24,7 +24,7 @@ import {
 } from '@/utils/orderTotals.js';
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { invoiceShipmentState, shipmentNoteKey } from '@/utils/invoiceShipment.js';
-import { paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { internationalOrderSummary, isAwaitingShippingQuote, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -269,10 +269,26 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
               {shippingPromotionLabel ? <p className="mt-1 text-xs font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
             </>
           ) : null}
+          {/* The document has to agree with what was asked for. An overseas buyer is asked to transfer
+              dollars, frozen at the rate this order was written with; printing only the rupiah leaves
+              them holding a receipt for an amount they never sent. And an order whose freight has not
+              been worked out has no final total at all — the payment page already refuses to name one,
+              and an invoice that names one anyway is the more convincing of the two documents. */}
           <div className="mt-3 flex items-center justify-between border-t border-[#e5e7eb] pt-3">
             <span className="text-sm font-bold uppercase text-editorial-charcoal">{t('inv.totalDue')}</span>
-            <span className="text-xl font-bold text-editorial-charcoal">{formatTotal(order.subtotal)}</span>
+            <span className="text-xl font-bold text-editorial-charcoal">
+              {isAwaitingShippingQuote(order)
+                ? '—'
+                : (internationalOrderSummary(order)?.amountLabel || formatTotal(order.subtotal))}
+            </span>
           </div>
+          {isAwaitingShippingQuote(order) ? (
+            <p className="mt-2 text-xs font-bold leading-relaxed text-amber-800">{t('inv.awaitingShipping')}</p>
+          ) : internationalOrderSummary(order)?.amountLabel ? (
+            <p className="mt-2 text-xs font-semibold text-[#6b7280]">
+              {t('inv.usdBasis', { amount: new Intl.NumberFormat('id-ID').format(Number(order.subtotal || 0)) })}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

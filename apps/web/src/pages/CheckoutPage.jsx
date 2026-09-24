@@ -49,7 +49,7 @@ const CheckoutPage = () => {
     customerCode, customerName, contact, deliveryAddress, notes, saving, lookupLoading,
     securityChallenge, securityAnswer, setSecurityAnswer, verifyCustomerSecurity,
     destinationSearch, destinationOptions, selectedDestination, selectedCourier, selectedShipping, shippingOptions,
-    shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, selectedPaymentMethod, availablePaymentMethods,
+    shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, totalDue, totalDueUsdLabel, selectedPaymentMethod, availablePaymentMethods,
     canSubmitCheckout, blockedItems, validPhoneContact, updateCustomerCode, setCustomerName, setContact, setDeliveryAddress, setNotes,
     updateDestinationSearch, chooseShippingCourier, autoCalculateShipping, loadShippingRates, setSelectedShipping,
     setSelectedPaymentMethod, lookupCustomer, submitOrder,
@@ -404,7 +404,17 @@ const CheckoutPage = () => {
               ) : null}
               <div className="cart-totals__row" style={{ paddingTop: '12px', borderTop: `1px solid var(--editorial-border)`, marginTop: '8px' }}>
                 <span style={{ fontWeight: 700, color: 'var(--editorial-charcoal)' }}>{t('checkout.total')}</span>
-                <strong style={{ fontSize: '1.05rem' }}>{formatTotal(totalDue)}</strong>
+                {/* The currency the buyer will actually transfer in, with the rupiah it was worth
+                    underneath — the same pairing the product cards use. A total in rupiah under a page
+                    that quoted US$80 leaves the buyer guessing which of the two they owe. */}
+                <strong style={{ fontSize: '1.05rem' }}>
+                  {totalDueUsdLabel ? (
+                    <>
+                      {totalDueUsdLabel}
+                      <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-foreground, #6b7280)' }}>{formatTotal(totalDue)}</span>
+                    </>
+                  ) : formatTotal(totalDue)}
+                </strong>
               </div>
             </div>
 

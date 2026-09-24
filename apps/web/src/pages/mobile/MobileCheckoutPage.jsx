@@ -105,7 +105,7 @@ const MobileCheckoutPage = () => {
   const {
     customerCode, customerName, contact, deliveryAddress, notes, saving, securityChallenge, securityAnswer, lookupLoading,
     repeatCustomer, repeatAddressMode, destinationSearch, destinationOptions, selectedDestination, shippingOptions, selectedCourier,
-    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, selectedPaymentMethod, availablePaymentMethods, isManualPayment, validPhoneContact,
+    selectedShipping, shippingLoading, shippingError, shippingNotice, shippingFee, discountAmount, discountedSubtotal, totalDue, totalDueUsdLabel, selectedPaymentMethod, availablePaymentMethods, isManualPayment, validPhoneContact,
     canSubmitCheckout, blockedItems, setCustomerName, setContact, setDeliveryAddress, setNotes, setSecurityAnswer, setSelectedShipping,
     setSelectedPaymentMethod, chooseShippingCourier, updateCustomerCode, updateDestinationSearch, useCustomerLastAddress,
     useCustomerNewAddress, autoCalculateShipping, loadShippingRates, lookupCustomer, verifyCustomerSecurity, submitOrder,
@@ -202,7 +202,7 @@ const MobileCheckoutPage = () => {
           <div className="text-[10px] font-bold uppercase text-amber-700">{t('mcheckout.title')}</div>
           <h1 className="mt-1 text-xl font-bold leading-tight text-[#1f2937]">{t('mcheckout.lead')}</h1>
           <div className="mt-3 flex items-end justify-between gap-3">
-            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">{t('mcheckout.totalDue')}</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{formatTotal(totalDue)}</div></div>
+            <div><div className="text-[10px] font-bold uppercase text-[#8b949e]">{t('mcheckout.totalDue')}</div><div className="mt-1 text-2xl font-bold text-editorial-charcoal">{totalDueUsdLabel || formatTotal(totalDue)}</div>{totalDueUsdLabel ? <div className="text-[11px] font-bold text-[#6b7280]">{formatTotal(totalDue)}</div> : null}</div>
             <Button type="button" variant="outline" className="rounded-2xl bg-white" onClick={() => navigate('/mobile/cart')}>{t('mcheckout.editCart')}</Button>
           </div>
           {/* Sits under TOTAL BAYAR on purpose: this is the number the buyer is about to transfer, and a
@@ -530,7 +530,7 @@ const MobileCheckoutPage = () => {
                 <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('mcheckout.subtotalAfterVoucher')}</span><span>{formatTotal(discountedSubtotal)}</span></div>
               ) : null}
               <div className="mt-2 flex justify-between gap-3 text-[#6b7280]"><span>{t('checkout.shipping')}</span><span>{shippingFee ? formatTotal(shippingFee) : '-'}</span></div>
-              <div className="mt-3 border-t border-editorial-stone/10 pt-3 flex justify-between gap-3 text-sm text-editorial-charcoal"><span>{t('mcheckout.totalDue')}</span><span>{formatTotal(totalDue)}</span></div>
+              <div className="mt-3 border-t border-editorial-stone/10 pt-3 flex justify-between gap-3 text-sm text-editorial-charcoal"><span>{t('mcheckout.totalDue')}</span><span>{totalDueUsdLabel ? `${totalDueUsdLabel} · ${formatTotal(totalDue)}` : formatTotal(totalDue)}</span></div>
             </div>
           </CheckoutSection>
         </div>

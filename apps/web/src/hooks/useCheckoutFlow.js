@@ -31,6 +31,7 @@ import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { hasValidWhatsAppPhoneNumber } from '@/utils/phoneNumber.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { destinationFor } from '@/utils/internationalDestination.js';
+import { formatUsdPrice } from '@/utils/usdPrice.js';
 import { clearCheckoutDraft, readCheckoutDraft, writeCheckoutDraft } from '@/utils/checkoutDraftStorage.js';
 
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
@@ -153,6 +154,12 @@ export const useCheckoutFlow = ({
   const discountAmount = Math.min(Number(voucherDiscount || 0), Number(summary.subtotal || 0));
   const discountedSubtotal = Math.max(Number(summary.subtotal || 0) - discountAmount, 0);
   const totalDue = discountedSubtotal + shippingFee;
+  // The LABEL, not the number. This exported the dollar figure for one commit, and the checkout promptly
+  // fed it back into formatUsdPrice — which takes rupiah — and printed "US$5" for a Rp 1.260.000 order.
+  // Both gates were green; it was caught by opening the page. A screen that receives a finished string
+  // cannot get the units wrong, so the conversion happens once, here, beside the rupiah it converts.
+  // Empty for a domestic order, which is how a caller knows to print rupiah instead.
+  const totalDueUsdLabel = destination ? formatUsdPrice(totalDue) : '';
   const shippingSummary = isInternational
     ? (destination ? `${destination.regionLabel}${destination.shippingIncluded ? ' — shipping included' : ' — shipping quoted separately'}` : '')
     : (selectedShipping ? describeShippingRate(selectedShipping) : '');
@@ -810,6 +817,7 @@ export const useCheckoutFlow = ({
     discountAmount,
     discountedSubtotal,
     totalDue,
+    totalDueUsdLabel,
     shippingSummary,
     shippingWeight,
     canSubmitCheckout,
