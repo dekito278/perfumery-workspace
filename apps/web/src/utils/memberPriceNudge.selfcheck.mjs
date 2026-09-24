@@ -215,8 +215,20 @@ for (const page of ['pages/CartPage.jsx', 'pages/mobile/MobileCartPage.jsx']) {
 // variant from a hand-written field list; it named retailPriceNumber, priceTier and compareAtPriceNumber
 // and not memberPriceNumber, so all seven surfaces dropped it before reading it — and the nudge rendered
 // nowhere on the live site, found only by looking. Same omission compareAtPriceNumber once had, same way.
+//
+// And the premise above was only half right, which is worth writing down: the mapper DID name
+// memberPriceNumber and retailPriceNumber on the variant — it just named them off the output of
+// normalizeProductVariants, which rebuilds each variant through a five-field whitelist and had already
+// dropped both. The mapper carried undefined and this guard read the line and called it carried. So the
+// rule now is where the value comes FROM, not that the key appears.
 const mapper = read('data', 'publicStorefront.js');
-assert.match(mapper, /memberPriceNumber: variant\.memberPriceNumber/, 'the variant mapper must carry memberPriceNumber');
+assert.match(mapper, /memberPriceNumber: [^,\n]*memberPriceNumber/, 'the variant mapper must carry memberPriceNumber');
 assert.match(mapper, /memberPriceNumber: product\.memberPriceNumber/, 'the product mapper must carry memberPriceNumber');
+assert.match(mapper, /const bySourceId = new Map\(/,
+  "the variant mapper must read the tier fields off the product's own variants — normalizeProductVariants drops them");
+for (const field of ['memberPriceNumber', 'retailPriceNumber']) {
+  assert.match(mapper, new RegExp(`${field}: source\\.${field}`),
+    `${field} must come from the source variant, not from the normalizer that discarded it`);
+}
 
 console.log('memberPriceNudge selfcheck OK (member price shown to everyone; silent when there is nothing to say)');

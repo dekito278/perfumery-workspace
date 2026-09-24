@@ -83,6 +83,25 @@ for (const code of ['DE', 'FR', 'GB', 'BR']) {
   assert.equal(shippingIncludedFor(code), false, `${code} is quoted by hand — promising free shipping there is a loss`);
 }
 
+// --- 5b. A member discount does not travel -------------------------------------------------------------
+// applyTierPrices lowers priceNumber to the member price for a signed-in member and keeps the original
+// as retailPriceNumber. The international price is built on RETAIL: reading the lowered number
+// multiplied a domestic loyalty discount into an export price, so the same bottle cost US$45 to a buyer
+// who had logged in and US$50 to one who had not. Dekito's decision, 2026-09-24.
+const exportHook = read('hooks', 'useOverseasPrice.js');
+assert.match(exportHook, /variant\?\.retailPriceNumber/,
+  'the international price must start from the retail price a member price replaced');
+assert.match(exportHook, /product\?\.retailPriceNumber/,
+  'and from the product-level retail price when there is no variant');
+// Order matters, not just presence: `priceNumber ?? retailPriceNumber` reads the member price first and
+// would keep the bug while satisfying both assertions above.
+const lineExpression = (exportHook.match(/const linePrice = Number\(([\s\S]*?)\);/) || [])[1] || '';
+assert.ok(lineExpression, 'the hook must compute one line price');
+const firstRetail = lineExpression.search(/retailPriceNumber/);
+const firstTierPrice = lineExpression.search(/(?<!retail)(?<!Retail)\bpriceNumber/);
+assert.ok(firstRetail >= 0 && (firstTierPrice < 0 || firstRetail < firstTierPrice),
+  `retail must be read before the tier-rewritten price: ${lineExpression.replace(/\s+/g, ' ')}`);
+
 assert.equal(isAsiaCountry('MY'), true);
 assert.equal(isAsiaCountry('SG'), true);
 assert.equal(isAsiaCountry('JP'), false, 'Japan is zone 3 — a rich market on the world price');

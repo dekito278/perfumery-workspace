@@ -63,24 +63,37 @@ const inferPublicBadge = (product = {}, tags = []) => {
   return 'LIMITED';
 };
 
-const normalizePublicVariants = (product = {}, publicPrice) => (
-  normalizeProductVariants(product).map((variant) => ({
+const normalizePublicVariants = (product = {}, publicPrice) => {
+  // The tier fields have to be read back from the product's OWN variants, not from the output of
+  // normalizeProductVariants. That normalizer rebuilds every variant through createProductVariant, which
+  // is a hand-listed whitelist of five fields — so retailPriceNumber and memberPriceNumber were gone
+  // before this mapper ever saw them, and the two lines below carrying them "across" carried undefined.
+  //
+  // It cost a real price: applyTierPrices lowers a member's priceNumber and keeps the original as
+  // retailPriceNumber, the international price is built on retail, and with retail missing on the
+  // variant the member discount was multiplied into the export price. A signed-in buyer in Singapore
+  // saw US$45 where an anonymous one saw US$50.
+  const bySourceId = new Map((Array.isArray(product.variants) ? product.variants : [])
+    .map((variant, index) => [String(variant?.id || slugify(variant?.size) || `variant-${index + 1}`), variant]));
+
+  return normalizeProductVariants(product).map((variant) => {
+    const source = bySourceId.get(String(variant.id)) || {};
+    return {
     id: String(variant.id || slugify(variant.size)),
     size: variant.size || product.size || '30 ml',
     price: formatVariantPrice(variant, publicPrice),
     priceNumber: Number(variant.priceNumber || product.priceNumber || 0),
     // Carried, not recomputed: a tier price rewrote priceNumber upstream and this is what it replaced.
-    // Every field here is listed by hand, so anything not named is silently dropped — which is exactly
-    // how the member-price note came out blank the first time.
-    retailPriceNumber: variant.retailPriceNumber,
+    retailPriceNumber: source.retailPriceNumber ?? variant.retailPriceNumber,
     // Member price for a signed-out visitor (#147). Every field this mapper does not name is dropped —
     // it was rebuilt here without this one and the nudge rendered nowhere on the live site.
-    memberPriceNumber: variant.memberPriceNumber,
+    memberPriceNumber: source.memberPriceNumber ?? variant.memberPriceNumber,
     compareAtPriceNumber: Number(variant.compareAtPriceNumber || 0),
     stock: Math.max(0, Math.floor(Number(variant.stock ?? product.stock ?? 0)) || 0),
     availability: Number(variant.stock ?? product.stock ?? 0) > 0 ? 'Available' : 'Inquire',
-  }))
-);
+    };
+  });
+};
 
 const inferMaterialHighlights = (product = {}) => {
   if (Array.isArray(product.materialHighlights) && product.materialHighlights.length) {
