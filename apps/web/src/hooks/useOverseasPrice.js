@@ -1,7 +1,7 @@
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { useStorefrontRegion } from '@/hooks/useStorefrontRegion.js';
 import { tierPricesForLine } from '@/utils/tierPrice.js';
-import { internationalPriceFor } from '@/utils/shippingRegion.js';
+import { internationalPriceFor } from '@/utils/internationalDestination.js';
 import { useShippingRegion } from '@/hooks/useShippingRegion.js';
 
 /**

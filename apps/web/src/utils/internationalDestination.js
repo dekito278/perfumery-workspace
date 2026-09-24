@@ -20,9 +20,12 @@
 // A country on neither list cannot be checked out to at all. That is not a gap to fill with a guess: it
 // is a parcel nobody has priced, and WhatsApp is where those still belong.
 //
-// Import-free apart from the two rules it composes, so the guard can run it.
-import { SHIPPING_RATE_REGIONS, shippingRateRegionFor } from '@/data/internationalShippingRates.js';
-import { EXPORT_ZONE_BY_COUNTRY } from '@/data/exportZones.js';
+// Relative imports, and only to import-free modules, because api/orders/create.js runs in plain node and
+// cannot resolve the '@/' alias — and the price a server charges an international buyer has to come from
+// THIS rule, not from a second copy written for the server.
+import { SHIPPING_RATE_REGIONS, shippingRateRegionFor } from '../data/internationalShippingRates.js';
+import { EXPORT_ZONE_BY_COUNTRY } from '../data/exportZones.js';
+import { overseasPriceFromRetail } from './memberPriceFill.js';
 
 /**
  * Southeast Asia plus Hong Kong and Macau — the carrier's zones 1 and 2, which is also "the neighbours".
@@ -90,3 +93,30 @@ export const listCheckoutDestinations = (countryName = () => '') => SHIPPING_RAT
     .map((code) => ({ code, name: countryName(code) || code }))
     .sort((left, right) => left.name.localeCompare(right.name)),
 }));
+
+/** Southeast Asia pays this much of retail. */
+export const ASIA_MULTIPLIER = 2.2;
+
+/**
+ * The international price for one line, in the region the destination sits in.
+ *
+ * 'world' is the price Dekito set by hand and it is left exactly alone. 'asia' is COMPUTED from retail
+ * rather than stored, so it follows every price change without eighteen rows to keep in step — that is
+ * the whole reason it is a formula and not a column.
+ *
+ * And it is never dearer than the world price: a hand-set overseas price below 2.2x would otherwise make
+ * the neighbours pay more than America, which is the opposite of the point.
+ *
+ * Moved here from shippingRegion.js so the browser and the order endpoint share one implementation. Two
+ * implementations of one price is how a buyer gets shown one number and charged another.
+ */
+export const internationalPriceFor = ({ tierPrices = {}, linePrice = 0, region = 'world' } = {}) => {
+  const world = Number(tierPrices?.overseas) || 0;
+  const line = Number(linePrice) || 0;
+  const worldPrice = world && line && world > line ? world : null;
+  if (region !== 'asia') return worldPrice;
+
+  const asia = overseasPriceFromRetail(line, ASIA_MULTIPLIER);
+  if (!asia) return worldPrice;
+  return worldPrice ? Math.min(asia, worldPrice) : asia;
+};

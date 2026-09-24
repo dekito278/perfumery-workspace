@@ -7,15 +7,7 @@
 //
 // So there are two prices, split where the carrier splits the world.
 
-import { overseasPriceFromRetail } from '@/utils/memberPriceFill.js';
 
-/**
- * Southeast Asia plus Hong Kong and Macau — LTU's zones 1 and 2, which is also roughly "the neighbours".
- * They get a lower multiplier because free shipping cannot do the work there: RaySpeed charges about
- * Rp 90.000 to Malaysia, so waiving it is a gift worth 8% that nobody feels. Only the price itself can
- * move the number a buyer in Kuala Lumpur is looking at.
- */
-export const ASIA_MULTIPLIER = 2.2;
 
 /**
  * The same countries, as IANA time zones, because a browser tells you its clock and not its address.
@@ -81,25 +73,6 @@ export const detectShippingRegion = () => {
 // East Asia, Australia and the Americas". Thailand, the Philippines and Vietnam sat in that gap:
 // promised free shipping on the page, charged for it in Studio. The promise is what the buyer read.
 
-/**
- * The international price for one line, in the region the reader appears to be in.
- *
- * 'world' is the price Dekito set by hand and it is left exactly alone — he asked for that, and at
- * US$62 it reads modestly in the markets it was written for.
- *
- * 'asia' is COMPUTED from the retail price rather than stored, so it follows every price change without
- * eighteen rows to keep in step. That is the whole reason it is a formula and not a column.
- *
- * And it is never dearer than the world price. A hand-set overseas price below 2.2x would otherwise make
- * the neighbours pay more than America, which is the opposite of the point.
- */
-export const internationalPriceFor = ({ tierPrices = {}, linePrice = 0, region = 'world' } = {}) => {
-  const world = Number(tierPrices?.overseas) || 0;
-  const line = Number(linePrice) || 0;
-  const worldPrice = world && line && world > line ? world : null;
-  if (region !== 'asia') return worldPrice;
-
-  const asia = overseasPriceFromRetail(line, ASIA_MULTIPLIER);
-  if (!asia) return worldPrice;
-  return worldPrice ? Math.min(asia, worldPrice) : asia;
-};
+// internationalPriceFor moved to internationalDestination.js with the other destination rules — the
+// order endpoint runs in plain node, cannot resolve the '@/' alias this module uses, and must charge
+// from the same rule the shop displays.

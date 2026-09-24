@@ -42,7 +42,10 @@ assert.match(resolver, /rows\?\.\[0\]\?\.tier === 'reseller' \? 'reseller' : 'me
 // The resolved tier is what prices the order.
 assert.match(endpoint, /const buyer = await resolveBuyer\(req\);\s*\n\s*const buyerTier = buyer\.tier;/,
   'the recompute must be fed the tier this endpoint resolved itself');
-assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier\)/,
+// The needle stops at the tier rather than at the closing bracket: the call grew a third argument when
+// international orders started being priced by destination, and "the tier is passed" was never a claim
+// about how many arguments follow it.
+assert.match(endpoint, /priceCatalogItems\(input\.items \|\| \[\], buyerTier[,)]/,
   'the recompute must be given the resolved tier, or it silently prices everything at retail');
 
 // One rule for which price applies, shared with the storefront.

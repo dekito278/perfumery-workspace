@@ -19,6 +19,7 @@ import { validateVoucher } from '../../src/utils/voucherValidation.js';
 import { applyShippingPromotionToRates } from '../../src/utils/shippingPromotion.js';
 import { sanitizeClientContext } from '../../src/utils/clientContext.js';
 import { resolveTierPrice, tierPricesForLine, indexTierPrices } from '../../src/utils/tierPrice.js';
+import { destinationFor, internationalPriceFor } from '../../src/utils/internationalDestination.js';
 import { DEFAULT_ITEM_WEIGHT_GRAM, totalItemWeightGram } from '../../src/utils/itemWeight.js';
 import { sendOrderAlert } from '../../src/utils/orderNotifier.js';
 import { asCustomerCode } from '../../src/utils/customerCode.js';
@@ -129,7 +130,7 @@ const countAccountRedemptions = async (code, authUserId) => {
 const MAX_ORDER_LINES = 50;
 const MAX_LINE_QUANTITY = 100;
 
-const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
+const priceCatalogItems = async (items = [], buyerTier = 'retail', destination = null) => {
   if (items.length > MAX_ORDER_LINES) {
     throw new Error(`Order has too many item lines (${items.length}, max ${MAX_ORDER_LINES})`);
   }
@@ -161,16 +162,33 @@ const priceCatalogItems = async (items = [], buyerTier = 'retail') => {
     }
 
     // The buyer's tier price, from the same rule the storefront displays with — a buyer shown one price
-    // and charged another is the worst version of two implementations disagreeing. `overseas` is false:
-    // overseas sales are quoted by hand and entered in Studio, they do not come through this endpoint.
+    // and charged another is the worst version of two implementations disagreeing.
     const tierRows = await sbSelectOptional(
       `storefront_product_prices?product_id=eq.${encodeURIComponent(product.id)}&select=variant_id,tier,price_number`,
     );
-    if (tierRows.length) {
-      const index = indexTierPrices(tierRows.map((row) => ({ ...row, slug })));
+    const index = tierRows.length ? indexTierPrices(tierRows.map((row) => ({ ...row, slug }))) : null;
+    const lineTierPrices = index ? tierPricesForLine(index, slug, variant?.id || '') : {};
+
+    if (destination) {
+      // An international order is priced by WHERE THE PARCEL GOES, not by who is signed in. The member
+      // discount is a domestic loyalty price and does not travel (Dekito, 2026-09-24), so buyerTier is
+      // deliberately not consulted on this branch.
+      const international = internationalPriceFor({
+        tierPrices: lineTierPrices,
+        linePrice: unitPrice,
+        region: destination.priceRegion,
+      });
+      // Refuse rather than fall back. No international price for a line means the only number available
+      // is the Indonesian one, and charging Rp 359.000 for a bottle going to Germany is a loss the buyer
+      // would never question.
+      if (!international) {
+        throw new Error(`No international price set for ${slug} — set one before selling it abroad`);
+      }
+      unitPrice = international;
+    } else if (index) {
       unitPrice = resolveTierPrice({
         retailPrice: unitPrice,
-        tierPrices: tierPricesForLine(index, slug, variant?.id || ''),
+        tierPrices: lineTierPrices,
         tier: buyerTier,
         overseas: false,
       });
@@ -270,7 +288,15 @@ export default async function handler(req, res) {
     // 1. Item prices (authoritative, from DB)
     const buyer = await resolveBuyer(req);
     const buyerTier = buyer.tier;
-    const catalog = await priceCatalogItems(input.items || [], buyerTier);
+    // Where the parcel goes, resolved from the SAME rule the shop prices with. A country the shop does
+    // not ship to is refused here rather than quietly priced as domestic — the client picks from a list
+    // built by that rule, so anything else arriving is either a stale page or someone editing the body.
+    const destinationCountry = String(input.delivery?.country || '').trim().toUpperCase();
+    const destination = destinationCountry ? destinationFor(destinationCountry) : null;
+    if (destinationCountry && !destination) {
+      return jsonResponse(res, 422, { message: `Belum melayani pengiriman ke ${destinationCountry}` });
+    }
+    const catalog = await priceCatalogItems(input.items || [], buyerTier, destination);
     const bespoke = isBespoke ? await priceBespokeOptions(input.bespoke?.optionIds || {}) : { subtotal: 0, labels: {} };
     const itemsSubtotal = catalog.subtotal + bespoke.subtotal;
     if (itemsSubtotal <= 0) return jsonResponse(res, 422, { message: 'Order has no priced items' });
