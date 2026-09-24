@@ -144,7 +144,7 @@ const PublicJournalPage = () => {
                     <h2>{featured.title}</h2>
                     <p>{getExcerpt(featured)}</p>
                     <div className="journal-featured__meta">
-                      <time>{formatDate(featured.published_at || featured.updated || featured.created)}</time>
+                      <time>{formatDate(featured.published_at || featured.updated || featured.created, t('fmt.dateLocale'))}</time>
                       <span className="journal-featured__read">{t('journal.read')} <ArrowRight className="h-4 w-4" /></span>
                     </div>
                   </div>
@@ -159,7 +159,7 @@ const PublicJournalPage = () => {
                       <span className="journal-card__category">{getJournalCategoryLabel(article.category)}</span>
                       <h3>{article.title}</h3>
                       <p>{getExcerpt(article)}</p>
-                      <time>{formatDate(article.published_at || article.updated || article.created)}</time>
+                      <time>{formatDate(article.published_at || article.updated || article.created, t('fmt.dateLocale'))}</time>
                     </Link>
                   ))}
                 </div>

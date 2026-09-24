@@ -132,7 +132,7 @@ const MobileArticleView = ({ post, loading, failed, slug, title, description, ca
             <div className="mt-5 grid gap-2 text-xs font-bold text-[#6b7280]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
                 <CalendarDays className="h-4 w-4 text-editorial-charcoal" />
-                {formatDate(post.published_at || post.updated || post.created)}
+                {formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#d8d5ca] bg-white/80 px-3 py-1.5">
                 <Timer className="h-4 w-4 text-editorial-charcoal" />
@@ -324,7 +324,7 @@ const PublicJournalArticlePage = ({ mobile = false }) => {
               <div className="journal-article-header__meta hero-animate-text hero-animate-text--d3">
                 <span className="journal-article-meta-pill">
                   <CalendarDays />
-                  {formatDate(post.published_at || post.updated || post.created)}
+                  {formatDate(post.published_at || post.updated || post.created, t('fmt.dateLocale'))}
                 </span>
                 <span className="journal-article-meta-pill">
                   <Timer />

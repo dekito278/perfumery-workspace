@@ -100,7 +100,7 @@ const InvoiceCard = ({ customer, order, isMobile }) => {
             {t('inv.invoice')}
           </div>
           <h1 className="mt-4 text-2xl font-bold sm:text-4xl">{order.orderNumber}</h1>
-          <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt, t)}</p>
+          <p className="mt-1 text-xs font-semibold text-[#cfd8cc] sm:text-sm">{formatDate(order.createdAt, t('fmt.dateLocale'))}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <PaymentBadge status={order.paymentStatus} />

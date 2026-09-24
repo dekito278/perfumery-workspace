@@ -212,10 +212,10 @@ const PublicTrackingPage = () => {
                     <span>Item</span><strong>{order.itemCount || '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>{t('track.created')}</span><strong>{order.createdAt ? formatDate(order.createdAt) : '-'}</strong>
+                    <span>{t('track.created')}</span><strong>{order.createdAt ? formatDate(order.createdAt, t('fmt.dateLocale')) : '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
-                    <span>{t("track.lastUpdate")}</span><strong>{order.updatedAt ? formatDate(order.updatedAt) : '-'}</strong>
+                    <span>{t("track.lastUpdate")}</span><strong>{order.updatedAt ? formatDate(order.updatedAt, t('fmt.dateLocale')) : '-'}</strong>
                   </div>
                   <div className="tracking-detail-row">
                     <span>{t('track.courier')}</span><strong>{order.courierName || t("track.notAvailable")}</strong>
