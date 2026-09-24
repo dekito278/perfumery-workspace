@@ -22,7 +22,7 @@ import { buildPublicTrackingUrl } from '@/services/publicTrackingService.js';
 import { getMobileFromState } from '@/hooks/useMobileBackNavigation.js';
 import { getOrderProductItems, getOrderVoucherSnapshot } from '@/utils/orderTotals.js';
 import { exportOrdersCsv } from '@/utils/orderBulkActions.js';
-import { hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isBlockedByBespokeProduction, isReadyToPack, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { daysAwaitingQuote, hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isBlockedByBespokeProduction, isReadyToPack, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 
 const canExportShippingLabel = (order) => Boolean(
   order
@@ -504,6 +504,8 @@ const MobileFulfillmentPage = () => {
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900">
                   {awaitingQuoteOrders.length} order internasional sudah masuk tapi belum bisa dibayar. Halaman
                   bayarnya menahan nomor rekening, dan hitungan 24 jamnya tidak jalan — sampai kamu isi ongkirnya.
+                  Stoknya sudah dipotong dan tidak akan dikembalikan sendiri, jadi selama ini menunggu, botolnya
+                  tidak bisa dibeli orang lain.
                 </p>
               </div>
             </div>
@@ -516,8 +518,11 @@ const MobileFulfillmentPage = () => {
                   className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 text-left"
                 >
                   <span className="min-w-0 truncate text-xs font-bold text-[#1f2937]">{order.orderNumber}</span>
+                  {/* The age, not just the destination. Six days and one day look identical in a list, and
+                      the difference between them is a bottle that has been out of the catalogue for a week. */}
                   <span className="shrink-0 text-[10px] font-bold uppercase text-amber-800">
-                    {internationalOrderSummary(order)?.country || 'Luar negeri'}
+                    {[internationalOrderSummary(order)?.country || 'Luar negeri',
+                      daysAwaitingQuote(order) ? `${daysAwaitingQuote(order)} hari` : 'hari ini'].join(' · ')}
                   </span>
                 </button>
               ))}

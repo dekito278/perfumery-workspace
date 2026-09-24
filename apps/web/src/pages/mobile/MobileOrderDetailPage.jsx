@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import MobileAuthenticatedLayout from '@/layouts/MobileAuthenticatedLayout.jsx';
 import MobileTopBar from '@/components/mobile-ui/MobileTopBar.jsx';
 import MobileBottomSheet from '@/components/mobile-ui/MobileBottomSheet.jsx';
-import { getNextOrderStatusForPayment, hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
+import { daysAwaitingQuote, getNextOrderStatusForPayment, hasShippingLabelPrinted, internationalOrderSummary, isArchivedOrder, isAwaitingShippingQuote, isShippedOrder, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import MobileSegmentedControl from '@/components/mobile-ui/MobileSegmentedControl.jsx';
 import StickyBottomActionBar from '@/components/mobile-ui/StickyBottomActionBar.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -839,6 +839,7 @@ const MobileOrderDetailPage = () => {
               <div className="text-[10px] font-bold uppercase text-amber-800">Kirim ongkir ke pembeli</div>
               <p className="mt-1 text-[11px] font-semibold leading-relaxed text-amber-900">
                 Sampai angkanya kamu kirim, halaman bayar menahan nomor rekening dan hitungan 24 jamnya belum jalan.
+                {daysAwaitingQuote(order) ? ` Sudah ${daysAwaitingQuote(order)} hari, dan stoknya ditahan selama itu.` : ' Stoknya ditahan selama menunggu.'}
               </p>
               <input
                 type="text"

@@ -120,6 +120,26 @@ export const internationalOrderSummary = (order = {}) => {
   };
 };
 
+/**
+ * How long an order has been waiting for us, in whole days.
+ *
+ * The 24-hour reservation sweep skips an order awaiting a freight quote, which is right — cancelling it
+ * would punish the buyer for OUR delay. What that also means is that its stock is held with no time
+ * limit at all: every catalog order reserves inventory the moment it is written, and nothing ever gives
+ * this one back. In a shop that blends in small batches, one European buyer who goes quiet takes a
+ * bottle out of the catalogue permanently, and the only screen that knew said nothing about it.
+ *
+ * So the wait is shown. A queue entry reading "6 hari" is a different object than one reading "1 hari",
+ * and the difference is a bottle nobody can buy.
+ */
+export const daysAwaitingQuote = (order = {}, now = new Date()) => {
+  if (!isAwaitingShippingQuote(order)) return 0;
+  const created = new Date(order.createdAt || order.created_at || '');
+  if (!Number.isFinite(created.getTime())) return 0;
+  const days = Math.floor((now.getTime() - created.getTime()) / (24 * 60 * 60 * 1000));
+  return days > 0 ? days : 0;
+};
+
 export const isFrontQueueOrder = (order = {}) => (
   !isArchivedOrder(order)
   && !hasShippingLabelPrinted(order)
