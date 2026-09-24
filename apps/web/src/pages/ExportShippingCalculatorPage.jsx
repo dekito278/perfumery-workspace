@@ -10,12 +10,13 @@ import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
 import { shippingIncludedFor } from '@/utils/shippingRegion.js';
+import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
 import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
 import { filterDestinations, countMatches } from '@/utils/destinationSearch.js';
 import { buildExportQuote } from '@/utils/exportQuote.js';
 import { buildExportOrderData } from '@/utils/exportOrder.js';
-import { buildCheckoutDraft, buildOrderNotes } from '@/services/cartService.js';
+import { buildCheckoutDraft, buildOrderNotes, INTERNATIONAL_TRANSFER_PAYMENT } from '@/services/cartService.js';
 import { createOrder } from '@/services/orderService.js';
 import { formatPrice } from '@/utils/pricingUtils.js';
 import { useCatalogProducts } from '@/hooks/useCatalogProducts.js';
@@ -171,8 +172,26 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
       // fields it does not know about (notesLines, shippingFee, productsSubtotal) reach nothing.
       const orderData = draftOrder.orderData;
       const { notesLines, shippingFee } = orderData;
+      // The dollar figure is frozen onto the order, not recomputed when the buyer opens the link. They
+      // pay into a USD account days later — sometimes a Wise transfer takes three — and the number they
+      // were quoted has to be the number the payment page still asks for.
+      const amountUsd = usdPriceFor(orderData.subtotal);
       const order = await createOrder({
         ...orderData,
+        // The dollars AND where to send them, written onto the order together. A payment page that knows
+        // the amount but hands out the BCA account is worse than one that knows neither.
+        paymentResponse: amountUsd
+          ? {
+            amountUsd,
+            currency: 'USD',
+            amountIdr: orderData.subtotal,
+            usdRate: USD_PRICE_RATE,
+            bankName: INTERNATIONAL_TRANSFER_PAYMENT.bankName,
+            swift: INTERNATIONAL_TRANSFER_PAYMENT.swift,
+            accountNumber: INTERNATIONAL_TRANSFER_PAYMENT.accountNumber,
+            accountName: INTERNATIONAL_TRANSFER_PAYMENT.accountName,
+          }
+          : undefined,
         notes: buildOrderNotes({
           deliveryAddress: orderData.deliveryAddress,
           deliveryArea: orderData.deliveryArea,

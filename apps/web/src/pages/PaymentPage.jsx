@@ -30,6 +30,20 @@ import {
 const PAYMENT_SESSION_KEY = 'solivagant:doku-payment';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
+
+// What this buyer is actually asked to send.
+//
+// An international order is paid in dollars into a USD account, so every place this screen names an
+// amount — the header, the instruction, the sticky bar, the success panel — has to name the dollars.
+// Printing the rupiah beside a USD account number is how someone transfers the wrong number.
+//
+// The dollar figure rides on the order itself (payment_response.amountUsd), not on a rate read at page
+// load: the buyer must see the same figure tomorrow as the day the order was written, whatever the
+// market did overnight.
+const payableAmount = (session) => {
+  const usd = Number(session?.amountUsd || 0);
+  return usd > 0 ? `US$${Math.round(usd)}` : formatTotal(session?.amount);
+};
 const formatDateTime = (value, t) => {
   if (!value) return '';
   const date = new Date(value);
@@ -101,6 +115,7 @@ const buildManualTransferFromOrder = (order) => ({
   orderNumber: order.orderNumber,
   customerCode: order.customerCode,
   amount: order.subtotal,
+  amountUsd: Number(order.paymentResponse?.amountUsd || 0),
   customerName: order.customerName,
   paymentStatus: order.paymentStatus,
   paymentReference: order.paymentReference,
@@ -120,6 +135,7 @@ const buildManualTransferFromOrder = (order) => ({
     bankName: order.paymentResponse?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: order.paymentResponse?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
     accountName: order.paymentResponse?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+    swift: order.paymentResponse?.swift || '',
     amount: order.subtotal,
   },
   createdAt: order.createdAt,
@@ -185,14 +201,21 @@ const PaymentTotalBreakdown = ({ session, compact = false }) => {
       ) : null}
       {shouldShowShipping ? (
         <div className="mt-2 flex justify-between gap-3 text-[#6b7280]">
-          <span>{shippingPromotionLabel ? t("pay.shippingAfterPromo") : 'Ongkir'}</span>
+          <span>{shippingPromotionLabel ? t("pay.shippingAfterPromo") : t("pay.shipping")}</span>
           <span>{formatTotal(shippingFee)}</span>
         </div>
       ) : null}
       {shippingPromotionLabel ? <p className="mt-1 text-[11px] font-bold text-emerald-700">{shippingPromotionLabel}</p> : null}
       <div className="mt-3 flex justify-between gap-3 border-t border-editorial-stone/10 pt-3 text-editorial-charcoal">
         <span>{t("pay.totalDue")}</span>
-        <span>{formatTotal(session.amount)}</span>
+        <span className="text-right">
+          {payableAmount(session)}
+          {/* The rupiah stays visible under a dollar total — it is what the shop books, and a buyer
+              comparing it to the product page should find the same pair of numbers there. */}
+          {Number(session.amountUsd || 0) > 0
+            ? <span className="ml-2 font-semibold text-[#6b7280]">{formatTotal(session.amount)}</span>
+            : null}
+        </span>
       </div>
     </div>
   );
@@ -321,7 +344,7 @@ const PaymentFrame = ({ session, compact = false }) => {
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
             <div className="text-[10px] uppercase text-editorial-muted">Total</div>
-            <div className="mt-1">{formatTotal(session.amount)}</div>
+            <div className="mt-1">{payableAmount(session)}</div>
           </div>
           {session.paymentStatus ? (
             <div className="rounded-2xl bg-white/80 px-4 py-3">
@@ -494,7 +517,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
           </div>
           <div className="rounded-2xl bg-white/80 px-4 py-3">
             <div className="text-[10px] uppercase text-editorial-muted">Total</div>
-            <div className="mt-1">{formatTotal(session.amount)}</div>
+            <div className="mt-1">{payableAmount(session)}</div>
           </div>
         </div>
         <PaymentTotalBreakdown session={session} compact={compact} />
@@ -524,7 +547,7 @@ const QrisPanel = ({ session, compact = false, onPaid }) => {
             )}
           </div>
           <div className="mt-3 text-[10px] font-bold uppercase text-editorial-muted">{t("pay.totalDue")}</div>
-          <div className="text-2xl font-bold text-[#c0392b]">{formatTotal(session.amount)}</div>
+          <div className="text-2xl font-bold text-[#c0392b]">{payableAmount(session)}</div>
         </div>
 
         <div className="mx-auto flex max-w-[360px] flex-wrap items-center justify-center gap-1.5">
@@ -580,6 +603,9 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
     bankName: session.manualTransfer?.bankName || MANUAL_TRANSFER_PAYMENT.bankName,
     accountNumber: session.manualTransfer?.accountNumber || MANUAL_TRANSFER_PAYMENT.accountNumber,
     accountName: session.manualTransfer?.accountName || MANUAL_TRANSFER_PAYMENT.accountName,
+    // Only an international order carries these, and both are useless on a domestic one: a SWIFT code
+    // means nothing for a BCA transfer, and the "OUR" charge option does not exist there either.
+    swift: session.manualTransfer?.swift || '',
   };
 
   const copyValue = async (label, value) => {
@@ -668,7 +694,7 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
               </div>
               <div className="rounded-2xl bg-white/80 px-4 py-3">
                 <div className="text-[10px] uppercase text-editorial-muted">{t("pay.transferTotal")}</div>
-                <div className="mt-1">{formatTotal(session.amount)}</div>
+                <div className="mt-1">{payableAmount(session)}</div>
               </div>
             </div>
             <PaymentTotalBreakdown session={session} compact={compact} />
@@ -725,6 +751,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
                 <Copy className="h-4 w-4 text-editorial-charcoal" />
               </div>
             </button>
+            {transfer.swift ? (
+              <button type="button" onClick={() => copyValue(t("pay.swift"), transfer.swift)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground">{t("pay.swift")}</div>
+                    <div className="mt-1 text-2xl font-bold tracking-[0.08em] text-editorial-charcoal">{transfer.swift}</div>
+                  </div>
+                  <Copy className="h-4 w-4 text-editorial-charcoal" />
+                </div>
+              </button>
+            ) : null}
             <button type="button" onClick={() => copyValue(t("pay.accountNameLabel"), transfer.accountName)} className="rounded-2xl border border-editorial-stone/10 bg-white p-4 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -738,9 +775,17 @@ const ManualTransferPanel = ({ session, compact = false, onProofSubmitted }) => 
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          {transfer.swift ? (
+            /* Dekito's own line, off the invoice he already sends by hand. "OUR" makes the SENDER pay every
+               fee in the chain, so the amount arrives whole instead of losing $15-25 to an intermediary
+               bank — an exact fix where the rounding in usdPrice.js is only a cushion. */
+            <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-900">
+              {t('pay.ourCharges')}
+            </p>
+          ) : null}
           <div className="text-xs font-bold uppercase">{t('pay.instructions')}</div>
           <ol className="mt-3 grid gap-2 text-sm font-semibold leading-relaxed">
-            <li>{t('pay.step1', { amount: formatTotal(session.amount) })}</li>
+            <li>{t('pay.step1', { amount: payableAmount(session) })}</li>
             <li>{t('pay.step2')}</li>
             <li>{t('pay.step3')}</li>
             <li>{t('pay.step4')}</li>
@@ -1117,7 +1162,7 @@ const PaymentPageContent = ({ isMobile }) => {
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase text-[#8b949e]">{sessionIsManual ? t("pay.manualTransfer") : t("pay.dokuPayment")}</p>
-                  <p className="truncate text-lg font-bold leading-tight text-editorial-charcoal">{formatTotal(session.amount)}</p>
+                  <p className="truncate text-lg font-bold leading-tight text-editorial-charcoal">{payableAmount(session)}</p>
                   <p className="truncate text-[10px] font-bold text-amber-700">{t(paymentStatusKeys[session.paymentStatus || 'pending'] || 'pay.awaiting')}</p>
                 </div>
                 <Button type="button" className="h-12 rounded-2xl gap-2 px-4" onClick={openPrimaryPaymentAction}>
