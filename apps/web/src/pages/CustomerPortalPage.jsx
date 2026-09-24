@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTierPrices } from '@/hooks/useStorefrontProducts.js';
 import { Button } from '@/components/ui/button.jsx';
 import StateBlock from '@/components/ui/state-block.jsx';
+import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import { internationalOrderSummary, isAwaitingShippingQuote, paymentStatusLabels } from '@/utils/orderWorkflow.js';
 import { orderHasShipped } from '@/utils/trackingLead.js';
 import StatusChip, { getOrderStatusTone, getPaymentStatusTone, getShipmentStatusTone } from '@/components/ui/status-chip.jsx';
@@ -42,7 +43,6 @@ import {
 import { getDiscountedVoucherCartLines } from '@/utils/cartVoucherPricing.js';
 import { copyTextToClipboard } from '@/utils/clipboard.js';
 import { publicErrorMessage } from '@/utils/publicErrorMessage.js';
-import AskAtelierButton from '@/components/storefront/AskAtelierButton.jsx';
 import useTranslate from '@/hooks/useTranslate.js';
 
 const formatTotal = (value) => `Rp ${new Intl.NumberFormat('id-ID').format(Number(value || 0))}`;
@@ -726,12 +726,16 @@ const SelfServiceActions = ({
   order,
   refreshing = false,
 }) => {
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const paymentPath = buildPaymentPath({ isMobileRoute, order });
-  // Reorder fills the cart and sends the buyer to it. The English shop has no cart and /en/cart
-  // redirects, so the button would quietly stock a basket nobody can open and drop the customer on the
-  // catalogue — a dead end that looks like a bug rather than a policy.
-  const canReorder = !isInternational && getOrderProductItems(order).length > 0;
+  // Reorder fills the cart and sends the buyer to it. It used to be hidden from an international
+  // customer, and the reason is kept rather than deleted: the English shop had no cart, /en/cart
+  // redirected, and the button would have stocked a basket nobody could open. Both of those stopped
+  // being true when /en got a cart and a checkout — so the gate was refusing a returning overseas buyer
+  // the one button on this page that makes them a repeat customer.
+  // The prices take care of themselves: useCart re-prices every line from the catalogue at the
+  // international price, so a basket refilled from a domestic order is not a domestic-priced basket.
+  const canReorder = getOrderProductItems(order).length > 0;
   const showOpenPayment = canOpenPayment(order) && !(isManualTransferPayment(order.paymentProvider) && canUploadPaymentProof(order));
   const buttonClass = compact
     ? 'flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-bold'
@@ -777,14 +781,14 @@ const SelfServiceActions = ({
         <ExternalLink className="h-4 w-4" />
         {t('cust.publicTracking')}
       </a>
-      {/* Hidden rather than disabled in the English shop: a greyed button is still an offer, and this
-          one cannot be honoured there at all. */}
-      {isInternational ? null : (
-        <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
-          <ShoppingBag className="h-4 w-4" />
-          {t('cust.orderAgain')}
-        </button>
-      )}
+      {/* It used to be hidden in the English shop — "a greyed button is still an offer, and this one
+          cannot be honoured there at all" — which was true while /en had no cart. It has one now, so
+          the offer can be honoured and the button belongs to both shops. Still disabled, not hidden,
+          when the order has no product lines to put back. */}
+      <button type="button" onClick={() => onReorder(order)} disabled={!canReorder} className={`${outlineClass} disabled:opacity-50`}>
+        <ShoppingBag className="h-4 w-4" />
+        {t('cust.orderAgain')}
+      </button>
       {order.paymentProvider === 'doku' && ['unpaid', 'pending'].includes(order.paymentStatus) ? (
         <button type="button" onClick={() => onRefreshPayment(order)} disabled={refreshing} className={`${outlineClass} disabled:opacity-60`}>
           {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -796,7 +800,7 @@ const SelfServiceActions = ({
 };
 
 const CustomerPortalPage = () => {
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, loginWithGoogle, rememberCustomerCode, logout } = useAuth();
@@ -1243,17 +1247,12 @@ const CustomerPortalPage = () => {
                 <p className="mt-2 text-xs font-semibold leading-relaxed text-[#cbd6c5]">
                   {t('cust.oneplace')}
                 </p>
-                {/* Same reason as the desktop hero below, and this is the surface most of them are on:
-                    the English shop has no checkout, so a reader abroad who reaches their account has
-                    nowhere else to arrange an order from. The phone hero does not carry the sentence
-                    that says so, which is exactly why the button had to be put here on purpose. */}
-                {isInternational ? (
-                  <AskAtelierButton
-                    labelKey="intl.noticeCta"
-                    draftKey="intl.noticeMessage"
-                    className="mt-3 w-full"
-                  />
-                ) : null}
+                {/* This used to read "Arrange an international order on WhatsApp", because the English
+                    shop had no checkout and a reader abroad had nowhere else to order from. It has one
+                    now, so that label pointed them at the slower path this whole project replaced. The
+                    button stays — an account page with no way to reach a human is its own defect — but
+                    it asks a question instead of taking an order. */}
+                <AskAtelierButton className="mt-3 w-full" />
               </div>
             </div>
             <form onSubmit={loadPortal} className="grid gap-3 p-4">
@@ -1517,17 +1516,12 @@ const CustomerPortalPage = () => {
               <p className="mt-4 text-base font-medium leading-relaxed text-muted-foreground">
                 {t('cust.heroBody')}
               </p>
-              {/* The English shop has no checkout: that sentence tells a reader abroad their order is
-                  arranged on WhatsApp, so the way to arrange one belongs under it rather than in the
-                  footer. The Indonesian sentence says nothing of the kind — there is a checkout — so
-                  there is nothing here to answer. */}
-              {isInternational ? (
-                <AskAtelierButton
-                  labelKey="intl.noticeCta"
-                  draftKey="intl.noticeMessage"
-                  className="mt-4 w-full sm:w-auto"
-                />
-              ) : null}
+              {/* Same change as the phone hero above: the sentence this button answered said an order
+                  from abroad is arranged on WhatsApp. It is not — the checkout takes it — so the
+                  sentence now says what is true (member prices are domestic, international orders are
+                  priced in dollars at checkout) and the button went back to being what it always
+                  actually was: the way to reach a person. */}
+              <AskAtelierButton className="mt-4 w-full sm:w-auto" />
             </div>
 
             <form onSubmit={loadPortal} className="rounded-2xl border bg-white p-4 shadow-sm">

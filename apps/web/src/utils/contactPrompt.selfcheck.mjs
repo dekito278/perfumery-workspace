@@ -77,10 +77,15 @@ for (const parts of surfaces) {
 }
 assert.ok(guarded >= 3, `the scan found only ${guarded} asking sentence(s) — it is no longer looking at the right thing`);
 
-// --- 3b. The account page, where WhatsApp is not help but the checkout itself -----------------------------
-// The English shop takes no orders through this checkout, and the hero says so. That sentence does not
-// order the reader to do anything (rule 1 agrees), but a reader abroad still has nowhere else to go, so
-// the way to arrange an order sits under it rather than in the footer.
+// --- 3b. The account page, where WhatsApp is help again and not the checkout ------------------------------
+// INVERTED, with the reason kept. This used to require both buttons to be labelled "arrange an
+// international order", because the English shop took no orders and a reader abroad had nowhere else to
+// go. /en has a checkout now, so that label sent the buyer down the slower path this project replaced —
+// and it sat under a hero sentence that told them the same untrue thing.
+//
+// The buttons stay, because an account page with no way to reach a person is its own defect. What
+// changed is the errand: they ask a question now instead of taking an order, and they belong to both
+// shops, because a buyer in Jakarta may also want to reach a human from this page.
 const portal = read('pages', 'CustomerPortalPage.jsx');
 // BOTH heroes. The page returns a different tree for /mobile, and the first version of this shipped to
 // the desktop one only — measured on production: /en/customer on a phone redirects to /en/mobile/customer
@@ -90,12 +95,12 @@ const portalButtons = [...portal.matchAll(/<AskAtelierButton[\s\S]{0,240}?\/>/g)
 assert.equal(portalButtons.length, 2,
   `the account page has a phone tree and a desktop tree; found ${portalButtons.length} contact button(s), expected one in each`);
 for (const button of portalButtons) {
-  assert.match(button, /labelKey="intl\.noticeCta"/,
-    'labelled as arranging an order, not as asking about a parcel that does not exist yet');
-  assert.match(button, /draftKey="intl\.noticeMessage"/, 'and drafted the same way');
+  assert.doesNotMatch(button, /labelKey="intl\.noticeCta"/,
+    'the account page still labels its contact button as the way to arrange an international order. The '
+    + 'checkout takes the order; this button is how you reach a person');
 }
-assert.equal((portal.match(/\{isInternational \? \(\s*<AskAtelierButton/g) || []).length, 2,
-  'and both belong to the English shop only — the Indonesian account page has a checkout to spend a member price in');
+assert.equal((portal.match(/\{isInternational \? \(\s*<AskAtelierButton/g) || []).length, 0,
+  'the contact button is gated on the shop again — reaching a person is not an international-only need');
 
 // --- 4. The button keeps its promise ---------------------------------------------------------------------
 const button = read('components', 'storefront', 'AskAtelierButton.jsx');

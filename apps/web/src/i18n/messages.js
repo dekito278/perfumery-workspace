@@ -1727,7 +1727,7 @@ export const MESSAGES = {
     "cust.maskedNoteMobile": "You are seeing this order by code. To see and manage the full details (name, contact, address),",
     "cust.withGoogleAccount": "with the account you ordered with.",
     "cust.securityOnBody": "This customer has a security question switched on. Answer it to open the dashboard.",
-    "cust.heroBody": "One Google account: order status, your invoices, and the details we ship to. Member prices apply in the Indonesian shop, where the checkout runs \u2014 an order from abroad is arranged on WhatsApp. An older customer code still works below.",
+    "cust.heroBody": "One Google account: order status, your invoices, and the details we ship to. Member prices are an Indonesian loyalty price and do not apply to an order going abroad \u2014 international orders are priced in dollars at checkout. An older customer code still works below.",
     "cust.itemCount": "{count} items",
     "cust.afterVoucherUnit": "After the voucher: {price} each",
     "cust.voucherCode": "Voucher {code}",

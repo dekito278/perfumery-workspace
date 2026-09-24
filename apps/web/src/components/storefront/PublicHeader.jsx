@@ -37,7 +37,7 @@ const megaMenuColumns = [
 
 const PublicHeader = () => {
   const { summary } = useCart();
-  const { t, isInternational } = useTranslate();
+  const { t } = useTranslate();
   const { currentUser } = useAuth();
   // The header used to delete any cart line whose slug was not in the visible catalog, silently. A shopper
   // whose product went out of stock or got unpublished just found their cart shorter, with no reason given
@@ -130,15 +130,16 @@ const PublicHeader = () => {
           >
             <UserRound className="h-4 w-4" />
           </Link>
-          {/* The English shop has no cart to open. Leaving the icon there — with a count on it, from
-              a cart filled in the Indonesian shop — is an invitation to a checkout that now redirects,
-              and a count that quotes domestic prices. */}
-          {isInternational ? null : (
-            <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.quantity })}>
-              <ShoppingBag className="h-4 w-4" />
-              {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
-            </Link>
-          )}
+          {/* Hidden from the English shop until now, and the reason is kept rather than deleted: there
+              was no cart to open, the checkout redirected, and the count would have quoted domestic
+              prices. All three stopped being true when /en got a cart and a checkout — and useCart
+              re-prices every line internationally, so the count is a count of the right basket.
+              Leaving it hidden meant a buyer could press "Add to cart — US$95" on the product page and
+              then have no way back to the cart but to know the URL. */}
+          <Link to="/cart" className="editorial-cart-button" aria-label={t('nav.cartAria', { count: summary.quantity })}>
+            <ShoppingBag className="h-4 w-4" />
+            {summary.quantity > 0 ? <span className="editorial-cart-count">{summary.quantity}</span> : null}
+          </Link>
         </div>
       </header>
 

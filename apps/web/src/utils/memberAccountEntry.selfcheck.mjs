@@ -60,16 +60,23 @@ assert.match(MESSAGES.id['cust.memberWaiting'], /Harga member/, 'and that empty 
 assert.doesNotMatch(MESSAGES.en['cust.memberWaiting'], /Member price/i,
   'the English empty state still leads with a price that cannot be spent in that shop');
 
-// --- 3b. And nothing in the English portal offers the cart ---------------------------------------------
-// Every promise on this page has to survive a shop with no checkout. "Items from an old order go
-// straight into the cart" was true for months and became false the day the cart left.
-// The one exception is an ERROR raised by pressing the button, which the English shop never shows — it
-// is not an offer, it is what the Indonesian shop says when an old order has nothing to repeat.
-const NOT_AN_OFFER = new Set(['cust.noItemsToReorder']);
+// --- 3b. The English portal may offer the cart, and may not offer the member price ---------------------
+// This rule is INVERTED, not deleted, and the reason it used to read the other way is the point.
+//
+// It used to forbid any English message from mentioning the cart at all: "every promise on this page has
+// to survive a shop with no checkout". That was true for months. It stopped being true when /en got a
+// cart and a checkout, and the rule outlived its premise — which is how the reorder button ended up
+// hidden from returning overseas customers, and the cart icon hidden from the whole English header,
+// long after both worked.
+//
+// What survives is the half that was always about money rather than about plumbing: a member price is a
+// domestic loyalty price and cannot be charged on an order going abroad. So an English message may
+// mention the cart freely, and may mention a member price only while saying where it applies.
 for (const [key, value] of Object.entries(MESSAGES.en)) {
-  if (!key.startsWith('cust.') || NOT_AN_OFFER.has(key)) continue;
-  assert.doesNotMatch(value, /\b(into the cart|reorder|re-order|one-tap)\b/i,
-    `${key} offers the English shop a cart it does not have: "${value}"`);
+  if (!key.startsWith('cust.') || !/member price/i.test(value)) continue;
+  assert.match(value, /Indonesia/i,
+    `${key} names a member price without saying it is Indonesian: "${value}" — an overseas reader takes `
+    + 'it as a discount on the order they are about to place');
 }
 assert.doesNotMatch(portal, /'Masukkan kode SOLI', 'Kode muncul setelah checkout pertama/, 'step one is signing in, not typing a code');
 
@@ -90,17 +97,24 @@ assert.equal((portal.match(/<title>\{t\('cust\.tab'\)\}<\/title>/g) || []).lengt
 assert.match(MESSAGES.id['cust.tab'], /Akun Member/, 'and the tab is named for the account, not for tracking');
 assert.match(portal, /\{t\('cust\.heroTitle'\)\}/, 'the hero leads with what signing in does to the price');
 assert.match(MESSAGES.id['cust.heroTitle'], /harga member/, 'and says so in Indonesian');
-// English leads with what the account DOES there instead: following an order. Same rule as the button
-// above — a member price is real, and it is real in the Indonesian shop, which is the only one with a
-// checkout to spend it in.
+// English leads with what the account DOES there instead: following an order. A member price is real,
+// and it is real in Indonesia — not because the English shop has no checkout (it has one), but because
+// the discount is a domestic loyalty price that deliberately does not travel.
 assert.doesNotMatch(MESSAGES.en['cust.heroTitle'], /member price/i,
-  'the English hero opens on a member price the English shop cannot charge');
-assert.match(MESSAGES.en['cust.heroBody'], /Indonesian shop/,
+  'the English hero opens on a member price that does not apply to the order it is about to take');
+assert.match(MESSAGES.en['cust.heroBody'], /Indonesia/i,
   'and must say where a member price does apply, rather than leaving it unexplained');
+assert.match(MESSAGES.en['cust.heroBody'], /do not apply|does not apply|not apply/i,
+  'and must say plainly that it does not apply to an order going abroad');
+// The sentence that used to live here said an order from abroad is arranged on WhatsApp. It is not any
+// more, and nothing on this page may say so: the checkout takes it.
+assert.doesNotMatch(MESSAGES.en['cust.heroBody'], /arranged on WhatsApp/i,
+  'the account page still tells an overseas reader their order happens on WhatsApp — it happens at the '
+  + 'checkout, and pointing them at the slower path is the thing this project replaced');
 // The rule is that someone holding an old code is still told the box is down there — not the wording.
 // Pinned to the sentence, this failed the day the label was corrected: the field resolves the CUSTOMER
 // code (SOLI...), and calling it an order code is what sent buyers holding DKT-... into a dead end.
 assert.match(MESSAGES.id['cust.heroBody'], /[Kk]ode customer lama/, 'and still points the code-holder somewhere');
 assert.match(MESSAGES.id['cust.heroBody'], /di bawah/, 'saying where the box is');
 
-console.log('memberAccountEntry selfcheck OK (a door to the account on every page — framed around the price in the shop that has a checkout, and around the order in the shop that does not))');
+console.log('memberAccountEntry selfcheck OK (a door to the account on every page — framed around the price in the shop the discount applies to, and around the order everywhere else))');

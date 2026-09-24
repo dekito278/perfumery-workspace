@@ -88,6 +88,46 @@ for (const path of ['/cart', '/checkout', '/mobile/cart', '/mobile/checkout']) {
 }
 assert.doesNotMatch(app, /const DomesticOnly/, 'the old gate is back');
 
+// The price of that exemption: each exempt page must take its currency from the ORDER. PaymentPage
+// reads amountUsd off the payment session it builds; the portal goes through internationalOrderSummary.
+// Neither may go back to asking which shop the reader is in, because that answers a different question.
+for (const rel of ['pages/PaymentPage.jsx', 'pages/CustomerPortalPage.jsx']) {
+  const source = read(rel);
+  assert.match(source, /amountUsd|internationalOrderSummary\(/,
+    `${rel} is exempt from the shop check because it reads the order instead — and it has stopped doing `
+    + 'that, so it now settles a dollar order in rupiah with nothing watching');
+  assert.match(source, /isAwaitingShippingQuote\(/,
+    `${rel} must also know an order whose freight has not been quoted: it has no total yet, and this page `
+    + 'is where someone would otherwise be invited to pay one');
+}
+
+// --- 2b. Reachable by the BUYER, not merely by the URL -------------------------------------------------
+// The route check above passed for three commits while an English buyer could not actually get to the
+// cart. The header's cart icon was hidden from the whole English shop, the catalogue's quick-add button
+// was hidden, and a returning overseas customer's "Order again" was hidden — each behind its own
+// isInternational gate, each with a comment citing a premise that had already expired: "the English shop
+// has no cart". So someone could press "Add to cart — US$95" on a product page and have no way back to
+// the cart except to know the URL.
+//
+// A route nobody can see is not a route. These three are the buyer's only doors into the cart, which is
+// why they are named here rather than scanned for.
+const doors = [
+  [['components', 'storefront', 'PublicHeader.jsx'], /<Link to="\/cart"/, 'the header cart icon'],
+  [['pages', 'CatalogPage.jsx'], /onClick=\{\(event\) => handleQuickAdd\(event, product\)\}/, "the catalogue's quick-add"],
+  [['pages', 'CustomerPortalPage.jsx'], /onClick=\{\(\) => onReorder\(order\)\}/, "the account page's Order again"],
+];
+for (const [file, affordance, what] of doors) {
+  const source = read(...file);
+  const at = source.search(affordance);
+  assert.ok(at > 0, `${what} is gone from ${file.join('/')}`);
+  // The 400 characters before it: an `isInternational ? null :` or `!isInternational &&` wrapper sits
+  // immediately above the thing it hides, so that is where a returning gate would be.
+  const above = source.slice(Math.max(0, at - 400), at).replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(above, /isInternational\s*\?|!isInternational\s*&&/,
+    `${what} is hidden from the English shop again. The cart, the checkout and the international prices `
+    + 'all work; hiding the way in just means the buyer fills a basket they cannot open.');
+}
+
 // --- 3. …but every number the English shop shows is the international one -----------------------------
 // This replaces "no surface may reach the cart". The surfaces may reach it; what they may not do is put
 // a domestic price on an English screen, which is the bug the old rule prevented by amputation.
@@ -141,7 +181,12 @@ const jsxFilesIn = (rel) => readdirSync(join(srcRoot, rel))
 
 const STUDIO = /Studio|Admin|Formula|Material|Batch|Inventory|Supplier|Report|Dashboard|Order|Shipment|Customers|Journal(Editor|Page|Detail)|Validation|Curation|Voucher|Quotation|Login|Auth/;
 // Reached only after an order already exists.
-const EXEMPT = new Set(['pages/PaymentPage.jsx']);
+// Both of these SETTLE an order that already exists rather than starting one, and both now read the
+// currency off the order itself instead of off the shop the reader happens to be in — which is the more
+// accurate question anyway: an order placed from Berlin is a dollar order whichever shop its buyer opens
+// afterwards. The exemption is paired with an assertion below that they really do read the order, so it
+// is not a hole.
+const EXEMPT = new Set(['pages/PaymentPage.jsx', 'pages/CustomerPortalPage.jsx']);
 // These ARE the cart and the checkout, and they are now allowed to take an international payment — that
 // is the whole point of this rewrite. They answer to §2 and §3 instead.
 const GATED_BY_ROUTE = /^(pages\/CartPage|pages\/CheckoutPage|pages\/mobile\/MobileCartPage|pages\/mobile\/MobileCheckoutPage)\.jsx$/;
@@ -182,17 +227,26 @@ assert.ok(payChecked >= 2, `the payment-surface scan only found ${payChecked} fi
 
 // --- 4b. Reorder is not offered where there is no cart to reorder into --------------------------------
 //
-// Pinned to the BUTTON, not to the file. The scan above only asks whether the portal consults the shop
-// somewhere, and it does — in a second, belt-and-braces line — so deleting the gate around the button
-// itself left every other assertion green while an English customer got a Reorder button that fills a
-// basket they cannot open and drops them on the catalogue.
+// INVERTED, and the reason it used to read the other way is kept. It required the Reorder button to be
+// HIDDEN in the English shop, because that shop had no cart to put anything into. When /en got one, the
+// rule went on enforcing the old world: a returning overseas customer — the one this project exists to
+// win — was refused the single button on the page that makes them a repeat buyer, and the guard held the
+// door shut.
+//
+// The button now belongs to both shops. What survives is the finer point the old rule made: it is
+// DISABLED rather than hidden when there is nothing to put back, because a greyed button explains
+// itself and a missing one does not.
 {
   const portal = read('pages/CustomerPortalPage.jsx');
   const at = portal.indexOf('onReorder(order)');
   assert.ok(at > 0, 'the reorder button has moved; this check no longer points at anything');
   const before = portal.slice(Math.max(0, at - 400), at);
-  assert.match(before, /isInternational \? null :/,
-    'the Reorder button is offered in the English shop, which has no cart to put anything into');
+  assert.doesNotMatch(before, /isInternational \? null :|!isInternational &&/,
+    'the Reorder button is hidden from the English shop again — it has a cart, and useCart re-prices '
+    + 'every line internationally, so the basket it fills is the right one');
+  assert.match(portal, /onClick=\{\(\) => onReorder\(order\)\}[\s\S]{0,120}disabled=\{!canReorder\}/,
+    'the button must be disabled rather than hidden when the order has nothing to put back — a greyed '
+    + 'button explains itself, a missing one reads as a bug');
 }
 
 // --- 5. Bespoke stops at the design in the English shop ----------------------------------------------
