@@ -9,7 +9,7 @@ import { listExportDestinations } from '@/data/exportZones.js';
 import { EXPORT_RATE_EFFECTIVE } from '@/data/exportRates.js';
 import { quoteInternationalShipping } from '@/utils/exportShipping.js';
 import { quoteInternationalShippingPrice, formatShippingUsd } from '@/utils/internationalShippingPrice.js';
-import { shippingIncludedFor } from '@/utils/shippingRegion.js';
+import { shippingIncludedFor, isAsiaCountry, internationalPriceFor } from '@/utils/shippingRegion.js';
 import { usdPriceFor, USD_PRICE_RATE } from '@/utils/usdPrice.js';
 import { SHIPPING_RATE_BOTTLE_SIZE_ML, SHIPPING_RATES_EFFECTIVE_YEAR } from '@/data/internationalShippingRates.js';
 import { USD_PER_RUPIAH_RATE, USD_RATE_SET_ON } from '@/utils/overseasVisitor.js';
@@ -64,6 +64,15 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
 
   const products = useMemo(() => catalog.filter(isProductVisibleInStorefront), [catalog]);
 
+  // Which of the two international prices this destination pays. The storefront decides it from the
+  // reader's clock; here the destination country is known outright, and isAsiaCountry is the same split
+  // by country that shippingRegion already owns.
+  //
+  // This screen used to quote the WORLD price to everyone. A buyer in Kuala Lumpur was shown Rp 790.000
+  // on the shop and written down at Rp 1.260.000 here — Rp 470.000 a bottle, Rp 2.820.000 on the
+  // six-bottle order the page opens with.
+  const priceRegion = isAsiaCountry(countryCode) ? 'asia' : 'world';
+
   const lines = useMemo(() => rows.map((row) => {
     const product = products.find((item) => item.slug === row.slug);
     const variants = product?.variants || [];
@@ -76,13 +85,17 @@ const ExportShippingCalculatorPage = ({ mobile = false }) => {
       variant,
       retailPrice,
       overseasPriceSet: Number(forLine[OVERSEAS_TIER] || 0) > 0,
-      unitPrice: resolveTierPrice({ retailPrice, tierPrices: forLine, overseas: true }),
+      // internationalPriceFor returns null when no overseas price is set for the line; falling back to
+      // resolveTierPrice keeps the existing behaviour of charging the domestic price and flagging the row
+      // rather than refusing to quote at all.
+      unitPrice: internationalPriceFor({ tierPrices: forLine, linePrice: retailPrice, region: priceRegion })
+        || resolveTierPrice({ retailPrice, tierPrices: forLine, overseas: true }),
       name: product?.name || '',
       size: variant?.size || product?.size || '',
       weightGram: itemWeightGram(variant?.size || product?.size || '', FALLBACK_GRAM),
       weighedSize: isWeighedSize(variant?.size || product?.size || ''),
     };
-  }), [rows, products, tierPrices.index]);
+  }), [rows, products, tierPrices.index, priceRegion]);
 
   const visibleDestinations = filterDestinations(destinations, countrySearch, countryCode);
   const destinationMatches = countMatches(destinations, countrySearch);
